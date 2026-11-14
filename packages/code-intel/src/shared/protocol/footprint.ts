@@ -14,7 +14,8 @@
 //
 // It also lists the changed files that no binding holds, because no part shows
 // their change. With a proposal it lists the parts the proposal adds whose
-// bound source the range does not add, because their code was there before.
+// bound source the range does not add: their code was there before, or their
+// binding names code that exists nowhere.
 //
 // It is information: it carries no severity and changes no exit status. It is
 // derived on request and never stored.
@@ -177,8 +178,8 @@ const ProposedFootprintSchema = z
 		changedNotNamed: z.array(FootprintPartSchema),
 		namedNotChanged: z.array(FootprintPartSchema),
 		/**
-		 * The parts the proposal adds whose bound source the range does not add, so their code was
-		 * there at the merge base (TASK-637). Each is also in `namedAndChanged` or `namedNotChanged`.
+		 * The parts the proposal adds whose bound source the range does not add (TASK-637). Their
+		 * code was there at the merge base, or their binding names code that exists nowhere. Each is also in `namedAndChanged` or `namedNotChanged`.
 		 * A directory part that the range adds a file to is not listed.
 		 */
 		preexisting: z.array(FootprintPartSchema),

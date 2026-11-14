@@ -31,7 +31,7 @@ interface Inputs {
 	readonly hosting: Hosting;
 	readonly access: ApiAccess;
 	readonly mode: OutOfPlanMode;
-	/** What the `preexisting` input says that added modules with code at the base do. */
+	/** What the `preexisting` input says that added modules without new code do. */
 	readonly preexistingMode: OutOfPlanMode;
 	readonly overrideLabel: string;
 	readonly stateInput: string;

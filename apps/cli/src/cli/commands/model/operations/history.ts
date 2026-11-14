@@ -49,11 +49,13 @@ const WORDS = {
 			"",
 			"It also lists, in `unboundFiles`, each changed file that no module is bound to, because no module shows that change. The files of the vault are not listed.",
 			"",
-			"With a draft selected, it also lists, in `preexisting`, each module that the draft adds and whose bound code the branch does not add, because that code was there at the merge base. A picture of the draft marks such a module as added, although the diff shows no new code for it. The branch adds code to a module when it adds a file inside its binding that the merge base lacks, or, for a binding to a declaration, the declaration. A module bound to a directory that the branch adds a file to is therefore not preexisting. A renamed file adds no code. Each module says in `newSource` whether the branch added code to it.",
+			"With a draft selected, it also lists, in `preexisting`, each module that the draft adds and whose bound code the branch does not add. Its code was there at the merge base, or its binding names code that exists nowhere. A picture of the draft marks such a module as added, although the diff shows no new code for it.",
+			"",
+			"The branch adds code to a module when it adds a file inside its binding that the merge base lacks, or, for a binding to a declaration, the declaration. A module bound to a directory that the branch adds a file to is therefore not preexisting. A renamed file adds no code. Each module says in `newSource` whether the branch added code to it.",
 			"",
 			"With `--fail-outside`, it exits 1 when the branch changed a module that the draft does not name. A module bound to a directory passes when each file it changed lies in the binding of another changed module inside it. If the branch also changed a file that only the outer module binds, the outer module fails. A file that no module is bound to never fails it. A gate before a merge uses it.",
 			"",
-			"With `--fail-preexisting`, it exits 1 when `preexisting` names a module. Model the code that exists at the base in the current state first, then add only new code in the draft.",
+			"With `--fail-preexisting`, it exits 1 when `preexisting` names a module. Model code that exists at the base in the current state first, and repair a binding whose code exists nowhere.",
 			"",
 			"A repository that cannot read the base or head is named, and the command exits 2. Source refs stay local and no source history is retained.",
 		].join("\n"),
@@ -199,7 +201,7 @@ function judged(
 		...(preexisting.length === 0
 			? []
 			: [
-					`Added by the draft, with code at the base: ${namesOf(preexisting)}. Model each in the current state first, or bind it to code that the branch adds.`,
+					`Added by the draft without new code: ${namesOf(preexisting)}. Model code that exists at the base in the current state first, or bind each to code that the branch adds.`,
 				]),
 	];
 	if (unreadLines(answer).length > 0) return { diagnostics, outcome: "unread" };

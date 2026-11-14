@@ -2,7 +2,7 @@ name: Archboard pull request
 description: >-
   Comment on a pull request with its architecture as text: the proposal it carries, the footprint
   of the change against the plan, and a link to the vault. Optionally warn or fail when modules
-  change outside the plan, or when the proposal adds modules whose code the base already has. It
+  change outside the plan, or when the proposal adds modules that bind no code that it adds. It
   warns when the `archboard-pr` section of the description draws a Mermaid chart. Runs on `pull_request` events and needs a checkout with
   `fetch-depth: 0`. The job needs `contents: read` and `pull-requests: write`, or only
   `contents: read` when `report-file` takes the report in place of the comment.
@@ -45,8 +45,8 @@ inputs:
     default: warn
   preexisting:
     description: >-
-      What modules that the proposal adds, but whose bound code the base already has, do. A picture
-      of the proposal marks such a module as added although the diff adds no code for it. The
+      What modules that the proposal adds, but whose bound code the pull request does not add, do. A
+      picture of the proposal marks such a module as added although the diff adds no code for it. The
       comment lists them in every mode. `warn` annotates, `fail` fails the step unless the
       pull request carries the override label, and `off` does not judge. A module bound to a
       directory that the pull request adds a file to is not counted.

@@ -92,7 +92,7 @@ With a proposal, it reports:
 - `namedAndChanged`: Branch changes that the proposal names.
 - `changedNotNamed`: Changed modules absent from the proposal. Investigate work outside the plan or an incomplete proposal.
 - `namedNotChanged`: Proposed modules without code changes. Identify unfinished work or explain why no code change is needed.
-- `preexisting`: Modules the proposal adds whose bound code the branch does not add. Their code exists at the merge base, so a picture marks existing code as added. Model that code in Current first.
+- `preexisting`: Modules the proposal adds whose bound code the branch does not add, so a picture marks them as added without new code. If their code exists at the merge base, model it in Current first. Otherwise repair the binding.
 
 A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes, or that a merge brings in again from a lower layer of a stack, does not count.
 Footprints retain large commits with `large` and list unread modules in `skipped`.

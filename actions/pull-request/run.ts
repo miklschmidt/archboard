@@ -142,7 +142,7 @@ function annotatePlan(report: PullRequestReport): void {
 	annotateFound(
 		report.preexisting.status,
 		"Archboard preexisting",
-		`${String(preexisting.length)} module(s) that the proposal adds bind code that the base already has: ${preexisting.join(", ")}.`,
+		`${String(preexisting.length)} module(s) that the proposal adds bind no code that the pull request adds: ${preexisting.join(", ")}.`,
 	);
 }
 
@@ -231,7 +231,7 @@ function registerCheckouts(context: Context): string | undefined {
 
 /**
  * Judge the footprint against the plan: the modules changed outside it, and the modules it adds
- * whose code the base already has.
+ * whose bound code the pull request does not add.
  * @param context The run.
  * @param choice The proposal, or why there is none.
  * @param buckets The footprint, if it was read.

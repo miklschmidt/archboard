@@ -202,7 +202,7 @@ function footprintSection(report: PullRequestReport): string[] {
 		...moduleBucket("Planned but unchanged", report.buckets.plannedUnchanged),
 		...(report.buckets.preexisting.length === 0
 			? []
-			: moduleBucket("Added, with code at the base", report.buckets.preexisting, true)),
+			: moduleBucket("Added without new code", report.buckets.preexisting, true)),
 		...unboundBucket(report.buckets.unbound),
 	];
 }
@@ -250,7 +250,7 @@ function outOfPlanSection(report: PullRequestReport): string[] {
 function preexistingLines(report: PullRequestReport): string[] {
 	const label = `\`${report.overrideLabel}\``;
 	const found = modules(report.buckets?.preexisting.length ?? 0);
-	const what = `${found} that the proposal adds already had code at the base, so a picture of the proposal marks existing code as added. Model them in the current state first, in a documentation layer below this pull request.`;
+	const what = `${found} that the proposal adds bind no code that this pull request adds, so a picture of the proposal marks them as added. Model code that exists at the base in the current state first, in a documentation layer below this pull request, or repair a binding whose code exists nowhere.`;
 	const by: Partial<Record<OutOfPlanDecision["status"], string>> = {
 		warn: `${what} The action warns only; set \`preexisting: fail\` to make it fail.`,
 		fail: `${what} This check fails; add the label ${label} to let this pull request through.`,

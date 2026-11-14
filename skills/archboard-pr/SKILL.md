@@ -50,7 +50,7 @@ Never write a flowchart or sequence chart in Mermaid.
 Read the existing PR state comment before creating a proposal.
 Locate its stable ID through the catalogue.
 For a proposal that predates code, follow [reconciliation](references/reconcile.md).
-Each added subject binds source that the diff adds.
+Each added module with a binding binds source that the diff adds.
 If the source exists at the base, model it in Current first, in a documentation layer below this PR. That documentation needs no proposal of its own.
 Use consumer authoring and comparison recipes, preserving source evidence, documents, and order.
 
@@ -58,14 +58,15 @@ Compare with the actual review base:
 
 ```bash
 archboard model compare --state <proposal-id> --against <base-state-or-checkpoint> -C <checkout>
-archboard model footprint --base <base-ref> --head <head-ref> --state <proposal-id> --against <base-state-or-checkpoint> --fail-preexisting -C <checkout>
+archboard model footprint --base <base-ref> --head <head-ref> --state <proposal-id> --against <base-state-or-checkpoint> -C <checkout>
 archboard check code --state <proposal-id> -C <checkout>
 ```
 
 For a planning root, use its empty baseline and omit absent selectors.
 Fix findings caused by the change and record unavailable evidence.
 Commit tracked authored inputs with implementation.
-Finish when proposal meaning matches implementation, comparison accounts for every changed subject, and the footprint's `preexisting` is empty.
+While the proposal is a draft, add `--fail-preexisting` to the footprint. It exits 1 for each added module whose bound code the branch does not add.
+Finish when proposal meaning matches implementation, comparison accounts for every changed subject, and the draft's footprint passes `--fail-preexisting`.
 
 ## Prepare artifacts
 

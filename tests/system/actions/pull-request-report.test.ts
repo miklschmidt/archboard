@@ -116,15 +116,15 @@ describe("the sticky comment", () => {
 		expect(text.indexOf("### Plan")).toBeLessThan(text.indexOf("### Footprint"));
 	});
 
-	test("lists the added modules with code at the base only when there are some, and says why it fails", () => {
-		expect(pullRequestComment(report)).not.toContain("Added, with code at the base");
+	test("lists the added modules without new code only when there are some, and says why it fails", () => {
+		expect(pullRequestComment(report)).not.toContain("Added without new code");
 		const text = pullRequestComment({
 			...report,
 			buckets: { ...report.buckets!, preexisting: ["CLI"] },
 			preexisting: { status: "fail", failed: true },
 		});
 		expect(text).toContain(
-			"<details open>\n<summary>Added, with code at the base (1)</summary>\n\n- CLI\n\n</details>",
+			"<details open>\n<summary>Added without new code (1)</summary>\n\n- CLI\n\n</details>",
 		);
 		expect(text.slice(text.indexOf("### Plan"), text.indexOf("### Footprint"))).toContain(
 			"`archboard: out of plan`",

@@ -337,7 +337,7 @@ test("a module the draft adds is preexisting when the branch adds none of its bo
 			writeFileSync(join(home, file), text);
 		}
 		for (const args of [
-			["add", "tools", "lib", "src"],
+			["add", ...Object.keys(files)],
 			["commit", "--quiet", "-m", subject],
 		]) {
 			const ran = Bun.spawnSync(["git", "-C", home, ...args]);
