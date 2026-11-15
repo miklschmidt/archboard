@@ -1,11 +1,11 @@
 ---
 id: TASK-640
 title: Walkthrough authoring and recording carry their own QA
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-15T02:24:00Z'
-updated_date: '2026-11-15T04:37:00Z'
+updated_date: '2026-11-15T04:47:00Z'
 labels: []
 dependencies: []
 type: bug
@@ -43,3 +43,9 @@ The README explainer said that Codex "uses exactly what you have on screen, noth
 <!-- SECTION:NOTES:BEGIN -->
 Explainer reauthored (486b7079eb), then put in plain user language (4789d9de10, 5d0bd7ffc0) after a take inverted "Merging the code adopts nothing". Web-shop walkthroughs reauthored with a regenerated history.import.json (fad33c9726), then restated as descriptions (7cf7c7579c) after three PR takes in a row answered step text that sounded like a request; pr-walkthrough pins 452d05c6. Site player text matches "How an order is placed today". A try at warning only about audible loss through silentConcealedSamples was reverted (53f2640c7d) because that counter does not prove the lost audio was silent. Final takes: explainer and pr-walkthrough concealed nothing; newcomer concealed 287 ms with no quiet hole inside speech (TASK-641).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Walkthrough authoring and recording now carry their own QA. The consumer reference (skills/archboard/references/canonical-walkthroughs.md) lets a narrative hold all its point needs, has the author prove each claim, and adds a recording check: a whole voice, and each step's spoken words against narrative and source, where a short opener passes and a reply fails. The PR walkthrough guide and the README asset guide use it. "What Archboard does" and the web-shop example's three walkthroughs were reauthored through the CLI, the fixture was exported again and pr-walkthrough pins 452d05c6, and the site player mirrors the new "How an order is placed today". The README kit prints the recorder's dropout warning for a new recording and none on --replay. Verified: bun run check 26/26, all 13 PR checks, a fresh fixture import, and the transcripts of the final README takes (explainer and pr-walkthrough concealed nothing; newcomer concealed 287 ms with no quiet hole inside speech). Follow-up: TASK-641 (where and why a take loses about 290 ms).
+<!-- SECTION:FINAL_SUMMARY:END -->
