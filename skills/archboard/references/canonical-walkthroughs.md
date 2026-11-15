@@ -99,7 +99,9 @@ Leaving the walkthrough stops narration.
 Make one point per beat.
 State it in the title, for example `Only the ledger sets items aside`.
 Voice speaks from the title, narrative, selection, and picture alone, and fills any gap with its own guess.
-So write in the narrative everything that the point needs: what the subjects do, why it matters, and where the claim stops.
+So write in the narrative everything that the point needs: what the subjects do and why it matters.
+If a listener could easily take the point further than it goes, say where it stops.
+Spend words on what the listener cannot guess, and leave out what every listener knows.
 Use model names and source-backed numbers, such as a limit, count, or timeout.
 Select the two or three subjects that the beat explains.
 
@@ -110,15 +112,15 @@ Rewrite or remove a claim that you cannot prove.
 
 ## Check a recording
 
-Use a recording only if its voice is whole and every beat says what its narrative says.
+Use a recording only if its voice is whole and every beat tells its point truly.
 
 1. If `model record` reports that the voice dropped out, record again. The kept `talk.json` counts the lost samples in `audio.reception.concealedSamples`.
 2. Read what the voice said in each beat from `talk.json`. In `events`, each `step` entry starts its `beat`. The last `said` text of each `itemId` is one spoken item, and it belongs to the beat of the `step` before it.
-3. Compare each beat's spoken words with its narrative and the source. Each spoken claim is true. The beat opens on the system, as narration, and never as a reply to someone.
+3. Compare each beat's spoken words with its narrative and the source. The voice narrates in its own words, so a short opener such as `So` or `Yep` passes. A beat fails if the voice gets the product wrong, drops the point, or replies to the beat or talks about it as a text, as in `Sure, it means` or `This is saying`.
 4. Inspect a representative frame of each beat with ffmpeg.
 
 If the voice states something false because the narrative is wrong or unclear, repair the narrative, retain a new checkpoint, and record again.
-If the narrative is right and the voice still adds, drops, or changes a claim, or answers the beat, record again.
+If the narrative is right and the beat still fails, record again.
 If every beat of one recording passes, the check is complete.
 
 ## A newcomer's walkthrough
