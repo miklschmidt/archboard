@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { ArchitectureCheckpointRetainSchema } from "@archboard/model/contract";
 
 import { readTalk } from "@archboard/walkthrough/recorder";
-import { TALK_SAMPLE_RATE, audibleDropoutMs, type Talk } from "@archboard/walkthrough/talk";
+import { TALK_SAMPLE_RATE, type Talk } from "@archboard/walkthrough/talk";
 
 import {
 	encodeThumbnail,
@@ -124,8 +124,11 @@ async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Prom
  * @param context Where to say it.
  */
 function reportDropout(talk: Talk, context: MakeContext): void {
-	const ms = audibleDropoutMs(talk);
-	if (ms === 0 || context.replay) return;
+	const reception = talk.audio.reception;
+	if (reception === undefined || context.replay) return;
+	const audible = reception.concealedSamples - (reception.silentConcealedSamples ?? 0);
+	if (audible === 0) return;
+	const ms = Math.round((audible * 1000) / TALK_SAMPLE_RATE);
 	context.say(`The voice dropped out for ${ms} ms while it was recorded. Record it again.`);
 }
 
