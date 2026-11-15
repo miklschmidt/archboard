@@ -119,16 +119,14 @@ async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Prom
 }
 
 /**
- * Say that a new recording's voice dropped out, when its talk counts samples the browser made up while it spoke.
+ * Say that a new recording's voice dropped out, when its talk counts samples the browser made up.
  * @param talk The kept talk.
  * @param context Where to say it.
  */
 function reportDropout(talk: Talk, context: MakeContext): void {
-	const reception = talk.audio.reception;
-	if (reception === undefined || context.replay) return;
-	const audible = reception.concealedSamples - (reception.silentConcealedSamples ?? 0);
-	if (audible === 0) return;
-	const ms = Math.round((audible * 1000) / TALK_SAMPLE_RATE);
+	const lost = talk.audio.reception?.concealedSamples ?? 0;
+	if (lost === 0 || context.replay) return;
+	const ms = Math.round((lost * 1000) / TALK_SAMPLE_RATE);
 	context.say(`The voice dropped out for ${ms} ms while it was recorded. Record it again.`);
 }
 
