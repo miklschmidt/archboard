@@ -114,7 +114,7 @@ Rewrite or remove a claim that you cannot prove.
 
 Use a recording only if its voice is whole and every beat tells its point truly.
 
-1. If `model record` reports that the voice dropped out, record again. The kept `talk.json` counts the lost samples in `audio.reception.concealedSamples`.
+1. If `model record` reports that the voice dropped out, record again. In the kept `talk.json`, `audio.reception` counts the samples that the browser made up. Subtract `silentConcealedSamples` from `concealedSamples` for the audible loss. If `silentConcealedSamples` is absent, use `concealedSamples` alone.
 2. Read what the voice said in each beat from `talk.json`. In `events`, each `step` entry starts its `beat`. The last `said` text of each `itemId` is one spoken item, and it belongs to the beat of the `step` before it.
 3. Compare each beat's spoken words with its narrative and the source. The voice narrates in its own words, so a short opener such as `So` or `Yep` passes. A beat fails if the voice gets the product wrong, drops the point, or replies to the beat or talks about it as a text, as in `Sure, it means` or `This is saying`.
 4. Inspect a representative frame of each beat with ffmpeg.
