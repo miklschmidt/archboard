@@ -36,6 +36,7 @@ function countOf(stats: Partial<RTCInboundRtpStreamStats>): Reception | null {
 	if (stats.type !== "inbound-rtp" || stats.kind !== "audio") return null;
 	return {
 		concealedSamples: stats.concealedSamples ?? 0,
+		silentConcealedSamples: stats.silentConcealedSamples ?? 0,
 		stretchedSamples:
 			(stats.insertedSamplesForDeceleration ?? 0) + (stats.removedSamplesForAcceleration ?? 0),
 	};
@@ -56,6 +57,10 @@ async function receptionOf(receivers: readonly RTCRtpReceiver[]): Promise<Recept
 	if (counts.length === 0) return undefined;
 	return {
 		concealedSamples: counts.reduce((sum, count) => sum + count.concealedSamples, 0),
+		silentConcealedSamples: counts.reduce(
+			(sum, count) => sum + (count.silentConcealedSamples ?? 0),
+			0,
+		),
 		stretchedSamples: counts.reduce((sum, count) => sum + count.stretchedSamples, 0),
 	};
 }

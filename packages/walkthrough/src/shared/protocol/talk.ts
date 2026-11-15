@@ -85,12 +85,26 @@ type TalkEvent = z.infer<typeof TalkEventSchema>;
  */
 const ReceptionSchema = z
 	.object({
-		/** Samples the receiver made up because the voice had not arrived: what a listener hears as a dropout. */
+		/** Samples the receiver made up because the voice had not arrived. */
 		concealedSamples: SampleSchema,
+		/** Of those, the samples it made up while the voice was silent, which nobody hears. */
+		silentConcealedSamples: SampleSchema.optional(),
 		/** Samples it added or removed to slow the voice down or speed it up while it waited for packets. */
 		stretchedSamples: SampleSchema,
 	})
 	.strict();
+
+/**
+ * How long a listener hears the voice drop out in a talk: the samples made up while it spoke.
+ * @param talk The talk.
+ * @returns The milliseconds, or 0 when the voice arrived whole or nobody counted it.
+ */
+function audibleDropoutMs(talk: Talk): number {
+	const reception = talk.audio.reception;
+	if (reception === undefined) return 0;
+	const audible = reception.concealedSamples - (reception.silentConcealedSamples ?? 0);
+	return Math.round((audible * 1000) / TALK_SAMPLE_RATE);
+}
 
 /** What the live pass's page hands over: the log of the talk, stamped on the voice's clock. */
 const TalkLogSchema = z
@@ -492,6 +506,7 @@ export {
 	TALK_VOICE_FILE,
 	TalkLogSchema,
 	TalkSchema,
+	audibleDropoutMs,
 	framesOf,
 	publishReplayPage,
 	replayAskedOf,
