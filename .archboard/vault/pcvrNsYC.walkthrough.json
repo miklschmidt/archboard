@@ -66,7 +66,7 @@
     },
     {
       "title": "Plan the change before the code",
-      "narrative": "Ask your agent for a change, and it writes a proposal: a planned architecture drawn over the current one, with new parts in green, changed parts in orange, and removed parts dashed in red. The proposal stores only the changes, so the current architecture stays as it is. Draft two options and open them side by side, or compare them with the interface changes first. Merging the code adopts nothing. When an option ships, your agent adopts it on your word, with its reason, and the architecture that it replaced stays as a checkpoint that you can reopen.",
+      "narrative": "Ask your agent for a change, and it writes a proposal: a planned architecture drawn over the current one, with new parts in green, changed parts in orange, and removed parts dashed in red. The proposal stores only the changes, so the current architecture stays as it is. Draft two options and open them side by side, or compare them with the interface changes first. After the code ships, you tell your agent to adopt the option, and it records your reason. The architecture that it replaced stays as a checkpoint that you can reopen.",
       "reading": {
         "selection": [
           "vKEsyHFk/0T9enjhi#KJy5yYuq",
@@ -106,7 +106,7 @@
     },
     {
       "title": "Share it as a picture or a narrated video",
-      "narrative": "Render a reading as an SVG or a PNG for a design document, and the picture carries its own legend. Track it in Git, and archboard check embeds names every picture that the model has outgrown. Or record a walkthrough like this one for a pull request or a new teammate: the voice explains each beat, and the video moves on when the voice finishes. The server, the renderer and the recording run on your own machine.",
+      "narrative": "Render a reading as an SVG or a PNG for a design document, and the picture carries its own legend. Track it in Git, and archboard check embeds names every picture that the model has outgrown. Or record a walkthrough like this one for a pull request or a new teammate: the voice explains each beat, and the picture moves to the next beat when the voice finishes. The server, the renderer and the recording run on your own machine.",
       "reading": {
         "selection": [
           "vKEsyHFk/XppR9owz#255ksC3D",
