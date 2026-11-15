@@ -11,8 +11,8 @@
   },
   "beats": [
     {
-      "title": "Your agent draws the map",
-      "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, and how they talk. Archboard keeps that model in the repository and draws every line. Nobody drags a box, so the picture never drifts away from the model.",
+      "title": "Your agent maps the system, and Archboard draws it",
+      "narrative": "Your coding agent, such as Claude Code or Codex, reads the code and tells Archboard what the system is through the Agent CLI: its services, stores and queues, what contains what, how the parts talk, and in what order. Archboard keeps that model as files in your repository, the Architecture inputs, so it can be reviewed with the code. The Drawing engine draws every box and line from the model, and no file stores a position, so the picture cannot drift from the model. The agent that changes the code can update the model in the same task, and the code check finds where the two disagree.",
       "reading": {
         "selection": [
           "vKEsyHFk/vKEsyHFk#TBnOCNx2",
@@ -30,7 +30,7 @@
     },
     {
       "title": "Read a system you did not write",
-      "narrative": "Open the model in your browser. Start with the big parts, open any module to see what it holds, and follow the breadcrumbs back. Open code jumps to the source that a module names. You learn a codebase from its map first, and from its files second.",
+      "narrative": "Open the model in your browser. Start at the root modules, open a module to see its parts, and follow the breadcrumbs back. Show a second place in the other pane to compare the two. Open code opens the code that a module names in your editor. The Browser reads the model and never edits it: Architecture drawing draws each reading, and Panes and workspace holds each pane's reading and opens the code. You learn a codebase from its map first, and from its files second.",
       "reading": {
         "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "selection": [
@@ -48,7 +48,7 @@
     },
     {
       "title": "See where the design costs the most",
-      "narrative": "Measures counts what each module hides, what only passes calls on, and what changes with it in Git. The code check finds calls that the map leaves out. You get the facts behind each design smell, and you decide what they mean.",
+      "narrative": "Measures lists every module beside the facts behind the design smells of John Ousterhout's A Philosophy of Software Design. From the model's relationships, it counts each module's entry points, hidden parts and callers, and the entry points that the map shows passing a call straight on. The History lens reads Git commits through each module's code links: how often a module changes, and which modules keep changing with it, also where no relationship joins them. The Code check reads the source and finds calls between modules that the map leaves out. There is no score. You judge what the counts mean.",
       "reading": {
         "scope": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
         "selection": [
@@ -66,7 +66,7 @@
     },
     {
       "title": "Plan the change before the code",
-      "narrative": "Ask your agent for a change, and Archboard draws it as a proposal over today's architecture. Put two options side by side. When one ships, your agent adopts it with its reason, and the architecture that it replaces stays in history.",
+      "narrative": "Ask your agent for a change, and it writes a proposal: a planned architecture drawn against the current one. New parts are outlined in green, changed parts in orange, and removed parts dashed in red. Compact proposals stores only the changes, and the current architecture stays as it is. Draft two options and open them side by side, or compare them with interface changes first. Merging the code adopts nothing. When an option ships, your agent adopts it on your word, with its reason, and Canonical checkpoint operations keeps the architecture that it replaced as an exact checkpoint that you can reopen.",
       "reading": {
         "selection": [
           "vKEsyHFk/0T9enjhi#KJy5yYuq",
@@ -86,7 +86,7 @@
     },
     {
       "title": "Ask about what you see",
-      "narrative": "Select any part and choose Explain with Codex, or press Talk and ask aloud. Codex starts from the exact reading on your screen and the parts that you selected. From there it can hand work to an agent that reads the whole repository, and that agent makes changes when you ask for them.",
+      "narrative": "Choose Explain with Codex to explain your selection or its relationships, trace a flow, or explain a proposal. Canonical context capture keeps the exact reading on your screen and your selection, and Canonical explanation actions hands them to the Codex agent of this checkout. It reads them and the code, and answers under the picture and in the conversation. An explanation answers and changes nothing. Press Talk to ask aloud, or to ask for work. The voice hands your words to a coordinator, which reads the model and your panes and gives longer work to that same agent. That agent can read the whole repository, and when you ask, it draws a proposal or edits the model.",
       "reading": {
         "selection": [
           "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
@@ -106,7 +106,7 @@
     },
     {
       "title": "Share it as a picture or a narrated video",
-      "narrative": "Render any reading as an SVG or a PNG for a design document, and the picture carries its own legend. Or record a walkthrough like this one for a pull request or a new teammate. The server, the renderer and the recording all run on your own machine.",
+      "narrative": "Model render commands export a reading as an SVG, and model rasterize makes a PNG, for a design document. The picture carries its own legend. Track it in Git, and archboard check embeds names the pictures that the model has outgrown. Or record a walkthrough like this one for a pull request or a new teammate. Walkthrough video lets the voice explain each beat, moves on when the voice finishes, and encodes the video. The server, the renderer, Chromium and ffmpeg run on your machine. The voice comes from Codex, through your Codex sign-in.",
       "reading": {
         "selection": [
           "vKEsyHFk/XppR9owz#255ksC3D",
