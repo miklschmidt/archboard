@@ -227,7 +227,7 @@
     },
     {
       "title": "Reserved means nobody else can buy it",
-      "narrative": "When a shopper presses Pay, Place order asks Reserve route to set the order's items aside, before the card is charged. Reservation ledger reserves them only if enough are left, and from then on no other order can take them. They come back only through Release route, when Timeout guard cancels an order still running after 10 seconds. The counts underneath are set from the warehouse every 5 minutes. To see one reservation step by step, read the flow Reserve an order's items.",
+      "narrative": "When a shopper presses Pay, Place order asks Reserve route to set the order's items aside, before the card is charged. Reservation ledger reserves them only if enough are left, and from then on no other order can take them. They come back only through Release route, when Timeout guard cancels an order still running after 10 seconds. The counts underneath are set from the warehouse every 5 minutes. The flow Reserve an order's items shows one reservation step by step.",
       "reading": {
         "visibility": {
           "modules": [

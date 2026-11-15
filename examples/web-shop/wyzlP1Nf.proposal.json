@@ -6,8 +6,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-01T03:54:15.200Z",
   "predecessor": "dAg7XGx2",
-  "predecessorRevision": "f446f2855bb40fbdea43c07864e2959e5b8043e0aa7bc59561c9507187bc87e4",
-  "baseline": "091c3dfbadbe9e2a5f03586b29e70375f8fc8300",
+  "predecessorRevision": "270908fb81a0d0c9f62bd7e0676656488ec21b1309f0ed4abc5b776ed805b6ca",
+  "baseline": "796567886a73389b63120202a3a0762862e841a1",
   "changes": [
     {
       "type": "remove",
@@ -295,8 +295,8 @@
       "kind": "beat",
       "value": {
         "id": "Shop#8d2tNlJ6",
-        "title": "Shoppers should not wait for stock and email",
-        "narrative": "Today Place order makes the shopper wait while it reserves the stock, charges the card, saves the paid order and sends the receipt email, and Timeout guard cancels any order still running after 10 seconds. This draft answers the shopper once the order is saved as pending and the payment has started. A new webhook records the payment, and a new worker, fed by a queue, reserves the stock and sends the receipt.",
+        "title": "Checkout stops making the shopper wait",
+        "narrative": "Today Place order makes the shopper wait while it reserves the stock, charges the card, saves the paid order and sends the receipt email, and Timeout guard cancels any order still running after 10 seconds. The Queued fulfilment proposal answers the shopper once the order is saved as pending and the payment has started. A new webhook records the payment, and a new worker, fed by a queue, reserves the stock and sends the receipt.",
         "reading": {
           "visibility": {
             "modules": [
@@ -448,7 +448,7 @@
       "value": {
         "id": "Shop#ZcpGEh5X",
         "title": "Payment provider tells a webhook when the payment succeeds",
-        "narrative": "The draft adds Payment webhook, POST /payments/webhook, inside Checkout API. When the payment succeeds, Payment provider sends it a payment succeeded event, and the webhook marks the order paid in Orders DB and answers 200 OK. Until then, the order stays pending.",
+        "narrative": "Payment webhook is a new route, POST /payments/webhook, inside Checkout API. When the payment succeeds, Payment provider sends it a payment succeeded event, and the webhook marks the order paid in Orders DB and answers 200 OK. Until then, the order stays pending.",
         "reading": {
           "visibility": {
             "modules": [
@@ -589,8 +589,8 @@
       "kind": "beat",
       "value": {
         "id": "Shop#F5QYhOyC",
-        "title": "Look closely at duplicate webhooks",
-        "narrative": "Payment provider may deliver the same payment succeeded event more than once. If Payment webhook publishes order paid for each delivery, Fulfilment worker is asked again to reserve the same order's items and send its receipt, so the order can hold its stock twice and the shopper can get two receipts. Inspect the webhook: it should mark an order paid and publish order paid only once per order, however many times the event arrives.",
+        "title": "Duplicate payment events can fulfil an order twice",
+        "narrative": "Payment provider may deliver the same payment succeeded event more than once. If Payment webhook publishes order paid for each delivery, Fulfilment worker is asked again to reserve the same order's items and send its receipt, so the order can hold its stock twice and the shopper can get two receipts. That makes Payment webhook the place that needs the closest look: a correct webhook marks an order paid and publishes order paid once per order, however many times the event arrives.",
         "reading": {
           "visibility": {
             "modules": [

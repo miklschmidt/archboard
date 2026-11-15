@@ -63,11 +63,11 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 		name: "pr-walkthrough",
 		vault: "examples/web-shop",
 		// The portable example archive retains this exact reading of the Queued fulfilment draft,
-		// saved when its walkthrough's narratives were reauthored; it holds that walkthrough and has
-		// the revision of the tracked example. The earlier reading, 2e715ac9, keeps the first
-		// narratives, and the first draft's checkpoint, f4ae77d8, is the shelved "Queued
-		// fulfilment, first draft".
-		checkpoint: "10ebe024332a4a3c31f517700008aa6e595855ad",
+		// saved when its walkthrough's narratives became statements about the system; it holds that
+		// walkthrough and has the revision of the tracked example. The earlier readings keep older
+		// narratives: 10ebe024 the first proven ones, and 2e715ac9 the original ones. The first
+		// draft's checkpoint, f4ae77d8, is the shelved "Queued fulfilment, first draft".
+		checkpoint: "452d05c65e16f5e7b0d9a0fbbc81ac3a603447c6",
 		walkthrough: "Why checkout stops waiting",
 		thumbnail: { file: "docs/readme/idx-voice.webp", step: 1 },
 	}),
