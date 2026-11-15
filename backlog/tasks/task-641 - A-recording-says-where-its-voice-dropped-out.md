@@ -4,7 +4,7 @@ title: A recording says where its voice dropped out
 status: To Do
 assignee: []
 created_date: '2026-11-15T03:32:00Z'
-updated_date: '2026-11-15T04:00:00Z'
+updated_date: '2026-11-15T04:37:00Z'
 labels: []
 dependencies: []
 type: bug
@@ -26,7 +26,5 @@ Narrated README takes on 2026-11-13 and 2026-11-15 often lost exactly 13,920 sam
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Measured 2026-11-15 (a62f845f53 keeps silentConcealedSamples in the talk): one newcomer take concealed 13,800 samples, of which 12,240 (255 ms) were made up during silence and 1,560 (33 ms) during speech. So the recurring "290 ms" warning was mostly inaudible. The recorder and the README kit now warn only about the audible part. Still open: when in the talk the audible part falls, and its cause.
-
-A second newcomer take concealed exactly the same 13,800 samples, 12,240 of them silent, so the 1,560 audible samples (33 ms) recur identically: a fixed artifact, not load. The README newcomer video (2026-11-15) carries it.
+Measured 2026-11-15: one newcomer take that briefly kept WebRTC silentConcealedSamples concealed 13,800 samples, 12,240 of them as silence and 1,560 (33 ms) with sound. A second take showed exactly the same counts. That split is what one 287 ms gap gives when the expand fades to silence, so the counters alone cannot say whether the voice was speaking. The take's voice.wav has no quiet run of 200 ms or more inside any step's speech: its long quiet runs are the start and the gaps between steps. So the gap most likely falls at a step boundary, but this is not proven. The README newcomer video (2026-11-15) is that take. Still open: when the loss happens, and its cause.
 <!-- SECTION:NOTES:END -->

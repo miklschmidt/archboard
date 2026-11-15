@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-15T02:24:00Z'
-updated_date: '2026-11-15T04:07:00Z'
+updated_date: '2026-11-15T04:37:00Z'
 labels: []
 dependencies: []
 type: bug
@@ -41,5 +41,5 @@ The README explainer said that Codex "uses exactly what you have on screen, noth
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Explainer reauthored (486b7079eb, then plain user language 4789d9de10 and 5d0bd7ffc0 after a take inverted "Merging the code adopts nothing"). Web-shop walkthroughs reauthored with a regenerated history.import.json (fad33c9726), then restated as descriptions (7cf7c7579c) after three PR takes in a row answered beat text that sounded like a request ("Shoppers should not wait…", "This draft", "Inspect the webhook"); pr-walkthrough pin now 452d05c6. Site player text matches "How an order is placed today". Recording check found most "290 ms" dropouts were silent concealment (a62f845f53). Final takes: explainer and pr-walkthrough clean; newcomer carries a fixed 33 ms audible concealment that recurs identically (TASK-641).
+Explainer reauthored (486b7079eb), then put in plain user language (4789d9de10, 5d0bd7ffc0) after a take inverted "Merging the code adopts nothing". Web-shop walkthroughs reauthored with a regenerated history.import.json (fad33c9726), then restated as descriptions (7cf7c7579c) after three PR takes in a row answered step text that sounded like a request; pr-walkthrough pins 452d05c6. Site player text matches "How an order is placed today". A try at warning only about audible loss through silentConcealedSamples was reverted (53f2640c7d) because that counter does not prove the lost audio was silent. Final takes: explainer and pr-walkthrough concealed nothing; newcomer concealed 287 ms with no quiet hole inside speech (TASK-641).
 <!-- SECTION:NOTES:END -->
