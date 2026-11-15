@@ -28,17 +28,25 @@ function bufferVoice(receivers: Receivers): readonly RTCRtpReceiver[] {
 }
 
 /**
+ * The samples one inbound audio statistic added or removed to change the voice's pace.
+ * @param stats The statistic.
+ * @returns The samples.
+ */
+function stretchedOf(stats: Partial<RTCInboundRtpStreamStats>): number {
+	return (stats.insertedSamplesForDeceleration ?? 0) + (stats.removedSamplesForAcceleration ?? 0);
+}
+
+/**
  * How one receiver's statistic counts the voice, when it is the voice's inbound audio.
  * @param stats One statistic of a receiver's report.
- * @returns The samples made up and stretched, or null for any other statistic.
+ * @returns The samples made up, made up in silence, and stretched, or null for any other statistic.
  */
-function countOf(stats: Partial<RTCInboundRtpStreamStats>): Reception | null {
+function countOf(stats: Partial<RTCInboundRtpStreamStats>): Record<keyof Reception, number> | null {
 	if (stats.type !== "inbound-rtp" || stats.kind !== "audio") return null;
 	return {
 		concealedSamples: stats.concealedSamples ?? 0,
 		silentConcealedSamples: stats.silentConcealedSamples ?? 0,
-		stretchedSamples:
-			(stats.insertedSamplesForDeceleration ?? 0) + (stats.removedSamplesForAcceleration ?? 0),
+		stretchedSamples: stretchedOf(stats),
 	};
 }
 
@@ -57,10 +65,7 @@ async function receptionOf(receivers: readonly RTCRtpReceiver[]): Promise<Recept
 	if (counts.length === 0) return undefined;
 	return {
 		concealedSamples: counts.reduce((sum, count) => sum + count.concealedSamples, 0),
-		silentConcealedSamples: counts.reduce(
-			(sum, count) => sum + (count.silentConcealedSamples ?? 0),
-			0,
-		),
+		silentConcealedSamples: counts.reduce((sum, count) => sum + count.silentConcealedSamples, 0),
 		stretchedSamples: counts.reduce((sum, count) => sum + count.stretchedSamples, 0),
 	};
 }
