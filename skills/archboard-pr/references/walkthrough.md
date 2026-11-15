@@ -19,9 +19,7 @@ archboard model replay <artifact-directory>/talk --out <artifact-directory>/walk
 Video and pictures use Blocks by default. The talk keeps its layout for replay.
 
 Read the receipt's duration, output size, talk path, and exact revision.
-Inspect a representative frame per beat with ffmpeg.
-Compare the spoken transcript with source evidence.
-Repair inaccurate narrative before recording again.
+Check the recording as the consumer reference's recording check says, before you use it.
 Keep the retained narrative and talk until artifacts are complete.
 
 For chapter times, use `architecture.playback.beats` and the `step` and final `said` entries in `events`.

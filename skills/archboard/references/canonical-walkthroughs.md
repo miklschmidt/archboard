@@ -3,7 +3,7 @@
 A walkthrough is an ordered narrative with complete reading instructions.
 Its `.walkthrough.json` contains no geometry or copied architecture.
 Use the [claimed edit recipe](canonical-models.md#edit-one-module-description) for the target, revision, operation identity, writer, claim, and doing line.
-Claim the model ID when adding a walkthrough:
+To add a walkthrough, claim the model ID:
 
 ```json
 {
@@ -45,7 +45,7 @@ A retained narrative requires its exact target as an archive dependency.
 If that dependency is missing, the write refuses.
 
 To edit, claim the walkthrough and all existing beats.
-Also claim the model when adding or removing identities.
+To add or remove identities, also claim the model.
 Use `edit-walkthrough` with stable `subject`, metadata `set`, or `clear:["summary"]`.
 
 An optional `beats` array gives the complete intended order.
@@ -98,14 +98,32 @@ Leaving the walkthrough stops narration.
 
 Make one point per beat.
 State it in the title, for example `Only the ledger sets items aside`.
-Use the narrative for what the picture cannot show.
+Voice speaks from the title, narrative, selection, and picture alone, and fills any gap with its own guess.
+So write in the narrative everything that the point needs: what the subjects do, why it matters, and where the claim stops.
 Use model names and source-backed numbers, such as a limit, count, or timeout.
 Select the two or three subjects that the beat explains.
-Voice uses the title, narrative, selection, and picture.
+
+Before you save, prove every claim of every narrative from the source or from the product's behavior.
+Know the file or command that proves each claim.
+Give an absolute claim, such as `only`, `every`, `never`, or `nothing`, the closest look.
+Rewrite or remove a claim that you cannot prove.
+
+## Check a recording
+
+Use a recording only if its voice is whole and every beat says what its narrative says.
+
+1. If `model record` reports that the voice dropped out, record again. The kept `talk.json` counts the lost samples in `audio.reception.concealedSamples`.
+2. Read what the voice said in each beat from `talk.json`. In `events`, each `step` entry starts its `beat`. The last `said` text of each `itemId` is one spoken item, and it belongs to the beat of the `step` before it.
+3. Compare each beat's spoken words with its narrative and the source. Each spoken claim is true. The beat opens on the system, as narration, and never as a reply to someone.
+4. Inspect a representative frame of each beat with ffmpeg.
+
+If the voice states something false because the narrative is wrong or unclear, repair the narrative, retain a new checkpoint, and record again.
+If the narrative is right and the voice still adds, drops, or changes a claim, or answers the beat, record again.
+If every beat of one recording passes, the check is complete.
 
 ## A newcomer's walkthrough
 
-Use this sequence when a newcomer asks how something works:
+If a newcomer asks how something works, use this sequence:
 
 1. Write a one-sentence answer: `When you do this, this happens`. Name the action and result.
 2. Choose four to ten modules and one flow that explain the answer. Give each module a plain `responsibility`. Exclude helpers, configuration, types, and tests. Include every module and relationship needed for the answer.
@@ -119,7 +137,7 @@ Use this sequence when a newcomer asks how something works:
 
 Use this sequence for reviewers unfamiliar with the code.
 Target the change's proposal.
-Write three to six beats of a few sentences each, for one to three minutes:
+Write three to six beats, for one to three minutes in all:
 
 1. Read the diff against the merge base. State why the PR exists in one sentence about the need.
 2. Run `archboard model footprint --base <merge-base> --state <proposal>`. Read each commit marked `large` before assigning it a beat. Give every changed module a beat, or explain its omission.

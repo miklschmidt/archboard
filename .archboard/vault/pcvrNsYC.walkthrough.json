@@ -86,7 +86,7 @@
     },
     {
       "title": "Ask about what you see",
-      "narrative": "Select any part and choose Explain with Codex, or press Talk and ask aloud. Codex gets the exact reading on your screen and the parts that you selected, and it changes nothing. So the answer is about this picture.",
+      "narrative": "Select any part and choose Explain with Codex, or press Talk and ask aloud. Codex starts from the exact reading on your screen and the parts that you selected. From there it can hand work to an agent that reads the whole repository, and that agent makes changes when you ask for them.",
       "reading": {
         "selection": [
           "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
