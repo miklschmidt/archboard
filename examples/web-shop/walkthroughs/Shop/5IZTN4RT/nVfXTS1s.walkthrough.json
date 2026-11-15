@@ -8,7 +8,7 @@
   "beats": [
     {
       "title": "Checkout reserves the items before it charges the card",
-      "narrative": "When a shopper presses Pay, Place order sends the order's items to Reserve route and waits for the answer. It charges the card only once the items are set aside.",
+      "narrative": "When a shopper presses Pay, Place order in Checkout API sends the order's items to Reserve route, POST /reservations on the Stock API of Inventory service, and waits for the answer. It charges the card only after Reserve route answers that the items are reserved.",
       "reading": {
         "visibility": {
           "modules": [
@@ -43,7 +43,7 @@
     },
     {
       "title": "Only the ledger sets items aside",
-      "narrative": "Reservation ledger locks each item's row in Stock DB, checks that the count minus what is already reserved covers the order, and writes the reservation in the same transaction.",
+      "narrative": "Reserve route hands the items to Reservation ledger, the only part that changes a reservation; Release route goes through it too. In one transaction, the ledger locks each item's row in Stock DB, checks that the count minus what is already reserved covers the order, and writes the reservation. Because the check and the write happen under the same lock, no other order can change those rows in between.",
       "reading": {
         "visibility": {
           "modules": [
@@ -84,7 +84,7 @@
     },
     {
       "title": "The last item goes to the first order",
-      "narrative": "Two shoppers can press Pay for the last item at the same moment. The row lock makes the second order wait for the first; it then finds nothing left, gets 409 sold out, and that shopper is told the item has sold out.",
+      "narrative": "Two shoppers can press Pay for the last item at the same moment. Whichever order locks the item's row first reserves it and commits. The second order waits at the lock until then, and finds nothing left. If even one of an order's items is short, the ledger reserves none of them, and Reserve route answers Checkout API with 409 sold out instead of 201 reserved.",
       "reading": {
         "visibility": {
           "modules": [
@@ -127,7 +127,7 @@
     },
     {
       "title": "A cancelled order puts its items back",
-      "narrative": "When checkout cancels an order, Timeout guard calls Release route and the ledger deletes that order's reservations. Nothing else gives reserved items back, so an order checkout forgets to cancel keeps its items.",
+      "narrative": "Release route, DELETE /reservations/{order}, puts a cancelled order's items back through Reservation ledger. Its only caller is Timeout guard, which cancels an order still running after 10 seconds. Nothing else gives reserved items back, so an order that Timeout guard does not cancel keeps its items set aside.",
       "reading": {
         "visibility": {
           "modules": [
@@ -174,7 +174,7 @@
     },
     {
       "title": "The counts come from the warehouse",
-      "narrative": "Every 5 minutes Warehouse sync reads what the warehouse has on its shelves and sets each count in Stock DB. Reservations are subtracted from that count, never written into it.",
+      "narrative": "Every 5 minutes, Warehouse sync reads the counts from Warehouse system and sets each product's count in Stock DB to what the warehouse reports. It is the only part that writes the counts. Reservations are stored beside the counts and subtracted from them when the ledger checks an order, so a sync replaces the counts but never touches a reservation.",
       "reading": {
         "visibility": {
           "modules": [
@@ -227,7 +227,7 @@
     },
     {
       "title": "Reserved means nobody else can buy it",
-      "narrative": "When checkout reserves an order's items, Inventory service sets them aside so nobody else can buy them, and puts them back when the order is cancelled. The counts it starts from are never more than 5 minutes old.",
+      "narrative": "When a shopper presses Pay, Place order asks Reserve route to set the order's items aside, before the card is charged. Reservation ledger reserves them only if enough are left, and from then on no other order can take them. They come back only through Release route, when Timeout guard cancels an order still running after 10 seconds. The counts underneath are set from the warehouse every 5 minutes. To see one reservation step by step, read the flow Reserve an order's items.",
       "reading": {
         "visibility": {
           "modules": [
