@@ -11,8 +11,8 @@
   },
   "beats": [
     {
-      "title": "Your agent draws the map",
-      "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, and how they talk. Archboard keeps that model in the repository and draws every line. Nobody drags a box, so the picture never drifts away from the model.",
+      "title": "Your agent maps the system, and Archboard draws it",
+      "narrative": "Point Claude Code or Codex at a repository. The agent reads the code and tells Archboard what the system is: its services, stores and queues, what contains what, how the parts talk, and in what order. Archboard keeps that model as files in your repository, so it is reviewed with the code. Archboard draws every box and line from the model, and no file stores a position, so the picture never drifts from the model. The agent that changes the code can update the model in the same task, and the code check finds where the two disagree.",
       "reading": {
         "selection": [
           "vKEsyHFk/vKEsyHFk#TBnOCNx2",
@@ -30,7 +30,7 @@
     },
     {
       "title": "Read a system you did not write",
-      "narrative": "Open the model in your browser. Start with the big parts, open any module to see what it holds, and follow the breadcrumbs back. Open code jumps to the source that a module names. You learn a codebase from its map first, and from its files second.",
+      "narrative": "Open the model in your browser. Start at the top, open a module to see its parts, and follow the breadcrumbs back. Open a second pane to compare two places side by side. Open code takes you from a module to its code in your editor. The browser only reads the model. You learn a codebase from its map first, and from its files second.",
       "reading": {
         "scope": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "selection": [
@@ -48,7 +48,7 @@
     },
     {
       "title": "See where the design costs the most",
-      "narrative": "Measures counts what each module hides, what only passes calls on, and what changes with it in Git. The code check finds calls that the map leaves out. You get the facts behind each design smell, and you decide what they mean.",
+      "narrative": "Measures lists each module beside the facts behind the design smells of John Ousterhout's A Philosophy of Software Design: its entry points, what it hides, who calls it, and which entry points only pass a call straight on. The history lens reads your Git commits: how often each module changes, and which modules keep changing together, even where no relationship joins them. The code check finds calls between modules that the map leaves out. There is no score. You judge what the counts mean.",
       "reading": {
         "scope": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
         "selection": [
@@ -66,7 +66,7 @@
     },
     {
       "title": "Plan the change before the code",
-      "narrative": "Ask your agent for a change, and Archboard draws it as a proposal over today's architecture. Put two options side by side. When one ships, your agent adopts it with its reason, and the architecture that it replaces stays in history.",
+      "narrative": "Ask your agent for a change, and it writes a proposal: a planned architecture drawn over the current one, with new parts in green, changed parts in orange, and removed parts dashed in red. The proposal stores only the changes, so the current architecture stays as it is. Draft two options and open them side by side, or compare them with the interface changes first. After the code ships, you tell your agent to adopt the option, and it records your reason. The architecture that it replaced stays as a checkpoint that you can reopen.",
       "reading": {
         "selection": [
           "vKEsyHFk/0T9enjhi#KJy5yYuq",
@@ -86,7 +86,7 @@
     },
     {
       "title": "Ask about what you see",
-      "narrative": "Select any part and choose Explain with Codex, or press Talk and ask aloud. Codex gets the exact reading on your screen and the parts that you selected, and it changes nothing. So the answer is about this picture.",
+      "narrative": "Select any part and choose Explain with Codex to explain it or its relationships, trace a flow, or explain a proposal. Codex gets the exact reading on your screen and your selection, reads the code behind them, and answers. An explanation changes nothing. Press Talk to ask aloud, or to ask for work. The voice hands your words to a coordinator, which sees your panes and gives longer work to an agent in your repository. That agent can read the whole codebase, and it makes the changes that you ask for.",
       "reading": {
         "selection": [
           "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
@@ -106,7 +106,7 @@
     },
     {
       "title": "Share it as a picture or a narrated video",
-      "narrative": "Render any reading as an SVG or a PNG for a design document, and the picture carries its own legend. Or record a walkthrough like this one for a pull request or a new teammate. The server, the renderer and the recording all run on your own machine.",
+      "narrative": "Render a reading as an SVG or a PNG for a design document, and the picture carries its own legend. Track it in Git, and archboard check embeds names every picture that the model has outgrown. Or record a walkthrough like this one for a pull request or a new teammate: the voice explains each beat, and the picture moves to the next beat when the voice finishes. The server, the renderer and the recording run on your own machine.",
       "reading": {
         "selection": [
           "vKEsyHFk/XppR9owz#255ksC3D",

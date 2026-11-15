@@ -32,7 +32,9 @@ a stale README is listed, and it does not fail the gate.
 Refresh an asset when `readme:check` lists it after your change. Then:
 
 1. Look at every file it wrote. A clip that films the wrong thing still gets a
-   new hash.
+   new hash. Check a narrated video as the
+   [recording check](../../skills/archboard/references/canonical-walkthroughs.md#check-a-recording)
+   says.
 2. Read the README text around it. Change an alt text or a caption that no
    longer says what the picture shows.
 3. Attach every file that the kit says to attach, and put the new address in

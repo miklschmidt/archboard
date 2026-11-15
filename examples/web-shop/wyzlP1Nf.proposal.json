@@ -6,8 +6,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-01T03:54:15.200Z",
   "predecessor": "dAg7XGx2",
-  "predecessorRevision": "b2e1b74d865541cafce67160d5725d594d5332c6d62813de8f3e4f059b01f2a7",
-  "baseline": "78567d34c3cf5bd9149ea14c5d20d657709b12c2",
+  "predecessorRevision": "270908fb81a0d0c9f62bd7e0676656488ec21b1309f0ed4abc5b776ed805b6ca",
+  "baseline": "796567886a73389b63120202a3a0762862e841a1",
   "changes": [
     {
       "type": "remove",
@@ -295,8 +295,8 @@
       "kind": "beat",
       "value": {
         "id": "Shop#8d2tNlJ6",
-        "title": "Shoppers should not wait for stock and email",
-        "narrative": "Today checkout keeps the shopper on a spinner while stock, the card and the receipt email all answer, and cancels the order after 10 seconds. This change answers the shopper as soon as the payment has started and does the rest from a queue.",
+        "title": "Checkout stops making the shopper wait",
+        "narrative": "Today Place order makes the shopper wait while it reserves the stock, charges the card, saves the paid order and sends the receipt email, and Timeout guard cancels any order still running after 10 seconds. The Queued fulfilment proposal answers the shopper once the order is saved as pending and the payment has started. A new webhook records the payment, and a new worker, fed by a queue, reserves the stock and sends the receipt.",
         "reading": {
           "visibility": {
             "modules": [
@@ -370,7 +370,7 @@
       "value": {
         "id": "Shop#gJ2kFvig",
         "title": "Place order answers once the payment has started",
-        "narrative": "Place order now saves the order as pending, starts the payment and answers. Timeout guard and its 10 second limit are removed, because nothing slow is left inside the request.",
+        "narrative": "Place order now writes the order to Orders DB as pending, asks Payment provider to start the payment, and answers as soon as the payment has started. It no longer waits for the charge to finish, reserves no stock and sends no receipt, and the shopper's page says the order is received rather than confirmed. Timeout guard is removed, with its 10 second limit, its stock release and its refund.",
         "reading": {
           "visibility": {
             "modules": [
@@ -447,8 +447,8 @@
       "kind": "beat",
       "value": {
         "id": "Shop#ZcpGEh5X",
-        "title": "The payment provider reports the outcome to a webhook",
-        "narrative": "When the payment succeeds, Payment provider calls the new Payment webhook, and the webhook marks the order paid in Orders DB.",
+        "title": "Payment provider tells a webhook when the payment succeeds",
+        "narrative": "Payment webhook is a new route, POST /payments/webhook, inside Checkout API. When the payment succeeds, Payment provider sends it a payment succeeded event, and the webhook marks the order paid in Orders DB and answers 200 OK. Until then, the order stays pending.",
         "reading": {
           "visibility": {
             "modules": [
@@ -526,7 +526,7 @@
       "value": {
         "id": "Shop#FL9Sgryx",
         "title": "Stock and the receipt move to a worker behind a queue",
-        "narrative": "The webhook publishes order paid to Order events, and Fulfilment worker reserves the items and sends the receipt. Both calls used to run inside Place order; a failed email is now retried by the worker, not by the shopper's request.",
+        "narrative": "After marking the order paid, the webhook publishes order paid to Order events, and the queue delivers it to Fulfilment worker. The worker reserves the items through Reserve route and sends the receipt to Email provider, the two calls that used to run inside Place order. A failed email is now retried with backoff by the worker, while the shopper already has their page. Stock is now reserved after the card is paid, so an item can sell out after its shopper has paid.",
         "reading": {
           "visibility": {
             "modules": [
@@ -589,8 +589,8 @@
       "kind": "beat",
       "value": {
         "id": "Shop#F5QYhOyC",
-        "title": "Look closely at duplicate webhooks",
-        "narrative": "Payment providers can deliver the same event twice. Check that Payment webhook marks an order paid once and publishes order paid once, or the worker reserves the stock twice.",
+        "title": "Duplicate payment events can fulfil an order twice",
+        "narrative": "Payment provider may deliver the same payment succeeded event more than once. If Payment webhook publishes order paid for each delivery, Fulfilment worker is asked again to reserve the same order's items and send its receipt, so the order can hold its stock twice and the shopper can get two receipts. That makes Payment webhook the place that needs the closest look: a correct webhook marks an order paid and publishes order paid once per order, however many times the event arrives.",
         "reading": {
           "visibility": {
             "modules": [

@@ -119,6 +119,18 @@ async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Prom
 }
 
 /**
+ * Say that a new recording's voice dropped out, when its talk counts samples the browser made up.
+ * @param talk The kept talk.
+ * @param context Where to say it.
+ */
+function reportDropout(talk: Talk, context: MakeContext): void {
+	const lost = talk.audio.reception?.concealedSamples ?? 0;
+	if (lost === 0 || context.replay) return;
+	const ms = Math.round((lost * 1000) / TALK_SAMPLE_RATE);
+	context.say(`The voice dropped out for ${ms} ms while it was recorded. Record it again.`);
+}
+
+/**
  * Record the walkthrough, or render the talk its last recording kept again, and cut what the README
  * shows from the video. A replay draws the frames again with today's renderer and spends no Codex
  * usage, because the kept talk contains the voice and architecture. A new recording is made beside the kept
@@ -164,7 +176,9 @@ async function record(spec: NarratedSpec, context: MakeContext): Promise<void> {
 		rmSync(talk, { recursive: true, force: true });
 		renameSync(recorded, talk);
 	}
-	await cutThumbnail(spec, video, readTalk(talk));
+	const kept = readTalk(talk);
+	reportDropout(kept, context);
+	await cutThumbnail(spec, video, kept);
 }
 
 /**
