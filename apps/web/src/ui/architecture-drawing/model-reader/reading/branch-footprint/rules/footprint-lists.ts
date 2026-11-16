@@ -1,12 +1,9 @@
-// The lists of a branch footprint, in the order a review reads them (ADR 0045).
+// The lists of a branch footprint, from the plan outward (ADR 0045).
 
 import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 
 /** One module the footprint read. */
 type FootprintModule = Extract<BranchFootprintAnswer, { proposal: null }>["changed"][number];
-
-/** Why the proposal names a module. */
-type NamedReason = FootprintModule["named"][number];
 
 /** A module the footprint did not read, with the reason. */
 type FootprintSkip = BranchFootprintAnswer["skipped"][number];
@@ -17,42 +14,51 @@ type FootprintCommit = BranchFootprintAnswer["commits"][number];
 /** The lists a footprint answers, by the name of each. */
 type ListKey = "changedNotNamed" | "namedAndChanged" | "namedNotChanged" | "changed";
 
-/** One list of the view: what it holds and the modules in it. */
+/** One list of the view: what it is called, the question it asks, and the modules in it. */
 interface FootprintList {
 	readonly key: ListKey;
 	readonly label: string;
-	readonly gloss: string;
+	/** What the list means for a review, under its modules. */
+	readonly note: string;
+	/** Whether the list holds work that the plan does not name, which a review looks at first. */
+	readonly outside: boolean;
 	readonly modules: readonly FootprintModule[];
 }
 
-/** What each list is called and says it holds. */
-const LISTS: Readonly<Record<ListKey, { readonly label: string; readonly gloss: string }>> = {
-	changedNotNamed: {
-		label: "Changed but not named",
-		gloss: "The branch changed these modules, and the plan does not name them.",
-	},
+/** What each list is called and what it asks. */
+const LISTS: Readonly<
+	Record<ListKey, { readonly label: string; readonly note: string; readonly outside: boolean }>
+> = {
 	namedAndChanged: {
-		label: "Named and changed",
-		gloss: "The plan names these modules, and the branch changed them.",
+		label: "Planned and changed",
+		note: "The branch built what the proposal names.",
+		outside: false,
+	},
+	changedNotNamed: {
+		label: "Changed outside the plan",
+		note: "Did the branch leave the plan, or does the plan miss a module?",
+		outside: true,
 	},
 	namedNotChanged: {
-		label: "Named but not changed",
-		gloss: "The plan names these modules, and the branch does not change them yet.",
+		label: "Planned, not changed yet",
+		note: "Is the work still to do, or does the module need no code change?",
+		outside: false,
 	},
-	changed: { label: "Changed", gloss: "The branch changed these modules." },
+	changed: { label: "Changed", note: "The branch changed these modules.", outside: false },
 };
 
 /**
- * The lists of an answer. With a proposal, the modules that it does not name come first, because
- * a review looks for them first. Without one, the answer has one list.
+ * The lists of an answer. With a proposal, they read from the plan outward: what the branch built,
+ * what it changed outside the plan, and what it did not change yet. The middle list stands out,
+ * because a review looks at it first. Without a proposal, the answer has one list.
  * @param answer The footprint.
  * @returns The lists, in the order they show.
  */
 function footprintLists(answer: BranchFootprintAnswer): readonly FootprintList[] {
 	if (answer.proposal === null) return [listOf("changed", answer.changed)];
 	return [
-		listOf("changedNotNamed", answer.changedNotNamed),
 		listOf("namedAndChanged", answer.namedAndChanged),
+		listOf("changedNotNamed", answer.changedNotNamed),
 		listOf("namedNotChanged", answer.namedNotChanged),
 	];
 }
@@ -79,35 +85,6 @@ const NOT_READ: Readonly<Record<FootprintSkip["reason"], string>> = {
 	"no-merge-base": "the base and the head share no history",
 };
 
-/** What a reason other than the module's own change names, in the singular and the plural. */
-const NAMED_THING: Readonly<Record<Exclude<NamedReason["by"], "part">, readonly [string, string]>> =
-	{
-		relationship: ["line", "lines"],
-		step: ["flow step", "flow steps"],
-	};
-
-/**
- * Why the proposal names a module, in a reader's words: the change to the module itself, and the
- * lines and flow steps it ends, counted by kind and standing, so that a module at the end of many
- * reads as one short phrase.
- * @param named The reasons of the answer.
- * @returns One phrase for each kind and standing, in the order the answer first gives them.
- */
-function namedWords(named: readonly NamedReason[]): string[] {
-	const counts = new Map<string, { readonly reason: NamedReason; count: number }>();
-	for (const reason of named) {
-		const key = `${reason.by} ${reason.status}`;
-		const entry = counts.get(key);
-		if (entry === undefined) counts.set(key, { reason, count: 1 });
-		else entry.count += 1;
-	}
-	return [...counts.values()].map(({ reason, count }) => {
-		if (reason.by === "part") return `${reason.status} by the plan`;
-		const [one, many] = NAMED_THING[reason.by];
-		return `end of ${count} ${reason.status} ${count === 1 ? one : many}`;
-	});
-}
-
 /**
  * The commits of a module, newest first, as the answer holds them.
  * @param answer The footprint.
@@ -128,7 +105,6 @@ function commitsOf(
 export {
 	commitsOf,
 	footprintLists,
-	namedWords,
 	NOT_READ,
 	type FootprintCommit,
 	type FootprintList,

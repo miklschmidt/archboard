@@ -1,5 +1,6 @@
-import type { JSX, ReactNode } from "react";
+import { useMemo, type JSX, type ReactNode } from "react";
 import type { Model } from "@archboard/model/content";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { FootprintFacts } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintFacts.tsx";
 import { FootprintLists } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintLists.tsx";
 import type { FootprintShow } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/show-on-picture.ts";
@@ -14,6 +15,8 @@ interface BranchFootprintProps {
 	readonly vault: string;
 	/** The reading on screen. */
 	readonly model: Model;
+	/** How kinds look, for each module's chip. */
+	readonly look: KindLook;
 	/** What the reader chose for the range, kept while the dialog is away. */
 	readonly choice: FootprintChoice;
 	readonly onChoice: (choice: FootprintChoice) => void;
@@ -97,7 +100,11 @@ function FootprintBody(
 		readonly footprint: ReturnType<typeof useBranchFootprint>["footprint"];
 	},
 ): JSX.Element {
-	const { base, refsFailure, vaultFailure, footprint } = props;
+	const { model, base, refsFailure, vaultFailure, footprint } = props;
+	const kinds = useMemo(
+		() => new Map(model.modules.map((module) => [module.id, module.kind])),
+		[model.modules],
+	);
 	if (refsFailure !== undefined)
 		return <Status alert>The branches could not be read. {refsFailure}</Status>;
 	if (vaultFailure !== undefined)
@@ -110,6 +117,8 @@ function FootprintBody(
 		<>
 			<FootprintLists
 				answer={footprint.data}
+				look={props.look}
+				kinds={kinds}
 				selected={props.selected}
 				onChoose={props.onChoose}
 				onShow={props.onShow}
