@@ -3,21 +3,25 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "abr2gK6Q",
-    "name": "A workhorse stop ends its whole work tree",
-    "summary": "Spoken Stop and the Stop control end the workhorse's turn, every sub-agent and every queued request, report only what they observed end, and refuse new work meanwhile; inspection reads the real turn, sub-agents and queue, so a stop is never claimed without evidence.",
+    "id": "7D3sm8BE",
+    "name": "A reader sees what a branch changed and reads the model on that branch",
+    "summary": "The branch footprint answers only in the CLI and the pull-request Action, so a reader cannot see in the browser which modules a branch changed against its own proposal; Measures gains that view, and a branch reading reads the vault at a source ref from Git.",
     "documents": [
       {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "docs/adr/0048-a-workhorse-stop-ends-the-whole-work-tree.md"
+        "path": "backlog/tasks/task-633 - Measures-shows-what-a-branch-changed-and-a-branch-reading-reads-the-model-on-that-branch.md"
+      },
+      {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/adr/0045-git-history-is-read-through-bindings-on-request.md"
       }
     ],
-    "predecessor": "omSpXUMz",
-    "baseline": "beb58ad032a961dc71c6e0db77e3343883be0e9c",
-    "createdAt": "2026-11-14T16:30:23.133Z",
-    "adoptedAt": "2026-11-14T16:32:09.631Z",
-    "reason": "TASK-446 implements the work tree stop and the inspection of real work on this branch (feat/workhorse-stop-tree, PR 116); archboard check --state abr2gK6Q is clean. Preparing the implementing PR authorizes this adoption.",
-    "previousCurrent": "omSpXUMz"
+    "predecessor": "abr2gK6Q",
+    "baseline": "f9db85855102b3e33cecd6f48004a41cb9b3a366",
+    "createdAt": "2026-11-16T18:17:45.872Z",
+    "adoptedAt": "2026-11-16T18:18:39.377Z",
+    "reason": "PR #118 implements it on branch feat/branch-footprint-view: Measures shows what a branch changed, a branch reading reads the model at a source ref, and model footprint reads the vault at its head. It replays draft a5K6IbA8 on the current state abr2gK6Q, because main adopted other proposals while the PR was open. The request to prepare the implementing PR authorized this adoption.",
+    "previousCurrent": "abr2gK6Q"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

@@ -3,7 +3,7 @@
   "name": "Canonical model read",
   "kind": "function",
   "responsibility": "Reads current, draft, and retained architecture before resolving explicit references and bound source",
-  "description": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only.",
+  "description": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only. Module navigation reads a branch reading at its source ref.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/read"
