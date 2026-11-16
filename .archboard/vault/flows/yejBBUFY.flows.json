@@ -1189,7 +1189,7 @@
     {
       "id": "vKEsyHFk#BGwcNOC3",
       "name": "Show a branch footprint on its picture",
-      "summary": "Show on picture opens the nearest module that holds a list's changed modules, in the branch reading of the head when the head is not checked out, and selects what that picture draws of them, so the reader sees the branch's reach on the architecture it plans.",
+      "summary": "Show on picture opens the nearest module that holds a list's changed modules, in the model that the footprint read: the branch reading of the head when the footprint read the vault at that ref, else the vault on disk. It selects what that picture draws of them, so the reader sees the branch's reach on the architecture it plans.",
       "participants": [
         "vKEsyHFk#y39xN3Ne",
         "vKEsyHFk/yejBBUFY#w46oCRoH",
