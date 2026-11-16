@@ -3,7 +3,7 @@
   "name": "Branch footprint",
   "kind": "ui",
   "responsibility": "Shows which modules the commits from a base to a head changed, against the proposal at that head",
-  "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the commits changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent, at the head's branch reading when the head is not checked out, and selects each changed module it draws and each drawn module that holds one.",
+  "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the branch changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent in the model that the footprint read: the head's branch reading when the footprint read the vault at that ref, else the vault on disk. It selects each changed module it draws and each drawn module that holds one.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint"
