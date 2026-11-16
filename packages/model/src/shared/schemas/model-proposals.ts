@@ -22,6 +22,8 @@ const StateSelectionSchema = ReadingSelectionSchema.extend({
 	explain: ExplanationRequestSchema.optional(),
 	/** The other states whose interface measures go beside a comparison (ADR 0044). */
 	beside: z.array(z.string().min(1)).optional(),
+	/** A branch or commit of the vault's repository: read the vault as that holds it, from Git. */
+	ref: z.string().min(1).optional(),
 });
 const CheckpointIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
 const ModelIssueSchema = ReconciliationIssueSchema.extend({

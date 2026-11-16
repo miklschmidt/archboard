@@ -88,6 +88,20 @@ function readingLabel(props: {
 }): string {
 	const { model, state, checkpoint } = props;
 	if (checkpoint !== null) return savedLabel(model, checkpoint);
+	const at = model.sourceRef;
+	// A branch reading names its ref and commit first, so it is never taken for the checkout.
+	if (at !== undefined)
+		return `${at.ref} at ${at.commit.slice(0, 7)} · ${stateLabel(model, state)}`;
+	return stateLabel(model, state);
+}
+
+/**
+ * Label the state of a reading of live inputs: the vault on disk, or the vault at a ref.
+ * @param model The reading.
+ * @param state The requested state.
+ * @returns Its current, planning or draft label.
+ */
+function stateLabel(model: Model, state: string | null): string {
 	if (state === null) return model.manifest.current === null ? "Planning" : "Current";
 	const selected = model.selectedState;
 	if (selected === null) return "Unavailable state";
@@ -132,6 +146,7 @@ function ModelStateChip(props: {
 			variant="outline"
 			size="sm"
 			data-slot="model-reading-selector"
+			data-source-ref={props.model.sourceRef?.ref}
 			aria-label={`Reading ${label}. Open History.`}
 			title={label}
 			onClick={open}

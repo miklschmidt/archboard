@@ -8,6 +8,7 @@ import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reade
 import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hooks/use-comparison-saved-at.ts";
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 type Action = ExplanationInvocation["request"]["action"];
 
@@ -56,7 +57,7 @@ function useModelExplanation(
 	const display = useReadingDisplay(vault, model);
 	const capture = useMemo(() => {
 		const mode = DiagramGrammarSchema.safeParse(grammar);
-		if (!mode.success || model.migrationPreview !== undefined) return null;
+		if (!mode.success || !readsVaultOnDisk(model)) return null;
 		return {
 			vault,
 			model: model.manifest.id,

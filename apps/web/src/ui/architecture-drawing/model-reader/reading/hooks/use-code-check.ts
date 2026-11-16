@@ -6,6 +6,7 @@ import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { codeCheckQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import type { CodeCheckReading } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { CodeReadingName } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /** How the code pass over the reading on screen stands, while no remembered pass read it. */
 type CodeCheckProgress =
@@ -30,7 +31,7 @@ function useCodeCheck(
 	model: CodeReadingName,
 	remembered: { readonly read: "pending" | "error" | "success"; readonly matched: boolean },
 ): CodeCheckProgress {
-	const preview = model.migrationPreview !== undefined;
+	const preview = !readsVaultOnDisk(model);
 	const query = useQuery({
 		...codeCheckQuery(vault, checkedReading(model)),
 		/**

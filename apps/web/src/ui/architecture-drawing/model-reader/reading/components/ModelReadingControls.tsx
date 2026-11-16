@@ -4,6 +4,7 @@ import { ModelSelectionBar } from "#ui/architecture-drawing/model-reader/reading
 import type { useModelExplanation } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-explanation.ts";
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
 import { selectedSubject } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /** What can be done with a selection, wherever it is explained. */
 interface SelectionActions {
@@ -44,7 +45,7 @@ function SelectionControls(props: SelectionActions): JSX.Element {
 function ReadingExplain(props: SelectionActions): JSX.Element | null {
 	const { reader, explanation } = props;
 	const { selection, model, accepted } = reader;
-	if (model.migrationPreview !== undefined) return null;
+	if (!readsVaultOnDisk(model)) return null;
 	return (
 		<ModelExplanationMenu
 			open={props.menu}

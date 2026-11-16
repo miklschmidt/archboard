@@ -150,7 +150,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint|focus|hideKinds|expand|showGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|ref|focus|hideKinds|expand|showGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -210,6 +210,7 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		id,
 		scope: search[`scope${paneId}`] ?? null,
 		checkpoint: search[`checkpoint${paneId}`] ?? null,
+		ref: search[`ref${paneId}`],
 		state: search[`state${paneId}`],
 		preview: search[`preview${paneId}`],
 		bookmark: search[`bookmark${paneId}`],
@@ -290,6 +291,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 		...Object.fromEntries(
 			(
 				[
+					"ref",
 					"state",
 					"preview",
 					"bookmark",

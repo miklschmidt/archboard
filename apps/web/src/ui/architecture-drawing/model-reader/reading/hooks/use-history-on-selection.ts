@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /**
  * A selection of a bound module asks for the model's code history (ADR 0045), so About and Measures
@@ -18,7 +19,7 @@ function useHistoryOnSelection(
 	useQuery({
 		...modelHistoryQuery(vault, model),
 		enabled:
-			model.migrationPreview === undefined &&
+			readsVaultOnDisk(model) &&
 			model.modules.some((module) => selected.has(module.id) && module.binding !== undefined),
 		notifyOnChangeProps: [],
 	});

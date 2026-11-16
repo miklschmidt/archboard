@@ -77,7 +77,7 @@ Done: the spec names the proposal, and the comparison lists every architectural 
 - Proposal: the proposal's name and stable ID.
 - Slice: the qualified IDs of the subjects and endpoint modules, with the change that this ticket owns. Include its flow's ID.
 - Link: the link to the slice.
-- Gate: before this ticket merges, `archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
+- Gate: before this ticket merges, `archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --model-at checkout --fail-outside` exits 0. Each module in `namedAndChanged` is in this slice.
 
 </ticket-architecture-section>
 
@@ -94,8 +94,10 @@ Done: each architectural change has exactly one owning ticket, and each publishe
 3. Before you merge a ticket branch, run its gate in the worktree of the integration branch:
 
    ```bash
-   archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --fail-outside
+   archboard model footprint --base <integration-branch> --head <ticket-branch> --state <proposal-id> --model-at checkout --fail-outside
    ```
+
+   `--model-at checkout` reads the proposal on disk. You edit the proposal in this worktree, so the vault at the ticket branch does not hold your edits.
 
    If the command exits 2, resolve its refusal or unread source before merging, then run the gate again.
    Exit status 1 means that a changed module outside the proposal fails the gate.
@@ -134,7 +136,7 @@ Done: each architectural change has exactly one owning ticket, and each publishe
 5. After the code review, read the footprint of the whole integration branch:
 
    ```bash
-   archboard model footprint --base <default-branch> --head <integration-branch> --state <proposal-id> --fail-outside
+   archboard model footprint --base <default-branch> --head <integration-branch> --state <proposal-id> --model-at checkout --fail-outside
    archboard check code --state <proposal-id>
    ```
 

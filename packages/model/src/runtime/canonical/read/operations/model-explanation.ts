@@ -249,10 +249,40 @@ async function readRequestedArchitecture(
  * @returns A structured refusal or no conflict.
  */
 function selectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
+	return branchSelectionFailure(selection) ?? stateSelectionFailure(selection);
+}
+/**
+ * Refuse a state that names a preview, an original address or a checkpoint too.
+ * @param selection The parsed explicit selectors.
+ * @returns A structured refusal or no conflict.
+ */
+function stateSelectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
 	if (selection.preview !== undefined || selection.legacyAddress !== undefined)
 		return previewSelectionFailure(selection);
 	if (selection.state !== undefined && selection.checkpoint !== undefined)
 		return refuse("MODEL_INVALID", [], "Select one state or checkpoint.");
+	return undefined;
+}
+/**
+ * A branch reading reads the vault at one commit. It cannot be one checkpoint, a migration preview,
+ * an original address, a playback or a captured explanation too.
+ * @param selection The requested reading.
+ * @returns A structured refusal, or no conflict for a reading with no source ref.
+ */
+function branchSelectionFailure(selection: z.infer<typeof StateSelectionSchema>) {
+	if (selection.ref === undefined) return undefined;
+	if (selection.checkpoint !== undefined)
+		return refuse("MODEL_INVALID", [], "Select one source ref or checkpoint.");
+	if (
+		[selection.preview, selection.legacyAddress, selection.walkthrough, selection.explain].some(
+			(value) => value !== undefined,
+		)
+	)
+		return refuse(
+			"MODEL_INVALID",
+			[],
+			"A branch reading offers no migration preview, original address, walkthrough or explanation.",
+		);
 	return undefined;
 }
 /**

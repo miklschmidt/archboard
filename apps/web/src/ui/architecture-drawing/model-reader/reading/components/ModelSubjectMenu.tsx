@@ -6,6 +6,7 @@ import { ExplanationChoices } from "#ui/architecture-drawing/model-reader/readin
 import type { SelectionActions } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingControls.tsx";
 import type { SubjectMenu } from "#ui/architecture-drawing/model-reader/reading/hooks/use-subject-menu.ts";
 import { subjectReference } from "#ui/architecture-drawing/model-reader/reading/rules/subject-reference.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /**
  * What a right click on a part of the picture offers, at the cursor.
@@ -49,7 +50,7 @@ function ModelSubjectMenu(props: {
 					<RiFileCopyLine aria-hidden="true" />
 					Copy reference
 				</DropdownMenu.Item>
-				{model.migrationPreview === undefined && (
+				{readsVaultOnDisk(model) && (
 					<>
 						<DropdownMenu.Separator />
 						<ExplanationChoices
