@@ -6,8 +6,7 @@ status: accepted
 
 This decision supersedes parts of
 [ADR 0025](0025-containment-and-type-own-distinct-visual-channels.md) and
-[ADR 0038](0038-groups-gather-and-colour-their-cards.md). Each of those records
-names the sentences it replaces. The owner decided it on 2026-10-06, under
+[ADR 0038](0038-groups-gather-and-colour-their-cards.md). The owner decided it on 2026-10-06, under
 TASK-402.
 
 ## Context
