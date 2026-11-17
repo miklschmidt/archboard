@@ -16,6 +16,9 @@ A new planning root retains an empty coherent baseline and introduces its subjec
 A child names its predecessor by stable state identity.
 Sibling proposals share no mutable copy of their predecessor.
 
+A proposal compares against its independent or explicitly pinned predecessor, even when Current exists, because it can describe only a fragment of Current.
+A proposal that follows Current otherwise compares against Current.
+
 Each change addresses a stable subject identity.
 Omitted fields preserve their values, and null never means deletion.
 No change addresses a text line or an array index.
