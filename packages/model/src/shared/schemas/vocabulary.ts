@@ -40,8 +40,8 @@ type EdgeEmphasis = z.infer<typeof EdgeEmphasisSchema>;
  * something: architecture shows what the parts are and how they are wired;
  * sequence shows a flow as an ordered exchange between their columns, a
  * decision as labelled alternative frames and a loop as a loop frame; and
- * flowchart shows the logic of the same flow, its steps as boxes and its
- * decisions as diamonds with labelled branches (ADR 0053).
+ * flowchart shows the logic of the same flow (ADR 0053), its steps as boxes
+ * and its decisions as diamonds with labelled branches.
  *
  * `sequence` was called `data-flow` until schema 2.5.0, which renames every
  * stored view. A write that still names it is told the new name.

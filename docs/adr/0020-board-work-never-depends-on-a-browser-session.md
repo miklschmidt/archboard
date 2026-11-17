@@ -100,7 +100,7 @@ become the browser of a user.
 ## Consequences
 
 - `board save` and branching never move panes. Showing a board is a browser
-  operation, including the old scratch-save exception from ADR 0012.
+  operation, as ADR 0012 decided.
 - This decision replaces the browser-mediated findings renderer of TASK 121. Its
   persisted-snapshot and immutable-render requirements remain.
 - The command registry and repository checks enforce the split. A board command

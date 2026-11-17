@@ -1,4 +1,4 @@
-//! Traffic drawn as a beam of light (ADR 0027), the same beam the SVG writes:
+//! Traffic drawn as a beam of light, the same beam the SVG writes:
 //! a gradient on a bar that slides along each piece of the route, and a soft
 //! mask in the shape of that piece lets it through. The SVG moves the bar with
 //! SMIL or Web Animations. Here the bar sits where a clock says.

@@ -347,7 +347,7 @@ Recovery preserves foreign edits and checks the original checkout context.
 
 The retired `./commands` and `./store-move` entries expose no alternate live path.
 Unmigrated vaults return `LEGACY_AUTHORITY` and require explicit inventory, mapping, preview, and authorized migration.
-[ADR 0068](../adr/0068-one-live-canonical-model-and-consumer-path.md) records this transition pending parent acceptance.
+[ADR 0068](../adr/0068-one-live-canonical-model-and-consumer-path.md) records this transition.
 The configured Git signer remains authoritative for checkpoint and synchronization commits.
 Archive synchronization preserves ancestry without merging current models or selecting current architecture.
 
@@ -409,7 +409,7 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   the source excerpt of one remembered piece of evidence: `CodeCheckAnswer` and
   `RememberedFindings` with their schemas, and `CodeSourceLinesSchema`. The owner raised the
   ceiling of `code-intel` from 11 to 12 on 2026-11-07 for this schema, the contract of
-  `GET /api/code/source-lines` (ADR 0046, amendment of 2026-11-07). The schema is in
+  `GET /api/code/source-lines` (ADR 0046, "Where the pass runs"). The schema is in
   `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes,
   the start of a period and `HistoryRefusalCode`, the codes a history reading refuses with, from
   `shared/protocol/`. It also gives the label of a commit's

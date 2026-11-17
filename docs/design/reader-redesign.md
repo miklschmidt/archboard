@@ -132,7 +132,7 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
    A door that holds parts ends with a plus, which expands it, and the tab of an expanded module ends with a minus,
    which collapses it and brings the door back. A removed door has no plus, and a closed part has none either: a
    door is the way in, so that a picture grows only along a line. A module with no parts stands as its card outside
-   the frame, because a door would open onto that one card (ADR 0070).
+   the frame, because a door would open onto that one card.
    From three lines of one kind to one door, each way, the lines share a trunk, and each line wears its words on its
    own branch, beside the part that owns it. A line that finds no room for its words draws none, and the panel of
    the selected line shows them.

@@ -4,8 +4,8 @@ status: accepted
 
 # Blocks keeps legacy placement and plans its routes
 
-Amended on 2026-11-09. The dense placement of [ADR 0064](0064-blocks-is-the-default-layout-engine.md) states one cost and searches for the placement that costs least.
-That cost replaces the rules of the 2026-11-08 amendment (TASK-559.09), which chose each door's wall by the room the page costs.
+Amended on 2026-11-09. The dense placement states one cost and searches for the placement that costs least.
+That cost replaces the rules of TASK-559.09, which chose each door's wall by the room the page costs.
 Simulated annealing from a fixed seed moves the parts between the cells of each frame's grid, and starts from the grid's greedy answer.
 
 TASK-554 proposes this decision on 2026-10-28 and revises it on 2026-10-29.

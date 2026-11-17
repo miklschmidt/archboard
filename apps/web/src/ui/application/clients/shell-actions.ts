@@ -53,7 +53,7 @@ interface ShellActionDeps {
 	 * @returns The move, to be failed if the server refuses it.
 	 */
 	readonly userMoves?: (paneId: string) => UserMove;
-	/** Say the person activated a pane's checkout (ADR 0050). */
+	/** Say the person activated a pane's checkout. */
 	readonly activate: ConversationActivation;
 	/**
 	 * Write that a pane reads a repository with no model to read, which no arrival announces.

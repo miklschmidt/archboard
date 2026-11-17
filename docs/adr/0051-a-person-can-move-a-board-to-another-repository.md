@@ -21,7 +21,7 @@ the command line, and agents can use it too.
 
 The move is the second exception to "agents author, users read". The first is
 taking back a claim. Like a take-back, a move that a person starts in the
-browser is the person's own act, so it writes no doing line (ADR 0016). The CLI
+browser is the person's own act, so it writes no doing line. The CLI
 form is an agent write like any other, and it needs `--doing`.
 
 The target is a repository identity or an untracked vault. A board moves into

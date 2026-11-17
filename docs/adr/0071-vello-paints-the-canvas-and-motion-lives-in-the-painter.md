@@ -9,7 +9,7 @@ The owner decided this on 2026-11-01 (TASK-560). This record replaces one clause
 The clause is "The browser viewer keeps its classes and Web Animations over that SVG."
 
 This record also changes how three earlier decisions are carried out, but not what they decide.
-[ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md) keeps its pulse,
+[ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md) keeps its traffic contract,
 [ADR 0041](0041-a-recording-is-a-talk-rendered-frame-by-frame.md) keeps its frame clock, and
 [ADR 0042](0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md) keeps its flights.
 [The Vello painter](../design/vello-painter.md) holds the measurements and the method.

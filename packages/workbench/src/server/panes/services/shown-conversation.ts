@@ -1,4 +1,4 @@
-// The call that changes which checkout's conversation a tab's agent dock shows (ADR 0050).
+// The call that changes which checkout's conversation a tab's agent dock shows.
 //
 // The person's own acts in the browser activate a checkout: focusing a pane, opening a model,
 // drilling down, or picking a workhorse from the dock's list. The browser

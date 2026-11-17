@@ -1,4 +1,4 @@
-//! How a picture's traffic keeps time (ADR 0027). A line carries a steady train
+//! How a picture's traffic keeps time. A line carries a steady train
 //! of pulses; lines that keep the same time hand their pulses on through the
 //! card between them, held for the shorter way round its edge. Everything is a
 //! function of the picture, so one picture draws the same bytes every time.
@@ -317,7 +317,7 @@ pub(super) fn rim_length(rect: Rect, from: Point, to: Point) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    //! How traffic keeps time (ADR 0027): lines that keep the same time hand
+    //! How traffic keeps time: lines that keep the same time hand
     //! their pulses on through the card between them, a line's pulses lie
     //! behind its feeder's by the line and the way round the card, and where
     //! the time differs nothing is handed on. Every line carries a pulse at

@@ -1,4 +1,4 @@
-//! Traffic drawn as a beam of light (ADR 0027): a gradient painted onto a bar
+//! Traffic drawn as a beam of light: a gradient painted onto a bar
 //! that slides along each straight or bending piece of the route, and a soft
 //! mask in the shape of that piece lets it through. A train of pulses is one
 //! repeating gradient that slides by one spacing every spacing's time; a

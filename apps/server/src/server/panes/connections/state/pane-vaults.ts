@@ -42,7 +42,7 @@ function broadcastEverywhere(message: WebSocketMessage): void {
  * it shows. Its sockets carry the news of the new vault from now on, and its
  * registration says the new vault until the pane next reports. What it said it
  * was reading is of the vault it left, so it is forgotten. The conversation its tab's agent dock
- * shows stays as it is: only the person's own act in the browser changes that (ADR 0050).
+ * shows stays as it is: only the person's own act in the browser changes that.
  * @param clientId The pane's client id.
  * @param vault The vault it moves into.
  */

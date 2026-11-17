@@ -1,4 +1,4 @@
-// The refs a branch footprint can be read between (ADR 0045).
+// The refs a branch footprint can be read between (TASK-633).
 //
 // It lists the local branches and the remote-tracking branches of each bound repository, in the
 // checkout that the footprint reads that repository in (`checkoutsReadFrom`, ADR 0049), and merges

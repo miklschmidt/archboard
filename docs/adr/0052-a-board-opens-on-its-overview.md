@@ -15,8 +15,9 @@ does the line of a door that holds the open module. The last paragraphs of the
 decision below said that a view that opens a container still draws such a line.
 That gives way.
 
-Decided with the owner on 2026-10-15. This decision supersedes one clause of
-[ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md):
+Decided with the owner on 2026-10-15. This decision supersedes one clause that
+[ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md)
+once held:
 "Do not add size-driven refusal, automatic partitioning, or a density policy
 before an observed problem requires one". The problem is now observed.
 

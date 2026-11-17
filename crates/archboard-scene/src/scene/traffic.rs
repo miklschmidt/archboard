@@ -1,4 +1,4 @@
-//! Traffic as data (ADR 0027): the route a train of pulses rides, how fast
+//! Traffic as data: the route a train of pulses rides, how fast
 //! and how far apart they fly, and what one pulse looks like. Each painter
 //! animates the pulses as it can; the painter of the scene and every frontend
 //! share these dimensions of a pulse.

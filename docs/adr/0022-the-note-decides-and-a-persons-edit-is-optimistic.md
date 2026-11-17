@@ -53,7 +53,7 @@ An agent can edit any board, watched or not. Nothing steers the work of the
 agent toward what a person is looking at, and nobody asks the agent to keep a
 restructure in view. Every pane owes the person real-time visibility instead.
 The `--doing` line on every agent
-write stays (ADR 0016, TASK-095), and nobody asks a person to write one.
+write stays (TASK-095), and nobody asks a person to write one.
 
 ## What remains from the earlier decisions
 

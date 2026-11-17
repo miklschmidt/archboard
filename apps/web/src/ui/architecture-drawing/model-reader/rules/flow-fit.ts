@@ -10,8 +10,8 @@ import type { DiagramGrammar } from "@archboard/model/views";
 type FlowGrammar = Exclude<DiagramGrammar, "architecture">;
 
 /**
- * The reading a flow opens in: the one its pane shows at the larger scale, up to the drawn size,
- * and the sequence when both show as large (ADR 0073). A reading that could not be drawn loses.
+ * The reading a flow opens in: the one its pane shows at the larger scale, up to the drawn size
+ * (ADR 0073), and the sequence when both show as large. A reading that could not be drawn loses.
  * @param room The pane's window on the picture, or null for a pane not laid out yet, which the
  * reference pane stands in for.
  * @param pictures How large each reading draws the flow, or null where it was not drawn.

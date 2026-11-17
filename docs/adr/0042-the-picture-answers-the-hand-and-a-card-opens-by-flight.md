@@ -27,9 +27,8 @@ the server and never part of an address.
    reader asked for no motion, when a walkthrough is presented, when the card is
    not drawn, when the board's picture is not to hand within `divePrefetch`, and
    when the picture changes under the flight.
-   ADR 0071 amends this: a move to a deeper module flies through the nearest drawn
-   card that holds it, a move at the same depth never flies, and the plain way
-   between two boards of the tree is a passage.
+   DESIGN.md ("The Depth Rule") decides which moves between the boards of the
+   tree fly.
 
 ## How the picture is marked
 

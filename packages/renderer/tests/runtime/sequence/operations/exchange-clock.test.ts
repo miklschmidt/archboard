@@ -1,4 +1,4 @@
-// An exchange told on one clock (ADR 0027): every message sends its pulse in its
+// An exchange told on one clock: every message sends its pulse in its
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";

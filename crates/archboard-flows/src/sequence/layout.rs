@@ -7,8 +7,8 @@
 //! messages are horizontal runs stacked down the page in the order the flow
 //! states them. Order is array position: a flow carries no step number.
 //!
-//! There is no cap on participants or steps: ADR 0023 refuses size-driven
-//! limits, so nothing here may assume a small number of either.
+//! There is no cap on participants or steps, so nothing here may assume a
+//! small number of either.
 //!
 //! One shared animation clock advances through all flows in stated order, so
 //! messages animate one after another instead of every exchange at once.

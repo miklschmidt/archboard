@@ -187,7 +187,7 @@ function validateBoardName(name: string): string {
  * A variant selector is whatever the board answers to: `current`, a minted id,
  * or the lasting name a proposal was given — a title somebody wrote ("Proposed:
  * queued ingest"), not a slug. Casing, spaces and punctuation all survive: the
- * board matches them exactly (ADR 0023), and a name `branch` accepts has to be
+ * board matches them exactly, and a name `branch` accepts has to be
  * addressable or it is a proposal nobody can open. So only `@` is refused, which
  * separates the variant from the board, with the control characters no address
  * may hold. What a FILENAME takes is asked in `variantInFileName` instead.
@@ -339,8 +339,8 @@ function paneKey(identity: Pick<LegacyIdentity, "board" | "variant">): string {
  * Not `paneKey`, which lowercases the variant because a lock, a lease and a
  * catalogue entry are filed under one spelling of an address (ADR 0010). A pane
  * address is the other job: it is resolved against the board's own variants, and
- * a minted id is matched by the mixed-case alphabet it was minted from
- * (ADR 0023), so lowercasing one stops it naming the variant it names.
+ * a minted id is matched by the mixed-case alphabet it was minted from,
+ * so lowercasing one stops it naming the variant it names.
  * @param identity The board's identity.
  * @returns The bare name for the `current` variant, otherwise `name@variant`.
  */
@@ -480,8 +480,8 @@ function archboardOwnPath(
  * `Payments.semantic.json`. A file that does not exist yet is named with the
  * casing the human typed, which is what makes the vault case-preserving as well
  * as case-insensitive. The suffix is a parameter rather than a constant here
- * because which file kind a board is stored in belongs to whoever stores it
- * (ADR 0023); addressing is what every board shares.
+ * because which file kind a board is stored in belongs to whoever stores it;
+ * addressing is what every board shares.
  * @param identity The board to locate.
  * @param root The vault root.
  * @param suffix The file suffix the board kind is stored under.
@@ -507,8 +507,8 @@ function vaultPathFor(
 	}
 	// A file at the byte-equal path is the answer, without a readdir. The only
 	// vault where this and the case-insensitive walk below disagree is one that
-	// already holds two case-variants of the same name, which ADR 0010 calls
-	// broken and `listBoards` already reports as a collision (TASK-153).
+	// already holds two case-variants of the same name, which ADR 0010 treats
+	// as a collision and `listBoards` already reports (TASK-153).
 	if (byteEqualPathExists(vault, resolved, relative)) return resolved;
 	return caseInsensitivePath(vault, relative);
 }

@@ -144,8 +144,8 @@ Behind answers in the code check. One command then says how each board stands
 against its code: the findings say what is wrong, and behind says where to
 look.
 
-Every reading is information. It is not a vault diagnostic, it changes no exit
-status, and it puts no dot on the diagnostics bell (ADR 0026).
+Every reading is information. It is not a vault diagnostic (ADR 0026), it
+changes no exit status, and it puts no dot on the diagnostics bell.
 
 Behind is information, for three reasons:
 

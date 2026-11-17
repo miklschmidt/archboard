@@ -11,7 +11,7 @@ The solve port of [ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-
 
 ## Context
 
-The dense placement of ADR 0063 searches a grid for each width and each way its frames stand together.
+The dense placement of Blocks searches a grid for each width and each way its frames stand together.
 It routes each placement at each room. When a line asks for room, it routes that placement again.
 So a reader waited for one Blocks picture for hundreds of milliseconds on average, and for well over a second at most.
 The pool runs several workers, but one picture sent one solve, so one worker did all of its work while the others waited.

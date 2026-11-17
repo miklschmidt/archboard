@@ -127,7 +127,7 @@ const NETWORK: EvidenceKind[] = ["call", "configured-path"];
 /**
  * The vocabulary a vault has before its owner writes config.yaml. Every kind
  * a model is likely to draw carries a colour, so a fresh vault is not neutral
- * gray (ADR 0025 makes containment colour mandatory once configured);
+ * gray (ADR 0038 makes a group's colour mandatory once configured);
  * external and other stay neutral so a part outside the checkout reads as
  * outside, and call and dependency keep the neutral edge ink.
  *

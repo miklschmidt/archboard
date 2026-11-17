@@ -95,10 +95,10 @@ const MODEL_LOCK_MS = durations({
 	 * The lock is a broadcast as well as a guard, and the broadcast reaches one
 	 * server: taking a model is news the server that did it can send, and a second
 	 * server over the same vault has nothing to tell it because a file does not
-	 * call anybody. Excluded correctly, told late. ADR 0016 left the poll undone
-	 * for the per-write hold, where being wrong costs milliseconds, and named the
-	 * long claim as what makes it worth paying for — a pane on the second server
-	 * would otherwise let somebody draw into a model an agent has had for minutes.
+	 * call anybody. Excluded correctly, told late. The poll is left undone
+	 * for the per-write hold, where being wrong costs milliseconds. The long claim
+	 * makes it worth paying for: a pane on the second server would otherwise let
+	 * somebody draw into a model an agent has had for minutes.
 	 *
 	 * One renewal interval, so a pane learns about a claim about as fast as the
 	 * claim's own lease moves. It costs one read of the vault's file metadata per

@@ -1,5 +1,5 @@
 // A container's entry points take its first row on the Track engine, and its
-// hidden parts sit below them (ADR 0044, TASK-368.08). The interface is read
+// hidden parts sit below them (TASK-368.08). The interface is read
 // off the whole variant, never off what a view or a comparison draws.
 import { expect, test } from "bun:test";
 import { renderArchitecture, renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";

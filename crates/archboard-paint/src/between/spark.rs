@@ -26,7 +26,7 @@ const DASHED_FADE: f64 = 0.7;
 /// The spark at the head of a line being drawn on, in layers: how far each reaches
 /// back, how much wider than the line it is, how much of it shows, and how far the
 /// line's colour goes toward the text. A pulse goes toward white, which the chalk
-/// ground would swallow here (ADR 0027).
+/// ground would swallow here.
 const SPARK: [(f64, f64, f64, f64); 3] = [
     (150.0, 7.0, 0.05, 0.25),
     (76.0, 3.0, 0.16, 0.5),

@@ -146,7 +146,7 @@ function picker() {
 			return { failed: unrelated };
 		},
 		/**
-		 * Record what the person activated (ADR 0050).
+		 * Record what the person activated.
 		 * @param paneId The pane.
 		 * @param target What was activated in it.
 		 * @returns That the server took it.

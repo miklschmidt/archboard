@@ -5,8 +5,8 @@ status: accepted
 # The renderer reads a board in a direction and is measured by fit in the reader's pane
 
 ADR 0023 records that PR Lens's layout was chosen for its clarity and finish. It
-records that fitting one viewport is not a success criterion. It also records
-that no density policy is wanted. The compound layout of 2026-09-13 replaced PR
+once recorded that fitting one viewport is not a success criterion. It also once
+recorded that no density policy is wanted. The compound layout of 2026-09-13 replaced PR
 Lens's grid with ELK and renderer-owned reading conventions. The 27 renderer
 commits after TASK-211 re-decided pieces of that layout one board at a time.
 They left nothing on record, because the ADR ruled the question out. A tall,

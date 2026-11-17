@@ -14,7 +14,7 @@ drawings, sizes, positions and routes are not layout inputs.
 Layout does not change the meaning of a comparison. The variant that a picture
 is read against decides the Standing of each subject. Since 2026-09-27 that
 variant is the current variant of the board, or the direct predecessor on a
-board with none (ADR 0023 as amended). Removed subjects remain visible in the
+board with none (ADR 0023). Removed subjects remain visible in the
 comparison.
 
 Stable subject identities and the transitions of the viewer carry continuity
@@ -22,7 +22,8 @@ between pictures. Cards can move, containers can shrink, and a proposal can read
 in a different direction. Large rearrangements can make the brief transition
 busier. The readability of the settled picture takes priority.
 
-This record supersedes the predecessor-direction rule of ADR 0028. It also
+This record supersedes the rule that a proposal reads in the direction of its
+predecessor. It also
 supersedes the placement continuity decisions of TASK-245.04 and TASK-245.05.
 TASK-276 records the measured before/after evidence. The renderer keeps one
 layout path. It has no second set of proposal

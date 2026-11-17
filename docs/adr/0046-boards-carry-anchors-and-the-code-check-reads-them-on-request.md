@@ -70,7 +70,7 @@ of that end (ADR 0044). Two parts meet at the children of their nearest holder.
 A relationship or flow step that joins those two children stands for the calls
 between the parts below them, so the check reports such a call as information.
 Evidence never joins a part to a part inside it, and never joins parts on two
-boards (ADR 0023).
+boards.
 
 ### Evidence kinds
 

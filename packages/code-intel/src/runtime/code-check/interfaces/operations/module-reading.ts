@@ -53,7 +53,7 @@ interface OutsideUse {
 	/**
 	 * Whether the use runs the code it reaches: a use only as a type does not,
 	 * nor does a use as a value, except a known function passed as an argument
-	 * (ADR 0046, amended by TASK-367.28 and TASK-436.15).
+	 * (TASK-367.28, TASK-436.15).
 	 */
 	readonly runs: boolean;
 	readonly site: DefinitionSite;

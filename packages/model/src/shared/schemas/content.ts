@@ -23,7 +23,7 @@ const SubjectOrderSchema = z.int().nonnegative();
 
 /**
  * Effective traffic speed when an author enables traffic without stating one,
- * in diagram units a second (ADR 0027, raised from 40 by TASK-339).
+ * in diagram units a second (ADR 0027), raised from 40 by TASK-339.
  */
 const DEFAULT_TRAFFIC_SPEED = 80;
 /**
@@ -82,7 +82,7 @@ import { EdgeEmphasisSchema, EdgeKindSchema, NodeKindSchema } from "#shared/sche
  * is never what a missing named variant falls back to. Two boards are two
  * independent histories, so a link that silently landed on whatever is current
  * when the variant it named is gone would quietly show somebody a different
- * architecture from the one the link was about (ADR 0023).
+ * architecture from the one the link was about.
  */
 const DrillDownVariantSchema = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("named"), name: DisplayNameSchema }).strict(),

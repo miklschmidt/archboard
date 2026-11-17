@@ -90,7 +90,7 @@ const CodeEvidenceSchema = z
  * before it and 3 after it, without line terminators, and `first` is the line
  * number of `lines[0]`. A line longer than the route's limit is cut and ends
  * with `…`. It is the one answer that quotes text of a file, an exception that
- * the owner asked for (ADR 0046, amendment of 2026-11-07). The route answers it
+ * the owner asked for (ADR 0046). The route answers it
  * beside `success: true`, and a parse keeps only the answer.
  */
 const CodeSourceLinesSchema = z.object({

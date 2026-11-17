@@ -44,7 +44,7 @@ only between drawings that are equal on every earlier one.
 
 The measures, in order:
 
-- The reader invariants of ADR 0028: no route through a card, no fan of skips
+- The reader invariants: no route through a card, no fan of skips
   down a flank, bounded bends per route, and every label on a straight run of
   its own route.
 - Crossings, and crossings on a line's corner.

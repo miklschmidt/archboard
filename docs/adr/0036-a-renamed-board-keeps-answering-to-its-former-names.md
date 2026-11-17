@@ -68,7 +68,7 @@ of case is a change of name like any other.
 One alternative is to rewrite every reference in the same write. A rename then
 takes the lease of every board that links to the renamed one. It rewrites their
 drill-downs, as one write across the vault. Separate boards are independent
-documents (ADR 0023), and the vault has no transaction that spans files. So "all
+documents, and the vault has no transaction that spans files. So "all
 or nothing" is a new mechanism that nobody else needs.
 
 That rewrite also changes frozen history. A historical variant's drill-down is a

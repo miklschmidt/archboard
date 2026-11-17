@@ -104,8 +104,8 @@ interface DiagramRenderRequest {
 	/**
 	 * The whole variant the picture reads, before a view narrows it and without
 	 * what a comparison puts back. The layout reads each container's interface
-	 * from it (ADR 0044): an entry point keeps its container's first row in a
-	 * view that hides its caller, and a child a comparison puts back is never
+	 * from it (ADR 0044). An entry point stays one in a view that hides its
+	 * caller, and a child a comparison puts back is never
 	 * one. Absent, the variant's own reading of the view stands in for it.
 	 */
 	readonly variant?: InterfaceContent | undefined;

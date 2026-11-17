@@ -49,7 +49,7 @@ The Chrome 150 that `agent-browser` brings had no WebGL2 here, and it painted on
 
 ### What a frame did
 
-The GPU canvas of ADR 0071 keeps a settled part as an encoded scene, and a later frame draws it again with a new transform.
+The GPU canvas keeps a settled part as an encoded scene, and a later frame draws it again with a new transform.
 The walk asks every canvas to keep the same parts: settled items at the top level, and runs of text.
 The CPU canvas answered that it keeps nothing, and the WebGL2 canvas of the spike did the same.
 So each frame of a strip painter did all of this again:
@@ -254,7 +254,7 @@ The picture stage lets traffic rest after a frame on both strip painters, as it 
 
 ### The lens
 
-ADR 0071 already accepts a painter with no lens. With the CPU painter, a machine with no WebGPU shows "the same moves with no blur".
+ADR 0071 sends a machine with no WebGPU to the CPU painter, which has no lens, so that machine shows "the same moves with no blur".
 The WebGL2 painter has no lens either. It shows the same moves as the CPU painter, and parity at rest does not change.
 
 A port of the lens is possible, but nobody built it.

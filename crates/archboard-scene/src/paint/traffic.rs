@@ -1,4 +1,4 @@
-//! A picture's traffic, painted as data (ADR 0027): on every line that carries
+//! A picture's traffic, painted as data: on every line that carries
 //! some, the route its pulses ride and how they move, in the time that lines
 //! which keep the same time hand on. The SVG painter draws the pulses.
 

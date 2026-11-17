@@ -1,6 +1,6 @@
 // One board, one file, one version.
 //
-// ADR 0023 asks for a board's whole branching family — every variant, its
+// ADR 0023 once asked for a board's whole branching family — every variant, its
 // ancestry, and which one is current — to live in a single versioned document,
 // so that a change to a parent and its consequences for the children are one
 // write or no write at all. This is the shape of that document.

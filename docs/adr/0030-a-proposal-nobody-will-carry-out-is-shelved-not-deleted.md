@@ -10,7 +10,7 @@ The original decision below remains historical evidence.
 
 Extends
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md),
-which gave a variant three lifecycles: current, draft and historical. TASK-261
+which once gave a variant three lifecycles: current, draft and historical. TASK-261
 tracks this decision.
 
 A draft can outlive its proposal. Two drafts in this repository's own vault got
@@ -43,7 +43,7 @@ The word is chosen against words that already have another meaning here:
 
 Shelving is not deletion, and the decision rejects deletion. Other boards
 address a variant by name. A drill-down names a target board and a variant. A
-named target never falls back to whichever variant is current (ADR 0023). It
+named target never falls back to whichever variant is current. It
 reports that there is nothing there.
 
 The two spent drafts above name each other, so deleting either leaves the
@@ -92,5 +92,5 @@ the way to say that the thinking resumed.
 
 The lifecycle enum is now four values wide. An older build refuses a document
 that this build wrote. It does not misread the document, because the contract is
-strict. There is no compatibility layer. ADR 0023 already says that authored
-boards are repaired rather than migrated.
+strict. There is no compatibility layer. Authored boards are repaired rather than
+migrated.

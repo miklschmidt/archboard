@@ -1,7 +1,7 @@
-//! The shapes a flowchart draws that are not boxes (ADR 0053): a decision's
+//! The shapes a flowchart draws that are not boxes: a decision's
 //! diamond, a loop's hexagon, and the rounded terminals where a flow starts and
 //! ends, each a block of the gold of a primary action; and the markers at the
-//! ends of a jump (ADR 0073), each jump in an ink of its own.
+//! ends of a jump, each jump in an ink of its own.
 
 use std::collections::BTreeMap;
 use std::f64::consts::PI;

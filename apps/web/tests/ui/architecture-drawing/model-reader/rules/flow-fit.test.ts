@@ -1,5 +1,5 @@
-// Which reading a flow opens in (ADR 0073): the one its pane shows at the larger scale, up to the
-// drawn size, and the sequence when both show as large.
+// Which reading a flow opens in: the one its pane shows at the larger scale, up to the drawn size
+// (ADR 0073), and the sequence when both show as large.
 
 import { expect, test } from "bun:test";
 import { fittingReading } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";

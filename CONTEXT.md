@@ -346,7 +346,7 @@ What a frame holds reaches the frame here, and what stands outside reaches it on
 **Door**:
 A module outside the open one that holds parts and that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
 One click opens it, its plus expands it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it.
-A module with no parts stands as its card instead, beside the frame (ADR 0070).
+A module with no parts stands as its card instead, beside the frame.
 _Avoid_: nearby context, external (that is a kind)
 
 **Line**:
@@ -453,7 +453,7 @@ _Avoid_: sequence view, data-flow view, sequence diagram (for the reading)
 
 **Flowchart reading**:
 A reading in the `flowchart` grammar.
-It draws one flow's steps from a start to an end: a message as a box, a decision as a diamond with a labelled line for each alternative, and a loop as a hexagon (ADR 0053).
+It draws one flow's steps from a start to an end: a message as a box, a decision as a diamond with a labelled line for each alternative, and a loop as a hexagon.
 A run of steps that is too tall for the pane breaks into columns side by side (ADR 0073).
 _Avoid_: flowchart view, logic view, decision tree, activity diagram
 
@@ -496,7 +496,7 @@ _Avoid_: density, aspect ratio, zoom (that is the camera's)
 
 **Landing whole**:
 How a module's picture first shows: whole in the room of its pane, at no more than a scale of 1.
-A sequence or a flowchart keeps a landing of 0.6 on the head of its frame when whole would read smaller (ADR 0070).
+A sequence or a flowchart keeps a landing of 0.6 on the head of its frame when whole would read smaller.
 _Avoid_: floor, zoom to fit
 
 **Far view**:
@@ -773,7 +773,7 @@ _Avoid_: relationship kind (that is what the model claims), link type, dependenc
 
 **Use as a value**:
 A use at run time that runs none of the name's code, such as reading a constant or testing a value against a class.
-It is call evidence, so it supports a relationship, and the code check never calls a dependency undrawn on it alone (ADR 0046).
+It is call evidence (ADR 0046), so it supports a relationship, and the code check never calls a dependency undrawn on it alone.
 _Avoid_: read, weak call, reference (that is any use)
 
 **Candidate**:
@@ -788,7 +788,7 @@ _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift,
 
 **Source excerpt**:
 The lines of a file around one piece of evidence that a remembered finding names: the evidence line, with up to 3 lines on each side.
-It is the only text of a file that Archboard quotes, within the limits of the amendment of 2026-11-07 to ADR 0046.
+It is the only text of a file that Archboard quotes, within the limits of ADR 0046 ("Where the pass runs").
 _Avoid_: snippet, preview, code context, quote
 
 ### Walkthroughs and voice
@@ -892,7 +892,7 @@ _Avoid_: steer, pause, end voice
 
 **Shown conversation**:
 The workhorse conversation that the agent dock of every pane of a tab shows: the one of the checkout that the user last activated.
-Nothing that an agent does to a pane changes it (ADR 0050).
+Nothing that an agent does to a pane changes it.
 _Avoid_: active thread, current conversation, selected thread
 
 **Workhorse news**:

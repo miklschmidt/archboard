@@ -10,7 +10,7 @@
 // had (ADR 0036). A named variant that is not there is reported, never quietly
 // swapped for whichever variant happens to be current. The two models are two
 // independent histories, and a link that landed on a different architecture
-// from the one it named would be worse than a link that refuses (ADR 0023).
+// from the one it named would be worse than a link that refuses.
 //
 // The inspector subscribes to the reading, so it follows the model's news under
 // the name it goes by now. The double-click asks once and gets a promise; the

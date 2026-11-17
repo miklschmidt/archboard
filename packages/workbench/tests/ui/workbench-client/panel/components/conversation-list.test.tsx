@@ -1,4 +1,4 @@
-// The dock's list of the tab session's workhorses (ADR 0050): it is there only
+// The dock's list of the tab session's workhorses: it is there only
 // while there are two or more to pick from, it marks the shown one, it says in
 // words what each waits on, and a pick names the checkout picked. The keyboard
 // reaches each as a button of a toggle group, which the browser owner drives.

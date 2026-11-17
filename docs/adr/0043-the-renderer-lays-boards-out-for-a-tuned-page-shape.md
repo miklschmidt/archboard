@@ -12,7 +12,7 @@ user decided it on 2026-10-05, under TASK-395.
 
 ## Context
 
-ADR 0028 derived the reference pane from the desktop shell at 1920 by 1080:
+The reference pane was first derived from the desktop shell at 1920 by 1080:
 the viewport less the navigator, the rows above and below the panes, the
 inspector and the fit margin. ADR 0039 kept that pane as the yardstick for
 fit. One module, `src/shared/shell-geometry`, derived it.

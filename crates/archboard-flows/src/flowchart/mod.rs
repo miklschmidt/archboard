@@ -1,4 +1,4 @@
-//! A flow drawn as a flowchart (ADR 0053): its steps as boxes, its decisions
+//! A flow drawn as a flowchart: its steps as boxes, its decisions
 //! as diamonds with a labelled line for each alternative, its loops as
 //! hexagons, from a start to an end, in a frame that names the flow.
 //!

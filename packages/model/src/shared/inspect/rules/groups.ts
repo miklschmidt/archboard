@@ -4,7 +4,7 @@
 // Nothing here is authored and nothing is drawn. A node says which groups it
 // belongs to; everything below is derived from those memberships and the
 // relationships the variant already states, every time it is asked, over the
-// whole variant before any view narrows it (ADR 0023). A view that hides a
+// whole variant before any view narrows it. A view that hides a
 // member is a narrower picture, not a smaller group, so the viewer says a
 // hidden member is hidden rather than leaving it out.
 //

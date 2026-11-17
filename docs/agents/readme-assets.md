@@ -179,7 +179,7 @@ the key moments stay under `takes/<asset>` in the scratch directory for inspecti
 
 ## Tracked embeds
 
-The `architecture` SVGs are tracked embeds under ADR 0068.
+The `architecture` SVGs are tracked embeds (ADR 0057).
 The kit reads the canonical model from `.archboard/vault` on its own server.
 It writes the selected diagrams into `docs/readme` through `model render`.
 Each artifact carries its exact render recipe, and Git supplies the tracked artifact list.

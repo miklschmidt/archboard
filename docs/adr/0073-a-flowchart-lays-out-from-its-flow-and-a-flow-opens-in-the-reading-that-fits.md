@@ -6,7 +6,7 @@ status: accepted
 
 Decided for TASK-568 on 2026-11-03. TASK-572 added the jumps on 2026-11-04.
 This record replaces the track engine layout of [ADR 0053](0053-a-flow-holds-its-logic-and-reads-as-a-sequence-or-a-flowchart.md).
-The two readings of a flow and their shapes stay as ADR 0053 decided.
+The two readings of a flow stay as ADR 0053 decided.
 
 ## Context
 
@@ -41,7 +41,7 @@ The address names the reading that opened, so reload and history restore it.
 - Graphviz and the track engine no longer draw flowcharts.
 - The core draws a flowchart in one pass.
   Its lines cross nowhere by construction, so no line hops another.
-- The renderer core carries the static Onest Bold file, about 120 KB, for the letters of the jumps alone.
+- The renderer core carries the static Onest Bold file, about 120 KB, for the letters at the two ends of a jump alone.
 - The pane size takes part in the choice, so two panes can open one flow in different readings.
   The address records the reading that each pane opened.
 - The CLI, embeds and walkthroughs name their grammar, as before.

@@ -4,7 +4,7 @@
 // A pane reads what a pass found and does not start one: a pass reads code and Git
 // and takes seconds, and every open canvas would start one. So the server remembers
 // what the last pass found, and a pane reads that. Only the code view of Measures
-// starts a pass, once for a reading no pass read (ADR 0046, amendment of 2026-11-08). The memory holds one reading for each document and
+// starts a pass, once for a reading no pass read (ADR 0046). The memory holds one reading for each document and
 // variant a pass has read: the version of the document it read, when it ran, and
 // what it found on that document. A pass replaces the readings of the documents it
 // read and leaves the others, so a pass over a named draft does not forget what

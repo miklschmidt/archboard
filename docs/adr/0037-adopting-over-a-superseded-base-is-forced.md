@@ -9,9 +9,9 @@ Canonical adoption supersedes the live variant operation below. Superseded propo
 The original decision below remains historical evidence.
 
 Amends
-[ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md). ADR
-0023 let any coherent draft, including a competing branch, be adopted without
-reparenting. Tracked as TASK-331. The user decided it on 2026-09-24.
+[ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md).
+Until this decision, any coherent draft, including a competing branch, could be
+adopted without reparenting. Tracked as TASK-331. The user decided it on 2026-09-24.
 
 Two proposals branched from the same current variant can both be adopted. The
 second adoption silently drops the change of the first.

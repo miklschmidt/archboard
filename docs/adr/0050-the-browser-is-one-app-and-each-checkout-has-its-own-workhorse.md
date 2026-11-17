@@ -78,8 +78,8 @@ checkout.
 - ADR 0019 is amended. A tab session has one workhorse for each checkout,
   which runs in that checkout, and one coordinator that runs in no checkout.
   The child environment holds no vault.
-- ADR 0047 is amended. The implementation brief names the checkout and `-C`,
-  not `ARCHBOARD_VAULT`.
+- The implementation brief of ADR 0047 names the checkout and `-C`, not
+  `ARCHBOARD_VAULT`.
 - ADR 0048 is amended. A spoken stop is a workhorse stop of every running
   workhorse of the tab session, and the Stop control is one of the shown
   workhorse.

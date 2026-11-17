@@ -202,7 +202,7 @@ function codeFindingsQuery(vault: string) {
 
 /**
  * One code pass over one version of a reading, which the code view of Measures starts when no
- * remembered pass read it (ADR 0046, amendment of 2026-11-08). It settles once the findings have
+ * remembered pass read it (ADR 0046). It settles once the findings have
  * been read again, so the view goes from checking to the findings in one step. It never goes stale
  * and the cache keeps it, so a page starts one pass for a version of a reading however often the
  * view opens, and a pass that failed is tried again only when somebody asks.

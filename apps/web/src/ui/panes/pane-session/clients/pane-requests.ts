@@ -101,7 +101,7 @@ function showModel(
 /**
  * Say that the person activated a checkout in this tab: the checkout of the
  * pane they focused or opened a model in, or one they picked from the dock's
- * list (ADR 0050). Every pane of the tab then shows that checkout's conversation.
+ * list. Every pane of the tab then shows that checkout's conversation.
  * @param vault The vault the pane is in.
  * @param request The pane, and the checkout of a pick from the list.
  * @returns The checkout shown now.

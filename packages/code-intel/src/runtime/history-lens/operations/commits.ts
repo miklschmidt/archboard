@@ -235,7 +235,7 @@ function changedUnder(
  * the renames of its files: once a newer commit renamed a file into it, the
  * older commits count under the name the file had. A year of commits across a
  * model's hundreds of paths runs in one turn of the server's event loop, so a
- * commit that touches none of a path's names costs one set lookup (ADR 0045).
+ * commit that touches none of a path's names costs one set lookup.
  * @param commits The walk, newest first.
  * @param paths Normalized bound paths.
  * @returns For each path, the ids of the commits that changed it.

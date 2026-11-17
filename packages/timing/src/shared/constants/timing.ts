@@ -1,8 +1,7 @@
 // Every duration in Archboard, grouped by the subsystem that owns it.
 //
 // A duration used to sit next to the code that consumed it. Read one at a time
-// they all look independent, and they are not: ADR 0016 is where that stopped
-// being tolerable. So they live here, with what pulls against what written
+// they all look independent, and they are not. So they live here, with what pulls against what written
 // beside them, and the reasons are the point: the next person to halve one of
 // these should not have to discover by accident what else they halved.
 //

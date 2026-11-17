@@ -13,9 +13,7 @@ The owner decided the edge tab, the door buttons and the line ends. The
 integrator decided rule 6 under the owner's trust of 2026-10-31. The owner looked
 at the door buttons in the real pane and accepted them.
 
-This record supersedes [ADR 0062](0062-parent-headers-use-normal-card-sizing.md)
-and replaces the header slab of
-[ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md).
+This record supersedes [ADR 0062](0062-parent-headers-use-normal-card-sizing.md).
 
 ## A frame has one edge tab
 
@@ -32,9 +30,6 @@ container acting, and it hides which part acts and what that part does. On
 `Commands`, 43 relationships drew 10 lines, four frame lines held 37 of them,
 and 16 of 24 parts showed no line. A threshold that kept many-part lines on the
 frame did not meet the owner's request.
-
-Only a relationship that names the open module itself stays on the frame
-([ADR 0044](0044-a-containers-interface-is-what-relationships-from-outside-reach.md)).
 
 ## Rule 6 is deleted, so every relationship has a line
 
