@@ -78,9 +78,9 @@ function ListCard(props: FootprintListsProps & { readonly list: FootprintList })
 			data-footprint-list={list.key}
 			aria-labelledby={heading}
 			className={cn(
-				"rounded-control shadow-raised inset-ring flex min-h-0 flex-col gap-3.5 p-3.5",
+				"rounded-control shadow-raised inset-ring flex flex-col gap-3.5 p-3.5 md:min-h-0",
 				list.outside
-					? "inset-ring-standing-changed/45 bg-[color-mix(in_oklch,var(--standing-changed)_7%,var(--face))]"
+					? "inset-ring-standing-changed/45 bg-[color-mix(in_srgb,var(--standing-changed)_6%,var(--face))]"
 					: "bg-face inset-ring-border",
 			)}
 		>
@@ -121,7 +121,7 @@ function ListCard(props: FootprintListsProps & { readonly list: FootprintList })
 }
 
 /**
- * One module of a list: its kind's chip, its name and its commits.
+ * One module of a list: its kind's chip and its name. The lines under the cards count the commits.
  * @param props The module and what choosing it does.
  * @returns The row.
  */
@@ -130,7 +130,6 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
 	const { id, name } = module.subject;
 	const kind = kinds.get(id);
 	const commits = commitsOf(answer, module);
-	const large = commits.filter((one) => one.large).length;
 	const choose = useCallback(
 		(event: MouseEvent<HTMLButtonElement>): void => onChoose(id, event.altKey),
 		[id, onChoose],
@@ -151,12 +150,6 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
 					<KindChip look={look} kind={kind} />
 				)}
 				<span className="text-control min-w-0 flex-1 truncate">{name}</span>
-				{commits.length > 0 && (
-					<span className="text-technical text-muted-foreground shrink-0 font-mono">
-						{commits.length} {commits.length === 1 ? "commit" : "commits"}
-						{large > 0 && `, ${large} large`}
-					</span>
-				)}
 			</button>
 		</li>
 	);

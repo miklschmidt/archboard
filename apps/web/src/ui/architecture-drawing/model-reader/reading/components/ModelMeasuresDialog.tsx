@@ -56,7 +56,7 @@ const TABS: readonly {
 		value: "branch",
 		Icon: RiGitBranchLine,
 		label: "What this branch changed",
-		gloss: "The modules that the commits from a base changed",
+		gloss: "The modules that a branch changed since its base",
 	},
 ];
 
