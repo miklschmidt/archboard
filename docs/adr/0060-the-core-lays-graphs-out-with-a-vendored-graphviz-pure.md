@@ -6,9 +6,7 @@ status: accepted
 
 The user decided this on 2026-10-26. TASK-548.01 builds it. It replaces the
 section "Graphviz stays with the host for now" of
-[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md),
-and its clause that a worker puts Graphviz back as it was loaded before each
-solve.
+[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md).
 
 ## Context
 
