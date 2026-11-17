@@ -4,7 +4,7 @@
 //
 // `archboard check code` and `archboard check all` ask it, and so does the code view
 // of Measures when it opens on a reading that no remembered pass read (ADR 0046,
-// amendment of 2026-11-08). It reads code and Git, which takes seconds, so it runs
+// "Where the pass runs"). It reads code and Git, which takes seconds, so it runs
 // only on a request and never inside `/api/vault/check`, which every open canvas
 // reads. It runs as
 // checkout work, the admission the code opener uses: a caller that hangs up

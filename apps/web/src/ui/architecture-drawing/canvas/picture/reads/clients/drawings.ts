@@ -245,7 +245,7 @@ interface CodeCheckReading {
 
 /**
  * Run one code pass over a reading, which the server remembers for every pane (ADR 0046,
- * amendment of 2026-11-08). A pass reads code and Git and takes seconds, so only the code view
+ * "Where the pass runs"). A pass reads code and Git and takes seconds, so only the code view
  * of Measures starts one, once for a version of a reading. It asks for a draft by its state and
  * for Current by nothing, as `archboard check code` does. It is not cancelled when the view
  * closes: what it finds is remembered, and the view shows it when it opens again.
