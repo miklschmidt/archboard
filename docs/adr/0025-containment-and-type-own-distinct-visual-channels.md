@@ -49,7 +49,7 @@ highlight rather than replacing the comparison treatment.
 
 Traffic is a separate optional connection property. Nothing infers it from
 emphasis. [ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md)
-records its settled requirements and remaining design questions.
+records its settled requirements.
 
 Separating these channels makes a hosting migration readable without losing
 type, change or selection information. If a view changes a node from a leaf card
