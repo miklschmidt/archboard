@@ -4,11 +4,6 @@ status: accepted
 
 # Built-in agents support architecture and hand off implementation
 
-Amended by [ADR
-0050](0050-the-browser-is-one-app-and-each-checkout-has-its-own-workhorse.md)
-(2026-10-14). The implementation brief names the checkout and gives `-C` with
-it, in place of `ARCHBOARD_VAULT`. Everything else stands.
-
 Archboard's coordinator and workhorse inspect architecture, analyze code, and
 author requested proposals and architecture documents. They can run existing
 tests and diagnostic commands, and create temporary experiments outside the
@@ -22,12 +17,7 @@ useful inspection commands.
 
 For an explicit implementation request, Archboard saves an implementation brief
 in the OS temporary directory, following the handoff skill's storage convention.
-It reports the saved path in the conversation. The brief names the board,
-proposal, observed version, unresolved decisions, affected repositories, and
-acceptance criteria. It gives
-the exact CLI path, `ARCHBOARD_URL`, `ARCHBOARD_VAULT`,
-`ARCHBOARD_NO_AUTOSTART=1`, and commands to retrieve the proposal and its
-differences.
+It reports the saved path in the conversation.
 
 This keeps architecture work useful without creating a second implementation
 agent on a branch where the user already works.

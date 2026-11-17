@@ -4,8 +4,7 @@ status: accepted
 
 # A save writes a file, and does not move a pane
 
-ADR 0020 supersedes the exception in this ADR that lets a scratch save move a
-pane. The main decision remains. Saving or branching a board never changes
+Saving or branching a board never changes
 browser state.
 
 `board save --board payments --variant option-a` used to take every pane that
@@ -33,18 +32,6 @@ names a board and writes to it, on screen or not. A save that silently repoints
 a pane gives one command both jobs. The job that it does silently is the one
 about the screen.
 
-## Naming the scratch board is not a branch
-
-One case moves a pane: `board save --board scratch --as payments`. Scratch is a
-placeholder and not a subject. It has no home in the vault. After the save, the
-placeholder and the named board hold the same drawing. A pane left on scratch
-shows a second copy of the board that was just created. There is nothing to stay
-behind for.
-
-The code makes this distinction in `classifyBoardSave`. A source with a home in
-the vault is branched, and nothing moves. A source without one is being named,
-and the panes come with it.
-
 ## Say it either way
 
 Which way the decision went mattered least. That the behavior stopped happening
@@ -52,10 +39,6 @@ silently mattered most. Every save now reports what it did to the screen.
 `panes.moved` lists the panes that the save repointed. `panes.kept` lists the
 panes that the save deliberately left on the board that was saved from.
 `saveKind` names which of the three acts the save was.
-
-The CLI turns that report into a sentence that names the pane, the way
-`board open` already does. A branch also says in the same sentence that the
-branch is not showing anywhere, and how to show it.
 
 ## Why not make branching a separate command
 

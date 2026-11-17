@@ -45,15 +45,11 @@ A missing source revision leaves architecture readable with an explicit evidence
 Missing architecture or required baselines instead refuse the exact reading.
 Readers never substitute current content.
 
-The browser selects Current or one complete checkpoint identity as presentation state.
-Each selection reads that scope again through the shared contract.
 Separate cache keys prevent a current result from supplying a historical reading.
-The retained identity and source-evidence availability remain visible beside its architecture.
 The browser never creates checkpoints.
 
 This decision extends ADR 0066 for retained canonical readings.
 The source-history lens in ADR 0045 remains separate from retained architecture.
-Proposal changes and migration remain separate delivery slices.
 
 ## Explicit archive publication
 
@@ -85,17 +81,11 @@ A shallow archive boundary triggers a deeper fetch of the configured archive ref
 The runtime refuses incomplete or foreign archive ancestry and keeps current files, the index, source HEAD, and source fetch mappings unchanged.
 Machine-local source repository paths remain local because publication cannot redact immutable metadata.
 The browser reads publication status separately from the exact architecture cache.
-The reader explicitly sets the destination and starts each publish or fetch action.
-Network failures leave a pending status with a retry action and recovery instructions.
-Missing history shows an unavailable reading until the explicit fetch restores that exact checkpoint.
-The selection stays fixed throughout the exchange.
-The browser shows the remote retention limitation beside the status.
 Publication updates fresh reading metadata but never changes a completed edit receipt.
 
 ## Canonical description installation
 
 TASK-549.03 adds one claimed description edit through the shared runtime.
-The operation names the model, current state, complete read token, subject, writer, doing line, claim, and operation identity.
 The complete token covers discovered paths, exact bytes, and policy.
 Only the affected module file changes.
 
@@ -144,10 +134,6 @@ Invalid or changing content refuses a coherent read and blocks new edits.
 
 A vault-scoped event stream starts each connection with a fresh reading and claim list.
 Later events identify durable completion, stable external content, claim changes, or an unavailable current reading.
-One browser connection per vault and query cache supplies current updates.
-A fresh snapshot replaces current content only after older requests are canceled.
-The query cache keeps the last coherent current reading during a failure.
-The browser marks that reading stale and shows the refusal.
 Historical failures never substitute current content.
 Human take-back ends the displayed subject claim without changing architecture.
 
@@ -174,7 +160,6 @@ Each untracked vault owns its private archive and recovery records.
 The archive remains local until an owner configures a destination and explicitly publishes history.
 Creating the archive or configuring a destination performs no network exchange.
 Private checkpoints use the same independent archive branch and actual Git ancestry as source-backed checkpoints.
-Export and migration remain separate delivery slices.
 
 ## Portable model restoration
 

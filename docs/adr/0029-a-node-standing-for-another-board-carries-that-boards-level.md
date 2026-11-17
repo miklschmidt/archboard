@@ -28,8 +28,7 @@ chooses and where a drill-down can sit.
 
 `external` means code this codebase does not own: a library, a framework, a
 runtime, a shell, a hosted service, a caller outside the checkout. It is the
-kind for a boundary the team cannot edit. Its neutral appearance is there to say
-"outside" at a glance.
+kind for a boundary the team cannot edit.
 
 It is not the kind for a part of this codebase that a reader reaches through
 another board. A board in the vault is not external to the vault. A node that
@@ -45,8 +44,8 @@ its kind. The kind matches the level:
 - A node of kind `service` stands for a `service` board.
 - A node of kind `module` stands for a `module` board.
 
-A reader then sees where one level of the architecture joins the next, in the
-icon chip, without opening anything.
+A reader then sees where one level of the architecture joins the next, without
+opening anything.
 
 So the vocabulary must offer a kind for every level it configures. The default
 vocabulary now defines `system` alongside `service` and `module`. A vault that
@@ -85,9 +84,7 @@ one level coarser, the one this board is a part of. It belongs on a container,
 never on a card standing beside the parts. The container is the whole this board
 describes. Opening the board that contains it is a property of that whole.
 
-A down or sideways link belongs on a card. A module board that shows
-`calls this module` draws an edge to a node whose kind is `module` and whose
-drill-down opens it.
+A down or sideways link belongs on a card.
 
 ## Considered and rejected
 
@@ -107,19 +104,3 @@ that a standing-for node can keep a descriptive kind and record its level beside
 it. It duplicates what the drill-down target already knows and can go stale
 against it. It also makes the level a thing readers must inspect rather than
 see.
-
-## Consequences
-
-- The default vocabulary gains a `system` node kind, so every default level has
-  a kind that can stand for it.
-- The vault checker reports three things that it did not report before. The
-  first is a node that exists only to carry its `drillDown` (no relationships,
-  no children, in no flow). The second is a `drillDown` naming a board the vault
-  does not hold. The third is a kind that disagrees with the level of the board
-  it opens. The checker reports them as warnings, because the board stays
-  readable and a repair is an ordinary agent write
-  ([ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md)).
-- The migration of `.archboard/vault` is not a rename. Several of its cards
-  exist only to point up (`Archboard system`, `System overview`,
-  `Workbench subsystem`). The boards holding them need their real caller drawn
-  or the link moved onto a container. TASK-257 owns that rewrite.

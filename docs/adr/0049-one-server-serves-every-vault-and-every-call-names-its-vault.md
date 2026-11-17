@@ -7,8 +7,7 @@ status: accepted
 Decided with the owner on 2026-10-14. The migration is planned in the Backlog
 document doc-002, "One Archboard server for every vault".
 
-Amended by TASK-526.01 (2026-10-24): the code check is `archboard check code`,
-also run by `archboard check` and `archboard check all`.
+Amended by TASK-526.01 (2026-10-24): the code check is `archboard check code`.
 [ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
 decides the split.
 
@@ -44,8 +43,7 @@ working directory, or from the directory that `-C <dir>` names. Every answer
 names the vault that it used and how the vault was found. If no vault is found,
 the command refuses, as it does today. `ARCHBOARD_VAULT` is gone. If it is
 set, every command refuses and says how a vault is found now. Thus an old
-`.envrc` or `.env` cannot quietly address another vault. `./bin/dogfood` is gone
-too: `archboard` in the archboard checkout reads archboard's own boards.
+`.envrc` or `.env` cannot quietly address another vault.
 
 ## Two addresses for one vault
 
@@ -65,17 +63,14 @@ identity, so no board in another vault can drill down into it.
 ## The checkout registry
 
 The checkout registry holds every checkout known on this machine, each with its
-repository identity. It also holds every untracked vault, with a name that the
-browser shows. For each identity it records one chosen checkout. A checkout
-becomes known in three ways. A person runs `repo add`. A command runs in the
-checkout, and its answer says once that it registered the checkout. Or a known
-checkout lists it in `git worktree list`. A checkout whose directory is gone
-stays in `repo list` as gone until `repo forget` removes it.
+repository identity. It also holds every untracked vault. For each identity it
+records one chosen checkout. A checkout becomes known in three ways. A person
+runs `repo add`. A command runs in the checkout, and its answer says once that
+it registered the checkout. Or a known checkout lists it in `git worktree list`.
 
 The first checkout of an identity is its chosen checkout. After that, only a
-person's choice changes it: `repo use`, the navigator's menu (ADR 0050), and
-`browser show` from another checkout (ADR 0050). `repo add` never changes the
-choice, because adding a checkout must not move what every other vault reads.
+person's choice changes it. `repo add` never changes the choice, because adding
+a checkout must not move what every other vault reads.
 
 ADR 0011 rejected registration that scans the filesystem, because the answer is
 a guess. Registration by a command is not a guess. Somebody ran a command in
@@ -93,10 +88,10 @@ vault that the command addresses.
 ## Servers that run other source
 
 A server runs the source of the checkout that started it (ADR 0021). Inside an
-archboard checkout, `archboard` runs that checkout's own `bin/archboard`. The
-main archboard checkout uses port 3000. A linked worktree of archboard uses a
-port that is a hash of its root path into the range 10000 to 19999. The path
-stays the same for the life of a worktree, but a branch inside it can change.
+archboard checkout, `archboard` runs that checkout's own `bin/archboard`. A
+linked worktree of archboard uses a port that is a hash of its root path. The
+path stays the same for the life of a worktree, but a branch inside it can
+change.
 When `ARCHBOARD_URL` or `--url` is set, it still decides. `/health` reports
 the source checkout of the server. A command that finds a server of other source
 on its port refuses, names both checkouts, and does not pick another port. All
@@ -104,7 +99,7 @@ servers share one state directory, because pid files and Codex ledgers are
 already kept per port, and the registry is machine-wide on purpose.
 
 Tests and the skill evaluations keep their own servers, ports and state
-directories. They make their vaults in the `<dir>/.archboard/vault` layout.
+directories.
 
 ## Considered options
 
@@ -125,16 +120,13 @@ of one machine.
 - ADR 0004 is superseded. Its logical code references stay, through ADR 0011.
 - ADR 0011 is amended. The registry holds every known checkout and a chosen
   checkout for each identity. A command registers the checkout that it runs
-  in. The `cwd` origin of its table went earlier, with the command that used
-  it. A semantic board states every binding as a repository and a path.
+  in. A semantic board states every binding as a repository and a path.
 - ADR 0015 is amended. The server starts without a vault, and the CLI refuses
   when it finds none.
 - ADR 0020 is amended. "The configured vault" becomes the vault that the call
   names.
 - ADR 0021 is amended. A worktree of archboard runs its own server on its own
   port.
-- The vault mismatch guard of TASK-471.01 has no purpose, and that task is
-  superseded.
 - The owner considers a hosted Archboard. It keeps boards in a database and
   gives each board a repository link as metadata. A local board stores no
   repository field. Its repository is the identity of the checkout that holds

@@ -38,18 +38,10 @@ in four cases:
 - An element without a resolvable binding.
 
 The server owns one machine-wide opener because the server launches the
-application. Its initial value is the platform's native opener. A custom opener
+application. A custom opener
 is an executable plus an argument list that contains `{path}`. It is never a
 shell command. The setting lives outside the vault, survives a restart, and
-applies to every pane immediately. The frontend settings panel provides platform
-and editor presets, custom executable and argument fields, validation, and a
-test that opens a chosen registered checkout root.
-
-Activating a local target does not move away from the canvas or ask for a second
-confirmation. The canvas shows a launch failure. If the binding has a GitHub
-action, the launch failure can offer it as an explicit action. It does not
-silently change the person's requested action. A remote GitHub target opens as
-an ordinary HTTPS link in a new browser tab.
+applies to every pane immediately.
 
 ## Rejected alternatives
 
@@ -66,16 +58,11 @@ replaces.
 
 The runtime target is a presentation overlay. It must be stripped before every
 note write, held write, snapshot, or browser change report becomes canonical.
-Tests must therefore cover both halves together. The first half is that the
-browser can activate local file and directory targets or open the GitHub
-fallback. The second half is that the raw note still contains only the portable
-binding and unrelated human-authored links.
 
 ## Amendment of 2026-11-03: a file an agent's answer names
 
 Codex writes a local file in its answer as a markdown link to the file's
-absolute path, with an optional line, for example
-`[app.ts](/abs/path/app.ts:12)`. The browser reads such a link as a page of the
+absolute path. The browser reads such a link as a page of the
 Archboard server, so the link went nowhere. The conversation and an explanation
 now send the path and its line to the same open route, through the vault of the
 focused pane.
@@ -84,7 +71,7 @@ The server opens that path only as a binding of the vault would open it. It
 finds the innermost checkout that holds the real path among the checkouts that
 the vault reads, and it resolves the path in that checkout through the binding
 resolver. A path in no such checkout, or a link inside a checkout that leads out
-of it, opens nothing and says which checkout to choose. So the browser still
+of it, opens nothing. So the browser still
 cannot make the server open an arbitrary file: it reaches only what a binding of
 the vault can already reach. A failed open offers no GitHub link, because the
 answer read the checkout's working tree, not a recorded ref.

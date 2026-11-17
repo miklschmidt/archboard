@@ -13,8 +13,7 @@ migration is planned in the Backlog document doc-002, "One Archboard server for
 every vault".
 
 Once one app reads every repository (ADR 0050), a board sometimes lives in the
-wrong one. For example, a board that a meta project drew belongs to the product
-repository that it describes. The owner wants a person to move it in the
+wrong one. The owner wants a person to move it in the
 browser. `archboard semantic move <board> --to <dir>` is the same operation on
 the command line, and agents can use it too.
 
@@ -26,8 +25,7 @@ browser is the person's own act, so it writes no doing line (ADR 0016). The CLI
 form is an agent write like any other, and it needs `--doing`.
 
 The target is a repository identity or an untracked vault. A board moves into
-the vault of the chosen checkout of its target identity. On the command line,
-`--to` names a directory, and the vault is found from it as `-C` finds one.
+the vault of the chosen checkout of its target identity.
 
 The whole note moves, with every variant, every former name and every subject
 id unchanged. Thus the comparison and the history stay true. A move is not a
@@ -46,14 +44,8 @@ These moves are refused:
   vault, and git carries boards between them.
 - A move while somebody else claims the board in the source vault, or its name
   in the target vault. The move takes the lease in both vaults.
-- A move to a vault that already has a board, or a former name, with the same
-  name.
 - A move that needs a drill-down into an untracked vault. An untracked vault
   has no identity, so no board in another vault can name it.
-
-Before a person moves a board, the browser shows the drill-downs that the move
-rewrites. After the move, the pane that showed the board shows it in its new
-repository.
 
 ## Order, not one write
 

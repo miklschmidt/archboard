@@ -17,22 +17,6 @@ one of its endpoints. Other container bodies are routing obstacles. This design
 does not use Graphviz's own orthogonal routes, because the prototype showed that
 they can cross headings or meet constrained endpoints diagonally.
 
-Relationship labels use clear runs of their routes. A label that cannot fit
-requests measured space from the layout owner.
-
-Cards expose shared ports per relationship kind on their faces. Different kinds
-use distinct physical attachment positions and native lane separation. A lane is
-a passage where lines run. Shared mixed-type runs proved ambiguous, so this
-readability requirement followed. The router owns face choice and paths. Ports
-are not private to each edge. Endpoint clearance must still accommodate the
-actual arrowhead and a rounded bend.
-
-Labels try natural route runs after placement space is reserved. They become
-waypoints only after that still cannot fit their words.
-
-The user explicitly rejected importing constraints absent from the prototype
-during adoption.
-
 The same implementation runs in workers under Bun and in the browser. The host
 loads the two WebAssembly engines. Semantic content, measured text and layout
 geometry retain one owner. SVG painting and the interaction atlas consume the

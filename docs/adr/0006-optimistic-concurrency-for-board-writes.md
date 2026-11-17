@@ -72,9 +72,6 @@ wrote with the version that the note carries now. Three cases follow:
 - The number moved forwards. Another archboard wrote the note, and the
   difference says by how many writes.
 
-The comparison lives in `foreignWriteTo` beside the hash. So the refusal and the
-pane's mark say one thing rather than two.
-
 Two rules keep it honest. First, archboard never writes different bytes without
 moving the count. That is what makes "unchanged and different" mean somebody
 else. So a write that produces the note that is already there does not bump the
@@ -114,19 +111,14 @@ So the refusal stops the board saving instead of stopping the person. Nothing is
 written. The board is marked as not saving, and what the person draws after that
 goes into a copy that the canvas keeps.
 
-The person gets the three outcomes below by asking for them: from the mark in
-the board bar, from a save they ran, or from the commands. The commands are the
-same commands they always were. Archboard still picks none of them. The check
-was not weakened to make the experience nicer. That was the temptation worth
-naming (TASK-079).
+Archboard still picks none of the three outcomes below. The check was not
+weakened to make the experience nicer. That was the temptation worth naming
+(TASK-079).
 
 The held copy raises one question that this decision did not have to answer
 before: what the outcomes do with the work drawn since. Reload discards it. That
 is what "take the note" always meant. Overwrite writes it.
-
-Save elsewhere writes the work to the other note and moves the panes with it.
-The board left behind is about to be repainted with the other editor's version,
-and watching that happen is not "nothing is lost".
+Save elsewhere writes the work to the other note.
 
 ## And said before it is refused
 
@@ -138,36 +130,9 @@ as the person spends thinking before they touch something. On a wall display
 that is minutes, and it can be an hour.
 
 So the comparison above runs on the boards that are on screen as well as on the
-writes. When the comparison comes back positive, the board bar says
-`note changed on disk` (TASK-062). It is the same comparison, in one function,
-on purpose. The mark claims to show the state in which the next write is
+writes. When the comparison comes back positive, the board bar says so
+(TASK-062). It is the same comparison, in one function, on purpose. The mark claims to show the state in which the next write is
 refused. A second implementation of the question is one that drifts.
-
-The mark now says which side is newer (TASK-091). That was the one thing it was
-unable to say, and it is the question the mark exists to answer. Three sentences
-name three cases:
-
-- The sentence `note is 2 writes ahead` is another archboard working on this
-  board.
-- The sentence `note was rolled back` is somebody's revert arriving from the
-  vault.
-- The sentence `note changed on disk` is what is left, an editor that keeps no
-  count. The mark used to have this sentence for all three.
-
-That improvement is not a second mechanism. It comes off the one comparison.
-That is the whole reason it arrived here for free.
-
-The mark offers the reload and not the three outcomes, because the other two are
-not reachable yet. Nothing is refused yet, so there is no held copy to write
-over the note and none to write elsewhere. It says instead what does not happen:
-nothing is written, nothing is lost, and the next change is refused rather than
-saved over theirs.
-
-This state is not a hold and it is not a lock. Both say something adjacent, and
-neither says this. A hold is this state one write later, after the refusal
-happened. A lock (ADR 0016) is another archboard writer holding the board right
-now, which excludes a pane from drawing. This state excludes nobody from
-anything.
 
 Riding on the lock watcher's timer rather than a second one keeps the cost
 honest. That sweep already runs once per renewal interval and only while a

@@ -17,24 +17,9 @@ Amended by [ADR 0047](0047-built-in-agents-support-architecture-and-hand-off-imp
 the built-in agents support architecture work and hand off implementation to
 the user's own coding agent.
 
-Amended by TASK-302 (2026-09-23): a canvas has one thread link, not one per
-pane, and nobody makes it by hand. If sign-in is needed, the first message or
-press of Talk signs in, starts Codex, creates the workhorse and links it.
-Whichever pane is focused speaks for the conversation, with its board as
-context. The sentences below say so. Everything else stands.
-
 Amended by TASK-313 (2026-09-23): the canvases on one machine share one Codex
 home, one Codex database and so one sign-in. Codex takes several processes on
 one home, and it reloads the sign-in from disk before it refreshes it.
-
-Amended by TASK-319 (2026-10-11): the person sees what the voice coordinator
-does. Its turns show in the one conversation, among the workhorse's turns. A
-workhorse turn that the coordinator delegated names the coordinator turn that
-did it. So "the state of the workhorse and the state of the coordinator remain
-visibly separate" (Consequences) now means that the two are told apart. A
-coordinator turn has its own head and mark. The dock, Stop and the composer
-speak of the workhorse only. The two threads and their lifetimes stay separate,
-and the decision above stands.
 
 Archboard keeps two things about its own child: the owner lock and the epoch
 ledger. An epoch is one run of the child, and the epoch ledger records which
@@ -73,18 +58,10 @@ The tab keeps the session id in sessionStorage. So a reload keeps the
 conversation, and a new tab or window starts a new one.
 
 Each tab session has its own thread link, workhorse, coordinator, voice session,
-board-change delivery, queue, command lease and approvals. So two tabs can talk
-at the same time. The coordinator starts with the first message or Talk of the
-tab, not at sign-in.
+board-change delivery, queue, command lease and approvals.
 
-A session ends 60 seconds after the last socket of its panes closes. A reload
-within that time keeps the conversation and its approvals, but it stops voice.
-At the end, Archboard settles the approvals of the session, stops its
-board-change delivery and clears its link. After no turn runs on a thread of the
-session, Archboard unsubscribes from it, so Codex unloads it.
-
-The thread selector, its list of candidate threads and the attach, relink and
-refresh commands are gone. The sentences below say so. Everything else stands.
+A session ends 60 seconds after the last socket of its panes closes. The
+sentences below say so. Everything else stands.
 
 Amended by TASK-379 (2026-09-29): the environment of the child names the server
 that started it. `ARCHBOARD_URL` and `ARCHBOARD_VAULT` are the URL and vault of
@@ -121,9 +98,7 @@ sessionStorage. The link binds the session to one workhorse that the current
 child controls. The first thing the person asks in the tab makes the link: a
 message or Talk. No separate step makes it.
 
-Both panes of a tab show and speak for the same conversation. A message carries
-the board of the focused pane as its context. Every other tab holds a
-conversation of its own.
+A message carries the board of the focused pane as its context.
 
 Replacing the child invalidates every execution proof and unbinds every tab
 session. An execution proof shows that an operation was committed, was
@@ -211,8 +186,7 @@ Archboard must maintain its own Codex sign-in, process status and reconnect
 story. It must carry a message or a Talk through each of them, without asking
 the person to set anything up. A child restart is intentionally conservative.
 Prior work remains inspectable but not executable. The next message or Talk in a
-tab creates a new link for that tab. The state of the workhorse and the state of
-the coordinator remain visibly separate.
+tab creates a new link for that tab.
 
 Each tab costs a workhorse thread and a coordinator thread, and a recording is a
 tab of its own. A tab session that ends settles what it was asked and gives up

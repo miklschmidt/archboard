@@ -42,11 +42,3 @@ reads the level and a mixed-level board is a real thing to want to say.
 Another option is to default the level from the board and keep `--level` as an
 override, the shape of TASK-040. The decision rejects it on the `showLevel`
 argument above. This duplication destroys a signal and removes no footgun.
-
-## Consequences
-
-Nothing stamps a level, so nothing has to keep it in step with the board. If a
-reader wants the effective level of a node, it resolves the level as the node's
-own. If the node has none, the reader uses the level of the board. Every reader
-today either prints the level of a node that has one, or compares it. Both stay
-correct without change.

@@ -19,8 +19,7 @@ nothing about boards got that one: `add`, `describe`, `clear`, `promote`,
 can hold two boards, "the board" is a phrase with no referent for all of them.
 
 So a caller names its board, every time, and the server refuses a call that
-names none. `activeBoardKey()`, `activeBoard()` and `setActiveBoard()` are gone
-from the store. There is nothing left to fall back to, so nothing can fall back.
+names none. There is nothing left to fall back to, so nothing can fall back.
 
 ## Why not one of the easier answers
 
@@ -58,46 +57,3 @@ resolution.
 Boards and panes are addressed separately, and only one of them is strict. The
 board axis is authority, and it is always explicit: `--board <key>` on the
 command line and `?board=` on the API.
-
-The pane axis is display. If one pane is on screen, `board open X` goes into
-that pane. If two panes are on screen, it needs `--pane left|right|1|primary…`.
-If no pane is on screen, the board is loaded and nothing shows it. Every answer
-names the pane the board landed in.
-
-Putting a board on the wrong half of the screen is visible and instantly
-correctable. Writing into the wrong board is silent. So the display axis gets a
-default where it cannot be wrong, and the authority axis gets none at all.
-
-Operations addressed to the browser rather than to a board take no board:
-`screenshot`, viewport control and the `panes` report. The pane they run in
-already settles which board they concern. `mermaid` is the exception that proves
-it. Conversion happens in the pane that answers for the browser. So `mermaid`
-names a board _and_ the server refuses it unless that is the board the pane
-holds.
-
-## Scratch
-
-The canvas still boots holding a `scratch` board. So a first-time user has
-something in front of them rather than an empty shell and a refusal. It is a
-board like any other, and a caller must name it like any other:
-`--board scratch`. It gets a home in the vault the same way anything else does:
-`board save --board scratch --as <name>`.
-
-A refusal lists the boards that are open, and scratch is one of them. So the
-message that says "you must name a board" also says which boards there are.
-
-## Consequences
-
-- Every board-touching REST route and CLI command changed. There was nobody to
-  keep compatible: archboard is private and unpublished.
-- `board current` became `board info <name>`. "The current board" was the
-  question the deleted pointer answered.
-- `board list` no longer reports `active`. It reports `onScreen`, which is what
-  each pane is holding.
-- `/health` and `/api/sync/status` count boards instead of naming one.
-- A new pane shows whatever another pane is already showing, or `scratch`. It
-  never adopts "the last board opened", because adopting it is the pointer
-  again, reintroduced as a display default and available to drift.
-- The server sends `board_switched` to one socket. Broadcasting it was the same
-  statement as "every pane shows the same board", since the message replaces the
-  receiving pane's entire scene.

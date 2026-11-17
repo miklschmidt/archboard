@@ -20,19 +20,15 @@ docs pages.
 - `/docs/` shows the newest release that has docs. Each release that has docs stays at
   `/docs/<version>/`, and main is at `/docs/next/`. Without a release that has docs, `/docs/`
   shows main.
-- When a release is published, its docs are built from its tag. The release workflow calls the
-  site workflow with the tag. The site workflow builds the tag with `DOCS_VERSION` set to the
-  version and `DOCS_REF` set to the tag. It attaches the result to the GitHub release as
-  `docs.tar.gz`. The repository commits no copy of any version's docs.
+- When a release is published, its docs are built from its tag. The result is attached to the
+  GitHub release as `docs.tar.gz`. The repository commits no copy of any version's docs.
 - Every deploy builds main, fetches `docs.tar.gz` of every release, and mounts each build at its
-  root (`site/scripts/versions.ts`). Each build is made for the root `/docs/`. Moving it rewrites
-  that root in its HTML only. Its search index holds paths under its root, and its scripts hold no
-  docs path, so both move unchanged.
+  root. Each build is made for the root `/docs/`. Moving it rewrites that root in its HTML only.
+  Its search index holds paths under its root, and its scripts hold no docs path, so both move
+  unchanged.
 - A moved page whose path `/docs/` also serves names that page as its canonical URL. Search
   engines then index the docs of the newest release. The sitemap and `llms.txt` list only the
   pages under `/docs/` itself.
-- When a page loads, it reads `/docs/versions.json`. So a page of an old release offers the
-  releases after it, and main and an older release say which version they describe.
 - A guide writes `{{version}}` where it pins the CLI and `@{{sha}} # {{ref}}` where it pins an
   Action: the commit, and its tag in a comment. A release's docs fill in that release, its commit
   and its tag. Main's docs fill in the latest release, which is the version in `package.json` on

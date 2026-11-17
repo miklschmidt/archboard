@@ -14,9 +14,7 @@ Amends
 reparenting. Tracked as TASK-331. The user decided it on 2026-09-24.
 
 Two proposals branched from the same current variant can both be adopted. The
-second adoption silently drops the change of the first. On a scratch vault,
-TASK-1 adds A and is adopted. Then TASK-2 adds B and is adopted. The current
-variant has B and not A.
+second adoption silently drops the change of the first.
 
 A draft follows its predecessor only while that predecessor is a draft or
 current. After another adoption makes the predecessor historical, nothing more
@@ -31,8 +29,7 @@ If that parent is a draft, it stands on the parent of the parent, and so on. A
 historical variant on that line is one that a later adoption superseded after
 the line was branched from it.
 
-The refusal names the superseded variant, the variant adopted over it, and the
-current variant. It also names the two ways on. The author can branch again from
+The refusal names the two ways on. The author can branch again from
 the current variant and state the change again. Or, if leaving out the other
 change is intended, the author can adopt with `--force`.
 

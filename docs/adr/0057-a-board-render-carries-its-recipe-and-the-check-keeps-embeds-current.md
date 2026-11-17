@@ -8,8 +8,7 @@ Canonical render recipes and Git artifact discovery supersede board-owned export
 [ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
 The original decision below remains historical evidence.
 
-Decided by the repository owner on 2026-10-24, in a design interview. It serves
-TASK-526 and its subtasks.
+Decided by the repository owner on 2026-10-24, in a design interview.
 
 ## Context
 
@@ -40,19 +39,13 @@ runs one:
 
 The answer has one part for each check, and a subcommand fills only its own
 part. If any part has a diagnostic or a warning, the command exits 1.
-Information never changes the exit status. `--variant`, `--every-draft` and
-`--plan` belong to `check code`, `check` and `check all`. `--fix` belongs to
-`check embeds`, `check` and `check all`, and the other subcommands refuse it.
-With `check --fix`, the other checks still run and report. The flag `--code`
-is removed, with no alias.
+Information never changes the exit status.
 
 A documentation repository that embeds the boards of another repository's
 vault often has no vault of its own. In a Git checkout without a vault,
 `check`, `check all` and `check embeds` therefore run the embeds check alone,
 over the embeds of that checkout. The check finds the vault of each embed by
-its recipe, as everywhere else. The answer names no vault. Its `skipped` part
-says that the semantics and code checks did not run, and why, and stderr says
-it too. The exit status comes from the embeds check alone. `check semantics`
+its recipe, as everywhere else. The exit status comes from the embeds check alone. `check semantics`
 and `check code` read a vault, so they are refused there with
 `VAULT_NOT_FOUND`, as every other command is (ADR 0049).
 
@@ -90,10 +83,7 @@ embed checkable. A file without a recipe is not an embed. SVGO removes
 `<metadata>` by default, so the documentation says to keep it.
 
 A render on stdout carries the recipe too, so stdout and `--out` give the same
-bytes. An SVG render defaults to `--theme auto`. A PNG cannot follow the
-reader's colour scheme, so `rasterize` defaults to `dark`. Both `render` and
-`rasterize` draw a horizontal legend by default, and `--no-legend` turns the
-legend off.
+bytes.
 
 ### An embed and when it is outdated
 
@@ -124,15 +114,6 @@ the other marks none. The fingerprint makes the warning mean "the board says
 something new". `--fix` still draws again what either comparison finds, so a
 renderer improvement reaches every picture (ADR 0023).
 
-When the board is gone, the warning names the commit that removed it, from the
-vault's Git history, when the check can find it. When a board now holds the
-deleted board's name, the warning says so. If the recipe asks for "current"
-and the overview or Everything, `--fix` then points the recipe at that board.
-It does not for other recipes, because the ids of the old variant and view do
-not exist on the new board. The
-answer lists every embed that `--fix` drew again or pointed at another board.
-Nothing points at a new board without that line.
-
 ### Tracked embeds
 
 `semantic render --out <file> --track` makes a tracked embed: the board lists
@@ -142,24 +123,18 @@ The list belongs to the board, not to a variant, because a recipe can say
 
 `--track` is a board write. It takes the lease, an agent states `--doing`, and
 the version rises. It does not move the last change of ADR 0045, because it
-changes nothing that a board says about the code. If no registered checkout of
-the vault's repository exists, or the output file is in no Git checkout, the
-CLI refuses `--track`.
+changes nothing that a board says about the code.
 
 In the vault's repository, `check embeds` also reads each tracked embed of its
 boards. An outdated tracked embed in another repository is information there,
 not a warning. A warning fails the vault's pull request until the other
 repository draws the embed again. That repository reads the vault's default
 branch. So it can draw the embed again only after the pull request merges, and
-each side then waits for the other. `--fix` draws a tracked embed again only in a registered
-checkout, and otherwise the answer names it.
+each side then waits for the other.
 
 A move (ADR 0051) carries the list with the note. The target vault's check
 then names each tracked embed whose recipe still names the old repository, and
-`--fix` rewrites the recipe. A rename needs nothing to find the board, because
-former names answer forever and the recipe names the board by id. A title
-without words names the board, so a titled picture shows the old name after a
-rename. The check then reports it outdated, and `--fix` draws the new name.
+`--fix` rewrites the recipe.
 
 ### A vault in another repository
 
@@ -179,23 +154,16 @@ no cached copy, a failed fetch is a warning that names the repository.
 
 ### Deleting a board
 
-`archboard semantic delete <board>` removes the whole note. It follows the
-rules of every other write: the lease, `--doing` for an agent and
-`--expect-version`. It refuses while a node on another board opens the board,
+`archboard semantic delete <board>` removes the whole note. It refuses while a node on another board opens the board,
 and the refusal names those boards. It reads the drill-downs on the current and
 draft variants of the other boards of its own vault. A drill-down on history or
 on a shelved proposal does not refuse, because neither takes an edit, so
-nobody could repair that refusal. A board in another repository's vault cannot
-be seen from here, and that vault's own check names its link once the board is
-gone. It does not refuse for tracked embeds: its
-answer lists them, and their own check then names the deleting commit. A
-delete frees the name and the former names. The browser offers no delete.
+nobody could repair that refusal. It does not refuse for tracked embeds: its
+answer lists them, and their own check then names the deleting commit. The
+browser offers no delete.
 
 ## Considered options
 
-- **Behind fails the check.** A board that an agent read and found correct
-  then needs a "checked" marker to clear the failure. ADR 0045 rejected that
-  marker, and the reasons still hold.
 - **A list of embeds in the vault configuration or a manifest file.** The list
   must be kept in step with the files by hand. A recipe in the file moves with
   the file, and a deleted file stops being checked.
@@ -207,9 +175,6 @@ delete frees the name and the former names. The browser offers no delete.
   repository that the person cannot change.
 - **A forwarding record for a moved board.** ADR 0051 rejected it. The board's
   own list carries the context to the target vault.
-- **The words "artifact" and "tracked render".** An embed is what a document
-  shows, and the check exists for documents. "Artifact" also covers talk
-  folders and videos, and nothing checks them.
 
 ## Consequences
 
@@ -219,9 +184,3 @@ delete frees the name and the former names. The browser offers no delete.
   The full `archboard check` reads Git and can reach the network.
 - A board document gains one optional board-level list. The schema version
   does not move, as for `formerNames` and `documents`.
-- Every SVG that this build draws differs from one drawn before, because it
-  carries a recipe and follows the reader's colour scheme.
-- The README's architecture SVGs, drawn from this repository's own vault,
-  become tracked embeds, and the README shows the feature on itself. The
-  sequence and web-shop SVGs are drawn from `examples/web-shop`, which is no
-  vault in place, so they carry no recipe.

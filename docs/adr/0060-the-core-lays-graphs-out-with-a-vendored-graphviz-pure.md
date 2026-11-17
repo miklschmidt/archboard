@@ -61,10 +61,7 @@ The crates are not members of the workspace, so they keep upstream's files and
 a later version diffs cleanly against them.
 
 `crates/archboard-graphviz` implements the layout's `Graphviz` port with it.
-The layout still hands Graphviz a viz-js `Graph` object. The crate replays the
-cgraph calls viz-js made of that object, writes DOT that states every
-object's final value, and answers `dot`'s `json0` output, y inverted, as
-viz-js answered it. The WebAssembly core's `layOutBoard` takes the graph
+The WebAssembly core's `layOutBoard` takes the graph
 alone, and a native build lays a board out with no C library and no host.
 
 A solve's answer depends on its graph alone. graphviz-pure holds a layout's
@@ -83,24 +80,13 @@ of unsafe code in archboard's crates, so `unsafe_code` is `deny` with one
 
 ## Consequences
 
-Every corpus drawing is the same bytes as before the change, and
-`crates/archboard-graphviz/tests/viz_js.rs` holds two captured graphs to
-viz-js's answers, ties included. The native test of `archboard-render`
-draws a corpus board with the core's own Graphviz.
+Every corpus drawing is the same bytes as before the change.
 
-`@viz-js/viz` is gone from the repository. A worker starts by instantiating
-a module, without fetching, hashing or compiling anything.
+`@viz-js/viz` is gone from the repository.
 
-On one shared machine (TASK-548.01 notes), the first renders that
-`docs/design/wide-board-layout-fixtures/timing.ts 7` measures took 10,729 ms
-and 10,649 ms in all, against 10,273 ms and 10,062 ms before, and the slowest
-first render, Agent workbench, took 1,703 ms and 1,674 ms against 1,754 ms
-and 1,702 ms. Drawing the whole corpus on one job took 22.4 s against 24.4 s.
-graphviz-pure is a port written for exactness, not speed. TASK-548.03 makes
-it faster to the same bytes, and hands it
-the statements of a graph without DOT text unless a name or value holds a
-backslash or a raw-byte character. TASK-548.02 shares answers between
-workers, which is exact only now that an answer depends on its graph alone.
+graphviz-pure is a port written for exactness, not speed. TASK-548.02 shares
+answers between workers, which is exact only now that an answer depends on its
+graph alone.
 
 graphviz-pure is under the Eclipse Public License 2.0, a weak copyleft
 licence. The vendored files keep it, with their notices, and

@@ -49,7 +49,7 @@ reports that there is nothing there.
 The two spent drafts above name each other, so deleting either leaves the
 other's link opening nothing. The vault checker cannot see this, because it
 checks the board name and level. Keeping the variant under its name leaves every
-link resolving. The viewer discloses what each link opens.
+link resolving.
 
 Shelving is a fifth transition, beside create, branch, edit, settle and adopt.
 It goes through the one write boundary that the other four use. That means the
@@ -76,28 +76,14 @@ content, because views and level belong to the board rather than to any variant.
 
 Shelving itself refuses four variants:
 
-- The current variant. There is no proposal there to let go. Shelving it makes a
-  board that says what is built say nothing.
+- The current variant. There is no proposal there to let go.
 - A historical variant, because it is not a live proposal.
 - A variant that is already shelved, because it is not a live proposal.
 - A draft that other drafts still stand on, and the refusal names them. Shelving
   it leaves those proposals derived from a state that stopped moving. Nothing on
   the board says so.
 
-[ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md)
-supersedes the first reason given here, that a board with no current
-architecture is not a board. A board for something nobody built yet has none.
-
-Readers keep listing a shelved variant under its lifecycle, wherever draft and
-historical are already distinguished. These places are the variant bar, the
-navigator's markers, and the drill-down's disclosure of what a link opens.
-
 ## Consequences
-
-A board's family stops growing monotonically in cost. A proposal that is over
-stops charging every edit to its parent. The record of what was proposed, and of
-how the proposal ended, survives in the one place somebody who looks for it will
-be: the board it was proposed on.
 
 Nothing becomes reversible. There is no un-shelving, for the same reason that
 there is no un-adopting. The record says a decision was made. The way to propose

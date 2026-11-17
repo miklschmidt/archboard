@@ -12,8 +12,7 @@ The original decision below remains historical evidence.
 This decision governs the separate source-history lens.
 
 TASK-369.01 tracks this decision, accepted on 2026-10-06 after an independent
-review. It serves TASK-369, its subtasks TASK-369.02
-to TASK-369.07, and Proposal 3 of the design checks.
+review.
 
 TASK-369.04 amended this ADR on 2026-10-06. A flow step joins two coupled
 parts, and a container counts as at an end inside it. The amendment after the
@@ -33,18 +32,12 @@ decides the split.
 TASK-559.29 amended this ADR on 2026-10-31. The canonical reader asks on a
 selection and when `Measures` opens, and a measurement replaced the one of
 2026-10-06. The amendment after the section on derived readings gives the
-reasons. TASK-590.11 amended that amendment on 2026-11-07: `Measures` is a
-dialog, and it asks when its view What changes together opens.
+reasons.
 
 TASK-635 amended this ADR on 2026-11-13. A footprint counts a part as changed
 only when its bound declarations or paths differ between the merge base and the
 head. The section on the footprint gives the rule, and the rejected options give
 the reason.
-
-TASK-633 proposes an amendment of 2026-11-13. `Measures` shows a branch
-footprint, a footprint with a named head reads the vault at that head, and
-`Show on picture` selects what a footprint lists. The amendment after the
-amendment of 2026-10-31 gives the reasons.
 
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
@@ -69,11 +62,6 @@ bound files, it changes the part. Git records files, so the mapping needs no
 parser and works in every language, infrastructure and Nix included.
 Behind keeps this path mapping. Locality and footprint use the declaration
 mapping below when a binding names a symbol.
-
-A `.csproj` binding names every file below its project directory, as the code
-check reads it. Both readings use the same binding file selection. A change
-to project source or settings counts even when the project file stays unchanged
-(TASK-436.13).
 
 The mapping follows renames. A commit that renames a bound file changes the
 part, and the commits before the rename count under the former path. Git's own
@@ -118,25 +106,15 @@ Every language adapter can supply declaration ranges through this same source
 reader. The reader never uses uncommitted checkout files. Unsupported formats,
 unparsed code, and ambiguous definitions use path-wide fallback. A symbol that
 no revision resolves also uses path-wide fallback. Each listed part reports
-`attribution.mode`: `symbol`, `path`, or `mixed`. `symbol` means declaration
-precision throughout the reading. `mixed` means that some revisions resolve
-the declaration and others need fallback. It does not require a changed
-declaration in the range. `path` means path-wide attribution throughout.
-The `symbol` field names the bound symbol. The `fallback` field groups commit
-ids by reason: `unsupported` or `unresolved`. A binding without a symbol keeps
-path mapping.
+`attribution.mode`: `symbol`, `path`, or `mixed`. A binding without a symbol
+keeps path mapping.
 
-A Terraform binding keeps its root-module path and complete module address.
-Local module calls resolve against each revision, including nested calls and
-shared definitions outside the root directory. A shared definition change
-counts for every bound instance that reads it. Remote modules remain unsupported.
 The reader follows Git file renames and reads deleted declarations from parents.
 It does not infer identity between renamed symbols.
 
 Coupling excludes duplicate declaration ownership. Distinct resolved symbols
 can pair even when their bound paths overlap. Aliases of a shared definition
 cannot pair. Path-wide attribution keeps the existing overlap exclusion.
-Locality still excludes large commits. Footprint still keeps and marks them.
 
 ## Each repository is read at the HEAD of its checkout
 
@@ -225,8 +203,7 @@ code and finds the board right, it writes nothing, and the board stays behind.
 Such a statement is an authored claim that nothing verifies, and somebody keeps
 it by hand. It also adds a field or a command that every reader must learn.
 The code check (TASK-367) says whether a board is right. Behind only says
-where to look. Each commit in the answer carries its subject, so a reader
-passes over a fix quickly. Behind is information (below), so a count that
+where to look. Behind is information (below), so a count that
 grows never blocks a clean check. A binding's `confirmedAt` is part of its
 node. So restating it is an edit like any other, and it moves the last change
 of the whole board.
@@ -237,17 +214,12 @@ A period is the commits on a checkout's HEAD that were committed in the year
 before the commit time of HEAD. `--since <date>` names another start. The
 period ends at HEAD and not at the clock, so one HEAD always gives one answer.
 
-The default is one year. A shorter period leaves most parts below the
-thresholds that follow. In a longer one, the history of code that was rewritten
-long ago decides the answer. On this repository a year holds every commit that
-changed the parts that the design note measured.
-
 Both readings leave out large commits, and each answer says how many it left
 out. Without that filter, Claims and Panes look coupled, and 10 of their 12
 shared commits are large.
 
 The hotspots of a board are its parts ranked by the number of commits in the
-period that changed them. The answer lists each part's commits, newest first.
+period that changed them.
 A hotspot counts commits only. Tornhill also weighs a hotspot by the complexity
 of its code, and the lens measures no complexity. A count of changed lines
 grows with moved and generated files, so the lens counts no lines either.
@@ -291,9 +263,7 @@ TASK-369.04 amended the rule above for an unjoined pair. Two more things join
 two coupled parts. Everything else stands.
 
 A flow step joins the two parts at its ends, in either direction, as a
-relationship does. The board holds the message, and the flow's data-flow view
-draws it. The architecture picture draws it as a step line only on a board with
-no relationships. So the board does not miss that dependency. ADR 0044 leaves steps out of a container's interface,
+relationship does. ADR 0044 leaves steps out of a container's interface,
 because a return travels against the dependency. Change coupling has no
 direction, so that reason does not apply here.
 
@@ -306,20 +276,13 @@ changed together in 34 commits (35%). Five commands inside Commands call
 Server client. Without this rule, the pair read as unjoined, although the board
 draws the dependency.
 
-So one end of the relationship or step must be the first part, a container
-above it or a part inside it. The other end must be the second part, a
-container above it or a part inside it. Then the two parts are joined.
-
 ## Footprint sets a range of commits against a proposal
 
 A footprint reads the commits from the merge base of a named ref and HEAD up to
 HEAD, in each checkout. The ref is anything that Git resolves in the checkout,
 such as `main`, `origin/main` or a commit. With `--head <ref>`, the commits run
 up to that ref instead of HEAD, read from Git without a checkout, for a layer of
-a pull-request stack that is not checked out. The head resolves as the code
-check resolves a ref a draft pins: the name, else the branch of that name on
-`origin`. A checkout where it does not resolve is not read, as for the base.
-When it resolves in none, the request is refused with `HEAD_UNRESOLVED`. If the
+a pull-request stack that is not checked out. If the
 ref does not resolve in a checkout, the lens does not read that checkout, and
 the answer says so.
 
@@ -335,15 +298,7 @@ that tell whether a directory part holds the parts inside it, also count only
 when they differ between the two ends.
 
 With `--variant <proposal>`, the footprint reads the parts of the variant that
-the proposal is read against and of the proposal. That variant is the current
-variant, unless `--against <variant>` names another. It must be a current
-variant or a draft, and not the proposal (`AGAINST_NOT_LIVE`,
-`NOTHING_TO_COMPARE`). A board with no current variant reads a proposal against
-its parent. A proposal with no parent is read against nothing, so it names every
-part it holds, as added. Without `--variant`, a board with no current variant is
-refused with `NO_CURRENT_VARIANT`, unless `--against` names the variant to
-read. A removed part is only on the variant read against, and an added part is
-only on the proposal. The footprint splits the parts into
+the proposal is read against and of the proposal. The footprint splits the parts into
 three lists: named and changed, changed but not named, and named but not
 changed. A skipped part is in none of the three lists.
 
@@ -364,11 +319,6 @@ the proposal changed from a part at the far end of a new relationship.
 | Hotspots        | `archboard semantic locality <board>`               | information |
 | Change coupling | `archboard semantic locality <board>`               | information |
 | Footprint       | `archboard semantic footprint <board> --base <ref>` | information |
-
-`archboard check --code` reads every board. Its answer keeps behind apart from
-its diagnostics. Both `semantic` commands take `--variant` for a draft, and
-`semantic footprint` takes it for the proposal that it sets the commits
-against.
 
 Behind answers in the code check, because TASK-369.02 asks the check for it.
 The code check also reads every board against its code: the files of each
@@ -417,12 +367,8 @@ colour or a mark, because every visual channel is taken (ADR 0025, ADR 0031).
 The pane inspector is the one place where a user sees a reading (TASK-369.07).
 
 The Archboard server derives the readings, because the pane inspector needs a
-route and the CLI talks to the server. One walk of each repository's log serves
-every board of one request. The server keeps each answer of behind and of
-locality in memory. Its key is everything that the answer derives from. That is
-the options, the version of each board, and the checkout of each repository
-with its HEAD. For behind, the key also holds the HEAD of the vault's checkout.
-A request reads those HEADs first and reuses an answer whose key still holds.
+route and the CLI talks to the server. The server keeps each answer of behind
+and of locality in memory. Its key is everything that the answer derives from.
 The memory goes with the process. It answers no question about what is on a
 board, so it is not a second copy of one.
 
@@ -436,12 +382,8 @@ polls every 5 seconds (`VAULT_CHECK_POLL_MS`). The plain `archboard check`
 stays as it is.
 
 If a user selects a part, the pane inspector asks the route of
-`semantic locality`. It never asks on a timer. The first selection on a board
-at one HEAD starts one walk. A request that arrives while that walk runs waits
-for it and starts no second walk. The answer covers every part of the board, so
-a later selection reads the server's memory. On this repository on 2026-10-06,
-a walk of one year (about 3,300 commits) took 0.4 seconds. The Git history of
-one board file took less than 0.1 seconds.
+`semantic locality`. It never asks on a timer. On this repository on 2026-10-06,
+a walk of one year (about 3,300 commits) took 0.4 seconds.
 
 TASK-367.24 says that a pane never starts a code pass itself. A walk is not a
 code pass. It reads only Git, and it took less than a second here. Also, every
@@ -454,130 +396,20 @@ rule of TASK-367.24 for the code pass.
 TASK-559.29 amended the section above for the canonical reader. Everything else
 stands.
 
-The canonical reader has no pane inspector. About holds the commits and the
-coupled parts of one module. The `Measures` dialog has a view, What changes
-together, which lists the commits and the unjoined pairs of every module. So
-`Measures` is a second place where a user sees a reading. It is still derived
-on request, stored nowhere and drawn on no picture.
-
-A selection of a bound module asks the route, on the picture too, and About and
-`Measures` find the answer. `Measures` asks when its view What changes together
-opens, because its other views need no history. Nothing asks while a reader
-holds no bound module and that view is closed. The answer covers every
-module, so the browser keeps one answer for each model revision, and a later
-selection asks nothing. This replaces the rule that a later selection reads the
-server's memory, and the words that the next selection reads the HEADs. A HEAD
-that moves keeps the shown answer until `Refresh` or a new revision. A failed
-read waits for a person, because a walk costs seconds and a selection is not a
-retry.
+The canonical reader has no pane inspector. `Measures` is a second place where
+a user sees a reading. It is still derived on request, stored nowhere and drawn
+on no picture.
 
 The measurement above no longer holds. On this repository on 2026-10-31, the
 model held 524 modules, 40 of them bound to a symbol, and the period held 5,089
-commits. A first read took 19 seconds. The server answered no other request for
-11 of those seconds, because the mapping of commits onto bound paths ran in one
-turn of its event loop. That is not acceptable for a read that a selection
-starts. The mapping now looks up each commit's paths once, so a commit that
-touches none of a path's names costs one set lookup. It took 8.5 seconds and now
-takes 0.34 seconds. A first read now takes about 10 seconds, and about 18 seconds
-while other requests run all the time. A request for a kept answer takes under
-0.2 seconds. Another request waited one second at most. Most of what remains is
-the declaration mapping of the 40 symbols, which gives way to other requests at
-each Git read.
-
-The server now keeps a walk apart from an answer. A walk derives only from the
-checkout's HEAD, the period and what the parts bind. So a model edit that moves
-no binding needs a new answer and no new walk, and an agent that writes a model
-while a reader looks at it starts no walks. The server keeps four walks, because
-a walk holds every file of a year of commits.
+commits. A first read now takes about 10 seconds, and about 18 seconds
+while other requests run all the time.
 
 The browser passes no signal to the read. Each selection mounts its own
 subscriber, and the last subscriber of a read leaves before the next one mounts.
 A signal then stops a read that the next selection needs, and a reader who moves
 from module to module never gets an answer. An obsolete read ends on the server
 and its answer stays in the memory.
-
-## Amendment of 2026-11-13: the reader shows a branch footprint
-
-TASK-633 amends this ADR. Its status is proposed until TASK-633 is done.
-Everything above stands, except where this section says otherwise.
-
-`Measures` gets a fourth view, What this branch changed. It is the third place
-where a user sees a reading. The footprint stays derived on request and stored
-nowhere, and the server still keeps no footprint. The view reads at two times
-only: when it opens, and when the reader presses `Refresh`. The browser keeps
-one answer for each model revision, base, head and state, and it shows the
-commits that each repository was read at, so that a stale answer is visible.
-
-The reader chooses the base and the head from searchable lists. A new route
-lists the local and remote branches of every repository that the state binds,
-merged by name, with the repositories that hold each. It reads no remote and
-lists no tags. The base defaults to the vault's `origin/HEAD`, else `main`.
-The head defaults to the checked-out head. That default sends no head, so each
-repository reads up to its own HEAD, as the CLI does without `--head`.
-
-A footprint with a named head now reads the vault at that head, when the
-vault's repository resolves it. It reads the vault from Git objects, with no
-checkout. This is a branch reading (`CONTEXT.md`). The proposals and the
-bindings of the branch then decide what the commits are set against. A head
-that only a code repository holds keeps the vault on disk. The answer names
-the vault that it read. The reason is the main use: a branch that carries its
-own proposal must be set against that proposal, and before this amendment it
-was set against the proposal of whatever checkout was chosen.
-
-The CLI takes `--model-at checkout` to read the vault on disk. The
-archboard-plan gate needs it, because the gate runs in the integration worktree
-after the orchestrator edits the proposal there. The ticket branch still holds
-the older proposal. Without the option, the gate would read that older
-proposal and fail again after a correct fix.
-
-The section "Derived on request, never stored, never drawn" says that no
-reading sets a mark. That stands. The view has `Show on picture`, which opens
-the nearest module that holds a list's modules, at the head's branch reading
-when the head is not checked out. It then selects each drawn module of the list
-and each drawn module that holds one. A module that holds a changed module is
-lit, because the branch changed code inside it. This is the ordinary selection.
-The reader asks for it, and it lasts until the next selection. It is not a
-mark that a reading sets, so no visual channel is taken.
-
-## What this assumes about the code check
-
-ADR 0046 decides the code check of TASK-367 at the same time as this decision.
-This decision assumes the following. ADR 0046 keeps or changes it.
-
-- `archboard check --code` runs on a route of its own that only a request
-  starts, never inside the polled check.
-- The server keeps its answer in memory, keyed on the HEAD of each checkout it
-  read.
-- It reads each registered checkout at its HEAD, and a repository that this
-  machine has not registered stays silent.
-- It reads the current variant of every board, and a named draft with
-  `--variant`.
-- Its exit status follows `archboard check`, so only a warning or an error
-  fails it.
-- It skips a part pinned to a ref that its checkout does not have out, as this
-  decision does.
-
-Behind joins the answer of `archboard check --code` as information. If ADR 0046
-puts the code check somewhere else, behind keeps every rule above, and ADR 0046
-names where it answers.
-
-## Names
-
-The tasks call the first reading staleness. This decision says that a board is
-behind its code, as in "10 commits behind". "Stale" already means three other
-things here. A stale server runs older source (ADR 0014, the `stale` field of
-`archboard status`). A stale README asset is older than its sources
-(TASK-396). A write that names a stale version is refused. ADR 0031 already
-says "behind" for a binding against the code.
-
-The tasks call a large commit a sweep. The archboard-dev skill already calls
-its pass after a removal or a rename a sweep.
-
-The tasks call the range of hotspots a window. `CONTEXT.md` uses "window" for a
-browser window, so this decision says period.
-
-The co-change measure is change coupling. Temporal coupling means three
-different things in three books.
 
 ## Considered and rejected
 
@@ -609,13 +441,6 @@ its code opens at. A stamp on each part is an authored answer that goes out of
 date and that somebody keeps by hand on every part. ADR 0031 refused that split
 for existence.
 
-**A way to say that a board was checked.** Nothing verifies such a claim. The
-code check says whether a board is right. The section on behind gives the other
-reasons.
-
-**Let a walkthrough edit move the last change.** A walkthrough changes no part.
-A walkthrough for a pull request recording then hides that pull request.
-
 **Read the remote's default branch.** It needs a fetch and the network, and it
 answers about code that this machine does not have.
 
@@ -630,9 +455,6 @@ repository to GitHub at that ref.
 all languages. TASK-448 adds declaration mapping through the existing adapters
 and labels path-wide fallback when they cannot resolve a symbol.
 
-**Leave out the size filter.** Claims and Panes then look coupled through 10
-large commits.
-
 **Count each commit in a footprint**, as behind and locality do. In a stack
 that merges instead of rebasing, two layers can make the same change. The
 upper layer's own commit then changes the part, but its pull request changes
@@ -644,19 +466,6 @@ ends of the range (TASK-635).
 **Apply the size filter to behind and footprint.** A large commit can move what
 a board says. A branch's large commit did change its parts. Those two readings
 keep large commits and say which ones are large.
-
-**Count changed lines in a hotspot.** Moved and generated files then rank first,
-and the lens still reads no complexity.
-
-**Make the thresholds options.** Then two answers with other thresholds do not
-compare, and the measurement no longer reproduces. The period is the one
-option.
-
-**End the period at the clock.** The answer then changes while HEAD stays, and
-an answer kept for one HEAD lies.
-
-**Name only the source end of a changed relationship.** The vault defines each
-relationship kind. Its direction does not say which end's code changes.
 
 **Answer in the plain `archboard check`.** Every open canvas polls it every 5
 seconds, and agents run it after board work (ADR 0026). A walk there runs for
@@ -671,41 +480,6 @@ change that contract.
 different options, so one command has four modes. Its natural name, history,
 already means historical variants and adoption history here.
 
-**Make behind a warning.** See the three reasons above.
-
-**Let the pane read only answers that an agent left**, as TASK-367.24 plans
-for the code pass. The inspector is then empty until an agent asks, and every
-commit empties it again. A walk for one board takes less than a second here,
-and a selection is a request.
-
-**Push a new answer after a HEAD moves.** That needs a watcher on every
-checkout. The next selection reads the HEADs anyway.
-
-**Draw the readings**, as heat or as traffic. Every visual channel is taken
-(ADR 0025), and traffic is authored illustration (ADR 0027).
-
 ## Consequences
 
-- TASK-369.02 builds the walk, the mapping and behind in
-  `archboard check --code`. It depends on the code check's route of
-  TASK-367.05, or it builds that route first.
-- The default period is a duration, so it lives in
-  `packages/timing/src/shared/constants/timing.ts`.
-- TASK-369.03 creates `archboard semantic locality` with hotspots, and
-  TASK-369.04 adds change coupling to the same answer. TASK-369.04 compares
-  with the design note over the default period, which covers the commits that
-  the note measured.
-- TASK-369.05 creates `archboard semantic footprint` and gives its answer a
-  schema.
-- If a task commits on `main`, TASK-369.06 names the commit that the task
-  started from as `--base`. The commits of other work in that range count too,
-  and the closing step tells them apart by their subjects. A board that no
-  proposal of the task names is still behind by the task's commits. So the
-  closing step reads both.
-- TASK-369.07 asks the locality route on selection and never on a timer. Its
-  list of recent commits is the part's commits in the period. On a draft it
-  asks for that draft. On a historical or a shelved variant it says that the
-  lens does not read that variant.
-- Behind depends on a committed vault. A vault outside Git gets the other
-  three readings only.
 - A shallow clone answers from the commits that it has.

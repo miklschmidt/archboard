@@ -78,23 +78,9 @@ TASK-549.08 completes adoption and shelving through that same writer.
 
 CLI and HTTP adapt the existing architecture operations.
 The public package interface gains no names.
-The browser uses explicit selected state metadata when it labels a draft.
-State and comparison selectors belong to each pane address.
-The state picker lists active proposals and exact saved readings.
-The comparison picker supports the runtime default and explicit bases.
-Unavailable selections remain in the address and controls.
 
-Mutable draft queries follow the existing architecture change feed.
-Current snapshots update only the default current query.
-Other mutable readings refresh through their own state and comparison selectors.
-Exact checkpoint queries remain separate.
-
-The browser compares complete semantic contents through the existing comparison operation.
 Removed subjects come from a separately read base with the same model, state, checkpoint, and comparison revision.
 An unavailable or changed base supplies no removed definitions.
-The diagram explains its incomplete comparison and offers a refresh action.
-The inspector uses the runtime's changed fields rather than inferring changes from placement.
-Scope, focus, and filters affect depiction without changing the selected architecture or its complete interfaces.
 
 TASK-549.07 publishes a predecessor edit, safe inherited changes, and durable standing through one existing journal.
 The existing semantic reconciliation engine applies the canonical decoder as its coherence authority.
@@ -122,9 +108,8 @@ The reader requires the original subject before it permits that continuing ident
 No new identity authority or history store exists.
 
 Shared readers expose standing on proposal catalogue entries and selected state metadata.
-The browser uses that standing for state choices, unresolved values, and blocked ancestry.
 Comparison differences never establish whether a proposal needs settlement.
-Readers can open the live blocking ancestor. Exact retained readings keep their original standing after a live settlement.
+Exact retained readings keep their original standing after a live settlement.
 Agents author settlements through the shared writer, and the browser reflects the durable family result.
 Write and recovery receipts report unsettled family states from the same signed record.
 CLI and HTTP interpret neither conflicts nor recovery progress.
@@ -184,12 +169,7 @@ Current authored files gain no correction ledger or copied history.
 
 Archive-only writes still use the durable journal, configured signer, exact retry, and completion feed.
 The observer reads newly retained operations after the archive ref changes.
-Idle observations read the loose ref and packed-ref metadata without starting Git.
 Only records for the addressed vault produce completion events.
-
-The browser reads correction evidence through its existing state history disclosure.
-The selected and comparison audits remain distinct inside one bounded region.
-Each entry shows its reason, date, source commits, and links to exact prior and corrected readings.
 
 Logical readers refresh after archive-only completion events, even when the current file digest is unchanged.
 Exact original checkpoints keep their original facts and audit coverage.

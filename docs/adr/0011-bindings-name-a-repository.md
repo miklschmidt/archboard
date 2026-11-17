@@ -44,21 +44,6 @@ happened to be. So the address depended on ambient state that the caller did not
 set and had no way to see. It is the same mistake that ADR 0009 just removed
 from board addressing, one level down.
 
-The mistake failed in two different ways.
-
-On the command line, it fails quietly. Suppose that the caller stands in
-`acme/alpha` and promotes a node that means `acme/beta`. Then `src/service.ts`
-binds to a real file, in a real repo, at a real commit. Everything about the
-answer looks right, and the repository is the wrong one. The cross-repo case
-makes this the normal case and not the unlucky one. A system board whose nodes
-belong to five repositories is built in one session. There is no directory to
-stand in that is right for more than one of them.
-
-A protocol-neutral application caller can have no working directory at all. A
-relative path there is not resolvable by intent, only by accident. That case
-proves that an ambient process directory was the wrong interface, even though
-the CLI has an explicit working-directory origin.
-
 ## The decision
 
 A binding resolves from something that the caller named. `resolveBinding` takes
@@ -74,17 +59,13 @@ caller named the repository. The answer always reports which one it used.
 | `declared`     | a repo nothing here can resolve                            | Archboard records it as stated, derives no code link, and tells the caller how to register it.                 |
 
 On a surface with no working directory, archboard refuses a bare relative path.
-The refusal names both ways out and the repositories registered on this machine.
 
 The location of each repository on this machine is written down. ADR 0004
 promised that registry, "board-to-code targets resolve through a machine-local
 registry rather than living in the vault". It never built that registry.
 
 The registry is one JSON file in the state directory. It holds one entry per
-repository identity, and each entry holds the checkout path. It fills from two
-sides. `repo add <dir>` records what a person declares. Observation records the
-rest, because every binding that resolves through a real path records where that
-repository was found. A second promotion into a repo can name it from anywhere.
+repository identity, and each entry holds the checkout path.
 
 The registry is host state, so the CLI maintains it through `repo list`,
 `repo add`, and `repo forget`. The REST and domain modules consume it too. A
@@ -118,12 +99,6 @@ a stale worktree, the answer is a guess wearing the clothes of a lookup. Every
 entry traces back to something that a person declared or something that
 archboard actually resolved. Nothing else gets in.
 
-The last alternative keeps the cwd fallback silent on the CLI. The working
-directory of the shell is a real thing that the caller chose and can see, so it
-stays. It must not look like an answer that the caller gave. Every time, the
-result says which directory it used and which repository that was. Disclosure is
-the price of keeping the convenience.
-
 ## Consequences
 
 The decision has these consequences:
@@ -131,9 +106,6 @@ The decision has these consequences:
 - `resolveBinding` has no default origin, so a new call site cannot silently
   reintroduce the ambient directory. Adding one is a type error until it says
   where relative paths come from.
-- A promotion whose path resolved against the working directory now carries an
-  extra sentence in its summary. That is intended. It is the sentence that makes
-  a wrong binding visible at the moment of its creation.
 - Archboard refuses a relative path from a caller with no working directory.
   Resolving it against the server process uses a directory that nobody chose.
 - The registry is machine-local, so a vault carried to another machine derives
@@ -144,7 +116,4 @@ The decision has these consequences:
   affordance, without any rewrite of board notes.
 
 Amended by TASK-436.16 (2026-10-07): checkout registration is explicit through
-`repo add`. The observation path described in the original decision has no
-caller and is removed. Resolving a binding does not register its checkout.
-Existing `repos.json` entries whose source is `observed` remain readable;
-`repo list` preserves that stored source. New registrations are `declared`.
+`repo add`. Resolving a binding does not register its checkout.

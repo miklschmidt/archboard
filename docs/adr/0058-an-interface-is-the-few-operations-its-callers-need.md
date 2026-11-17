@@ -37,7 +37,6 @@ summed over the entries.
 `tests/system/repository-policy/interface-width.test.ts` counts the width of each package.
 It fails when a package exceeds the ceiling recorded for it in `interface-width-ceilings.json`
 beside the test.
-The ceiling file lists exactly the packages that exist, so a new package starts with a ceiling.
 A ceiling goes down when a package gets narrower.
 A ceiling never goes up to make room for a name: design a deeper operation instead.
 
@@ -58,9 +57,4 @@ The count cannot see that move, so this rule names it.
 
 ## Consequences
 
-A change that adds a public name must fit under the package's ceiling.
-If it does not fit, the change deepens an operation instead.
-A change that narrows a package lowers the ceiling, so the freed room cannot fill again unseen.
 When an assembly moves into a package, the tests of that assembly move with it.
-The name count is a lower bound on what a caller must learn.
-Review still judges the types, invariants, ordering and error modes behind each name.

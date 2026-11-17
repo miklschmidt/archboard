@@ -33,20 +33,12 @@ A behavior folder is named for its job.
 It is never a role name, an area name, a generic bucket name or `legacy`.
 
 A role folder is always the last folder of a path, and it holds files only.
-These are the roles:
-
-```text
-api clients components constants hooks lifecycle middleware operations processes
-projections protocol routes rules schemas services sockets state store wiring workers
-```
 
 The form of a path is `src/<area>/<behavior>[/<behavior>…]/<role>/<file>`.
 
 - Code that belongs to the area as a whole keeps `src/<area>/<role>/<file>` with no behavior folder.
 - `src/<area>/api/` stays directly under the area, because it is the interface that `exports` names.
 - Tests mirror their source under `tests/<area>/…`. `tests/<area>/support/` stays.
-- Generated and ignored trees keep the shape of the tool that writes them.
-- The `#*` aliases do not change.
 - A module with parts binds its behavior folder.
 
 Apps follow the same rules as packages.
@@ -64,13 +56,6 @@ The area still says where code runs, and the behavior folder holds one job.
 
 ## Consequences
 
-Hundreds of files moved, over many commits, and each commit kept `bun run check` green.
-While the move ran, the lint rules accepted both layouts, and a ratchet in the layout test listed the trees that still put roles first.
-Each move commit removed its trees from that list, and the last one removed the list (TASK-582.03.04).
-Now `tests/system/repository-policy/workspace-layout.test.ts` holds the rule for every file below an area, and the lint rules accept only the new layout.
-
-`scripts/move-source.ts` moves the files of a reviewed manifest.
-It rewrites the imports and the repository paths, and it updates the bindings and anchors of the vault in the same commit.
+`tests/system/repository-policy/workspace-layout.test.ts` holds the rule for every file below an area, and the lint rules accept only the new layout.
 
 A behavior folder never has the name of a role. So a behavior whose name is a role word gets a new name.
-An example is the `routes` folder of the edge routes in the renderer's tests.

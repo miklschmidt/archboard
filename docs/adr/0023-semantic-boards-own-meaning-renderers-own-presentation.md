@@ -13,11 +13,7 @@ Amended by [ADR 0051](0051-a-person-can-move-a-board-to-another-repository.md)
 one board write a browser makes besides a take-back. Everything else stands.
 
 The user amended this ADR in a decision of 2026-09-27. What a variant is drawn
-against is the board's current variant, not its predecessor. The user's words
-were: "Diff should be on 'historical' and not 'current', when a board has
-historical boards. Current is now, backwards (historical) / forwards
-(proposals/drafts) is always diffed against 'current', not the other way
-around."
+against is the board's current variant, not its predecessor.
 
 The current variant is the reference and shows no comparison. A historical,
 draft or shelved variant is drawn, inspected, narrated and compared as how it
@@ -27,16 +23,13 @@ has no now. On such a board, each draft is still read against the one it came
 from.
 
 The ancestry is unchanged. Reconciliation, inheritance and adoption (ADR 0037)
-still follow the parent. `semantic compare --against` reads a variant against
-any other. That is how a superseded proposal is read for its own change. The
-comparison bullet below says so, and everything else stands.
+still follow the parent.
 
 Human drawing edits mostly repaired agent layout and organization mistakes.
 Agents repeatedly produce diagrams with weak visual and typographic hierarchy.
 The replacement board model will express architectural meaning and presentation
 intent. The renderer owns geometry and styling, so one improvement can benefit
 every board. These product boundaries were agreed during TASK-169 on 2026-09-11.
-The schema, renderer choice, and implementation approach remain under design.
 
 ## Agreed boundaries
 
@@ -53,13 +46,10 @@ The schema, renderer choice, and implementation approach remain under design.
   When needed, JSON Schema can be generated from the combined Zod schema. It is
   not a second hand-maintained contract. Zod is already a repository dependency.
 - A board can have several named views that share its nodes. Each view selects a
-  grammar and the content it explains. The frontend can switch between views or
-  display them together. Views are distinct from the linked boards at other
-  levels.
+  grammar and the content it explains. Views are distinct from the linked boards
+  at other levels.
 - Views belong to the board. Every variant exposes the same named readings,
-  grammar and scope. A variant supplies the content for a reading. Selecting a
-  different variant preserves the selected view. Absent subjects yield an empty
-  or partial reading instead of a different menu.
+  grammar and scope. A variant supplies the content for a reading.
 - Walkthroughs belong to each variant's semantic content and can differ between
   proposals. Narrative or view changes alone do not badge architectural nodes as
   changed.
@@ -69,16 +59,12 @@ The schema, renderer choice, and implementation approach remain under design.
   Authored boards are repaired without a compatibility layer.
 - A board describes one diagram or architectural question. Its semantic name
   describes that subject. Repository paths belong in code bindings. Variants
-  record the diagram's evolution and appear as an ancestry tree in navigation.
+  record the diagram's evolution.
 - Compare variants deterministically using stable architectural identities.
   Rendered views show added, removed, and changed content using derived labels
   and visual treatment. Agents do not author those change flags.
-- A proposal's change labels are part of its ordinary rendering rather than a
-  separately requested comparison mode. Variants form a tree, with one
-  predecessor per variant. A can have competing children B and C. Every variant
-  but the current one shows how it differs from the current variant. On a board
-  with no current variant, B derived from A shows its changes relative to A
-  (amended 2026-09-27, above).
+- Variants form a tree, with one predecessor per variant. A can have competing
+  children B and C.
 - A child's baseline follows its evolving parent. It does not stay pinned to the
   parent's branching-time content. Automatic inheritance applies only to draft
   proposals. Adoption preserves ancestry but stops automatic inheritance from
@@ -93,9 +79,8 @@ The schema, renderer choice, and implementation approach remain under design.
   merge, identical changes agree, and incompatible changes to the same field
   conflict. Conflicting changes to flow or walkthrough order require resolution
   rather than an inferred order.
-- Retain the child's last coherent rendering. Visibly mark its need for
-  reconciliation, and highlight affected subjects. The engine detects conflicts
-  and the viewer presents them.
+- Retain the child's last coherent rendering. The engine detects conflicts and
+  the viewer presents them.
 - The command that edited the parent returns affected descendants, issues, and
   actionable guidance/instructions to the same agent so that it can resolve
   them. A frontend resolve-with-agent action is not required, because the
@@ -126,11 +111,9 @@ The schema, renderer choice, and implementation approach remain under design.
 - Removed content comes from the comparison baseline for the derived depiction.
   The baseline is the current variant, or on a board with none the predecessor.
   Removed content is not reinserted into the proposal's authored content.
-- The existing comparison implementation must be assessed against the new
-  semantic schema rather than assumed reusable unchanged. Badge the entity whose
-  semantic properties changed. Changing an edge does not automatically badge its
-  endpoint nodes as changed. Changes to renderer geometry, styling, or
-  bookkeeping do not count as changes to architecture.
+- Badge the entity whose semantic properties changed. Changing an edge does not
+  automatically badge its endpoint nodes as changed. Changes to renderer
+  geometry, styling, or bookkeeping do not count as changes to architecture.
 - Agents can express containment, ordered flows, focal subjects, diagram
   grammar, and the order in which nodes and relationships enter layout. Their
   numeric `order` is persistent authoring intent. Absent values are assigned
@@ -145,9 +128,6 @@ The schema, renderer choice, and implementation approach remain under design.
   license and originating revision. Schema, renderer, and engine changes share a
   verification workflow. No separate repository or package release pipeline is
   required. Take useful upstream changes deliberately.
-- Support a narrative walkthrough for explaining architecture to leadership. It
-  has explanatory text alongside the diagram. Scrolling through the narrative
-  highlights its subjects.
 - PR Lens provides walkthrough schema and focus geometry. Its hosted narrative
   viewer is not in the open-source renderer. Archboard's viewer must supply this
   interaction. Agents author optional ordered headings, explanations, target
@@ -162,21 +142,16 @@ The schema, renderer choice, and implementation approach remain under design.
   not match across levels. The target's movable `current` designation is used
   only on explicit request. Missing named targets never fall back to it
   silently.
-- Historical preservation is per board. Drill-down opens the explicit target
-  with its current/proposed/historical status visible. If historical detail is
-  required, use an explicitly historical target. Automatic snapshots spanning
-  boards are deferred.
-- A node has a name, an optional short responsibility, and an optional detailed
-  description. The name and responsibility receive consistent visual hierarchy.
-  Longer descriptions are available through inspection.
+- Historical preservation is per board. If historical detail is required, use an
+  explicitly historical target. Automatic snapshots spanning boards are
+  deferred.
 - A node has at most one optional primary code binding. Nodes on the same board
   can bind to different repositories. A node is planned because of the variant
   it is on, never because of what it lacks. A missing binding means nothing is
   bound, not that nothing was built
   ([ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md)).
-- People explore through selection, inspection, code navigation, pan and zoom,
-  and agent requests grounded in selected nodes. Initially, agents make content
-  changes. A direct manipulation editor is not a delivery requirement.
+- Initially, agents make content changes. A direct manipulation editor is not a
+  delivery requirement.
 - Large renderings are acceptable. The viewer supports navigation across the
   board. Fitting the whole diagram in one viewport is not a success criterion.
   Do not add size-driven refusal, automatic partitioning, or a density policy
@@ -185,15 +160,6 @@ The schema, renderer choice, and implementation approach remain under design.
 - Drop native Obsidian compatibility. Preserve existing board files without
   rewriting or deleting them. Migration mechanisms are deferred and are not part
   of this work.
-
-## First complete validation example
-
-Use this feature's architecture: the existing Excalidraw board pipeline versus
-the proposed semantic-board pipeline. Author new semantic boards without
-migrating old files. Show architecture and an agent-edit sequence, with a
-leadership walkthrough. Then exercise competing branches, a parent change, a
-conflict, and adoption. This example makes sure that both visual quality and
-variant lifecycle behavior work against a real change the user is planning.
 
 ## Relationship to existing decisions
 
@@ -243,24 +209,13 @@ picture measured in one browser matches what that browser paints. It can differ
 from another browser's.
 
 The browser keeps pictures in its storage, stamped with the board version, the
-vault policy fingerprint and the renderer build. On page load, the browser makes
-sure that each entry matches the server's board list. When the server announces
-a board's change, the browser draws that board's pictures again in the
-background. The render route remains for the CLI, rasterizing and anything else
-without a renderer of its own.
+vault policy fingerprint and the renderer build. The render route remains for
+the CLI, rasterizing and anything else without a renderer of its own.
 
 ## A walkthrough is presented, not scrolled (TASK-250, 2026-09-17)
 
 The walkthrough boundary above still holds. Agents author the ordered steps,
 their subjects and their views. The viewer owns every interaction with them.
-What changed is that interaction. Scrolling a column of text to move between
-steps put the step on screen at the mercy of where the text happened to sit. The
-user wants a walkthrough to be something a voice agent can present.
-
-So the viewer presents it. The viewer sets the step's heading and words in the
-picture's frame. The reader steps explicitly (keys, controls, or choosing a
-step). The camera glides to the step while what it is not about recedes. Leaving
-returns the camera and view the reader had.
 
 The pane exposes which step is on screen and whether it finished arriving, so
 that something driving the presentation can wait for it. Nothing about a
@@ -273,16 +228,8 @@ position from the browser. The canvas sends a pane `pane_present`. It is one
 more way of choosing a step, beside the keys and the controls. The next thing a
 person does replaces it.
 
-The pane's semantic report gains the position of a presented walkthrough. The
-position consists of these parts:
-
-- The walkthrough
-- The step
-- How many there are
-- Whether the step finished arriving
-- Which request the position answers, or none for a position that a person chose
-
-That report is read-only telemetry, in the same class as the view and the
+The pane's semantic report gains the position of a presented walkthrough. That
+report is read-only telemetry, in the same class as the view and the
 selection it already carries. It is the only acknowledgement there is. A
 narrator learns that a step is on screen because the pane said so, never because
 the canvas asked for it. A position that no request put there is a person's
@@ -291,24 +238,18 @@ Narrating a walkthrough writes nothing about it.
 
 Since 2026-09-23, no narrator asks for steps. The user steps by hand. When the
 user presses Narrate, the canvas sends `pane_present` once, to open the first
-step. The voice model is told every position that the pane then reports.
+step.
 
 ## Delivery
 
 The later TASK-203 decisions refine consumer vocabulary and appearance in
 [ADR 0024](0024-vault-configuration-owns-vocabulary-and-presentation.md),
 [ADR 0025](0025-containment-and-type-own-distinct-visual-channels.md), and
-[ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md). Their
-acceptance records product decisions. Implementation of that work remains
-subject to completing the TASK-203 plan. The TASK-245 decisions on reading
-direction and the fit measure are in
+[ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md). The TASK-245
+decisions on reading direction and the fit measure are in
 [ADR 0028](0028-the-renderer-reads-a-board-in-a-direction-and-is-measured-by-fit.md).
 
 The product decisions above were accepted through Q34 of the TASK-169 interview.
-The accepted implementation design is the spec in TASK-170, with
-delivery tickets TASK-171 through TASK-181. The user explicitly pre-approved the
-implementation approach and breakdown. The user
-also authorized autonomous implementation using Claude Opus 5 through herdr.
 
 ## Historical corrections (TASK-509)
 
@@ -318,23 +259,16 @@ architecture existed or which variant succeeded it.
 
 Ordinary edits still refuse historical content. `semantic correct` accepts an
 explicit correction with a reason and immutable Git commits for every
-repository that its bindings, anchors or documents reference. A preview reads
-the candidate against those Git trees, including when a commit equals HEAD.
-Local edits never supply historical evidence. The write repeats that reading
-and refuses code warnings before the normal lease and expected-version boundary
-commits the checked candidate.
+repository that its bindings, anchors or documents reference. Local edits never
+supply historical evidence.
 
 The correction keeps the variant's identity, ancestry, lifecycle and adoption
 records. Content corrections flow into inheriting drafts through the normal
-three-way merge. Drafts keep their own changes, and conflicts remain visible. Propagation
-stops at current, historical and shelved successors. Shared views and board
-level stay unchanged. The variant
-records each correction's time, reason and repository commits. The code check
-reports skipped evidence too. The author must inspect that evidence and assess
-responsibilities and labels that a code check cannot prove.
+three-way merge. Drafts keep their own changes, and conflicts remain visible.
+Propagation stops at current, historical and shelved successors. Shared views
+and board level stay unchanged. The variant records each correction's time,
+reason and repository commits.
 
 `--suggest` uses the time when the variant stopped being current to find the
 last commit before that time in each repository's HEAD ancestry. These commits
-are guesses. An author inspects them and supplies the exact commits to preview
-and write. A repository with another historical branch can need a different
-commit. A missing timestamp or unavailable commit never selects current code.
+are guesses. A missing timestamp or unavailable commit never selects current code.

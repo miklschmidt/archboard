@@ -39,10 +39,6 @@ The page chooses once for a canvas, from what the browser says:
 
 The refusal by name is necessary. Chrome gave SwiftShader with no performance caveat, and Firefox ignores the caveat flag.
 On SwiftShader, Vello GPU took about a second for a frame of the largest picture.
-The name is the unmasked renderer name where the browser gives it, and the plain renderer name otherwise.
-The page reads the name once, before any canvas takes a context of its own.
-So a refusal costs a canvas no shader work, and every later canvas of the page gets the same answer at once.
-The rule reads no frame back, as before.
 
 Every page that paints a picture gets the same order, the product canvas and the marketing site alike.
 
@@ -56,14 +52,9 @@ Vello GPU does not report a lost context, and it then draws nothing with no erro
 Each replacement takes a fresh canvas, because a canvas that held a WebGPU or a WebGL2 context never takes a 2D one.
 If the CPU painter fails, the SVG keeps the picture visible, as ADR 0071 states.
 
-The surface says which painter draws: WebGPU, WebGL2 or the CPU.
-It also says why WebGPU does not paint and, on the CPU, why WebGL2 does not either.
-
 ### The strip painters keep their parts
 
 Both strip painters keep parts, as the WebGPU painter already did.
-The walk keeps the same parts on every painter: settled items at the top level, and runs of text.
-A kept part is the list of its drawing calls, with their transforms and bounds, and with the outline of each stroke.
 
 A frame replays the kept parts and skips each shape that lies outside the canvas.
 Up to a scale of 1, Vello makes the same outline of a stroke at every scale. So up to that scale, the frame fills the kept outline.
@@ -87,13 +78,7 @@ The page chooses its painter in the browser, so every page needs every painter.
 
 ## Consequences
 
-- A strip frame of the largest picture costs clearly less on both painters, and fewer frames come late. That picture still gets no smooth motion on WebGL2, and a small picture moves smoothly on both strip painters.
-- A first frame takes longer, because it records its parts.
-- On the full corpus, flowcharts included, WebGL2 matched the CPU painter against the SVG.
-- A strip frame still spends its time on the walk, the glyphs, the long outlines and the polylines, and no single waste remains.
-- A line that holds traffic changes each frame, so no painter keeps it.
-- A WebGL2 painter has no lens, so a move on it shows no blur, as on the CPU.
-- WebGL2 starts more slowly than the CPU painter. It compiles its shaders at its start.
+- A strip frame of the largest picture costs clearly less on both painters, and fewer frames come late. That picture still gets no smooth motion on WebGL2.
 - The painter's WebAssembly grows by the WebGL2 painter, and every page loads it.
 - A Rust panic in Vello GPU stops the module that holds every painter. This change did not test what such a stop leaves. The SVG ink stays as the last fallback.
 - Recordings and README takes keep the CPU painter, because a browser with its GPU turned off gives no WebGL2 context.

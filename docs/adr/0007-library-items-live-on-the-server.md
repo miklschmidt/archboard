@@ -27,12 +27,6 @@ axis along which this app is used:
   with" must be the same kind of question. `library list` exists because of this
   decision and cannot exist without it.
 
-The seven curated libraries that ship in `libraries/` follow from the same
-choice. The server seeds them on first read, so they need no network fetch and
-no browser has to carry them. Seeding is recorded per set. A set that the human
-deletes stays deleted. An eighth set added later still reaches a vault that
-already exists.
-
 ## Consequences
 
 The library is only as durable as the vault. If `ARCHBOARD_VAULT` is not set,
@@ -41,10 +35,7 @@ Archboard server does. Boards refuse to operate without a vault. A library has
 no wrong file to overwrite, so it degrades instead of refusing.
 
 Writes are last-write-wins. The browser reports the whole palette because
-Excalidraw hands it the whole palette. There is no library delta to be had. The
-server broadcasts the result to every client. The window in which a second tab
-holds a stale copy is therefore the width of one round trip, not the life of the
-tab.
+Excalidraw hands it the whole palette. There is no library delta to be had.
 
 This design deliberately does not do two things. Library items never enter the
 element store of a board, its baseline, or the change feed. Only a human who

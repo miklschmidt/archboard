@@ -43,8 +43,7 @@ experience being honest, and the version check runs for everyone.
 
 While a claim stands, a claimed board is read-only to people. If an agent claims
 a board, every pane that shows it stops accepting content edits. Panning and
-zooming keep working, so a person can watch and read. The pane is in the view
-mode of Excalidraw, which takes selection with it.
+zooming keep working, so a person can watch and read.
 
 A content gesture no longer revokes the claim. A person who wants the board back
 uses one explicit control that releases the claim. The agent learns that it lost
@@ -53,8 +52,7 @@ the board, as ADR 0016 already says.
 An agent can edit any board, watched or not. Nothing steers the work of the
 agent toward what a person is looking at, and nobody asks the agent to keep a
 restructure in view. Every pane owes the person real-time visibility instead.
-The pane shows which board an agent holds and what the agent said it is doing.
-This includes boards that no pane has open. The `--doing` line on every agent
+The `--doing` line on every agent
 write stays (ADR 0016, TASK-095), and nobody asks a person to write one.
 
 ## What remains from the earlier decisions

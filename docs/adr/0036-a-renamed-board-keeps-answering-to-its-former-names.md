@@ -63,10 +63,6 @@ Its key is unchanged, so every address still names it and nothing is kept as a
 former name. Variant names are always matched exactly, so for a variant a change
 of case is a change of name like any other.
 
-A request for the name that something already has is refused. A write advances
-the version and tells every pane that the board changed, although nothing
-changed.
-
 ## Considered and rejected
 
 One alternative is to rewrite every reference in the same write. A rename then
@@ -90,12 +86,6 @@ never repairs a saved address.
 - A name that no board carries costs a read of the vault to find the board that
   used to carry it. Only a miss pays that cost. Reading a board by its own name
   costs what it always did, and nothing caches the answer (ADR 0015).
-- Everything this process keyed by the old name follows the board. Panes that
-  show it are pointed at the new name, and their address is rewritten to it. The
-  claim of the server on it is carried over for what is left of the campaign.
-  What agents said they were doing stays with it. A second server on the same
-  vault still reaches the board through the old name, and its panes follow on
-  their next open.
 - The fields are additive, so the contract version did not move. This build
   reads every document that was written before them. Moving the version will
   rewrite every board of every vault on its first read.

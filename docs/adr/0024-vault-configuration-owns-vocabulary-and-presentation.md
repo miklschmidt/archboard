@@ -31,9 +31,7 @@ board-level classification in
 [ADR 0013](0013-a-node-records-a-level-only-to-differ-from-its-board.md). It
 also makes the vocabulary consumer-defined.
 
-Consumers also define node types and relationship types. A node type has a
-display name, optional named color and RemixIcon icon. A relationship type has a
-name and configured appearance. These presentation mappings belong to the
+Consumers also define node types and relationship types. These presentation mappings belong to the
 configuration. They are not the definitions of the domain terms. Exact
 configuration field names remain an implementation-design detail.
 
@@ -44,20 +42,13 @@ and historical variants alike. It does not mark architectural subjects as
 changed, and it does not rewrite historical content.
 
 The initial editing interface is YAML with a validation schema and CLI
-validation, without a configuration editor UI. Saving the configuration
-refreshes open boards automatically, and the refresh preserves their cameras and
-selections. Failure and recovery follow
+validation, without a configuration editor UI. Failure and recovery follow
 [ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md).
 
 ## Curated palette
 
 Consumer configuration references curated color names only. It cannot supply raw
-color values or define new palette entries. The centrally maintained palette
-must make retuning existing colors and adding new names straightforward. That
-includes coordinated light and dark appearances. Its initial breadth includes
-red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo,
-violet, purple, fuchsia, pink and rose. It also includes neutral fallback
-colors.
+color values or define new palette entries.
 
 This chooses consistent, legible rendering over arbitrary consumer styling. It
 also replaces hash-assigned kind/group colors with explainable configured
@@ -70,9 +61,7 @@ preserve the distinction.
 
 One policy applies consistently across the vault. If the current policy changes,
 historical drawings change appearance, and that is the cost. Board meaning and
-variant identity remain stable. The unpublished branch can break and repair
-existing boards. This work does not retain the interim JSON configuration or
-introduce a compatibility layer for it.
+variant identity remain stable.
 
 This extends
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md).

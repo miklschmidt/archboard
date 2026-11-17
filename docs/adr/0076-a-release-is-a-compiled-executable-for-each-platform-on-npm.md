@@ -82,14 +82,8 @@ voice package, `@archboard/codex-realtime-voice`, has the version of Archboard
   It embeds the tree-sitter grammars and their queries, the reviewed texts of
   the workbench and the theme colours, so that no native addon loads at run
   time.
-- `frontend/`, the browser bundle that `vp build` makes.
-- `core/`, the renderer glue and WebAssembly that the server loads.
-- `skills/archboard` and `skills/archboard-pr`, as Git tracks them. The skills
-  read their JSON Schemas from the executable with `archboard model schema`.
 - `archboard-release.json`, which records the version, the commit, the core
   source hash and the Codex version.
-- `LICENSE` with the version written in, and `THIRD_PARTY_NOTICES.md` for every
-  bundled dependency and font.
 
 A release ships no TypeScript language server. The code check uses the native
 `tsc --lsp --stdio` of the checkout's own TypeScript 7 or later. A repository
@@ -102,9 +96,6 @@ Without either, the code check reports the server as missing.
   refused with `CORE_BUILD_STALE`, and the remedy is to reinstall.
 - `archboard restart` stops the server and starts it again. It builds nothing,
   because a release never changes on disk except by an install.
-- A server that runs another version than the installed executable gets a
-  warning that names `archboard restart`, as a stale source does in a checkout.
-  `/health` reports the version and the mode.
 - The server listens on `127.0.0.1:4242`. The browser address is
   `http://archboard.localhost:4242`, because Chrome and Firefox resolve every
   `*.localhost` name to the loopback address themselves. The CLI connects to
@@ -115,13 +106,6 @@ Without either, the code check reports the server as missing.
   checkout run side by side.
 - Inside an archboard checkout, a release command hands off to that
   checkout's `bin/archboard`, as ADR 0049 decides.
-- The skills CLI (`npx skills add miklschmidt/archboard -g`) installs the
-  skills from GitHub, and the agent makes a vault with `archboard model init`.
-  `archboard install-skill` stays for a clone or offline use. It links the
-  skills of the installation, and it never writes into the installation,
-  because a global install can be read-only.
-- The browser loads `ui/clients/core.ts` and the painter as before. The build
-  of the bundle fixes the hash that the browser checks.
 
 ### Publication
 
@@ -130,9 +114,7 @@ Conventional Commits, and each pull request lands as one commit with a
 conventional title. release-please (a release tool from Google) reads the
 commits on `main` since the last release. It keeps one release pull request
 open. That pull request bumps the version in the root `package.json` and adds
-the new section of `CHANGELOG.md`. Before 1.0, a `feat` commit bumps the minor
-version and a `fix` commit bumps the patch version. A breaking change bumps
-the minor version.
+the new section of `CHANGELOG.md`.
 
 A merge of the release pull request is the release. release-please tags the
 merge commit `v<version>` and makes a GitHub release with the same notes. The
@@ -150,9 +132,7 @@ repository stores no npm token, and each package gets provenance. npm trusts
 only the publish job, which runs in the GitHub environment `npm`. That job
 publishes each package with `npm publish` after the gate and the smoke test
 pass, with no further approval. Each package on npm names the trusted workflow
-and refuses publication by token. If npm
-trusts a workflow only for a package that already exists, the owner publishes
-a placeholder of each name once by hand.
+and refuses publication by token.
 
 The MIT voice package has no version line of its own. The Archboard
 executable carries the voice package, and the voice package bundles other
@@ -174,8 +154,6 @@ shipped `LICENSE`.
 - The release build needs a build matrix of three platforms, and every file that
   the program reads by path must load from the installation module or from the
   executable.
-- A checkout keeps its port, its hand-off, its source-hash refusal and its
-  rebuild on restart.
 
 ## Amendment
 
@@ -184,7 +162,4 @@ Amended by TASK-601 (2026-11-08): `archboard install-skill` is now
 skills CLI on the skills directory of the installation, started by `bun x`,
 `pnpm dlx` or `npx`, so the skills CLI decides where each agent reads its
 skills. The skills CLI copies the skills, so a person runs `archboard init`
-again after an update. `init` still never writes into the installation. Its
-last step gives the setup of the language servers to an agent: at a terminal
-it starts Claude Code or Codex with a prompt, and without a terminal its answer
-ends with that prompt.
+again after an update. `init` still never writes into the installation.

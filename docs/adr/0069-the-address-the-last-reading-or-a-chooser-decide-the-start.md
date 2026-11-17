@@ -28,7 +28,7 @@ one origin, and an origin is one server. The last reading stays out of the share
 registry, so a checkout cannot change what another reader starts on.
 
 A repository with no model, or with a legacy model, opens only if somebody asks
-for it. `repoX` alone names such a pane in an address.
+for it.
 
 `/api/served-vault` and the `served` field of `/api/repositories` are gone. The
 server no longer holds a default vault. A pane socket whose vault is gone moves to
@@ -39,7 +39,7 @@ the home of that vault, and the server refuses a socket with no home.
 The server remembers the last reading. A server serves every browser of the
 machine, so one reader's reading then opens for another.
 
-The chooser opens on a machine with one repository. It offers one row. It also
+The chooser opens on a machine with one repository. It
 leaves an agent's `browser show` with no pane on a machine that has nothing to
 choose.
 
@@ -53,5 +53,3 @@ pane session, for one state that lasts until the first choice.
 - A reader's open moves a pane into a repository with no model or a legacy model,
   so that the pane can state what the repository lacks. An agent's show stays
   refused, because an agent must read the refusal.
-- `archboard init` (named `install-skill` until TASK-601) registers the repository that it sets up, so that the
-  command the empty start shows makes a row appear.

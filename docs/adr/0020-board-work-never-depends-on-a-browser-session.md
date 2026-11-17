@@ -48,17 +48,12 @@ user's browser session. A real browser remains valid evidence for browser
 behavior and Excalidraw round-trip fidelity. It is not a runtime prerequisite
 for board work.
 
-TASK-143.08.06.01 measured `@excalidraw/excalidraw` 0.18.1,
-`@excalidraw/mermaid-to-excalidraw` 2.2.2, and Mermaid 11.17.2 on Bun 1.4.0. Bun
-with `happy-dom` 20.13.2 and `@napi-rs/canvas` 1.0.8 rendered the representative
-PNG and SVG fixture. It converted a valid three-node Mermaid flowchart into an
-empty element list. The malformed-input path rejected its input, so this is a
-silent reachable-workflow loss rather than a clean unsupported case.
-
-An isolated Chromium 150.0.7871.186 process produced five Mermaid elements and
-identical PNG and SVG bytes in two zero-client runs. The full record, including
-memory and cleanup measurements, was an Excalidraw-era design investigation. It
-was removed with the Excalidraw export (TASK-296).
+TASK-143.08.06.01 measured Bun with `happy-dom` and `@napi-rs/canvas`. It
+rendered the representative PNG and SVG fixture. It converted a valid three-node
+Mermaid flowchart into an empty element list. The malformed-input path rejected
+its input, so this is a silent reachable-workflow loss rather than a clean
+unsupported case. An isolated Chromium process produced five Mermaid elements
+and identical PNG and SVG bytes in two zero-client runs.
 
 Archboard therefore selects one server-owned, isolated headless Chromium
 renderer for board rendering and Mermaid conversion. Its implementation must
@@ -104,17 +99,8 @@ become the browser of a user.
 
 ## Consequences
 
-The decision has these consequences:
-
-- A configured vault and server are sufficient for every board workflow.
-- `board new`, board reads and writes, Mermaid conversion, inspection, export,
-  and board rendering work with zero browser clients.
-- `archboard browser` is the only command family that can require a connected
-  browser or consume live session state.
 - `board save` and branching never move panes. Showing a board is a browser
   operation, including the old scratch-save exception from ADR 0012.
-- ADR 0015 remains authoritative: the note is the board. Lazy resolution reads
-  that note rather than creating another current copy.
 - This decision replaces the browser-mediated findings renderer of TASK 121. Its
   persisted-snapshot and immutable-render requirements remain.
 - The command registry and repository checks enforce the split. A board command

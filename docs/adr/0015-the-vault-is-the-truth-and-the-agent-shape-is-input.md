@@ -21,16 +21,6 @@ Divergence between two copies of one thing is invisible until it is expensive.
 Four bugs came out of this gap. A person found each one by noticing something
 absurd, and nothing detected any of them.
 
-The four bugs were:
-
-- A label multiplied every time a board went round the loop. One edge carried
-  dozens of copies of its own name and collapsed to no height at all (TASK-024).
-- A human renamed a node, and the old name came back (TASK-028).
-- A human emptied a label, and the old text returned (TASK-029).
-- A label drifted away from the shape it belonged to. It drifted far enough to
-  stretch the board's own bounds and skew every layout signal read from them
-  (TASK-034).
-
 Each was fixed on its own terms. The gap that produced them stayed. Left open,
 it produces the next one.
 
@@ -62,14 +52,6 @@ of the board. A description is a summary rather than a second shape.
 There is one implementation of that conversion, shared by everything that needs
 it. There is not one implementation per side that must agree.
 
-The write entry is `applyElementInput`. Every server route gives it the input
-statements and deletions. The route receives the named elements plus the settled
-created, updated and deleted board-shape delta. It owns well-forming, id
-minting, label and arrow-ref consumption, binding and routing, text measuring,
-version stamps and document repair. Routes still own reading the note,
-persisting, broadcasting and answering. TASK-102 can therefore make this entry
-one stage of the write door without teaching that door the conversion order.
-
 Session state is not board content, and it is not in question. Examples are
 which panes are open, which pane has focus, what a person selected, and which
 browsers are connected. None of it can live in a note. All of it dies with the
@@ -92,9 +74,6 @@ answers "what was on it then". The vault was never asked that question and
 cannot answer it. Moving the past state to disk does not remove a second truth.
 It invents a second file.
 
-Losing one of these loses history and no work. A diff starts over from now. A
-snapshot that somebody meant to go back to is gone. That is a real cost. It is
-the cost of a restart, not a contradiction between two copies of the present.
 Two more things follow from that test rather than from an exception.
 
 A past state must not be able to become the present one by accident. A history
@@ -128,19 +107,6 @@ does not offer, for the same reason that Obsidian does not show it.
 A canvas that somebody can draw on before discovering that the drawing was never
 anywhere is worse than a canvas that will not open yet. It is worse in the way
 that costs the most: silently, and only once there is something to lose.
-
-This change to the experience is smaller than it sounds. Choosing a vault is
-already an explicit step of installing archboard into a repository. An agent
-usually runs that step rather than somebody by hand. On the ordinary path, a
-vault is chosen, created and written down before anybody starts a canvas.
-
-Being explicit there keeps the first run good. It is the right place for the
-choice. The choice is a decision about where a person's work lives. It is not
-something to guess at on their behalf while they are already drawing.
-
-The refusal is therefore a backstop for a canvas started without that step, not
-a place to teach what a vault is. It must say that installation chooses one and
-how to run it.
 
 One rejected option falls back to somewhere outside the vault. It keeps the
 first run soft. It makes a second place where board content lives, which is the

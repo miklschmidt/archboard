@@ -27,8 +27,7 @@ in the pane. The scorecard in CONTEXT.md then gave fit the same weight as
 crossings and bends. The engines followed.
 
 Track's score multiplies fit into the cost of its crossings, so a better fit can
-buy a crossing. Blocks chooses its placements and joins by fit. If the fold fits
-better, Graphviz folds a tall board into columns. Picture reviews counted a
+buy a crossing. Blocks chooses its placements and joins by fit. Picture reviews counted a
 smaller fit as a regression.
 
 On 2026-09-27 a review called Board rasterizer worse because it fit 6% smaller.
@@ -74,97 +73,27 @@ their price.
 
 A chooser can leave the drawing that it took before this decision. It does so
 only where the other drawing is no worse on any number that the engine counts.
-The next section says how the engines do this.
 
-### How the engines choose
-
-The comparison is `readingOrder` in `lib/track/score.ts`. It compares two
-layouts on four numbers, in this order: crossings, hooks, bends, route length.
-The first number on which they differ decides. Two route lengths within a
-twentieth of each other count as equal. If all four numbers are equal, the
-layout that fits the reference pane better wins, and then the smaller page. An
-engine that does not count a number leaves it equal.
-
-Graphviz counts crossings and hooks on its settled drawing. Each place where two
-lines cross is a crossing. A crossing within a lane of a line's bend counts one
-more. Each stretch of at least a lane on which two unrelated lines share one
-stroke also counts one (`crossingsSeen`). Its hooks are line ends that hook into
-a card's side, pairs of lines that touch, and joins crowded into one blot.
-
-Track and Blocks count crossings, bends and route length on their lines as
-drawn. Where they choose whether a block's containers stack, a line that laps
-round the block past every card it holds counts as one crossing more. In its
-stacked form, One write lands (Track) turned its lines less but sent 'announce
-the accepted write' down the page's right edge.
-
-No chooser that this decision changed counts double tracks. Track and Blocks
-count no hooks. Graphviz counts no bends or route length. Counting them changed
-no drawing in either vault. Graphviz's settlement of its routes (`even-pins.ts`)
-weighs double tracks and lines on one stroke among the defects that it refuses.
-This decision did not change it.
-
-The guard is `takes`. Every chooser that this decision changed makes two picks:
+Every chooser that this decision changed makes two picks:
 the pick it made before this decision (its earlier weighing), and a reading
 pick.
 
 If the two picks agree, that is the choice. If they differ, the reading pick
 wins on one condition. It must be no worse than the earlier pick on every number
 that the engine counts, with route length within a twentieth. Otherwise the
-earlier pick stays. Two drawings often trade one number for another. The guard
+earlier pick stays. Two drawings often trade one number for another. This guard
 stops a crossing saved from buying more bends, more line or a hook.
-
-The reading picks are:
-
-- Whether a block's containers stack, and whether a board drawn inline packs its
-  group regions: the comparison.
-- Which way a block's joins are kept whole: the way that parts fewer joins.
-  Between ways that part as many, the comparison.
-- Graphviz's column fold: the fold must fit the reference pane at least a
-  twentieth better than the unfolded drawing and read no worse on the
-  comparison.
-
-The earlier weighing of the column fold is that fit gain and a higher score. The
-score is fit less a share for each crossing. A fold with a crossing fewer and
-two hooks more passes both, so it was taken before this decision and still is. A
-drawing that fits a twentieth better shows at about the same scale, which pays
-for none of a fold's price.
-
-These choosers stay on their earlier weighing:
-
-- Settling a block's ports. Held to the guard, the chooser drew Public ownership
-  (Blocks) with four more crossings and IIS data with one more.
-- The held port order and the board's wrap. On every board of both vaults, the
-  guard kept their earlier pick, so their earlier rule is kept.
-- The wrap of a block inside the board and the fold of a block of cards. They
-  are chosen before the drawing exists, on their fit less a share for each
-  crossing. Their fit stands for how the finished drawing will read.
-- A block of blocks' packing. It is chosen that way too, and it is the one
-  change outside the guard. Where two packings score alike, the chooser takes
-  the smaller page rather than the first packing tried. In Reading a board
-  (Blocks), the first packing tried stepped 'one stage per pane' down three
-  bends. It ran alongside the dashed 'a board's new version' for 180 px. On the
-  smaller page it turns once and hops the dashed line.
 
 ## Consequences
 
-- The choosers change as the section above says. They are Track's and Blocks'
-  stacking, joins and packing (`lib/blocks/place.ts`, `joins.ts`), a block of
-  blocks' ties (`pack.ts`), and Graphviz's column fold
-  (`lib/layout/column-readings.ts`). Each is judged by the pictures it gives.
 - A drawing that improved on the comparison alone but traded one number for
   another goes back to the drawing it had before this decision, fit included.
   Those trades are the cost of the rule that no drawing reads worse than it did.
-- Picture reviews list a change of fit as information and judge the drawing by
-  how it reads.
 
 ## Amendment of 2026-10-17: a line that runs away from its ends weighs as crossings
 
 TASK-486 wrapped container headers at their drawn width. The new sizes made
-some choosers take layouts that a reader sees at once as worse. In Azure
-deployment internals (Blocks), TLS termination moved beside Client access and
-ingress, and the lines into it looped out and over the top of the picture. In
-Inside Rust device trust library (Blocks), two lines ran down the far left of
-the page and along its foot to cross eight lines fewer. The measures did not
+some choosers take layouts that a reader sees at once as worse. The measures did not
 weigh how far a line travels outside the region between its two ends.
 
 The measure is the run away. For each line, take the smallest box that holds
@@ -172,63 +101,10 @@ both of its end cards, and grow it by 24 px on every side. The run away is the
 length of the line outside that box. Each whole 300 px that one line runs away
 counts as one crossing. 300 px is the rate at which the trunk router already
 weighs a detour (`lib/blocks/trunks.ts`). A short turn beside an end costs
-nothing. The code is `lib/blocks/away.ts`.
+nothing.
 
 Runs away are counted with crossings, so the order of the measures does not
 change. The second measure is now crossings, crossings on a line's corner and
-runs away. `readingOrder`, `noWorse` and `scoreOf` in `lib/track/score.ts` add
-the runs away to the crossings of a layout that counts them.
+runs away.
 
-These choosers count runs away:
-
-- The joins choice and the choice to pack a board's group regions weigh the
-  whole drawing as placed. Their reading picks count runs away. The earlier
-  weighing of the group choice counts them too. Without them in both picks,
-  Device Trust Control Plane (Track) packed its groups and crossed five lines
-  more.
-- Settling a block's ports stays on its earlier weighing, and that weighing
-  now counts runs away. This is the change that gives Inside Rust device trust
-  library its earlier layout back.
-- A block of blocks' packing is chosen before the drawing exists, and its
-  lines still leave their blocks by the walls that the board's second layout
-  turns (`lib/blocks/sides.ts`). So runs away do not rank the packings. They
-  only set some aside. The chooser measures every line that the block holds
-  whole, joined through the blocks inside it. It keeps each packing whose runs
-  away weigh at most four times those of the packing that runs away least,
-  plus four crossings. It then weighs the packings it kept as before. With a
-  smaller allowance, provisional walls set aside packings that read well
-  later. With a larger one, Azure deployment internals keeps TLS termination
-  beside Client access and ingress.
-
-Whether a block's containers stack does not count runs away. That choice
-weighs a block of cards before its ports are settled, and counting runs away
-there made Device Trust Delivery's overview (Track) worse. The held port
-order, the wraps and the folds also stay as they were.
-
-The stacking choice counts one more thing as a crossing, beside a line that
-laps round the block: a line that turns round the corner of a container it has
-no end in. It runs over or under the container past one side, and then down or
-up beside the container for more than 200 px (`turnsRoundOf` in
-`lib/blocks/weighing.ts`). After the header of Code evidence wrapped to one
-line, Code evidence (Archboard server, Track) stacked under HTTP serving on a
-page that fit better with one crossing fewer. Both picks took it. Board writes
-then stood at the far left, and 'read a board, write one under its lease' ran
-over Code evidence and down its far side, across the whole page.
-
-A reading pick can now take a crossing to end a run away. The September
-fixture of Starting a workhorse (Track) now packs Codex child. The packed
-layout crosses one line, bends six times fewer and runs no line away. The
-inline layout ran one line some 780 px down beside the region. The board as it
-is today draws as it did. The wrap rule that the fixture held, a region that
-the wrap lowers whole may stand under any card of the row above, now has a test
-of its own on `sinks` (`tests/wrap-sinks.test.ts`).
-
-Over every variant and view of both vaults on both engines, 401 drawings
-changed, 258 of them distinct. On crossings plus the length that lines run
-away at 300 px each, 204 read better, 41 read worse and 13 are the same. A
-review of the pictures whose numbers moved the wrong way found 16 of them
-slightly worse and 2 clearly worse. The two clearly worse drawings are Device
-Trust Control Plane in its native-hosts variant (Track and Blocks): the layout
-now taken draws lines through cards. In the Track drawing, the layout that the
-choice weighs draws none, and the steps after the choice move them into the
-cards. TASK-486 records the drawings that still read worse than before it.
+TASK-486 records the drawings that still read worse than before it.

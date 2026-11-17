@@ -39,8 +39,7 @@ A decision or a loop holds steps of all three sorts, so a flow is a tree told
 in order. Decisions and loops belong to the flow, never to a part: a part does
 not branch, an exchange does.
 
-Each step is a subject of its own with a minted id, as a message is. The
-store mints every id through `src/shared/ids/ids.ts`, and a restated step that
+Each step is a subject of its own with a minted id, as a message is. A restated step that
 names its id keeps it. Comparison and reconciliation read the tree flat: each
 step alone, in document order, with `within` naming the decision alternative
 or loop that holds it. A step moved into another alternative changed its
@@ -56,14 +55,8 @@ proposal's steps there too.
 One flow has two readings, chosen by the view's grammar:
 
 - `sequence` (formerly `data-flow`): participants in columns and every message
-  in order. A decision is an `alt` frame with its question, a labelled row for
-  each alternative and a dashed line between them. A loop is a `loop` frame
-  with its condition. These are the combined fragments of UML.
-- `flowchart`: the flow's steps from a start to an end, top to bottom. A
-  message is a box that names what happens and who sends it to whom. A
-  decision is a diamond with one line for each alternative, labelled with the
-  alternative's label. A loop is a hexagon with a line labelled "repeat" into
-  its steps, a line back from the last of them, and a line labelled "done" out.
+  in order.
+- `flowchart`: the flow's steps from a start to an end, top to bottom.
   The track engine (TASK-349) lays it out, because its top-to-bottom tracks fit
   a flow that branches and rejoins. The start, the end and the lines belong to
   the picture and are no subjects.
@@ -80,8 +73,5 @@ lease. A payload that still says `data-flow` is refused with the new name.
   lines on an architecture picture, a footprint) reads them through
   `messagesOf`, in the order a run that took every alternative once would meet
   them.
-- A flowchart of a flow with no decision and no loop is a column of boxes. The
-  sequence view is the better reading of such a flow, and the archboard skill
-  says when each reading answers the question.
 - A flow does not name its start and end. The flowchart draws them from the
   first and the last step.

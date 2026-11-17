@@ -17,37 +17,6 @@ This decision rests on the source of the Obsidian Excalidraw plugin at
 `36a32940bac50fd60fb379b18a9f38668f941108`. Its pinned manifest reports version
 `2.26.4`.
 
-The decision relies on these source regions:
-
-- `loadData` reads the data region and the `## Embedded Files` records
-  ([lines 539-925](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L539-L925)).
-- `generateMDBase` writes Embedded Files entries and builds the scene JSON for
-  the Drawing payload
-  ([lines 1379-1467](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1379-L1467)).
-- `generateMDAsync` and `generateMDSync` wrap that JSON in the Drawing section
-  and return the note data
-  ([lines 1470-1495](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1470-L1495)).
-- `syncFiles` cleans file records and writes new scene files to the vault
-  ([lines 1599-1745](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1599-L1745)).
-- `syncElements` clears `scene.files` after syncing
-  ([lines 1747-1766](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1747-L1766)).
-
-Element Links have a bidirectional lifecycle. At
-[lines 772-856](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L772-L856),
-`loadData` parses the persisted section and applies entries to matching scene
-elements. At
-[lines 1034-1058](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1034-L1058),
-`findNewElementLinksInScene` only adds missing links.
-
-During sync and save, `syncElements` runs `updateElementLinksFromScene` and then
-`findNewElementLinksInScene`
-([lines 1747-1766](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1747-L1766)).
-At
-[lines 1114-1127](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1114-L1127),
-`updateElementLinksFromScene` reconciles existing entries. At
-[lines 1407-1415](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/36a32940bac50fd60fb379b18a9f38668f941108/src/shared/ExcalidrawData.ts#L1407-L1415),
-`generateMDBase` emits the current map.
-
 We found no exact plugin-authored `.excalidraw.md` note from version 2.26.4 in
 the pinned upstream tree or available local material. The public
 [v2.19.0 issue attachment](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2594)
@@ -120,10 +89,7 @@ Fetching the web link is the plugin's job.
 
 archboard deliberately does not preserve one neighboring section, the one that
 records which element links where. It is not a sole record. The links live on
-the elements in the drawing. On load, `loadData` applies persisted Element Links
-to matching elements. During sync and save, `syncElements` reconciles existing
-links with the scene and adds missing links. `generateMDBase` emits the current
-map.
+the elements in the drawing.
 
 Keeping a stale copy will put back a link that somebody deleted here. This is
 the shape of TASK-028 and TASK-029.

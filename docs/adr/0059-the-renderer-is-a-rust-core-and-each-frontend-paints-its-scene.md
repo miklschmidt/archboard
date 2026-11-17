@@ -102,8 +102,7 @@ of the core.
 The user accepted three costs. A browser draws a glyph path without font
 hinting, so small text on a 1080p screen can look a little softer than hinted
 text. A picture with many distinct glyphs grows. The accessible text is a
-second copy of the words. TASK-520.07 compares the small text with the
-pictures of today before it lands.
+second copy of the words.
 
 ### The core routes with its own router
 
@@ -133,19 +132,13 @@ is a separate decision.
 
 ### The host gives the core what only its place has
 
-The core draws a picture in one call: the reading to draw, the vault's policy
-and the render's choices go in, and the document, its atlas, each subject's
-appearance and the picture's key come out (`render`, TASK-520.08). The core
-also keeps the scene, for a frontend that paints it itself. A host gives the
-core four things that only the place it runs in has. In the request, it gives
-the durations of `@archboard/timing` and, where a document can stand alone, the
-theme colours. Through a port, it runs the layout's solves and gives the path
-data of the icons that a picture draws.
+A host gives the core four things that only the place it runs in has. In the
+request, it gives the durations of `@archboard/timing` and, where a document can
+stand alone, the theme colours. Through a port, it runs the layout's solves and
+gives the path data of the icons that a picture draws.
 
 [ADR 0061](0061-group-regions-are-packed-before-solving.md) proposes choosing group packing
 before solving graphs that contain multi-member regions, without a card-count cutoff (TASK-548.08).
-The council rejects the first candidate because it hides parent frames.
-The repaired candidate and the broader packing rule await the next council verdict.
 The group-packing competition below describes the baseline until that decision is accepted.
 
 The core chooses between the solves of a board itself: which joins to keep,
@@ -159,20 +152,6 @@ with `layOutBoard`, and puts Graphviz back as it was loaded before each solve.
 The renderer package
 holds no rule of layout, painting or measurement. It resolves a board's
 variant, view and comparison into a request and runs the solves.
-
-### Every port step has an oracle
-
-The port starts at the output. First the core paints the drawing that the
-TypeScript layout answers. Every corpus picture must then be the same bytes as
-the picture of the TypeScript painter. Then each layout engine moves to Rust,
-and it must answer the drawing that the TypeScript engine answered on the
-corpus. The corpus holds the dogfood vault and the vaults under `examples/`. It
-draws every board whole, every view and every non-current variant. It draws
-each under both engines and both themes, with and without the comparison.
-
-Two steps change pictures on purpose: the router and the text. Each of them is
-judged by the measures of ADR 0039, and a person reviews its changed pictures
-before it lands.
 
 ### Build
 
@@ -200,8 +179,7 @@ run their TypeScript from source.
 A native frontend gets the whole renderer without a JavaScript engine or a
 browser.
 
-The server, the CLI and every browser draw a board to the same bytes. Today
-each place measures with its own canvas.
+The server, the CLI and every browser draw a board to the same bytes.
 
 Every contributor needs the Rust toolchain, and a change to the core needs a
 build before the next command uses it. Tuning a layout rule now includes a
