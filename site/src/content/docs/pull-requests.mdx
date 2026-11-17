@@ -189,7 +189,11 @@ A branch can merge without a pull request, for example a ticket branch that merg
 archboard model footprint --base <integration-branch> --head <ticket-branch> --state <draft> --fail-outside
 ```
 
-It exits <Exit command="model footprint" outcome="outside" /> when the branch changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules. The `archboard-plan` skill runs this gate before each ticket merge.
+It exits <Exit command="model footprint" outcome="outside" /> when the branch changed a module that the draft does not name, and names each module on standard error. Without a draft, it refuses the option, because only a draft names modules.
+
+If the vault's repository holds the ticket branch, the command reads that branch's draft. Otherwise, it reads the draft on disk.
+
+The `archboard-plan` skill runs this gate in the integration worktree with `--model-at checkout` before each ticket merge. It edits the draft there, so the ticket branch does not hold those edits.
 
 A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes does not count. In a stack that merges instead of rebasing, a change that a lower layer also made, and that a merge brings in, does not count either. Each changed module lists the commits that changed it.
 
