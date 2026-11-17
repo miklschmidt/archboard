@@ -24,11 +24,13 @@ interface FootprintList {
 	readonly outside: boolean;
 	/** What an empty list means for a review: the outcome, and one line that explains it. */
 	readonly empty: { readonly outcome: string; readonly detail: string };
+	/** Whether modules relevant to this list were not read. */
+	readonly unread: boolean;
 	readonly modules: readonly FootprintModule[];
 }
 
 /** What each list is called, what it asks, and what it means when it is empty. */
-const LISTS: Readonly<Record<ListKey, Omit<FootprintList, "key" | "modules">>> = {
+const LISTS: Readonly<Record<ListKey, Omit<FootprintList, "key" | "modules" | "unread">>> = {
 	namedAndChanged: {
 		label: "Planned and changed",
 		note: "The branch built what the proposal names.",
@@ -75,11 +77,14 @@ const LISTS: Readonly<Record<ListKey, Omit<FootprintList, "key" | "modules">>> =
  * @returns The lists, in the order they show.
  */
 function footprintLists(answer: BranchFootprintAnswer): readonly FootprintList[] {
-	if (answer.proposal === null) return [listOf("changed", answer.changed)];
+	if (answer.proposal === null)
+		return [listOf("changed", answer.changed, answer.skipped.length > 0)];
+	const namedUnread = answer.skipped.some((skip) => skip.named.length > 0);
+	const outsideUnread = answer.skipped.some((skip) => skip.named.length === 0);
 	return [
-		listOf("namedAndChanged", answer.namedAndChanged),
-		listOf("changedNotNamed", answer.changedNotNamed),
-		listOf("namedNotChanged", answer.namedNotChanged),
+		listOf("namedAndChanged", answer.namedAndChanged, namedUnread),
+		listOf("changedNotNamed", answer.changedNotNamed, outsideUnread),
+		listOf("namedNotChanged", answer.namedNotChanged, namedUnread),
 	];
 }
 
@@ -87,10 +92,11 @@ function footprintLists(answer: BranchFootprintAnswer): readonly FootprintList[]
  * One list with its words.
  * @param key The list.
  * @param modules Its modules.
+ * @param unread Whether relevant modules were not read.
  * @returns The list.
  */
-function listOf(key: ListKey, modules: readonly FootprintModule[]): FootprintList {
-	return { key, ...LISTS[key], modules };
+function listOf(key: ListKey, modules: readonly FootprintModule[], unread: boolean): FootprintList {
+	return { key, ...LISTS[key], modules, unread };
 }
 
 /** Why a module or a repository was not read, in a reader's words. */
