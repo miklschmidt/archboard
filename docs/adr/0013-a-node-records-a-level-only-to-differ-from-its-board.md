@@ -1,7 +1,7 @@
 # A node records a level only to differ from its board
 
 Recursive canonical containment supersedes the level contract below. No numeric depth replaces board levels.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 `promote --variant` stopped being something the caller repeats. TASK-040 made a

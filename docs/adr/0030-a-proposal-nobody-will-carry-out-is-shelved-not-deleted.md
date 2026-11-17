@@ -5,7 +5,7 @@ status: accepted
 # A proposal nobody will carry out is shelved, not deleted
 
 Compact proposal lifecycle operations supersede live variant shelving below. The independent archive preserves the final proposal, baseline, and shelving reason.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 Extends

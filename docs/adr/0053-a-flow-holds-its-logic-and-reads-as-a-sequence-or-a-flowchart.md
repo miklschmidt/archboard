@@ -5,7 +5,7 @@ status: accepted
 # A flow holds its logic, and reads as a sequence or as a flowchart
 
 Independent canonical flow collections supersede board-owned flows below. Sequence and flowchart still require a complete explicit authored exchange.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 [ADR 0073](0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md) replaces its track engine layout of the flowchart.
 

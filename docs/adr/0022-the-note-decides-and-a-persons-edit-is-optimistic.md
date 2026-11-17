@@ -5,7 +5,7 @@ status: accepted
 # The note decides, and a person's edit is optimistic
 
 Canonical subject claims and complete revisions supersede board leases and document versions below. The browser reads architecture and retains human claim take-back.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 Amended by [ADR 0051](0051-a-person-can-move-a-board-to-another-repository.md)

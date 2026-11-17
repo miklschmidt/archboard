@@ -5,7 +5,7 @@ status: accepted
 # Board names are case-insensitive, and case-preserving
 
 Canonical subjects use stable qualified identities and unique-name resolution. The live board-name contract below is superseded.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 A board name was a case-sensitive string. It mapped straight to a filename with

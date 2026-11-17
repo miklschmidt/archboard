@@ -5,7 +5,7 @@ status: accepted
 # A board opens on its overview, and relationships and calls are drawn apart
 
 Recursive module scope supersedes the board overview and named-view navigation below. Direct context and aggregated relationship inspection retain their semantic rules.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 Amended by the owner on 2026-10-31 (TASK-559.24). No reading draws a line

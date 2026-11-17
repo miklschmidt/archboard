@@ -5,7 +5,7 @@ status: accepted
 # Board work never depends on a browser session
 
 Canonical model operations supersede explicit live board addressing below. Explicit vault addressing and independence from browser sessions remain.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 Amended by [ADR
