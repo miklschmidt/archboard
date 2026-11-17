@@ -138,6 +138,7 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
 		<li data-footprint-module={id} data-commits={commits.length}>
 			<button
 				type="button"
+				title={name}
 				onClick={choose}
 				className={cn(
 					rowTone({ lit: id === selected }),
