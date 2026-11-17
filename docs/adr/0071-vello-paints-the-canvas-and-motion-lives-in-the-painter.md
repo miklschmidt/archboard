@@ -4,9 +4,8 @@ status: accepted
 
 # Vello paints the canvas, and motion lives in the painter
 
-The owner decided this on 2026-11-01 (TASK-560). This record replaces one clause of
+The owner decided this on 2026-11-01 (TASK-560). This record replaces browser SVG painting in
 [ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md).
-The clause is "The browser viewer keeps its classes and Web Animations over that SVG."
 
 This record also changes how three earlier decisions are carried out, but not what they decide.
 [ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md) keeps its traffic contract,
