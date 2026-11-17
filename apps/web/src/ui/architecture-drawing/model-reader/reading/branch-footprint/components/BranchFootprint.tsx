@@ -66,7 +66,7 @@ function LiveFootprint(props: BranchFootprintProps): JSX.Element {
 		<div
 			data-slot="branch-footprint"
 			data-footprint-state={footprint.status}
-			className="flex min-h-0 flex-1 flex-col gap-3"
+			className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
 		>
 			<FootprintRange
 				refs={refs.data}
