@@ -1,4 +1,4 @@
-import { useCallback, useMemo, type JSX } from "react";
+import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { SourceRefsAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 import {
@@ -24,13 +24,17 @@ interface FootprintRangeProps {
 	readonly against: string | null;
 	readonly choice: FootprintChoice;
 	readonly onChoice: (choice: FootprintChoice) => void;
+	/** Whether the branch adopted the current state, which the state list then says. */
+	readonly adopted: boolean;
 	readonly busy: boolean;
 	readonly onRefresh: () => void;
+	/** What stands before Refresh at the end of the row. */
+	readonly children?: ReactNode;
 }
 
 /**
- * What a footprint reads, on one row: the base, the head, the state it is set against, and
- * Refresh at the end. A new head clears the chosen state, because another vault can be read.
+ * What a footprint reads, on one row: the base, the head, the state it is set against, and at the
+ * end what it stands before Refresh. A new head clears the chosen state, because another vault can be read.
  * @param props The range, its choices and what a choice does.
  * @returns The row.
  */
@@ -41,7 +45,10 @@ function FootprintRange(props: FootprintRangeProps): JSX.Element {
 		() => [{ value: CHECKOUT, label: checkedOut(refs), detail: "The checkout" }, ...branches],
 		[refs, branches],
 	);
-	const stateChoices = useMemo(() => againstChoices(states), [states]);
+	const stateChoices = useMemo(
+		() => againstChoices(states, props.adopted),
+		[states, props.adopted],
+	);
 	const chooseBase = useCallback(
 		(next: string): void => onChoice({ ...choice, base: next }),
 		[choice, onChoice],
@@ -89,16 +96,18 @@ function FootprintRange(props: FootprintRangeProps): JSX.Element {
 				disabled={stateChoices.length === 0}
 				onChoose={chooseAgainst}
 			/>
-			<Button
-				variant="outline"
-				size="xs"
-				data-slot="footprint-refresh"
-				disabled={props.busy}
-				onClick={props.onRefresh}
-				className="ml-auto"
-			>
-				Refresh
-			</Button>
+			<div className="ml-auto flex items-center gap-2">
+				{props.children}
+				<Button
+					variant="outline"
+					size="xs"
+					data-slot="footprint-refresh"
+					disabled={props.busy}
+					onClick={props.onRefresh}
+				>
+					Refresh
+				</Button>
+			</div>
 		</div>
 	);
 }

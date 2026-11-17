@@ -263,7 +263,7 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		() =>
 			browser.eval<{ against: string | null; vault: string | null }>(`({
 				against: document.querySelector('[data-ref-picker="against"] button')?.getAttribute('data-value') ?? null,
-				vault: document.querySelector('[data-slot="footprint-vault"]')?.getAttribute('data-vault-read') ?? null,
+				vault: document.querySelector('[data-slot="footprint-facts"]')?.getAttribute('data-vault-read') ?? null,
 			})`),
 		(shown) => shown.vault === "ref",
 		"the footprint at a head that is not checked out",
@@ -302,6 +302,8 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		"the plan after restoring the base",
 		WAIT,
 	);
+	// The range of each repository is in the popover of the key before Refresh.
+	await browser.run(["click", '[data-slot="footprint-facts"]']);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
@@ -311,6 +313,7 @@ test("Measures lists what a branch changed, and a branch reading opens at its re
 		"the restored merge base in the footprint",
 		WAIT,
 	);
+	await browser.run(["press", "Escape"]);
 
 	// Show on picture opens that head's branch reading in that state, and selects the listed module.
 	await browser.run(["click", '[data-footprint-show="namedNotChanged"]']);

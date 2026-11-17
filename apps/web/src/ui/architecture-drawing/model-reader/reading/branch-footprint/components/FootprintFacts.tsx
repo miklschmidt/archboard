@@ -1,4 +1,6 @@
 import type { JSX } from "react";
+import { RiInformationLine } from "@remixicon/react";
+import { buttonVariants, Popover } from "@archboard/ui-kit/components";
 import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 import {
 	NOT_READ,
@@ -8,23 +10,57 @@ import {
 /** The length of a commit as a line shows it. */
 const SHORT = 7;
 
+/** The key's look: a small outline key, as `Refresh` beside it is. */
+const KEY = buttonVariants({ variant: "outline", size: "icon-xs" });
+
+/** The popover's heading, which names it. */
+const HEADING = "footprint-facts-heading";
+
 /**
- * What a footprint read and what it could not: each repository's range, the commits it marks as
- * large, the modules it did not read, and the changed files that no module binds. Nothing here is
- * a count of change: it says what the lists cover, so that a module that was not read never looks
- * unchanged (ADR 0045).
+ * What a footprint read and what it could not, behind a key on the range row: each repository's
+ * range, the commits it marks as large, and the modules it did not read. Nothing here is a count of
+ * change: it says what the lists cover, so that a module that was not read never looks unchanged
+ * (ADR 0045). The key names the vault it read in `data-vault-read` while the popover is closed.
+ * @param props The answer, or undefined while there is none.
+ * @param props.answer The footprint.
+ * @returns The key and its popover.
+ */
+function FootprintFacts(props: {
+	readonly answer: BranchFootprintAnswer | undefined;
+}): JSX.Element {
+	const { answer } = props;
+	return (
+		<Popover>
+			<Popover.Trigger
+				disabled={answer === undefined}
+				aria-label="What the lists cover"
+				data-slot="footprint-facts"
+				data-vault-read={answer?.vaultRead.at}
+				className={KEY}
+			>
+				<RiInformationLine aria-hidden="true" />
+			</Popover.Trigger>
+			<Popover.Content align="end" aria-labelledby={HEADING} className="w-96">
+				<h3 id={HEADING} className="text-control font-semibold">
+					What the lists cover
+				</h3>
+				{answer !== undefined && <FactLines answer={answer} />}
+			</Popover.Content>
+		</Popover>
+	);
+}
+
+/**
+ * The lines of the popover.
  * @param props The answer.
  * @param props.answer The footprint.
- * @returns The facts.
+ * @returns The lines.
  */
-function FootprintFacts(props: { readonly answer: BranchFootprintAnswer }): JSX.Element {
+function FactLines(props: { readonly answer: BranchFootprintAnswer }): JSX.Element {
 	const { answer } = props;
 	const large = answer.commits.filter((one) => one.large).length;
 	return (
-		<div
-			data-slot="footprint-facts"
-			className="text-body text-muted-foreground flex min-h-0 flex-col gap-1.5 overflow-y-auto"
-		>
+		<div className="text-body text-muted-foreground flex flex-col gap-1.5">
 			<p data-slot="footprint-vault" data-vault-read={answer.vaultRead.at}>
 				{vaultWords(answer.vaultRead)}
 			</p>
@@ -46,7 +82,6 @@ function FootprintFacts(props: { readonly answer: BranchFootprintAnswer }): JSX.
 			{answer.skipped.length > 0 && (
 				<p data-slot="footprint-skipped">Not read: {skippedWords(answer.skipped)}.</p>
 			)}
-			{answer.unboundFiles.length > 0 && <UnboundFiles files={answer.unboundFiles} />}
 		</div>
 	);
 }
@@ -83,36 +118,6 @@ function skippedWords(skipped: readonly FootprintSkip[]): string {
 	for (const { reason } of skipped)
 		reasons.set(NOT_READ[reason], (reasons.get(NOT_READ[reason]) ?? 0) + 1);
 	return [...reasons].map(([reason, count]) => `${count} ${reason}`).join(", ");
-}
-
-/**
- * The changed files that no module binds, which no row shows.
- * @param props The files.
- * @param props.files The files of the answer.
- * @returns The list.
- */
-function UnboundFiles(props: {
-	readonly files: BranchFootprintAnswer["unboundFiles"];
-}): JSX.Element {
-	const { files } = props;
-	// Two repositories can change the same path, so a list of several names each file's.
-	const several = new Set(files.map((file) => file.repo)).size > 1;
-	return (
-		<details data-slot="footprint-unbound">
-			<summary className="cursor-default">
-				{files.length} changed {files.length === 1 ? "file has" : "files have"} no module bound to{" "}
-				{files.length === 1 ? "it" : "them"}.
-			</summary>
-			{/* A branch can leave hundreds of files unbound, so they scroll and the cards keep their room. */}
-			<ul className="bg-tray-sink shadow-well rounded-panel mt-1.5 flex max-h-48 flex-col gap-0.5 overflow-y-auto p-2.5 font-mono">
-				{files.map((file) => (
-					<li key={`${file.repo}:${file.path}`} className="text-technical [overflow-wrap:anywhere]">
-						{several ? `${file.repo}: ${file.path}` : file.path}
-					</li>
-				))}
-			</ul>
-		</details>
-	);
 }
 
 export { FootprintFacts };

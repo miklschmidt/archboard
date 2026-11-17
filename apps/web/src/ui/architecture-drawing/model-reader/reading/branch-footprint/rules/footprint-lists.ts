@@ -22,29 +22,49 @@ interface FootprintList {
 	readonly note: string;
 	/** Whether the list holds work that the plan does not name, which a review looks at first. */
 	readonly outside: boolean;
+	/** What an empty list means for a review: the outcome, and one line that explains it. */
+	readonly empty: { readonly outcome: string; readonly detail: string };
 	readonly modules: readonly FootprintModule[];
 }
 
-/** What each list is called and what it asks. */
-const LISTS: Readonly<
-	Record<ListKey, { readonly label: string; readonly note: string; readonly outside: boolean }>
-> = {
+/** What each list is called, what it asks, and what it means when it is empty. */
+const LISTS: Readonly<Record<ListKey, Omit<FootprintList, "key" | "modules">>> = {
 	namedAndChanged: {
 		label: "Planned and changed",
 		note: "The branch built what the proposal names.",
 		outside: false,
+		empty: {
+			outcome: "Nothing planned changed yet",
+			detail: "The branch changed no module that the proposal names.",
+		},
 	},
 	changedNotNamed: {
 		label: "Changed outside the plan",
 		note: "Did the branch leave the plan, or does the plan miss a module?",
 		outside: true,
+		empty: {
+			outcome: "Nothing outside the plan",
+			detail: "The proposal names every module that the branch changed.",
+		},
 	},
 	namedNotChanged: {
 		label: "Planned, not changed yet",
 		note: "Is the work still to do, or does the module need no code change?",
 		outside: false,
+		empty: {
+			outcome: "Every planned module changed",
+			detail: "The branch changed each module that the proposal names.",
+		},
 	},
-	changed: { label: "Changed", note: "The branch changed these modules.", outside: false },
+	changed: {
+		label: "Changed",
+		note: "The branch changed these modules.",
+		outside: false,
+		empty: {
+			outcome: "No bound module changed",
+			detail: "The commits change no file that a module binds.",
+		},
+	},
 };
 
 /**

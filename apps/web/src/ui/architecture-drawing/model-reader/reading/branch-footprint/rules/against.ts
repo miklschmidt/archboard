@@ -12,11 +12,13 @@ interface AgainstChoice {
 
 /**
  * The states a footprint can be set against: the current state first, then every proposal, of the
- * vault that the footprint reads.
+ * vault that the footprint reads. A current state that the branch adopted says so, because the
+ * footprint then sets it against the merge base's current state as a plan.
  * @param read The states of that vault, once read.
+ * @param adopted Whether the branch adopted the current state.
  * @returns The choices.
  */
-function againstChoices(read: VaultStates | undefined): readonly AgainstChoice[] {
+function againstChoices(read: VaultStates | undefined, adopted = false): readonly AgainstChoice[] {
 	if (read === undefined) return [];
 	const proposals = read.proposals.map((one) => ({
 		value: one.id,
@@ -25,7 +27,8 @@ function againstChoices(read: VaultStates | undefined): readonly AgainstChoice[]
 	}));
 	const { current } = read.manifest;
 	if (current === null) return proposals;
-	return [{ value: current.id, label: current.name, detail: "Current" }, ...proposals];
+	const detail = adopted ? "Current, adopted on this branch" : "Current";
+	return [{ value: current.id, label: current.name, detail }, ...proposals];
 }
 
 /**

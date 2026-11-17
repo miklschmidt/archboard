@@ -3,6 +3,7 @@ import { Button, cn } from "@archboard/ui-kit/components";
 import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
+import { EmptyList } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/EmptyList.tsx";
 import {
 	commitsOf,
 	footprintLists,
@@ -20,7 +21,10 @@ interface FootprintListsProps {
 	readonly answer: BranchFootprintAnswer;
 	/** How kinds look, for each module's chip. */
 	readonly look: KindLook;
-	/** The kind of each module of the reading on screen. A module only the branch adds has none. */
+	/**
+	 * The kind of each module of the model that the footprint reads and of the reading on screen. A
+	 * module that only a proposal adds has none.
+	 */
 	readonly kinds: ReadonlyMap<string, string>;
 	/** The module selected on the picture, or null. */
 	readonly selected: string | null;
@@ -43,7 +47,7 @@ function FootprintLists(props: FootprintListsProps): JSX.Element {
 		<div
 			data-slot="footprint-lists"
 			className={cn(
-				"bg-tray-sink shadow-well rounded-panel grid min-h-64 flex-1 gap-1.5 overflow-y-auto p-1.5",
+				"bg-tray-sink shadow-well rounded-panel grid min-h-40 flex-1 gap-1.5 overflow-y-auto p-1.5",
 				lists.length > 1 && "md:grid-cols-3 md:overflow-hidden",
 			)}
 		>
@@ -56,13 +60,16 @@ function FootprintLists(props: FootprintListsProps): JSX.Element {
 
 /**
  * One list: its name and count, its modules, the question it asks, and the key that shows it on
- * its picture. The list of work outside the plan takes the changed tone.
+ * its picture, or what its emptiness means. The list of work outside the plan takes the changed
+ * tone while it holds modules.
  * @param props The list and what a row does.
  * @returns The card.
  */
 function ListCard(props: FootprintListsProps & { readonly list: FootprintList }): JSX.Element {
 	const { answer, list, onShow } = props;
 	const heading = `footprint-list-${list.key}`;
+	// An empty list outside the plan is good news, so only a list that holds modules takes the tone.
+	const alarm = list.outside && list.modules.length > 0;
 	const show = useCallback(
 		(): void =>
 			onShow(
@@ -79,7 +86,7 @@ function ListCard(props: FootprintListsProps & { readonly list: FootprintList })
 			aria-labelledby={heading}
 			className={cn(
 				"rounded-control shadow-raised flex flex-col gap-3.5 p-3.5 inset-ring md:min-h-0",
-				list.outside
+				alarm
 					? "inset-ring-standing-changed/45 bg-[color-mix(in_srgb,var(--standing-changed)_6%,var(--face))]"
 					: "bg-face inset-ring-border",
 			)}
@@ -87,7 +94,7 @@ function ListCard(props: FootprintListsProps & { readonly list: FootprintList })
 			<header className="flex items-baseline justify-between gap-3">
 				<h3
 					id={heading}
-					className={cn("text-control font-semibold", list.outside && "text-standing-changed")}
+					className={cn("text-control font-semibold", alarm && "text-standing-changed")}
 				>
 					{list.label}
 				</h3>
@@ -96,26 +103,22 @@ function ListCard(props: FootprintListsProps & { readonly list: FootprintList })
 				</span>
 			</header>
 			{list.modules.length === 0 ? (
-				<p className="text-body text-muted-foreground">None.</p>
+				<EmptyList list={list} />
 			) : (
-				<ul className="-mx-1.5 flex min-h-0 flex-col gap-0.5 overflow-y-auto">
-					{list.modules.map((module) => (
-						<ModuleRow key={module.subject.id} {...props} module={module} />
-					))}
-				</ul>
+				<>
+					<ul className="-mx-1.5 flex min-h-0 flex-col gap-0.5 overflow-y-auto">
+						{list.modules.map((module) => (
+							<ModuleRow key={module.subject.id} {...props} module={module} />
+						))}
+					</ul>
+					<footer className="mt-auto flex flex-col items-start gap-2.5">
+						<p className="text-body text-muted-foreground">{list.note}</p>
+						<Button variant="outline" size="xs" data-footprint-show={list.key} onClick={show}>
+							Show on picture
+						</Button>
+					</footer>
+				</>
 			)}
-			<footer className="mt-auto flex flex-col items-start gap-2.5">
-				<p className="text-body text-muted-foreground">{list.note}</p>
-				<Button
-					variant="outline"
-					size="xs"
-					data-footprint-show={list.key}
-					disabled={list.modules.length === 0}
-					onClick={show}
-				>
-					Show on picture
-				</Button>
-			</footer>
 		</section>
 	);
 }
