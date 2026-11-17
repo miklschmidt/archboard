@@ -4,97 +4,60 @@ status: accepted
 
 # A board render carries its recipe, and the check keeps embeds current
 
-Canonical render recipes and Git artifact discovery supersede board-owned export tracking below. Explicit embed repair uses the existing renderer and rasterizer.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
-The original decision below remains historical evidence.
-
-Decided by the repository owner on 2026-10-24, in a design interview.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) replaces the sections on tracked
+embeds and on deleting a board. Git discovers embeds, and no board-owned list of embeds remains.
 
 ## Context
 
-Documentation sites embed board pictures. A person or an agent changes code,
-the code check says that a board no longer matches it, and somebody corrects
-the board. Nothing then says which pictures in which repositories now show the
-old board. `semantic render --out` writes an SVG and prints a receipt with the
-board, the version and the variant, but the file records none of it. The
-picture is often in another repository than the vault that holds its board.
+Documentation sites embed board pictures. When somebody corrects a board to match the code,
+nothing says which pictures in which repositories now show the old board. The picture is often in
+another repository than the vault that holds its board.
 
-The code check is also easy to skip. The plain `archboard check` never runs it
-(ADR 0046), and the CI of this repository does not run it either. Behind, the
-reading of ADR 0045, already says how many commits changed a board's bound
-files after its last change. It is information and never fails the check.
+The code check is also easy to skip. The plain `archboard check` never ran it (ADR 0046). Behind,
+the reading of ADR 0045, says how many commits changed a board's bound files after its last change.
+It is information and never fails the check.
 
 ## Decision
 
 ### The check runs every check
 
-`archboard check` and `archboard check all` run every check. Each subcommand
-runs one:
+`archboard check` runs every check: semantics, code and embeds. Each subcommand runs one. If any
+part has a diagnostic or a warning, the command exits 1. Information never changes the exit status.
 
-| Command                     | What it reads                                                         |
-| --------------------------- | --------------------------------------------------------------------- |
-| `archboard check semantics` | the vault's boards against its configuration (the former plain check) |
-| `archboard check code`      | the code check of ADR 0046, with behind                               |
-| `archboard check embeds`    | the embeds of this checkout and the tracked embeds of this vault      |
+A documentation repository that embeds the boards of another repository's vault often has no vault
+of its own. In a Git checkout without a vault, `check` therefore runs the embeds check alone, and
+the exit status comes from it alone.
 
-The answer has one part for each check, and a subcommand fills only its own
-part. If any part has a diagnostic or a warning, the command exits 1.
-Information never changes the exit status.
+The route that every open pane polls stays the semantics check. A pane never starts a language
+server or a fetch.
 
-A documentation repository that embeds the boards of another repository's
-vault often has no vault of its own. In a Git checkout without a vault,
-`check`, `check all` and `check embeds` therefore run the embeds check alone,
-over the embeds of that checkout. The check finds the vault of each embed by
-its recipe, as everywhere else. The exit status comes from the embeds check alone. `check semantics`
-and `check code` read a vault, so they are refused there with
-`VAULT_NOT_FOUND`, as every other command is (ADR 0049).
-
-The route that every open pane polls stays the semantics check. A pane never
-starts a language server or a fetch.
-
-A stale board stays a matter of the code check. If code no longer matches a
-binding, an anchor or a drawn relationship, its warnings fail the check.
-Behind stays information, as ADR 0045 decides. A correct board cannot clear a
-failure of behind, and such a failure teaches people to make empty edits.
+A stale board stays a matter of the code check. If code no longer matches a binding, an anchor or a
+drawn relationship, its warnings fail the check. Behind stays information, as ADR 0045 decides. A
+correct board cannot clear a failure of behind, and such a failure teaches people to make empty
+edits.
 
 ### A board render carries its render recipe
 
-Every board render, SVG or PNG, carries its render recipe: what it records
-about how it was drawn. The recipe holds:
+Every board render, SVG or PNG, carries its render recipe: what it records about how it was drawn.
+The recipe names the board, the variant, the view and the drawing choices. It also holds:
 
-- the board's `id`, with its name for messages only
-- the variant by id, or "current" for a render that named no variant, so that
-  the render follows an adoption
-- the view by id, the variant drawn against, and the drawing choices: theme,
-  layout, legend and title, and for a PNG its scale and region
-- a fingerprint of what the renderer was given: the drawn variant without its
-  walkthroughs and the code that it cites, the variant it is drawn against,
-  the view, the board's level, the vault's presentation policy and the title
-  text
+- a fingerprint of what the renderer was given
 - a hash of the picture as drawn, without the recipe
 
-The recipe holds no output path and no board version. An edit of a variant
-that the picture neither draws nor is drawn against raises the version and
-changes nothing that the picture draws.
+The recipe holds no output path and no board version. An edit of a variant that the picture neither
+draws nor is drawn against raises the version and changes nothing that the picture draws.
 
-An SVG holds the recipe in its `<metadata>` element, and a PNG in a text chunk.
-A post-processor that keeps the recipe, such as a font subsetter, leaves the
-embed checkable. A file without a recipe is not an embed. SVGO removes
-`<metadata>` by default, so the documentation says to keep it.
-
-A render on stdout carries the recipe too, so stdout and `--out` give the same
-bytes.
+An SVG holds the recipe in its `<metadata>` element, and a PNG in a text chunk. A post-processor
+that keeps the recipe, such as a font subsetter, leaves the embed checkable. A file without a recipe
+is not an embed. SVGO removes `<metadata>` by default, so the documentation says to keep it.
 
 ### An embed and when it is outdated
 
-An embed is a board render that a repository keeps under Git. `check embeds`
-reads the files that Git tracks in the checkout that it runs in. Each SVG
-document and each PNG with a recipe is an embed. A render that Git ignores is
-no embed. An SVG inside an HTML, Markdown or MDX page is no embed either,
-because `--fix` rewrites a whole file.
+An embed is a board render that a repository keeps under Git. A render that Git ignores is no
+embed. An SVG inside an HTML, Markdown or MDX page is no embed either, because `--fix` rewrites a
+whole file.
 
-The check finds the board by the recipe's `id` in the vault that the recipe
-names, draws it again from the recipe and compares:
+The check draws each embed again from its recipe and compares:
 
 | What the check finds                                      | Severity    |
 | --------------------------------------------------------- | ----------- |
@@ -103,84 +66,29 @@ names, draws it again from the recipe and compares:
 | Only the fingerprint differs: nothing drawn changed       | none        |
 | The board, its variant or its view is gone                | warning     |
 
-The fingerprint covers the whole drawn variant, also the parts that a view
-leaves out. So an edit outside the view moves the fingerprint and leaves the
-picture as it was. Such an embed is current, and `--fix` only writes its new
-recipe.
-
-Archboard runs from a clone, so two machines can run two commits of the
-renderer. With a pure picture hash, one machine marks every embed outdated and
-the other marks none. The fingerprint makes the warning mean "the board says
-something new". `--fix` still draws again what either comparison finds, so a
-renderer improvement reaches every picture (ADR 0023).
-
-### Tracked embeds
-
-`semantic render --out <file> --track` makes a tracked embed: the board lists
-the embed as `{ repo, path }`, the shape of a binding without the code fields.
-The list belongs to the board, not to a variant, because a recipe can say
-"current". The recipe stays in the file, so one copy of it exists.
-
-`--track` is a board write. It takes the lease, an agent states `--doing`, and
-the version rises. It does not move the last change of ADR 0045, because it
-changes nothing that a board says about the code.
-
-In the vault's repository, `check embeds` also reads each tracked embed of its
-boards. An outdated tracked embed in another repository is information there,
-not a warning. A warning fails the vault's pull request until the other
-repository draws the embed again. That repository reads the vault's default
-branch. So it can draw the embed again only after the pull request merges, and
-each side then waits for the other.
-
-A move (ADR 0051) carries the list with the note. The target vault's check
-then names each tracked embed whose recipe still names the old repository, and
-`--fix` rewrites the recipe.
+Archboard runs from a clone, so two machines can run two commits of the renderer. With a pure
+picture hash, one machine marks every embed outdated and the other marks none. The fingerprint makes
+the warning mean "the board says something new". `--fix` still draws again what either comparison
+finds, so a renderer improvement reaches every picture (ADR 0023).
 
 ### A vault in another repository
 
-A recipe names its vault by the repository identity of the vault's checkout.
-When that repository has a registered checkout, the check reads its vault as
-it is, as a binding reads its checkout. Otherwise it fetches the whole
-`.archboard/vault` directory of the default branch, shallow and sparse, with
-the person's own git credentials. A render reads the vault's configuration and
-the levels of the boards that its nodes stand for, so one board file is not
-enough. The fetch is cached in the state directory by commit. Offline with a
-cached copy, the check uses the cache and says so as information. The cache can
-be behind the default branch, and an embed can be drawn from a newer commit.
-So every finding against a cached vault is information, and `--fix` writes no
-embed from it. The answer then says that the vault came from a cache. A stale
-cache fails no check and draws no embed back to an older picture. Offline with
-no cached copy, a failed fetch is a warning that names the repository.
-
-### Deleting a board
-
-`archboard semantic delete <board>` removes the whole note. It refuses while a node on another board opens the board,
-and the refusal names those boards. It reads the drill-downs on the current and
-draft variants of the other boards of its own vault. A drill-down on history or
-on a shelved proposal does not refuse, because neither takes an edit, so
-nobody could repair that refusal. It does not refuse for tracked embeds: its
-answer lists them, and their own check then names the deleting commit. The
-browser offers no delete.
+A recipe names its vault by the repository identity of the vault's checkout. When that repository
+has a registered checkout, the check reads its vault as it is. Otherwise it fetches the vault from
+the default branch with the person's own git credentials, and caches it by commit. The cache can be
+behind the default branch, and an embed can be drawn from a newer commit. So every finding against a
+cached vault is information, and `--fix` writes no embed from it. A stale cache fails no check and
+draws no embed back to an older picture.
 
 ## Considered options
 
-- **A list of embeds in the vault configuration or a manifest file.** The list
-  must be kept in step with the files by hand. A recipe in the file moves with
-  the file, and a deleted file stops being checked.
-- **Compare the file's bytes.** A font subsetter or another post-processor
-  then marks every embed outdated.
-- **A board version in the comparison.** A draft edit or a walkthrough edit
-  then marks embeds outdated that draw nothing new.
-- **Refuse a delete while tracked embeds exist.** The embeds can be in a
-  repository that the person cannot change.
-- **A forwarding record for a moved board.** ADR 0051 rejected it. The board's
-  own list carries the context to the target vault.
+- **A list of embeds in the vault configuration or a manifest file.** The list must be kept in step
+  with the files by hand. A recipe in the file moves with the file, and a deleted file stops being
+  checked.
+- **Compare the file's bytes.** A font subsetter or another post-processor then marks every embed
+  outdated.
 
 ## Consequences
 
-- ADR 0045, ADR 0046 and ADR 0054 are amended where they name `check --code`
-  or the plain check. Their other decisions hold.
-- The semantics check, which the panes poll, still reads no code and no Git.
-  The full `archboard check` reads Git and can reach the network.
-- A board document gains one optional board-level list. The schema version
-  does not move, as for `formerNames` and `documents`.
+- The semantics check, which the panes poll, still reads no code and no Git. The full
+  `archboard check` reads Git and can reach the network.

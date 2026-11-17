@@ -4,40 +4,10 @@ status: accepted
 
 # Git history is read through bindings, on request, and never stored
 
-Canonical locality and footprint supersede live board selectors below. The existing local source-history algorithms and separate source-evidence policy remain.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
-The original decision below remains historical evidence.
-
-[ADR 0065](0065-checkpoints-retain-architecture-without-selecting-current.md) governs retained canonical architecture.
-This decision governs the separate source-history lens.
-
-TASK-369.01 tracks this decision, accepted on 2026-10-06 after an independent
-review.
-
-TASK-369.04 amended this ADR on 2026-10-06. A flow step joins two coupled
-parts, and a container counts as at an end inside it. The amendment after the
-section on hotspots and change coupling gives the reasons.
-
-TASK-448 amended this ADR on 2026-10-07. Locality and footprint now use bound
-declarations when the code-facts adapters resolve them.
-
-Amended by TASK-526.01 (2026-10-24): behind is read by
-`archboard check code`, and by `archboard check` and `archboard check all`,
-which run the code check. The plain `archboard check` is now
-`archboard check semantics`, the check that the canvases poll. Behind stays
-information and never fails the check.
-[ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
-decides the split.
-
-TASK-559.29 amended this ADR on 2026-10-31. The canonical reader asks on a
-selection and when `Measures` opens, and a measurement replaced the one of
-2026-10-06. The amendment after the section on derived readings gives the
-reasons.
-
-TASK-635 amended this ADR on 2026-11-13. A footprint counts a part as changed
-only when its bound declarations or paths differ between the merge base and the
-head. The section on the footprint gives the rule, and the rejected options give
-the reason.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) replaces the live board selectors
+below with canonical locality and footprint. The Git reading below holds.
+[ADR 0065](0065-checkpoints-retain-architecture-without-selecting-current.md) governs retained
+canonical architecture. This decision governs the separate source-history lens.
 
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
@@ -46,13 +16,6 @@ proposal named. Hotspots say which parts change
 often, and change coupling says which parts change together. `CONTEXT.md`
 defines the four terms and large commit. This ADR decides how the lens reads
 Git and where each reading answers.
-
-The measurements of 2026-09-29 (`048312ee`) shaped it. Board viewer was 10
-commits behind its bound files. Architecture painter and Sequence painter
-changed together in 6 commits, and no relationship joins them. Two traps showed
-up. A part that drills into its own board and binds a whole directory adds
-hundreds of commits. Commits of 50 to 864 files make Claims and Panes look
-coupled.
 
 ## A commit changes a part through its bound files
 
@@ -63,58 +26,27 @@ parser and works in every language, infrastructure and Nix included.
 Behind keeps this path mapping. Locality and footprint use the declaration
 mapping below when a binding names a symbol.
 
-The mapping follows renames. A commit that renames a bound file changes the
-part, and the commits before the rename count under the former path. Git's own
-rename detection decides what a rename is.
-
-A merge commit counts for nothing of its own. The commits that it brings in
-count.
-
-A large commit is a commit that changes more than 30 files, bound or not. The
-number is code-maat's default for the largest change set that it counts
-(`--max-changeset-size`).
-
 The lens reads the current variant, because only the current variant says that
-its architecture is built (ADR 0031). `semantic locality` and
-`semantic footprint` read a named draft with `--variant`, as the code check
-does. Behind never reads a draft. The lens never reads a historical or a
-shelved variant.
+its architecture is built (ADR 0031). Locality and footprint can read a named
+draft, as the code check does. Behind never reads a draft. The lens never
+reads a historical or a shelved variant.
 
-The lens skips these parts:
-
-- A part with no binding.
-- A part that carries a drill-down, upward, downward or sideways. The board it
-  opens carries its history. Archboard server binds its Semantic renderer card
-  to a whole directory, and counting that card adds 259 commits.
-- A part bound into a repository that this machine has not registered.
-- A part pinned to a branch or a commit that its checkout does not have out.
-
-A skipped part is in no count and in no list of a reading. The answers of
-`semantic locality` and `semantic footprint` list the parts that they skipped,
-with the reason. A part that the lens did not read must never look like a part
-that no commit changed.
+The lens skips a part with no binding, a part that carries a drill-down, a part
+bound into a repository that this machine has not registered, and a part pinned
+to a ref that its checkout does not have out. The board that a drill-down opens
+carries its own history. A skipped part is in no count and in no list of a
+reading, and each answer lists the parts that it skipped. A part that the lens
+did not read must never look like a part that no commit changed.
 
 ## Symbols narrow locality and footprint
 
-Locality and footprint share one declaration mapping (TASK-448). The existing
+Locality and footprint share one declaration mapping. The existing
 code-facts adapters read immutable Git sources before and after each commit.
 A commit counts when the bound declaration changes its source text or file path.
-An addition or deletion counts too. An absent declaration before its creation
-counts for nothing. Unrelated declarations in the same file do not count.
-
-Every language adapter can supply declaration ranges through this same source
-reader. The reader never uses uncommitted checkout files. Unsupported formats,
-unparsed code, and ambiguous definitions use path-wide fallback. A symbol that
-no revision resolves also uses path-wide fallback. Each listed part reports
-`attribution.mode`: `symbol`, `path`, or `mixed`. A binding without a symbol
-keeps path mapping.
-
-The reader follows Git file renames and reads deleted declarations from parents.
-It does not infer identity between renamed symbols.
-
-Coupling excludes duplicate declaration ownership. Distinct resolved symbols
-can pair even when their bound paths overlap. Aliases of a shared definition
-cannot pair. Path-wide attribution keeps the existing overlap exclusion.
+Unrelated declarations in the same file do not count. The reader never uses
+uncommitted checkout files. Unsupported formats, unparsed code, and ambiguous
+definitions use path-wide fallback, and the answer labels it. The reader does
+not infer identity between renamed symbols.
 
 ## Each repository is read at the HEAD of its checkout
 
@@ -123,49 +55,22 @@ names for it, at that checkout's HEAD. It never fetches. A ref resolves only
 from what the checkout already has. The lens answers about the code that this
 machine has, which is the code that "open the code" opens.
 
-A repository with no registered checkout stays silent: its parts get no
-diagnostic, as `BINDING_PATH_MISSING` gives them none. The answer of
-`archboard check --code` only says that it did not read them. So a reader
-never takes them for parts that no commit changed.
-
-A binding can be pinned to a branch or a commit (TASK-311). If its checkout has
-that ref out, the lens reads the part. If the checkout has another ref out, the
-lens skips the part and names both refs. This is the match that decides where
-the code of the part opens. A pin says that the part describes the code at that
-ref, and the commits on another ref say nothing about it.
-
 The repositories of one vault share no commits. So change coupling pairs only
-two parts bound into one repository. The next section says how behind carries
-the commit that it counts from into each repository.
+two parts bound into one repository.
 
 ## A board is behind by the commits after its last change
 
 A board's last change is the last commit that changed its current variant. The
 board is behind its code by the commits that changed a part's bound files after
-its last change.
+its last change. The lens finds the last change in the board file's own Git
+history.
 
-The lens finds the last change in the board file's own Git history. It walks
-the commits of the board file, newest first, and follows the renames of the
-file. It stops at the first commit that changed the current variant. In that
-commit, another variant became current, or the current variant itself changed.
-To find a change, the lens compares the variant with its state before the
-commit. A part, a relationship, a flow or a step with the comparison status
-added, changed or removed is a change. The commit that created the board
-changed it.
-
-So an adoption counts, and so does an edit in place that changes a part, a
-relationship, a flow or a step. A binding is part of its node, so a new binding
-counts. A draft edit, a shelving, a rename, a change to the views, a
-walkthrough edit and a migration write do not count. None of them says
-anything new about whether the parts match the code. A walkthrough explains the
-architecture and changes none of it, and a change to its words alone badges no
-part (ADR 0023). If a walkthrough edit counts, a walkthrough that an agent
-writes for a pull request recording hides the commits of that pull request.
-
-Historical board bytes pass through the board store's pure decoder, which
-applies its registered schema migrations in memory and validates the result.
-It reads no vault file and persists nothing. A schema-only migration commit
-therefore compares equal to the old document's meaning (TASK-436.14).
+An adoption counts, and so does an edit in place that changes a part, a
+relationship, a flow or a step. A draft edit, a shelving, a rename, a change to
+the views, a walkthrough edit and a migration write do not count. None of them
+says anything new about whether the parts match the code. If a walkthrough edit
+counts, a walkthrough that an agent writes for a pull request recording hides
+the commits of that pull request.
 
 The last change carries into each bound repository in one of two ways:
 
@@ -179,164 +84,68 @@ The last change carries into each bound repository in one of two ways:
   repository of its own reads the other repositories this way. Time is the
   only order that two repositories share.
 
-If the board file holds a change to its current variant that no commit has
-yet, the last change is now, and no commit counts. A new board file that Git
-does not track yet, and does not ignore, is such a change.
-
 If the vault is not in a Git repository, or Git ignores the board file, the
 lens cannot find the last change. The answer says so, and it never reports zero
-commits for such a board. `INSTALL.md` lets a person ignore the vault or keep
-it outside every repository. Such a vault still gets hotspots, change coupling
-and footprints, which need no history of the board file. A time stored in the
-board can carry behind to such a vault. The options rejected below say why
-the lens stores none, and nothing yet shows a need for it.
-
-A board with no current variant has no last change, and the answer says so.
-Its drafts are ahead of the code (ADR 0031).
-
-The commits that a board is behind by include large commits, and the answer
-says which ones are large. A large commit can change what a board says. A
-commit that moves a module is an example.
+commits for such a board.
 
 Archboard adds no way to say that a board was checked. If an agent reads the
 code and finds the board right, it writes nothing, and the board stays behind.
 Such a statement is an authored claim that nothing verifies, and somebody keeps
-it by hand. It also adds a field or a command that every reader must learn.
-The code check (TASK-367) says whether a board is right. Behind only says
-where to look. Behind is information (below), so a count that
-grows never blocks a clean check. A binding's `confirmedAt` is part of its
-node. So restating it is an edit like any other, and it moves the last change
-of the whole board.
+it by hand. The code check says whether a board is right. Behind only says
+where to look.
 
 ## Hotspots and change coupling read a period with code-maat's filters
 
 A period is the commits on a checkout's HEAD that were committed in the year
-before the commit time of HEAD. `--since <date>` names another start. The
-period ends at HEAD and not at the clock, so one HEAD always gives one answer.
+before the commit time of HEAD. The period ends at HEAD and not at the clock,
+so one HEAD always gives one answer.
 
 Both readings leave out large commits, and each answer says how many it left
-out. Without that filter, Claims and Panes look coupled, and 10 of their 12
-shared commits are large.
+out. Without that filter, unrelated parts look coupled through large commits.
 
-The hotspots of a board are its parts ranked by the number of commits in the
-period that changed them.
 A hotspot counts commits only. Tornhill also weighs a hotspot by the complexity
 of its code, and the lens measures no complexity. A count of changed lines
 grows with moved and generated files, so the lens counts no lines either.
 
-These two rules decide whether two parts of one board have change coupling.
-The values are code-maat's defaults (`--min-shared-revs` and `--min-coupling`),
-and code-maat calls a commit a revision:
+Change coupling uses code-maat's default thresholds for shared commits and
+degree. The thresholds are fixed, and the period is the one option. Fixed
+thresholds keep two answers comparable.
 
-- The two parts changed together in at least 5 commits of the period.
-- The degree is at least 30%. The degree is the number of shared commits
-  divided by the mean of the two parts' commit counts.
+A relationship or a flow step joins the two parts at its ends, in either
+direction. ADR 0044 leaves steps out of a container's interface, because a
+return travels against the dependency. Change coupling has no direction, so
+that reason does not apply here. A part inside an end counts as at that end,
+and a container counts as at an end inside it, because the board draws that
+dependency for the container too (ADR 0044).
 
-code-maat also requires a mean of at least 5 commits (`--min-revs`). The first
-rule makes it always hold, because each part has at least as many commits as
-the two share.
-
-For path-wide attribution, the lens leaves out a pair whose bound paths overlap:
-one path, or one path below the other. Each shared commit of such a pair is one
-change counted twice. With precise declaration attribution, distinct symbols
-can pair within the same file. Shared declaration ownership is still excluded.
-Command dispatch binds Interruptible run and runCliWith to one file. Browser
-application binds Tab session to a file below the directory of Pane session.
-
-A relationship joins the two parts at its ends, in either direction. A part
-inside an end counts as at that end. A relationship that ends on a container is
-a dependency drawn at a higher level (ADR 0044), so it joins the parts inside.
-
-If no relationship of the variant joins two coupled parts, and neither part is
-inside the other, the answer lists the pair as unjoined. An unjoined pair is
-what the reading is for. It points to a dependency that the board does not
-draw, or to one decision that two parts carry (Ousterhout's information
-leakage).
-
-The thresholds are fixed, and the period is the one option. Fixed thresholds
-keep two answers comparable and keep the measurement of the design note
-reproducible.
-
-## Amendment of 2026-10-06: what joins two coupled parts
-
-TASK-369.04 amended the rule above for an unjoined pair. Two more things join
-two coupled parts. Everything else stands.
-
-A flow step joins the two parts at its ends, in either direction, as a
-relationship does. ADR 0044 leaves steps out of a container's interface,
-because a return travels against the dependency. Change coupling has no
-direction, so that reason does not apply here.
-
-A container counts as at an end inside it. ADR 0044 counts a relationship
-that starts inside a container and ends outside it as an outgoing relationship
-of the container. A relationship from outside to a part inside makes its
-source a caller of the container. So the board draws that dependency for the
-container too. On Command interface on 2026-10-06, Commands and Server client
-changed together in 34 commits (35%). Five commands inside Commands call
-Server client. Without this rule, the pair read as unjoined, although the board
-draws the dependency.
+If nothing joins two coupled parts, and neither part is inside the other, the
+answer lists the pair as unjoined. An unjoined pair is what the reading is for.
+It points to a dependency that the board does not draw, or to one decision that
+two parts carry (Ousterhout's information leakage).
 
 ## Footprint sets a range of commits against a proposal
 
 A footprint reads the commits from the merge base of a named ref and HEAD up to
-HEAD, in each checkout. The ref is anything that Git resolves in the checkout,
-such as `main`, `origin/main` or a commit. With `--head <ref>`, the commits run
-up to that ref instead of HEAD, read from Git without a checkout, for a layer of
-a pull-request stack that is not checked out. If the
-ref does not resolve in a checkout, the lens does not read that checkout, and
-the answer says so.
+HEAD, in each checkout.
 
 A part changed when its bound declarations or paths differ between the merge
-base and the head. The lens compares the two ends as one commit, with the
-mapping and the declaration reading that it uses for each commit. A change that
-a later commit of the range undoes is then no change. A change that a lower
-layer of a stack also made, and that a merge brings in, is no change either.
-The footprint lists the changed parts, each with the commits of the range that
-changed it, and it says which commits are large. It uses no period, and it
-leaves no large commit out. A changed file that no binding holds, and the files
-that tell whether a directory part holds the parts inside it, also count only
-when they differ between the two ends.
-
-With `--variant <proposal>`, the footprint reads the parts of the variant that
-the proposal is read against and of the proposal. The footprint splits the parts into
-three lists: named and changed, changed but not named, and named but not
-changed. A skipped part is in none of the three lists.
+base and the head.
 
 The proposal names each part whose comparison status is added, changed or
 removed. It also names each part at an end of a relationship or a step with one
 of those statuses. A new relationship changes the code at its ends, although
 the comparison does not badge them (ADR 0023). Both ends count, because the
 direction of a relationship does not say which end's code changes, and
-relationship kinds belong to the vault (ADR 0024). The answer says why it names
-each part. So a reader can tell a part that
-the proposal changed from a part at the far end of a new relationship.
+relationship kinds belong to the vault (ADR 0024).
 
 ## Where each reading answers
 
-| Reading         | Where it answers                                    | Severity    |
-| --------------- | --------------------------------------------------- | ----------- |
-| Behind          | `archboard check --code`, per board and per part    | information |
-| Hotspots        | `archboard semantic locality <board>`               | information |
-| Change coupling | `archboard semantic locality <board>`               | information |
-| Footprint       | `archboard semantic footprint <board> --base <ref>` | information |
+Behind answers in the code check. One command then says how each board stands
+against its code: the findings say what is wrong, and behind says where to
+look.
 
-Behind answers in the code check, because TASK-369.02 asks the check for it.
-The code check also reads every board against its code: the files of each
-checkout as they are on disk, with uncommitted edits (ADR 0046). Behind counts
-the commits on HEAD. One command then says how each board stands against its
-code: the findings say what is wrong, and behind says where to look.
-
-`semantic locality` answers hotspots and change coupling together, because one
-walk of one period gives both and the pane inspector shows both for one part.
-Locality is the word of the codebase-design skill for where change
-concentrates, and the design note uses it for these two readings.
-`semantic footprint` answers the reading that it is named for. The two commands
-read different ranges with different options: a period for locality, and a
-base ref for a footprint. One command for both has two modes.
-
-Information means that a reading is not a vault diagnostic. It has no warning
-or error severity, it changes no exit status, and it puts no dot on the
-diagnostics bell (ADR 0026). The canvas draws nothing for it.
+Every reading is information. It is not a vault diagnostic, it changes no exit
+status, and it puts no dot on the diagnostics bell (ADR 0026).
 
 Behind is information, for three reasons:
 
@@ -349,11 +158,6 @@ Behind is information, for three reasons:
   meaning anything. As a warning, behind puts every board on the bell, and the
   bell is never clear.
 
-Hotspots and change coupling describe the code. An unjoined pair asks the
-board a question and proves no fault in it. A footprint helps a review. What a
-maintainer does with a footprint is a rule of the archboard-dev skill
-(TASK-369.06), not a severity.
-
 ## Derived on request, never stored, never drawn
 
 Each reading is derived on request, from Git and the board. Nothing writes a
@@ -364,48 +168,23 @@ what is on a board.
 No reading changes the picture. Traffic is authored illustration and never
 measurement (ADR 0027), so no reading sets traffic. No reading sets emphasis, a
 colour or a mark, because every visual channel is taken (ADR 0025, ADR 0031).
-The pane inspector is the one place where a user sees a reading (TASK-369.07).
+The pane inspector and `Measures` are the only places where a user sees a
+reading.
 
 The Archboard server derives the readings, because the pane inspector needs a
 route and the CLI talks to the server. The server keeps each answer of behind
 and of locality in memory. Its key is everything that the answer derives from.
 The memory goes with the process. It answers no question about what is on a
-board, so it is not a second copy of one.
+board, so it is not a second copy of one. The server keeps no footprint,
+because a ref such as `origin/main` can move while every HEAD stays.
 
-The server keeps no footprint (TASK-369.05). No pane asks for one, and an agent
-asks once for a branch. Also, a ref such as `origin/main` can move while every
-HEAD stays. The key of a footprint then needs the commit of the ref in each
-checkout, and to find that is most of the work.
+No reading runs inside the check that every open canvas polls, because a walk
+there runs for every pane and every check. The reader asks for a reading on a
+selection, and when `Measures` opens. It never asks on a timer. A pane never starts a code pass itself, but a walk is not a code pass. It
+reads only Git, and every commit can change its answer, so a pane that only
+reads what an agent left shows nothing most of the time.
 
-No reading runs inside `/api/vault/check`, the check that every open canvas
-polls every 5 seconds (`VAULT_CHECK_POLL_MS`). The plain `archboard check`
-stays as it is.
-
-If a user selects a part, the pane inspector asks the route of
-`semantic locality`. It never asks on a timer. On this repository on 2026-10-06,
-a walk of one year (about 3,300 commits) took 0.4 seconds.
-
-TASK-367.24 says that a pane never starts a code pass itself. A walk is not a
-code pass. It reads only Git, and it took less than a second here. Also, every
-commit can change its answer. A pane that only reads what an agent left then
-shows nothing most of the time. This decision does not change the
-rule of TASK-367.24 for the code pass.
-
-## Amendment of 2026-10-31: when the reader asks
-
-TASK-559.29 amended the section above for the canonical reader. Everything else
-stands.
-
-The canonical reader has no pane inspector. `Measures` is a second place where
-a user sees a reading. It is still derived on request, stored nowhere and drawn
-on no picture.
-
-The measurement above no longer holds. On this repository on 2026-10-31, the
-model held 524 modules, 40 of them bound to a symbol, and the period held 5,089
-commits. A first read now takes about 10 seconds, and about 18 seconds
-while other requests run all the time.
-
-The browser passes no signal to the read. Each selection mounts its own
+The browser passes no abort signal to the read. Each selection mounts its own
 subscriber, and the last subscriber of a read leaves before the next one mounts.
 A signal then stops a read that the next selection needs, and a reader who moves
 from module to module never gets an answer. An obsolete read ends on the server
@@ -413,19 +192,10 @@ and its answer stays in the memory.
 
 ## Considered and rejected
 
-**Count from the board's last write**, its `updatedAt` or the last commit of
-its file. A draft edit, a shelving, a rename and a migration write all move it,
-and none of them says anything new about the built architecture. A draft is
-ahead of the code (ADR 0031), so its edits cannot bring the board up to its
-code.
-
 **Count from the time of the last adoption.** The time is in the board, and it
-needs no Git. But the current variant is also edited in place. Board viewer
-adopted TASK-387 on 2026-10-03, and commit `2779dff27` rebound one of its parts
-on 2026-10-05. A board that was created current has no adoption at all. And a
-time counts the commit that carries a board change with its code: commit
-`e88465230` carried that adoption 75 seconds after its time, and it changed two
-bound files of Board viewer.
+needs no Git. But the current variant is also edited in place. A board that was
+created current has no adoption at all. And a time counts the commit that
+carries a board change with its code.
 
 **Store a time on each variant.** It works for a vault outside Git. It adds a
 field that every write must stamp, and it is still a time, so it counts that
@@ -435,46 +205,22 @@ same commit.
 part. An adoption says that the whole variant is right. A part that an agent
 read and left alone then looks behind for ever.
 
-**Stamp each binding.** An agent records on each binding the commit that it
-last read the code at. Since TASK-311, a binding's `commit` pins the ref that
-its code opens at. A stamp on each part is an authored answer that goes out of
-date and that somebody keeps by hand on every part. ADR 0031 refused that split
-for existence.
-
-**Read the remote's default branch.** It needs a fetch and the network, and it
-answers about code that this machine does not have.
-
 **Read every branch**, as code-maat's guide does with `--all`. Unmerged work
 then counts against the variant that says what is built.
 
 **Read a pinned ref that the checkout does not have out.** The lens then reads
-code that the checkout does not show. "Open the code" sends a part of a GitHub
-repository to GitHub at that ref.
-
-**Require a parser for every binding.** File mapping remains available for
-all languages. TASK-448 adds declaration mapping through the existing adapters
-and labels path-wide fallback when they cannot resolve a symbol.
+code that the checkout does not show. A pin says that the part describes the
+code at that ref, and the commits on another ref say nothing about it.
 
 **Count each commit in a footprint**, as behind and locality do. In a stack
 that merges instead of rebasing, two layers can make the same change. The
 upper layer's own commit then changes the part, but its pull request changes
-nothing there. The same holds for a change and its revert. The footprint then
-names a part that the branch does not change, and `--fail-outside` fails a
-branch for it. A footprint answers what a branch changes, so it reads the two
-ends of the range (TASK-635).
+nothing there. The same holds for a change and its revert. A footprint answers
+what a branch changes, so it reads the two ends of the range.
 
 **Apply the size filter to behind and footprint.** A large commit can move what
 a board says. A branch's large commit did change its parts. Those two readings
 keep large commits and say which ones are large.
-
-**Answer in the plain `archboard check`.** Every open canvas polls it every 5
-seconds, and agents run it after board work (ADR 0026). A walk there runs for
-every pane and every check. Hotspots, change coupling and footprint also need a
-board and options.
-
-**Answer in `semantic inspect`.** It is the reading that a pane runs over the
-same document, and it needs only the board and the policy. Git and checkouts
-change that contract.
 
 **One command for all four readings.** The four read different ranges with
 different options, so one command has four modes. Its natural name, history,
