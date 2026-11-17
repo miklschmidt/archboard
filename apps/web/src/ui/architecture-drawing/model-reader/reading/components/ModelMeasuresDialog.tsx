@@ -22,7 +22,10 @@ import type {
 	MeasureKey,
 	MeasureView,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
-import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import {
+	kindLookOf,
+	type KindLook,
+} from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /** The four views of the dialog. */
 type MeasuresTab = "code" | "interface" | "changes" | "branch";
@@ -56,7 +59,7 @@ const TABS: readonly {
 		value: "branch",
 		Icon: RiGitBranchLine,
 		label: "What this branch changed",
-		gloss: "The modules that the commits from a base changed",
+		gloss: "The modules that a branch changed since its base",
 	},
 ];
 
@@ -195,12 +198,10 @@ function ModelMeasuresDialog(props: ModelMeasuresDialogProps): JSX.Element {
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="branch" className={PANEL}>
-						<BranchFootprint
-							vault={reader.vault}
-							model={reader.accepted.shown.model}
+						<BranchPanel
+							reader={reader}
 							choice={footprint}
 							onChoice={setFootprint}
-							selected={soleOf(reader.selection.ids)}
 							onChoose={choose}
 							onShow={show}
 						/>
@@ -247,12 +248,8 @@ function MeasuresPanel(
 	> & { readonly reader: Reader },
 ): JSX.Element {
 	const { reader, ...table } = props;
-	const { shown, scene } = reader.accepted;
-	const appearances = useSceneAppearances(scene);
-	const look = useMemo(
-		() => kindLookOf(shown.model.policy, appearances),
-		[shown.model.policy, appearances],
-	);
+	const { shown } = reader.accepted;
+	const look = useReaderLook(reader);
 	return (
 		<ModelMeasures
 			{...table}
@@ -262,6 +259,44 @@ function MeasuresPanel(
 			look={look}
 			selected={soleOf(reader.selection.ids)}
 		/>
+	);
+}
+
+/**
+ * What this branch changed, over the reading on screen.
+ * @param props The reader, the range the reader chose, and what a row and a list do.
+ * @returns The view.
+ */
+function BranchPanel(
+	props: Pick<
+		Parameters<typeof BranchFootprint>[0],
+		"choice" | "onChoice" | "onChoose" | "onShow"
+	> & { readonly reader: Reader },
+): JSX.Element {
+	const { reader, ...view } = props;
+	const look = useReaderLook(reader);
+	return (
+		<BranchFootprint
+			{...view}
+			vault={reader.vault}
+			model={reader.accepted.shown.model}
+			look={look}
+			selected={soleOf(reader.selection.ids)}
+		/>
+	);
+}
+
+/**
+ * How kinds look in the reading on screen, as its picture draws them.
+ * @param reader The reader.
+ * @returns The look.
+ */
+function useReaderLook(reader: Reader): KindLook {
+	const { shown, scene } = reader.accepted;
+	const appearances = useSceneAppearances(scene);
+	return useMemo(
+		() => kindLookOf(shown.model.policy, appearances),
+		[shown.model.policy, appearances],
 	);
 }
 

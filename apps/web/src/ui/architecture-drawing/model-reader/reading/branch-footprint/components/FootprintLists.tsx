@@ -1,10 +1,11 @@
 import { useCallback, type JSX, type MouseEvent } from "react";
 import { Button, cn } from "@archboard/ui-kit/components";
 import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	commitsOf,
 	footprintLists,
-	namedWords,
 	type FootprintList,
 	type FootprintModule,
 } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/footprint-lists.ts";
@@ -17,6 +18,10 @@ import { rowTone } from "#ui/shell/rules/row-tone.ts";
 /** Inputs for the lists. */
 interface FootprintListsProps {
 	readonly answer: BranchFootprintAnswer;
+	/** How kinds look, for each module's chip. */
+	readonly look: KindLook;
+	/** The kind of each module of the reading on screen. A module only the branch adds has none. */
+	readonly kinds: ReadonlyMap<string, string>;
 	/** The module selected on the picture, or null. */
 	readonly selected: string | null;
 	/** Select a module on its picture, here or in the other pane. */
@@ -26,31 +31,36 @@ interface FootprintListsProps {
 }
 
 /**
- * The modules a footprint lists, one section for each list, in a well that scrolls. A row selects
- * its module on its picture, beside the reading with Alt, as a row of the other Measures tables does.
+ * The modules a footprint lists, one card for each list, side by side in a well. A card's modules
+ * scroll inside it. A row selects its module on its picture, beside the reading with Alt, as a row
+ * of the other Measures tables does.
  * @param props The answer and what a row does.
  * @returns The lists.
  */
 function FootprintLists(props: FootprintListsProps): JSX.Element {
-	const { answer } = props;
+	const lists = footprintLists(props.answer);
 	return (
 		<div
 			data-slot="footprint-lists"
-			className="bg-tray-sink shadow-well rounded-panel flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-3"
+			className={cn(
+				"bg-tray-sink shadow-well rounded-panel grid min-h-0 flex-1 gap-1.5 overflow-y-auto p-1.5",
+				lists.length > 1 && "md:grid-cols-3 md:overflow-hidden",
+			)}
 		>
-			{footprintLists(answer).map((list) => (
-				<ListSection key={list.key} {...props} list={list} />
+			{lists.map((list) => (
+				<ListCard key={list.key} {...props} list={list} />
 			))}
 		</div>
 	);
 }
 
 /**
- * One list: its name, its count, what it holds, and its rows.
+ * One list: its name and count, its modules, the question it asks, and the key that shows it on
+ * its picture. The list of work outside the plan takes the changed tone.
  * @param props The list and what a row does.
- * @returns The section.
+ * @returns The card.
  */
-function ListSection(props: FootprintListsProps & { readonly list: FootprintList }): JSX.Element {
+function ListCard(props: FootprintListsProps & { readonly list: FootprintList }): JSX.Element {
 	const { answer, list, onShow } = props;
 	const heading = `footprint-list-${list.key}`;
 	const show = useCallback(
@@ -67,51 +77,59 @@ function ListSection(props: FootprintListsProps & { readonly list: FootprintList
 		<section
 			data-footprint-list={list.key}
 			aria-labelledby={heading}
-			className="flex flex-col gap-1"
+			className={cn(
+				"rounded-control shadow-raised flex flex-col gap-3.5 p-3.5 inset-ring md:min-h-0",
+				list.outside
+					? "inset-ring-standing-changed/45 bg-[color-mix(in_srgb,var(--standing-changed)_6%,var(--face))]"
+					: "bg-face inset-ring-border",
+			)}
 		>
-			<header className="flex items-baseline gap-2">
-				<h3 id={heading} className="text-title">
+			<header className="flex items-baseline justify-between gap-3">
+				<h3
+					id={heading}
+					className={cn("text-control font-semibold", list.outside && "text-standing-changed")}
+				>
 					{list.label}
 				</h3>
 				<span className="text-technical text-muted-foreground font-mono">
 					{list.modules.length}
 				</span>
+			</header>
+			{list.modules.length === 0 ? (
+				<p className="text-body text-muted-foreground">None.</p>
+			) : (
+				<ul className="-mx-1.5 flex min-h-0 flex-col gap-0.5 overflow-y-auto">
+					{list.modules.map((module) => (
+						<ModuleRow key={module.subject.id} {...props} module={module} />
+					))}
+				</ul>
+			)}
+			<footer className="mt-auto flex flex-col items-start gap-2.5">
+				<p className="text-body text-muted-foreground">{list.note}</p>
 				<Button
 					variant="outline"
 					size="xs"
 					data-footprint-show={list.key}
 					disabled={list.modules.length === 0}
 					onClick={show}
-					className="ml-auto self-center"
 				>
 					Show on picture
 				</Button>
-			</header>
-			<p className="text-body text-muted-foreground">{list.gloss}</p>
-			{list.modules.length === 0 ? (
-				<p className="text-body text-muted-foreground">None.</p>
-			) : (
-				<ul className="flex flex-col">
-					{list.modules.map((module) => (
-						<ModuleRow key={module.subject.id} {...props} module={module} />
-					))}
-				</ul>
-			)}
+			</footer>
 		</section>
 	);
 }
 
 /**
- * One module of a list: its name, its commits, why the plan names it, and the changed modules
- * that it holds.
+ * One module of a list: its kind's chip and its name. The lines under the cards count the commits.
  * @param props The module and what choosing it does.
  * @returns The row.
  */
 function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModule }): JSX.Element {
-	const { answer, module, selected, onChoose } = props;
+	const { answer, module, look, kinds, selected, onChoose } = props;
 	const { id, name } = module.subject;
+	const kind = kinds.get(id);
 	const commits = commitsOf(answer, module);
-	const large = commits.filter((one) => one.large).length;
 	const choose = useCallback(
 		(event: MouseEvent<HTMLButtonElement>): void => onChoose(id, event.altKey),
 		[id, onChoose],
@@ -120,39 +138,22 @@ function ModuleRow(props: FootprintListsProps & { readonly module: FootprintModu
 		<li data-footprint-module={id} data-commits={commits.length}>
 			<button
 				type="button"
+				title={name}
 				onClick={choose}
 				className={cn(
 					rowTone({ lit: id === selected }),
-					"flex min-h-9 w-full items-center gap-3 px-2 py-1 text-left",
+					"flex min-h-9 w-full items-center gap-2.5 px-1.5 py-1 text-left",
 				)}
 			>
-				<span className="flex min-w-0 flex-1 flex-col">
-					<span className="text-control truncate">{name}</span>
-					<span className="text-body text-muted-foreground truncate">{detailOf(module)}</span>
-				</span>
-				{commits.length > 0 && (
-					<span className="text-technical text-muted-foreground shrink-0 font-mono">
-						{commits.length} {commits.length === 1 ? "commit" : "commits"}
-						{large > 0 && `, ${large} large`}
-					</span>
+				{kind === undefined ? (
+					<span aria-hidden="true" className="size-6 shrink-0" />
+				) : (
+					<KindChip look={look} kind={kind} />
 				)}
+				<span className="text-control min-w-0 flex-1 truncate">{name}</span>
 			</button>
 		</li>
 	);
-}
-
-/**
- * What a row says under a module's name: why the plan names it and what it holds.
- * @param module The module.
- * @returns The words, or its bound path when there is nothing else to say.
- */
-function detailOf(module: FootprintModule): string {
-	const words = namedWords(module.named);
-	if (module.holds.length > 0)
-		words.push(
-			`holds ${module.holds.length} changed ${module.holds.length === 1 ? "module" : "modules"}`,
-		);
-	return words.length === 0 ? module.path : words.join("; ");
 }
 
 export { FootprintLists };
