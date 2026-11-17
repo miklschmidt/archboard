@@ -78,7 +78,7 @@ function ListCard(props: FootprintListsProps & { readonly list: FootprintList })
 			data-footprint-list={list.key}
 			aria-labelledby={heading}
 			className={cn(
-				"rounded-control shadow-raised inset-ring flex flex-col gap-3.5 p-3.5 md:min-h-0",
+				"rounded-control shadow-raised flex flex-col gap-3.5 p-3.5 inset-ring md:min-h-0",
 				list.outside
 					? "inset-ring-standing-changed/45 bg-[color-mix(in_srgb,var(--standing-changed)_6%,var(--face))]"
 					: "bg-face inset-ring-border",

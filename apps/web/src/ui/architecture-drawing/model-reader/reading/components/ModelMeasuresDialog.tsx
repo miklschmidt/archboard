@@ -22,7 +22,10 @@ import type {
 	MeasureKey,
 	MeasureView,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-measures.ts";
-import { kindLookOf, type KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import {
+	kindLookOf,
+	type KindLook,
+} from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /** The four views of the dialog. */
 type MeasuresTab = "code" | "interface" | "changes" | "branch";
