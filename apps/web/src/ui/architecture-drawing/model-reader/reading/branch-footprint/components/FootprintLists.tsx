@@ -43,7 +43,7 @@ function FootprintLists(props: FootprintListsProps): JSX.Element {
 		<div
 			data-slot="footprint-lists"
 			className={cn(
-				"bg-tray-sink shadow-well rounded-panel grid min-h-0 flex-1 gap-1.5 overflow-y-auto p-1.5",
+				"bg-tray-sink shadow-well rounded-panel grid min-h-64 flex-1 gap-1.5 overflow-y-auto p-1.5",
 				lists.length > 1 && "md:grid-cols-3 md:overflow-hidden",
 			)}
 		>

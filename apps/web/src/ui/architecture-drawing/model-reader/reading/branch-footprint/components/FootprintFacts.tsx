@@ -23,7 +23,7 @@ function FootprintFacts(props: { readonly answer: BranchFootprintAnswer }): JSX.
 	return (
 		<div
 			data-slot="footprint-facts"
-			className="text-body text-muted-foreground flex flex-col gap-1.5"
+			className="text-body text-muted-foreground flex min-h-0 flex-col gap-1.5 overflow-y-auto"
 		>
 			<p data-slot="footprint-vault" data-vault-read={answer.vaultRead.at}>
 				{vaultWords(answer.vaultRead)}
@@ -103,7 +103,8 @@ function UnboundFiles(props: {
 				{files.length} changed {files.length === 1 ? "file has" : "files have"} no module bound to{" "}
 				{files.length === 1 ? "it" : "them"}.
 			</summary>
-			<ul className="mt-1 flex flex-col gap-0.5 font-mono">
+			{/* A branch can leave hundreds of files unbound, so they scroll and the cards keep their room. */}
+			<ul className="bg-tray-sink shadow-well rounded-panel mt-1.5 flex max-h-48 flex-col gap-0.5 overflow-y-auto p-2.5 font-mono">
 				{files.map((file) => (
 					<li key={`${file.repo}:${file.path}`} className="text-technical [overflow-wrap:anywhere]">
 						{several ? `${file.repo}: ${file.path}` : file.path}
