@@ -1,4 +1,4 @@
-// One writer at a time, per model (ADR 0016).
+// One writer at a time, per model.
 //
 // This public module remains the stable lock API. Private owners separate the
 // vault lease, acquisition, process-local claim lifecycle, and claim commands.

@@ -583,7 +583,7 @@ The slice adds no browser behavior.
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
   owner proves a claim in one Archboard server process excludes writes through
   another on the same vault and reaches its panes, which an in-process mutex
-  could not do (ADR 0016).
+  could not do.
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
 

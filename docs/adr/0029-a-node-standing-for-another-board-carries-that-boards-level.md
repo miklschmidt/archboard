@@ -52,11 +52,10 @@ vocabulary now defines `system` alongside `service` and `module`. A vault that
 configures its own levels defines a kind of the same name for each. If it does
 not, it cannot say what its own boards are.
 
-### How this relates to the node `level` of ADR 0013
+### How this relates to the node `level`
 
-[ADR 0013](0013-a-node-records-a-level-only-to-differ-from-its-board.md) says a
-node records a level only to differ from its board. It also says that an absent
-level means the board's own. That field lives on the legacy promotion path,
+An earlier rule said that a node records a level only to differ from its board,
+and that an absent level means the board's own. That field lives on the legacy promotion path,
 where a node is element metadata. A semantic node has no `level` field at all,
 and this ADR adds none.
 
@@ -64,7 +63,7 @@ The rule survives in the form this decision gives it. A node at its board's
 level says nothing extra. Its kind describes what the part is, such as a route,
 a queue, or a function. A node at a different level says so through the kind it
 carries. The only nodes that sit at another level are the ones standing for
-another board. This is one field, read the way ADR 0013 reads the other. Silence
+another board. This is one field, read the way the earlier rule read the other. Silence
 means "same as the board", and there is nothing to keep in step.
 
 ## A drill-down is an affordance, never a node

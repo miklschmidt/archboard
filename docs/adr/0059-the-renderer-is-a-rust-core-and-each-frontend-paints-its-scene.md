@@ -85,8 +85,6 @@ A host gives the core only what the place it runs in has, such as durations,
 theme colours and icons, and it runs the core's layout solves on its workers.
 The core chooses between the solves of a board itself, and asks for every solve
 that a choice reads before it waits for any of them.
-[ADR 0061](0061-group-regions-are-packed-before-solving.md) proposes replacing
-these choices.
 
 The renderer package holds no rule of layout, painting or measurement. It
 resolves a board's variant, view and comparison into a request and runs the

@@ -13,7 +13,7 @@ import { durations } from "#shared/constants/durations.ts";
 /** `MODEL_LOCK_MS.renew`, named once so that `watch` can be one renewal interval. */
 const LOCK_RENEW_MS = 1000;
 
-/** One writer at a time (ADR 0016): the lease file every model write takes. */
+/** One writer at a time: the lease file every model write takes. */
 const MODEL_LOCK_MS = durations({
 	/**
 	 * How long a lock is held without renewal before it lapses.
@@ -108,7 +108,7 @@ const MODEL_LOCK_MS = durations({
 	watch: LOCK_RENEW_MS,
 });
 
-/** A claim: one writer for longer than one write (ADR 0016, TASK-080), and what every pane shows of it. */
+/** A claim: one writer for longer than one write (TASK-080), and what every pane shows of it. */
 const CLAIM_MS = durations({
 	/**
 	 * How long a claim runs when the agent does not say.

@@ -54,7 +54,7 @@ link resolving.
 Shelving is a fifth transition, beside create, branch, edit, settle and adopt.
 It goes through the one write boundary that the other four use. That means the
 same lease, the same expected-version check, one version advance and one atomic
-write (ADR 0016). It takes the reason the proposal was let go. The board records
+write. It takes the reason the proposal was let go. The board records
 what was shelved, at what time and for what reason, the way it already records
 each time the designation moved.
 

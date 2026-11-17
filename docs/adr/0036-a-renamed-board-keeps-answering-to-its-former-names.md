@@ -27,7 +27,7 @@ that people wrote down elsewhere.
 
 A rename is one write to one board, through the same boundary as every other
 write, and it changes nothing but the name. It uses the same lease and the same
-expected version. It makes one version advance and one atomic write (ADR 0016).
+expected version. It makes one version advance and one atomic write.
 Every id, every variant with its lifecycle and ancestry, and every record of
 adoption, shelving and reconciliation stay exactly as they were. A rename is
 never a delete and a recreate, and never an adoption.

@@ -26,10 +26,8 @@ values with the vault's consumer rather than a hard-coded product enum. So
 different architectural domains can use their own classifications consistently
 across boards.
 
-A board must declare its level using that configured vocabulary. This keeps the
-board-level classification in
-[ADR 0013](0013-a-node-records-a-level-only-to-differ-from-its-board.md). It
-also makes the vocabulary consumer-defined.
+A board must declare its level using that configured vocabulary. This makes the
+vocabulary consumer-defined.
 
 Consumers also define node types and relationship types. These presentation mappings belong to the
 configuration. They are not the definitions of the domain terms. Exact

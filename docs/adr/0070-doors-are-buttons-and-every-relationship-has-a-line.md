@@ -13,8 +13,6 @@ The owner decided the edge tab, the door buttons and the line ends. The
 integrator decided rule 6 under the owner's trust of 2026-10-31. The owner looked
 at the door buttons in the real pane and accepted them.
 
-This record supersedes [ADR 0062](0062-parent-headers-use-normal-card-sizing.md).
-
 ## A frame has one edge tab
 
 A frame names its module with one edge tab: one line with the icon, the name and

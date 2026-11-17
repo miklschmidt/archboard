@@ -541,7 +541,7 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
   in `tests/system/code-targets` and `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records an exact retained canonical walkthrough to a video
-(ADR 0035, ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
+(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
 operation or fact for each job a caller has. It imports `model`, `timing`, `workspace` and `renderer`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
 files of `runtime/api/` run only in Bun.

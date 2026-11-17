@@ -4,13 +4,11 @@ status: accepted
 
 # A recording is a talk rendered frame by frame
 
-This ADR supersedes
-[ADR 0035](0035-a-recording-is-paced-and-captured-by-the-page.md) in full. The
-encoder is ffmpeg.
+This ADR replaces the earlier one-pass recording in full. The encoder is ffmpeg.
 
 ## Context
 
-ADR 0035 made a recording in one live pass. The page paced the walkthrough on
+The earlier design made a recording in one live pass. The page paced the walkthrough on
 the Codex voice and captured its own tab with `getDisplayMedia` and
 `MediaRecorder`. A machine without a usable GPU held the picture for 57 to
 75 ms in the glides between views, and a busy machine held it longer.
@@ -35,7 +33,7 @@ So every frame is drawn, with or without a GPU and under any load. A kept talk
 renders again, in the other theme or after a renderer fix, with no new voice
 session.
 
-Two things stand from ADR 0035. Only the page hears the audio, so the page
+Two things stand from the one-pass design. Only the page hears the audio, so the page
 decides when a step ends, not the server. Pass 1 runs on the Archboard server
 that the CLI talks to, because that server holds the Codex sign-in.
 
