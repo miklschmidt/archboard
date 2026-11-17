@@ -1,10 +1,13 @@
 import { useMemo, type JSX, type ReactNode } from "react";
 import type { Model } from "@archboard/model/content";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { VaultStates } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/against.ts";
 import { FootprintFacts } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintFacts.tsx";
 import { FootprintLists } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintLists.tsx";
 import type { FootprintShow } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/show-on-picture.ts";
 import { FootprintRange } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintRange.tsx";
+import { UnboundFiles } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/UnboundFiles.tsx";
 import {
 	useBranchFootprint,
 	type FootprintChoice,
@@ -63,7 +66,7 @@ function LiveFootprint(props: BranchFootprintProps): JSX.Element {
 		<div
 			data-slot="branch-footprint"
 			data-footprint-state={footprint.status}
-			className="flex min-h-0 flex-1 flex-col gap-3"
+			className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto"
 		>
 			<FootprintRange
 				refs={refs.data}
@@ -73,22 +76,41 @@ function LiveFootprint(props: BranchFootprintProps): JSX.Element {
 				against={against}
 				choice={choice}
 				onChoice={onChoice}
+				adopted={adoptedHere(footprint.data, read.states)}
 				busy={refs.isFetching || read.isFetching || footprint.isFetching}
 				onRefresh={refresh}
-			/>
+			>
+				<FootprintFacts answer={footprint.data} />
+			</FootprintRange>
 			<FootprintBody
 				{...props}
 				base={base}
 				refsFailure={refs.error?.message}
 				vaultFailure={read.error?.message}
 				footprint={footprint}
+				read={read.states}
 			/>
 		</div>
 	);
 }
 
 /**
- * The lists and what they cover, or what stands in their place.
+ * Whether the branch adopted the current state that the footprint is set against: the server then
+ * sets it against the merge base's current state, as a proposal, and names that state `against`.
+ * @param answer The footprint, once read.
+ * @param states The states of the vault that the footprint reads, once read.
+ * @returns Whether it did.
+ */
+function adoptedHere(
+	answer: BranchFootprintAnswer | undefined,
+	states: VaultStates | undefined,
+): boolean {
+	const current = states?.manifest.current?.id;
+	return current !== undefined && answer?.proposal?.id === current;
+}
+
+/**
+ * The lists and the files that no module binds, or what stands in their place.
  * @param props The reads and what a row does.
  * @returns The body.
  */
@@ -98,13 +120,12 @@ function FootprintBody(
 		readonly refsFailure: string | undefined;
 		readonly vaultFailure: string | undefined;
 		readonly footprint: ReturnType<typeof useBranchFootprint>["footprint"];
+		/** The model that the footprint reads, once read. */
+		readonly read: Pick<Model, "modules"> | undefined;
 	},
 ): JSX.Element {
-	const { model, base, refsFailure, vaultFailure, footprint } = props;
-	const kinds = useMemo(
-		() => new Map(model.modules.map((module) => [module.id, module.kind])),
-		[model.modules],
-	);
+	const { model, base, refsFailure, vaultFailure, footprint, read } = props;
+	const kinds = useKinds(model, read);
 	if (refsFailure !== undefined)
 		return <Status alert>The branches could not be read. {refsFailure}</Status>;
 	if (vaultFailure !== undefined)
@@ -123,8 +144,26 @@ function FootprintBody(
 				onChoose={props.onChoose}
 				onShow={props.onShow}
 			/>
-			<FootprintFacts answer={footprint.data} />
+			<UnboundFiles files={footprint.data.unboundFiles} />
 		</>
+	);
+}
+
+/**
+ * The kind of each module: in the model that the footprint reads, which holds the branch's modules
+ * that the reading on screen can lack, else in the reading on screen.
+ * @param model The reading on screen.
+ * @param read The model that the footprint reads, once read.
+ * @returns The kinds by module.
+ */
+function useKinds(
+	model: Pick<Model, "modules">,
+	read: Pick<Model, "modules"> | undefined,
+): ReadonlyMap<string, string> {
+	const branch = read?.modules;
+	return useMemo(
+		() => new Map([...model.modules, ...(branch ?? [])].map((module) => [module.id, module.kind])),
+		[model.modules, branch],
 	);
 }
 

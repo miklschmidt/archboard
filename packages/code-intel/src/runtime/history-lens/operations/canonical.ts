@@ -6,7 +6,8 @@ import {
 	type ArchitectureHistoryRequestSchema,
 } from "#shared/protocol/canonical-history.ts";
 import { readStatesToCheck, type StateToCheck } from "#runtime/code-check/operations/states.ts";
-import { readSourceRefs } from "#runtime/history-lens/operations/source-refs.ts";
+import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
+import { mergeBaseIn, readSourceRefs } from "#runtime/history-lens/operations/source-refs.ts";
 import { createLocalityEvidence } from "#runtime/history-lens/operations/locality.ts";
 import { readFootprintEvidence } from "#runtime/history-lens/operations/footprint.ts";
 const locality = createLocalityEvidence();
@@ -94,6 +95,75 @@ function vaultRead(model: NonNullable<StateToCheck["model"]>) {
 }
 
 /**
+ * The current state at the merge base, when the branch adopted the current state it is read
+ * against: a proposal that a branch drafts and adopts before it merges is the plan of that
+ * branch, so the footprint sets the commits against what the merge base held, as it sets a draft
+ * against its predecessor. Without a merge base in the vault's repository, a model at it, or
+ * another current state there, the current state has no plan.
+ * @param vault The explicit vault.
+ * @param reading The selected state.
+ * @param request The range.
+ * @param signal The caller's cancellation signal.
+ * @returns The variant of the merge base's current state, or undefined.
+ */
+async function adoptedAgainst(
+	vault: string,
+	reading: StateToCheck,
+	request: z.output<typeof ArchitectureFootprintRequestSchema>,
+	signal: AbortSignal | undefined,
+) {
+	const current = selectedCurrent(reading);
+	if (current === undefined) return undefined;
+	const mergeBase = await vaultMergeBase(vault, request, signal);
+	if (mergeBase === undefined) return undefined;
+	const then = await currentAt(vault, mergeBase);
+	return then === undefined || then.id === current ? undefined : then.variant;
+}
+
+/**
+ * The selected state, when it is the current state.
+ * @param reading The selected state.
+ * @returns Its identity, or undefined for a draft or a reading of no current state.
+ */
+function selectedCurrent(reading: StateToCheck): string | undefined {
+	const model = reading.model;
+	return model?.selectedState?.lifecycle === "current" ? model.manifest.current?.id : undefined;
+}
+
+/**
+ * The merge base of the range in the vault's own repository.
+ * @param vault The explicit vault.
+ * @param request The range. Without a head, it ends at the checkout's HEAD.
+ * @param signal The caller's cancellation signal.
+ * @returns The merge base, or undefined when no checkout holds the vault or the refs share none.
+ */
+async function vaultMergeBase(
+	vault: string,
+	request: z.output<typeof ArchitectureFootprintRequestSchema>,
+	signal: AbortSignal | undefined,
+): Promise<string | undefined> {
+	const own = vaultIdentity(vault);
+	const root = checkoutsReadFrom(vault).find((checkout) => checkout.repo === own)?.root;
+	const head = request.head ?? "HEAD";
+	const range = await mergeBaseIn(root, { base: request.base, head }, { signal });
+	return range?.mergeBase;
+}
+
+/**
+ * The current state of the vault as a commit holds it.
+ * @param vault The explicit vault.
+ * @param ref The commit.
+ * @returns The state's identity and its variant, or undefined when the commit holds no current state.
+ */
+async function currentAt(vault: string, ref: string) {
+	const read = await readStatesToCheck(vault, undefined, { ref });
+	if (!("ok" in read)) return undefined;
+	const reading = read.states[0]!;
+	const id = reading.model?.manifest.current?.id;
+	return id === undefined ? undefined : { id, variant: reading.variant };
+}
+
+/**
  * Compare a local source branch range with canonical architecture and its proposal.
  * @param vault The explicit vault.
  * @param input The selected state and local source refs.
@@ -110,7 +180,11 @@ async function readArchitectureFootprint(
 	if (!("ok" in read)) return read;
 	const reading = read.states[0]!;
 	const model = reading.model!;
-	const { proposal, against } = footprintVariants(reading);
+	const adopted = await adoptedAgainst(vault, reading, request, signal);
+	const { proposal, against } =
+		adopted === undefined
+			? footprintVariants(reading)
+			: { proposal: reading.variant, against: adopted };
 	const evidence = await readFootprintEvidence({
 		vault,
 		document: reading.document,
