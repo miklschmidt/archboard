@@ -37,7 +37,7 @@ It also refuses a route that crosses or touches its own ink, because no hop can 
 The Solver interface, text shaping, Rust core, worker pool, and Graphviz remain under ADRs 0059 and 0060.
 A pool of several workers lays a dense reading out in parts across them, and the core makes the choice of one solve from their answers ([ADR 0078](0078-a-blocks-solve-is-laid-out-in-parts-across-the-layout-workers.md)).
 Track retains its existing behavior and must remain byte-identical.
-ADRs 0033, 0040, 0061, and 0062 retain their placement and measured-header decisions.
+ADRs 0033 and 0040 retain their placement decisions.
 
 The original proposal replaced placement as well as routing.
 It increased mean area and route length.
