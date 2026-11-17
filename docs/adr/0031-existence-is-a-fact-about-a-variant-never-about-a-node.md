@@ -51,9 +51,8 @@ bound to it. It never meant that nothing was built.
 ## What this supersedes
 
 [ADR 0030](0030-a-proposal-nobody-will-carry-out-is-shelved-not-deleted.md)
-refuses to shelve the current variant, because "a board with no current
-architecture is not a board". The refusal stands, but its reason does not. A
-board can have no current architecture. A board cannot lose the current
+still refuses to shelve the current variant. A board can have no current
+architecture. A board cannot lose the current
 architecture that it has.
 
 ## Consequences
