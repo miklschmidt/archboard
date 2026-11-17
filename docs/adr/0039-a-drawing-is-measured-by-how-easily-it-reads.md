@@ -5,9 +5,8 @@ status: accepted
 # A drawing is measured by how easily it reads, and fit is a guideline
 
 Superseded in part by
-[ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md): its clauses on
-what the Graphviz engine counts, its route settlement (`even-pins.ts`) and its
-column fold describe code that no longer exists.
+[ADR 0040](0040-track-and-blocks-replace-the-graphviz-engine.md): the Graphviz
+engine is retired. The readability measure still governs its successors.
 
 Superseded in part by
 [ADR 0043](0043-the-renderer-lays-boards-out-for-a-tuned-page-shape.md): the

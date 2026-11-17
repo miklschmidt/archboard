@@ -5,10 +5,7 @@ status: accepted
 # Track and Blocks replace the Graphviz engine
 
 This decision supersedes
-[ADR 0033](0033-graphviz-placement-and-obstacle-routing.md). It also supersedes
-the clauses of [ADR 0039](0039-a-drawing-is-measured-by-how-easily-it-reads.md)
-that describe what the Graphviz engine counts and how it folds a board into
-columns. The user decided it on 2026-09-27.
+[ADR 0033](0033-graphviz-placement-and-obstacle-routing.md). The user decided it on 2026-09-27.
 
 ## Context
 
@@ -48,9 +45,7 @@ If only a preference remembers `graphviz`, it falls back to the default quietly.
 No board, vault or server setting stores an engine, so nothing else changes.
 
 ADR 0039's rule, that a drawing is measured by how easily it reads, governs
-Track and Blocks as before. Its sentences about what Graphviz counts, its
-settlement of routes (`even-pins.ts`), its column fold and
-`lib/layout/column-readings.ts` describe code that is now deleted.
+Track and Blocks as before.
 
 ## Consequences
 
