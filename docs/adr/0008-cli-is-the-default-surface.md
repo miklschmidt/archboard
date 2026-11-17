@@ -23,10 +23,6 @@ public contract and its exceptions instead of removing them.
 
 ## Consequences
 
-Running `archboard` with no command shows CLI help. The package has no stdio
-transport, MCP server factory, tool catalogue, dispatcher, compatibility
-exports, or Model Context Protocol dependencies.
-
 The CLI owns agent-facing commands. Command handlers reuse domain modules and
 the loopback REST interface. REST is an application seam, not a second agent
 command catalogue. TASK-123 will generate CLI help, result contracts, and

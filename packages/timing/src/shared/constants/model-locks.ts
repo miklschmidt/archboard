@@ -13,7 +13,7 @@ import { durations } from "#shared/constants/durations.ts";
 /** `MODEL_LOCK_MS.renew`, named once so that `watch` can be one renewal interval. */
 const LOCK_RENEW_MS = 1000;
 
-/** One writer at a time (ADR 0016): the lease file every model write takes. */
+/** One writer at a time: the lease file every model write takes. */
 const MODEL_LOCK_MS = durations({
 	/**
 	 * How long a lock is held without renewal before it lapses.
@@ -95,10 +95,10 @@ const MODEL_LOCK_MS = durations({
 	 * The lock is a broadcast as well as a guard, and the broadcast reaches one
 	 * server: taking a model is news the server that did it can send, and a second
 	 * server over the same vault has nothing to tell it because a file does not
-	 * call anybody. Excluded correctly, told late. ADR 0016 left the poll undone
-	 * for the per-write hold, where being wrong costs milliseconds, and named the
-	 * long claim as what makes it worth paying for — a pane on the second server
-	 * would otherwise let somebody draw into a model an agent has had for minutes.
+	 * call anybody. Excluded correctly, told late. The poll is left undone
+	 * for the per-write hold, where being wrong costs milliseconds. The long claim
+	 * makes it worth paying for: a pane on the second server would otherwise let
+	 * somebody draw into a model an agent has had for minutes.
 	 *
 	 * One renewal interval, so a pane learns about a claim about as fast as the
 	 * claim's own lease moves. It costs one read of the vault's file metadata per
@@ -108,7 +108,7 @@ const MODEL_LOCK_MS = durations({
 	watch: LOCK_RENEW_MS,
 });
 
-/** A claim: one writer for longer than one write (ADR 0016, TASK-080), and what every pane shows of it. */
+/** A claim: one writer for longer than one write (TASK-080), and what every pane shows of it. */
 const CLAIM_MS = durations({
 	/**
 	 * How long a claim runs when the agent does not say.

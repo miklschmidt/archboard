@@ -155,7 +155,7 @@ pub struct LineAppearance {
     pub arrowhead: Arrowhead,
 }
 
-/// Which shape a flowchart draws a step as (ADR 0053).
+/// Which shape a flowchart draws a step as.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum FlowchartShape {

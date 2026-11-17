@@ -13,12 +13,11 @@
 //
 // A pair is unjoined when nothing the variant draws joins it. A relationship
 // or a flow step joins the parts at its two ends, in either direction. A part
-// inside an end counts as at that end, because a relationship that ends on a
-// container is a dependency drawn at a higher level (ADR 0044). A container
-// counts as at an end inside it too: a relationship between a part inside it
-// and a part outside it crosses the container's edge, and ADR 0044 counts it
-// among the container's callers or outgoing relationships. A part inside the
-// other is joined by that containment.
+// inside an end counts as at that end. A container counts as at an end inside
+// it too: a relationship between a part inside it and a part outside it
+// crosses the container's edge, and ADR 0044 counts it among the container's
+// callers or outgoing relationships. A part inside the other is joined by that
+// containment.
 
 import type { AttributedCommits } from "#runtime/history-lens/operations/attribution.ts";
 import type { WalkedCommit } from "#runtime/history-lens/operations/commits.ts";

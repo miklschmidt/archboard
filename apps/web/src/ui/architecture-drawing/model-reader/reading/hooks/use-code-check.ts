@@ -1,5 +1,5 @@
 // The code pass that the code view of Measures starts over the reading on screen when no
-// remembered pass read it (ADR 0046, amendment of 2026-11-08, TASK-590.13).
+// remembered pass read it (ADR 0046, TASK-590.13).
 
 import { useCallback } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";

@@ -2,7 +2,7 @@
 //
 // The card in the picture says a node's name, its kind and, when it has one,
 // the single line it is responsible for. That is all a card can carry and stay
-// readable, and ADR 0023 makes the rest reachable rather than drawn: the longer
+// readable, so the rest is reachable rather than drawn: the longer
 // description, the one optional primary code binding, the model one level down,
 // and what the last code check found about it.
 //

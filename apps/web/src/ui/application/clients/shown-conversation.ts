@@ -1,4 +1,4 @@
-// The person activating a checkout (ADR 0050). The agent dock shows the
+// The person activating a checkout. The agent dock shows the
 // conversation of the checkout the person last activated: by focusing a pane,
 // by opening a model in one, or by picking a workhorse from the dock's list.
 // What an agent does to a pane never activates anything, so only the places

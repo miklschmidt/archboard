@@ -1,4 +1,4 @@
-// The shapes of a flowchart (ADR 0053): a decision's diamond, a loop's hexagon
+// The shapes of a flowchart: a decision's diamond, a loop's hexagon
 // and the terminals. They are blocks as the cards are, and what a card keeps
 // they keep.
 //

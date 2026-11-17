@@ -205,7 +205,7 @@ function paneKeyForNewPane(clientId: string, vault: string): string | null {
  * Whether a pane key still names something: the model, and the variant of it
  * the key names.
  *
- * A pane key carries the variant after the last `@` (ADR 0009) and a model is
+ * A pane key carries the variant after the last `@` and a model is
  * addressed by name alone — the whole family is in the one document — so the
  * key has to be taken apart before either half is looked up. Reading the key
  * whole refuses every proposal a pane was showing, and the pane comes back on

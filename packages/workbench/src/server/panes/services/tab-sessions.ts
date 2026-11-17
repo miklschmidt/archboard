@@ -112,7 +112,7 @@ function forgetTabSession(clientId: string): void {
 }
 
 /**
- * The checkout whose conversation a pane's tab shows (ADR 0050). A pane whose socket named no tab
+ * The checkout whose conversation a pane's tab shows. A pane whose socket named no tab
  * shows its own checkout's.
  * @param clientId The pane's client id.
  * @param own The checkout of the pane's own vault, which pins a tab that shows none yet.

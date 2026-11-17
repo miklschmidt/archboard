@@ -1,5 +1,4 @@
-//! A card or container alone in its group's region (ADR 0038, amended
-//! 2026-09-27). Such a region gathers nothing, so the blocks lay it out as the
+//! A card or container alone in its group's region (ADR 0038). Such a region gathers nothing, so the blocks lay it out as the
 //! node itself, with a box grown by the region's inset and caption band:
 //! placement and routing see one obstacle where the picture without the region
 //! saw one. A caption wider than the node widens the region, not the node,

@@ -1,5 +1,5 @@
-// The tab session's workhorses, one per checkout, and the one whose
-// conversation the dock shows (ADR 0050). Picking one shows its conversation in
+// The tab session's workhorses, one per checkout (ADR 0050), and the one whose
+// conversation the dock shows. Picking one shows its conversation in
 // every pane of the tab. It is there only while the tab has two or more: with
 // one there is nothing to pick. Each says in words, never in colour alone,
 // whether it is running or waits for the person.

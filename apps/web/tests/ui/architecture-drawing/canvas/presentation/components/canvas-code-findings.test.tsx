@@ -2,7 +2,7 @@
 //
 // The server remembers the findings of the last pass, and a pane reads that
 // memory and never starts a pass; only the code view of Measures starts one
-// (ADR 0046, amendment of 2026-11-08). A warning puts the picture's own warning
+// (ADR 0046). A warning puts the picture's own warning
 // triangle on its subject, where the picture puts it for a subject nobody has
 // decided; information draws nothing; findings about another version of the
 // model draw nothing; and the selection tab lists the findings of the subject

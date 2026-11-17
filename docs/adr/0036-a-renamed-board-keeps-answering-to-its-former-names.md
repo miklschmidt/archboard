@@ -5,7 +5,7 @@ status: accepted
 # A renamed board keeps answering to its former names
 
 Canonical stable identities and explicit migration aliases supersede live board rename operations below. Exact original addresses retain their original historical coverage.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 Extends [ADR 0010](0010-board-names-are-case-insensitive.md) and
@@ -27,7 +27,7 @@ that people wrote down elsewhere.
 
 A rename is one write to one board, through the same boundary as every other
 write, and it changes nothing but the name. It uses the same lease and the same
-expected version. It makes one version advance and one atomic write (ADR 0016).
+expected version. It makes one version advance and one atomic write.
 Every id, every variant with its lifecycle and ancestry, and every record of
 adoption, shelving and reconciliation stay exactly as they were. A rename is
 never a delete and a recreate, and never an adoption.
@@ -63,16 +63,12 @@ Its key is unchanged, so every address still names it and nothing is kept as a
 former name. Variant names are always matched exactly, so for a variant a change
 of case is a change of name like any other.
 
-A request for the name that something already has is refused. A write advances
-the version and tells every pane that the board changed, although nothing
-changed.
-
 ## Considered and rejected
 
 One alternative is to rewrite every reference in the same write. A rename then
 takes the lease of every board that links to the renamed one. It rewrites their
 drill-downs, as one write across the vault. Separate boards are independent
-documents (ADR 0023), and the vault has no transaction that spans files. So "all
+documents, and the vault has no transaction that spans files. So "all
 or nothing" is a new mechanism that nobody else needs.
 
 That rewrite also changes frozen history. A historical variant's drill-down is a
@@ -90,12 +86,6 @@ never repairs a saved address.
 - A name that no board carries costs a read of the vault to find the board that
   used to carry it. Only a miss pays that cost. Reading a board by its own name
   costs what it always did, and nothing caches the answer (ADR 0015).
-- Everything this process keyed by the old name follows the board. Panes that
-  show it are pointed at the new name, and their address is rewritten to it. The
-  claim of the server on it is carried over for what is left of the campaign.
-  What agents said they were doing stays with it. A second server on the same
-  vault still reaches the board through the old name, and its panes follow on
-  their next open.
 - The fields are additive, so the contract version did not move. This build
   reads every document that was written before them. Moving the version will
   rewrite every board of every vault on its first read.

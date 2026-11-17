@@ -4,7 +4,7 @@
 //
 // `archboard check code` and `archboard check all` ask it, and so does the code view
 // of Measures when it opens on a reading that no remembered pass read (ADR 0046,
-// amendment of 2026-11-08). It reads code and Git, which takes seconds, so it runs
+// "Where the pass runs"). It reads code and Git, which takes seconds, so it runs
 // only on a request and never inside `/api/vault/check`, which every open canvas
 // reads. It runs as
 // checkout work, the admission the code opener uses: a caller that hangs up
@@ -30,7 +30,7 @@
 // `GET /api/code/source-lines?repo=<repo>&path=<path>&line=<line>` answers the
 // source excerpt of one piece of evidence that the memory holds for the vault
 // (TASK-590.06): the evidence line with up to 3 lines on each side. It is the
-// one route that quotes text of a file (ADR 0046, amendment of 2026-11-07), so
+// one route that quotes text of a file (ADR 0046), so
 // only a page of Archboard's own origin reads it, and it reads only a place
 // that the memory names. A place that no remembered finding names, or whose
 // file or line is gone or never quoted, is a 404.

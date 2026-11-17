@@ -1,4 +1,4 @@
-// Where a binding resolves (ADR 0049, TASK-472.03): in the checkout that holds
+// Where a binding resolves (ADR 0049, "The checkout registry", TASK-472.03): in the checkout that holds
 // the vault when it names the vault's own identity, and in the chosen checkout
 // of the identity when it names any other. The cases here are the ones that
 // only the rule can get wrong; the CLI and opener owners prove the readers use it.

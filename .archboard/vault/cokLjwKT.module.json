@@ -3,16 +3,16 @@
   "name": "archboard-router",
   "kind": "package",
   "responsibility": "Routes orthogonal connectors around rectangular obstacles",
-  "description": "It replaced libavoid in the renderer core (ADR 0061). Earlier paths reserve parallel lanes, and input order breaks every tie. A connector with no path answers Unroutable, and its caller decides what to do.",
+  "description": "It replaced libavoid in the renderer core (ADR 0059). Earlier paths reserve parallel lanes, and input order breaks every tie. A connector with no path answers Unroutable, and its caller decides what to do.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-router"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#cokLjwKT",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Orthogonal router"
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": []
 }

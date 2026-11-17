@@ -1,4 +1,4 @@
-// Which checkout's conversation the agent dock shows (ADR 0050), and the call
+// Which checkout's conversation the agent dock shows, and the call
 // that changes it.
 //
 // A tab session shows the conversation of one checkout in every pane. Only the

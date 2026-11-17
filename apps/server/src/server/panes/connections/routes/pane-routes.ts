@@ -256,7 +256,7 @@ function awaitPaneOpen(): { pending: PendingPaneOpen; opened: Promise<PaneRegist
  *
  * It takes no model. What lands in the new pane is a separate act — `browser
  * show ... --pane <the pane this answered with>` — so that showing a model
- * stays the one thing that decides which model a pane holds (ADR 0009).
+ * stays the one thing that decides which model a pane holds (ADR 0020).
  * @param _req The request.
  * @param res Its response.
  */
@@ -543,8 +543,8 @@ function focusChange(
  *
  * Registration is the pane saying what it is showing, and a pane that has just
  * arrived on a model may be arriving into one an agent already holds and is
- * part way through. Being told outright is what ADR 0016 requires of every
- * arrival; a broadcast only reaches whoever was already there.
+ * part way through. Being told outright is how every
+ * arrival learns it; a broadcast only reaches whoever was already there.
  * @param clientId The pane's client id.
  * @param paneKey The model it is now showing.
  */

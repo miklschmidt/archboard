@@ -1,4 +1,4 @@
-//! Where a decision's or loop's frame stands across a sequence (ADR 0053).
+//! Where a decision's or loop's frame stands across a sequence.
 //!
 //! UML draws a choice as an `alt` fragment and a repetition as a `loop`
 //! fragment: a frame round the messages it governs, an operator in a tab at

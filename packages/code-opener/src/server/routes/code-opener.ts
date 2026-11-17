@@ -121,7 +121,7 @@ interface CodeOpenerRouteDependencies {
  * The variant the pane is showing is part of the model key it sends, so a
  * proposal's binding is read off the proposal rather than off whatever is
  * current: a person following code from a draft lands in the code that draft
- * names (ADR 0023).
+ * names.
  * @param _vault The vault root the model lives in.
  * @param _paneKey The model the node is on, variant and all.
  * @param _subjectId The node whose binding is wanted.

@@ -421,7 +421,7 @@ A sequence lifeline starts 13 units below its card to clear the shadow.
 The sticky head carries its shadows and hides the columns behind their full reach.
 The shell touches none of it, and the Untouched Picture Rule still holds.
 [ADR 0044](docs/adr/0044-cards-containers-and-groups-are-drawn-as-slabs.md)
-records the construction.
+records why depth uses no filter, blur or mask.
 
 On chalk the picture is crisp and vivid, never pastel or dusty. Its own
 neutrals are the shell's warm chalk, near hue 85, and never blue: a card

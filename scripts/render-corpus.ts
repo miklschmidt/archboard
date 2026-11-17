@@ -1,4 +1,4 @@
-// The corpus every renderer port step is held to (ADR 0059): the canonical
+// The corpus every renderer port step is held to: the canonical
 // model of the dogfood vault and of the vaults under examples/, its current
 // state and every proposal, the whole model, each module that holds parts, and
 // each flow as a sequence and a flowchart.

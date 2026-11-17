@@ -5,7 +5,7 @@ status: accepted
 # Board names are case-insensitive, and case-preserving
 
 Canonical subjects use stable qualified identities and unique-name resolution. The live board-name contract below is superseded.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 A board name was a case-sensitive string. It mapped straight to a filename with
@@ -39,19 +39,6 @@ already exists wins, whatever casing it carries. So `payments` finds
 `Payments.excalidraw.md` and never creates a second note beside it. APFS and
 NTFS behave exactly this way. So a vault looks on Linux the way its author left
 it on a Mac.
-
-When a board's file is resolved, the cost is a readdir per path segment. A
-case-sensitive filesystem does not do the matching for us. This decision
-originally refused a fast path for a name that already matches byte for byte.
-The refusal made sure that the answer never depended on how the caller spelled
-the address.
-
-_Superseded in part by TASK-153._ Now a note that exists at the byte-equal path
-is returned without the readdir. If nothing is there, the walk runs, and only
-then. The two answers differ only in a vault that already holds two
-case-variants of one name. The section below calls such a vault broken, and
-`board list` already reports it as a collision. So the fast path costs nothing
-that the vault had not already lost.
 
 ## Why not case-sensitive everywhere
 

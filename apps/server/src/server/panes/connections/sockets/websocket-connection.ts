@@ -366,7 +366,7 @@ async function acceptWebSocketConnection(
 	ws.once("close", agentActivity.hold(vault));
 	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	// There is a screen again, so the lock files of what is on it are worth
-	// reading (ADR 0016).
+	// reading.
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);

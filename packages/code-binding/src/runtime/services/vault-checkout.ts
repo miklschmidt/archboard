@@ -1,4 +1,4 @@
-// Where a binding resolves (ADR 0049), owned by one function.
+// The checkout registry (ADR 0049): where a binding resolves, owned by one function.
 //
 // A binding or anchor names a repository identity. Every reader that turns one
 // into a directory (the code opener, the code check, behind, footprint,

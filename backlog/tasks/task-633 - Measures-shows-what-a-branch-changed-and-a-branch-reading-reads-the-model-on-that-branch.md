@@ -3,11 +3,11 @@ id: TASK-633
 title: >-
   Measures shows what a branch changed, and a branch reading reads the model on
   that branch
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-12T23:34:00Z'
-updated_date: '2026-11-16T18:20:00Z'
+updated_date: '2026-11-17T03:10:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -164,4 +164,12 @@ All five subtasks are Done. The whole-branch gate (archboard model footprint --b
 Main adopted the telemetry proposal e3T8Mjgq from TGDLt5Ea before this PR merged, which superseded a5K6IbA8. Proposal 7Kc2FJFu carries the same changes on e3T8Mjgq (3 modules, 9 relationships, 16 descriptions, 2 flows with 22 steps, compared field by field) and is adopted on PR #118. a5K6IbA8 could not be shelved, because the local archive holds four retired TGDLt5Ea checkpoints (STATE_AMBIGUOUS), so the branch drops its never-merged file. Gates that named a5K6IbA8 now name 7Kc2FJFu.
 
 On 2026-11-16, main adopted the workhorse stop proposal abr2gK6Q (PR #116) before this PR merged, which superseded 7Kc2FJFu. Proposal 7D3sm8BE carries the draft a5K6IbA8 changes on abr2gK6Q and is adopted on PR #118. Its vault changes match the 7Kc2FJFu adoption file by file, except for the generated ids of relationships and flow steps. Gates that named 7Kc2FJFu now name 7D3sm8BE.
+
+2026-11-17: The user rejected the ADR 0045 amendment of 2026-11-13. It described functionality and UI behavior, not a decision that is hard to reverse. TASK-642 removed it from ADR 0045, and the behavior now lives in DESIGN.md, the docs site (#119) and the code. AC #5 holds for CONTEXT.md, DESIGN.md and the skills. ADR 0045 records no part of this task on purpose. #118, #127 and #119 are merged.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Measures has a fourth view, What this branch changed, with three cards for the footprint lists (#118, #127). A named head reads the vault at that head, and --model-at checkout reads the vault on disk for the archboard-plan gate. Show on picture opens the nearest shared parent and selects the listed modules. The docs site documents the view (#119). The proposed ADR 0045 amendment was dropped at the user's request (TASK-642).
+<!-- SECTION:FINAL_SUMMARY:END -->

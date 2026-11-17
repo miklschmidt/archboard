@@ -1,5 +1,5 @@
 // Whether code runs what a name spells, or only uses the name as a value
-// (ADR 0046, amended by TASK-367.28).
+// (TASK-367.28).
 //
 // Code runs a name when it calls it, constructs it, renders it as a
 // component, applies it as a decorator or an attribute, sends it a message or

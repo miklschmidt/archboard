@@ -1,5 +1,4 @@
-// The source excerpt of remembered code evidence (TASK-590.06, ADR 0046 amendment of
-// 2026-11-07). `GET /api/code/source-lines` answers the evidence line with up to 3 lines on
+// The source excerpt of remembered code evidence (TASK-590.06, ADR 0046). `GET /api/code/source-lines` answers the evidence line with up to 3 lines on
 // each side, only for a place that a finding the server remembers names, only from a file
 // inside its checkout that Git does not ignore, and only to a page of the server's origin.
 //

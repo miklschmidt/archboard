@@ -27,20 +27,8 @@ canary, global `kept()` registry, or source policy that parses a TypeScript
 project to make module replacement safe.
 
 Runtime state has ordinary process lifetime. The Canvas application owns every
-resource that needs ordered construction or teardown:
-
-- The HTTP and WebSocket servers
-- The Codex child
-- Browser sockets and pane leases
-- Pending operations
-- Lock and claim timers
-- Note watches
-- Change-feed settlement
-
-The application installs signal ownership before any fallible child startup. It
-starts each owner once and tears the owners down in reverse order. A timed owner
-has its own grace and force action. After forcing, the lifetime still waits for
-the original stop operation to settle. The application never reports an
+resource that needs ordered construction or teardown. It starts each owner once
+and tears the owners down in reverse order. The application never reports an
 abandoned cleanup as a completed shutdown. A cache that owns no timer, handle,
 listener, child, or process-only user work is harmless and can stay
 module-local.
@@ -52,19 +40,10 @@ ordinary stop and restart path looks for holds before it sends a signal. It
 refuses while any hold exists and names the boards and available recovery
 actions.
 
-After a signal, the application stops admitting HTTP writes. It drains both
-admitted request bodies and the explicit asynchronous mutation work they
-entered. Before it closes a browser or server, it looks for holds again. A
-client disconnect cancels a board-lock wait before it can resume into a write.
-The drain is bounded. Work that does not settle refuses the stop, names what is
-still active, restores write admission, and leaves every resource intact for a
-later retry.
-
-Listen failures unwind the owners already entered. A runtime HTTP server error
-enters this same guarded stop. It does not run a separate exit path. The HTTP
-listener receives the startup abort signal directly. Teardown waits until a
-pending listen closes or fails before it reports a terminal stop.
-Source-freshness guidance uses that same guarded restart path.
+After a signal, the application stops admitting HTTP writes and drains the work
+already admitted. The drain is bounded. Work that does not settle refuses the
+stop, names what is still active, restores write admission, and leaves every
+resource intact for a later retry.
 
 Frontend Vite HMR can remain. It belongs to the browser bundle process and does
 not replace modules inside the Archboard server. Backend and frontend
@@ -97,17 +76,4 @@ This ADR supersedes only the hot-reload portion of ADR 0014. The canvas and CLI
 still run TypeScript source directly with Bun. The browser bundle still has a
 build step. Type-checking remains an explicit required gate.
 
-Backend development has one lifecycle: start, run, stop. Source-freshness
-diagnostics tell the operator to use the guarded restart path. The repository no
-longer needs hot-reload fixtures or a special global lifetime model. Tests
-exercise:
-
-- Startup failure
-- Held-board refusal
-- Recovery
-- Shutdown with and without connected browsers
-- Pending-operation settlement
-- Child and timer cleanup
-- Signals
-- Timeouts
-- A second fresh application start
+Backend development has one lifecycle: start, run, stop.

@@ -54,7 +54,7 @@ const RESERVED_VIEW_NAMES: readonly string[] = Object.freeze(["Overview", EVERYT
  * part of, because a card drawn outside the container it belongs to would be
  * telling the reader something untrue about the architecture. A container
  * that holds every part the view asked for is the exception: it separates
- * nothing in the picture, so it is left out, as the model is (ADR 0052).
+ * nothing in the picture, so it is left out, as the model is.
  * @param content The variant's whole content.
  * @param scope What the reading selects.
  * @returns The content as that reading reads it.
@@ -160,7 +160,7 @@ function wordsOfParts(
  * The one answer to what a joined line says (reader redesign, rule 4). A shared label stands for
  * all of them. Otherwise a reader asks what one card uses of the other, and the names inside
  * the cards answer that where a label list could not fit. Failing those, the first label and the
- * count of the others. A count alone tells a reader nothing (ADR 0052), so a line with neither a
+ * count of the others. A count alone tells a reader nothing, so a line with neither a
  * label nor an inner part wears no words.
  * @param edges The relationships on the line.
  * @param ends The line's drawn ends.

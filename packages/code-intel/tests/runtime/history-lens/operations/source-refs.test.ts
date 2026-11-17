@@ -1,4 +1,4 @@
-// The refs a branch footprint can be read between (ADR 0045), listed through the lens's public
+// The refs a branch footprint can be read between (TASK-633), listed through the lens's public
 // operation over a canonical vault and repositories this owner builds for itself, with its own
 // checkout registry through ARCHBOARD_REPOS so nothing reads the machine's real one.
 //

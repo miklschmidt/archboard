@@ -1,4 +1,4 @@
-// The footprint of a head reads the vault at that head (ADR 0045), through the lens's public
+// The footprint of a head reads the vault at that head (TASK-633), through the lens's public
 // operation over a canonical vault and repositories this owner builds for itself, with its own
 // checkout registry through ARCHBOARD_REPOS so nothing reads the machine's real one.
 //

@@ -4,8 +4,7 @@
 // A finding quotes a symbol, a path and a line, and never other text of a file,
 // because a file can hold a secret and the Archboard server answers any request
 // from this machine (ADR 0046). This reading is the one exception, which the
-// owner asked for, and the amendment of 2026-11-07 to ADR 0046 records its
-// limits:
+// owner asked for, and ADR 0046 ("Where the pass runs") records its limits:
 //
 // - It answers only a place that a piece of evidence of the vault's remembered
 //   findings names, so it reads only a file that a code pass of that vault read.

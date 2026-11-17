@@ -1,4 +1,4 @@
-// A decision's answers leave it from separate points (TASK-491, ADR 0073):
+// A decision's answers leave it from separate points (TASK-491):
 // the first from the left, the last from the right, and any other from the
 // bottom, but the taller of two answers runs straight down out of the bottom.
 // Each line from a side point leaves sideways and stays beside the diamond

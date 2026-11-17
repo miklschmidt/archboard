@@ -1,6 +1,6 @@
 //! Every step of one flow, stacked down the page in the order it is stated.
 //!
-//! A message takes a row. A decision or loop takes a frame (ADR 0053): a head
+//! A message takes a row. A decision or loop takes a frame: a head
 //! row with its operator and its question or condition, then what it holds,
 //! and for a decision a labelled row at the start of each alternative, parted
 //! from the one before by a dashed line. The steps after a decision run below

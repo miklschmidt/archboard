@@ -5,12 +5,12 @@ status: accepted
 # A proposal nobody will carry out is shelved, not deleted
 
 Compact proposal lifecycle operations supersede live variant shelving below. The independent archive preserves the final proposal, baseline, and shelving reason.
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement.
 The original decision below remains historical evidence.
 
 Extends
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md),
-which gave a variant three lifecycles: current, draft and historical. TASK-261
+which once gave a variant three lifecycles: current, draft and historical. TASK-261
 tracks this decision.
 
 A draft can outlive its proposal. Two drafts in this repository's own vault got
@@ -43,18 +43,18 @@ The word is chosen against words that already have another meaning here:
 
 Shelving is not deletion, and the decision rejects deletion. Other boards
 address a variant by name. A drill-down names a target board and a variant. A
-named target never falls back to whichever variant is current (ADR 0023). It
+named target never falls back to whichever variant is current. It
 reports that there is nothing there.
 
 The two spent drafts above name each other, so deleting either leaves the
 other's link opening nothing. The vault checker cannot see this, because it
 checks the board name and level. Keeping the variant under its name leaves every
-link resolving. The viewer discloses what each link opens.
+link resolving.
 
 Shelving is a fifth transition, beside create, branch, edit, settle and adopt.
 It goes through the one write boundary that the other four use. That means the
 same lease, the same expected-version check, one version advance and one atomic
-write (ADR 0016). It takes the reason the proposal was let go. The board records
+write. It takes the reason the proposal was let go. The board records
 what was shelved, at what time and for what reason, the way it already records
 each time the designation moved.
 
@@ -76,28 +76,14 @@ content, because views and level belong to the board rather than to any variant.
 
 Shelving itself refuses four variants:
 
-- The current variant. There is no proposal there to let go. Shelving it makes a
-  board that says what is built say nothing.
+- The current variant. There is no proposal there to let go.
 - A historical variant, because it is not a live proposal.
 - A variant that is already shelved, because it is not a live proposal.
 - A draft that other drafts still stand on, and the refusal names them. Shelving
   it leaves those proposals derived from a state that stopped moving. Nothing on
   the board says so.
 
-[ADR 0031](0031-existence-is-a-fact-about-a-variant-never-about-a-node.md)
-supersedes the first reason given here, that a board with no current
-architecture is not a board. A board for something nobody built yet has none.
-
-Readers keep listing a shelved variant under its lifecycle, wherever draft and
-historical are already distinguished. These places are the variant bar, the
-navigator's markers, and the drill-down's disclosure of what a link opens.
-
 ## Consequences
-
-A board's family stops growing monotonically in cost. A proposal that is over
-stops charging every edit to its parent. The record of what was proposed, and of
-how the proposal ended, survives in the one place somebody who looks for it will
-be: the board it was proposed on.
 
 Nothing becomes reversible. There is no un-shelving, for the same reason that
 there is no un-adopting. The record says a decision was made. The way to propose
@@ -106,5 +92,5 @@ the way to say that the thinking resumed.
 
 The lifecycle enum is now four values wide. An older build refuses a document
 that this build wrote. It does not misread the document, because the contract is
-strict. There is no compatibility layer. ADR 0023 already says that authored
-boards are repaired rather than migrated.
+strict. There is no compatibility layer. Authored boards are repaired rather than
+migrated.

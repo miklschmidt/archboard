@@ -1,4 +1,4 @@
-// The answer of a source refs listing, `GET /api/architecture/refs` (ADR 0045).
+// The answer of a source refs listing, `GET /api/architecture/refs` (TASK-633).
 //
 // A branch footprint is read against a base ref and, optionally, a head ref. The reader needs the
 // refs to choose from. This lists the local branches and the remote-tracking branches of every

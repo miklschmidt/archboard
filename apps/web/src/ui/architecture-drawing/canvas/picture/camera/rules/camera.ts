@@ -55,9 +55,8 @@ type FitTarget =
 /**
  * How far in and out a diagram can be taken.
  *
- * Large renderings are expected and fitting one in a viewport is not a success
- * criterion (ADR 0023), so the floor is low enough to see a whole system at
- * once and the ceiling high enough to read a card's smallest type.
+ * Large renderings are expected, so the floor is low enough to see a whole
+ * system at once and the ceiling high enough to read a card's smallest type.
  */
 const MIN_SCALE = 0.05;
 const MAX_SCALE = 8;

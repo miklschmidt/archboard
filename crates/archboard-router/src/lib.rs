@@ -1,4 +1,4 @@
-//! Orthogonal connector routing around rectangular obstacles (ADR 0061).
+//! Orthogonal connector routing around rectangular obstacles (ADR 0059).
 //!
 //! The path search follows \[W09\] M. Wybrow, K. Marriott and P. J. Stuckey,
 //! "Orthogonal Connector Routing", Graph Drawing 2009, LNCS 5849, pp. 219-231.

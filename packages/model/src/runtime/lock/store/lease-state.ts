@@ -1,4 +1,4 @@
-// The lease on disk that makes one writer at a time per model true (ADR 0016),
+// The lease on disk that makes one writer at a time per model true,
 // and the announcements that tell every pane who has the model now.
 
 import fs from "node:fs";

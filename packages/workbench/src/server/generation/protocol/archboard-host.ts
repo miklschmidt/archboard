@@ -34,7 +34,7 @@ export interface ArchboardWorkbenchServer {
 		};
 	readonly onCodexProcessGroupOwned: (identity: CodexProcessGroupIdentity) => void;
 	/**
-	 * The checkout whose conversation a browser pane's tab shows, the shown conversation (ADR 0050):
+	 * The checkout whose conversation a browser pane's tab shows, the shown conversation:
 	 * pinned on the first read to the checkout of the tab's focused pane, and changed after that
 	 * only by the person's own act in the browser. Every pane of the tab shows that checkout's
 	 * workhorse.

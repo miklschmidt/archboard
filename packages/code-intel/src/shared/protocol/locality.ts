@@ -85,7 +85,7 @@ const CoupledPairSchema = z
 		 * No relationship or flow step of the variant joins the two parts, in
 		 * either direction, and neither part is inside the other. A part inside
 		 * an end counts as at that end, and so does a container that holds the
-		 * end (ADR 0045 as amended). An unjoined pair asks
+		 * end (ADR 0045). An unjoined pair asks
 		 * whether the document misses a dependency, or whether two parts carry one
 		 * decision.
 		 */

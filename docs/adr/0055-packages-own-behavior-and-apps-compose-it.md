@@ -5,13 +5,10 @@ status: accepted
 # Packages own behavior and apps compose it
 
 Amended by [ADR 0058](0058-an-interface-is-the-few-operations-its-callers-need.md)
-(2026-10-25). An outside caller is necessary for a public name, but it is not sufficient.
-An interface is the few operations its callers need, and a repository check holds each package
-to a recorded ceiling on the names it exports. Everything else stands.
+(2026-10-25). Everything else stands.
 
 Amended by [ADR 0075](0075-each-area-groups-code-by-behavior-first.md)
-(2026-11-06). Inside each area, code is grouped by behavior first, and a role folder is the
-last folder of a path. That replaces the role-first grouping of the Decision below, for packages
+(2026-11-06). It replaces the role-first grouping of the Decision below, for packages
 and apps alike.
 
 Decided for TASK-500.

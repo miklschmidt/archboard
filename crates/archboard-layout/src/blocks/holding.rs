@@ -1,6 +1,6 @@
 //! The invisible edges that hold a block's items where they belong (TASK-349):
 //! a wrap's lowered cards down, a container's hidden parts below its first
-//! entry points (ADR 0044), the items no line enters on the first rank and the
+//! entry points, the items no line enters on the first rank and the
 //! items no line leaves above the bottom ports.
 
 use crate::geometry::Side;
@@ -50,7 +50,7 @@ impl<'t> CardLayout<'t> {
     }
 
     /// The invisible edges that stand each container's hidden parts below its
-    /// first entry points (ADR 0044): the parts its callers reach take its
+    /// first entry points: the parts its callers reach take its
     /// first row, under its title, and what they hide sits beneath them.
     pub(super) fn entry_row_edges(&self) -> Vec<Edge> {
         let entries = &self.tree.entries;

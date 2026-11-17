@@ -30,16 +30,6 @@ a part that changes without a mark. Three choices shape this design:
   voice model misses a sentence it was not told. If somebody forgets to exclude
   a new driven change under the opposite default, the loop comes back.
 
-A pick or a view changes in the same moment as its gesture. So the pane drops a
-mark that the next drawn report does not use. It was a click on what was already
-selected, and it must not wait for a change somebody else makes. The pane asks
-the server for a board or a variant, and the change arrives later, across a
-moment in which the pane reads nothing. So those marks wait for a drawn reading.
-If the server refuses the move, the pane withdraws them. A report sent again
-after a failure, or said again after a reconnect, carries no marks.
-
-The walkthrough position keeps `answering`, which already tells a step somebody
-asked for from one the user chose (TASK-251). Focus needs no mark, because
-nothing the server sends moves the active pane. So a registration whose pane
-became the focused one is the user's. A message that can move focus must carry a
-cause before it ships.
+Focus needs no mark, because nothing the server sends moves the active pane. So
+a registration whose pane became the focused one is the user's. A message that
+can move focus must carry a cause before it ships.

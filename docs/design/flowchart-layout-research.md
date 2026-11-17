@@ -349,7 +349,7 @@ No source tests these rules on a flowchart.
 
 ### Where a decision's answers go
 
-6. **A decision that fits stays whole.** Its answers stand side by side below its diamond, as ADR 0073 decides.
+6. **A decision that fits stays whole.** Its answers stand side by side below its diamond.
 7. **A decision that closes a column.** The diamond stands at the foot of the column, after the steps that lead to it.
    Its short answers stay below the diamond in that column.
    Its long answer leaves the right point of the diamond and runs into the gap.
@@ -370,7 +370,7 @@ No source tests these rules on a flowchart.
     The report routes cut lines in the same place ([wrap] p. 16).
     DRAKON runs its frame line around the left side instead, and keeps it to hold the picture together ([2009][p09] pp. 11-12).
     Mark the top run of the rising line with an arrowhead that points right, as DRAKON marks its upper line ([2009][p09] p. 11).
-    This keeps it apart from a loop's back line, which enters the side point of a hexagon (ADR 0073).
+    This keeps it apart from a loop's back line, which enters the side point of a hexagon.
 11. **Short answers run along a lower line.** Their loose ends drop to a shared line below the columns and run right to their joins.
     DRAKON grounds side routes on the lower line of a silhouette in the same way ([syntax], thesis 29).
     Nested decisions join from the inside out.
@@ -415,7 +415,7 @@ Each column then opens with the first step of a phase: announce, check, classify
 ## Open questions
 
 - **Tolerance.** How much scale can a cut with meaning cost, compared with the balanced cut?
-  Under ADR 0073, a shorter column height must gain at least 1% of scale.
+  Today the core keeps a shorter column height when the reference pane shows it larger than every shorter break before it (`crates/archboard-flows/src/flowchart/frames.rs`).
   The tolerance for meaning needs a value, measured on the flows of this repository.
 - **Length of "long".** How much taller than the others must the long answer be?
 - **Two long answers.** What happens to a decision with two answers that are both too tall for the column?

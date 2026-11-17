@@ -4,12 +4,11 @@ status: accepted
 
 # Vello paints the canvas, and motion lives in the painter
 
-The owner decided this on 2026-11-01 (TASK-560). This record replaces one clause of
+The owner decided this on 2026-11-01 (TASK-560). This record replaces browser SVG painting in
 [ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md).
-The clause is "The browser viewer keeps its classes and Web Animations over that SVG."
 
 This record also changes how three earlier decisions are carried out, but not what they decide.
-[ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md) keeps its pulse,
+[ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md) keeps its traffic contract,
 [ADR 0041](0041-a-recording-is-a-talk-rendered-frame-by-frame.md) keeps its frame clock, and
 [ADR 0042](0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md) keeps its flights.
 [The Vello painter](../design/vello-painter.md) holds the measurements and the method.
@@ -24,15 +23,6 @@ The typed scene of ADR 0059 lets a frontend paint with no SVG or CSS.
 Vello is written in Rust, so it joins the Cargo workspace.
 It can paint the same scene in the browser through WebAssembly and in a native GPUI frontend.
 PixiJS can do neither.
-
-Nobody had measured Vello in the browsers that people use. So a real run came first.
-The run used Chrome 155 on Linux with an RTX 4090 and a picture of 6,292 paths.
-Vello on WebGPU encoded a frame in 4.2 ms and rendered it in 1.0 ms.
-One frame of 540 took more than 25 ms.
-Vello on the CPU took 9 to 16 ms to encode and 11 to 17 ms to raster.
-About two frames of three took more than 25 ms.
-WebGPU on a software adapter took more than 8 s per frame. Firefox 158 on Linux has no WebGPU. Safari, Windows and macOS were not
-measured.
 
 ## Decision
 
@@ -54,45 +44,6 @@ run with no GPU and no DOM, and the Rust tests own them. The durations stay in
 An in-between is also a scene, so a picture that arrives during a flight starts from
 what shows. Nothing lands first.
 
-### A move is a rack of focus
-
-The owner tested the first painter and said: "These are just the same as it were before."
-The first climb repaired the old choreography and kept it. So motion is now designed for the GPU.
-
-A lens runs between Vello and the surface while a picture moves.
-It halves the frame six times, and it shows the frame sharp in one rounded box and out of focus around it.
-The stage says what the box is on each frame, and the same box serves every move.
-A flight holds the card, a door holds its growing frame, and an entrance holds a circle that opens from the middle.
-A frame at rest never meets the lens, so parity at rest holds and a picture at rest costs nothing more.
-The CPU painter has no lens, so a recording and a machine with no WebGPU show the same moves with no blur.
-
-A picture blooms out of its middle, and a card that the last picture also drew flies from where it stood.
-The picture inside a card blooms as the camera flies in, and it gathers again on the way back.
-The parts of a door ride inside the door as it grows, so no frame travels empty.
-A subject id is one identity across pictures, and this is what lets a door on one picture fly to its place on the next.
-
-### A move follows the module tree
-
-The owner tested the rack of focus and asked for motion that reflects the depth of the recursive decomposition.
-So the module tree now decides every move between pictures.
-A move to a deeper picture zooms in, and a move to a shallower picture zooms out.
-A move at the same depth carries the reader sideways, to the side that the order of the tree gives.
-
-The page compares the depth of the two scopes and sends the way with the side.
-The camera flies when it has a card: the nearest card that holds a deeper module, or the card that holds this picture on a picture above it.
-Otherwise the painter runs a passage: two rigid planes on one timeline, which start at the click.
-A door to a picture at the same depth goes sideways too, because a flight into it says the wrong thing about the tree.
-Only another view of one picture and a reading of no picture keep the rack of focus and the bloom.
-The way never depends on the route, so a card, a door, a crumb, the list and Back agree.
-
-### A line is drawn along the connections
-
-The owner tested the depth moves and found the lines too fast for how much was going on.
-A spark now draws each line, in the order that the connections give, so a picture builds along the way its parts talk.
-A card takes the spark round its edge and sends its own lines on.
-A line that changes its shape in a move leaves and is drawn again, because many lines swinging at once read as a tangle.
-The lines run on past the rest of the move, so the cards can be read first, and a move's progress runs past 1 for that time.
-
 ### The page keeps the decisions, and the stage keeps the motion
 
 The page decides which arrival a picture gets and how far the shared cards moved.
@@ -104,9 +55,6 @@ gone, so the viewer has one motion system.
 
 ADR 0074 replaces this section with three painters. It keeps the fresh canvas and the reasons on the surface.
 
-If `requestAdapter({ powerPreference: "high-performance" })` gives a non-fallback
-adapter and a device, `vello` paints. Otherwise `vello_cpu` paints. The rule reads no
-frame back, because a blank-frame check also hides a missing adapter.
 If the GPU fails at start or in a frame, the CPU painter takes over on a fresh canvas.
 A canvas that held a WebGPU context never takes a 2D one.
 The stage releases each failed painter and restores complete SVG ink while its replacement starts.
@@ -124,10 +72,6 @@ A painted surface drops the SVG's glyphs and definitions, because they were half
 picture's layout. Its traffic is taken out before it enters the page, so no SMIL runs
 under the canvas.
 
-A first picture's ink waits up to `PICTURE_MS.painterGrace` for its painter, so that the
-painter brings the picture in. A late or failed painter leaves a correct picture, because
-the ink then shows.
-
 A pointer lands on the canvas, because the surface takes no pointer. The painter
 answers what lies under it from the scene, in the order it draws, with flow heads where
 it holds them. An event that reached a group of the picture came from no pointer.
@@ -141,19 +85,10 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
 
 ## Consequences
 
-- On the largest picture at 120 Hz, a toggle's mean frame gap fell from 31.6 ms to 9.2 ms,
-  and its slow frames from 68 to 11. Wheel, pinch, keys and drag have no slow frames.
-  These figures came before the motion work. `docs/design/vello-painter.md` holds the
-  later numbers, which ran at 60 Hz.
 - A person without WebGPU sees a correct picture on the CPU painter, but with slower
   frames. Traffic there rests as long as its last frame took. On a small picture it takes
   21% of the main thread, against 8% on the old page.
 - The painter adds 4.7 MB of WebAssembly, and the page loads it apart from the core.
-  The page asks for the GPU while it draws a first picture, because a browser's first
-  answer takes about 350 ms.
-- README takes run with `--disable-gpu`, so they paint on the CPU. They did not run again
-  with this change.
-- The page holds a canvas and an SVG. TASK-561 follows this change to reduce the DOM.
 - Vello fills fixed buffers for each frame and reports nothing when one is full, so a
   large picture on a large canvas stops drawing with no error. `crates/vendor/vello_encoding`
   raises two of those limits for 48 MB more GPU memory, and no test owns the budget.
