@@ -4,7 +4,9 @@
 //
 // `shop` holds the vault. Its `plan` branch, which is never checked out, moves the binding of
 // `Ledger` from `b.ts` to `c.ts`, changes both files, and holds a proposal that edits `Checkout`.
-// `main` is checked out and holds neither. `other` holds `Worker` and a branch that `shop` lacks.
+// `main` is checked out and holds neither. The last case adds `adopted`, which follows `plan` and
+// adopts its proposal, as a branch does before it merges. `other` holds `Worker` and a branch that
+// `shop` lacks.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -13,8 +15,12 @@ import { join } from "node:path";
 import type * as ApiModule from "#runtime/api/history-lens.ts";
 import { ArchitectureHistoryResultSchema } from "#shared/protocol/canonical-history.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
+import { readArchitectureClaims, readArchitectureModel } from "@archboard/model/store-read";
+import {
+	claimArchitectureSubjects,
+	editArchitectureModule,
+	releaseArchitectureClaim,
+} from "@archboard/model/store-write";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-head-"));
@@ -130,6 +136,39 @@ async function createProposal(): Promise<string> {
 	});
 	if (!edit.success || edit.target.state === null) throw new Error(JSON.stringify(edit));
 	return edit.target.state;
+}
+
+/**
+ * Adopt a proposal through the public write, as a branch does before it merges.
+ * @param state The proposal.
+ */
+async function adopt(state: string): Promise<void> {
+	const model = readArchitectureModel(vault);
+	if (!model.success) throw new Error(JSON.stringify(model));
+	// The planning write keeps its claim, so this write releases it first.
+	const claims = readArchitectureClaims(vault);
+	if (!claims.success) throw new Error(JSON.stringify(claims));
+	for (const held of claims.claims)
+		await releaseArchitectureClaim(vault, { claim: held.id, writer: held.writer });
+	const target = { model: model.manifest.id, state };
+	const claim = await claimArchitectureSubjects(vault, {
+		target,
+		writer: "agent",
+		reason: "adopting on a branch",
+		subjects: [model.manifest.id, "Current", state, ...model.modules.map((module) => module.id)],
+	});
+	if (!claim.success) throw new Error(JSON.stringify(claim));
+	const adopted = await editArchitectureModule(vault, {
+		target,
+		writer: "agent",
+		doing: "adopting on a branch",
+		claim: claim.claim.id,
+		operationId: crypto.randomUUID(),
+		expectedRevision: model.revision,
+		proposal: { type: "adopt", reason: "The branch built the plan." },
+		changes: [],
+	});
+	if (!adopted.success) throw new Error(JSON.stringify(adopted));
 }
 
 /**
@@ -291,3 +330,22 @@ test("a branch footprint can compare its proposal with a retained checkpoint", a
 		state: { id: proposal },
 	});
 });
+
+// The adoption reaches the retained history that every reading shares, so this case runs last.
+test("a proposal that the head adopted is the plan, set against the merge base's current state", async () => {
+	git(shop, "checkout", "-q", "-b", "adopted", "plan");
+	await adopt(proposal);
+	commit(shop, {}, "adopt the plan");
+	git(shop, "checkout", "-q", "main");
+	const answer = await footprint({ head: "adopted" });
+	expect(answer).toMatchObject({
+		vaultRead: { at: "ref", ref: "adopted" },
+		state: { id: proposal, lifecycle: "current" },
+		against: { id: "Current" },
+		proposal: { id: proposal },
+	});
+	// The branch moved the binding of `Ledger` in its model, so the plan names it too.
+	expect(listed(answer)).toEqual({ namedAndChanged: ["Checkout", "Ledger"], changedNotNamed: [] });
+	// A head that adopted nothing keeps the current state of the merge base, which has no plan.
+	expect(listed(await footprint({ head: "plan" }))).toEqual({ changed: ["Checkout", "Ledger"] });
+}, 30_000);

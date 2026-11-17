@@ -31,6 +31,11 @@ its architecture is built (ADR 0031). Locality and footprint can read a named
 draft, as the code check does. Behind never reads a draft. The lens never
 reads a historical or a shelved variant.
 
+A footprint sets a draft against its predecessor. It sets a current state that
+the branch adopted against the current state at the merge base, which the vault
+at that commit holds. A branch adopts its proposal before it merges, so its plan
+must survive the adoption.
+
 The lens skips a part with no binding, a part that carries a drill-down, a part
 bound into a repository that this machine has not registered, and a part pinned
 to a ref that its checkout does not have out. The board that a drill-down opens
