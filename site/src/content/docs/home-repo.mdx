@@ -95,13 +95,13 @@ The command reads one checkout of each repository, the chosen checkout. `archboa
 
 To read another branch, name it with `--head`. By default, the command reads the vault at that head if the Home Repo holds it. Then `--state` can name a proposal that exists only on that branch. If only a code repository holds the head, the command reads the vault on disk. With `--checkpoint`, it reads the saved state instead.
 
-The answer's `vaultRead` records the model's source. For the vault on disk, it holds `{ "at": "checkout" }`. For a Git ref, it holds `{ "at": "ref", "ref": "<head>", "commit": "<commit>" }`.
-
-If you edited a proposal without a commit to the head, add `--model-at checkout`. The command then reads the model on disk.
-
 ```bash
 archboard model footprint --base main --head agent/split-payments --state "Split payments"
 ```
+
+The answer's `vaultRead` records the model's source. For the vault on disk, it holds `{ "at": "checkout" }`. For a Git ref, it holds `{ "at": "ref", "ref": "<head>", "commit": "<commit>" }`.
+
+If you edited a proposal without a commit to the head, add `--model-at checkout`. The command then reads the model on disk.
 
 ### In the browser
 
