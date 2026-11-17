@@ -4,8 +4,8 @@ status: accepted
 
 # A board render carries its recipe, and the check keeps embeds current
 
-[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) replaces the sections on tracked
-embeds and on deleting a board. Git discovers embeds, and no board-owned list of embeds remains.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) replaces board-owned embed tracking
+with Git discovery and retires live board deletion.
 
 ## Context
 
