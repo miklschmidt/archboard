@@ -34,7 +34,7 @@ With a head, it reads the model at that head, from Git and with no checkout: the
 Its `vaultRead` field names the vault that it read.
 Its `unboundFiles` lists the changed files that no module is bound to.
 Read those files, and skipped or unavailable source, directly from the diff.
-An empty footprint shows only that no bound module changed. Judge architectural change from the diff and `unboundFiles`.
+A footprint without a changed module shows only that the bound code it read is unchanged. Judge architectural change from the whole diff.
 
 Choose the evidence that fits:
 
