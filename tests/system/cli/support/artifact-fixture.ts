@@ -6,11 +6,7 @@ import { z } from "zod";
 import { checkoutRoot } from "./package-cli.ts";
 
 /** The files `bun run generate:cli-contract` writes, in the order it writes them. */
-const artifactNames = [
-	"cli-command-audit.md",
-	"command-contract-proof.json",
-	"command-contract-proof.md",
-] as const;
+const artifactNames = ["command-contract-proof.json", "command-contract-proof.md"] as const;
 
 const spawnSchema = z.object({
 	command: z.array(z.string()),

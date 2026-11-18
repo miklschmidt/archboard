@@ -4,7 +4,7 @@ title: ADRs record only decisions that are hard to reverse
 status: In Progress
 assignee: []
 created_date: '2026-11-17T02:54:00Z'
-updated_date: '2026-11-17T03:21:00Z'
+updated_date: '2026-11-18T20:08:00Z'
 labels: []
 dependencies: []
 ordinal: 1084000
@@ -28,5 +28,5 @@ Many ADRs in docs/adr/ restate basic functionality and UI behavior (what a view 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Two passes cut docs/adr/ from 12,861 to 5,528 lines. Pass 1 (seven reviewers) removed UI behavior and functionality walkthroughs. Pass 2 (six reviewers) cut the 15 largest ADRs to their decisions, folded amendments into the main text and dropped task history. No ADR file was deleted, because about 720 files cite ADRs by number. A follow-up commit fixed about 150 citations in code comments, CONTEXT.md, docs and other ADRs. Still stale: four citations in .archboard/vault module descriptions (jLUi9ZuH ADR 0044, 0idmUHd2 ADR 0073, NFwqWgrm ADR 0071, cokLjwKT ADR 0061), which need a vault claim, and docs/design/cli-command-audit.json:1974 (ADR 0057 tracked embeds). Near-empty ADRs that could be deleted later: 0007, 0013, 0016, 0017, 0035, 0061, 0062. Checks: format:check passes, rustfmt on the 15 touched Rust files passes, lint:core-docs passes, the site builds and its links resolve.
+Two passes cut docs/adr/ from 12,861 to 5,528 lines. Pass 1 (seven reviewers) removed UI behavior and functionality walkthroughs. Pass 2 (six reviewers) cut the 15 largest ADRs to their decisions, folded amendments into the main text and dropped task history. No ADR file was deleted, because about 720 files cite ADRs by number. A follow-up commit fixed about 150 citations in code comments, CONTEXT.md, docs and other ADRs. Still stale: four citations in .archboard/vault module descriptions (jLUi9ZuH ADR 0044, 0idmUHd2 ADR 0073, NFwqWgrm ADR 0071, cokLjwKT ADR 0061), which need a vault claim. Near-empty ADRs that could be deleted later: 0007, 0013, 0016, 0017, 0035, 0061, 0062. Checks: format:check passes, rustfmt on the 15 touched Rust files passes, lint:core-docs passes, the site builds and its links resolve.
 <!-- SECTION:NOTES:END -->

@@ -52,7 +52,7 @@
     {
       "order": 9000,
       "kind": "call",
-      "label": "registryOf, for the contract audit",
+      "label": "registryOf, for the contract proof",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

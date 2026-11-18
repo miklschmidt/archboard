@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import {
@@ -7,7 +7,6 @@ import {
 	artifactNames,
 	createArtifactFixture,
 } from "./support/artifact-fixture.ts";
-import { checkoutRoot } from "./support/package-cli.ts";
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
 const proofSchema = z.object({
@@ -25,13 +24,6 @@ const proofSchema = z.object({
 	),
 	contracts: z.array(z.object({ name: z.string() }).passthrough()),
 });
-const auditSchema = z.object({
-	entries: z.array(z.object({ path: z.string() }).passthrough()),
-	workflows: z.array(z.object({ name: z.string() }).passthrough()),
-});
-const audit = auditSchema.parse(
-	JSON.parse(readFileSync(join(checkoutRoot, "docs/design/cli-command-audit.json"), "utf8")),
-);
 describe("command contract artifact generation", () => {
 	// Two cold generators took 13.3s under a half-CPU quota (TASK-162).
 	test(
@@ -74,11 +66,6 @@ describe("command contract artifact generation", () => {
 			expect(proofMarkdown.match(/^Usage:\n\n```text\narchboard /gm)).toHaveLength(
 				proof.contracts.length,
 			);
-			const auditMarkdown = fixture.bytes(fixture.first, "cli-command-audit.md").toString();
-			expect(auditMarkdown.match(/^\| +`[^`]+` +\|/gm)).toHaveLength(audit.entries.length);
-			for (const workflow of audit.workflows) {
-				expect(auditMarkdown, workflow.name).toContain(`### ${workflow.name}`);
-			}
 			for (const name of artifactNames) {
 				const ignored = fixture.git([
 					"check-ignore",
