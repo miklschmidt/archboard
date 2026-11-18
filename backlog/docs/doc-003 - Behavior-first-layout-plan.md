@@ -3,7 +3,7 @@ id: doc-003
 title: Behavior-first layout plan
 type: specification
 created_date: '2026-11-06T19:05:00Z'
-updated_date: '2026-11-06T19:06:00Z'
+updated_date: '2026-11-18T20:01:00Z'
 ---
 # Behavior-first layout plan (TASK-582.03)
 
@@ -328,7 +328,7 @@ Evidence: crates are root Cargo members (`Cargo.toml:5`, ADR 0059).
 6. `bun run check`.
 
 **Specific risks:**
-- **CLI:** run `bun run generate:cli-contract` to regenerate the proof and `docs/design/cli-command-audit.json`.
+- **CLI:** run `bun run generate:cli-contract` to regenerate the proof.
 - **Rust:** `nix develop -c cargo test -p archboard-scene`, then `bun run build:core`.
 - **Embeds:** run `archboard check embeds`. Root-level model changes (Renderer core, the Layout investigation root) can make the README architecture SVGs stale. Refresh them as `docs/agents/readme-assets.md` describes. `readme:check` is informational.
 - **Walkthroughs:** a beat whose scope loses a part may need `edit-walkthrough`. Check after each model intent.

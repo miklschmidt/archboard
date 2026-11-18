@@ -14,7 +14,7 @@
     {
       "order": 52000,
       "kind": "call",
-      "label": "the registry, for the generated audit",
+      "label": "the registry, for the generated proof",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
