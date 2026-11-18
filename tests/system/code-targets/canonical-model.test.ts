@@ -54,6 +54,34 @@ test("canonical modules use the existing opener and refuse a mismatched model id
 	expect(refused.body).toMatchObject({ success: false, code: "MODEL_UNAVAILABLE" });
 });
 
+test("a canonical module bound to a missing file offers the GitHub link with its refusal", async () => {
+	await using resources = new AsyncDisposableStack();
+	const options: OpenerFixtureOptions = { defaultDependencies: true };
+	const fixture = await createOpenerFixture(options);
+	resources.defer(() => fixture.dispose());
+	const vault = join(fixture.checkout, ".archboard/vault");
+	options.vault = vault;
+	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	const path = join(vault, "gateway.module.json");
+	const gateway = JSON.parse(readFileSync(path, "utf8"));
+	writeFileSync(
+		path,
+		JSON.stringify({ ...gateway, binding: { repo: fixture.repository, path: "src/missing.ts" } }),
+	);
+	const refused = await fixture.request("/api/code-targets/open", {
+		method: "POST",
+		body: jsonBody({ model: "Shop", subject: "Shop#Gateway" }),
+	});
+	expect(refused.status).toBe(422);
+	expect(refused.body).toMatchObject({
+		success: false,
+		code: "TARGET_UNAVAILABLE",
+		actions: [
+			{ kind: "github", href: "https://github.com/acme/payments/tree/HEAD/src/missing.ts" },
+		],
+	});
+});
+
 test("canonical code activation opens the selected draft binding instead of current code", async () => {
 	await using resources = new AsyncDisposableStack();
 	const options: OpenerFixtureOptions = { defaultDependencies: true };
