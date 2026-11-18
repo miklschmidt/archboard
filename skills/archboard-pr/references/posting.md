@@ -17,7 +17,9 @@ Add the video as another attachment when present.
 Otherwise, use an already-authorized upload route or return completed files to the user.
 Never publish unresolved local paths.
 An attach command can store some uploads before it fails.
-After a failure, read the PR body, reuse the attachment URLs that it holds, and upload only the missing files.
+The PR body then holds their URLs, and a local path for each file that failed.
+If the PR exists after a failure, upload only the missing files and replace those local paths.
+If the PR does not exist, run the create command again.
 
 For updates, read the existing body before replacing the marked section.
 Read it again immediately before the write, and build the new body from that latest read.
