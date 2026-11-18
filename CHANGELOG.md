@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.0](https://github.com/miklschmidt/archboard/compare/v0.4.1...v0.5.0) (2026-11-18)
+
+
+### Features
+
+* **cli:** footprint flags modules a draft adds for existing code, and PR charts come from model flows ([#125](https://github.com/miklschmidt/archboard/issues/125)) ([6b7117d](https://github.com/miklschmidt/archboard/commit/6b7117d815ed8791f8285090d4f8ad17eb4dde5e))
+* **code-intel:** keep a branch's plan in its footprint after it adopts the proposal ([#129](https://github.com/miklschmidt/archboard/issues/129)) ([2e99212](https://github.com/miklschmidt/archboard/commit/2e992120306f6f8025d648cbdf98efc167c37b8c))
+* **site:** one indexed copy of each docs page, a sitemap and llms.txt ([#108](https://github.com/miklschmidt/archboard/issues/108)) ([45eab9f](https://github.com/miklschmidt/archboard/commit/45eab9f1a9a5c65c5df0454226c00a15e66e73d3))
+* **telemetry:** send anonymous usage as wide events ([#115](https://github.com/miklschmidt/archboard/issues/115)) ([8c0a88c](https://github.com/miklschmidt/archboard/commit/8c0a88c8b366433a5ed9ae20c2587aef7cd23d90))
+* **web:** mark the words that moved in a changed field ([#112](https://github.com/miklschmidt/archboard/issues/112)) ([e2cbb84](https://github.com/miklschmidt/archboard/commit/e2cbb84d077151361c4f28c446cc306f832f6817))
+* **web:** show a branch footprint's lists as cards ([#127](https://github.com/miklschmidt/archboard/issues/127)) ([20a01f1](https://github.com/miklschmidt/archboard/commit/20a01f1b83daf8030326501524d401a2bcd00944))
+* **web:** show what a branch changed in Measures, and read the model at a branch ([#118](https://github.com/miklschmidt/archboard/issues/118)) ([fe7c85f](https://github.com/miklschmidt/archboard/commit/fe7c85f79fbdeb6da77aa45bbd2765d2308f87cb))
+* **workhorse:** stop ends the whole work tree and inspection reads real work ([#116](https://github.com/miklschmidt/archboard/issues/116)) ([277e096](https://github.com/miklschmidt/archboard/commit/277e0967f302a59e88f0b7c2538fc5cce6f49175))
+
+
+### Bug Fixes
+
+* **code-intel:** count a footprint module as changed only when the branch changes it ([#121](https://github.com/miklschmidt/archboard/issues/121)) ([dc6c72f](https://github.com/miklschmidt/archboard/commit/dc6c72f61eb600305a15ec5e7c2d326e3deb099b))
+* **deps:** update the packages that bun audit flags ([#114](https://github.com/miklschmidt/archboard/issues/114)) ([3d987a2](https://github.com/miklschmidt/archboard/commit/3d987a21e0e068fb0a44ee13d6fbdff921c44ede))
+* **release:** keep bun.lock at the versions a release raises ([#111](https://github.com/miklschmidt/archboard/issues/111)) ([01dc319](https://github.com/miklschmidt/archboard/commit/01dc319974dcb47b10ee25742bb2ec3191ce50e0))
+* **renderer:** an exported legend keys each kind once with the panel's chip ([#124](https://github.com/miklschmidt/archboard/issues/124)) ([7f6f798](https://github.com/miklschmidt/archboard/commit/7f6f798be6afdd7c7f0811dadd7b4974a24dae87))
+* **site:** the hero starts still and moves only where the GPU is quick ([#122](https://github.com/miklschmidt/archboard/issues/122)) ([5f195c2](https://github.com/miklschmidt/archboard/commit/5f195c2ba5607af83ae1978f1219a8ea56af00e2))
+* **voice:** a recorded walkthrough narrates each beat instead of answering it ([#123](https://github.com/miklschmidt/archboard/issues/123)) ([babfdc6](https://github.com/miklschmidt/archboard/commit/babfdc65d49045af498c432db1b10c45d367511e))
+* **walkthrough:** authors prove each claim and check every recording before using it ([#126](https://github.com/miklschmidt/archboard/issues/126)) ([c98d9da](https://github.com/miklschmidt/archboard/commit/c98d9da1d1e3921d2c87356923625fdd37d31a2a))
+* **web:** name the shown proposal at the head of its root reading ([#110](https://github.com/miklschmidt/archboard/issues/110)) ([45daf9e](https://github.com/miklschmidt/archboard/commit/45daf9e700bd76f8f721c64aebe1af0a9c39c88d))
+
 ## [0.4.1](https://github.com/miklschmidt/archboard/compare/v0.4.0...v0.4.1) (2026-11-12)
 
 
