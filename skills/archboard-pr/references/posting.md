@@ -16,8 +16,12 @@ gh pr edit <number> --body-file <artifact-directory>/body.md --attach <artifact-
 Add the video as another attachment when present.
 Otherwise, use an already-authorized upload route or return completed files to the user.
 Never publish unresolved local paths.
+An attach command can store some uploads before it fails.
+After a failure, read the PR body, reuse the attachment URLs that it holds, and upload only the missing files.
 
 For updates, read the existing body before replacing the marked section.
+Read it again immediately before the write, and build the new body from that latest read.
+If the marked section changed since your first read, stop and fold that edit into your section first.
 Preserve author and reviewer text outside it.
 Replace the section rather than appending another description.
 Remove earlier generated Summary or Evidence duplicates outside the markers, while preserving unrelated author text.
