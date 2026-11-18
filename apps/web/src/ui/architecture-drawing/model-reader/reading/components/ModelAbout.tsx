@@ -1,5 +1,6 @@
 // About: every long list of a reading, on a page over the picture so that the picture keeps its
-// camera. The page says which subject it describes: the open scope, or what is selected.
+// camera. The right panel stays beside it, with the page's outline at its top and what can be done
+// at its foot. The page says which subject it describes: the open scope, or what is selected.
 
 import {
 	RiArrowLeftRightLine,
@@ -25,7 +26,6 @@ import {
 	type AboutPageSection,
 	type AboutPlace,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
-import { ModelCodeWarnings } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelConnectionTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnectionTable.tsx";
 import { ModelFlowDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowDetails.tsx";
 import { ModelGroups } from "#ui/architecture-drawing/model-reader/reading/components/ModelGroups.tsx";
@@ -38,7 +38,6 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import { ModelStateTimeline } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
-import type { useModelCodeFindings } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
 import { useStateTimeline } from "#ui/architecture-drawing/model-reader/reading/hooks/use-state-timeline.ts";
 import { modulePlaces } from "#ui/architecture-drawing/model-reader/reading/rules/module-places.ts";
@@ -51,13 +50,10 @@ interface ModelAboutProps extends ModelSelectionDetailsProps {
 	readonly onSubject: Reader["onAbout"];
 	/** What the reading's state says of itself, which the first surface leaves out. */
 	readonly overview: ReactNode;
-	readonly code: ReturnType<typeof useModelCodeFindings>["reading"];
-	/** Select a subject and show it on the diagram, or let go for a warning about the model. */
+	/** Select a subject and show it on the diagram. */
 	readonly onShow: (id: string | null) => void;
 	/** What the picture draws each subject with, for the marks of the lists. */
 	readonly appearances: Parameters<typeof kindLookOf>[1];
-	/** What can be done with the selection. */
-	readonly children: ReactNode;
 	/** The walkthroughs of the open scope. */
 	readonly walkthroughs: readonly ModelSelectionDetailsProps["model"]["walkthroughs"][number][];
 	readonly tree: Reader["tree"];
@@ -72,39 +68,31 @@ interface ModelAboutProps extends ModelSelectionDetailsProps {
  * @returns The page.
  */
 function ModelAbout(props: ModelAboutProps): JSX.Element {
-	const { subject, model, selection, onShow } = props;
+	const { subject, model, selection } = props;
 	const timeline = useStateTimeline(props.vault, model);
 	const look = useMemo(
 		() => kindLookOf(model.policy, props.appearances),
 		[model.policy, props.appearances],
 	);
 	const state = timeline.entries.find((entry) => entry.state.id === model.selectedState?.id);
-	const tools = (
-		<>
-			<AboutSubject
-				subject={subject}
-				onSubject={props.onSubject}
-				selecting={selection.ids.size > 0}
-			/>
-			<ModelCodeWarnings reading={props.code} onSelect={onShow} />
-			{props.children}
-		</>
+	const { onSubject } = props;
+	const selecting = selection.ids.size > 0;
+	const tools = useMemo(
+		() => <AboutSubject subject={subject} onSubject={onSubject} selecting={selecting} />,
+		[subject, onSubject, selecting],
 	);
 	return (
+		// The page lies on the picture's own sheet, with its four rounded corners.
 		<article
 			data-slot="model-about"
 			data-subject={subject}
-			className="bg-sidebar absolute inset-0 z-20 flex min-h-0 flex-col"
+			className="picture-corners bg-background absolute inset-0 z-20 flex min-h-0 flex-col"
 		>
-			{/* The page is a sheet in the chrome, as the picture is: a strip of chrome under it and
-			    beside it, and four rounded corners. */}
-			<div className="picture-corners bg-background relative mr-2 mb-2 flex min-h-0 flex-1 flex-col in-data-presenting:m-0">
-				{subject === "selection" ? (
-					<ModelAboutSelection {...props} look={look} state={state} tools={tools} />
-				) : (
-					<ScopePage {...props} look={look} state={state} tools={tools} timeline={timeline} />
-				)}
-			</div>
+			{subject === "selection" ? (
+				<ModelAboutSelection {...props} look={look} state={state} tools={tools} />
+			) : (
+				<ScopePage {...props} look={look} state={state} tools={tools} timeline={timeline} />
+			)}
 		</article>
 	);
 }

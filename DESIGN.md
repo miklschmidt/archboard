@@ -621,8 +621,10 @@ selected, it says the open module's name and description, or at the roots the mo
 name and the summary of its state. A flow reading says the flow. With a selection, it
 explains the selected thing, and a click on a card lights the card and fills the panel at
 once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row of a list is a row of the left column: it lies on the panel's ground with no plate, card or rule under it, it is 28px high, and it sets its name in Control at weight 400 and its detail in Body and muted ink at its end. Its tone reaches 8px past the panel's 16px edges, so its words stand on those edges. Under the pointer it takes Control Face at 50%. The row on screen, or the row that is pressed, rises as a Control Face with `shadow-raised`, with no gold. A row that cannot be used is in muted ink and keeps still under the pointer. A row of a subject on the picture also lights it. `rowTone` in `shell/rules/row-tone.ts` holds the tone that the rows of both columns share.
-Long lists and evidence live on About, which lies over the panel, so the panel keeps its
-room and the picture keeps its camera. A pane presented fullscreen has no panel.
+Long lists and evidence live on About, which lies over the picture, so the picture keeps
+its camera. The panel stays beside About and follows the same rule for where it shows.
+There the outline of About takes the place of the subject at the top of the panel. The
+legend and the foot stay under it. A pane presented fullscreen has no panel.
 
 A subject that differs from the state it is read against has an `Against <state>` section. It lists each field that moved: its name, then `was` over `now`, the whole of each value, with the old value in muted ink. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink: the removed standing (`--standing-removed`) under the words taken out of `was`, and the added standing (`--standing-added`) under the words put into `now`. Two values that share no word carry no tint.
 
@@ -769,8 +771,9 @@ nothing else. With reduced motion the sidebar appears and goes at once.
 A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
 chrome. While it lasts the control is held and says so, and nothing shows or hides
 the sidebar. A pick made on the About page lays
-no panel over the page, where it would cover the page's controls. Its panel comes
-with the diagram.
+no panel over the page, where it would cover the page's controls. The right panel
+beside About keeps its outline and has no Clear selection key. The subject of a pick
+shows in the panel with the diagram.
 
 A walkthrough's row begins with a play mark, never a bare triangle, because a
 triangle is the mark of a row that folds open. Narrate is in every walkthrough's
@@ -781,9 +784,10 @@ its tooltip says why.
 ### About page
 
 The pane's header has two tabs, Diagram and About, and the mark of the open tab is
-Gold Mark. The About page lies over the picture on Ground Chalk and scrolls. A band at
-its top names what it describes, the open scope or the selected subject, and leads to
-the other one. Its column is 1320px wide at most and centred. The column
+Gold Mark. The About page lies over the picture on Ground Chalk and scrolls, with the
+right panel beside it. A band at its top names what it describes, the open scope or the
+selected subject, and leads to the other one. What can be done with the subject stays at
+the foot of the right panel. Its column is 1096px wide at most and centred. The column
 keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
 
 Presenting a walkthrough from About shows its picture and steps. Leaving it returns
@@ -796,13 +800,13 @@ variant on screen with its lifecycle mark, its name and where it stands in muted
 ink. The variant's summary follows in the Reading role, 68 characters wide at most.
 40px separate the head from the first section.
 
-The outline is a column 176px wide, 48px to the left of the sections, and it stays
-32px below the top of the page while the page scrolls. Each entry is a 32px row
-with the section's 16px mark, its name in Control and its count in Technical. The
-section being read has full ink and a 2px piece of Gold Mark on its left edge. On a
-page narrower than 1040px, the outline is a bar on Ground Chalk at the top of the
-page with a Rule under it. There the gold piece lies under the entry, and a bar too
-narrow for its entries scrolls sideways. A jump to a section scrolls the page
+The outline stands at the top of the right panel, as a column of rows whose words
+stand on the panel's 16px edges. Each entry is a 32px row with the section's 16px
+mark, its name in Control and its count in Technical. The section being read has
+full ink and a 2px piece of Gold Mark on its left edge. Where the panel hides, in a
+reading narrower than 900px with nothing selected, the outline is a bar on Ground
+Chalk at the top of the page with a Rule under it. There the gold piece lies under
+the entry, and a bar too narrow for its entries scrolls sideways. A jump to a section scrolls the page
 smoothly, or at once with reduced motion.
 
 The outline appears only when the page has more than one section. Choosing a section

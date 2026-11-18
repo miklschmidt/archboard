@@ -1,9 +1,11 @@
 // The anatomy of About, for the open scope and for a selection alike: the name in the display
-// face, a line of facts, what the subject is responsible for in reading size, then an outline
-// beside the sections. The end of the title holds what the page is about and what can be done.
+// face, a line of facts, what the subject is responsible for in reading size, then the sections.
+// The outline of the sections stands at the top of the right panel. The end of the title holds
+// what the page is about.
 
 import type { RemixiconComponentType } from "@remixicon/react";
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useContext, useMemo, useState, type JSX, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { Model } from "@archboard/model/content";
 import { ModelSwitch } from "#ui/architecture-drawing/model-reader/reading/components/ModelSwitch.tsx";
 import { ModelStateFact } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
@@ -14,6 +16,7 @@ import {
 	ABOUT_SHEET,
 	ABOUT_TITLE,
 	AboutOutline,
+	AboutOutlineContext,
 	AboutSectionFrame,
 	scrollToSection,
 	type AboutSection,
@@ -58,7 +61,7 @@ interface ModelAboutFrameProps {
 	readonly look: KindLook;
 	/** The reading's state on the timeline, or undefined for a reading with none. */
 	readonly state: TimelineEntry | undefined;
-	/** What the page is about and what can be done. */
+	/** What the page is about, and what can be done with the subject itself. */
 	readonly tools: ReactNode;
 	/** How the subject stands: its warnings, and how it differs from what it is read against. */
 	readonly children?: ReactNode;
@@ -126,7 +129,8 @@ function openAt(page: HTMLElement, place: AboutPlace): void {
 }
 
 /**
- * The page. It opens where the reader left it, and an outline of one section says nothing.
+ * The page. It opens where the reader left it, and an outline of one section says nothing. The
+ * outline stands at the top of the right panel, and over the sections where the panel hides.
  * @param props The subject and its sections.
  * @returns The page.
  */
@@ -151,10 +155,26 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 		},
 		[page, reducedMotion],
 	);
+	const outline = useContext(AboutOutlineContext);
+	const outlined = sections.length > 1;
 	return (
-		<div ref={attach} onScroll={keep} className={`${ABOUT_PAGE} min-h-0 flex-1`}>
+		<div
+			ref={attach}
+			onScroll={keep}
+			tabIndex={-1}
+			data-slot="model-about-page"
+			className={`${ABOUT_PAGE} min-h-0 flex-1`}
+		>
+			{outlined &&
+				outline.panel !== null &&
+				createPortal(
+					<AboutOutline sections={sections} current={current} onGo={goTo} place="panel" />,
+					outline.panel,
+				)}
 			<div className={ABOUT_COLUMNS}>
-				{sections.length > 1 && <AboutOutline sections={sections} current={current} onGo={goTo} />}
+				{outlined && outline.hidesNarrow && (
+					<AboutOutline sections={sections} current={current} onGo={goTo} place="bar" />
+				)}
 				<AboutTitle {...props} />
 				<div className={ABOUT_SHEET}>
 					{sections.map((entry) => (
