@@ -1,0 +1,809 @@
+{
+  "id": "3nkEfr1W",
+  "name": "Module depth from the code",
+  "summary": "Measures and the gate judge module depth from the code: exposed values, pass-throughs, unused exports, repeated caller math and shallow modules, with no score.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-18T21:30:08.571Z",
+  "predecessor": "1wIcvaUQ",
+  "predecessorRevision": "7836fdce2590e9d0e643b73241a1493779857b1073e9c2cdec07c2a5534160bf",
+  "baseline": "38dcee803a0191e0f1edfba164eecdb77f6eb5a3",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#AJGft3Pe",
+      "field": "description",
+      "value": "Its policy also holds whether plain archboard check fails on shallow modules, so that CI and agent loops share one gate. The canonical reader carries it in each model's policy."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#yQCdykGt",
+      "field": "description",
+      "value": "With --fail-shallow-modules, or when the selected model's policy turns the gate on, it promotes MODULE_SHALLOW on the modules that the branch touched to a warning before the existing exit rule. --base names the branch base; without it the default-base lookup decides. A base that does not resolve is a refusal, never a pass."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+      "field": "description",
+      "value": "Per model, state and revision it keeps each module's exports, counts, findings, language coverage and skipped reads, modules with no findings included, so a pane tells a clean result from an incomplete read."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
+      "field": "description",
+      "value": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "field": "description",
+      "value": "The checker reads current architecture, one selected state, or independent drafts. It reports bindings, anchors, declared relationships, interfaces, module depth and document references with canonical identities. It reads the interface of every bound module, with or without parts, in every language that the module holds, and hands Module depth what it read. EXPOSED_UNUSED is a warning when the reader resolved every use in that language and the model draws no outside caller of the entry; otherwise it is information. The answer marks the modules that the branch touched and carries the selected model's shallow-module setting; severities in the answer never depend on the caller's flags. Its state reader also reads one selected state at a source ref, through the branch reading, for the branch footprint of a named head. Git locality and branch footprint use separate requested history operations. The timings of its language servers name the program that ran and the TypeScript that it read."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#DLEkNAnz",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "judge exposure, resolved uses, coverage and caller owners",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#DLEkNAnz",
+        "to": "vKEsyHFk#roHByn84"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DLEkNAnz",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#mGUosADW",
+      "kind": "relationship",
+      "value": {
+        "order": 920,
+        "kind": "call",
+        "label": "modules touched since the base, working tree included",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#mGUosADW",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#mGUosADW",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#roHByn84",
+      "kind": "module",
+      "value": {
+        "order": 21010,
+        "name": "Module depth",
+        "kind": "module",
+        "responsibility": "Judges each bound module's exports from its code, and the math that callers repeat on them",
+        "description": "Code check hands it each module's exposure, the resolved outside uses, each language's coverage and the module that owns each caller, so it reads nothing twice. It counts exported functions, each public method, exported values and exported types, and the pieces of logic behind them, as evidence. It reports EXPOSED_VALUE for any exported non-function value that outside code reads, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH when outside callers also import the defining module, EXPOSED_VALUE_COMPUTED when two or more modules write the same math on one exported value, and MODULE_SHALLOW when every non-type export carries a per-name finding. MODULE_SHALLOW is information in the answer; the CLI decides when it fails.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/module-depth"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#roHByn84"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#roHByn84",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PbpqK7dj",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "the logic behind exports and the expression around uses",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#PbpqK7dj",
+        "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PbpqK7dj",
+      "placement": {
+        "holder": "vKEsyHFk#roHByn84"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#JQ4qwewE",
+      "kind": "module",
+      "value": {
+        "order": 21500,
+        "name": "Language server setup brief",
+        "kind": "module",
+        "responsibility": "Writes the brief that tells an agent how to set up the missing language servers of a checkout",
+        "description": "It sits beside the configurable languages in the browser-safe languages entry. One brief serves archboard init and Fix with Codex. It names the languages that lack a server and tells the agent to follow the repository's own rules for development tools, to show its plan first, and to write .archboard/language-servers.json. Choosing a terminal agent and starting it stay in the CLI.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/shared/api/language-server-setup.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#JQ4qwewE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#JQ4qwewE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#4Xftcuh4",
+      "kind": "relationship",
+      "value": {
+        "order": 50,
+        "kind": "call",
+        "label": "the brief for the repository's servers",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#4Xftcuh4",
+        "to": "vKEsyHFk#JQ4qwewE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4Xftcuh4",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#XgeEM0Pb"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Y0s83yrf",
+      "kind": "module",
+      "value": {
+        "order": 30500,
+        "name": "Code exports",
+        "kind": "ui",
+        "responsibility": "Lists a module's exports by kind on its About page, each with its findings and an Open code action",
+        "description": "Functions, classes with their public members, values and types each get a group. Each name shows its findings from the last code check, and a module with many names keeps its groups collapsed.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Y0s83yrf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Y0s83yrf",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
+      "field": "description",
+      "value": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tQ2B3iEF",
+      "field": "description",
+      "value": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why. What a module exposes shows Model and Code columns side by side, each sortable, and code findings join the findings list. A language without its server says which server it needs and offers Fix with Codex, which starts the setup in Talk. A fourth view, What this branch changed, holds the branch footprint."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#HeTg2hKV",
+      "kind": "relationship",
+      "value": {
+        "order": 30,
+        "kind": "call",
+        "label": "the code counts, findings and coverage of the reading",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#HeTg2hKV",
+        "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#HeTg2hKV",
+      "placement": {
+        "holder": "vKEsyHFk#tQ2B3iEF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#8edJWcN6",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "render",
+        "label": "the selected module's code exports and findings",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#8edJWcN6",
+        "to": "vKEsyHFk#Y0s83yrf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8edJWcN6",
+      "placement": {
+        "holder": "vKEsyHFk#iOyrvcQp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ePT7OKz6",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the brief for a missing server, in a fix asked for",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#ePT7OKz6",
+        "to": "vKEsyHFk#JQ4qwewE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ePT7OKz6",
+      "placement": {
+        "holder": "vKEsyHFk#mlSnLR16"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+      "placement": {
+        "holder": "vKEsyHFk#HBlhIeSD",
+        "before": "vKEsyHFk#RlLRwGPb"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#RlLRwGPb",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#RlLRwGPb",
+        "name": "An agent loop gates on shallow modules",
+        "summary": "archboard check code --fail-shallow-modules judges every module that the branch touched, working tree included, so an implementation agent fails on the shallow module or leaked value that it caused, and not on older findings.",
+        "participants": [
+          "vKEsyHFk/XppR9owz#yQCdykGt",
+          "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "vKEsyHFk/HBlhIeSD#radK8osF",
+          "vKEsyHFk#roHByn84"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RlLRwGPb",
+      "placement": {
+        "holder": "vKEsyHFk#HBlhIeSD",
+        "before": "vKEsyHFk#sgbsZcAx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#kWpaLnYW",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#kWpaLnYW",
+        "from": "vKEsyHFk/XppR9owz#yQCdykGt",
+        "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "label": "check code, gate from the flag or the model's policy",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#kWpaLnYW",
+      "placement": {
+        "holder": "vKEsyHFk#RlLRwGPb",
+        "before": "vKEsyHFk#u3l4Wcqv"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#u3l4Wcqv",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#u3l4Wcqv",
+        "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "label": "run the pass with the branch base",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#u3l4Wcqv",
+      "placement": {
+        "holder": "vKEsyHFk#RlLRwGPb",
+        "before": "vKEsyHFk#V40V03n7"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#V40V03n7",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#V40V03n7",
+        "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+        "label": "modules touched since the base, working tree included",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#V40V03n7",
+      "placement": {
+        "holder": "vKEsyHFk#RlLRwGPb",
+        "before": "vKEsyHFk#xQcarlX2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xQcarlX2",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#xQcarlX2",
+        "kind": "decision",
+        "question": "Does the base resolve?",
+        "alternatives": [
+          "no",
+          "yes"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xQcarlX2",
+      "placement": {
+        "holder": "vKEsyHFk#RlLRwGPb"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#812X56fP",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#812X56fP",
+        "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "label": "the base names no commit: a refusal",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#812X56fP",
+      "placement": {
+        "holder": "vKEsyHFk#xQcarlX2",
+        "alternative": "no",
+        "before": "vKEsyHFk#NzaWSCEI"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#NzaWSCEI",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#NzaWSCEI",
+        "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "to": "vKEsyHFk/XppR9owz#yQCdykGt",
+        "label": "422 with the refusal as it is",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NzaWSCEI",
+      "placement": {
+        "holder": "vKEsyHFk#xQcarlX2",
+        "alternative": "no"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dOxvYKIK",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#dOxvYKIK",
+        "kind": "loop",
+        "condition": "for each bound module"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dOxvYKIK",
+      "placement": {
+        "holder": "vKEsyHFk#xQcarlX2",
+        "alternative": "yes",
+        "before": "vKEsyHFk#AlZWurhc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#5t6U7SKT",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#5t6U7SKT",
+        "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "to": "vKEsyHFk#roHByn84",
+        "label": "exposure, resolved uses, coverage and caller owners",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5t6U7SKT",
+      "placement": {
+        "holder": "vKEsyHFk#dOxvYKIK",
+        "before": "vKEsyHFk#pMAyX82t"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#pMAyX82t",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#pMAyX82t",
+        "from": "vKEsyHFk#roHByn84",
+        "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "label": "counts and per-name findings, MODULE_SHALLOW as information",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#pMAyX82t",
+      "placement": {
+        "holder": "vKEsyHFk#dOxvYKIK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AlZWurhc",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#AlZWurhc",
+        "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "label": "findings, coverage and the touched modules",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AlZWurhc",
+      "placement": {
+        "holder": "vKEsyHFk#xQcarlX2",
+        "alternative": "yes",
+        "before": "vKEsyHFk#gAsVGsSG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#gAsVGsSG",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#gAsVGsSG",
+        "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "to": "vKEsyHFk/XppR9owz#yQCdykGt",
+        "label": "the answer, severities unchanged by any flag",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gAsVGsSG",
+      "placement": {
+        "holder": "vKEsyHFk#xQcarlX2",
+        "alternative": "yes",
+        "before": "vKEsyHFk#lmDX8sCU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lmDX8sCU",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#lmDX8sCU",
+        "from": "vKEsyHFk/XppR9owz#yQCdykGt",
+        "to": "vKEsyHFk/XppR9owz#yQCdykGt",
+        "label": "promote MODULE_SHALLOW on touched modules, then exit",
+        "kind": "self"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lmDX8sCU",
+      "placement": {
+        "holder": "vKEsyHFk#xQcarlX2",
+        "alternative": "yes"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#sgbsZcAx",
+      "kind": "flow",
+      "value": {
+        "id": "vKEsyHFk#sgbsZcAx",
+        "name": "A person reads module depth in Measures",
+        "summary": "Measures shows what the model claims and what the code exposes side by side, and a missing language server becomes a fix asked of that checkout's agent, so the person sees the same evidence that the gate uses.",
+        "participants": [
+          "vKEsyHFk#tQ2B3iEF",
+          "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+          "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+          "vKEsyHFk#mlSnLR16",
+          "vKEsyHFk#JQ4qwewE",
+          "vKEsyHFk/yejBBUFY#cLeaiTWy",
+          "vKEsyHFk#iOyrvcQp",
+          "vKEsyHFk#Y0s83yrf"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#sgbsZcAx",
+      "placement": {
+        "holder": "vKEsyHFk#HBlhIeSD"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ThS1TrIe",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#ThS1TrIe",
+        "from": "vKEsyHFk#tQ2B3iEF",
+        "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+        "label": "the code counts, findings and coverage of the reading",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ThS1TrIe",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx",
+        "before": "vKEsyHFk#nv6IUIIo"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nv6IUIIo",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#nv6IUIIo",
+        "from": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+        "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "label": "what the last code pass found",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nv6IUIIo",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx",
+        "before": "vKEsyHFk#Mw2ObWB8"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Mw2ObWB8",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#Mw2ObWB8",
+        "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "to": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+        "label": "the answer for this model, state and revision",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Mw2ObWB8",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx",
+        "before": "vKEsyHFk#ap5B41FS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ap5B41FS",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#ap5B41FS",
+        "from": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+        "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "label": "exports, counts, findings, coverage and skipped reads",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ap5B41FS",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx",
+        "before": "vKEsyHFk#CkmWAi8p"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CkmWAi8p",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#CkmWAi8p",
+        "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+        "label": "the remembered answer",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CkmWAi8p",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx",
+        "before": "vKEsyHFk#eLM3oKam"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#eLM3oKam",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#eLM3oKam",
+        "kind": "decision",
+        "question": "Did every language of the reading have its server?",
+        "alternatives": [
+          "a server is missing",
+          "every server ran"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#eLM3oKam",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx",
+        "before": "vKEsyHFk#OAhe57tI"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Np3IKgXj",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#Np3IKgXj",
+        "from": "vKEsyHFk#tQ2B3iEF",
+        "to": "vKEsyHFk#mlSnLR16",
+        "label": "Fix with Codex, for the checkout that misses it",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Np3IKgXj",
+      "placement": {
+        "holder": "vKEsyHFk#eLM3oKam",
+        "alternative": "a server is missing",
+        "before": "vKEsyHFk#Lc3BE31i"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Lc3BE31i",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#Lc3BE31i",
+        "from": "vKEsyHFk#mlSnLR16",
+        "to": "vKEsyHFk#JQ4qwewE",
+        "label": "the brief for the missing server",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Lc3BE31i",
+      "placement": {
+        "holder": "vKEsyHFk#eLM3oKam",
+        "alternative": "a server is missing",
+        "before": "vKEsyHFk#Oh7qLIuo"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Oh7qLIuo",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#Oh7qLIuo",
+        "from": "vKEsyHFk#mlSnLR16",
+        "to": "vKEsyHFk/yejBBUFY#cLeaiTWy",
+        "label": "a fix asked for, in that checkout's conversation",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Oh7qLIuo",
+      "placement": {
+        "holder": "vKEsyHFk#eLM3oKam",
+        "alternative": "a server is missing"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#OAhe57tI",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#OAhe57tI",
+        "from": "vKEsyHFk#iOyrvcQp",
+        "to": "vKEsyHFk#Y0s83yrf",
+        "label": "the selected module's code exports and findings",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#OAhe57tI",
+      "placement": {
+        "holder": "vKEsyHFk#sgbsZcAx"
+      }
+    }
+  ],
+  "retiredIds": [
+    "vKEsyHFk#cSZH7g8C",
+    "vKEsyHFk#NhuAoJeU",
+    "vKEsyHFk#ur7VSXSv",
+    "vKEsyHFk#l0D9FW8C",
+    "vKEsyHFk#uzficQsx",
+    "vKEsyHFk#9y3RLiJT",
+    "vKEsyHFk#NQrZ7g9j",
+    "vKEsyHFk#AVXJ77TF",
+    "vKEsyHFk#KjHWHpyF",
+    "vKEsyHFk#zJuVpHI6",
+    "vKEsyHFk#JF25Mfjo",
+    "vKEsyHFk#s24KyOxm",
+    "vKEsyHFk#S4AdBVvg",
+    "vKEsyHFk#EoSZnZq0",
+    "vKEsyHFk#GcypBRia",
+    "vKEsyHFk#QGeoC4HK",
+    "vKEsyHFk#aEhCqDX1",
+    "vKEsyHFk#HKAv8Kvv",
+    "vKEsyHFk#VkrGEDgW",
+    "vKEsyHFk#2t8Jtuod",
+    "vKEsyHFk#9xfriq1p",
+    "vKEsyHFk#nlnEE0ZR",
+    "vKEsyHFk#7WlVguMc",
+    "vKEsyHFk#6rC91ANw",
+    "vKEsyHFk#c9Ghvv0B",
+    "vKEsyHFk#Z9ftOUk0",
+    "vKEsyHFk#SNPpj9Su",
+    "vKEsyHFk#ySSagyeD",
+    "vKEsyHFk#PskX2bKm",
+    "vKEsyHFk#szqUP9OP",
+    "vKEsyHFk#D7S35eom"
+  ]
+}
