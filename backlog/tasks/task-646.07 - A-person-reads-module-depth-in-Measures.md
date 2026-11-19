@@ -4,6 +4,7 @@ title: A person reads module depth in Measures
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:49:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -57,3 +58,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #5 Opening a pane never starts a code pass
 - [ ] #6 The model code evidence and model measures component tests cover the columns and the findings
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Archboard server, Browser, code-intel and Model reading (with their holders). Model reading: Measures binds only ModelMeasures.tsx, so its own head, row, dialog, rules, hook and the findings list files sit under Model reading. code-intel: the code-check answer contract gains the export list, unjudged languages and skip identities. Archboard server and Browser: tests. None changes architecture beyond the plan, so the exception is recorded in the proposal history (operation task-646-07-exceptions). Unbound: DESIGN.md and the site's EvidenceTabs demo copy. Follow-up for TASK-646.08: the code-findings answer is about 1.1 MB on this repository with 2018 export names, and every canvas reads it.
+<!-- SECTION:NOTES:END -->
