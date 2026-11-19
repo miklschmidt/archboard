@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T16:23:00Z'
-updated_date: '2026-11-19T17:43:00Z'
+updated_date: '2026-11-19T18:00:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -76,6 +76,8 @@ Resolution of the voice package conflict (settled deviation, decisions.md "TASK-
 - No caller changes; timing exports unchanged (9).
 Verification after merging deepen/module-depth (only backlog tickets came in): build, types, lint:all, format:check pass; test:modules 5348 pass; test:repository 176 pass; test:system 227 pass (voice-package included); full serial browser lane passes; pack:voice builds and the concept check finds nothing; site build passes; check code --fail-shallow-modules: no INTERFACE_WIDE or MODULE_SHALLOW on timing (other modules' known findings and ANCHOR warnings for the removed getters remain; information CODE_PASS_THROUGH on durationMs -> durationOf).
 - ADR 0083 is free on deepen/module-depth, but deepen/653-01-scene also adds an ADR 0083; whichever lands second must renumber.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit 0a0b0185c7): 7 modules got architectural edits (timing, Language servers, Code check, Chromium launch, Pane arrivals, Server launcher, Process groups); 95 got no-meaning records: 72 where a removed getter became durationMs or deadline or a comment changed, 13 where a hand-written poll now calls waitUntil or pause through an existing timing relationship, 3 that pass timing's Clock port to their waits (Codex process, Child ownership, Walkthrough recorder; an internal seam type, no architectural meaning), 7 containers changed only in tests. 12 broken anchors repaired. Unbound files: this ticket, ADR 0083, docs/agents/frontend.md, the pack script, the oxlint import resolver, two site demo scripts and repository-level system tests and ceilings: no module.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
