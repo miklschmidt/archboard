@@ -253,7 +253,8 @@ interface ParsedFacts {
 	 * The pieces of logic the file holds, where its adapter counts them: calls,
 	 * operators, conditions and loops (TASK-646.04).
 	 */
-	readonly logic?: number /** The math the file writes on the names it imports, where its adapter reads it (TASK-646.06). */;
+	readonly logic?: number;
+	/** The math the file writes on the names it imports, where its adapter reads it (TASK-646.06). */
 	readonly computations?: readonly Computation[];
 }
 
@@ -357,7 +358,8 @@ interface SyntaxFacts {
 	readonly testImports?: readonly ResolvedImport[];
 	readonly unparsed: readonly Unparsed[];
 	/** The pieces of logic the file holds, where its adapter counts them (`ParsedFacts.logic`). */
-	readonly logic?: number /** The math the file writes on the names it imports (`ParsedFacts.computations`). */;
+	readonly logic?: number;
+	/** The math the file writes on the names it imports (`ParsedFacts.computations`). */
 	readonly computations?: readonly Computation[];
 }
 

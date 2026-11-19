@@ -3,7 +3,7 @@
 // The checkout `shop` holds a canonical vault. `timing` exports durations and
 // a getter. `codex` and `relay` compute the restart backoff on
 // `PROCESS_MS` with their own names, in another operand order, and `relay`
-// through local variables. `codex` and `worker` compute the same jitter on the
+// through local variables and with a comment among the arguments. `codex` and `worker` compute the same jitter on the
 // getter `jitterMs`. `worker` and `server` compare and mask `DEADLINE_MS`,
 // which is no math, and compute different math on `STEP_MS`. Only `server`
 // computes on `LIMIT`.
@@ -83,7 +83,7 @@ beforeAll(async () => {
 			"const { restartMax } = PROCESS_MS;",
 			"export function wait(tries: number): number {",
 			"\tconst base = PROCESS_MS.restartBase;",
-			"\treturn Math.min(2 ** tries * base, restartMax);",
+			"\treturn Math.min(2 ** tries * base, /* the cap */ restartMax);",
 			"}",
 			"",
 		].join("\n"),
