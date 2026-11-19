@@ -17,9 +17,12 @@
 // a closed tab or an unsplit takes its registration with it, so there are no
 // ghosts. No pane at all is the normal state of a headless server, not an error.
 
-import { paneAddressKey, parsePaneKey } from "@archboard/model/legacy-address";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import {
+	paneAddressKey,
+	parsePaneKey,
+	type LegacyIdentity,
+	type ModelDocument,
+} from "@archboard/model-contract";
 import {
 	type Arrangement,
 	type PaneContext,
@@ -33,10 +36,7 @@ import {
 } from "#runtime/rules/panes-layout.ts";
 import { HOW_TO_OPEN_A_PANE, addressablePanes } from "#runtime/rules/panes-addressing.ts";
 
-type LegacyIdentity = ReturnType<typeof parsePaneKey>;
-type PaneArchitecture = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"]
->;
+type PaneArchitecture = NonNullable<ModelDocument<"paneContext">["architecture"]>;
 
 /**
  * What the read-out says beyond naming the panes: the things an agent needs

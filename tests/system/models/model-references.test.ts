@@ -4,17 +4,13 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 import {
-	architectureModelReadSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import {
+	changeArchitectureClaims,
+	readArchitectureModel,
 	retainArchitectureCheckpoint,
-	claimArchitectureSubjects,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
+} from "@archboard/model-store";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-references-surface-"));
@@ -111,7 +107,7 @@ function cli(args: string[]) {
 
 function answer(stdout: string) {
 	const { vault: _vault, ...value } = z.record(z.string(), z.unknown()).parse(JSON.parse(stdout));
-	return architectureModelReadSchema().parse(value);
+	return parsedReply("read", value);
 }
 
 test("CLI and HTTP share explicit code resolution, foreign navigation and unavailable outcomes", async () => {
@@ -125,7 +121,7 @@ test("CLI and HTTP share explicit code resolution, foreign navigation and unavai
 	});
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const http = architectureModelReadSchema().parse(await response.json());
+	const http = parsedReply("read", await response.json());
 	const read = cli(["model", "read", "Shop#Gateway", "--model", "Shop", "--references", "--code"]);
 	expect(read.status, read.stderr).toBe(0);
 	expect(answer(read.stdout)).toEqual(http);
@@ -165,7 +161,7 @@ test("CLI edits and HTTP exact retries decode checkpoints with local current ref
 	const current = readArchitectureModel(vault);
 	if (!current.success || !current.manifest.current) throw new Error(JSON.stringify(current));
 	const target = { model: "Shop", state: current.manifest.current.id };
-	const claimed = await claimArchitectureSubjects(vault, {
+	const claimed = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "testing public checkpoint metadata",
@@ -206,7 +202,7 @@ test("CLI edits and HTTP exact retries decode checkpoints with local current ref
 		});
 		expect(edited.status, edited.stderr).toBe(0);
 		const { vault: _address, ...raw } = JSON.parse(edited.stdout);
-		const created = architectureModuleEditResultSchema().parse(raw);
+		const created = parsedReply("edit", raw);
 		if (!created.success) throw new Error(JSON.stringify(created));
 		const response = await fetch(`${server.base}/api/architecture/module`, {
 			method: "POST",
@@ -214,7 +210,7 @@ test("CLI edits and HTTP exact retries decode checkpoints with local current ref
 			body: JSON.stringify({ ...request, doing, vault }),
 		});
 		expect(response.status).toBe(200);
-		expect(architectureModuleEditResultSchema().parse(await response.json())).toEqual(created);
+		expect(parsedReply("edit", await response.json())).toEqual(created);
 		const retained = cli(["model", "read", "--checkpoint", created.checkpoint.id]);
 		expect(retained.status, retained.stderr).toBe(0);
 		expect(answer(retained.stdout)).toMatchObject({
@@ -223,6 +219,6 @@ test("CLI edits and HTTP exact retries decode checkpoints with local current ref
 			selectedState: { name: "Local reference" },
 		});
 	} finally {
-		await releaseArchitectureClaim(vault, { claim: claimed.claim.id, writer: "agent" });
+		await changeArchitectureClaims(vault, "release", { claim: claimed.claim.id, writer: "agent" });
 	}
 });

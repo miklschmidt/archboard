@@ -3,8 +3,7 @@
 // recording kept may follow them. Parsed strictly, like every canonical input.
 
 import { z } from "zod";
-import { diagramThemeSchema } from "@archboard/model/render-reply";
-import { semanticPolicySchema } from "@archboard/model/policy";
+import { modelShape } from "@archboard/model-contract";
 
 /** A path in the run's home, spelled as a prompt spells it: `~/` is the author's own HOME. */
 const HomePathSchema = z.string().regex(/^~\/[^/]/u, "a path in the run's home, starting ~/");
@@ -25,7 +24,7 @@ const TalkFixtureSchema = z
 		walkthrough: z.string().min(1),
 		directory: HomePathSchema,
 		/** The palette it was recorded in. */
-		theme: diagramThemeSchema(),
+		theme: modelShape("diagramTheme"),
 	})
 	.strict();
 type TalkFixture = z.infer<typeof TalkFixtureSchema>;
@@ -34,7 +33,7 @@ const FixtureSchema = z
 	.object({
 		$comment: z.string().optional(),
 		registerRepo: z.boolean(),
-		policy: semanticPolicySchema().partial().optional(),
+		policy: modelShape("semanticPolicy").partial().optional(),
 		steps: z.array(RawFixtureStepSchema).default([]),
 		inputs: z.record(z.string(), z.string()).default({}),
 		talk: TalkFixtureSchema.optional(),

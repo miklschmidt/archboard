@@ -5,7 +5,7 @@
 import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useContext, useMemo, useState, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { ModelStateFact } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
 import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {

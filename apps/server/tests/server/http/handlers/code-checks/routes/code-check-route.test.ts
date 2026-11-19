@@ -1,4 +1,3 @@
-import { mintId } from "@archboard/model/ids";
 // The code check runs on a route of its own, never inside the check that
 // every open canvas polls every 5 seconds (ADR 0045, ADR 0046), and the caller
 // that hangs up cancels it, because it runs as checkout work. A variant that
@@ -18,15 +17,14 @@ import express from "express";
 import type * as ServerModule from "#server/http/application/wiring/application.ts";
 import type * as RouteModule from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { codeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
+import { mintId } from "@archboard/model-rules";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
+	readArchitectureModel,
+} from "@archboard/model-store";
 const proposals: string[] = [];
-import { vaultCheckSchema } from "@archboard/model/policy";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -123,7 +121,7 @@ beforeAll(async () => {
 	writeFileSync(join(checkout, "src", "a.ts"), "2\n");
 	git("commit", "-q", "--no-gpg-sign", "-am", "change a.ts");
 	const target = { model: "Shop", state: "Current" };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "author",
 		reason: "Create independent proposals",
@@ -156,7 +154,7 @@ beforeAll(async () => {
 	);
 	proposals.push(second);
 
-	await releaseArchitectureClaim(vault, { claim: claim.claim.id, writer: "author" });
+	await changeArchitectureClaims(vault, "release", { claim: claim.claim.id, writer: "author" });
 
 	[server, route] = await Promise.all([
 		import("#server/http/application/wiring/application.ts"),
@@ -175,7 +173,7 @@ afterAll(() => {
 
 test("the polled semantic check stays separate from canonical code inspection", async () => {
 	const base = await listen(server.app);
-	const polled = vaultCheckSchema()
+	const polled = modelShape("vaultCheck")
 		.passthrough()
 		.parse(
 			await (await fetch(`${base}/api/vault/check?vault=${encodeURIComponent(vault)}`)).json(),

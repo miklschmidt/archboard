@@ -8,9 +8,9 @@
 
 import {
 	defaultLayoutEngine,
-	layoutEngineSchema,
 	type LayoutEngineName,
-} from "@archboard/model/render-reply";
+	parseDocument,
+} from "@archboard/model-contract";
 
 /** Where the choice is remembered. */
 const LAYOUT_ENGINE_KEY = "archboard.layout-engine";
@@ -27,7 +27,8 @@ const LAYOUT_ENGINES: readonly { readonly name: LayoutEngineName; readonly label
  */
 function remembered(): LayoutEngineName {
 	try {
-		const parsed = layoutEngineSchema().safeParse(
+		const parsed = parseDocument(
+			"layoutEngine",
 			globalThis.localStorage.getItem(LAYOUT_ENGINE_KEY),
 		);
 		return parsed.success ? parsed.data : defaultLayoutEngine();

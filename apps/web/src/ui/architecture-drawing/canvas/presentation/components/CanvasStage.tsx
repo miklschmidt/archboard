@@ -61,14 +61,9 @@ import {
 	semanticRenderQuery,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
-import type { WalkthroughBeatSchema } from "@archboard/model/content";
-import type { z } from "zod";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { ModelDocument, WalkthroughBeat } from "@archboard/model-contract";
 
-type SemanticPanePart = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
->[number];
-type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
+type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
 
 /** Inputs for a semantic pane. */
 interface CanvasStageProps {

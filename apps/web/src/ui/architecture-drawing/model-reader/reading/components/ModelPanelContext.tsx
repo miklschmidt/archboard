@@ -1,6 +1,6 @@
 import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useMemo, type JSX, type MouseEvent, type ReactNode } from "react";
-import type { Model, projectModel } from "@archboard/model/content";
+import type { Model, projectModel } from "@archboard/model-rules";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { flowCollections } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";

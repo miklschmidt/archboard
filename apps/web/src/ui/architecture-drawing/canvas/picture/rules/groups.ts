@@ -1,14 +1,13 @@
 // Which groups a pane offers, and what choosing one selects: every member of
 // it, across whatever contains each one.
 //
-// Membership is read from the model (`isMemberOf` in `@archboard/model/content`),
+// Membership is read from the model (`inspectGroups` in `@archboard/model-rules`),
 // never inferred from containment or from the regions the picture draws (ADR
 // 0023): a member the view hides is still a member, and simply is not drawn to
 // be seen selected.
 
-import { groupsUsed, isMemberOf } from "@archboard/model/content";
-import type { VariantContent } from "@archboard/model/content";
-import type { SemanticPolicy } from "@archboard/model/policy";
+import type { VariantContent, SemanticPolicy } from "@archboard/model-contract";
+import { inspectGroups } from "@archboard/model-rules";
 
 /** What the vault calls each group, and its colour, by id. */
 type GroupNames = SemanticPolicy["groups"];
@@ -57,7 +56,7 @@ function groupChoices(content: VariantContent | null, names: GroupNames): GroupC
 	if (content === null) {
 		return [];
 	}
-	return groupsUsed(content).map((id) => {
+	return inspectGroups(content).map(({ group: id }) => {
 		const configured = Object.hasOwn(names, id);
 		return {
 			id,
@@ -75,7 +74,7 @@ function groupChoices(content: VariantContent | null, names: GroupNames): GroupC
  * @returns The group and its members.
  */
 function groupSelection(content: VariantContent, group: string): GroupSelection {
-	const members = content.nodes.filter((node) => isMemberOf(node, group)).map((node) => node.id);
+	const members = inspectGroups(content, group).members.map((node) => node.id);
 	return { group, members };
 }
 

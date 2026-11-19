@@ -11,9 +11,9 @@
 // model needs to know when what it was told stopped being true, and a cursor
 // it can say it has read up to.
 
-import { mintId } from "@archboard/model/ids";
-import { watchArchitectureModel } from "@archboard/model/store-read";
-import type { ArchitectureEvent } from "@archboard/model/contract";
+import type { ArchitectureEvent } from "@archboard/model-contract";
+import { mintId } from "@archboard/model-rules";
+import { watchArchitectureModel } from "@archboard/model-store";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 /** One settled change, as a context consumer reads it. */
 interface SettledModelChange extends SettledChangeSourceEvent {

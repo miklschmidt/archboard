@@ -16,10 +16,7 @@ import {
 	beatFocus,
 	type BeatFocus,
 } from "#ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts";
-import type { WalkthroughBeatSchema } from "@archboard/model/content";
-import type { z } from "zod";
-
-type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
+import type { WalkthroughBeat } from "@archboard/model-contract";
 
 /**
  * Whether the picture on screen is the reading a step asked for.

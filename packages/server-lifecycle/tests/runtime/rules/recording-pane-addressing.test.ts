@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
 import { resolvePane } from "#runtime/rules/panes-addressing.ts";
-import { parsePaneKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model-contract";
 
 // Which pane a caller means, beside a recording page's pane (TASK-304).
 //

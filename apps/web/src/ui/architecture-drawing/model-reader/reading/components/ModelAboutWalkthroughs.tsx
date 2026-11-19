@@ -17,7 +17,7 @@ import {
 import { useCallback, useContext, useMemo, useState, type CSSProperties, type JSX } from "react";
 
 import { Button, cn, IconButton } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";

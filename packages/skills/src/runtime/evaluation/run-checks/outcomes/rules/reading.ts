@@ -4,13 +4,17 @@
 // functions, so a check is testable against a document built in memory.
 
 import {
-	currentVariant,
+	resolveVariant,
+	type ArchitectureModelRead,
+	type DiagramTheme,
 	type LegacyBoard,
+	type SemanticEdge,
+	type SemanticNode,
+	type SemanticPolicy,
 	type SemanticVariant,
-} from "@archboard/model/legacy-board";
-import type { DiagramTheme } from "@archboard/model/render-reply";
-import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
-import type { SemanticPolicy } from "@archboard/model/policy";
+	type VariantContent,
+	type VaultDiagnostic,
+} from "@archboard/model-contract";
 import type { recordingContainerOf } from "@archboard/walkthrough/recorder";
 import type { CaptureAttempt } from "#runtime/evaluation/run-checks/operations/captures.ts";
 import {
@@ -19,15 +23,12 @@ import {
 	plausibleSubjects,
 	variantNamed,
 } from "#runtime/evaluation/run-checks/outcomes/rules/naming.ts";
-import type { vaultDiagnosticSchema } from "@archboard/model/policy";
-import type { z } from "zod";
 
-type Model = Extract<import("@archboard/model/contract").ArchitectureModelRead, { success: true }>;
+type Model = Extract<ArchitectureModelRead, { success: true }>;
 type EvaluatedDocument = Omit<
 	LegacyBoard,
 	"schemaVersion" | "kind" | "level" | "createdAt" | "updatedAt" | "version"
 > & { version?: number; revision?: string; architecture?: Model };
-type VaultDiagnostic = z.infer<ReturnType<typeof vaultDiagnosticSchema>>;
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {
@@ -116,7 +117,7 @@ type Finding = Omit<CheckVerdict, "check">;
  * @returns The variant, or undefined when the document has no such variant.
  */
 function variantOf(document: EvaluatedDocument, asked?: string): SemanticVariant | undefined {
-	return asked === undefined ? currentVariant(document) : variantNamed(document, asked);
+	return asked === undefined ? resolveVariant(document) : variantNamed(document, asked);
 }
 
 /**

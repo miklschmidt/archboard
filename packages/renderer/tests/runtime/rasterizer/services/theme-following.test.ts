@@ -10,12 +10,12 @@ import {
 import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { VariantContentSchema } from "@archboard/model/content";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { themeColor } from "#runtime/theme/store/source.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/rasterizer/services/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
@@ -27,7 +27,8 @@ setDefaultTimeout(TEST_CHROMIUM_COLD_START_CASE_MS);
 // shown as an image, as a CSS background and inline, under each scheme, it
 // paints that scheme's ground and that scheme's cards.
 
-const CONTENT = VariantContentSchema.parse(
+const CONTENT = fixtureDocument(
+	"variantContent",
 	withFixtureOrders({
 		nodes: [
 			{ id: "api", name: "API", kind: "service", responsibility: "Takes requests" },

@@ -16,8 +16,8 @@ import {
 	type KeyboardEvent,
 	type PointerEvent,
 } from "react";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { projectModel } from "@archboard/model/content";
+import type { DiagramBox } from "@archboard/model-contract";
+import type { projectModel } from "@archboard/model-rules";
 import { CameraSurface } from "#ui/architecture-drawing/canvas/presentation/components/CameraSurface.tsx";
 import { LeavingPart } from "#ui/architecture-drawing/canvas/presentation/components/LeavingPart.tsx";
 import {

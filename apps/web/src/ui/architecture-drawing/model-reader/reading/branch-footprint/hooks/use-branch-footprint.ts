@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
 	branchFootprintQuery,

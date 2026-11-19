@@ -3,7 +3,6 @@
 // block keeps for trunks that do not use it, lines between blocks that turn back on
 // themselves or run along a border, and lines that join on the way to a card and part again.
 import { expect, test } from "bun:test";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import {
 	corridorPoints,
@@ -26,9 +25,10 @@ import tightWallPort from "#tests/runtime/support/fixtures/tight-wall-port.json"
 import twoChains from "#tests/runtime/support/fixtures/two-chains.json";
 import wallPortKinds from "#tests/runtime/support/fixtures/wall-port-kinds.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its documents. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },

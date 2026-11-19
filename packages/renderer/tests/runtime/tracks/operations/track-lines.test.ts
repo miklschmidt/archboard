@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import {
 	corridorPoints,
 	routeLabels,
@@ -23,6 +23,7 @@ import trunkFan from "#tests/runtime/support/fixtures/trunk-fan.json";
 import twinLines from "#tests/runtime/support/fixtures/twin-lines.json";
 import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The room a container keeps around what it holds, and between it and a container it stands over. */
 /** The straight run an arrowhead sits on after a line's last bend. */
@@ -31,7 +32,7 @@ const APPROACH = 12;
 const TWO_BENDS = 16;
 
 /** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },
@@ -199,7 +200,7 @@ test("two labelled lines into one card enter it evenly", async () => {
 			["store", "Shared store", "Existing shared production database."],
 		].map(([id, name, responsibility]) => ({ id, name, kind: "module", responsibility })),
 		edges: ["left", "right"].map((from) => ({
-			id: from,
+			id: `${from}-ln`,
 			from,
 			to: "store",
 			kind: "data",
@@ -214,7 +215,7 @@ test("two labelled lines into one card enter it evenly", async () => {
 	});
 	const store = drawing.atlas.nodes["store"]!;
 	const routes = routePoints(drawing.svg);
-	const [left, right] = ["left", "right"].map((id) => routes.get(id)!.at(-1)!.x);
+	const [left, right] = ["left", "right"].map((id) => routes.get(`${id}-ln`)!.at(-1)!.x);
 	expect(Math.abs(left! - store.x - (store.x + store.width - right!))).toBeLessThanOrEqual(2);
 });
 

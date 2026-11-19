@@ -1,4 +1,3 @@
-import { architectureRenderRequestSchema } from "@archboard/model/contract";
 // What a board render records about how it was drawn (ADR 0057, TASK-526.02).
 //
 // The recipe is what draws the picture again and what tells whether it is
@@ -13,13 +12,7 @@ import { architectureRenderRequestSchema } from "@archboard/model/contract";
 // nothing that the picture draws.
 
 import { z } from "zod";
-import {
-	layoutEngineSchema,
-	legendLayoutSchema,
-	offeredViewSchema,
-	renderedVariantSchema,
-	standaloneThemeSchema,
-} from "@archboard/model/render-reply";
+import { modelShape } from "@archboard/model-contract";
 
 /** The version of the recipe's shape. A reader refuses one it does not know. */
 const RENDER_RECIPE_VERSION = 1;
@@ -30,7 +23,7 @@ const RENDER_RECIPE_MARK = "archboard:render-recipe";
 /** The namespace of the SVG element that holds the recipe. */
 const RENDER_RECIPE_NAMESPACE = "https://github.com/miklschmidt/archboard/render-recipe";
 
-const IdSchema = renderedVariantSchema().shape.id;
+const IdSchema = modelShape("renderedVariant").shape.id;
 
 /** A SHA-256 digest, spelled with its algorithm. */
 const DigestSchema = z
@@ -50,7 +43,10 @@ const RenderRecipeSchema = z
 		/** The variant by id, or `current` for a render that named none, so the render follows an adoption. */
 		variant: z.union([z.literal("current"), z.object({ id: IdSchema }).strict()]),
 		/** The view by id, Everything's included, or `overview` for a render that named none. */
-		view: z.union([z.literal("overview"), z.object({ id: offeredViewSchema().shape.id }).strict()]),
+		view: z.union([
+			z.literal("overview"),
+			z.object({ id: modelShape("offeredView").shape.id }).strict(),
+		]),
 		/**
 		 * How the picture reads against another variant: `on` for the board's own
 		 * reading, `off` for none, or the variant it was asked to be drawn against.
@@ -60,13 +56,16 @@ const RenderRecipeSchema = z
 			z.literal("off"),
 			z.object({ against: IdSchema }).strict(),
 		]),
-		theme: standaloneThemeSchema(),
+		theme: modelShape("standaloneTheme"),
 		/** The layout engine named, or null for the default one. */
-		layout: layoutEngineSchema().nullable(),
+		layout: modelShape("layoutEngine").nullable(),
 		/** The words of the title, true for the names of what is drawn, or null for none. */
 		title: z.union([z.string().regex(/\S/u), z.literal(true)]).nullable(),
 		/** How the legend is laid out and whether it stands alone, or null for none. */
-		legend: z.object({ layout: legendLayoutSchema(), alone: z.boolean() }).strict().nullable(),
+		legend: z
+			.object({ layout: modelShape("legendLayout"), alone: z.boolean() })
+			.strict()
+			.nullable(),
 		/** A bitmap's scale and region; absent for an SVG. */
 		raster: z
 			.object({
@@ -93,7 +92,7 @@ const ArchitectureRecipeSchema = z.strictObject({
 	recipe: z.literal(2),
 	model: z.strictObject({ id: z.string(), name: z.string() }),
 	vault: z.strictObject({ repo: z.string().nullable() }),
-	reading: architectureRenderRequestSchema(),
+	reading: modelShape("renderRequest"),
 	fingerprint: DigestSchema,
 	picture: DigestSchema,
 	raster: RenderRecipeSchema.shape.raster,

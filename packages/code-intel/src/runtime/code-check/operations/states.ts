@@ -1,8 +1,11 @@
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { modelContent } from "@archboard/model/content";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import type { SemanticPolicy } from "@archboard/model/policy";
+import { readArchitectureModel } from "@archboard/model-store";
+import { modelContent } from "@archboard/model-rules";
+import type {
+	ArchitectureModelRead,
+	LegacyBoard,
+	SemanticPolicy,
+	SemanticVariant,
+} from "@archboard/model-contract";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;

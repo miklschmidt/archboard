@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { stateCatalogue } from "#ui/architecture-drawing/model-reader/reading/rules/state-catalogue.ts";
 import { SHOP } from "#tests/ui/support/model-reader/scene.ts";
 

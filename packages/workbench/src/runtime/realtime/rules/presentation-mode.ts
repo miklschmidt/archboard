@@ -38,7 +38,7 @@
 // each of those stands against it (TASK-309): the picture marks what was added and changed, and
 // the voice can only explain what it is told.
 
-import type { ChangeKind } from "@archboard/model/comparison";
+import type { ChangeKind } from "@archboard/model-rules";
 import type { z } from "zod";
 import { languageName, type recordingNarrationSchema } from "@archboard/walkthrough/recording";
 

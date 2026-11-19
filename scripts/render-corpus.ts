@@ -21,9 +21,9 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import { projectFlow, projectModel, type Model } from "@archboard/model/content";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { type Model, projectFlow, projectModel } from "@archboard/model-rules";
+import { readArchitectureModel } from "@archboard/model-store";
+import { modelShape, type LayoutEngineName } from "@archboard/model-contract";
 import { renderArchitecture } from "@archboard/renderer/bun";
 
 /** One drawing of the corpus, as a run recorded it. */
@@ -54,7 +54,7 @@ interface Job {
 	readonly key: string;
 	readonly state: State;
 	readonly reading: Reading;
-	readonly engine: z.infer<ReturnType<typeof layoutEngineSchema>>;
+	readonly engine: LayoutEngineName;
 	readonly theme: "light" | "dark";
 	readonly comparison: boolean;
 }
@@ -278,7 +278,7 @@ interface Axes {
  */
 function axesOf(options: Record<string, string | boolean | undefined>): Axes {
 	return {
-		engines: z.array(layoutEngineSchema()).parse(listOf(options["engines"], "track,blocks")),
+		engines: z.array(modelShape("layoutEngine")).parse(listOf(options["engines"], "track,blocks")),
 		themes: z.array(z.enum(["light", "dark"])).parse(listOf(options["themes"], "light,dark")),
 		comparisons: listOf(options["comparison"], "on,off").map((value) => value === "on"),
 		every: (options["variants"] ?? "all") === "all",

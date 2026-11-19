@@ -9,7 +9,8 @@
 			"files": ["docs/readme/banner.webp", "docs/assets/archboard-social-card.jpg"],
 			"sources": [
 				"packages/renderer/src",
-				"packages/model/src/shared",
+				"packages/model-contract/src/shared",
+				"packages/model-rules/src/shared",
 				"packages/code-binding/src/shared",
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
@@ -194,7 +195,8 @@
 			],
 			"sources": [
 				"packages/renderer/src",
-				"packages/model/src/shared",
+				"packages/model-contract/src/shared",
+				"packages/model-rules/src/shared",
 				"packages/code-binding/src/shared",
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
@@ -341,7 +343,8 @@
 			],
 			"sources": [
 				"packages/renderer/src",
-				"packages/model/src/shared",
+				"packages/model-contract/src/shared",
+				"packages/model-rules/src/shared",
 				"packages/code-binding/src/shared",
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",

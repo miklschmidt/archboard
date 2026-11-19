@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
-import type { LayoutEngineName } from "@archboard/model/render-reply";
+import type { LayoutEngineName } from "@archboard/model-contract";
 import {
 	layoutEngineNow,
 	onLayoutEngineChange,

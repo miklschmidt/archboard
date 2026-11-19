@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The room two arrowheads on one face need to read as two lines. */
 const APART = 24;
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },

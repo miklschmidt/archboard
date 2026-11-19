@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import heldLabel from "#tests/runtime/support/fixtures/held-label.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
 const CONTAINER_INSET = 20;
 
 /** Six kinds of card and four of line, as the reduced document below draws them. */
-const plain = semanticPolicySchema().parse({
+const plain = fixtureDocument("semanticPolicy", {
 	levels: ["k0"],
 	nodeKinds: Object.fromEntries(
 		["k0", "k1", "k2", "k3", "k4", "k5", "k6"].map((kind) => [

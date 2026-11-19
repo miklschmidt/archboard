@@ -14,7 +14,7 @@ import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
 import { KeyTip } from "#ui/architecture-drawing/canvas/presentation/components/PresentationKeys.tsx";
-import type { VariantContent } from "@archboard/model/content";
+import type { VariantContent } from "@archboard/model-contract";
 
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 

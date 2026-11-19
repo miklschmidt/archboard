@@ -1,17 +1,9 @@
-import { architectureRenderResultSchema } from "@archboard/model/contract";
-import { standaloneThemeSchema } from "@archboard/model/render-reply";
 // The public receipt for one semantic rasterization: the saved document picture,
 // its selectors and dimensions, and the renderer document that produced it.
 // The CLI writes this shape and evaluation tooling parses the same authority.
 
 import { z } from "zod";
-
-import {
-	diagramThemeSchema,
-	offeredViewSchema,
-	pictureReceiptShape,
-	renderedVariantSchema,
-} from "@archboard/model/render-reply";
+import { modelShape } from "@archboard/model-contract";
 
 /** The diagram page before bitmap scaling. */
 const SemanticRasterPageSizeSchema = z.object({ width: z.number(), height: z.number() });
@@ -30,7 +22,7 @@ const SemanticRasterReceiptSchema = z.object({
 	document: z.string(),
 	version: z.int(),
 	/** What was drawn; ids select it exactly and names are what a person types. */
-	variant: renderedVariantSchema(),
+	variant: modelShape("renderedVariant"),
 	/**
 	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
@@ -39,10 +31,10 @@ const SemanticRasterReceiptSchema = z.object({
 	 * with none, with the one it came from), so the receipt names the other
 	 * side; the bitmap cannot.
 	 */
-	comparedWith: renderedVariantSchema().nullable(),
+	comparedWith: modelShape("renderedVariant").nullable(),
 	/** The selected view, or null when the whole variant was drawn. */
-	view: offeredViewSchema().nullable(),
-	theme: diagramThemeSchema(),
+	view: modelShape("offeredView").nullable(),
+	theme: modelShape("diagramTheme"),
 	file: z.string(),
 	/** Bitmap pixels. */
 	width: z.int(),
@@ -57,7 +49,7 @@ const SemanticRasterReceiptSchema = z.object({
 	 * Every node, edge, flow and step the diagram draws, and the counts of the
 	 * marks its key shows: of the whole diagram, also when a region is captured.
 	 */
-	...pictureReceiptShape(),
+	...modelShape("pictureReceipt"),
 	/** The exact renderer document and stable presentation state used for capture. */
 	source: z.object({
 		renderer: z.literal("semantic-renderer"),
@@ -66,10 +58,10 @@ const SemanticRasterReceiptSchema = z.object({
 	}),
 });
 
-const ArchitectureRasterReceiptSchema = architectureRenderResultSchema()
-	.options[0].omit({ svg: true, atlas: true })
+const ArchitectureRasterReceiptSchema = modelShape("renderSuccess")
+	.omit({ svg: true, atlas: true })
 	.extend({
-		theme: standaloneThemeSchema(),
+		theme: modelShape("standaloneTheme"),
 		file: z.string(),
 		scale: z.number(),
 		diagram: SemanticRasterPageSizeSchema,

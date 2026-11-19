@@ -2,10 +2,13 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { modelSnapshotSchema } from "@archboard/model/contract";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { structureDiagnostics } from "@archboard/model/vault-policy";
-import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
+import { parseDocument } from "@archboard/model-contract";
+import {
+	changeArchitectureClaims,
+	checkArchitectureVault,
+	editArchitectureModule,
+	readArchitectureModel,
+} from "@archboard/model-store";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { holderOf, vaultIn } from "../support/test-vault.ts";
@@ -14,6 +17,17 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-model-snapshot-"));
 const vault = vaultIn(home);
 let server: OwnedServer | undefined;
+
+/**
+ * Read a written snapshot file's content as the snapshot document it must be.
+ * @param raw The parsed JSON.
+ * @returns The snapshot.
+ */
+function snapshotOf(raw: unknown) {
+	const read = parseDocument("modelSnapshot", raw);
+	if (!read.success) throw read.error;
+	return read.data;
+}
 
 beforeAll(async () => {
 	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
@@ -34,7 +48,7 @@ beforeAll(async () => {
 	const current = readArchitectureModel(vault);
 	if (!current.success || !current.manifest.current) throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
-	const claimed = await claimArchitectureSubjects(vault, {
+	const claimed = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "proposing a draft to snapshot",
@@ -85,7 +99,7 @@ test("a snapshot holds a draft, its comparison state, the vault check and the po
 	expect(bytes.equals(readFileSync(join(holderOf(vault), "second.json")))).toBeTrue();
 	expect(bytes.toString()).not.toContain(home);
 
-	const parsed = modelSnapshotSchema().parse(JSON.parse(bytes.toString()));
+	const parsed = snapshotOf(JSON.parse(bytes.toString()));
 	const version = Bun.spawnSync([join(repoRoot, "bin/archboard"), "--version"]);
 	expect(parsed.cliVersion).toBe(version.stdout.toString().trim());
 	expect(parsed.reading.selectedState).toMatchObject({ name: "Queued", lifecycle: "draft" });
@@ -117,7 +131,7 @@ test("a retained state keeps its icons when the current policy names different i
 			"retained.json",
 		);
 		expect(result.status, result.stderr).toBe(0);
-		const parsed = modelSnapshotSchema().parse(
+		const parsed = snapshotOf(
 			JSON.parse(readFileSync(join(holderOf(vault), "retained.json"), "utf8")),
 		);
 		expect(parsed.reading.policy.nodeKinds["service"]?.icon).toBe("RiAnchorLine");
@@ -139,10 +153,10 @@ test("a retained snapshot checks its exact checkpoint after the live state chang
 	const original = readFileSync(path);
 	try {
 		writeFileSync(path, JSON.stringify({ ...handler, outgoing: [] }));
-		const changed = readArchitectureModel(vault);
-		if (!changed.success) throw new Error(JSON.stringify(changed));
 		expect(
-			structureDiagnostics(changed).some((item) => item.code === "ROOT_UNCONNECTED"),
+			(await checkArchitectureVault(vault)).diagnostics.some(
+				(item) => item.code === "ROOT_UNCONNECTED",
+			),
 		).toBeTrue();
 		const result = snapshot(
 			"--state",
@@ -151,7 +165,7 @@ test("a retained snapshot checks its exact checkpoint after the live state chang
 			"retained-check.json",
 		);
 		expect(result.status, result.stderr).toBe(0);
-		const parsed = modelSnapshotSchema().parse(
+		const parsed = snapshotOf(
 			JSON.parse(readFileSync(join(holderOf(vault), "retained-check.json"), "utf8")),
 		);
 		expect(parsed.reading.relationships.some((edge) => edge.id === "Shop#Dispatch")).toBeTrue();
@@ -164,7 +178,7 @@ test("a retained snapshot checks its exact checkpoint after the live state chang
 test("a state that compares nothing has no comparison reading, and a refused read writes no file", () => {
 	const current = snapshot("--out", "current.json");
 	expect(current.status, current.stderr).toBe(0);
-	const parsed = modelSnapshotSchema().parse(
+	const parsed = snapshotOf(
 		JSON.parse(readFileSync(join(holderOf(vault), "current.json"), "utf8")),
 	);
 	expect(parsed.reading.selectedState).toMatchObject({ lifecycle: "current" });

@@ -15,7 +15,7 @@
 // beside them, for the one that quotes it.
 
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@archboard/code-binding/resolution";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead, SemanticNode } from "@archboard/model-contract";
 import {
 	claimsOf,
 	type AnchorClaim,
@@ -55,7 +55,6 @@ import { definitionsOfText } from "#runtime/code-facts/operations/text-definitio
 import type { z } from "zod";
 import type { CodeFileSchema } from "#shared/protocol/code-files.ts";
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
-import type { SemanticNode } from "@archboard/model/content";
 
 type CodeFile = z.infer<typeof CodeFileSchema>;
 type CodeFileOwners = NonNullable<CodeFile["owners"]>;

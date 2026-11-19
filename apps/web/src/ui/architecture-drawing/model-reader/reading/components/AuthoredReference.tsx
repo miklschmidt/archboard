@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 interface ReferenceProps {
 	reference: NonNullable<Model["modules"][number]["binding"]>;

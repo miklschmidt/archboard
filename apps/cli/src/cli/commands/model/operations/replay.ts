@@ -4,8 +4,7 @@
 
 import { z } from "zod";
 
-import { diagramThemeSchema, layoutEngineSchema } from "@archboard/model/render-reply";
-import { parseLegacyBoard } from "@archboard/model/legacy-board";
+import { modelShape, parseDocument } from "@archboard/model-contract";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { TalkFileError, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
@@ -18,13 +17,15 @@ import {
 	requireWritableDirectory,
 } from "#cli/commands/model/rules/recording-output.ts";
 
-const THEMES = diagramThemeSchema().options;
+const diagramTheme = modelShape("diagramTheme");
+const layoutEngine = modelShape("layoutEngine");
+const THEMES = diagramTheme.options;
 
 const ReplayInputSchema = z.object({
 	talk: z.string(),
 	out: z.string(),
-	theme: diagramThemeSchema().optional(),
-	layout: layoutEngineSchema().optional(),
+	theme: diagramTheme.optional(),
+	layout: layoutEngine.optional(),
 });
 
 const ReplayReceiptSchema = z.object({
@@ -41,8 +42,8 @@ const ReplayReceiptSchema = z.object({
 	mimeType: z.string(),
 	durationMs: z.int(),
 	frames: z.int(),
-	theme: diagramThemeSchema(),
-	layout: layoutEngineSchema(),
+	theme: diagramTheme,
+	layout: layoutEngine,
 });
 
 /**
@@ -52,8 +53,8 @@ const ReplayReceiptSchema = z.object({
  * @returns The state's id, or null for a model with no current state.
  */
 function currentStateOf(document: unknown): string | null {
-	const parsed = parseLegacyBoard(document);
-	return parsed.ok ? (parsed.board.current ?? null) : null;
+	const parsed = parseDocument("legacyBoard", document);
+	return parsed.success ? (parsed.data.current ?? null) : null;
 }
 
 /**
@@ -133,7 +134,7 @@ const modelReplayContract = defineCommand({
 			spellings: ["--layout"],
 			value: "required",
 			placeholder: "engine",
-			choices: layoutEngineSchema().options,
+			choices: layoutEngine.options,
 			description:
 				"Which layout engine lays the model out; the engine the talk was recorded with when absent",
 		},

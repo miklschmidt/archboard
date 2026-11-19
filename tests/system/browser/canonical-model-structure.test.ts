@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
-	ArchitectureModelRead,
 	ArchitectureCheckpointRetain,
-} from "@archboard/model/contract";
+	ArchitectureModelRead,
+} from "@archboard/model-contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

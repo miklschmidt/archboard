@@ -12,8 +12,7 @@
 // and the diagram agree about which subjects this view draws without either of
 // them asking the other.
 
-import type { SemanticVariant } from "@archboard/model/legacy-board";
-import { everyStep, isMessage } from "@archboard/model/flow";
+import { type SemanticVariant, type WalkthroughBeat, readFlow } from "@archboard/model-contract";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { subjectOf } from "#ui/architecture-drawing/canvas/picture/reads/rules/document.ts";
 import { litBy, type Wiring } from "#ui/architecture-drawing/canvas/picture/rules/connections.ts";
@@ -24,10 +23,6 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 import { subjectBox } from "#ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts";
 import { flowFocus } from "#ui/architecture-drawing/canvas/picture/rules/flow-head.ts";
-import type { WalkthroughBeatSchema } from "@archboard/model/content";
-import type { z } from "zod";
-
-type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** What a beat's subjects can be found in: the picture on screen. */
 interface FocusSource {
@@ -122,7 +117,7 @@ function endsOf(variant: Pick<SemanticVariant, "content"> | null, id: string): s
  */
 function wiringOf(variant: Pick<SemanticVariant, "content">): Wiring {
 	const { nodes, edges, flows } = variant.content;
-	const messages = flows.flatMap((flow) => everyStep(flow.steps).filter(isMessage));
+	const messages = flows.flatMap((flow) => readFlow(flow.steps).messages);
 	return { nodes, edges: [...edges, ...messages] };
 }
 

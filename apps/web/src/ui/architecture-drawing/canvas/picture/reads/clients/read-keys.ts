@@ -8,7 +8,7 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
-import { defaultLayoutEngine } from "@archboard/model/render-reply";
+import { defaultLayoutEngine } from "@archboard/model-contract";
 import {
 	comparisonKey,
 	type CodeCheckReading,

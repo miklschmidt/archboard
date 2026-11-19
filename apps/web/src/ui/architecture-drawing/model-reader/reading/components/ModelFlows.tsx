@@ -1,6 +1,6 @@
 import { useCallback, useRef, type JSX } from "react";
 
-import type { ModelFlow } from "@archboard/model/content";
+import type { ModelFlow } from "@archboard/model-rules";
 import { ModelChoiceList } from "#ui/architecture-drawing/model-reader/reading/components/ModelChoiceList.tsx";
 import { useRevealedRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-revealed-row.ts";
 import type { ClaimedSubjects } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";

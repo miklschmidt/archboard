@@ -6,9 +6,9 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { LegacyBoardSchema } from "@archboard/model/legacy-board";
+import { legacyBoardOf } from "#tests/runtime/support/legacy-board.ts";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import {
 	anonymousRunId,
 	bundleForGrader,
@@ -40,7 +40,7 @@ const usage = (input: number, output: number) => ({
 	total: input + output,
 });
 
-const DOCUMENT = LegacyBoardSchema.parse(
+const DOCUMENT = legacyBoardOf(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",

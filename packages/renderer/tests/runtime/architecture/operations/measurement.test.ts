@@ -5,8 +5,7 @@
 // balanced or not centred, a container that draws its description, and a
 // render that answers differently after another document was drawn.
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/model/content";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type VariantContent } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import {

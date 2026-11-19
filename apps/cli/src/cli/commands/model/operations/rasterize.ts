@@ -1,9 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import {
-	architectureRenderRequestSchema,
-	architectureRenderResultSchema,
-} from "@archboard/model/contract";
+import { modelShape, type ModelReply } from "@archboard/model-contract";
 import {
 	architectureRasterReceiptSchema,
 	createSemanticRasterizer,
@@ -18,10 +15,7 @@ import {
 } from "#cli/commands/model/operations/render.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { regionWithin } from "#cli/commands/model/rules/raster-region.ts";
-type Picture = Extract<
-	z.infer<ReturnType<typeof architectureRenderResultSchema>>,
-	{ success: true }
->;
+type Picture = Extract<ModelReply<"render">, { success: true }>;
 const RegionSchema = z
 	.string()
 	.regex(/^\d+,\d+,[1-9]\d*,[1-9]\d*$/u)
@@ -123,14 +117,14 @@ const modelRasterizeContract = defineCommand({
 		},
 	],
 	input: {
-		ingress: architectureRenderRequestSchema().extend({
+		ingress: modelShape("renderRequest").extend({
 			out: z.string(),
 			theme: z.enum(["light", "dark"]).default("dark"),
 			scale: rasterScaleSchema().default(1),
 			region: RegionSchema.optional(),
 		}),
 	},
-	result: z.union([architectureRasterReceiptSchema(), architectureRenderResultSchema().options[1]]),
+	result: z.union([architectureRasterReceiptSchema(), modelShape("refusal")]),
 	output: {
 		cases: [
 			{

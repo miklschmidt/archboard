@@ -1,7 +1,7 @@
 // What a state is called by where it stands in its model's life, in the one word the History
 // dialog and a comparison of interfaces both use. Pure.
 
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 /** Where a state stands in its model's life. */
 type Lifecycle = NonNullable<Model["selectedState"]>["lifecycle"];

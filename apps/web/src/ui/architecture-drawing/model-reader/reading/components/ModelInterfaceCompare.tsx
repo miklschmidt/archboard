@@ -7,7 +7,7 @@
 
 import type { JSX } from "react";
 
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import {
 	interfaceSides,

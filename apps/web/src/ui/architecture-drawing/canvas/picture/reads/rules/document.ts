@@ -11,24 +11,35 @@
 // questions inspection asks. Nothing here writes: the browser never states
 // anything about a legacy board (ADR 0023).
 
-import { addressedVariant, parseLegacyBoard } from "@archboard/model/legacy-board";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import { comparedWith, compareVariants, standingOf } from "@archboard/model/comparison";
-import type { ChangeKind, FieldChange } from "@archboard/model/comparison";
-import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
-import type { FlowStep, SemanticFlow } from "@archboard/model/flow";
-import type { SemanticView } from "@archboard/model/views";
-import type { SemanticEdge, SemanticNode } from "@archboard/model/content";
-import type { variantLifecycleSchema } from "@archboard/model/legacy-board";
+import {
+	addressedVariant,
+	type LegacyBoard,
+	type SemanticVariant,
+	type FlowStep,
+	type SemanticFlow,
+	type SemanticView,
+	type SemanticEdge,
+	type SemanticNode,
+	type VariantContent,
+	type ModelShape,
+	parseDocument,
+	readFlow,
+} from "@archboard/model-contract";
+import {
+	comparedWith,
+	compareVariants,
+	type ChangeKind,
+	type FieldChange,
+	changeOf,
+	type VariantComparison,
+} from "@archboard/model-rules";
 import type { z } from "zod";
-import type { VariantContent } from "@archboard/model/content";
 
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 type Shelving = NonNullable<LegacyBoard["shelvings"]>[number];
 type Adoption = NonNullable<LegacyBoard["adoptions"]>[number];
 
-type VariantComparison = ReturnType<typeof compareVariants>;
-type VariantLifecycle = z.infer<ReturnType<typeof variantLifecycleSchema>>;
+type VariantLifecycle = z.infer<ModelShape<"variantLifecycle">>;
 
 /** One node, with the containment around it. */
 interface NodeSubject {
@@ -134,21 +145,28 @@ function flowSubjectOf(
 				participants: flow.participants.map((one) => byId.get(one)?.name ?? one),
 			};
 		}
-		const steps = everyStep(flow.steps);
+		const { every: steps } = readFlow(flow.steps);
 		const at = steps.findIndex((step) => step.id === id);
 		const step = steps[at];
 		if (step !== undefined) {
-			return {
-				kind: "step",
-				step,
-				flow,
-				position: at + 1,
-				from: isMessage(step) ? byId.get(step.from) : undefined,
-				to: isMessage(step) ? byId.get(step.to) : undefined,
-			};
+			return { kind: "step", step, flow, position: at + 1, ...endsOf(step, byId) };
 		}
 	}
 	return undefined;
+}
+
+/**
+ * The nodes a step joins: a message's ends, which a decision or a loop lacks.
+ * @param step The step.
+ * @param byId Every node of the content, by id.
+ * @returns Who sent it and who received it, when the content still holds them.
+ */
+function endsOf(
+	step: FlowStep,
+	byId: ReadonlyMap<string, SemanticNode>,
+): Pick<StepSubject, "from" | "to"> {
+	if (step.kind === "decision" || step.kind === "loop") return { from: undefined, to: undefined };
+	return { from: byId.get(step.from), to: byId.get(step.to) };
 }
 
 /**
@@ -193,7 +211,7 @@ function subjectOf(variant: Pick<SemanticVariant, "content">, id: string): Subje
 // opinion:
 //
 //   The baseline is the same. `comparedWith` in
-//   `@archboard/model/comparison` is the one rule for it — the
+//   `@archboard/model-rules` is the one rule for it — the
 //   model's current variant, or on a model with none the variant it came from —
 //   and the picture and this panel both ask it, so neither can read a variant
 //   against a different one.
@@ -262,7 +280,7 @@ function depictionOf(model: LegacyBoard, variant: SemanticVariant): Depiction {
 	 * @returns Its standing.
 	 */
 	function standing(id: string): ChangeKind {
-		return comparison === undefined ? "unchanged" : standingOf(comparison, id);
+		return comparison === undefined ? "unchanged" : (changeOf(comparison, id)?.kind ?? "unchanged");
 	}
 
 	/**
@@ -275,19 +293,6 @@ function depictionOf(model: LegacyBoard, variant: SemanticVariant): Depiction {
 	}
 
 	return { against, standing, moved };
-}
-
-type DocumentReading =
-	| { readonly ok: true; readonly board: LegacyBoard }
-	| { readonly ok: false; readonly problem: string };
-
-/**
- * One model document, as the contract reads it.
- * @param document Whatever the model route answered with.
- * @returns The model, or why it is not one.
- */
-function readDocument(document: unknown): DocumentReading {
-	return parseLegacyBoard(document);
 }
 
 /** One of a model's variants, as a picker needs to know it. */
@@ -386,8 +391,11 @@ function flowName(flows: readonly SemanticFlow[], id: string): string {
 	if (flow !== undefined) {
 		return flow.name;
 	}
-	const step = flows.flatMap((one) => everyStep(one.steps)).find((one) => one.id === id);
-	return step === undefined ? id : stepWords(step);
+	for (const one of flows) {
+		const words = readFlow(one.steps).words.get(id);
+		if (words !== undefined) return words;
+	}
+	return id;
 }
 
 /**
@@ -490,20 +498,20 @@ function readingOf(
  * @returns The reading, or null when the model or that variant cannot be read.
  */
 function readVariant(document: unknown, asked: string | undefined): VariantReading | null {
-	const reading = readDocument(document);
-	if (!reading.ok) {
+	const reading = parseDocument("legacyBoard", document);
+	if (!reading.success) {
 		return null;
 	}
-	const named = addressedVariant(reading.board, undefined);
+	const named = addressedVariant(reading.data, undefined);
 	const family = {
-		variants: reading.board.variants.map(offeredVariant),
-		adoptions: reading.board.adoptions ?? [],
-		shelvings: reading.board.shelvings ?? [],
-		views: reading.board.views,
+		variants: reading.data.variants.map(offeredVariant),
+		adoptions: reading.data.adoptions ?? [],
+		shelvings: reading.data.shelvings ?? [],
+		views: reading.data.views,
 		opens: named.ok ? named.variant.id : null,
-		level: reading.board.level,
+		level: reading.data.level,
 	};
-	const opened = addressedVariant(reading.board, asked);
+	const opened = addressedVariant(reading.data, asked);
 	// The model reads even when the variant asked for is not one of its own: the
 	// picker is how somebody recovers from an address naming a variant that has
 	// been renamed, so the choice has to be on screen for them to make it.
@@ -569,7 +577,7 @@ function nameOfSubject(subject: Subject): string | undefined {
 		return subject.flow.name;
 	}
 	if (subject.kind === "step") {
-		return stepWords(subject.step);
+		return readFlow(subject.flow.steps).words.get(subject.step.id);
 	}
 	return subject.edge.label;
 }
@@ -584,7 +592,6 @@ export {
 	type Subject,
 	type VariantReading,
 	depictionOf,
-	readDocument,
 	readVariant,
 	subjectOf,
 };

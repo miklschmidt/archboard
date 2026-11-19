@@ -13,7 +13,7 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 import { RecordedModelStage } from "#ui/walkthroughs/recording/components/RecordedModelStage.tsx";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { ModelExplanationHost } from "#ui/application/components/ModelExplanationHost.tsx";
 import { explanationKey } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
 import { tabSessionId } from "#ui/panes/tab-session/clients/tab-session.ts";

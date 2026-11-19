@@ -1,5 +1,5 @@
 import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
-import { type ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 // Recording one walkthrough of a document to a video file, narrated by the Codex
 // voice (TASK-304), in two passes (TASK-381).
 //
@@ -25,8 +25,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
+import type {
+	DiagramTheme,
+	LayoutEngineName,
+	LegacyBoard,
+	ModelReply,
+} from "@archboard/model-contract";
 import { shellSize } from "@archboard/renderer/shell-geometry";
 import { durationMs } from "@archboard/timing";
 import {
@@ -60,10 +64,8 @@ import {
 import { renderTalk } from "#runtime/recorder/operations/render-talk.ts";
 import { writeSilence } from "#runtime/recorder/store/silence.ts";
 import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/recorder/store/talk-files.ts";
-import type { vaultCheckSchema } from "@archboard/model/policy";
-import type { z } from "zod";
 
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 /** What to record, and where. */
 interface RecordingOptions {

@@ -9,11 +9,11 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { compiledCore, loadCore } from "#runtime/bun-renderer/services/core.ts";
 import { createEnginePool, type EngineWorker } from "#shared/engine/rules/engine-pool.ts";
 import { installRendererHost, rendererHost } from "#shared/render/rules/host.ts";
-import { semanticPolicySchema } from "@archboard/model/policy";
-import type { VariantContent } from "@archboard/model/content";
+import { type VariantContent } from "@archboard/model-contract";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: { module: { name: "Module", icon: "RiBox3Line" } },
 	relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },

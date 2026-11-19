@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-	architectureCheckpointRequestSchema,
-	architectureCheckpointRetainSchema,
-	architectureCheckpointListSchema,
-} from "@archboard/model/contract";
+import { modelShape } from "@archboard/model-contract";
 import {
 	listArchitectureCheckpointsOnServer,
 	retainArchitectureCheckpointOnServer,
@@ -11,6 +7,9 @@ import {
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { requestOf } from "#cli/commands/model/operations/input.ts";
+
+const checkpointRequest = modelShape("checkpointRequest");
 
 const modelCheckpointsContract = defineCommand({
 	path: ["model", "checkpoints"],
@@ -21,7 +20,7 @@ const modelCheckpointsContract = defineCommand({
 	examples: ["archboard model checkpoints -C /tmp/shop"],
 	parameters: [],
 	input: { ingress: z.object({}) },
-	result: architectureCheckpointListSchema(),
+	result: modelShape("checkpointList"),
 	output: {
 		cases: [
 			{
@@ -150,17 +149,17 @@ const modelRetainContract = defineCommand({
 	],
 	input: {
 		ingress: z.object({
-			operationId: architectureCheckpointRequestSchema().shape.operationId,
-			writer: architectureCheckpointRequestSchema().shape.writer,
-			expectedRevision: architectureCheckpointRequestSchema().shape.expectedRevision,
-			dependencies: architectureCheckpointRequestSchema().shape.dependencies,
-			origin: architectureCheckpointRequestSchema().shape.origin,
+			operationId: checkpointRequest.shape.operationId,
+			writer: checkpointRequest.shape.writer,
+			expectedRevision: checkpointRequest.shape.expectedRevision,
+			dependencies: checkpointRequest.shape.dependencies,
+			origin: checkpointRequest.shape.origin,
 			expectedPlan: z
-				.union([z.literal("none"), architectureCheckpointRequestSchema().shape.expectedPlan])
+				.union([z.literal("none"), checkpointRequest.shape.expectedPlan])
 				.transform((value) => (value === "none" ? null : value)),
 		}),
 	},
-	result: architectureCheckpointRetainSchema(),
+	result: modelShape("checkpointRetain"),
 	output: {
 		cases: [
 			{
@@ -204,7 +203,7 @@ const modelRetainContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model retain");
-		const request = context.parse(architectureCheckpointRequestSchema(), {
+		const request = context.parse(requestOf("retainCheckpoint"), {
 			...input,
 			target: input.origin === undefined ? "current" : "migration",
 			doing: statedInvocation().doing,

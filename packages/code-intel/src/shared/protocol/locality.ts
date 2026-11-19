@@ -20,7 +20,7 @@ import {
 	BehindPartSchema,
 	BehindSkipSchema,
 } from "#shared/protocol/code-check.ts";
-import { renderedVariantSchema } from "@archboard/model/render-reply";
+import { modelShape } from "@archboard/model-contract";
 
 /**
  * The start of a period: a date, or a date and time with its offset. A date
@@ -112,7 +112,7 @@ const LocalityAnswerSchema = z
 		/** The document's version the reading was made at. */
 		version: z.int().nonnegative(),
 		/** The variant read: the current one, or the draft that was named. */
-		variant: renderedVariantSchema(),
+		variant: modelShape("renderedVariant"),
 		/** One for each repository a part was read in. */
 		periods: z.array(LocalityPeriodSchema),
 		/** Every commit that a hotspot lists, newest first, listed once. */

@@ -173,7 +173,7 @@
 					"id": "aDZPR2CP",
 					"heading": "A private child, composed once",
 					"body": "The workbench proves the executable and prepares an Archboard-only Codex home that every Archboard server on the machine shares, so one sign-in serves them all; it fills in the auto-review defaults its config.toml lacks and keeps what Codex or a person set. The owner lock and epoch ledger are the server's own. Then it starts the child and builds one generation's parts in the order they depend on each other.",
-					"subjects": ["skyIeErO", "9diqPrFw", "giL6EI28"]
+					"subjects": ["giL6EI28"]
 				},
 				{
 					"id": "GMR5L8XU",
@@ -185,27 +185,19 @@
 					"id": "Li1gMmz5",
 					"heading": "The server holds the link; a pane holds the lease",
 					"body": "The Archboard server's thread link names one workhorse, whichever pane speaks. The pane holding the lease sends its typed message straight to that thread as a turn or a steer, and edits the thread's queue. The coordinator's work goes through the four operations instead, each staged in the epoch ledger so a child that dies mid-flight leaves a stated outcome rather than a guess.",
-					"subjects": [
-						"byMaoUe0",
-						"u2LFaG7R",
-						"Qh7VZ9MQ",
-						"EZEiVlsE",
-						"tlC2W839",
-						"rOBpux5i",
-						"Uz2qReYK"
-					]
+					"subjects": ["byMaoUe0"]
 				},
 				{
 					"id": "LdbANjtD",
 					"heading": "Voice is a separate thread, not a second mouth",
 					"body": "The coordinator is its own thread with its own model and settings, and the voice model's subconscious: it reads the boards, follows the workhorse and decides what the voice model says, and it runs only while voice is live. It does bounded work itself and routes anything sustained to the workhorse through the four operations.",
-					"subjects": ["Fg9dkGj3", "ZQxB1ZaK", "mhknqBOz"]
+					"subjects": []
 				},
 				{
 					"id": "QvoF0oQJ",
 					"heading": "The coordinator hears the workhorse at once",
 					"body": "While voice is live, a workhorse turn that ends or begins waiting on the user, and anything the workhorse says through tell_coordinator, reaches the coordinator as one sentence in a turn/start: Codex adds it to the coordinator's running turn or starts one. With no voice session, or while a recording holds the voice, nothing is sent.",
-					"subjects": ["08zJvPJq", "NztvEtjX", "biUWQZMB", "Fg9dkGj3"],
+					"subjects": [],
 					"view": "aeBxrmvQ"
 				},
 				{

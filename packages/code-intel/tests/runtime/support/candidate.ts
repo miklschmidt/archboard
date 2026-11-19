@@ -5,22 +5,23 @@ import {
 	snapshotCheckoutAccess,
 	resolveRegisteredCheckout,
 } from "@archboard/code-binding/resolution";
-import { HistoricalRevisionSchema } from "@archboard/model/contract";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import { readVaultConfiguration } from "@archboard/model/vault-policy";
+import {
+	parseDocument,
+	readFlow,
+	type LegacyBoard,
+	type ModelDocument,
+	type SemanticVariant,
+} from "@archboard/model-contract";
+import { relationshipKindsOf } from "#tests/runtime/support/relationship-kinds.ts";
 import { commitOf } from "#runtime/history-lens/clients/source-history.ts";
-import { messagesOf } from "@archboard/model/flow";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { gitAnswer } from "#runtime/history-lens/clients/git.ts";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { checkCode, type CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
-import type { z } from "zod";
-
-type HistoricalRevision = z.infer<typeof HistoricalRevisionSchema>;
 
 /** A complete immutable revision for one repository the correction describes. */
-type CandidateRevision = Readonly<HistoricalRevision>;
+type CandidateRevision = Readonly<ModelDocument<"correction">["revisions"][number]>;
 
 /** The in-memory candidate and the immutable code it is to describe. */
 interface CandidateCodeRequest {
@@ -37,6 +38,21 @@ type CandidateCodeResult =
 	| { readonly ok: false; readonly problem: string };
 
 /**
+ * Whether a revision is a full immutable Git commit of a repository, as a correction states one.
+ * @param revision The revision.
+ * @returns True when the contract reads it as part of a correction.
+ */
+function revisionStated(revision: CandidateRevision): boolean {
+	return parseDocument("correction", {
+		previous: "0".repeat(40),
+		reason: "A candidate revision is read as a correction reads one.",
+		at: "2026-01-01T00:00:00.000Z",
+		revisions: [revision],
+		changes: [],
+	}).success;
+}
+
+/**
  * Check that every supplied revision identifies one immutable tree.
  * @param input The stated repository revisions.
  * @returns The revisions, or their refusal.
@@ -48,7 +64,7 @@ function candidateRevisions(
 	for (const revision of input) {
 		if (revisions.has(revision.repo))
 			return { ok: false, problem: `Repository ${revision.repo} has more than one revision.` };
-		if (!HistoricalRevisionSchema.safeParse(revision).success)
+		if (!revisionStated(revision))
 			return {
 				ok: false,
 				problem: `Repository ${revision.repo} needs a full immutable Git commit.`,
@@ -68,7 +84,9 @@ function candidateBindings(variant: SemanticVariant): CodeBinding[] {
 		...variant.content.nodes.flatMap((node) => (node.binding === undefined ? [] : [node.binding])),
 		...variant.content.edges.flatMap((edge) => (edge.anchor === undefined ? [] : [edge.anchor])),
 		...variant.content.flows.flatMap((flow) =>
-			messagesOf(flow.steps).flatMap((step) => (step.anchor === undefined ? [] : [step.anchor])),
+			readFlow(flow.steps).messages.flatMap((step) =>
+				step.anchor === undefined ? [] : [step.anchor],
+			),
 		),
 		...(variant.documents ?? []),
 	];
@@ -148,7 +166,7 @@ async function checkCandidateCode(request: CandidateCodeRequest): Promise<Candid
 	const parsed = candidateRevisions(request.revisions);
 	if (!(parsed instanceof Map)) return parsed;
 	const revisions = parsed;
-	const { relationshipKinds } = readVaultConfiguration(vault).configuration;
+	const relationshipKinds = relationshipKindsOf(vault);
 	const read: StateToCheck = { document, file, variant, named: true, relationshipKinds };
 	const bindings = candidateBindings(variant);
 	const missing = bindings.find((binding) => !revisions.has(binding.repo));

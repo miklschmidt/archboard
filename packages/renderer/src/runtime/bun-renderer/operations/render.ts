@@ -17,9 +17,11 @@ import {
 	type LegacyRenderOutcome,
 	type DrawnInput,
 } from "#shared/render/rules/legacy-board.ts";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
-import type { SemanticPolicy } from "@archboard/model/policy";
-import { wasDrawn, type SemanticRenderReply } from "@archboard/model/render-reply";
+import {
+	type LegacyBoard,
+	type SemanticPolicy,
+	type SemanticRenderReply,
+} from "@archboard/model-contract";
 import { installBunHost } from "#runtime/bun-renderer/services/bun-host.ts";
 import { legacyRecipe, type RecipeVault } from "#runtime/recipe/operations/legacy-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/recipe/operations/svg-recipe.ts";
@@ -90,7 +92,7 @@ function carryingRecipe(
 	input: DrawnInput,
 	vault: RecipeVault,
 ): SemanticRenderReply {
-	if (!wasDrawn(reply)) return reply;
+	if (!("svg" in reply)) return reply;
 	const recipe = legacyRecipe(document, choices, reply, input, vault);
 	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
 }

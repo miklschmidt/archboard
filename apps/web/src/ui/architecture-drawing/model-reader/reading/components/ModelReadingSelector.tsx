@@ -7,7 +7,7 @@ import { RiArrowRightSLine } from "@remixicon/react";
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CheckpointRows } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { Button, cn } from "@archboard/ui-kit/components";
 import { sharedNameTouches } from "#ui/architecture-drawing/model-reader/reading/rules/draft-touches.ts";
 import {

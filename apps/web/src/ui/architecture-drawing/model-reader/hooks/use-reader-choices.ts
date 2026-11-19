@@ -1,5 +1,5 @@
 import { useCallback, useContext, type RefObject } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { useFlowReadings } from "#ui/architecture-drawing/model-reader/hooks/use-flow-readings.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";

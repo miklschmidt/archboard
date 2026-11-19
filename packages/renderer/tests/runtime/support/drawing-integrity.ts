@@ -1,6 +1,5 @@
 import { expect } from "bun:test";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import { type LayoutEngineName, type VariantContent } from "@archboard/model-contract";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { collinearPorts } from "#tests/runtime/support/drawn-ports.ts";

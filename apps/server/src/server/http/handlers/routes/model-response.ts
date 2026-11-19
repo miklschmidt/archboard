@@ -1,5 +1,10 @@
 import type { Response } from "express";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import {
+	parseModelRequest,
+	type ArchitectureModelRead,
+	type ModelRequest,
+	type RequestOperation,
+} from "@archboard/model-contract";
 const failureStatuses: Partial<
 	Record<Extract<ArchitectureModelRead, { success: false }>["code"], number>
 > = {
@@ -60,4 +65,23 @@ function respond(
 		.json(result);
 }
 
-export { respond };
+/**
+ * Read a request body or query as the request of one operation. A request that is
+ * not one is refused here with the contract's 400 body.
+ * @param res The outgoing HTTP response.
+ * @param operation The operation asked for.
+ * @param body The body or query as received.
+ * @returns The intent, or undefined once the refusal has been sent.
+ */
+function requestOf<O extends RequestOperation>(
+	res: Response,
+	operation: O,
+	body: unknown,
+): ModelRequest<O> | undefined {
+	const parsed = parseModelRequest(operation, body);
+	if (parsed.success) return parsed.data;
+	res.status(400).json(parsed.refusal);
+	return undefined;
+}
+
+export { requestOf, respond };

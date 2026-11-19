@@ -24,10 +24,10 @@ import {
 	variantNamed,
 	type LegacyBoard,
 	type SemanticVariant,
-} from "@archboard/model/legacy-board";
+	type SemanticNode,
+	parseDocument,
+} from "@archboard/model-contract";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { SemanticNode } from "@archboard/model/content";
-import { readDocument } from "#ui/architecture-drawing/canvas/picture/reads/rules/document.ts";
 import type {
 	OtherRepository,
 	RepositoryPlace,
@@ -141,10 +141,10 @@ function destinationOf(
 ): DrillTarget {
 	if (document.kind === "reading") return document;
 	if (document.kind === "failed") return { kind: "unreadable", problem: document.problem };
-	const reading = readDocument(document.value);
-	return reading.ok
-		? variantOf(target, reading.board, there)
-		: { kind: "unreadable", problem: reading.problem };
+	const reading = parseDocument("legacyBoard", document.value);
+	return reading.success
+		? variantOf(target, reading.data, there)
+		: { kind: "unreadable", problem: reading.error };
 }
 
 /**
@@ -212,8 +212,8 @@ async function settled<T>(asked: Promise<T>): Promise<Read<T>> {
  */
 function nameNow(target: DrillDown, document: unknown): string {
 	if (document === undefined) return target.board;
-	const reading = readDocument(document);
-	return reading.ok ? reading.board.name : target.board;
+	const reading = parseDocument("legacyBoard", document);
+	return reading.success ? reading.data.name : target.board;
 }
 
 /**

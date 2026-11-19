@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type JSX, type ReactNode } from "react";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
+import type { LayoutEngineName } from "@archboard/model-contract";
 import type { SceneRequest } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 import { SHOP, shopRequest } from "#tests/ui/support/model-reader/scene.ts";
 

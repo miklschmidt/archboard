@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 const content = orderedFixture({
 	nodes: ["a", "b"].map((id) => ({ id, name: id, kind: "module" })),

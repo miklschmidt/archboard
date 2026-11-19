@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, type VariantContent } from "@archboard/model-contract";
 import { withFixtureOrders } from "#tests/runtime/rasterizer/services/fixture-orders.ts";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
@@ -13,7 +13,7 @@ import {
 import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
@@ -32,7 +32,7 @@ setDefaultTimeout(TEST_CHROMIUM_COLD_START_CASE_MS);
  * @returns The content.
  */
 function variant(content: Record<string, unknown>): VariantContent {
-	return VariantContentSchema.parse(withFixtureOrders(content));
+	return fixtureDocument("variantContent", withFixtureOrders(content));
 }
 
 /** Two parts, one relationship that carries traffic, and one exchange between them. */

@@ -3,10 +3,16 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 // across the run, versions, variants and their lifecycle, comparison against
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
 
-import { currentVariant, findVariant, type SemanticVariant } from "@archboard/model/legacy-board";
-import { messagesOf, type SemanticFlow } from "@archboard/model/flow";
-import type { SemanticView } from "@archboard/model/views";
-import type { SemanticNode, VariantContent } from "@archboard/model/content";
+import {
+	findVariant,
+	readFlow,
+	resolveVariant,
+	type SemanticFlow,
+	type SemanticNode,
+	type SemanticVariant,
+	type SemanticView,
+	type VariantContent,
+} from "@archboard/model-contract";
 import {
 	beatReferences,
 	beatsOf,
@@ -226,7 +232,7 @@ function isNamed(variant: SemanticVariant | undefined, asked: string | undefined
  */
 const currentIs: Check = (check, reading) =>
 	onDocument(check, reading, (document) => {
-		const current = currentVariant(document);
+		const current = resolveVariant(document);
 		return finding(isNamed(current, check.variant), `current is "${current?.name ?? "?"}"`);
 	});
 
@@ -236,7 +242,7 @@ const currentIs: Check = (check, reading) =>
  * @returns The JSON text.
  */
 function currentJson(document: EvaluatedDocument | undefined): string {
-	return JSON.stringify(document === undefined ? null : currentVariant(document)?.content);
+	return JSON.stringify(document === undefined ? null : resolveVariant(document)?.content);
 }
 
 /**
@@ -250,7 +256,7 @@ const currentUntouched: Check = (check, reading) =>
 		// Two absences are not two equal architectures: a document with no current
 		// variant has nothing for this check to hold still, and passing it would
 		// say the author left alone something that was never there.
-		if (currentVariant(document) === undefined) {
+		if (resolveVariant(document) === undefined) {
 			return finding(false, `"${document.name}" has no current variant to leave untouched`);
 		}
 		const same = currentJson(document) === currentJson(namedValue(reading.snapshot, check.board));
@@ -333,7 +339,7 @@ const flowWithSteps: Check = (check, reading) =>
 const flowStepRepeat: Check = (check, reading) =>
 	onFlow(check, reading, (flow) => {
 		const least = check.minRepeat ?? 2;
-		const repeated = messagesOf(flow.steps).filter(
+		const repeated = readFlow(flow.steps).messages.filter(
 			(step) => (step.repeat ?? 1) >= least && (check.withNote !== true || step.note !== undefined),
 		);
 		return finding(

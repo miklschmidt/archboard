@@ -20,12 +20,16 @@
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
-import { parseLegacyBoard } from "@archboard/model/legacy-board";
+import {
+	defaultLayoutEngine,
+	defaultSemanticPolicy,
+	parseDocument,
+	type SemanticPolicy,
+} from "@archboard/model-contract";
+import { checkArchitectureVault } from "@archboard/model-store";
 import { shellSize } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { defaultLayoutEngine, layoutEngineSchema } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
-import { readVaultConfiguration } from "@archboard/model/vault-policy";
+import { fixtureDocument } from "../model-documents.ts";
 import { orderedFixture } from "../ordered-fixture.ts";
 import { scorecardOf, verdictOf, type Measure } from "../drawn-scorecard.ts";
 
@@ -33,7 +37,7 @@ const fixtures = import.meta.dir;
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
-const layout = layoutEngineSchema().parse(process.env["ENGINE"] ?? defaultLayoutEngine());
+const layout = fixtureDocument("layoutEngine", process.env["ENGINE"] ?? defaultLayoutEngine());
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
@@ -69,21 +73,24 @@ for (const file of fs
 		policy: defaultSemanticPolicy(),
 	});
 }
-const { configuration: policy } = readVaultConfiguration(vault);
+const { policy } = await checkArchitectureVault(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
 	.toSorted()) {
-	const parsed = parseLegacyBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
-	if (!parsed.ok) {
+	const parsed = parseDocument(
+		"legacyBoard",
+		JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")),
+	);
+	if (!parsed.success) {
 		console.error(`unparsed ${file}: ${JSON.stringify(parsed).slice(0, 200)}`);
 		continue;
 	}
-	for (const variant of parsed.board.variants) {
-		const current = variant.id === parsed.board.current;
+	for (const variant of parsed.data.variants) {
+		const current = variant.id === parsed.data.current;
 		if (!current && !every) continue;
 		items.push({
-			name: parsed.board.name,
+			name: parsed.data.name,
 			variant: `${current ? "*" : ""}${variant.name}`,
 			content: variant.content,
 			policy,

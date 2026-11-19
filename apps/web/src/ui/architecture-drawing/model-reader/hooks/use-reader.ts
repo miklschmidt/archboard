@@ -1,5 +1,5 @@
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import type { Page } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { useChangeWalk } from "#ui/architecture-drawing/model-reader/hooks/use-change-walk.ts";

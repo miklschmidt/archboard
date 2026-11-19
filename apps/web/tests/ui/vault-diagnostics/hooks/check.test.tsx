@@ -5,15 +5,13 @@ import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
 import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type ModelReply } from "@archboard/model-contract";
 import {
 	useVaultCheck,
 	useVaultPolicyRefresh,
 } from "#ui/vault-diagnostics/hooks/use-vault-check.ts";
-import type { vaultCheckSchema } from "@archboard/model/policy";
-import type { z } from "zod";
 
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 /** The vault the check reads. */
 const VAULT = "/work/archboard/.archboard/vault";

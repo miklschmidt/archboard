@@ -2,10 +2,10 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
+	ArchitectureClaimResult,
 	ArchitectureModelRead,
 	ArchitectureModuleEditResult,
-	ArchitectureClaimResult,
-} from "@archboard/model/contract";
+} from "@archboard/model-contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

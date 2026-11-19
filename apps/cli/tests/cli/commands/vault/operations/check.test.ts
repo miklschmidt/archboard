@@ -6,17 +6,18 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
-import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
+import {
+	defaultSemanticPolicy,
+	modelShape,
+	type DiagnosticSubject,
+	type ModelReply,
+} from "@archboard/model-contract";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
-import type { describeSubject } from "@archboard/model/policy";
 
-type DiagnosticSubject = Parameters<typeof describeSubject>[0];
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
-const sharedSymbol: NonNullable<
-	z.infer<ReturnType<typeof vaultCheckSchema>>["diagnostics"][number]["sharedSymbol"]
-> = {
+const sharedSymbol: NonNullable<VaultCheck["diagnostics"][number]["sharedSymbol"]> = {
 	binding: { repo: "github.com/test/orders", path: "src/ledger.ts", symbol: "post" },
 	parts: [
 		{ board: "Orders", id: "AbCd", name: "Ledger", variants: ["v1"] },
@@ -57,7 +58,7 @@ const check: VaultCheck = {
 	],
 };
 
-const AnswerSchema = z.object({ semantics: vaultCheckSchema() });
+const AnswerSchema = z.object({ semantics: modelShape("vaultCheck") });
 
 const vault = makeStandInVault();
 let service = "";

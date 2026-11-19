@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model, projectModel } from "@archboard/model/content";
+import type { Model, projectModel } from "@archboard/model-rules";
 import {
 	kindNames,
 	lineEnds,

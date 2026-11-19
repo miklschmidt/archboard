@@ -234,31 +234,31 @@
 					"id": "SCewKCv2",
 					"heading": "Meaning is read once and drawn here",
 					"body": "A read answers with the board family or with a drawing made on the server. The browser is a viewer: it holds board content only as a read-only cache of what this said.",
-					"subjects": ["Y70KOm9C", "wYcdVszt", "xP18j2Co"]
+					"subjects": ["wYcdVszt"]
 				},
 				{
 					"id": "YWeWWUoZ",
 					"heading": "One write boundary, one lease",
 					"body": "Every change goes through one boundary: the writer states the version it read, the board's lease admits one writer at a time, and the file is committed before the write is answered.",
-					"subjects": ["8B8O9ZiT", "iG4T44Pd", "wYcdVszt", "8imgDQSw", "Ck9cBsJC"]
+					"subjects": ["8B8O9ZiT", "iG4T44Pd", "wYcdVszt", "8imgDQSw"]
 				},
 				{
 					"id": "uKlyn7Bt",
 					"heading": "A claim is visible wherever the board is",
 					"body": "When the holder of a board's lease changes, every pane showing the board is told who has it and what they said they were doing, and a person's one control is taking the claim back.",
-					"subjects": ["8imgDQSw", "EAiFrCYk", "yiSc1qWU", "Ck9cBsJC"]
+					"subjects": ["8imgDQSw", "EAiFrCYk", "yiSc1qWU"]
 				},
 				{
 					"id": "5qNrPkqO",
 					"heading": "A rename carries what the server keyed by the name",
 					"body": "A rename is a write like any other, and then the panes on the board, the claim on it and what the agent said it was doing move to the new name. The old name stays a former name, so anything still using it reaches the board.",
-					"subjects": ["JPg03tjh", "wYcdVszt", "yiSc1qWU", "8imgDQSw"]
+					"subjects": ["wYcdVszt", "yiSc1qWU", "8imgDQSw"]
 				},
 				{
 					"id": "HRtMJ3Oc",
 					"heading": "The file stays the truth while panes stay live",
 					"body": "A pane is told a new version exists and reads again; a change nobody here made is noticed on disk and announced the same way. The agent reads the same announcements as a feed with a cursor. Nothing about a board lives in a pane.",
-					"subjects": ["ZuLyutvj", "yiSc1qWU", "VO9ngl7m", "jpk7aRzD", "9G6CmNgt"]
+					"subjects": ["yiSc1qWU", "VO9ngl7m"]
 				}
 			]
 		}

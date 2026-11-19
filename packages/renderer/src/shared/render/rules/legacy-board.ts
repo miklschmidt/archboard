@@ -8,33 +8,31 @@
 // the vault policy it read, and the renderer host it installed; what the answer
 // is travels on nothing else (ADR 0023).
 
-import { comparedWith, drawingOf, drawnSubjects } from "@archboard/model/comparison";
-import {
-	findView,
-	scopedContent,
-	type ReadingScope,
-	type DiagramGrammar,
-	type SemanticView,
-} from "@archboard/model/views";
 import {
 	addressedVariant,
-	nothingBuilt,
-	resolveVariant,
+	type DiagramGrammar,
+	type FlowStep,
+	type LayoutEngineName,
 	type LegacyBoard,
+	type LegendLayout,
+	type NothingDrawnReason,
+	type OfferedView,
+	resolveVariant,
+	type SemanticPolicy,
+	type SemanticRenderReply,
 	type SemanticVariant,
-} from "@archboard/model/legacy-board";
-import type {
-	LayoutEngineName,
-	LegendLayout,
-	NothingDrawnReason,
-	OfferedView,
-	SemanticRenderReply,
-	StandaloneTheme,
-} from "@archboard/model/render-reply";
-import type { ToldStanding } from "@archboard/model/reconciliation";
-import type { SemanticPolicy } from "@archboard/model/policy";
-import type { VariantContent } from "@archboard/model/content";
-import type { FlowStep } from "@archboard/model/flow";
+	type SemanticView,
+	type StandaloneTheme,
+	type ToldStanding,
+	type VariantContent,
+} from "@archboard/model-contract";
+import {
+	comparedWith,
+	compareVariants,
+	type ReadingScope,
+	scopedContent,
+} from "@archboard/model-rules";
+import { drawnSubjects, findView, nothingBuilt } from "#shared/render/rules/legacy-subjects.ts";
 import { SemanticRenderError, type SubjectStanding } from "#shared/protocol/render-request.ts";
 import { renderSemanticView } from "#shared/render/rules/diagram.ts";
 
@@ -245,7 +243,7 @@ async function drawnReply(
 	// The comparison restores what the variant lacks of the one it is read against.
 	// The core draws only the variant's own reading when comparison is off.
 	// Blocks lays out that visible content; Track keeps comparison positions.
-	const proposal = drawingOf(board, variant, reading.scope, against);
+	const proposal = compareVariants(board, variant, reading.scope, against);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
 	const waiting = toldStanding(variant);
@@ -377,7 +375,7 @@ function uncitedSteps(steps: readonly FlowStep[]): FlowStep[] {
 }
 
 /**
- * What the drawn variant is read against, as `drawingOf` reads it: the variant
+ * What the drawn variant is read against, as `compareVariants` reads it: the variant
  * the caller named, else the one the board reads it against.
  * @param board The board, as read.
  * @param variant The variant to draw.

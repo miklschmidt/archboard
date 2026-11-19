@@ -3,11 +3,11 @@
 // and nothing else, and says what it found either way.
 
 import {
-	edgeTrafficSchema,
-	effectiveTraffic,
+	parseDocument,
+	type ModelDocument,
 	type SemanticNode,
 	type VariantContent,
-} from "@archboard/model/content";
+} from "@archboard/model-contract";
 import { namesMatch } from "#runtime/evaluation/run-checks/outcomes/rules/naming.ts";
 import {
 	edgesBetween,
@@ -372,9 +372,11 @@ const nodeDrillDown: Check = (check, content) =>
  * @param spec The check's traffic: off, default, or stated values.
  * @returns The effective values, or undefined for off.
  */
-function wantedTraffic(spec: OutcomeCheck["traffic"]): ReturnType<typeof effectiveTraffic> {
+function wantedTraffic(spec: OutcomeCheck["traffic"]): ModelDocument<"edgeTraffic"> | undefined {
 	if (spec === "off" || spec === undefined) return undefined;
-	return effectiveTraffic(edgeTrafficSchema().parse(spec === "default" ? {} : spec));
+	const traffic = parseDocument("edgeTraffic", spec === "default" ? {} : spec);
+	if (!traffic.success) throw traffic.error;
+	return traffic.data;
 }
 
 /**
@@ -386,7 +388,7 @@ function wantedTraffic(spec: OutcomeCheck["traffic"]): ReturnType<typeof effecti
 const edgeTraffic: Check = (check, content) => {
 	const [edge] = edgesBetween(content, check.from ?? "", check.to ?? "");
 	if (edge === undefined) return finding(false, `no relationship ${check.from} -> ${check.to}`);
-	const actual = effectiveTraffic(edge.traffic);
+	const actual = edge.traffic;
 	return finding(
 		JSON.stringify(actual) === JSON.stringify(wantedTraffic(check.traffic)),
 		`traffic on ${check.from} -> ${check.to} is ${JSON.stringify(actual ?? "off")}`,

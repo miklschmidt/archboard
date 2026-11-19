@@ -51,8 +51,8 @@ import {
 import type { CheckoutSnapshot, LocalCodeTarget } from "@archboard/code-binding/resolution";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, type CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticNode } from "@archboard/model/content";
-import { nodeSubject } from "@archboard/model/vault-policy";
+import type { SemanticNode } from "@archboard/model-contract";
+import { nodeSubject } from "@archboard/model-rules";
 
 /**
  * A directory that holds tests, by the conventions of common languages: `test`,

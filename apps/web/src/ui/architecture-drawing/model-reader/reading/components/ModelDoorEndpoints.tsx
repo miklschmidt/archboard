@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { doorEndpoints, type Model, type projectModel } from "@archboard/model/content";
+import { doorEndpoints, type Model, type projectModel } from "@archboard/model-rules";
 import {
 	kindNames,
 	moduleName,

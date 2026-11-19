@@ -4,14 +4,14 @@
 // Nothing here compares anything: the comparison of the reading says what changed, and its
 // drawing puts back what the proposal removed, so a removed subject has a row and a place.
 
-import { drawingOf, type FieldChange } from "@archboard/model/comparison";
-import { everyStep, stepWords } from "@archboard/model/flow";
+import { type SemanticEdge, readFlow, type VariantContent } from "@archboard/model-contract";
 import {
+	type FieldChange,
 	modelContent,
 	moduleForest,
 	type Model,
-	type SemanticEdge,
-} from "@archboard/model/content";
+	compareVariants,
+} from "@archboard/model-rules";
 import {
 	interfaceRows,
 	type InterfaceRow,
@@ -22,7 +22,7 @@ type Comparison = NonNullable<Model["comparison"]>;
 type Subject = Comparison["subjects"][number];
 type ChangeStanding = Exclude<Subject["kind"], "unchanged">;
 type ChangedSubject = Subject & { readonly kind: ChangeStanding };
-type Content = ReturnType<typeof drawingOf>["content"];
+type Content = VariantContent;
 type Walkthrough = Model["walkthroughs"][number];
 type Branch = ReturnType<typeof moduleForest>[number];
 
@@ -330,8 +330,13 @@ function collectionGroups(sides: readonly Model[], reading: ChangeReading): Chan
 function flowGroups(content: Content, reading: ChangeReading): ChangeGroup[] {
 	return content.flows.flatMap(({ id, name, steps }) => {
 		const own = ownRow(reading, id, { kind: "flow", flow: id, subject: id });
-		const held = everyStep(steps).flatMap((step) =>
-			rowOf(reading, step.id, stepWords(step), { kind: "flow", flow: id, subject: step.id }),
+		const { every, words } = readFlow(steps);
+		const held = every.flatMap((step) =>
+			rowOf(reading, step.id, words.get(step.id) ?? step.id, {
+				kind: "flow",
+				flow: id,
+				subject: step.id,
+			}),
 		);
 		return groupOf("flow", id, name, [...own, ...held]);
 	});
@@ -422,7 +427,9 @@ const NO_CHANGES: ChangeList = { groups: [], changes: [], positions: new Map(), 
  */
 function changeList(model: Model, reference: Model): ChangeList {
 	const subjects = model.comparison?.subjects.filter(isChanged) ?? [];
-	const { content } = drawingOf(modelContent(model), modelContent(reference));
+	const { content } = compareVariants(modelContent(reference), modelContent(model), {
+		kind: "all",
+	});
 	const reading: ChangeReading = {
 		changed: new Map(subjects.map((subject) => [subject.id, subject])),
 		parents: new Map(content.nodes.map((node) => [node.id, node.parent])),

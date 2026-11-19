@@ -1,25 +1,20 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import type { z } from "zod";
 import { Window } from "happy-dom";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { projectModel } from "@archboard/model/content";
+import type { ArchitectureModuleEdit, ModelRequestInput } from "@archboard/model-contract";
+import { projectModel } from "@archboard/model-rules";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
-import {
-	architectureRenderResultSchema,
-	type architectureRenderRequestSchema,
-	type ArchitectureModuleEdit,
-} from "@archboard/model/contract";
+	readArchitectureModel,
+} from "@archboard/model-store";
 import { readRenderRecipe } from "@archboard/renderer/recipe";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-render-context-"));
@@ -126,7 +121,7 @@ async function edit(
 	});
 	if (!current.success) throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "render-agent",
 		reason: "repairing render context",
@@ -156,11 +151,14 @@ async function edit(
 		if (!result.success) throw new Error(JSON.stringify(result));
 		return result;
 	} finally {
-		await releaseArchitectureClaim(vault, { claim: claim.claim.id, writer: "render-agent" });
+		await changeArchitectureClaims(vault, "release", {
+			claim: claim.claim.id,
+			writer: "render-agent",
+		});
 	}
 }
 
-async function render(selectors: z.input<ReturnType<typeof architectureRenderRequestSchema>> = {}) {
+async function render(selectors: ModelRequestInput<"render"> = {}) {
 	const parameters = new URLSearchParams({ vault });
 	for (const [key, value] of Object.entries(selectors)) {
 		if (value === undefined) continue;
@@ -168,7 +166,7 @@ async function render(selectors: z.input<ReturnType<typeof architectureRenderReq
 			parameters.append(key, String(entry));
 	}
 	const response = await fetch(`${server!.base}/api/architecture/render?${parameters}`);
-	const result = architectureRenderResultSchema().parse(await response.json());
+	const result = parsedReply("render", await response.json());
 	if (!result.success) throw new Error(JSON.stringify(result));
 	expect(response.status).toBe(200);
 	return result;

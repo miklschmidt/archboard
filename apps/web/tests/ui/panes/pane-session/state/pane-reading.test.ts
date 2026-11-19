@@ -7,10 +7,9 @@ import {
 	type ReadingReply,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { createStaleBuildNotice } from "#ui/panes/pane-session/state/stale-build.ts";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
 
 beforeEach(() => {
 	jest.useFakeTimers();

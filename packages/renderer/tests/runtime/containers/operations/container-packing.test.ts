@@ -1,12 +1,11 @@
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
 const CONTAINER_INSET = 20;
@@ -14,7 +13,7 @@ const CONTAINER_INSET = 20;
 // Track still pads a container whose cards fan out below it wider than its
 // insets, so that case holds on Blocks alone.
 test.each([
-	...layoutEngineSchema().options.flatMap((layout) => [
+	...modelShape("layoutEngine").options.flatMap((layout) => [
 		{ count: 2, fan: 0, layout },
 		{ count: 10, fan: 0, layout },
 	]),

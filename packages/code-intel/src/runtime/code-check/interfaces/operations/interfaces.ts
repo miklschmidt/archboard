@@ -79,14 +79,12 @@ import {
 import { topLevel } from "#runtime/module-depth/operations/module-depth.ts";
 import { reaches, usesOf } from "#runtime/module-depth/operations/depth-reading.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
-import { nodeSubject } from "@archboard/model/vault-policy";
+import { describeSubject, inspectContainer, nodeSubject } from "@archboard/model-rules";
+import type { ContainerInspection } from "@archboard/model-rules";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { inspectContainer } from "@archboard/model/container-interface";
-import type { SemanticNode } from "@archboard/model/content";
-import { describeSubject } from "@archboard/model/policy";
-import type { interfaceMeasures } from "@archboard/model/container-interface";
+import type { SemanticNode } from "@archboard/model-contract";
 
-type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
+type ContainerInterface = Extract<ContainerInspection, { readonly holdsParts: true }>;
 
 /**
  * The exposed names a child of the container owns: names whose definition

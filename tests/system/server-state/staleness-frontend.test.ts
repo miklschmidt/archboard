@@ -3,8 +3,6 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-import { semanticPaneContextRoute } from "@archboard/model/pane-context";
-
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { createRequester } from "./support/http.ts";
@@ -91,7 +89,7 @@ describe.serial("frontend staleness", () => {
 		let sequence = 0;
 		const read = async () =>
 			(
-				await request<StaleAnswer>(semanticPaneContextRoute(), {
+				await request<StaleAnswer>("/api/panes/semantic-context", {
 					method: "POST",
 					doing: false,
 					body: {

@@ -13,7 +13,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import {
 	corridorPoints,
 	routeEnds,
@@ -25,6 +25,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import containerDetour from "#tests/runtime/support/fixtures/container-detour.json";
 import variantReconciliation from "#tests/runtime/support/fixtures/variant-reconciliation.json";
 import sunkWrap from "#tests/runtime/support/fixtures/sunk-wrap.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
 const CONTAINER_INSET = 20;
@@ -222,7 +223,12 @@ test("containers side by side keep an inset between their borders", async () => 
 			{ id: `${side}a`, name: `${side} intake`, kind: "module", parent: side },
 			{ id: `${side}b`, name: `${side} output`, kind: "module", parent: side },
 		]),
-		edges: sides.map((side) => ({ id: side, from: `${side}a`, to: `${side}b`, kind: "call" })),
+		edges: sides.map((side) => ({
+			id: `${side}-e`,
+			from: `${side}a`,
+			to: `${side}b`,
+			kind: "call",
+		})),
 	});
 	const drawing = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
@@ -385,7 +391,7 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 // this group's name stays short enough for the two rows to fit the pane.
 test("a fan never steps down three rows where two would do", async () => {
 	const content = orderedFixture(variantReconciliation);
-	const policy = semanticPolicySchema().parse({
+	const policy = fixtureDocument("semanticPolicy", {
 		levels: ["service"],
 		nodeKinds: { function: { name: "Function", icon: "RiCodeLine" } },
 		relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },

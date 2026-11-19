@@ -1,6 +1,5 @@
-import { everyStep, type SemanticFlow } from "@archboard/model/flow";
-import type { VariantContent } from "@archboard/model/content";
-import { projectFlow, type Model, type ModelFlow } from "@archboard/model/content";
+import { type SemanticFlow, type VariantContent, readFlow } from "@archboard/model-contract";
+import { projectFlow, type Model, type ModelFlow } from "@archboard/model-rules";
 
 /**
  * Offer flows that touch selected subjects or the current scope, including hidden descendants.
@@ -60,7 +59,7 @@ function touchesScope(
  * @returns Every behavioral subject without copying its meaning.
  */
 function flowSubjects(flows: readonly SemanticFlow[]) {
-	return [...flows, ...flows.flatMap((flow) => everyStep(flow.steps))];
+	return [...flows, ...flows.flatMap((flow) => readFlow(flow.steps).every)];
 }
 
 /**

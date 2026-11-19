@@ -3,8 +3,11 @@ import { afterEach, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { editArchitectureModule, claimArchitectureSubjects } from "@archboard/model/store-write";
+import {
+	changeArchitectureClaims,
+	editArchitectureModule,
+	readArchitectureModel,
+} from "@archboard/model-store";
 import { TalkSchema, talkFrom } from "#shared/protocol/talk.ts";
 import { recordingPageUrl } from "#runtime/recorder/operations/record-walkthrough.ts";
 import { readTalk, writeTalk, askedTalkPlace } from "#runtime/recorder/store/talk-files.ts";
@@ -34,7 +37,7 @@ test("the existing talk store and page address preserve exact canonical playback
 	const current = readArchitectureModel(vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state: current.selectedState!.id };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "recording test",

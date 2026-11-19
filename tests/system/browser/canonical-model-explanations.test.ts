@@ -3,9 +3,9 @@ import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
-	ArchitectureModelRead,
 	ArchitectureCheckpointRetain,
-} from "@archboard/model/contract";
+	ArchitectureModelRead,
+} from "@archboard/model-contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { prepareProductionFixture } from "../server-state/support/codex-production.ts";

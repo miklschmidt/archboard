@@ -21,7 +21,7 @@ import {
 import { normalizeBoundPath } from "#runtime/history-lens/operations/commits.ts";
 import type { BehindSkip } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, type CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticNode, VariantContent } from "@archboard/model/content";
+import type { SemanticNode, VariantContent } from "@archboard/model-contract";
 
 /** A part the lens reads: where its checkout is, and the path it binds there. */
 interface ReadPart {

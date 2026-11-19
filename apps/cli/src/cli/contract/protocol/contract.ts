@@ -174,6 +174,15 @@ interface CommandExecution<Result> {
 	pendingArtifact?: unknown;
 }
 
+/** How a stated value is read: a schema, or any reading that answers as a schema does. */
+interface Reading<T> {
+	safeParse(
+		value: unknown,
+	):
+		| { readonly success: true; readonly data: T }
+		| { readonly success: false; readonly error: z.ZodError };
+}
+
 interface CommandContext {
 	readonly signal: AbortSignal;
 	readonly require: (prerequisite: RuntimePrerequisite, description: string) => Promise<void>;
@@ -182,7 +191,7 @@ interface CommandContext {
 	readonly readOptionalTextFile: (path: string) => string | undefined;
 	readonly resolvePath: (path: string) => string;
 	readonly prompt: (question: string, fallback: string) => Promise<string>;
-	readonly parse: <T>(schema: z.ZodType<T>, value: unknown) => T;
+	readonly parse: <T>(reading: Reading<T>, value: unknown) => T;
 	/** The sole lane that may write a diagnostic before public result validation. */
 	readonly diagnostic: (message: string) => void;
 	/** The vault the command addressed, when it reads `-C` and found one. */
@@ -531,6 +540,7 @@ export {
 	type PendingArtifact,
 	type CommandExecution,
 	type CommandContext,
+	type Reading,
 	defineCommand,
 	type AnyCommandContract,
 };

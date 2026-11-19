@@ -5,16 +5,19 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
-import type { VariantContent } from "@archboard/model/content";
+import {
+	defaultSemanticPolicy,
+	type DiagramBox,
+	modelShape,
+	type VariantContent,
+} from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema, type DiagramBox } from "@archboard/model/render-reply";
 import {
 	corridorPoints,
 	routeCrosses,
 	routePoints,
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = orderedFixture({
@@ -122,7 +125,7 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // Reduced from Cloud platform-strangler: two relationship kinds put the hero
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"an incoming header arrow has a whole head and room for any bend before its endpoint (%s)",
 	async (layout) => {
 		const content = orderedFixture(frameApproach);

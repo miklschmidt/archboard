@@ -21,8 +21,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
-import { groupsUsed } from "@archboard/model/content";
-import type { SemanticVariant } from "@archboard/model/legacy-board";
+import type { SemanticVariant } from "@archboard/model-contract";
 import {
 	groupChoices,
 	groupSelection,
@@ -32,6 +31,7 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/rules/groups.ts";
 import { vaultCheckQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
+import { inspectGroups } from "@archboard/model-rules";
 
 /** Where a group was chosen: which model, and which state of it. */
 interface GroupPlace {
@@ -99,7 +99,8 @@ function choiceOver(
 	if (presenting || place.model !== model) return true;
 	return (
 		variant !== null &&
-		(place.variant !== variant.id || !groupsUsed(variant.content).includes(place.group))
+		(place.variant !== variant.id ||
+			!inspectGroups(variant.content).some(({ group }) => group === place.group))
 	);
 }
 

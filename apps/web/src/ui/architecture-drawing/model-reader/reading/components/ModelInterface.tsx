@@ -1,5 +1,6 @@
 import { useMemo, type JSX } from "react";
-import type { Model, VariantContent } from "@archboard/model/content";
+import type { VariantContent } from "@archboard/model-contract";
+import type { Model } from "@archboard/model-rules";
 import { ContainerInterface } from "#ui/architecture-drawing/canvas/presentation/components/ContainerInterface.tsx";
 import { ModelInterfaceCompare } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceCompare.tsx";
 import type { ModuleInterface } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";

@@ -13,12 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createVariantLocality } from "#runtime/history-lens/operations/locality.ts";
 import { readVariantFootprint } from "#runtime/history-lens/operations/footprint.ts";
-import {
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-	currentVariant,
-	type LegacyBoard,
-} from "@archboard/model/legacy-board";
+import { resolveVariant, type LegacyBoard } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-own-checkout-"));
@@ -90,8 +86,8 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 }
 
 /** A document with one part, pinned to the branch the vault's checkout is on. */
-const document: LegacyBoard = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const document: LegacyBoard = legacyBoard({
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "bd",
 	name: "Shop",
@@ -141,7 +137,7 @@ afterAll(() => {
 });
 
 test("footprint and locality read the part in the checkout that holds the vault", async () => {
-	const current = currentVariant(document)!;
+	const current = resolveVariant(document)!;
 	const footprint = await readVariantFootprint({ vault, document, against: current, base: first });
 	expect(footprint.skipped).toEqual([]);
 	expect(footprint.proposal).toBeNull();

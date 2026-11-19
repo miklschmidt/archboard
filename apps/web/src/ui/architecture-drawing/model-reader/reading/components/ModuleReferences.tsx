@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { useModelNavigation } from "#ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-model-navigation.ts";
 import { useReferenceNavigation } from "#ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-reference-navigation.ts";
 

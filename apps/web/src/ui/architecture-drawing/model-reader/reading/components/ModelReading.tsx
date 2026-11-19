@@ -2,7 +2,7 @@ import { RiBarChart2Line, RiHistoryLine } from "@remixicon/react";
 import { Activity, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
-import type { Model as Content } from "@archboard/model/content";
+import type { Model as Content } from "@archboard/model-rules";
 import { ModelBreadcrumbs } from "#ui/architecture-drawing/model-reader/reading/components/ModelBreadcrumbs.tsx";
 import { ModelChanges } from "#ui/architecture-drawing/model-reader/reading/components/ModelChanges.tsx";
 import {

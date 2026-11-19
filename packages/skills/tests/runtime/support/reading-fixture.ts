@@ -3,13 +3,9 @@
 // removed, traffic changed, a flow and a walkthrough added, one draft with an
 // open disagreement, and one adoption recorded.
 
-import {
-	parseLegacyBoard,
-	LEGACY_BOARD_SCHEMA_VERSION,
-	type LegacyBoard,
-} from "@archboard/model/legacy-board";
+import { defaultSemanticPolicy, type LegacyBoard } from "@archboard/model-contract";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { legacyBoardOf } from "#tests/runtime/support/legacy-board.ts";
 import {
 	evaluateOutcomes,
 	type OutcomeCheck,
@@ -36,9 +32,9 @@ interface VariantSpec {
  */
 function document(variants: readonly VariantSpec[], extra: object = {}): LegacyBoard {
 	const current = variants.find((variant) => variant.lifecycle === "current")?.id;
-	const parsed = parseLegacyBoard(
+	return legacyBoardOf(
 		withFixtureOrders({
-			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+			schemaVersion: "2.5.0",
 			kind: "semantic-board",
 			id: "bd",
 			name: "Flask",
@@ -52,8 +48,6 @@ function document(variants: readonly VariantSpec[], extra: object = {}): LegacyB
 			...extra,
 		}),
 	);
-	if (!parsed.ok) throw new Error(`fixture document is incoherent: ${parsed.problem}`);
-	return parsed.board;
 }
 
 const APP = {

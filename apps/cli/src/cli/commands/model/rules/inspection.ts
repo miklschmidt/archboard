@@ -1,22 +1,21 @@
 // How `model inspect` states one module's interface (ADR 0044) or one group's
 // boundary.
 //
-// The derivation is the shared `inspectContainer` and `inspectGroup`, which the
+// The derivation is the shared `inspectContainer` and `inspectGroups`, which the
 // reader and the comparison also use. Everything here is the command's part:
 // putting the derived facts into an answer with a schema, and saying them in
 // words. The answer holds counts and lists. It never combines the counts and it
 // gives no verdict, because a model does not hold behavior.
 
 import { z } from "zod";
-import { inspectContainer, interfaceMeasures } from "@archboard/model/container-interface";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model-contract";
 import {
-	inspectGroup,
+	inspectContainer,
+	inspectGroups,
 	modelContent,
+	type ContainerInspection,
 	type Model,
-	type SemanticEdge,
-	type SemanticNode,
-	type VariantContent,
-} from "@archboard/model/content";
+} from "@archboard/model-rules";
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 
 /** One module as an answer names it: enough to find it in the model. */
@@ -46,7 +45,7 @@ const InterfaceMeasuresSchema = z.strictObject({
 	callers: z.int(),
 	outgoing: z.int(),
 	passThrough: z.int(),
-}) satisfies z.ZodType<ReturnType<typeof interfaceMeasures>>;
+}) satisfies z.ZodType<Extract<ContainerInspection, { holdsParts: true }>["measures"]>;
 
 /** What every answer says first: which exact reading it was derived from. */
 const readingHead = {
@@ -196,7 +195,7 @@ function moduleInspection(model: Model): ModuleInspection {
 	return {
 		...head,
 		holdsParts: true,
-		measures: interfaceMeasures(inspection),
+		measures: inspection.measures,
 		entryPoints: inspection.entryPoints.map((entry) => ({
 			...inspectedModule(entry.node),
 			reachedBy: entry.reachedBy.map(named),
@@ -227,7 +226,7 @@ function groupInspection(model: Model, id: string): GroupInspection {
 		throw new CliUsageError(`"${id}" is not a configured group. Configured: ${configured}.`);
 	}
 	const content = modelContent(model);
-	const inspection = inspectGroup(content, id);
+	const inspection = inspectGroups(content, id);
 	const named = relationshipNamer(content);
 	return {
 		...headOf(model),

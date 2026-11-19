@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { projectModel, type Model } from "@archboard/model/content";
+import { projectModel, type Model } from "@archboard/model-rules";
 import { useModelComparison } from "#ui/architecture-drawing/model-reader/hooks/use-model-comparison.ts";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { projectFlow } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";

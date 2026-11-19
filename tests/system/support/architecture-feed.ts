@@ -1,4 +1,5 @@
-import { architectureFeedFrameSchema, type ArchitectureFeedFrame } from "@archboard/model/contract";
+import type { ArchitectureFeedFrame } from "@archboard/model-contract";
+import { parsedReply } from "./model-reply.ts";
 
 /** A tab's architecture socket, subscribed to one vault, read one frame at a time. */
 interface ArchitectureFeed extends Disposable {
@@ -16,7 +17,7 @@ async function openArchitectureFeed(base: string, vault: string): Promise<Archit
 	const frames: ArchitectureFeedFrame[] = [];
 	const waiting: ((frame: ArchitectureFeedFrame) => void)[] = [];
 	socket.addEventListener("message", (message) => {
-		const frame = architectureFeedFrameSchema().parse(JSON.parse(String(message.data)));
+		const frame = parsedReply("feed", JSON.parse(String(message.data)));
 		const waiter = waiting.shift();
 		if (waiter === undefined) frames.push(frame);
 		else waiter(frame);

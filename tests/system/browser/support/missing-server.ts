@@ -1,7 +1,7 @@
 // A code pass that met a checkout without the Python server, as the page reads it, and the press
 // of Fix with Codex in the Measures of the focused pane (TASK-646.09).
 
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import type { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { z } from "zod";

@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { projectModel } from "@archboard/model/content";
+import type { projectModel } from "@archboard/model-rules";
 import { flowSubjects } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
 
 interface ModelHiddenSelectionProps {

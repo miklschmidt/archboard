@@ -7,7 +7,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 test("a flank label clears an unrelated corridor without bending away from its route", async () => {
 	// Reduced from the actual 25px label detour: the new parallel route's label

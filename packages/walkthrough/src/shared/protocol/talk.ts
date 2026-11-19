@@ -1,5 +1,4 @@
 import { canonicalReadingProblems } from "#shared/protocol/canonical.ts";
-import { architectureModelReadSchema } from "@archboard/model/contract";
 // A talk: what the live pass of a recording heard and did, for the second pass
 // to render frame by frame (TASK-381).
 //
@@ -18,16 +17,12 @@ import { architectureModelReadSchema } from "@archboard/model/contract";
 import { z } from "zod";
 
 import {
-	defaultLayoutEngine,
-	diagramThemeSchema,
-	layoutEngineSchema,
-} from "@archboard/model/render-reply";
-import {
 	addressedVariant,
+	defaultLayoutEngine,
+	modelShape,
+	parseDocument,
 	type LegacyBoard,
-	parseLegacyBoard,
-} from "@archboard/model/legacy-board";
-import { vaultCheckSchema } from "@archboard/model/policy";
+} from "@archboard/model-contract";
 import { RecordingLanguageSchema } from "#shared/schemas/recording-language.ts";
 
 /** What a talk's file says it is. */
@@ -138,12 +133,12 @@ const TalkSchema = z
 		/** The language the voice spoke. */
 		language: RecordingLanguageSchema,
 		/** The theme the talk is rendered in unless another is asked for. */
-		theme: diagramThemeSchema(),
+		theme: modelShape("diagramTheme"),
 		/**
 		 * The layout engine the talk is rendered with unless another is asked for (TASK-469). A talk
 		 * kept before it was stated was drawn with the default engine, and reads as that.
 		 */
-		layout: layoutEngineSchema().default(defaultLayoutEngine()),
+		layout: modelShape("layoutEngine").default(defaultLayoutEngine()),
 		board: TalkBoardSchema,
 		/** The voice, beside `talk.json`: mono 16-bit PCM at the talk's sample rate. */
 		audio: z
@@ -160,9 +155,9 @@ const TalkSchema = z
 		events: z.array(TalkEventSchema),
 		/** The board's document as the Archboard server served it. */
 		document: z.unknown(),
-		architecture: architectureModelReadSchema().options[0].optional(),
+		architecture: modelShape("model").optional(),
 		/** The vault's checked policy the board was drawn under. */
-		policy: vaultCheckSchema(),
+		policy: modelShape("vaultCheck"),
 	})
 	.strict()
 	.superRefine((talk, context) => {
@@ -280,15 +275,15 @@ function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
  * @returns Board failures.
  */
 function legacyBoardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
-	const parsed = parseLegacyBoard(talk.document);
-	if (!parsed.ok) return [`The talk's board cannot be read: ${parsed.problem}`];
+	const parsed = parseDocument("legacyBoard", talk.document);
+	if (!parsed.success) return [`The talk's board cannot be read: ${parsed.error}`];
 	const problems: string[] = [];
-	if (parsed.board.version !== talk.board.version) {
+	if (parsed.data.version !== talk.board.version) {
 		problems.push(
-			`The talk's board is at version ${parsed.board.version}, not ${talk.board.version}.`,
+			`The talk's board is at version ${parsed.data.version}, not ${talk.board.version}.`,
 		);
 	}
-	problems.push(...againstProblems(talk, parsed.board));
+	problems.push(...againstProblems(talk, parsed.data));
 	for (const event of talk.events) {
 		if (event.kind === "drawn" && event.version !== talk.board.version) {
 			problems.push(
@@ -405,8 +400,8 @@ function voiceLevels(samples: Int16Array): number[] {
  */
 const ReplayOptionsSchema = z
 	.object({
-		theme: diagramThemeSchema(),
-		layout: layoutEngineSchema(),
+		theme: modelShape("diagramTheme"),
+		layout: modelShape("layoutEngine"),
 		levels: z.array(z.number().min(0).max(1)),
 	})
 	.strict();

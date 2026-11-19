@@ -7,7 +7,7 @@
 // cumulative usage, not its own.
 
 import { describe, expect, test } from "bun:test";
-import { LegacyBoardSchema } from "@archboard/model/legacy-board";
+import { legacyBoardOf } from "#tests/runtime/support/legacy-board.ts";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { callUsageFrom, sessionUsage } from "#runtime/evaluation/grading/protocol/grader-usage.ts";
 import { countDirectVaultWrites } from "#runtime/evaluation/run-checks/audit/rules/guardrails.ts";
@@ -57,7 +57,7 @@ function classified(command: string): ClassifiedCommand {
 	return one;
 }
 
-const DOCUMENT = LegacyBoardSchema.parse(
+const DOCUMENT = legacyBoardOf(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",

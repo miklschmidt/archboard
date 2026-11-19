@@ -1,10 +1,9 @@
 import { expect, test } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type DiagramBox } from "@archboard/model-contract";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /**
  * One document holding the same content, built or not.
@@ -12,8 +11,8 @@ import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
  * @returns The document.
  */
 function documentOf(built: boolean) {
-	return LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	return fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Ingest",

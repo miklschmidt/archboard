@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { DiagramTheme } from "@archboard/model/render-reply";
+import { type DiagramTheme } from "@archboard/model-contract";
 import { THEME_STYLESHEET } from "#runtime/store/assets.ts";
 import { readThemeColors } from "#runtime/theme/store/read.ts";
 import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";

@@ -14,13 +14,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as ApiModule from "#runtime/api/history-lens.ts";
 import { ArchitectureHistoryResultSchema } from "#shared/protocol/canonical-history.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
-import { readArchitectureClaims, readArchitectureModel } from "@archboard/model/store-read";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
+	readArchitectureClaims,
+	readArchitectureModel,
+} from "@archboard/model-store";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-head-"));
@@ -111,7 +111,7 @@ async function createProposal(): Promise<string> {
 	const model = readArchitectureModel(vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
 	const target = { model: model.manifest.id, state: "Current" };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "planning on a branch",
@@ -149,9 +149,9 @@ async function adopt(state: string): Promise<void> {
 	const claims = readArchitectureClaims(vault);
 	if (!claims.success) throw new Error(JSON.stringify(claims));
 	for (const held of claims.claims)
-		await releaseArchitectureClaim(vault, { claim: held.id, writer: held.writer });
+		await changeArchitectureClaims(vault, "release", { claim: held.id, writer: held.writer });
 	const target = { model: model.manifest.id, state };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "adopting on a branch",
