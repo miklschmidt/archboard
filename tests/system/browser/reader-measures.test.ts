@@ -101,7 +101,7 @@ test("a selection reads the history, and the Measures dialog shows every module 
 	await pollUntil(
 		() =>
 			browser.eval<number>(
-				`document.querySelectorAll('[data-slot="semantic-inspector-commit-list"] [data-commit]').length`,
+				`document.querySelectorAll('[data-slot="model-panel"] [data-slot="module-history"] [data-slot="semantic-inspector-commit-list"] [data-commit]').length`,
 			),
 		(commits) => commits === 2,
 		"the history in the panel with no button",

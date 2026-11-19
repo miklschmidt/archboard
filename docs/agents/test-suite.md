@@ -886,7 +886,9 @@ The Open in About button opens that module and focuses the Interface heading.
 It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader. Each further hop has its own grade, across the doors, and the trace goes with the pick.
-`reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
+`reader-measures.test.ts` checks that a selected module shows its code history in the right panel.
+The `Measures` dialog lists every module, sorts by column, supports keyboard navigation, and selects a module on its diagram.
+The test also pages through code findings.
 `module-measures.test.ts` owns the one order of each measure and how a reading stands with history. `model-measures.test.tsx` owns the views of the dialog and what a table says in each state of a read. `model-code-evidence.test.tsx` owns the pager of the findings and the source lines round a finding's evidence.
 `relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
 
