@@ -596,3 +596,24 @@ test("--base names the base, and a base that does not resolve, or a gated module
 		answered = codeCheck;
 	}
 });
+
+test("a vault rule on MODULE_SHALLOW refuses --fail-shallow-modules, and the codes a rule turns off print on one line", async () => {
+	plain = clean;
+	try {
+		answered = {
+			...shallowAnswer(false),
+			models: shallowAnswer(false).models?.map((each) => ({
+				...each,
+				rules: { MODULE_SHALLOW: "information" as const, CODE_PASS_THROUGH: "off" as const },
+			})),
+		};
+		expect((await run(["check", "code", "--fail-shallow-modules"])).exited).toBe(2);
+		const ruled = await run(["check", "code"]);
+		expect(ruled.exited).toBe(0);
+		expect(
+			ruled.stderr.split("\n").filter((line) => line.includes("CODE_PASS_THROUGH")),
+		).toHaveLength(1);
+	} finally {
+		answered = codeCheck;
+	}
+});

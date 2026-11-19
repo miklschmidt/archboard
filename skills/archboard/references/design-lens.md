@@ -134,6 +134,9 @@ A C function macro is a function, and a Swift struct is a class.
 The per-name warnings below fail the check on every module, as every warning does.
 `--base <ref>` names the base. Without it, the default base decides.
 A vault policy with `codeCheck: { failShallowModules: true }` turns the gate on for plain `archboard check`.
+The vault policy's `codeCheck.rules` sets a module-depth code to `information` or `off` for the whole repository, and a code without a rule keeps its built-in level.
+A rule is the repository owner's decision, so leave the rules as they are and clear the finding at its seam.
+A finding whose message says the vault policy set it, and the line `code check: off by vault policy:`, come from those rules.
 `BASE_UNRESOLVED` means the check could not read the branch. Name a base that resolves; never treat it as a pass.
 
 Clear each finding at its seam. Never silence one.

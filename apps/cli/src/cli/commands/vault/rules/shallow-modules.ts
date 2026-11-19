@@ -7,7 +7,8 @@
 // `codeCheck.failShallowModules`, makes `MODULE_SHALLOW` on a module that the
 // branch touched a warning, and the existing exit rule fails on it. A gated
 // shallow module whose range the check could not read is a refusal, never a
-// pass.
+// pass. `failShallowModules` is the only promotion, so a vault rule that lowers
+// `MODULE_SHALLOW` beside the flag is a refusal that names both (TASK-650).
 
 import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
 
@@ -22,14 +23,6 @@ interface GateOptions {
 	readonly failShallowModules?: boolean | undefined;
 	readonly base?: string | undefined;
 }
-
-const baseRefusal = {
-	code: "BASE_UNRESOLVED",
-	exit: 2,
-	stream: "stderr" as const,
-	description:
-		"The base that `--base` names, or the default base, does not resolve, so the check cannot tell which modules the branch touched. Also a shallow module that the gate judges whose range the check could not read. A gate never passes because it read nothing.",
-};
 
 /** The options of the gate, which `check`, `check all` and `check code` read. */
 const gateParameters = [
@@ -118,6 +111,21 @@ function gatedFinding(code: CodeCheckResult, finding: CodeFinding): CodeFinding 
 }
 
 /**
+ * Refuse the flag where a vault rule lowers `MODULE_SHALLOW`, which the flag fails on.
+ * @param code The code check's answer.
+ */
+function refuseRuledGate(code: CodeCheckResult): void {
+	const ruled = code.models?.find((each) => each.rules?.MODULE_SHALLOW !== undefined);
+	if (ruled === undefined) return;
+	throw Object.assign(
+		new Error(
+			`--fail-shallow-modules fails the check on MODULE_SHALLOW, and the vault policy of ${JSON.stringify(ruled.model)} sets codeCheck.rules.MODULE_SHALLOW to ${ruled.rules?.MODULE_SHALLOW ?? ""}. Leave out the flag, or remove the rule.`,
+		),
+		{ code: "SHALLOW_RULE_CONFLICT" },
+	);
+}
+
+/**
  * Apply the shallow-module gate: `MODULE_SHALLOW` on a module that the branch touched becomes a
  * warning, so the existing exit rule fails on it.
  * @param code The code check's answer.
@@ -125,6 +133,7 @@ function gatedFinding(code: CodeCheckResult, finding: CodeFinding): CodeFinding 
  * @returns The answer with the gate applied.
  */
 function gateShallowModules(code: CodeCheckResult, flag: boolean): CodeCheckResult {
+	if (flag) refuseRuledGate(code);
 	const unread: string[] = [];
 	const findings = code.findings.map((finding) => {
 		const gate = gated(code, finding, flag) ? gatedFinding(code, finding) : finding;
@@ -137,8 +146,8 @@ function gateShallowModules(code: CodeCheckResult, flag: boolean): CodeCheckResu
 		new Error(
 			`The check could not read whether the branch touched the shallow modules ${named}: no base was found, the base does not resolve in their checkout, or it shares no history with HEAD there, as in a shallow clone. Name a base that resolves there with --base, or fetch the history the base needs.`,
 		),
-		{ code: baseRefusal.code },
+		{ code: "BASE_UNRESOLVED" },
 	);
 }
 
-export { askGate, baseRefusal, gateParameters, gateShallowModules };
+export { askGate, gateParameters, gateShallowModules };

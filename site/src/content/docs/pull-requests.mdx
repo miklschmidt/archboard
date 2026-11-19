@@ -85,6 +85,17 @@ The job summary lists up to {reference.facts.summaryRows} findings, evidence for
 | [`fail-on: never`](../reference/actions/#check-fail-on)   | The findings show, and the job never fails on them.                                                         |
 | [`allow-codes`](../reference/actions/#check-allow-codes)  | These codes show and never fail the job, such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn). |
 
+The vault decides the level of each module-depth code, such as [`EXPOSED_VALUE`](../reference/findings/#exposed-value), for the CLI, Measures and the Action alike. If you upgrade and write no rules, the new module-depth warnings fail the job. To lower one for the whole repository, set its rule in the vault's configuration. A code set to information keeps its findings and never fails the job, and one set to off removes them from the job summary and the annotations:
+
+```yaml title=".archboard/vault/.archboard/config.yaml"
+codeCheck:
+  rules:
+    EXPOSED_VALUE: information
+    CODE_PASS_THROUGH: "off"
+```
+
+[The gate](../gate/#set-the-level-of-a-module-depth-rule) lists the seven codes and what a rule can and cannot change. Use [`allow-codes`](../reference/actions/#check-allow-codes) for a code that only this job lets pass.
+
 A check that cannot run fails the job in every case: a usage error, a refusal, an unreachable server, or a checkout without a vault when the checks read one. With [`checks: embeds`](../reference/actions/#check-checks) the Action needs no vault.
 
 ## The plan on the pull request

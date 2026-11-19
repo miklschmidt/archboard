@@ -55,6 +55,7 @@ Make sure that the requested scope, flow, and every narrative beat remain availa
 Run affected semantic, code, and embed inspection through `archboard check`.
 In an implementation loop, run `archboard check code --fail-shallow-modules` before you hand back, with `--base <branch below yours>` in a stack.
 It fails on every warning, and on a shallow module that your branch touched. Clear each finding as [module depth](references/design-lens.md#module-depth) says.
+The vault's `codeCheck.rules` set the level of module-depth codes. When `SHALLOW_RULE_CONFLICT` refuses the flag, the vault already decided `MODULE_SHALLOW`: run it without the flag.
 Report concrete changes, refusals, unavailable source, and recovery work.
 Claim frontend acceptance, adoption, publication, or migration only after its operation succeeds.
 

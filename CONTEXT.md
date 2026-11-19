@@ -843,6 +843,10 @@ What fails `archboard check` on a shallow module that the branch touched since i
 The CLI applies it to the answer, whose severities never depend on the caller.
 _Avoid_: depth gate, shallow check
 
+**Module-depth rule**:
+The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers; `failShallowModules` stays the only promotion.
+_Avoid_: lint rule, suppression, allow list (that is the Action's `allow-codes`)
+
 **Touched module**:
 A module whose bound code, or a part's inside its module, the branch changed between the merge base with its base and the working tree.
 _Avoid_: changed file, dirty module
