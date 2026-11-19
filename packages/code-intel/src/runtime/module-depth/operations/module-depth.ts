@@ -281,9 +281,9 @@ function ownName(symbol: string, holder: string): string | undefined {
 
 /**
  * Whether a member is a public method of an exported class: a function the
- * class holds that callers name, not one the language calls itself. A C++ or
- * Objective-C method's code may be in another file than its class, the pair
- * of the class's header.
+ * class holds that callers name, not one the language calls itself. A method
+ * may be in another file than its class: a C++ or Objective-C method in the
+ * pair of its class's header, a Swift method in an extension.
  * @param member The member.
  * @param classes The module's exported classes.
  * @returns True when it is.
@@ -293,8 +293,7 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
 	if (kind !== "function" || calledByLanguage === true) return false;
 	return classes.some((each) => {
 		const own = ownName(symbol, each.definition.symbol);
-		if (own === undefined || CALLED_BY_LANGUAGE.has(own)) return false;
-		return each.path === member.path || symbol.includes("::");
+		return own !== undefined && !CALLED_BY_LANGUAGE.has(own);
 	});
 }
 

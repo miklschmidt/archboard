@@ -18,6 +18,7 @@
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
+import { swiftPassesTo } from "#runtime/code-facts/swift/operations/swift-pass-through.ts";
 
 /** The access levels another module can use. */
 const EXPOSED = new Set(["open", "public", "package"]);
@@ -50,6 +51,13 @@ const KINDS: Readonly<Record<string, Definition["kind"]>> = {
 };
 
 /**
+ * The declarations that declare a type and nothing a caller runs: a protocol,
+ * an alias and an associated type. An enum with no method is one too
+ * (typeDefinitions).
+ */
+const TYPES = new Set(["protocol_declaration", "typealias_declaration", "associatedtype_declaration"]);
+
+/**
  * The kind of a declaration or directly assigned closure.
  * @param node The declaration.
  * @returns Its kind.
@@ -61,6 +69,33 @@ function kindOf(node: Node): Definition["kind"] {
 			? "function"
 			: "value")
 	);
+}
+
+/**
+ * The methods Swift calls itself, by name and first argument label, which no
+ * caller names (TASK-646.12): `hash(into:)` for `Hashable`, `encode(to:)` for
+ * `Encodable`, `callAsFunction` for a call of the value, `makeIterator()` for
+ * `for in`. An initializer is a constructor.
+ */
+const CALLED_BY_LANGUAGE: ReadonlyMap<string, string | undefined> = new Map([
+	["hash", "into"],
+	["encode", "to"],
+	["callAsFunction", undefined],
+	["makeIterator", undefined],
+]);
+
+/**
+ * Whether Swift calls a function itself.
+ * @param node The declaration.
+ * @param name Its own name.
+ * @returns True for an initializer or a method of `CALLED_BY_LANGUAGE`.
+ */
+function calledByLanguage(node: Node, name: string): boolean {
+	if (node.type === "init_declaration") return true;
+	if (node.type !== "function_declaration" || !CALLED_BY_LANGUAGE.has(name)) return false;
+	const label = CALLED_BY_LANGUAGE.get(name);
+	const first = node.namedChildren.find((child) => child.type === "parameter");
+	return label === undefined || first?.childForFieldName("external_name")?.text === label;
 }
 
 /**
@@ -99,6 +134,7 @@ function writtenLevel(node: Node): string | undefined {
  */
 function defined(node: Node, name: string, holder: Holder): Definition {
 	const level = holder.imposed ? holder.level : (writtenLevel(node) ?? holder.level);
+	const passes = swiftPassesTo(node);
 	return {
 		symbol: holder.symbol === "" ? name : `${holder.symbol}.${name}`,
 		kind: kindOf(node),
@@ -107,8 +143,12 @@ function defined(node: Node, name: string, holder: Holder): Definition {
 		source: sourceRange(node),
 		visibility: level,
 		exposed: EXPOSED.has(level) && holder.exposed,
+		...(TYPES.has(node.type) ? { type: true } : {}),
+		...(calledByLanguage(node, name) ? { calledByLanguage: true } : {}),
+		...(passes === undefined ? {} : { passes }),
 	};
 }
+
 
 /**
  * The name a field of a declaration holds, of one kind of node, so a
@@ -159,10 +199,15 @@ function members(node: Node, holder: Holder, imposed?: string): Definition[] {
 function typeDefinitions(node: Node, holder: Holder): Definition[] {
 	const name = nameOf(node, "type_identifier");
 	if (name === undefined) return [];
-	const own = defined(node, name, holder);
-	const level = FILE_PRIVATE.has(own.visibility) ? "fileprivate" : "internal";
-	const inner: Holder = { symbol: own.symbol, level, imposed: false, exposed: own.exposed };
-	return [own, ...members(node, inner, own.visibility)];
+	const declared = defined(node, name, holder);
+	const level = FILE_PRIVATE.has(declared.visibility) ? "fileprivate" : "internal";
+	const inner: Holder = { symbol: declared.symbol, level, imposed: false, exposed: declared.exposed };
+	const held = members(node, inner, declared.visibility);
+	// An enum whose body holds no method is a type, as a TypeScript enum is, so it keeps the compiler's exhaustive checks.
+	const enumOnly =
+		node.childForFieldName("declaration_kind")?.text === "enum" &&
+		!held.some((each) => each.kind === "function" && each.symbol.startsWith(`${declared.symbol}.`));
+	return [enumOnly ? { ...declared, type: true } : declared, ...held];
 }
 
 /**

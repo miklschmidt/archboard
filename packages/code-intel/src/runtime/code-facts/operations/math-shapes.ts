@@ -63,6 +63,12 @@ interface MathSyntax {
 	readonly local: (operand: Node) => Local | undefined;
 	/** The later uses of a local variable in its scope. */
 	readonly uses: (local: Local) => readonly Node[];
+	/**
+	 * Whether the grammar reads a call that passes nothing after the math that
+	 * ends with an expression, rather than as the expression's own: so
+	 * tree-sitter-swift reads `1 + n * jitter()`.
+	 */
+	readonly calledAfter?: (operand: Node) => boolean;
 }
 
 /** The operators of arithmetic, by how tightly each binds. */
@@ -252,7 +258,8 @@ class MathReading {
 	computed(symbol: string, operand: Node, text: string): Computation | undefined {
 		const math = this.mathAround(operand);
 		if (math === undefined) return undefined;
-		const shape = this.shapeOf(math, { node: operand, text }).text;
+		const call = this.syntax.calledAfter?.(operand) === true ? "()" : "";
+		const shape = this.shapeOf(math, { node: operand, text: `${text}${call}` }).text;
 		return { symbol, line: operand.startPosition.row + 1, shape };
 	}
 
