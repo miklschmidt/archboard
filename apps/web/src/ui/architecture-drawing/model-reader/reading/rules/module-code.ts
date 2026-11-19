@@ -44,7 +44,7 @@ const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
 /** Why the pass did not judge a module, in words, for the reasons a part can be skipped for. */
 const NOT_JUDGED: Readonly<Partial<Record<Skip["reason"], string>>> = {
 	unbound: "no code binding",
-	"exposure-unknown": "no root file that a language the check reads has",
+	"exposure-unknown": "no root file in a language the check reads",
 	"repository-unregistered": "repository not registered here",
 	"checkout-unavailable": "checkout could not be read",
 	"ref-not-checked-out": "its ref is not checked out",
@@ -112,7 +112,7 @@ function measuredModule(depth: Depth, findings: number, skipped: readonly Skip[]
 		return {
 			kind: "skipped",
 			reason: "unjudged",
-			words: languages === "" ? "no name it exports is judged" : `no rule judges ${languages} yet`,
+			words: languages === "" ? "no export that a rule judges" : `no rule judges ${languages} yet`,
 		};
 	}
 	const { exports, logic } = depth;

@@ -346,10 +346,12 @@ function CodeStatus(props: CodeStatusProps): JSX.Element | null {
 	const judged = [...modules.values()].filter((one) => one.kind === "read").length;
 	return (
 		<div data-slot="model-measures-code" className="flex items-baseline justify-between gap-3">
-			<p className="text-body text-muted-foreground">
+			<p className="text-body text-muted-foreground min-w-0">
 				{`The code check judged ${judged} of ${rows} modules. ${notJudgedWords(modules)}`.trim()}
 			</p>
-			<CheckedAt checkedAt={reading.checkedAt} />
+			<div className="shrink-0 whitespace-nowrap">
+				<CheckedAt checkedAt={reading.checkedAt} />
+			</div>
 		</div>
 	);
 }
