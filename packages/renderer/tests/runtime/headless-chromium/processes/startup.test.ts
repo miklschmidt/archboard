@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
 import { launchHeadlessChromium } from "#runtime/headless-chromium/processes/launch.ts";
-import { rasterMs } from "@archboard/timing";
 
 test("an executable that exits before listening keeps its failure and cleans its process and profile", async () => {
 	const directory = mkdtempSync(join(tmpdir(), "archboard-startup-test-"));
@@ -15,8 +14,8 @@ test("an executable that exits before listening keeps its failure and cleans its
 		try {
 			const chromium = await launchHeadlessChromium({
 				chromiumPath: executable,
-				startupTimeoutMs: rasterMs("startupTimeout"),
-				cleanupTimeoutMs: rasterMs("cleanup"),
+				startupTimeoutMs: 30_000,
+				cleanupTimeoutMs: 1000,
 			});
 			await chromium.stop();
 		} catch (error) {

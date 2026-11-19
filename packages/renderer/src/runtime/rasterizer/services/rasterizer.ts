@@ -11,7 +11,7 @@
 
 import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
 import { discoveredChromiumPath } from "#runtime/headless-chromium/processes/process.ts";
-import { rasterMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { boundsRefusal } from "#runtime/rasterizer/operations/bounds.ts";
 import {
 	RasterSession,
@@ -107,9 +107,9 @@ const NOTHING_TO_CLEAN: SessionCleanup = {
 function resolveOptions(options: SemanticRasterizerOptions): SessionOptions {
 	return {
 		chromiumPath: options.chromiumPath ?? discoveredChromiumPath(),
-		jobTimeoutMs: options.jobTimeoutMs ?? rasterMs("jobTimeout"),
-		startupTimeoutMs: options.startupTimeoutMs ?? rasterMs("startupTimeout"),
-		cleanupTimeoutMs: options.cleanupTimeoutMs ?? rasterMs("cleanup"),
+		jobTimeoutMs: options.jobTimeoutMs ?? durationMs("raster.jobTimeout"),
+		startupTimeoutMs: options.startupTimeoutMs ?? durationMs("raster.startupTimeout"),
+		cleanupTimeoutMs: options.cleanupTimeoutMs ?? durationMs("raster.cleanup"),
 	};
 }
 
