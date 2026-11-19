@@ -40,6 +40,7 @@
 // and only a name at its end is an export: `packages.x86_64-linux` and
 // `image` only group the names below them.
 
+import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
@@ -121,13 +122,51 @@ function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
 	return !name.definition.symbol.includes(".") && !member;
 }
 
+/** How many names an alias may lead through before the search gives up. */
+const ALIAS_DEPTH = 8;
+
 /**
- * The kind of an export.
+ * The kind of the name a value holds, wherever that name is defined: a
+ * compound component made by `Object.assign` onto a function is a function.
+ * @param reading The module.
+ * @param path The file that defines the value.
+ * @param definition The value.
+ * @param depth How many names the search has led through.
+ * @returns The kind, or undefined when the value holds no name that is a
+ * function or a class.
+ */
+async function aliasedKind(
+	reading: DepthReading,
+	path: string,
+	definition: Definition,
+	depth = 0,
+): Promise<"function" | "class" | undefined> {
+	if (definition.aliases === undefined || depth >= ALIAS_DEPTH) return undefined;
+	const site = await definitionSite(reading.facts, reading.checkout, path, definition.aliases);
+	if (site === undefined || site.definition.type === true) return undefined;
+	const { kind } = site.definition;
+	return kind === "value" ? aliasedKind(reading, site.path, site.definition, depth + 1) : kind;
+}
+
+/**
+ * The kind of an export as its definition declares it.
  * @param definition Its definition.
  * @returns Its kind.
  */
-function kindOf(definition: Definition): ExportKind {
+function declaredKind(definition: Definition): ExportKind {
 	return definition.type === true ? "type" : definition.kind;
+}
+
+/**
+ * The kind of an export: a value counts as what the name it holds is.
+ * @param reading The module.
+ * @param name The export.
+ * @returns Its kind.
+ */
+async function kindOf(reading: DepthReading, name: ExposedName): Promise<ExportKind> {
+	const kind = declaredKind(name.definition);
+	if (kind !== "value") return kind;
+	return (await aliasedKind(reading, name.path, name.definition)) ?? kind;
 }
 
 /** The names a module exposes that this part counts, each once, and the adapters that read them. */
@@ -201,23 +240,31 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
  * The module's exports by kind: the top-level names of its judged languages,
  * the public methods of their classes, and the names at the end of their
  * paths of its infrastructure.
+ * @param reading The module.
  * @param names The counted names.
  * @returns The counts, and each judged export with its kind, in the order the module exports them.
  */
-function countExports(names: CountedNames): {
+async function countExports(
+	reading: DepthReading,
+	names: CountedNames,
+): Promise<{
 	readonly counts: ExportCounts;
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
-} {
-	const top = names.judged
-		.filter((name) => topLevel(name, names.judged))
-		.map((name) => [name, kindOf(name.definition)] as const);
+}> {
+	const top: (readonly [ExposedName, ExportKind])[] = [];
+	for (const name of names.judged.filter((each) => topLevel(each, names.judged))) {
+		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
+		top.push([name, await kindOf(reading, name)]);
+	}
 	const counted = [
 		...top,
-		...pathEnds(names.infrastructure).map((name) => [name, kindOf(name.definition)] as const),
+		...pathEnds(names.infrastructure).map((name) => [name, declaredKind(name.definition)] as const),
 	];
 	const classes = ofKind(top, "class");
+	const kinds = new Map(top);
 	const judged = names.judged.flatMap((name): (readonly [ExposedName, NameKind])[] => {
-		if (topLevel(name, names.judged)) return [[name, kindOf(name.definition)]];
+		const kind = kinds.get(name);
+		if (kind !== undefined) return [[name, kind]];
 		return methodOf(name, classes) ? [[name, "method"]] : [];
 	});
 	return {
@@ -311,7 +358,7 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
  */
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
-	const { counts, judged } = countExports(names);
+	const { counts, judged } = await countExports(reading, names);
 	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
 	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
 	const findings: DepthFinding[] = [];
