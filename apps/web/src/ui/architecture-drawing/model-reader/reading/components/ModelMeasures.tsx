@@ -27,6 +27,7 @@ import {
 	type ModuleCodeRead,
 } from "#ui/architecture-drawing/model-reader/reading/hooks/use-module-code.ts";
 import { notJudgedWords } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
+import { ModelMeasureServers } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasureServers.tsx";
 import { CheckedAt } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 import { historyDay } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
 import {
@@ -329,8 +330,9 @@ const CODE_UNREAD: Readonly<Record<CodeStatusProps["read"], string>> = {
 };
 
 /**
- * What the table says of its code counts: which pass they come from and what it did not judge, or
- * why no pass stands behind them. Opening the table never starts a pass.
+ * What the table says of its code counts: which pass they come from, what it did not judge and the
+ * language servers it missed, or why no pass stands behind them. Opening the table never starts a
+ * pass.
  * @param props The pass, and what it says of each module.
  * @returns The line.
  */
@@ -345,14 +347,17 @@ function CodeStatus(props: CodeStatusProps): JSX.Element | null {
 		);
 	const judged = [...modules.values()].filter((one) => one.kind === "read").length;
 	return (
-		<div data-slot="model-measures-code" className="flex items-baseline justify-between gap-3">
-			<p className="text-body text-muted-foreground min-w-0">
-				{`The code check judged ${judged} of ${rows} modules. ${notJudgedWords(modules)}`.trim()}
-			</p>
-			<div className="shrink-0 whitespace-nowrap">
-				<CheckedAt checkedAt={reading.checkedAt} />
+		<>
+			<div data-slot="model-measures-code" className="flex items-baseline justify-between gap-3">
+				<p className="text-body text-muted-foreground min-w-0">
+					{`The code check judged ${judged} of ${rows} modules. ${notJudgedWords(modules)}`.trim()}
+				</p>
+				<div className="shrink-0 whitespace-nowrap">
+					<CheckedAt checkedAt={reading.checkedAt} />
+				</div>
 			</div>
-		</div>
+			<ModelMeasureServers missing={props.missing} />
+		</>
 	);
 }
 

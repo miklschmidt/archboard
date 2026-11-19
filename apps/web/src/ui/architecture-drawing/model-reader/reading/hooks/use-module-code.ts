@@ -6,6 +6,8 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import {
 	codeByModule,
+	missingServers,
+	type MissingServers,
 	type ModuleCode,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
@@ -16,6 +18,8 @@ interface ModuleCodeRead {
 	readonly reading: ModelCodeReading | null;
 	/** What it says of each module it names, or nothing while no pass read the reading. */
 	readonly modules: ReadonlyMap<string, ModuleCode> | undefined;
+	/** The checkouts of the pass that miss the server of a language. */
+	readonly missing: readonly MissingServers[];
 	/** How the read of the remembered passes stands, or that the reading is not in the vault. */
 	readonly read: "pending" | "error" | "success" | "elsewhere";
 }
@@ -31,7 +35,8 @@ interface ModuleCodeRead {
 function useModuleCode(vault: string, model: CodeReadingName, wanted: boolean): ModuleCodeRead {
 	const { reading, read } = useModelCodeFindings(vault, model, wanted);
 	const modules = useMemo(() => (reading === null ? undefined : codeByModule(reading)), [reading]);
-	return { reading, modules, read: readsVaultOnDisk(model) ? read : "elsewhere" };
+	const missing = useMemo(() => (reading === null ? [] : missingServers(reading)), [reading]);
+	return { reading, modules, missing, read: readsVaultOnDisk(model) ? read : "elsewhere" };
 }
 
 export { useModuleCode, type ModuleCodeRead };

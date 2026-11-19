@@ -41,12 +41,48 @@ const SERVERS: Readonly<Record<ConfigurableLanguage, { server: string; install: 
 	},
 };
 
+/** One language without its server, and the server that it needs, in Markdown. */
+interface NeededServer {
+	readonly language: ConfigurableLanguage;
+	readonly server: string;
+}
+
+/** What setting up the language servers of a checkout takes. */
+interface LanguageServerSetup {
+	/** Each language without its server, and the server that it needs, as a person reads it. */
+	readonly needs: readonly NeededServer[];
+	/** The brief, as the agent's prompt. */
+	readonly brief: string;
+}
+
+/**
+ * Whether an agent configures the server of a language.
+ * @param language The language, as the code check names it.
+ * @returns Whether the brief knows it.
+ */
+function isConfigurable(language: string): language is ConfigurableLanguage {
+	return Object.hasOwn(SERVERS, language);
+}
+
+/**
+ * What setting up the language servers of a checkout takes: the server each missing language
+ * needs, and the brief for the agent that sets them up.
+ * @param missing The languages that lack a server, as the code check names them; a language
+ * whose server no agent configures is left out. Without any, the agent finds them itself.
+ * @returns The servers they need, and the brief.
+ */
+function languageServerSetup(missing?: readonly string[]): LanguageServerSetup {
+	const known = missing?.filter(isConfigurable);
+	const needs = (known ?? []).map((language) => ({ language, server: SERVERS[language].server }));
+	return { needs, brief: briefOf(known?.length === 0 ? undefined : known) };
+}
+
 /**
  * The brief for an agent that sets up the language servers of a checkout.
  * @param missing The languages that lack a server. Without them, the agent finds them itself.
  * @returns The brief, as the agent's prompt.
  */
-function languageServerSetupBrief(missing?: readonly ConfigurableLanguage[]): string {
+function briefOf(missing?: readonly ConfigurableLanguage[]): string {
 	const find =
 		missing === undefined
 			? [
@@ -72,4 +108,4 @@ function languageServerSetupBrief(missing?: readonly ConfigurableLanguage[]): st
 	].join("\n");
 }
 
-export { languageServerSetupBrief };
+export { languageServerSetup };
