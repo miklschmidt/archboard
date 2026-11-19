@@ -124,7 +124,8 @@ so agents in an implementation loop added exported constants and nothing failed.
   which the archboard skill states.
 - **The measured grounds need a reading the counts can stand on.** Every name
   the module exposes is in a language whose adapter names each export's kind,
-  and every file of such a language gave its count of logic. Otherwise the
+  and every file of such a language parsed whole and gave its count of logic,
+  since logic in code that did not parse goes uncounted. Otherwise the
   module gets neither `INTERFACE_WIDE` nor the measured ground of
   `MODULE_SHALLOW`, and an `external` module gets no verdict at all.
 - **No exemption for values a language forces to be constants.** The archboard

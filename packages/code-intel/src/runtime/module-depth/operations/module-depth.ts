@@ -42,8 +42,8 @@
 // `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its public
 // methods. Types are no verdict's concern, so an exported union or enum keeps
 // the compiler's exhaustive checks. The other grounds read the counts, and only
-// where every exported name is in a judged language and every file of one gave
-// its count of logic.
+// where every exported name is in a judged language and every file of one
+// parsed whole and gave its count of logic.
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
@@ -423,7 +423,7 @@ function memberOfFile(symbol: string, symbols: ReadonlySet<string>): boolean {
  * The pieces of logic in the module's files of a judged language: what each
  * file's adapter counts, and each value it keeps hidden at module level.
  * @param reading The module.
- * @returns The count, and whether every such file gave its count.
+ * @returns The count, and whether every such file parsed whole and gave its count.
  */
 async function logicOf(
 	reading: DepthReading,
@@ -434,7 +434,7 @@ async function logicOf(
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await judgedFile(reading, file);
 		if (read === undefined) continue;
-		if (read.logic === undefined) complete = false;
+		if (read.logic === undefined || read.unparsed.length > 0) complete = false;
 		logic += (read.logic ?? 0) + hiddenValues(read.definitions);
 	}
 	return { logic, complete };

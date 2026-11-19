@@ -199,7 +199,7 @@ Neither module finding names a fix. Reason one out from three principles:
 - Deep module: a module hides much logic behind few names. When callers put the module's pieces together, that assembly is the module's own logic: move it in, and the pieces become private. When nothing is left to hide, the module is a layer its callers do not need.
 - Test at the seams: the tests call the interface that callers use, not the pieces behind it. A seam that tests reach through private names is in the wrong place. When the interface narrows, the tests of the moved assembly move with it.
 
-The counts make a module finding only when every name the module exposes is in a language whose exports the check judges.
+The counts make a module finding only when every name the module exposes is in a language whose exports the check judges, and each file in such a language parsed whole.
 
 Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, because its remedy removes the name.
 
