@@ -221,14 +221,14 @@ function socketCheckout(checkouts: VoiceAgentOptions["checkouts"], named: string
  */
 export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 	const { context, voice, tools, browserLeaseLedger, ...extensions } = options.extensions ?? {};
-	const process = codexProcess(options.codex);
-	const storage = options.storage;
 	const workbench = createCodexWorkbench({
 		storage: {
-			rootDirectory: storage.directory,
-			...(storage.ownerDirectory === undefined ? {} : { ownerDirectory: storage.ownerDirectory }),
+			rootDirectory: options.storage.directory,
+			...(options.storage.ownerDirectory === undefined
+				? {}
+				: { ownerDirectory: options.storage.ownerDirectory }),
 		},
-		process,
+		process: codexProcess(options.codex),
 		host: {
 			instructions: threadProfiles(options, tools),
 			allowedCheckouts: options.checkouts,

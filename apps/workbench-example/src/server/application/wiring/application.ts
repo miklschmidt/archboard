@@ -89,13 +89,12 @@ export async function startExample(
 	signal: AbortSignal,
 ) {
 	requireAssets(options.browserDirectory);
-	const codex =
-		options.codex === undefined
-			? {}
-			: { executablePath: resolveCodexExecutable({ executablePath: options.codex }) };
+	const executablePath = resolveCodexExecutable(
+		options.codex === undefined ? {} : { executablePath: options.codex },
+	);
 	const agent = createVoiceAgent({
 		storage: { directory: options.state },
-		codex,
+		codex: { executablePath },
 		checkouts: [options.checkout],
 		identity: { serviceName: "workbench-example", threadSource: "workbench-example" },
 		instructions: {
