@@ -177,7 +177,6 @@ function toolResponseFor(envelope: DynamicToolEnvelope, success: boolean): ToolR
 
 export {
 	type DynamicToolRefusalReason,
-	type DynamicToolEnvelope,
 	type DynamicToolValue,
 	type ToolResponse,
 	OpaqueIdSchema,

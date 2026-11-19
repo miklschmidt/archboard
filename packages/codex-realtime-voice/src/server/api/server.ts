@@ -1,5 +1,4 @@
 export { createVoiceAgent } from "#server/agent/services/voice-agent.ts";
-export { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 export type {
 	VoiceAgent,
 	VoiceAgentBrowserPort,
