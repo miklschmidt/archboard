@@ -325,6 +325,28 @@ describe("Codex app-server transport adversarial public contract", () => {
 		}
 	});
 
+	test("refuses a malformed request on a full queue for its params, minting nothing", async () => {
+		const counted = makeMintCountingIdentity();
+		const { child, transport, close } = createHarness(undefined, counted.identity);
+		try {
+			child.stdin.blockNext = true;
+			const pending = Array.from(
+				{ length: CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests },
+				() => transport.request("turn/steer", {}).catch((error: unknown) => error),
+			);
+			const minted = counted.minted();
+			const refused = await captureRejection(transport.request("turn/steer", "not an object"));
+			expect(refused).toBeInstanceOf(CodexTransportUsageError);
+			expect((refused as Error).message).toContain("Codex request params must be a JSON object");
+			expect(counted.minted()).toBe(minted);
+			child.stdin.release();
+			await transport.shutdown();
+			await Promise.all(pending);
+		} finally {
+			await close();
+		}
+	});
+
 	test("checks the pending-request cap before minting another wire id", async () => {
 		const counted = makeMintCountingIdentity();
 		const { child, transport, close } = createHarness(undefined, counted.identity);

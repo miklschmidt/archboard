@@ -101,13 +101,13 @@ describe("decodeFrameBody decodes what a frame carries", () => {
  * @returns The encoder's answer.
  */
 function request(method: string, params: unknown): unknown {
-	return encodeFrame({ kind: "request", id: 1, method, params }, 1024);
+	return encodeFrame({ kind: "request", allocateId: () => 1, method, params }, 1024);
 }
 
 describe("encodeFrame writes one line within its bound", () => {
 	test("writes a request with the key of its id, omitting params for a method that takes none", () => {
 		const encoded = encodeFrame(
-			{ kind: "request", id: "r1", method: "account/logout", params: undefined },
+			{ kind: "request", allocateId: () => "r1", method: "account/logout", params: undefined },
 			1024,
 		);
 		expect(encoded).toEqual({

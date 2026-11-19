@@ -106,10 +106,14 @@ export type ResponseBody<Method extends ResponseMethod> =
 	| { readonly outcome: "result"; readonly result: ResponsePayloads[Method] }
 	| { readonly outcome: "error"; readonly error: DecodedJsonRpcError["error"] };
 
-/** A request the client sends; the id is the request's serialised JSON-RPC id. */
+/** A request the client sends. */
 export interface OutboundRequest {
 	readonly kind: "request";
-	readonly id: WireId;
+	/**
+	 * Allocates the request's serialised JSON-RPC id, once its method and params are accepted.
+	 * The caller may throw here to refuse the request before any id exists.
+	 */
+	readonly allocateId: () => WireId;
 	readonly method: string;
 	readonly params: unknown;
 }
@@ -372,19 +376,22 @@ function requestRefusal(method: string, params: unknown): FrameRefusal | undefin
 	return isRecord(params) ? undefined : "params-not-object";
 }
 
-/** A frame's JSON value, or the refusal of its method or params. */
-type FrameValue = { readonly value: unknown } | FrameRefusal;
+/** A frame's JSON value and its id, or the refusal of its method or params. */
+type FrameValue = { readonly value: unknown; readonly id?: WireId } | FrameRefusal;
 
 /**
- * The JSON value a request is written as, without params for a method that takes none.
+ * The JSON value a request is written as, without params for a method that takes none. Its id
+ * is allocated only once the method and params are accepted.
  * @param frame The request.
- * @returns The value, or the refusal of its method or params.
+ * @returns The value and its id, or the refusal of its method or params.
  */
 function requestValue(frame: OutboundRequest): FrameValue {
 	const refused = requestRefusal(frame.method, frame.params);
 	if (refused) return refused;
-	const { id, method, params } = frame;
+	const { method, params } = frame;
+	const id = frame.allocateId();
 	return {
+		id,
 		value: isClientRequestMethodWithoutParams(method) ? { id, method } : { id, method, params },
 	};
 }
@@ -406,9 +413,9 @@ function notificationValue(frame: OutboundNotification): FrameValue {
  * @returns The value.
  */
 function answerValue(frame: OutboundAnswer): FrameValue {
-	if (frame.kind === "reply") return { value: { id: frame.id, ...frame.outcome } };
+	if (frame.kind === "reply") return { id: frame.id, value: { id: frame.id, ...frame.outcome } };
 	const error = { code: jsonRpcErrorCode(frame.code), message: frame.message };
-	return { value: { id: frame.id, error } };
+	return { id: frame.id, value: { id: frame.id, error } };
 }
 
 /**
@@ -441,7 +448,8 @@ export function encodeFrame(
 ): EncodedFrame<EncodingRefusal, { readonly key: string }>;
 /**
  * Encodes a frame as one newline-terminated JSON line within a byte bound, refusing a method
- * or params the bound protocol does not accept.
+ * or params the bound protocol does not accept. A request's id is allocated only after its
+ * method and params are accepted, and whatever the allocator throws, this throws.
  * @param frame The frame.
  * @param maximumBytes The largest payload allowed, before the newline.
  * @returns The line, with the table key of its id, or the refusal.
@@ -463,6 +471,6 @@ export function encodeFrame(
 	return {
 		ok: true,
 		line: Buffer.from(`${encoded}\n`, "utf8"),
-		...(frame.kind === "notification" ? {} : { key: wireKey(frame.id) }),
+		...(value.id === undefined ? {} : { key: wireKey(value.id) }),
 	};
 }

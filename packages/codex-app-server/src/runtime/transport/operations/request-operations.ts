@@ -1,4 +1,9 @@
-import { encodeFrame, type EncodingRefusal, type FrameRefusal } from "#runtime/protocol/frames.ts";
+import {
+	encodeFrame,
+	type EncodedFrame,
+	type EncodingRefusal,
+	type FrameRefusal,
+} from "#runtime/protocol/frames.ts";
 import type {
 	ClientNotificationMethod,
 	ClientRequestMethodWithoutParams,
@@ -60,6 +65,16 @@ interface TrackedRequestInput<Method extends ResponseMethod> {
 	readonly requestOptions: CodexTransportRequestOptions;
 	readonly resolve: (value: CodexTransportResponse<Method>) => void;
 	readonly reject: (reason: unknown) => void;
+}
+
+/**
+ * The correlation of the id the encoder allocated, which it does before it writes any line.
+ * @param allocated The correlation, once the allocator ran.
+ * @returns The correlation.
+ */
+function allocatedId(allocated: WireRequestCorrelation | undefined): WireRequestCorrelation {
+	if (allocated === undefined) throw new TypeError("an encoded Codex request has an id");
+	return allocated;
 }
 
 /**
@@ -263,22 +278,29 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 		requestOptions: CodexTransportRequestOptions = {},
 	) => {
 		if (options.state() !== "open") return Promise.reject(closedError());
-		const backpressure = capacityRefusal();
-		if (backpressure) return Promise.reject(backpressure);
 		const identity = options.identity;
-		const wireId = identity.issuer.mintJsonRpcRequestId();
-		const encoded = encodeFrame(
-			{
-				kind: "request",
-				id: identity.decoder.serializeJsonRpcRequestId(wireId),
-				method,
-				params,
-			},
-			CODEX_APP_SERVER_CAPACITY.frameBytes,
-		);
-		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
-			requestId: wireId,
-		});
+		let allocated: WireRequestCorrelation | undefined;
+		/**
+		 * Mints the request's id once the protocol accepted its method and params, refusing
+		 * first when the pending-request cap is reached, so a refused request mints nothing.
+		 * @returns The serialised id.
+		 */
+		const allocateId = (): string | number => {
+			const backpressure = capacityRefusal();
+			if (backpressure) throw backpressure;
+			const requestId = identity.issuer.mintJsonRpcRequestId();
+			allocated = identity.decoder.createWireRequestCorrelation({ requestId });
+			return identity.decoder.serializeJsonRpcRequestId(requestId);
+		};
+		let encoded: EncodedFrame<FrameRefusal, { readonly key: string }>;
+		try {
+			encoded = encodeFrame(
+				{ kind: "request", allocateId, method, params },
+				CODEX_APP_SERVER_CAPACITY.frameBytes,
+			);
+		} catch (refusal) {
+			return Promise.reject(refusal);
+		}
 		if (!encoded.ok) {
 			const reason = encoded.reason;
 			if (!isEncodingRefusal(reason)) return Promise.reject(usageRefusal(method, reason));
@@ -287,11 +309,21 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 				`request ${method}`,
 				CODEX_APP_SERVER_CAPACITY.frameBytes,
 			);
-			return Promise.reject(undeliverableRequest(method, correlation, cause));
+			return Promise.reject(undeliverableRequest(method, allocatedId(allocated), cause));
 		}
+		const correlation = allocatedId(allocated);
 		const { line: frame, key } = encoded;
 		return new Promise<CodexTransportResponse<Method>>((resolve, reject) => {
-			trackRequest({ method, wireId, key, correlation, frame, requestOptions, resolve, reject });
+			trackRequest({
+				method,
+				wireId: correlation.requestId,
+				key,
+				correlation,
+				frame,
+				requestOptions,
+				resolve,
+				reject,
+			});
 		});
 	};
 
