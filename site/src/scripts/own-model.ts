@@ -11,7 +11,6 @@ import { durationMs } from "@archboard/timing";
 import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import own from "../paintings/own.json";
 import paintingUrl from "../paintings/own.painting.json?url";
-import { PHASES } from "./painter-phases";
 import { whileVisible } from "./reveal";
 
 /**
@@ -34,10 +33,7 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		const { painter, canvas } = started;
 		const enters = () => started.kind !== "cpu" && !motion.matches;
 		const flows = () => started.kind === "gpu" && !motion.matches;
-		painter.setPhases(PHASES);
-		painter.setLongestStep(durationMs("picture.longestStep"));
-		painter.setFarLine(0, 0);
-		painter.setTrafficShown(flows());
+		painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 }, trafficShown: flows() }));
 
 		// Frames run while the painter says the next moment looks different, and while the picture
 		// is on screen: the painter's clock waits for the frames that show it.
@@ -54,7 +50,8 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		};
 		const loop = (now: number) => {
 			try {
-				frame = visible && !stopped && painter.frame(now) ? requestAnimationFrame(loop) : 0;
+				const moves = visible && !stopped && painter.frame(now) !== "still";
+				frame = moves ? requestAnimationFrame(loop) : 0;
 			} catch (cause) {
 				fallback(cause);
 			}
@@ -93,9 +90,12 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 			if (shown || (enters() && box.bottom > window.innerHeight)) return;
 			shown = true;
 			window.removeEventListener("scroll", check);
-			if (enters())
-				painter.enter(painting, "null", durationMs("picture.entry"), 0, 0, performance.now());
-			else painter.show(painting);
+			const ms = durationMs("picture.entry");
+			const at = performance.now();
+			const arrival = enters()
+				? { kind: "entered", heading: null, ms, moved: [0, 0], at }
+				: { kind: "cut" };
+			painter.arrive(painting, JSON.stringify(arrival));
 			wake();
 		};
 
@@ -107,9 +107,9 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		window.addEventListener("scroll", check, { passive: true });
 		motion.addEventListener("change", () => {
 			if (stopped) return;
-			painter.setTrafficShown(flows());
+			painter.present(JSON.stringify({ trafficShown: flows() }));
 			// A picture on its way in stands whole once motion is reduced.
-			if (shown && motion.matches) painter.show(painting);
+			if (shown && motion.matches) painter.arrive(painting, JSON.stringify({ kind: "cut" }));
 			check();
 			wake();
 		});

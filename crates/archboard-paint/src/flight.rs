@@ -15,7 +15,7 @@ use crate::between::{
 use crate::definitions::Definitions;
 use crate::draw::Picture;
 use crate::passage::{Axis, Plane, first_step, place_at};
-use crate::presentation::{Camera, Presentation};
+use crate::presentation::{Camera, Seen};
 use crate::timing::{EASE_IN_OUT, EASE_OUT, EMPHASISED};
 
 /// How far through a stretch of time a moment is, from 0 to 1.
@@ -302,7 +302,7 @@ pub(crate) struct Ghost {
     /// goes on along it as it leaves, so a change of mind has no stop in it.
     pub(crate) held: Option<(Axis, f64, Stretch)>,
     /// How the picture looked when it was last seen: it leaves in its own light.
-    pub(crate) look: Presentation,
+    pub(crate) look: Seen,
 }
 
 impl Ghost {

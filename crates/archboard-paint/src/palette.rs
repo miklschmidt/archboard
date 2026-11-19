@@ -12,6 +12,7 @@ use std::mem::discriminant;
 use archboard_scene::names::word;
 use archboard_scene::scene::{Colour, Stop};
 use peniko::Color;
+use serde::Deserialize;
 
 /// Every token of both themes, as the shell and the SVG read them.
 const THEME_CSS: &str = include_str!("../../../packages/renderer/assets/theme.css");
@@ -32,7 +33,8 @@ struct Oklch {
 }
 
 /// A theme: light, or dark.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum Theme {
     /// The chalk ground.
     Light,

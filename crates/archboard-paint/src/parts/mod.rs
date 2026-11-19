@@ -12,7 +12,7 @@ use std::rc::Rc;
 use kurbo::{Affine, BezPath, Rect, Shape as _, Stroke, StrokeCtx, StrokeOpts};
 use peniko::Color;
 
-use crate::canvas::{Canvas, Ink, Lens, PartKey};
+use crate::canvas::{Canvas, Ink, Layer, Lens, PartKey};
 
 /// How closely Vello's strip canvases expand a stroke into its outline, in the
 /// stroke's own units, while a unit of it is at most a pixel
@@ -98,53 +98,60 @@ impl Drop for Part {
     }
 }
 
-/// A canvas that keeps each part a walk draws, so that a later frame draws it
-/// again from what it kept. It draws on another canvas, and it leaves out what
-/// lands outside that canvas.
-#[derive(Debug)]
-pub struct Keeper<C> {
-    canvas: C,
+/// The parts a stage keeps for its strip canvases, and the state of the walk
+/// that draws on one: what a frame on a strip canvas leaves for the next.
+#[derive(Debug, Default)]
+pub(crate) struct Parts {
     view: Rect,
     transform: Affine,
-    parts: HashMap<PartKey, Rc<Part>>,
+    by_key: HashMap<PartKey, Rc<Part>>,
     /// The parts being drawn, the innermost last.
     recording: Vec<Vec<Command>>,
     retained: Rc<Cell<usize>>,
 }
 
-impl<C: Canvas> Keeper<C> {
+impl Parts {
     /// Keep parts for a canvas of a size in pixels.
-    pub fn new(canvas: C, size: (f64, f64)) -> Keeper<C> {
-        Keeper {
-            canvas,
+    pub(crate) fn new(size: (f64, f64)) -> Parts {
+        Parts {
             view: view_of(size),
             transform: Affine::IDENTITY,
-            parts: HashMap::new(),
+            by_key: HashMap::new(),
             recording: Vec::new(),
             retained: Rc::default(),
         }
     }
 
-    /// The canvas it draws on.
-    pub fn canvas(&mut self) -> &mut C {
-        &mut self.canvas
-    }
-
-    /// Draw on another canvas of a size in pixels. The parts stay, because
+    /// Draw on a canvas of another size in pixels. The parts stay, because
     /// they hold no pixels.
-    pub fn replace(&mut self, canvas: C, size: (f64, f64)) {
-        self.canvas = canvas;
+    pub(crate) fn resize(&mut self, size: (f64, f64)) {
         self.view = view_of(size);
     }
 
+    /// A canvas that keeps on these parts what it draws on another.
+    pub(crate) fn over<'a, C: Canvas>(&'a mut self, canvas: &'a mut C) -> Keeper<'a, C> {
+        Keeper { canvas, kept: self }
+    }
+}
+
+/// A canvas that keeps each part a walk draws, so that a later frame draws it
+/// again from what it kept. It draws on another canvas, and it leaves out what
+/// lands outside that canvas.
+#[derive(Debug)]
+pub(crate) struct Keeper<'a, C> {
+    canvas: &'a mut C,
+    kept: &'a mut Parts,
+}
+
+impl<C: Canvas> Keeper<'_, C> {
     /// Draw a kept part under a transform, into the part being drawn when
     /// there is one.
     fn draw_part(&mut self, part: Rc<Part>, transform: Affine) {
-        if let Some(commands) = self.recording.last_mut() {
+        if let Some(commands) = self.kept.recording.last_mut() {
             commands.push(Command::Part { part, transform });
         } else {
-            replay(&mut self.canvas, self.view, &part, transform);
-            self.canvas.set_transform(self.transform);
+            replay(self.canvas, self.kept.view, &part, transform);
+            self.canvas.set_transform(self.kept.transform);
         }
     }
 }
@@ -215,27 +222,30 @@ fn replay<C: Canvas>(canvas: &mut C, view: Rect, part: &Part, at: Affine) {
                 opacity,
             } => {
                 canvas.set_transform(at * *transform);
-                canvas.push(clip.as_ref().map(|(path, rule)| (path, *rule)), *opacity);
+                canvas.push(Layer::Over {
+                    clip: clip.as_ref().map(|(path, rule)| (path, *rule)),
+                    opacity: *opacity,
+                });
             }
-            Command::Cut => canvas.push_cut(),
-            Command::Keep => canvas.push_keep(),
+            Command::Cut => canvas.push(Layer::Cut),
+            Command::Keep => canvas.push(Layer::Keep),
             Command::Pop => canvas.pop(),
             Command::Part { part, transform } => replay(canvas, view, part, at * *transform),
         }
     }
 }
 
-impl<C: Canvas> Canvas for Keeper<C> {
+impl<C: Canvas> Canvas for Keeper<'_, C> {
     fn set_transform(&mut self, transform: Affine) {
-        self.transform = transform;
-        if self.recording.is_empty() {
+        self.kept.transform = transform;
+        if self.kept.recording.is_empty() {
             self.canvas.set_transform(transform);
         }
     }
 
     fn fill(&mut self, path: &BezPath, ink: &Ink, even_odd: bool) {
-        let transform = self.transform;
-        match self.recording.last_mut() {
+        let transform = self.kept.transform;
+        match self.kept.recording.last_mut() {
             Some(commands) => commands.push(Command::Fill {
                 transform,
                 path: path.clone(),
@@ -244,7 +254,7 @@ impl<C: Canvas> Canvas for Keeper<C> {
                 bounds: path.bounding_box(),
             }),
             None => {
-                if lands(self.view, transform, path.control_box()) {
+                if lands(self.kept.view, transform, path.control_box()) {
                     self.canvas.fill(path, ink, even_odd);
                 }
             }
@@ -252,8 +262,8 @@ impl<C: Canvas> Canvas for Keeper<C> {
     }
 
     fn stroke(&mut self, path: &BezPath, stroke: &Stroke, ink: &Ink) {
-        let transform = self.transform;
-        match self.recording.last_mut() {
+        let transform = self.kept.transform;
+        match self.kept.recording.last_mut() {
             Some(commands) => {
                 let mut expanded = StrokeCtx::default();
                 kurbo::stroke_with(
@@ -274,48 +284,38 @@ impl<C: Canvas> Canvas for Keeper<C> {
                 });
             }
             None => {
-                if lands(self.view, transform, stroke_box(path, stroke)) {
+                if lands(self.kept.view, transform, stroke_box(path, stroke)) {
                     self.canvas.stroke(path, stroke, ink);
                 }
             }
         }
     }
 
-    fn push(&mut self, clip: Option<(&BezPath, bool)>, opacity: f32) {
-        let transform = self.transform;
-        match self.recording.last_mut() {
-            Some(commands) => commands.push(Command::Push {
-                transform,
-                clip: clip.map(|(path, rule)| (path.clone(), rule)),
-                opacity,
+    fn push(&mut self, layer: Layer<'_>) {
+        let transform = self.kept.transform;
+        match self.kept.recording.last_mut() {
+            Some(commands) => commands.push(match layer {
+                Layer::Over { clip, opacity } => Command::Push {
+                    transform,
+                    clip: clip.map(|(path, rule)| (path.clone(), rule)),
+                    opacity,
+                },
+                Layer::Cut => Command::Cut,
+                Layer::Keep => Command::Keep,
             }),
-            None => self.canvas.push(clip, opacity),
-        }
-    }
-
-    fn push_cut(&mut self) {
-        match self.recording.last_mut() {
-            Some(commands) => commands.push(Command::Cut),
-            None => self.canvas.push_cut(),
-        }
-    }
-
-    fn push_keep(&mut self) {
-        match self.recording.last_mut() {
-            Some(commands) => commands.push(Command::Keep),
-            None => self.canvas.push_keep(),
+            None => self.canvas.push(layer),
         }
     }
 
     fn pop(&mut self) {
-        match self.recording.last_mut() {
+        match self.kept.recording.last_mut() {
             Some(commands) => commands.push(Command::Pop),
             None => self.canvas.pop(),
         }
     }
 
     fn again(&mut self, key: PartKey, transform: Affine) -> bool {
-        let Some(part) = self.parts.get(&key).map(Rc::clone) else {
+        let Some(part) = self.kept.by_key.get(&key).map(Rc::clone) else {
             return false;
         };
         self.draw_part(part, transform);
@@ -323,24 +323,25 @@ impl<C: Canvas> Canvas for Keeper<C> {
     }
 
     fn keep(&mut self) -> bool {
-        self.recording.push(Vec::new());
+        self.kept.recording.push(Vec::new());
         true
     }
 
     fn kept(&mut self, key: PartKey, transform: Affine) {
-        let commands = self.recording.pop().unwrap_or_default();
+        let commands = self.kept.recording.pop().unwrap_or_default();
         let elements = commands.iter().map(Command::elements).sum::<usize>();
-        self.retained.set(self.retained.get() + elements);
+        let retained = Rc::clone(&self.kept.retained);
+        retained.set(retained.get() + elements);
         let part = Rc::new(Part {
             commands,
             elements,
-            retained: Rc::clone(&self.retained),
+            retained: Rc::clone(&retained),
         });
-        if self.retained.get() > MOST_KEPT {
-            self.parts.clear();
+        if retained.get() > MOST_KEPT {
+            self.kept.by_key.clear();
         }
-        if self.retained.get() <= MOST_KEPT {
-            self.parts.insert(key, Rc::clone(&part));
+        if retained.get() <= MOST_KEPT {
+            self.kept.by_key.insert(key, Rc::clone(&part));
         }
         self.draw_part(part, transform);
     }

@@ -4,8 +4,22 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, mock, test } from "bun:test";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 
-/** Every call the painter took, by name. */
+/** Every call the painter took, by name, and an arrival or a departure with its kind. */
 const taken: string[] = [];
+
+/**
+ * A call as the tests name it: an arrival or a departure says its kind, as in "arrive cut".
+ * @param call The method name.
+ * @param args What the call was given.
+ * @returns The name.
+ */
+function named(call: string, args: readonly unknown[]): string {
+	const [first, second] = args;
+	const said = call === "arrive" ? second : call === "depart" ? first : undefined;
+	if (typeof said !== "string") return call;
+	const { kind } = JSON.parse(said) as { readonly kind: string };
+	return `${call} ${kind}`;
+}
 
 /** How a painter's start ends. */
 type Outcome = "cpu" | "webgl" | "gpu" | "failed";
@@ -23,19 +37,20 @@ const painter = new Proxy(
 	{},
 	{
 		/**
-		 * Record the call or fail it once.
+		 * Record the call or fail it once. A frame says nothing moves after it.
 		 * @param _painter The painter.
 		 * @param call The method name.
 		 * @returns The method.
 		 */
 		get(_painter, call) {
-			return (): boolean => {
-				taken.push(String(call));
-				if (starting.failCall === call) {
+			return (...args: unknown[]): string | undefined => {
+				const name = named(String(call), args);
+				taken.push(name);
+				if (starting.failCall === name) {
 					delete starting.failCall;
 					throw new Error("painter failed");
 				}
-				return false;
+				return call === "frame" ? "still" : undefined;
 			};
 		},
 	},
@@ -166,8 +181,8 @@ test("a painter that starts in time brings the first picture in before hiding SV
 	const { surface } = await surfaceWithAPicture();
 	expect(surface.hasAttribute("data-ink-waits")).toBe(true);
 	await start("cpu");
-	expect(taken).toContain("enter");
-	expect(taken).not.toContain("show");
+	expect(taken).toContain("arrive entered");
+	expect(taken).not.toContain("arrive cut");
 	expect(surface.getAttribute("data-painter")).toBe("cpu");
 	expect(surface.hasAttribute("data-ink-waits")).toBe(false);
 	expect(surface.querySelector("use")).toBeNull();
@@ -179,8 +194,8 @@ test("a late painter takes the picture as it stands", async () => {
 	clock.advanceTo(400);
 	expect(surface.hasAttribute("data-ink-waits")).toBe(false);
 	await start("cpu");
-	expect(taken).toContain("show");
-	expect(taken).not.toContain("enter");
+	expect(taken).toContain("arrive cut");
+	expect(taken).not.toContain("arrive entered");
 });
 
 test("a failed start leaves complete SVG ink and an inspectable reason", async () => {
@@ -192,7 +207,7 @@ test("a failed start leaves complete SVG ink and an inspectable reason", async (
 	expect(surface.innerHTML).toBe(original);
 });
 
-test.each(["frame", "resize", "setFarLine"])(
+test.each(["frame", "resize", "present"])(
 	"%s failure restores complete ink and keeps the semantic groups",
 	async (failedCall) => {
 		const { surface, host, original } = await surfaceWithAPicture();
@@ -300,8 +315,8 @@ test("a cut during startup cancels the pending entrance", async () => {
 	const { surface } = await surfaceWithAPicture();
 	stageOf(surface)?.show("next");
 	await start("cpu");
-	expect(taken).toContain("show");
-	expect(taken).not.toContain("enter");
+	expect(taken).toContain("arrive cut");
+	expect(taken).not.toContain("arrive entered");
 });
 
 test("clearing a picture hides stale canvas ink at once", async () => {
@@ -334,7 +349,7 @@ test("disposal removes a replacement canvas before the stage accepts its painter
 
 test("failure during the initial briefing frees the painter and leaves SVG ink", async () => {
 	const { surface, original } = await surfaceWithAPicture();
-	starting.failCall = "enter";
+	starting.failCall = "arrive entered";
 	await start("cpu");
 	expect(taken.filter((call) => call === "free")).toHaveLength(1);
 	expect(surface.hasAttribute("data-ink-waits")).toBe(false);

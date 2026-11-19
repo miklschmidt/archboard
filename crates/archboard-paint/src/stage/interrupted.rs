@@ -1,11 +1,10 @@
 //! A new reading starts from what the CPU painter shows at each phase.
 
-use super::Stage;
-use crate::between::{Heading, PHASES};
+use super::{Arrival, Departure, Stage, Surface};
+use crate::between::Heading;
 use crate::cpu::CpuCanvas;
-use crate::palette::Theme;
 use crate::passage::Side;
-use crate::testing::{filled, painting, stroke, subject_group, traced};
+use crate::testing::{filled, painting, showing, stage, stroke, subject_group, traced};
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Item, PathStep, Purpose, Role, Subject, SubjectKind, Token};
 
@@ -57,65 +56,81 @@ fn picture() -> Vec<Item> {
     ]
 }
 
+/// The canvas, in pixels.
+const SIZE: (f64, f64) = (200.0, 100.0);
+
 fn raster(stage: &mut Stage, now: f64) -> Vec<u8> {
     let mut canvas = CpuCanvas::new(200, 100);
-    stage.draw(&mut canvas, now);
-    canvas.finish().to_vec()
+    stage.draw(Surface::Direct(&mut canvas), now);
+    canvas.pixels().to_vec()
 }
+
+/// An entrance with no heading over 100 ms, from a moment.
+fn entered(at: f64) -> Arrival {
+    Arrival::Entered {
+        heading: None,
+        ms: 100.0,
+        moved: (0.0, 0.0),
+        at,
+    }
+}
+
+/// A carry over 100 ms with nothing shared moved.
+const CARRIED: Arrival = Arrival::Carried {
+    shift: (0.0, 0.0),
+    ms: 100.0,
+};
 
 #[test]
 fn replacing_an_entrance_keeps_the_visible_frame_including_late_sparks() {
     for now in [10.0, 40.0, 100.0, 150.0] {
-        let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
-        stage.set_phases(PHASES);
-        stage.enter(painting(picture()), None, 100.0, (0.0, 0.0), 0.0);
+        let mut stage = stage(SIZE);
+        stage.arrive(painting(picture()), entered(0.0));
         raster(&mut stage, 0.0);
         let before = raster(&mut stage, now);
-        stage.enter(
-            painting(vec![card("old", 80.0)]),
-            None,
-            100.0,
-            (0.0, 0.0),
-            now,
-        );
+        stage.arrive(painting(vec![card("old", 80.0)]), entered(now));
         assert_eq!(raster(&mut stage, now), before, "progress {}", now / 100.0);
     }
 }
 
 #[test]
 fn an_edit_of_an_arriving_picture_keeps_both_planes_on_the_passage() {
-    let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
-    stage.set_phases(PHASES);
-    stage.show(painting(vec![card("left", 80.0)]));
-    let heading = Heading::Across {
-        side: Some(Side::Right),
+    let mut stage = showing(SIZE, vec![card("left", 80.0)]);
+    let beside = Arrival::Entered {
+        heading: Some(Heading::Across {
+            side: Some(Side::Right),
+        }),
+        ms: 100.0,
+        moved: (0.0, 0.0),
+        at: 0.0,
     };
-    stage.enter(
-        painting(vec![card("right", 80.0)]),
-        Some(heading),
-        100.0,
-        (0.0, 0.0),
-        0.0,
-    );
+    stage.arrive(painting(vec![card("right", 80.0)]), beside);
     raster(&mut stage, 0.0);
     let before = raster(&mut stage, 40.0);
-    stage.carry(painting(vec![card("right", 80.0)]), (0.0, 0.0), 100.0);
+    stage.arrive(painting(vec![card("right", 80.0)]), CARRIED);
     assert_eq!(raster(&mut stage, 40.0), before);
-    raster(&mut stage, 100.0);
-    assert!(stage.ghost.is_none());
+    let landed = raster(&mut stage, 100.0);
+    let mut alone = showing(SIZE, vec![card("right", 80.0)]);
+    assert_eq!(
+        landed,
+        raster(&mut alone, 100.0),
+        "nothing of the last is left"
+    );
 }
 
 #[test]
 fn a_departure_still_answers_while_sparks_run_after_the_cards_land() {
-    let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
-    stage.set_phases(PHASES);
-    stage.enter(painting(picture()), None, 100.0, (0.0, 0.0), 0.0);
+    let mut stage = stage(SIZE);
+    stage.arrive(painting(picture()), entered(0.0));
     raster(&mut stage, 0.0);
     let visible = raster(&mut stage, 110.0);
-    stage.leave(Heading::Across { side: None }, 20.0, 110.0);
+    stage.depart(Departure::Leaving {
+        heading: Heading::Across { side: None },
+        ms: 20.0,
+        at: 110.0,
+    });
     let gone = raster(&mut stage, 130.0);
-    let mut empty = Stage::new(Theme::Light, (200.0, 100.0));
-    empty.show(painting(Vec::new()));
+    let mut empty = showing(SIZE, Vec::new());
     assert_ne!(visible, gone);
     assert_eq!(gone, raster(&mut empty, 130.0));
 }
@@ -123,16 +138,15 @@ fn a_departure_still_answers_while_sparks_run_after_the_cards_land() {
 #[test]
 fn an_edit_during_an_entrance_keeps_the_visible_frame_including_late_sparks() {
     for now in [10.0, 40.0, 100.0, 150.0] {
-        let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
-        stage.set_phases(PHASES);
-        stage.enter(painting(picture()), None, 100.0, (0.0, 0.0), 0.0);
+        let mut stage = stage(SIZE);
+        stage.arrive(painting(picture()), entered(0.0));
         raster(&mut stage, 0.0);
         let before = raster(&mut stage, now);
-        stage.carry(painting(picture()), (0.0, 0.0), 100.0);
+        stage.arrive(painting(picture()), CARRIED);
         let after = raster(&mut stage, now);
         assert!(before == after, "progress {}", now / 100.0);
         let before = raster(&mut stage, now + 5.0);
-        stage.carry(painting(picture()), (0.0, 0.0), 100.0);
+        stage.arrive(painting(picture()), CARRIED);
         assert!(
             before == raster(&mut stage, now + 5.0),
             "second edit at {}",

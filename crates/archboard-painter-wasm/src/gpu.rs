@@ -8,7 +8,7 @@ use std::mem;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use archboard_paint::{Canvas, Ink, Lens, PartKey};
+use archboard_paint::{Canvas, Ink, Layer, Lens, PartKey};
 use futures_channel::oneshot;
 use js_sys::Function;
 use kurbo::{Affine, BezPath, Rect, Shape as _};
@@ -47,7 +47,7 @@ const LAYER_MARGIN: f64 = 2.0;
 const STROKE_REACH: f64 = 2.0;
 
 /// A layer that the canvas started.
-enum Layer {
+enum Opened {
     /// It went straight into the scene, with its clip.
     Clipped,
     /// It clips nothing, so it waits for what it holds. Vello gives a layer the
@@ -72,7 +72,7 @@ pub(crate) struct GpuCanvas {
     /// The bytes of path data in `parts`.
     kept: usize,
     /// The layers that are open, the innermost last.
-    layers: Vec<Layer>,
+    layers: Vec<Opened>,
     /// The boxes of the see-through layers and the parts being drawn, in their
     /// own space, the innermost last. None holds nothing yet.
     boxes: Vec<Option<Rect>>,
@@ -110,36 +110,39 @@ impl Canvas for GpuCanvas {
         }
     }
 
-    fn push(&mut self, clip: Option<(&BezPath, bool)>, opacity: f32) {
-        if let Some((path, even_odd)) = clip {
-            let rule = if even_odd {
-                Fill::EvenOdd
-            } else {
-                Fill::NonZero
-            };
-            self.scene
-                .push_layer(rule, Mix::Normal, opacity, self.transform, path);
-            self.layers.push(Layer::Clipped);
-        } else {
-            let held = self.spare.pop().unwrap_or_default();
-            let under = mem::replace(&mut self.scene, held);
-            self.layers.push(Layer::SeeThrough { under, opacity });
-            self.boxes.push(None);
+    fn push(&mut self, layer: Layer<'_>) {
+        match layer {
+            Layer::Over {
+                clip: Some((path, even_odd)),
+                opacity,
+            } => {
+                let rule = if even_odd {
+                    Fill::EvenOdd
+                } else {
+                    Fill::NonZero
+                };
+                self.scene
+                    .push_layer(rule, Mix::Normal, opacity, self.transform, path);
+                self.layers.push(Opened::Clipped);
+            }
+            Layer::Over {
+                clip: None,
+                opacity,
+            } => {
+                let held = self.spare.pop().unwrap_or_default();
+                let under = mem::replace(&mut self.scene, held);
+                self.layers.push(Opened::SeeThrough { under, opacity });
+                self.boxes.push(None);
+            }
+            Layer::Cut => self.composed(Compose::DestOut),
+            Layer::Keep => self.composed(Compose::DestIn),
         }
-    }
-
-    fn push_cut(&mut self) {
-        self.composed(Compose::DestOut);
-    }
-
-    fn push_keep(&mut self) {
-        self.composed(Compose::DestIn);
     }
 
     fn pop(&mut self) {
         match self.layers.pop() {
-            Some(Layer::SeeThrough { under, opacity }) => self.see_through(under, opacity),
-            Some(Layer::Clipped) | None => self.scene.pop_layer(),
+            Some(Opened::SeeThrough { under, opacity }) => self.see_through(under, opacity),
+            Some(Opened::Clipped) | None => self.scene.pop_layer(),
         }
     }
 
@@ -238,7 +241,7 @@ impl GpuCanvas {
             Affine::IDENTITY,
             &EVERYTHING.to_path(BOX_TOLERANCE),
         );
-        self.layers.push(Layer::Clipped);
+        self.layers.push(Opened::Clipped);
     }
 }
 
@@ -417,7 +420,10 @@ pub(crate) async fn warm(stopped: Function) -> Result<(), JsError> {
 fn first_frame(canvas: &mut GpuCanvas) {
     let square = Rect::new(8.0, 8.0, 56.0, 56.0).to_path(BOX_TOLERANCE);
     let ink = Ink::Solid(peniko::color::palette::css::WHITE);
-    canvas.push(Some((&square, false)), 0.5);
+    canvas.push(Layer::Over {
+        clip: Some((&square, false)),
+        opacity: 0.5,
+    });
     canvas.fill(&square, &ink, false);
     canvas.stroke(&square, &kurbo::Stroke::new(2.0), &ink);
     canvas.pop();

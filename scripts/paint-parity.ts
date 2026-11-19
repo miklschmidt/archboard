@@ -76,11 +76,11 @@ const PAGE_SCRIPT = `
 import init, { Painter } from "/painter.js";
 await init({ module_or_path: "/painter.wasm" });
 const started = await Painter.warm(() => {}).then(() => true, () => false);
-const gpu = started ? Painter.gpu(document.getElementById("gpu"), true) : null;
-const cpu = Painter.cpu(document.getElementById("cpu"), true);
+const gpu = started ? Painter.gpu(document.getElementById("gpu"), true, "{}") : null;
+const cpu = Painter.cpu(document.getElementById("cpu"), true, "{}");
 const webgl = (() => {
 	try {
-		return Painter.webgl(document.getElementById("webgl"), true);
+		return Painter.webgl(document.getElementById("webgl"), true, "{}");
 	} catch {
 		return null;
 	}
@@ -100,17 +100,19 @@ window.keepPainter = async (kind, file) => {
 	canvas.style.width = width + "px"; canvas.style.height = height + "px";
 	shown(canvas);
 	painter.resize(width, height);
-	painter.setTheme(theme === "dark");
+	painter.present(JSON.stringify({ theme: theme === "dark" ? "dark" : "light" }));
 	try {
-		painter.show(painting);
+		painter.arrive(painting, JSON.stringify({ kind: "cut" }));
 	} catch (error) {
 		return String(error);
 	}
 	painter.setCamera(0, 0, scale, 0, 0);
-	painter.setFarLine(far ? Number.POSITIVE_INFINITY : 0, 0);
-	painter.setTrafficShown(traffic);
-	if (traffic) painter.setPictureTime(1.5);
+	// JSON has no infinity: the largest number puts every camera past the far line.
+	const line = far ? Number.MAX_VALUE : 0;
+	painter.present(JSON.stringify({ farLine: { scale: line, ms: 0 }, trafficShown: traffic }));
 	painter.frame(0);
+	// The SVG stands its traffic at 1.5 s, and the painter's traffic runs on the frames' clock.
+	if (traffic) painter.frame(1500);
 	const copy = new OffscreenCanvas(width, height);
 	copy.getContext("2d").drawImage(canvas, 0, 0);
 	await fetch(file, { method: "PUT", body: await copy.convertToBlob({ type: "image/png" }) });

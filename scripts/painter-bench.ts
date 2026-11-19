@@ -92,13 +92,12 @@ try {
 	let painter;
 	if (kind === "gpu") {
 		await Painter.warm(() => {});
-		painter = Painter.gpu(canvas, fixture.dark);
-	} else if (kind === "webgl") painter = Painter.webgl(canvas, fixture.dark);
-	else painter = Painter.cpu(canvas, fixture.dark);
+		painter = Painter.gpu(canvas, fixture.dark, "{}");
+	} else if (kind === "webgl") painter = Painter.webgl(canvas, fixture.dark, "{}");
+	else painter = Painter.cpu(canvas, fixture.dark, "{}");
 	const startMs = performance.now() - started;
-	painter.show(fixture.painting);
-	painter.setFarLine(0, 0);
-	painter.setTrafficShown(false);
+	painter.arrive(fixture.painting, JSON.stringify({ kind: "cut" }));
+	painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 }, trafficShown: false }));
 	const fit = Math.min(width / fixture.width, height / fixture.height);
 	const camera = (index) => {
 		const scale = fit * (1 + 0.6 * (0.5 - 0.5 * Math.cos((2 * Math.PI * index) / 240)));
