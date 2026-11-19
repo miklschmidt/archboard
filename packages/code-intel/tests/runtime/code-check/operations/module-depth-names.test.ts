@@ -330,6 +330,20 @@ test("one finding per name, grouped by module", async () => {
 	expect(new Set(runs).size).toBe(runs.length);
 });
 
+test("a name a module passes on is information when the model draws a consumer whose code the check does not read", async () => {
+	const own = "export function publish(value: number): number {\n\treturn value + 1;\n}\n";
+	write(shop, { "src/sdk/index.ts": `${own}export { twice } from "../kit";\n` });
+	try {
+		const answer = await check();
+		expect(judged(answer, "EXPOSED_UNUSED").filter(([name]) => name === "Sdk")).toEqual([
+			["Sdk", "publish", "information"],
+			["Sdk", "twice", "information"],
+		]);
+	} finally {
+		write(shop, { "src/sdk/index.ts": own });
+	}
+});
+
 test("code outside that did not parse and names an export makes the module's unused exports information", async () => {
 	write(shop, { "src/broken.ts": "if (unusedHelper(1) {\n" });
 	try {

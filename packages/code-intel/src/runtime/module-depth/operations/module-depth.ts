@@ -483,6 +483,22 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
 }
 
 /**
+ * The files outside a module that the pass could not read whole and that can
+ * hold a use of a name: those of the languages its parts are written in, as a
+ * name's read is complete when the pass read every use in its language.
+ * @param reading The module.
+ * @param name The name.
+ * @returns The files.
+ */
+function unreadFor(reading: DepthReading, name: ExposedName): string[] {
+	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
+	const files = [...JUDGED_FILES.values()].filter((file) =>
+		parts.some((part) => file.test(part.path)),
+	);
+	return reading.unread.filter((file) => files.some((each) => each.test(file)));
+}
+
+/**
  * Measure one bound module from its code, and judge its exports.
  * @param reading What the code check read of the module.
  * @returns The counts, the findings, and the names it judged.
@@ -490,12 +506,11 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
 	const { counts, judged, listed } = await countExports(reading, names);
-	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
-	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
 	const siblings = await siblingUses(reading);
 	const findings: DepthFinding[] = [];
 	const rollUp = new Map<string, boolean>();
 	for (const [name, kind] of judged) {
+		const unread = unreadFor(reading, name);
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time keeps the findings in export order
 		const finding = await nameFinding({ ...reading, unread, siblings }, name, kind);
 		if (finding !== undefined) findings.push(finding);
