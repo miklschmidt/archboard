@@ -65,7 +65,7 @@ import { CSHARP_FILE } from "#runtime/code-facts/csharp/operations/csharp-projec
 import { GO_FILE } from "#runtime/code-facts/go/operations/go-resolution.ts";
 import { PYTHON_FILE } from "#runtime/code-facts/python/operations/python-exposure.ts";
 import { RUST_FILE } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
-import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
+import { TYPESCRIPT_CALLER } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	type DepthFinding,
 	type DepthReading,
@@ -104,11 +104,12 @@ const GROUPS: ReadonlyMap<
 ]);
 
 /**
- * The files each judged adapter reads: only an unread file of a name's
- * language can hold a use of it.
+ * The files that can use the names of each judged adapter, the JavaScript
+ * that imports TypeScript among them: only an unread file of these can hold a
+ * use of a name.
  */
 const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
-	["typescript", TYPESCRIPT_FILE],
+	["typescript", TYPESCRIPT_CALLER],
 	["python", PYTHON_FILE],
 	["go", GO_FILE],
 	["csharp", CSHARP_FILE],

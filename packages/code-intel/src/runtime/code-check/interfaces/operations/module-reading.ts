@@ -9,7 +9,8 @@
 // test exercises code and is not its caller at run time, so a test file is no
 // caller. The files outside that the pass could not read whole are named, so
 // a judge never takes an incomplete read for a complete one: a file no grammar
-// read, code that did not parse and names what the module exposes, a relative
+// read that writes a name the module exposes, as JavaScript, a Vue or a Svelte
+// component can import TypeScript, code that did not parse and names what the module exposes, a relative
 // import that resolves to no file, and an import of the whole module, as
 // `import * as ns`, a bare `import()` or `typeof import()` is, whose names no
 // reference spells. In Rust, so is a file with a use that leads to a name in
@@ -265,7 +266,8 @@ async function usesIn(
 	file: string,
 ): Promise<{ readonly uses: OutsideUse[]; readonly whole: boolean }> {
 	const read = await search.facts.read(search.checkout, file);
-	if (read === undefined || read.adapter === "text") return { uses: [], whole: false };
+	if (read === undefined) return { uses: [], whole: false };
+	if (read.adapter === "text") return { uses: [], whole: !mayUse(read.text, search.exposure) };
 	const uses: OutsideUse[] = [];
 	let whole = readWhole(read, search.exposure);
 	for (const reference of read.references) {
@@ -275,6 +277,25 @@ async function usesIn(
 		else if (use !== undefined) uses.push(use);
 	}
 	return { uses, whole };
+}
+
+/** A word a file may write: a name, as JavaScript spells one. */
+const WORD = /[\p{L}\p{N}_$]+/gu;
+
+/**
+ * Whether a file no grammar reads, such as JavaScript or a Vue component
+ * beside TypeScript, may use a module: it writes one of the names the module
+ * exposes, or the module exports a default, which an import names freely.
+ * @param text The file's text.
+ * @param exposure What the module exposes.
+ * @returns True when it may.
+ */
+function mayUse(text: string, exposure: ModuleExposure): boolean {
+	const words = new Set(text.match(WORD));
+	return exposure.exposed.some(({ name }) => {
+		const [first = name] = name.split(".");
+		return first === "default" || words.has(first);
+	});
 }
 
 /** A specifier that names a file by a path from the importing file. */

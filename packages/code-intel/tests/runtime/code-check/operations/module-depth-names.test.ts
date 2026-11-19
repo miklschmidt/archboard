@@ -404,3 +404,31 @@ test("code outside that did not parse and names an export makes the module's unu
 		rmSync(join(shop, "src/broken.ts"));
 	}
 });
+
+test("a JavaScript, Vue or Svelte file outside that names an export makes the module's unused exports information", async () => {
+	write(shop, {
+		"web/widget.vue": '<script setup>\nimport { unusedHelper } from "../src/util";\n</script>\n',
+		"scripts/tool.mjs": 'console.log("no module names here");\n',
+	});
+	try {
+		const answer = await check();
+		const severities = judged(answer, "EXPOSED_UNUSED").map(([, name, severity]) => [
+			name,
+			severity,
+		]);
+		// `widget.vue` names `unusedHelper`; `tool.mjs` names nothing a module exports.
+		expect(severities).toEqual([
+			["unusedHelper", "information"],
+			["testOnly", "information"],
+			["Unused", "information"],
+			["publish", "information"],
+			["orphan", "warning"],
+			["probe", "warning"],
+			["bytes", "warning"],
+			["open", "warning"],
+		]);
+	} finally {
+		rmSync(join(shop, "web"), { recursive: true });
+		rmSync(join(shop, "scripts"), { recursive: true });
+	}
+});

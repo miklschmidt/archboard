@@ -63,7 +63,7 @@ import {
 } from "#runtime/code-facts/terraform/operations/terraform-resolution.ts";
 import {
 	ENTRY_FILE,
-	TYPESCRIPT_FILE,
+	TYPESCRIPT_CALLER,
 	typeScriptRootFiles,
 } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 
@@ -113,11 +113,11 @@ interface ExposureRule {
 /** TypeScript's rule: a directory whose root files export what it exposes. */
 const TYPESCRIPT: ExposureRule = {
 	/**
-	 * Whether a file is TypeScript or TSX.
+	 * Whether a file can import TypeScript: TypeScript, JavaScript, or a Vue or Svelte component.
 	 * @param file The file.
-	 * @returns True when it is.
+	 * @returns True when it can.
 	 */
-	writes: (file) => TYPESCRIPT_FILE.test(file),
+	writes: (file) => TYPESCRIPT_CALLER.test(file),
 	/**
 	 * Whether a file is an `index` file.
 	 * @param name The file's name.

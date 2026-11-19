@@ -14,6 +14,12 @@ import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
 
 /** A file the TypeScript adapter reads. */
 const TYPESCRIPT_FILE = /\.(?:[cm]?ts|tsx)$/u;
+/**
+ * A file that can import a TypeScript module: TypeScript, JavaScript, or a Vue
+ * or Svelte component. The TypeScript adapter reads only TypeScript, so the
+ * others are callers the check cannot read whole.
+ */
+const TYPESCRIPT_CALLER = /\.(?:[cm]?[jt]s|[jt]sx|vue|svelte)$/u;
 /** The file that stands for its directory. */
 const ENTRY_FILE = /^index\.(?:[cm]?ts|tsx)$/u;
 /** The TypeScript extensions a written JavaScript extension can stand for. */
@@ -113,4 +119,4 @@ async function typeScriptRootFiles(
 		.toSorted();
 }
 
-export { ENTRY_FILE, TYPESCRIPT_FILE, typeScriptRootFiles };
+export { ENTRY_FILE, TYPESCRIPT_CALLER, TYPESCRIPT_FILE, typeScriptRootFiles };
