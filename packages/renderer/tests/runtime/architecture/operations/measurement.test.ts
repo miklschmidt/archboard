@@ -16,11 +16,11 @@ import {
 	type DrawnText,
 } from "#tests/runtime/support/drawn-text.ts";
 
-/** A card's name size: archboard_scene::paint::design CARD_TITLE_FONT. */
+/** A card's name size: PART_TITLE_SIZE of the core's size sheet (archboard_scene sizes.rs). */
 const TITLE_SIZE = 14;
 /** A card's responsibility size, set smaller than its name. */
 const NOTE_SIZE = 11;
-/** A line's words size: archboard_scene::paint::design PILL_FONT. */
+/** A line's words size: archboard_scene::measure::labels LABEL. */
 const LABEL_SIZE = 10;
 /** The narrowest a plate is: archboard_scene::measure::labels LABEL_MIN_WIDTH. */
 const LABEL_MIN_WIDTH = 40;

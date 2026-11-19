@@ -18,7 +18,6 @@ mod build;
 mod cards;
 mod colour;
 mod crossings;
-pub mod design;
 mod door;
 mod drill_mark;
 mod edge_line;
@@ -51,11 +50,14 @@ mod toggle;
 mod traffic;
 mod tray;
 
+pub use cards::card_radius;
+pub use edge_tab::{header_width_for, header_words_width, tab_width};
 pub use far_view::{far_line_scale, far_line_widths};
 pub use icons::{FlowLook, flow_look, kind_icon, own_icons};
 pub use junctions::junction_boxes;
 pub use legend::{Applied, Drawn, picture_legend};
 pub use marks::viewer_marks;
+pub use page::{diagram_margin, with_diagram_margins};
 
 /// One card or frame as the painter reads it.
 type Node = DrawingNode<NodeFacts>;

@@ -1,7 +1,7 @@
 //! The tab a sequence's flow frame carries its name and summary in.
 
 use crate::geometry::Rect;
-use crate::paint::design::tab_width;
+use crate::paint::tab_width;
 use crate::sizes::{ARCHITECTURE_CARD_PADDING, FLOW_HEADING, FLOW_HEADING_WITH_NOTE, TAB_PADDING};
 
 /// A flow frame's tab.

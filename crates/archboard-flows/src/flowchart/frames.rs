@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use archboard_layout::fit_in;
 use archboard_scene::drawing::MeasuredLabel;
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::design::{diagram_margin, with_diagram_margins};
+use archboard_scene::paint::{diagram_margin, with_diagram_margins};
 
 use super::graph::Chart;
 use super::layout::{Layout, Marker, Run};

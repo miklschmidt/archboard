@@ -1,12 +1,12 @@
-//! The measurements a message sequence is laid out with. Participants stand in
+//! Where a message sequence's parts go and how far apart. Participants stand in
 //! columns, their dashed lifelines show progression down the sequence, messages
 //! cross between them, and activation bars mark where a participant is busy.
-//! The card, label, margin and type sizes the painter shares are
-//! `archboard_scene::paint::design`'s.
+//! A part's own size, a card's, a plate's or a fragment's, is the measure's
+//! (`archboard_scene`'s Flow part measures, ADR 0088); this sheet never holds a
+//! size the painter draws by.
 
-use archboard_scene::paint::design;
-
-pub(super) const DIAGRAM_MARGIN: f64 = design::diagram_margin();
+/// The space around the page, which the painter frames the page by.
+pub(super) const DIAGRAM_MARGIN: f64 = archboard_scene::paint::diagram_margin();
 
 /// How far a container's well holds what it holds in from its walls.
 pub(super) const NEST_INSET: f64 = 18.0;

@@ -17,9 +17,9 @@ use crate::paint::styles::Styles;
 use crate::request::{NodeAppearance, SequenceCard, Standing};
 use crate::scene::{Group, Purpose, Role, Shape, SubjectKind};
 use crate::sizes::{
-    ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_PADDING_X, CARD_TITLE_FONT, ICON_CHIP_GAP,
-    ICON_CHIP_SIZE, NOTE_BASELINE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE,
-    SLAB_RADIUS, TITLE_BASELINE_WITH_NOTE,
+    ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_PADDING_X, CARD_RADIUS, CARD_TITLE_FONT,
+    ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_BASELINE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE,
+    PART_TITLE_SIZE, SLAB_RADIUS, TITLE_BASELINE_WITH_NOTE,
 };
 
 /// How far outside its subject a selection ring sits.
@@ -213,4 +213,9 @@ pub(super) fn header_anchor(header: Rect) -> Place {
         y: header.y + PART_TITLE_SIZE,
         size: PART_TITLE_SIZE,
     }
+}
+
+/// How round a card's corner is to the layout, which keeps a line's port clear of it.
+pub const fn card_radius() -> f64 {
+    CARD_RADIUS
 }

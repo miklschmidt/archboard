@@ -9,7 +9,7 @@ use crate::paint::palette::Palette;
 use crate::scene::{
     Atlas, AtlasBox, Boxes, Group, Purpose, Role, Shape, Slot, Stroke, Text, Transform,
 };
-use crate::sizes::{PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
+use crate::sizes::{DIAGRAM_MARGIN, PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
 
 /// The page a picture is drawn on, and how far its content had to move onto it.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -222,4 +222,14 @@ pub(super) fn planned_title(title: &str, unbuilt: bool) -> String {
     } else {
         title.to_owned()
     }
+}
+
+/// The space around the final drawing.
+pub const fn diagram_margin() -> f64 {
+    DIAGRAM_MARGIN
+}
+
+/// The length of a drawing with a diagram margin at both ends.
+pub fn with_diagram_margins(length: f64) -> f64 {
+    length + 2.0 * DIAGRAM_MARGIN
 }
