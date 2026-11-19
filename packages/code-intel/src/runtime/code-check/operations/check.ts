@@ -58,8 +58,8 @@ import {
 	pinOf,
 	readRefCodes,
 	refReadsOf,
+	onDisk,
 	routedFacts,
-	resolveOnDisk,
 	targetIn,
 	whereIn,
 	type RefCode,
@@ -70,13 +70,18 @@ import { evidenceOf } from "#runtime/code-check/evidence/operations/evidence.ts"
 import { infrastructureRunners } from "#runtime/code-check/evidence/operations/infrastructure-runners.ts";
 import {
 	judgeInterfaces,
+	type DepthRecord,
 	type ModuleReadings,
 } from "#runtime/code-check/interfaces/operations/interfaces.ts";
 import { lineagesOf } from "#runtime/code-check/evidence/operations/ownership.ts";
 import { kubernetesEvidenceOf } from "#runtime/code-check/evidence/operations/kubernetes-evidence.ts";
 import { partCodesOf, unboundSkips } from "#runtime/code-check/operations/part-code.ts";
 import { judgeRelationships } from "#runtime/code-check/evidence/operations/relationships.ts";
-import { openResolution, type Resolve } from "#runtime/code-check/operations/resolution.ts";
+import {
+	openResolution,
+	type Resolve,
+	type TokenType,
+} from "#runtime/code-check/operations/resolution.ts";
 import { judgeSupport } from "#runtime/code-check/claims/operations/support.ts";
 import {
 	heldInFiles,
@@ -100,6 +105,8 @@ interface CodeCheckOutcome {
 	readonly timings: CheckTiming[];
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
+	/** Each judged module measured from its code (TASK-646.04). */
+	readonly depth: DepthRecord[];
 }
 
 /** The code facts of every pass, kept in the server's memory by file content. The file owners read through it too. */
@@ -117,6 +124,8 @@ interface Pass {
 	readonly refs: RefCodes;
 	/** Where the pass's language servers say a use that no import resolves is defined. */
 	readonly resolve: Resolve;
+	/** The type the pass's language servers give a name a file declares. */
+	readonly tokenType: TokenType;
 	/** The kinds of file read as text in each repository. */
 	readonly readAsText: Map<string, Set<string>>;
 	/** What each module a container binds exposes, read once for every document. */
@@ -416,9 +425,11 @@ async function judgeStateRelationships(read: StateToCheck, pass: Pass): Promise<
 		lineages,
 		pieces: evidence.pieces,
 		facts: pass.facts,
+		tokenType: pass.tokenType,
 		modules: pass.modules,
 	});
 	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
+	pass.outcome.depth.push(...interfaces.depth);
 	pass.outcome.skipped.push(
 		...judged.skipped,
 		...interfaces.skipped,
@@ -540,10 +551,11 @@ async function checkCode(
 		checkouts,
 		facts,
 		refs,
-		resolve: resolveOnDisk(resolution.resolve, refs, withoutServer),
+		resolve: onDisk(resolution.resolve, { status: "unknown" } as const, refs, withoutServer),
+		tokenType: onDisk(resolution.tokenType, undefined, refs, withoutServer),
 		readAsText: new Map(),
 		modules: new Map(),
-		outcome: { timings: [], findings: [], skipped: [] },
+		outcome: { timings: [], findings: [], skipped: [], depth: [] },
 	};
 	try {
 		await judgeAll(claims, pass);

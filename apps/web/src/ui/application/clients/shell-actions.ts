@@ -278,6 +278,21 @@ function vaultOf(catalog: Pick<ModelCatalog, "repositories">, repository: string
 	);
 }
 
+/**
+ * The checkout whose conversation speaks for a repository: the one that holds the vault its models
+ * are read from, at `<checkout>/.archboard/vault`, as the server names the checkout of a pane. An
+ * untracked vault lists no checkout, so the vault is what names it.
+ * @param catalog The catalog.
+ * @param repository The repository's name.
+ * @returns The checkout's root, or null when the repository has no vault to read.
+ */
+function checkoutOf(
+	catalog: Pick<ModelCatalog, "repositories">,
+	repository: string,
+): string | null {
+	return vaultOf(catalog, repository)?.replace(/[/\\][^/\\]+[/\\][^/\\]+[/\\]?$/u, "") ?? null;
+}
+
 /** The pane actions. */
 type PaneActions = Pick<ShellActions, "selectPane" | "addPane" | "closePane" | "present">;
 
@@ -389,4 +404,4 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	};
 }
 
-export { createShellActions, vaultOf, type ShellActionDeps };
+export { checkoutOf, createShellActions, vaultOf, type ShellActionDeps };

@@ -28,11 +28,16 @@ const FINDING_NAMES: Readonly<Record<string, string>> = {
 	BINDING_PATH_MISSING: "Missing bound file",
 	BINDING_SYMBOL_MISSING: "Missing bound symbol",
 	CALLER_UNDRAWN: "Missing caller",
+	CODE_PASS_THROUGH: "Pass-through",
 	DOCUMENT_PATH_MISSING: "Missing document",
 	ENTRY_POINT_UNEXPOSED: "Entry point not exposed",
 	EXPOSED_UNUSED: "Exposed and unused",
+	EXPOSED_VALUE: "Exposed value",
+	EXPOSED_VALUE_COMPUTED: "Repeated math",
 	INHERITED_PART_DROPPED: "Inherited part dropped",
+	INTERFACE_UNDECLARED: "Undeclared interface",
 	MODULE_SHALLOW: "Shallow module",
+	REEXPORT_PASS_THROUGH: "Re-export",
 	RELATIONSHIP_BACKWARDS: "Backwards relationship",
 	RELATIONSHIP_UNDRAWN: "Missing relationship",
 	RELATIONSHIP_UNSUPPORTED: "Unsupported relationship",
@@ -118,7 +123,7 @@ function FindingCard(props: FindingCardProps): JSX.Element {
 			)}
 		>
 			<FindingHead finding={finding} onShow={onShow} />
-			{route !== null && <FindingRouteLine route={route} />}
+			{route !== null && <FindingRouteLine route={route} name={finding.export} />}
 			<p className="text-body text-body-foreground [overflow-wrap:anywhere]">{finding.message}</p>
 			{finding.evidence !== undefined && (
 				<EvidencePieces evidence={finding.evidence} piece={props.piece} onPiece={props.onPiece} />
@@ -165,13 +170,18 @@ function FindingHead(props: {
 }
 
 /**
- * What a finding is about: from one module to the other, or the one module.
- * @param props The route.
+ * What a finding is about: from one module to the other, or the one module, and the name it
+ * exports that a finding of module depth judges.
+ * @param props The route and the name.
  * @param props.route The route.
+ * @param props.name The exported name, if the finding judges one.
  * @returns The line.
  */
-function FindingRouteLine(props: { readonly route: FindingRoute }): JSX.Element {
-	const { route } = props;
+function FindingRouteLine(props: {
+	readonly route: FindingRoute;
+	readonly name: string | undefined;
+}): JSX.Element {
+	const { route, name } = props;
 	return (
 		<p
 			data-slot="code-finding-route"
@@ -185,7 +195,26 @@ function FindingRouteLine(props: { readonly route: FindingRoute }): JSX.Element 
 				</>
 			)}
 			<span>{route.to}</span>
+			{name !== undefined && <ExportName name={name} />}
 		</p>
+	);
+}
+
+/**
+ * The name a module exports that a finding judges, in the face of code.
+ * @param props The name.
+ * @param props.name The name.
+ * @returns The name.
+ */
+function ExportName(props: { readonly name: string }): JSX.Element {
+	return (
+		<code
+			data-slot="code-finding-export"
+			className="text-technical text-body-foreground min-w-0 truncate font-mono"
+		>
+			<span className="sr-only">exports </span>
+			{props.name}
+		</code>
 	);
 }
 
@@ -276,4 +305,4 @@ function EvidencePiece(props: {
 	);
 }
 
-export { FindingCard, FindingCounts, SEVERITY_WORDS, findingName };
+export { ExportName, FindingCard, FindingCounts, SEVERITY_WORDS, findingName };

@@ -13,6 +13,11 @@ import {
 	RiPlayCircleLine,
 } from "@remixicon/react";
 import { useMemo, type JSX, type ReactNode } from "react";
+import {
+	CodeExports,
+	checkedModule,
+} from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { ModelAboutWalkthroughs } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutWalkthroughs.tsx";
 import {
 	aboutSection,
@@ -35,16 +40,22 @@ import {
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import { ModelStateTimeline } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
+import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import { useStateTimeline } from "#ui/architecture-drawing/model-reader/reading/hooks/use-state-timeline.ts";
 import { modulePlaces } from "#ui/architecture-drawing/model-reader/reading/rules/module-places.ts";
+import type { CodeRead } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 import type { StateTimeline } from "#ui/architecture-drawing/model-reader/reading/rules/state-timeline.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /** Inputs for the page. */
 interface ModelAboutProps extends Pick<
 	ModelSelectionDetailsProps,
-	"vault" | "paneId" | "model" | "scope" | "projection" | "selection"
+	"vault" | "paneId" | "model" | "scope" | "projection" | "selection" | "onCodeTargetNotice"
 > {
+	/** The code pass that read the reading on screen, or null when none did. */
+	readonly code: ModelCodeReading | null;
+	/** How the read of the remembered code passes stands. */
+	readonly codeRead: CodeRead;
 	/** What the reading's state says of itself, which the first surface leaves out. */
 	readonly overview: ReactNode;
 	/** Select a subject and show it on the diagram. */
@@ -177,6 +188,32 @@ function interfaceSection(props: ScopePageProps): AboutPageSection | null {
 }
 
 /**
+ * What the code of the open module exports, by kind, from the code pass on screen.
+ * @param props The page's inputs.
+ * @returns The section, or null for a scope that is no module bound to code.
+ */
+function exportsSection(props: ScopePageProps): AboutPageSection | null {
+	const { scope } = props;
+	if (scope === null || props.projection.flow !== null) return null;
+	const found = scopeModel(props).modules.find((entry) => entry.id === scope);
+	const module = found === undefined ? null : checkedModule(props.model, found);
+	if (module === null) return null;
+	return aboutSection(
+		"exports",
+		"Code exports",
+		SECTION_ICONS.codeExports,
+		undefined,
+		<CodeExports
+			vault={props.vault}
+			module={module}
+			reading={props.code}
+			read={props.codeRead}
+			onNotice={props.onCodeTargetNotice}
+		/>,
+	);
+}
+
+/**
  * Each long list of the open scope. A section with nothing to show is absent.
  * @param props The page's inputs.
  * @returns The sections, in the order a reader asks.
@@ -231,6 +268,7 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 			/>,
 		),
 		interfaceSection(props),
+		exportsSection(props),
 		aboutSection(
 			"states",
 			"States",

@@ -4,6 +4,7 @@ The design lens reports facts for a design decision.
 `model inspect` and `model compare` read architecture.
 `model locality` and `model footprint` read Git through code bindings.
 Support each fact with its subjects and source evidence. Leave the judgment to the user.
+[Module depth](#module-depth) is the exception: the code check judges it.
 
 | Question                                       | Read                                              |
 | ---------------------------------------------- | ------------------------------------------------- |
@@ -118,6 +119,88 @@ With a proposal, `--fail-preexisting` exits 1 when `preexisting` is not empty.
 The pull-request Action lists these modules in its comment. Its `preexisting` input warns by default and fails only when set to `fail`.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
+
+## Module depth
+
+The code check measures each bound module from its code. Unlike the reads above, it gives verdicts, as findings.
+It also counts the exports of a bound Terraform module, Nix flake and Helm chart by kind, and judges none of them: a variable, an output or a value is there for callers. Terraform keeps its own `VARIABLE_PASSED_THROUGH` and `MODULE_SHALLOW`.
+`depth` lists each module's exports by kind (`functions`, `classes`, `methods`, `values`, `types`) and `logic`, the calls, operators, conditions, loops and hidden values behind them.
+A C# `static` member, or a Rust associated function or constant, is read through its type's name, so it counts as a function or a value of its own, and is never judged unused.
+The counts are evidence. Never turn them into a score.
+A type is what declares nothing a caller runs: a TypeScript interface, alias or enum; a Python type alias; a Go interface or named type without methods in its file; a C# interface, enum or delegate; a C or C++ struct, union or enum with no methods, a typedef or an alias; a Swift protocol, alias or enum with no methods; an Objective-C protocol.
+A C function macro is a function, and a Swift struct is a class.
+
+`archboard check code --fail-shallow-modules` makes `MODULE_SHALLOW` a warning on the modules that the branch touched since its base, uncommitted changes included.
+The per-name warnings below fail the check on every module, as every warning does.
+`--base <ref>` names the base. Without it, the default base decides.
+A vault policy with `codeCheck: { failShallowModules: true }` turns the gate on for plain `archboard check`.
+`BASE_UNRESOLVED` means the check could not read the branch. Name a base that resolves; never treat it as a pass.
+
+Clear each finding at its seam. Never silence one.
+
+- `EXPOSED_VALUE`: callers read an exported value, so they hold logic that belongs to the module.
+  With one reader, move the value into that reader and stop exporting it.
+  With several, move what they compute from it into the module, behind a function such as `restartDelayMs(attempt)`.
+  Where a caller needs the value itself, export a function that returns it.
+  An export that can be called is a function, even when a call makes it: a compound component made by `Object.assign(Root, { Item })`, or the helper that `cva(...)` returns.
+  The check follows the name that `Object.assign` extends, and asks the language server whether any other value can be called.
+  Without that server, the finding on a value a call makes is information: set the server up to judge it.
+  A schema cannot be called, so it is a value. A contract module keeps its schemas inside and exports a parse function and the types derived from them:
+
+  ```ts
+  const UserSchema = z.object({ name: z.string() });
+  export type User = z.infer<typeof UserSchema>;
+  export function parseUser(input: unknown): User {
+  	return UserSchema.parse(input);
+  }
+  ```
+
+- `EXPOSED_VALUE_COMPUTED`: two or more modules write the same math on one exported value or getter. The evidence lists every line that writes it.
+  The math is logic the exporter owns. Give the exporter a function that does it, make every caller call that function, and stop exporting the value that no caller reads any more:
+
+  ```ts
+  // Before: two callers each compute the backoff on the exported durations.
+  Math.min(PROCESS_MS.restartMax, PROCESS_MS.restartBase * 2 ** attempt);
+  // After: the timing module owns it, and keeps the durations inside.
+  export function restartDelayMs(attempt: number): number {
+  	return Math.min(PROCESS_MS.restartMax, PROCESS_MS.restartBase * 2 ** attempt);
+  }
+  ```
+
+  The match ignores the callers' own names and operand order, and follows one local variable. Equality, comparison, bitwise and logical operators are no math.
+  Two pieces of math that only share a shape, such as a deadline and a jitter, also match. One function on the exporter clears both.
+
+- `CODE_PASS_THROUGH` (information): a function or public method only passes its call on with its own parameters.
+  Give it a decision of its own, such as a default, a check or a translation, or let callers call the code it passes to.
+  A function that calls a value its own file defines at module level, such as `parse(input)` over a hidden schema, is the module deciding and has no finding.
+- `REEXPORT_PASS_THROUGH`: the module passes on a name that another module defines.
+  Through one door it is information. It is a warning when files outside both modules also import the defining module directly: two doors to one name.
+  Keep one door. Stop passing the name on, or make every caller import it through this module.
+- `EXPOSED_UNUSED`: no file outside the module uses an exported name, as code or as a type. A test is no user.
+  Stop exporting it. If files of the module use it, keep it out of the module's root files.
+  In a folder module that declares no interface (no file that stands for it, such as `index.ts`, and no `package.json` `exports`), a name that another of its files imports counts as used. A Go or Swift file sees its package's or target's names without an import, so there an exported name only the module uses stays a finding: stop exporting it.
+  It is a warning only after a complete read of the files outside the module in its language: each file parsed where it names the module's names, every relative import resolved, no whole-module import. A Rust `use crate::timing;` or `mod timing;` names each use it makes, so it leaves the read complete. A Rust use that leads into the module but reaches no name the check can find, such as a function a macro defines, leaves it incomplete.
+  A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
+  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a Python `__repr__`, a Go `String`, what a Rust `impl Drop` or `impl Display` defines, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`. A Rust item that `#[wasm_bindgen]` exports to JavaScript, or a type that derives ts-rs's `TS` for TypeScript, is never judged unused.
+- `INTERFACE_UNDECLARED` (information): a folder module that declares no interface, where some names are used only by another of its files, which keeps them from `EXPOSED_UNUSED`.
+  It says how many of its names files outside it use, and how many only its own files import, naming the first five.
+  Declare the interface with what callers use, in an entry file (`index.ts`, `__init__.py` or `mod.rs`) or in the package's `exports` in `package.json`, and the rest stays inside.
+- `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
+  If nothing is left to hide, merge the module into its callers.
+
+Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, because its remedy removes the name.
+
+A module that the model marks `external`, code the repository does not own such as a vendored crate, keeps its counts and gets none of these findings.
+
+A language can force a constant. No exemption exists, so use the seam that replaces it:
+
+- A `switch` case label: export a predicate or a method that answers the question.
+- An array size: export a type that owns the array.
+- An `as const` object with types derived from it: export the type, with `isKind` and `allKinds`.
+- An attribute argument or a decorator value: let the module ship the attribute.
+- A compile-time condition such as `#if`: move the condition into the module.
+
+Exported types count for no verdict, so an exported union or enum keeps the compiler's exhaustive checks.
 
 ## Integrate with improve-codebase-architecture
 

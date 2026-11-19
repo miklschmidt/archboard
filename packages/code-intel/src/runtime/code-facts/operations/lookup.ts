@@ -100,13 +100,15 @@ function definitionsNamed(definitions: readonly Definition[], symbol: string): D
 
 /**
  * How early a definition comes among those a symbol names: an exact spelling
- * before a tail of it, and code before a declaration of it.
+ * before a tail of it, and code before a declaration of it or a module of its
+ * name whose code is another file.
  * @param definition The definition.
  * @param exact The symbol, with `::` written as `.`.
  * @returns Its rank, lowest first.
  */
 function rank(definition: Definition, exact: string): number {
-	return Number(dotted(definition.symbol) !== exact) * 2 + Number(definition.declaration === true);
+	const elsewhere = definition.declaration === true || definition.moduleFile === true;
+	return Number(dotted(definition.symbol) !== exact) * 2 + Number(elsewhere);
 }
 
 /**
@@ -212,4 +214,4 @@ function notFound(
 	return part === undefined ? { status: "absent" } : { status: "unparsed", unparsed: part };
 }
 
-export { type Accept, definitionsNamed, endsWithNames, findSymbol };
+export { type Accept, definitionsNamed, dotted, endsWithNames, findSymbol };

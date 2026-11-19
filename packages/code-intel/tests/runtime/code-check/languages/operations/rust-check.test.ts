@@ -168,7 +168,12 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pGone warning",
 			// The library exposes `audit`, `Entry` and three names of `money` that the shop does not use.
-			"EXPOSED_UNUSED pLed information",
+			...Array.from({ length: 5 }, () => "EXPOSED_UNUSED pLed warning"),
+			// The shop reads the value `money::ZERO`, through the library and its module.
+			"EXPOSED_VALUE pLed warning",
+			// The money module has no parts, and its interface is read all the same.
+			...Array.from({ length: 3 }, () => "EXPOSED_UNUSED pMoney warning"),
+			"EXPOSED_VALUE pMoney warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			// The cart's relationship to the entry stands for these two calls into the ledger.
 			"RELATIONSHIP_UNDRAWN pLed information",

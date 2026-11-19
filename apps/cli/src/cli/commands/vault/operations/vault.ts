@@ -18,16 +18,25 @@ import {
 	FIX_HELP,
 } from "#cli/commands/vault/operations/check-help.ts";
 import { checkResult } from "#cli/commands/vault/operations/check-result.ts";
+import {
+	baseRefusal,
+	gateParameters,
+	askGate,
+	gateShallowModules,
+} from "#cli/commands/vault/rules/shallow-modules.ts";
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import {
+	CodeCheckResultSchema,
+	type CodeCheckResult,
+} from "#cli/commands/vault/protocol/code-check-result.ts";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
 import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /** How long one check took. */
-type CheckTiming = CodeCheckAnswer["timings"][number];
+type CheckTiming = CodeCheckResult["timings"][number];
 
 const output = {
 	cases: [
@@ -44,11 +53,13 @@ const output = {
 	 */
 	select: () => "json",
 } as const;
-/** What the code check reads: `--state`, `--every-draft` and `--plan`. */
+/** What the code check reads: `--state`, `--every-draft`, `--plan`, and the gate's options. */
 const CodeCheckInputSchema = z.object({
 	state: z.string().optional(),
 	everyDraft: z.boolean().optional(),
 	plan: z.array(z.string()).optional(),
+	failShallowModules: z.boolean().optional(),
+	base: z.string().optional(),
 });
 type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
 
@@ -65,13 +76,16 @@ type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
 async function codeCheckOnServer(
 	reading: CodeCheckInput,
 	signal: AbortSignal,
-): Promise<CodeCheckAnswer> {
+): Promise<CodeCheckResult> {
 	const asked = new URLSearchParams(reading.state === undefined ? [] : [["state", reading.state]]);
 	if (reading.everyDraft === true) asked.append("every-draft", "true");
 	for (const plan of reading.plan ?? []) asked.append("plan", path.resolve(plan));
+	askGate(asked, reading);
 	const query = asked.toString() === "" ? "" : `?${asked}`;
-	return CodeCheckAnswerSchema.parse(
-		await requestJson<unknown>(`/api/vault/code-check${query}`, { signal }),
+	const answer = await requestJson<unknown>(`/api/vault/code-check${query}`, { signal });
+	return gateShallowModules(
+		CodeCheckResultSchema.parse(answer),
+		reading.failShallowModules === true,
 	);
 }
 
@@ -140,7 +154,7 @@ function timingLine(timing: CheckTiming): string {
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
 const SemanticsPartSchema = VaultCheckSchema.extend({
-	timings: CodeCheckAnswerSchema.shape.timings,
+	timings: CodeCheckResultSchema.shape.timings,
 });
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
 
@@ -150,7 +164,7 @@ type SemanticsPart = z.output<typeof SemanticsPartSchema>;
  */
 const CheckAnswerSchema = z.object({
 	semantics: SemanticsPartSchema.optional(),
-	code: CodeCheckAnswerSchema.optional(),
+	code: CodeCheckResultSchema.optional(),
 	embeds: EmbedsPartSchema.optional(),
 	/**
 	 * The checks that read a vault and did not run, and why: the command ran in
@@ -305,6 +319,7 @@ const codeCheckParameters = [
 		description:
 			"Read this plan JSON, from `terraform show -json` or `tofu show -json`, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
 	},
+	...gateParameters,
 ] as const;
 
 /** The option of the embeds check, which `check`, `check all` and `check embeds` read. */
@@ -422,7 +437,7 @@ const checkAllContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
 	/**
 	 * Run every check.
@@ -506,6 +521,7 @@ const checkCodeContract = defineCommand({
 		"archboard check code --state TASK-123",
 		"archboard check code --every-draft",
 		"archboard check code --plan infra/plan.json",
+		"archboard check code --fail-shallow-modules --base main",
 	],
 	parameters: codeCheckParameters,
 	input: { ingress: CodeCheckInputSchema, stages: codeCheckStages },
@@ -516,7 +532,7 @@ const checkCodeContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
 	relationships: [codeRoute],
 	/**
 	 * Run the code check.

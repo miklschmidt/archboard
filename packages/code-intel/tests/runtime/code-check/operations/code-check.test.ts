@@ -305,6 +305,12 @@ test("what the pass cannot read is skipped with its reason, and a reason for a w
 	);
 	expect(skips.toSorted()).toEqual(
 		[
+			// A part bound to a symbol, or to a file that stands for no folder, names no module to
+			// measure; `pA` is on two documents.
+			"binding-not-a-module pA",
+			"binding-not-a-module pA",
+			"binding-not-a-module pD",
+			"binding-not-a-module pL",
 			"no-current-variant Idea",
 			"path-ignored e4",
 			"path-never-read e7",

@@ -2,8 +2,8 @@
 // `GET /api/architecture/footprint` (ADR 0045).
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
-// to HEAD, or up to a named head ref that need not be checked out, in each
-// checkout, and says which parts of a document's current variant those commits
+// to HEAD, or up to a named head ref that need not be checked out, or up to the
+// working tree, in each checkout, and says which parts of a document's current variant those commits
 // changed through their bound declarations or paths. With a proposal it sets
 // that against the parts the proposal names, in three lists: named and
 // changed, changed but not named, and named but not changed. The proposal
@@ -145,6 +145,11 @@ const footprintBase = {
 	base: z.string(),
 	/** The head ref as the caller named it; absent when the commits run up to each checkout's HEAD. */
 	head: z.string().optional(),
+	/**
+	 * Present when the commits run up to each checkout's working tree: its uncommitted changes,
+	 * untracked files included, read as one commit on top of HEAD.
+	 */
+	workingTree: z.literal(true).optional(),
 	/**
 	 * The variant the proposal is read against, or the variant itself when no
 	 * proposal is named: the current variant, else the proposal's parent. Null

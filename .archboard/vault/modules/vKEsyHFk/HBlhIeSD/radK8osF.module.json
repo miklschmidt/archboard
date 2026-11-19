@@ -3,7 +3,7 @@
   "name": "History lens",
   "kind": "module",
   "responsibility": "Relates canonical modules to explicit local Git evidence",
-  "description": "The history interface reads canonical states and their bound source declarations. Locality reports change frequency and coupling. Footprint compares explicit local refs and the selected proposal baseline, and lists each changed file that no binding holds, outside the vault. A named head that resolves in the vault's repository is read with the vault at that head, unless the caller asks for the vault on disk, so its proposals and bindings come from the branch; the answer names the vault it read. Source refs lists the branches of every repository the state binds, merged by name. Each changed part names the other changed parts that its binding holds. Missing source stays unavailable rather than being reported as unchanged.",
+  "description": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/history-lens"

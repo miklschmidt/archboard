@@ -159,13 +159,18 @@ test("a TypeScript file holds a bound symbol it defines and an anchored one it d
 	expect(found.toSorted()).toEqual(
 		[
 			"BINDING_SYMBOL_MISSING pU",
+			// The bound directory src/web exposes three names that no file outside it uses, one finding each.
+			"EXPOSED_UNUSED pW",
+			"EXPOSED_UNUSED pW",
+			"EXPOSED_UNUSED pW",
 			"ANCHOR_SYMBOL_MISSING e4",
 			"ANCHOR_SYMBOL_MISSING e5",
 			"ANCHOR_MISMATCH e3",
 			"ANCHOR_MISMATCH e6",
 		].toSorted(),
 	);
-	expect(outcome.findings.every((finding) => finding.severity === "warning")).toBe(true);
+	const claims = outcome.findings.filter((finding) => finding.code !== "EXPOSED_UNUSED");
+	expect(claims.every((finding) => finding.severity === "warning")).toBe(true);
 });
 
 test("an anchor whose symbol is defined outside both ends names the use it rests on, a use at run time before a use as a type", async () => {
@@ -198,6 +203,10 @@ test("a symbol found only in code that did not parse is skipped, and text-only n
 	]);
 	expect(skips.toSorted()).toEqual(
 		[
+			// A part bound to a symbol, or to a file that stands for no folder, names no module to measure.
+			["binding-not-a-module", "pA", "audit in src/billing/charge.ts"],
+			["binding-not-a-module", "pB", "charge in src/billing/charge.ts"],
+			["binding-not-a-module", "pL", "src/shared/log.ts"],
 			["symbol-unparsed", "pK", "src/web/broken.ts:2"],
 			["symbol-unparsed", "e9", "src/web/broken.ts:2"],
 			["text-only", MART, expect.stringContaining(".md")],

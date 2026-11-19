@@ -14,6 +14,14 @@ import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
 
 /** A file the TypeScript adapter reads. */
 const TYPESCRIPT_FILE = /\.(?:[cm]?ts|tsx)$/u;
+/**
+ * A file that can import a TypeScript module: TypeScript, JavaScript, or a Vue
+ * or Svelte component. The TypeScript adapter reads only TypeScript, so the
+ * others are callers the check cannot read whole.
+ */
+const TYPESCRIPT_CALLER = /\.(?:[cm]?[jt]s|[jt]sx|vue|svelte)$/u;
+/** An import of a module by its specifier: `from "x"`, `import "x"`, `import("x")` or `require("x")`. */
+const IMPORT = /\b(?:from|import|require)\s*\(?\s*["'][^"'\s]+["']/u;
 /** The file that stands for its directory. */
 const ENTRY_FILE = /^index\.(?:[cm]?ts|tsx)$/u;
 /** The TypeScript extensions a written JavaScript extension can stand for. */
@@ -113,4 +121,15 @@ async function typeScriptRootFiles(
 		.toSorted();
 }
 
-export { ENTRY_FILE, TYPESCRIPT_FILE, typeScriptRootFiles };
+/**
+ * Whether a file that can import TypeScript imports nothing, as a bundle, so
+ * it uses no TypeScript module whatever names it writes.
+ * @param file The file.
+ * @param text Its text.
+ * @returns True when it imports nothing.
+ */
+function importsNothing(file: string, text: string): boolean {
+	return TYPESCRIPT_CALLER.test(file) && !IMPORT.test(text);
+}
+
+export { ENTRY_FILE, TYPESCRIPT_CALLER, TYPESCRIPT_FILE, importsNothing, typeScriptRootFiles };

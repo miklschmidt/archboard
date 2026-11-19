@@ -24,16 +24,88 @@
 // exposure, which a `pub mod` re-exports (rust-imports.ts). A member of a
 // trait's `impl` is exposed when its type is, or when the file does not
 // declare the type.
+//
+// For module depth (TASK-646.10): a trait, a type alias and an associated
+// type declare a type and nothing a caller runs or reads. A `const` or
+// `static` of a function pointer's type can be called, so it is a function.
+// The members of an `impl` of a trait whose members the language's own
+// syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
+// `Display::fmt`, are called by the language: no caller names them, and
+// so is an item `#[wasm_bindgen]` exports to JavaScript, or a member of an
+// `impl` block it exports (TASK-646.16), and a type that derives ts-rs's `TS`,
+// which the bindings it writes name in TypeScript (TASK-646.18). An
+// associated function, which takes no `self`, and an associated constant
+// belong to the type and are named through it, as `Relay::new` is. A
+// function whose body only passes its call on names its callee's root
+// (rust-depth.ts).
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
+import { passesTo } from "#runtime/code-facts/rust/operations/rust-depth.ts";
 
 /** Where the walk is: the names that qualify an item, and whether everything around it is open. */
 interface Scope {
 	readonly prefix: readonly string[];
 	readonly open: boolean;
 }
+
+/** The items that declare a type and nothing a caller runs or reads. */
+const TYPE_ITEMS = new Set(["trait_item", "type_item", "associated_type"]);
+
+/**
+ * The traits whose members the language's syntax calls: the end of a scope,
+ * `*`, formatting, the operators, comparison, `for`, `.await` and a call.
+ */
+const LANGUAGE_TRAITS = new Set([
+	"Drop",
+	"Deref",
+	"DerefMut",
+	"Display",
+	"Debug",
+	"LowerHex",
+	"UpperHex",
+	"Octal",
+	"Binary",
+	"LowerExp",
+	"UpperExp",
+	"Pointer",
+	"Add",
+	"Sub",
+	"Mul",
+	"Div",
+	"Rem",
+	"Neg",
+	"Not",
+	"BitAnd",
+	"BitOr",
+	"BitXor",
+	"Shl",
+	"Shr",
+	"AddAssign",
+	"SubAssign",
+	"MulAssign",
+	"DivAssign",
+	"RemAssign",
+	"BitAndAssign",
+	"BitOrAssign",
+	"BitXorAssign",
+	"ShlAssign",
+	"ShrAssign",
+	"Index",
+	"IndexMut",
+	"PartialEq",
+	"Eq",
+	"PartialOrd",
+	"Ord",
+	"Iterator",
+	"IntoIterator",
+	"Future",
+	"IntoFuture",
+	"Fn",
+	"FnMut",
+	"FnOnce",
+]);
 
 /** An item's kind, by its node. */
 const ITEM_KIND: Readonly<Record<string, Definition["kind"]>> = {
@@ -71,19 +143,41 @@ function opens(visibility: string): boolean {
 }
 
 /**
- * Whether an attribute right before an item names `#[macro_export]`.
+ * Whether an attribute right before an item matches, written without spaces.
  * @param node The item.
- * @returns True when it does.
+ * @param attribute The attribute's spelling.
+ * @returns True when one does.
  */
-function exported(node: Node): boolean {
+function attributed(node: Node, attribute: RegExp): boolean {
 	for (
 		let at = node.previousNamedSibling;
 		at?.type === "attribute_item";
 		at = at.previousNamedSibling
 	) {
-		if (at.text.replaceAll(/\s+/gu, "") === "#[macro_export]") return true;
+		if (attribute.test(at.text.replaceAll(/\s+/gu, ""))) return true;
 	}
 	return false;
+}
+
+/** `#[macro_export]`, which exports a macro to the whole crate. */
+const MACRO_EXPORT = /^#\[macro_export\]$/u;
+
+/** `#[wasm_bindgen]`, with or without arguments, which exports an item to JavaScript. */
+const WASM_BINDGEN = /^#\[wasm_bindgen(?:\(.*\))?\]$/u;
+
+/** A `#[derive(...)]` that lists ts-rs's `TS`, which exports a type to TypeScript. */
+const DERIVE_TS = /^#\[derive\((?:.*,)?(?:ts_rs::)?TS(?:,.*)?\)\]$/u;
+
+/**
+ * What an item exported to the host language carries, to JavaScript by
+ * `#[wasm_bindgen]` or to TypeScript by ts-rs: the host uses it, and no Rust
+ * caller needs to name it.
+ * @param node The item, or the `impl` block that holds it.
+ * @returns The mark, or nothing.
+ */
+function hostCalled(node: Node): Pick<Definition, "calledByLanguage"> {
+	const exported = attributed(node, WASM_BINDGEN) || attributed(node, DERIVE_TS);
+	return exported ? { calledByLanguage: true } : {};
 }
 
 /**
@@ -112,9 +206,13 @@ function definition(
 	symbol: string,
 	shape: Pick<Definition, "kind" | "visibility" | "exposed">,
 ): Definition {
+	const passes = passesTo(node);
 	return {
 		symbol,
 		...shape,
+		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
+		...hostCalled(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),
@@ -150,7 +248,9 @@ function nameOf(node: Node): string | undefined {
 function namedItem(node: Node): { kind: Definition["kind"]; name: string } | undefined {
 	const kind = ITEM_KIND[node.type];
 	const name = nameOf(node);
-	return kind === undefined || name === undefined ? undefined : { kind, name };
+	if (kind === undefined || name === undefined) return undefined;
+	const pointer = node.childForFieldName("type")?.type === "function_type";
+	return { kind: kind === "value" && pointer ? "function" : kind, name };
 }
 
 /**
@@ -167,6 +267,15 @@ function implShape(member: Node, ofTrait: boolean, open: boolean): Openness {
 }
 
 /**
+ * What the members of an `impl` block of a trait carry when the language calls them.
+ * @param trait The trait the block implements, if any.
+ * @returns The mark, or nothing.
+ */
+function languageCalled(trait: Node | null): Pick<Definition, "calledByLanguage"> {
+	return LANGUAGE_TRAITS.has(typeName(trait) ?? "") ? { calledByLanguage: true } : {};
+}
+
+/**
  * The members of an `impl` block, spelled under its type.
  * @param node The block.
  * @param scope Where it is.
@@ -176,15 +285,33 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 	const type = typeName(node.childForFieldName("type"));
 	const body = node.childForFieldName("body");
 	if (type === undefined || body === null) return;
-	const ofTrait = node.childForFieldName("trait") !== null;
+	const trait = node.childForFieldName("trait");
+	const ofTrait = trait !== null;
+	const called = { ...languageCalled(trait), ...hostCalled(node) };
 	const holder = [...scope.prefix, type].join(".");
 	const open = scope.open && walk.types.get(holder) !== false;
 	for (const member of body.namedChildren) {
 		const item = namedItem(member);
 		if (item === undefined) continue;
 		const shape = { kind: item.kind, ...implShape(member, ofTrait, open) };
-		walk.found.push(definition(member, `${holder}.${item.name}`, shape));
+		const own = { ...called, ...associated(member) };
+		walk.found.push({ ...definition(member, `${holder}.${item.name}`, shape), ...own });
 	}
+}
+
+/**
+ * What a member of an `impl` block carries when it belongs to the type, not
+ * to a value of it: an associated function, which takes no `self`, or an
+ * associated constant. Callers name it through the type, as `Relay::new`.
+ * @param member The member.
+ * @returns The mark, or nothing.
+ */
+function associated(member: Node): Pick<Definition, "static"> {
+	if (member.type === "const_item") return { static: true };
+	const parameters = member.childForFieldName("parameters")?.namedChildren ?? [];
+	const typeOwn =
+		member.type === "function_item" && !parameters.some((each) => each.type === "self_parameter");
+	return typeOwn ? { static: true } : {};
 }
 
 /**
@@ -230,7 +357,7 @@ function typeMembers(node: Node, holder: string, shape: Openness, walk: Walk): v
  */
 function itemShape(node: Node, scope: Scope): Openness {
 	if (node.type === "macro_definition") {
-		const exposed = exported(node);
+		const exposed = attributed(node, MACRO_EXPORT);
 		return { visibility: exposed ? "macro_export" : "macro_rules", exposed };
 	}
 	const visibility = visibilityOf(node);
@@ -239,7 +366,7 @@ function itemShape(node: Node, scope: Scope): Openness {
 
 /**
  * A module item: `mod name;`, whose file is another and which exposes
- * nothing itself, or an inline module and its items.
+ * nothing itself, so it only names that file, or an inline module and its items.
  * @param node The module.
  * @param path Its names.
  * @param shape Its kind, visibility and exposure.
@@ -248,7 +375,8 @@ function itemShape(node: Node, scope: Scope): Openness {
 function modItem(node: Node, path: string[], shape: Shape, walk: Walk): void {
 	const body = node.childForFieldName("body");
 	const exposed = shape.exposed && body !== null;
-	walk.found.push(definition(node, path.join("."), { ...shape, exposed }));
+	const found = definition(node, path.join("."), { ...shape, exposed });
+	walk.found.push(body === null ? { ...found, moduleFile: true } : found);
 	if (body !== null) walkItems(body.namedChildren, { prefix: path, open: shape.exposed }, walk);
 }
 

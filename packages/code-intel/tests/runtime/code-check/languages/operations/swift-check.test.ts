@@ -177,6 +177,9 @@ test("anchors, binding symbols and the relationships between parts bound to Swif
 		[
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pB warning",
+			// Each bound target exposes a name that no file outside it uses, and the read is complete.
+			"EXPOSED_UNUSED pC warning",
+			"EXPOSED_UNUSED pU warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNDRAWN pR warning",
 			"RELATIONSHIP_UNDRAWN pU warning",

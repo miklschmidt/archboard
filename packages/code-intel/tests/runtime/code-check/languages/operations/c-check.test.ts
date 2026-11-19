@@ -227,7 +227,8 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 			// The ledger's header only declares the audit, and its source defines none of it.
 			"RELATIONSHIP_UNDRAWN pL information",
 			"CALLER_UNDRAWN pR warning",
-			"EXPOSED_UNUSED pK information",
+			// `src` has no include directory, and only `mail.c` beside it uses the notifier.
+			"INTERFACE_UNDECLARED pK information",
 		].toSorted(),
 	);
 	// Nothing was read as text.
@@ -262,10 +263,15 @@ test("a C module exposes what its public headers declare, and an outside file us
 	expect(undrawn?.evidence?.map((piece) => [piece.path, piece.symbol, piece.resolution])).toEqual([
 		["tools/batch.c", "money_round", "resolved"],
 	]);
-	// `notify.h` is a public header too, and no file outside `src` calls the notifier.
-	const unused = outcome.findings.find((each) => each.code === "EXPOSED_UNUSED");
-	expect(unused?.message).toContain("notify");
-	expect(unused?.message).not.toContain("money_round");
+	// `notify.h` is a public header too. No file outside `src` calls the notifier, but `mail.c`
+	// beside it includes it, and `src` declares no interface, so the notifier is used (TASK-646.17).
+	const library = outcome.depth.find((each) => each.directory === "src");
+	expect(library?.names.map((each) => each.name)).toContain("notify");
+	expect(outcome.findings.filter((each) => each.code === "EXPOSED_UNUSED")).toEqual([]);
+	// The remedy is C's way to declare an interface, not another language's entry file.
+	const undeclared = outcome.findings.find((each) => each.code === "INTERFACE_UNDECLARED");
+	expect(undeclared?.message).toContain("public headers in an include directory");
+	expect(undeclared?.message).not.toContain("index.ts");
 });
 
 test("a checkout with no configured C server says language-server-missing once for it, and names the command that configures one", () => {

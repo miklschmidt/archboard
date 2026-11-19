@@ -53,6 +53,8 @@ Read the resulting architecture.
 Compare its stable subjects with the intended change.
 Make sure that the requested scope, flow, and every narrative beat remain available.
 Run affected semantic, code, and embed inspection through `archboard check`.
+In an implementation loop, run `archboard check code --fail-shallow-modules` before you hand back, with `--base <branch below yours>` in a stack.
+It fails on every warning, and on a shallow module that your branch touched. Clear each finding as [module depth](references/design-lens.md#module-depth) says.
 Report concrete changes, refusals, unavailable source, and recovery work.
 Claim frontend acceptance, adoption, publication, or migration only after its operation succeeds.
 

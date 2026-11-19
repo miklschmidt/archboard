@@ -35,6 +35,7 @@
 
 import type { Node } from "web-tree-sitter";
 import { cDefinitionsOf } from "#runtime/code-facts/c/operations/c-definitions.ts";
+import { cPassesTo } from "#runtime/code-facts/c/operations/c-pass-through.ts";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 
@@ -97,7 +98,8 @@ const IVAR_WORDS: Readonly<Record<string, string>> = {
  * @param visibility.word The word.
  * @param visibility.exposed Whether it is exposed.
  * @param kind Its definition kind.
- * @param declares Whether its code is elsewhere.
+ * @param more What else it says: that its code is elsewhere, that it is a
+ * type, that the language calls it, or the call it only passes on.
  */
 function define(
 	walk: Walk,
@@ -105,7 +107,7 @@ function define(
 	extent: Node,
 	visibility: { word: string; exposed: boolean },
 	kind: Definition["kind"],
-	declares = false,
+	more: Pick<Definition, "declaration" | "type" | "calledByLanguage" | "passes"> = {},
 ): void {
 	walk.definitions.push({
 		symbol,
@@ -115,8 +117,36 @@ function define(
 		source: sourceRange(extent),
 		visibility: visibility.word,
 		exposed: visibility.exposed,
-		...(declares ? { declaration: true as const } : {}),
+		...more,
 	});
+}
+
+/**
+ * The methods the runtime and Foundation call themselves, which no caller
+ * names (TASK-646.12): an initializer, which `alloc` pairs with as a
+ * constructor, and the methods `NSObject` and its protocols ask of a class.
+ */
+const CALLED_BY_RUNTIME = new Set([
+	"dealloc",
+	"description",
+	"debugDescription",
+	"hash",
+	"isEqual:",
+	"copyWithZone:",
+	"mutableCopyWithZone:",
+	"encodeWithCoder:",
+	"load",
+	"initialize",
+]);
+
+/**
+ * Whether the runtime calls a method itself: an initializer, `init` or one
+ * whose selector starts `initWith`, or a method of `CALLED_BY_RUNTIME`.
+ * @param selector The method's selector.
+ * @returns True when it does.
+ */
+function calledByRuntime(selector: string): boolean {
+	return /^init(?:$|[A-Z:])/u.test(selector) || CALLED_BY_RUNTIME.has(selector);
 }
 
 /**
@@ -209,14 +239,26 @@ type MemberHandler = (walk: Walk, holder: Holder, node: Node) => void;
  */
 function member(walk: Walk, holder: Holder, name: string, node: Node, declares = false): void {
 	const visibility = { word: holder.word, exposed: holder.exposed };
-	define(
-		walk,
-		`${holder.symbol}::${name}`,
-		node,
-		visibility,
-		node.type === "property_declaration" ? "value" : "function",
-		declares,
-	);
+	const method = node.type !== "property_declaration";
+	define(walk, `${holder.symbol}::${name}`, node, visibility, method ? "function" : "value", {
+		...(declares ? { declaration: true } : {}),
+		...(method ? methodMore(node, name) : {}),
+	});
+}
+
+/**
+ * What a method says beyond its name: that the runtime calls it, or the
+ * message it only passes on.
+ * @param node The method declaration or definition.
+ * @param selector Its selector.
+ * @returns What it says.
+ */
+function methodMore(node: Node, selector: string): Pick<Definition, "calledByLanguage" | "passes"> {
+	const passes = node.type === "method_definition" ? cPassesTo(node) : undefined;
+	return {
+		...(calledByRuntime(selector) ? { calledByLanguage: true } : {}),
+		...(passes === undefined ? {} : { passes }),
+	};
 }
 
 /** How each kind of node inside a class, category, protocol or implementation is read. */
@@ -306,7 +348,9 @@ function classInterface(walk: Walk, node: Node): void {
 	if (head === undefined) return;
 	const exposed = walk.role === "header" && !head.extension;
 	if (!head.extension)
-		define(walk, head.symbol, node, { word: "@interface", exposed }, "class", true);
+		define(walk, head.symbol, node, { word: "@interface", exposed }, "class", {
+			declaration: true,
+		});
 	const word = head.extension ? "private" : "public";
 	const holder: Holder = { symbol: head.name, word, exposed, declares: true };
 	variablesOf(walk, holder, node, "protected");
@@ -341,7 +385,8 @@ function protocol(walk: Walk, node: Node): void {
 	const name = ownName(node);
 	if (name === undefined) return;
 	const exposed = walk.role === "header";
-	define(walk, name, node, { word: "@protocol", exposed }, "class");
+	// A protocol declares a type, as a TypeScript interface does: its members are no class's code.
+	define(walk, name, node, { word: "@protocol", exposed }, "class", { type: true });
 	members(walk, { symbol: name, word: "public", exposed, declares: false }, node);
 }
 

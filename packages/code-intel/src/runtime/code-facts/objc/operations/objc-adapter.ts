@@ -131,6 +131,8 @@ function objcFacts(role: ObjcRole): (tree: Tree, grammar: Grammar) => ParsedFact
 			),
 			imports: [...c.imports, ...modules].toSorted((left, right) => left.line - right.line),
 			unparsed: c.unparsed,
+			...(c.logic === undefined ? {} : { logic: c.logic }),
+			...(c.computations === undefined ? {} : { computations: c.computations }),
 		};
 	};
 }

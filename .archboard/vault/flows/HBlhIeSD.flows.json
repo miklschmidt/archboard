@@ -439,6 +439,211 @@
           ]
         }
       ]
+    },
+    {
+      "id": "vKEsyHFk#IP3XeEwA",
+      "name": "An agent loop gates on shallow modules",
+      "summary": "archboard check code --fail-shallow-modules judges every module that the branch touched, working tree included, so an implementation agent fails on the shallow module or leaked value that it caused, and not on older findings.",
+      "participants": [
+        "vKEsyHFk/XppR9owz#yQCdykGt",
+        "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "vKEsyHFk/HBlhIeSD#5SMX69gS",
+        "vKEsyHFk/HBlhIeSD#radK8osF",
+        "vKEsyHFk#ds3DX618"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk#B4NJs7OC",
+          "from": "vKEsyHFk/XppR9owz#yQCdykGt",
+          "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "label": "check code, gate from the flag or the model's policy",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#DQzvBIkD",
+          "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "label": "run the pass with the branch base",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#tFJyQbQp",
+          "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+          "to": "vKEsyHFk/HBlhIeSD#radK8osF",
+          "label": "modules touched since the base, working tree included",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#V8rWw05o",
+          "kind": "decision",
+          "question": "Does the base resolve?",
+          "alternatives": [
+            {
+              "label": "no",
+              "steps": [
+                {
+                  "id": "vKEsyHFk#iBwzPdUN",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                  "label": "the base names no commit: a refusal",
+                  "kind": "sync"
+                },
+                {
+                  "id": "vKEsyHFk#QaMFOUDZ",
+                  "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                  "to": "vKEsyHFk/XppR9owz#yQCdykGt",
+                  "label": "422 with the refusal as it is",
+                  "kind": "sync"
+                }
+              ]
+            },
+            {
+              "label": "yes",
+              "steps": [
+                {
+                  "id": "vKEsyHFk#moaqdT0N",
+                  "kind": "loop",
+                  "condition": "for each bound module",
+                  "steps": [
+                    {
+                      "id": "vKEsyHFk#71lMjmtG",
+                      "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                      "to": "vKEsyHFk#ds3DX618",
+                      "label": "exposure, resolved uses, coverage and caller owners",
+                      "kind": "sync"
+                    },
+                    {
+                      "id": "vKEsyHFk#GuOweShW",
+                      "from": "vKEsyHFk#ds3DX618",
+                      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                      "label": "counts and per-name findings, MODULE_SHALLOW as information",
+                      "kind": "sync"
+                    }
+                  ]
+                },
+                {
+                  "id": "vKEsyHFk#fp3SojGs",
+                  "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+                  "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                  "label": "findings, coverage and the touched modules",
+                  "kind": "sync"
+                },
+                {
+                  "id": "vKEsyHFk#TEdVWuFe",
+                  "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+                  "to": "vKEsyHFk/XppR9owz#yQCdykGt",
+                  "label": "the answer, severities unchanged by any flag",
+                  "kind": "sync"
+                },
+                {
+                  "id": "vKEsyHFk#hGeUTgzx",
+                  "from": "vKEsyHFk/XppR9owz#yQCdykGt",
+                  "to": "vKEsyHFk/XppR9owz#yQCdykGt",
+                  "label": "promote MODULE_SHALLOW on touched modules, then exit",
+                  "kind": "self"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vKEsyHFk#91r0ZFeg",
+      "name": "A person reads module depth in Measures",
+      "summary": "Measures shows what the model claims and what the code exposes side by side, and a missing language server becomes a fix asked of that checkout's agent, so the person sees the same evidence that the gate uses.",
+      "participants": [
+        "vKEsyHFk#tQ2B3iEF",
+        "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+        "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+        "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+        "vKEsyHFk#mlSnLR16",
+        "vKEsyHFk#8xqOjFa6",
+        "vKEsyHFk/yejBBUFY#cLeaiTWy",
+        "vKEsyHFk#iOyrvcQp",
+        "vKEsyHFk#51X5gvya"
+      ],
+      "steps": [
+        {
+          "id": "vKEsyHFk#rdbSbmMc",
+          "from": "vKEsyHFk#tQ2B3iEF",
+          "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+          "label": "the code counts, findings and coverage of the reading",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#4k8iFuDw",
+          "from": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+          "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "label": "what the last code pass found",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#AmRc2s2s",
+          "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "to": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+          "label": "the answer for this model, state and revision",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#R994OP9P",
+          "from": "vKEsyHFk/HBlhIeSD#yYQ3AHkf",
+          "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "label": "exports, counts, findings, coverage and skipped reads",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#OLlqZlzM",
+          "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+          "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+          "label": "the remembered answer",
+          "kind": "sync"
+        },
+        {
+          "id": "vKEsyHFk#FG5wW7VM",
+          "kind": "decision",
+          "question": "Did every language of the reading have its server?",
+          "alternatives": [
+            {
+              "label": "a server is missing",
+              "steps": [
+                {
+                  "id": "vKEsyHFk#1QlKEwfI",
+                  "from": "vKEsyHFk#tQ2B3iEF",
+                  "to": "vKEsyHFk#mlSnLR16",
+                  "label": "Fix with Codex, for the checkout that misses it",
+                  "kind": "sync"
+                },
+                {
+                  "id": "vKEsyHFk#52PuejOI",
+                  "from": "vKEsyHFk#mlSnLR16",
+                  "to": "vKEsyHFk#8xqOjFa6",
+                  "label": "the brief for the missing server",
+                  "kind": "sync"
+                },
+                {
+                  "id": "vKEsyHFk#cOBUdPjt",
+                  "from": "vKEsyHFk#mlSnLR16",
+                  "to": "vKEsyHFk/yejBBUFY#cLeaiTWy",
+                  "label": "a fix asked for, in that checkout's conversation",
+                  "kind": "sync"
+                }
+              ]
+            },
+            {
+              "label": "every server ran",
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "vKEsyHFk#K3TOL5DU",
+          "from": "vKEsyHFk#iOyrvcQp",
+          "to": "vKEsyHFk#51X5gvya",
+          "label": "the selected module's code exports and findings",
+          "kind": "sync"
+        }
+      ]
     }
   ]
 }

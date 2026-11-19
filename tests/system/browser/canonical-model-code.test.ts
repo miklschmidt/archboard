@@ -279,3 +279,85 @@ test("canonical code controls follow current draft and exact readings while miss
 		WAIT,
 	);
 }, 60_000);
+
+test("a code export on the About page opens its own source, at the line that defines it", async () => {
+	await using resources = new AsyncDisposableStack();
+	const fixtureRoot = join(browserTestRoots().ownerRoot, "code-exports");
+	const root = join(fixtureRoot, "checkout");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	// The gateway is bound to its directory, as a module of its own code is.
+	for (const file of ["gateway.module.json", "internal/handler.module.json"]) {
+		const path = join(vault, file);
+		writeFileSync(path, readFileSync(path, "utf8").replaceAll('"src/gateway.ts"', '"src/gateway"'));
+	}
+	mkdirSync(join(root, "src/gateway"), { recursive: true });
+	writeFileSync(
+		join(root, "src/gateway/index.ts"),
+		"// The gateway.\n\nexport function dispatch(): void {}\n\nexport function admit(): boolean {\n\treturn true;\n}\n",
+	);
+	initializeSource(root);
+	fixtureGit(root, "add", ".");
+	fixtureGit(root, "commit", "--quiet", "-m", "test: retain source fixtures");
+	const capture = join(fixtureRoot, "opened-code.txt");
+	const opener = join(fixtureRoot, "capture-opener.ts");
+	writeFileSync(
+		opener,
+		'import { writeFileSync } from "node:fs"; writeFileSync(process.argv[2]!, process.argv[3]!);\n',
+	);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({
+			GIT_CONFIG_GLOBAL: "/dev/null",
+			GIT_CONFIG_NOSYSTEM: "1",
+			ARCHBOARD_OPENER_CONFIG: join(fixtureRoot, "opener.json"),
+		}),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const configured = await fetch(`${server.base}/api/settings/opener`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+			Origin: server.base,
+			"Sec-Fetch-Site": "same-origin",
+		},
+		body: JSON.stringify({
+			version: 1,
+			kind: "custom",
+			executable: process.execPath,
+			argv: [opener, capture, "{path}:{line}"],
+		}),
+	});
+	if (!configured.ok) throw new Error(await configured.text());
+	const request = createJsonRequester(server);
+	const checked = await request<CodeCheckAnswer>("/api/vault/code-check");
+	const gateway = checked.body.depth?.find((module) => module.subject.id === "Shop#Gateway");
+	expect(gateway?.exports.functions).toBeGreaterThan(0);
+
+	const browser = resources.use(await createAgentBrowser());
+	const address = new URL(server.base);
+	address.searchParams.set("modelA", "Shop");
+	address.searchParams.set("scopeA", "Shop#Gateway");
+	await browser.run(["open", address.href]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await openAbout(browser);
+	const admit = '[data-slot="code-export"][data-export="admit"]';
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${admit}') !== null`),
+		Boolean,
+		"the gateway's code exports",
+		WAIT,
+	);
+	rmSync(capture, { force: true });
+	await browser.run(["click", admit]);
+	await pollUntil(
+		async () => (existsSync(capture) ? readFileSync(capture, "utf8") : null),
+		(opened) => opened === `${join(root, "src/gateway/index.ts")}:5`,
+		"the opener receiving the export's own line",
+		WAIT,
+	);
+}, 60_000);

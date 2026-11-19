@@ -129,6 +129,19 @@ function failureNotice(id: string, title: string, description: string): ShellNot
 }
 
 /**
+ * Fix with Codex could not reach the conversation of the checkout that misses a language server.
+ * @param repo The checkout's repository.
+ * @returns The notice.
+ */
+function unreachableCheckoutNotice(repo: string): ShellNotice {
+	return failureNotice(
+		"language-server-fix",
+		"Fix with Codex",
+		`This tab has no conversation in the checkout of ${repo}. Open one of its models, then press Fix with Codex again.`,
+	);
+}
+
+/**
  * The address named models that could not be opened (TASK-166). What is on
  * screen is what the panes could reach, and the address bar now says so.
  * @param paneKeys The models that could not be opened.
@@ -222,6 +235,7 @@ export {
 	infoNotice,
 	presentationNotice,
 	staleFrontendNotice,
+	unreachableCheckoutNotice,
 	LISTING_NOTICE_ID,
 	listingNotice,
 	readingNotice,

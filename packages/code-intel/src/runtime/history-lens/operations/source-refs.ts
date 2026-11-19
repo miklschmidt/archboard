@@ -285,4 +285,4 @@ async function readSourceRefs(
 	};
 }
 
-export { mergeBaseIn, readSourceRefs };
+export { defaultBaseOf, mergeBaseIn, readSourceRefs };

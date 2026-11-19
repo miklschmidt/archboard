@@ -223,6 +223,35 @@ test("a plan outside every registered checkout is refused before the pass", asyn
 	expect(await refused.json()).toMatchObject({ success: false, code: "PLAN_REFUSED" });
 });
 
+test("a caller asks for the modules the branch touched, from the default base or a named one", async () => {
+	const base = await listen(server.app);
+	const asked = CodeCheckAnswerSchema.parse(
+		await (
+			await fetch(`${base}/api/vault/code-check?${new URLSearchParams({ vault, touched: "true" })}`)
+		).json(),
+	);
+	expect(asked.touched).toEqual([
+		{ model: "Shop", state: "Current", base: "main", modules: [], unread: [] },
+	]);
+	const named = CodeCheckAnswerSchema.parse(
+		await (
+			await fetch(`${base}/api/vault/code-check?${new URLSearchParams({ vault, base: "HEAD~1" })}`)
+		).json(),
+	);
+	expect(named.touched).toEqual([
+		{ model: "Shop", state: "Current", base: "HEAD~1", modules: ["Shop#Checkout"], unread: [] },
+	]);
+});
+
+test("a base that does not resolve is refused, never a pass", async () => {
+	const base = await listen(server.app);
+	const refused = await fetch(
+		`${base}/api/vault/code-check?${new URLSearchParams({ vault, base: "no-such-base" })}`,
+	);
+	expect(refused.status).toBe(422);
+	expect(await refused.json()).toMatchObject({ success: false, code: "BASE_UNRESOLVED" });
+});
+
 test("a caller that hangs up cancels the code check", async () => {
 	const app = express();
 	let started!: () => void;

@@ -177,9 +177,10 @@ async function resolved(
 	const imports = read.imports.map((found) => resolver.resolve(file, found));
 	const references = read.references.map(({ through, ...reference }, index) => {
 		const target =
-			through === undefined
-				? moduleReading?.targets[index]
-				: targetOf(reference.symbol, through.local, imports[through.import]);
+			moduleReading?.targets[index] ??
+			(through === undefined
+				? undefined
+				: targetOf(reference.symbol, through.local, imports[through.import]));
 		return target === undefined ? reference : { ...reference, target };
 	});
 	return {
@@ -192,6 +193,20 @@ async function resolved(
 			? {}
 			: { testImports: read.testImports.map((found) => resolver.resolve(file, found)) }),
 		unparsed: parsed.unparsed,
+		...codeReading(parsed),
+	};
+}
+
+/**
+ * What an adapter read of a file's code beyond its names, where it reads it:
+ * its pieces of logic and the math it writes on the names it imports.
+ * @param parsed The file's facts.
+ * @returns Those of them the adapter gives.
+ */
+function codeReading(parsed: ParsedFacts): Pick<SyntaxFacts, "logic" | "computations"> {
+	return {
+		...(parsed.logic === undefined ? {} : { logic: parsed.logic }),
+		...(parsed.computations === undefined ? {} : { computations: parsed.computations }),
 	};
 }
 

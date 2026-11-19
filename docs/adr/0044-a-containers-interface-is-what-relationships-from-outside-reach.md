@@ -4,6 +4,10 @@ status: accepted
 
 # A container's interface is what relationships from outside it reach
 
+[ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md) supersedes one claim below,
+that depth has no measure. A board holds no behaviour, but the code does, and the code check now
+judges module depth from it. The interface measures of a board still give no verdict.
+
 ## Context
 
 A deep module hides a lot of behaviour behind a small interface (Ousterhout,

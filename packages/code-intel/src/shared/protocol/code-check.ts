@@ -47,7 +47,33 @@
 // of a draft whose ref cannot be read. TASK-498 adds `DOCUMENT_PATH_MISSING`,
 // a warning on a document reference of a variant the check reads whose file is
 // not at the version it names, with no subject: its `path` names the reference
-// as `variants.<id>.documents.<index>` (ADR 0054).
+// as `variants.<id>.documents.<index>` (ADR 0054). TASK-646.01 holds the
+// interface of every part bound to a module, with or without parts, and reads
+// every language the module holds. TASK-646.04 measures each bound
+// TypeScript module from its code (ADR 0082): `depth` counts its exports by
+// kind and the pieces of logic behind them, `EXPOSED_VALUE` is a warning on an
+// exported value that outside code reads, with the name in `export`, and
+// `MODULE_SHALLOW` is information on a module whose every export that is not a
+// type carries such a finding. `touched` marks the modules that the branch
+// touched, working tree included, when the request names a base or asks for
+// them, or a model's policy turns the shallow-module gate on, which
+// `models[].failShallowModules` carries. No severity depends on the request:
+// the CLI promotes `MODULE_SHALLOW` on a touched module to a warning.
+// TASK-646.05 gives each exported TypeScript name, each public method of an
+// exported class among them, at most one finding with the name in `export`:
+// `EXPOSED_UNUSED`, a warning only after a complete read when the model draws
+// no caller of it whose code the check does not read; `REEXPORT_PASS_THROUGH`,
+// a warning for two doors to one name and information for one;
+// `EXPOSED_VALUE`; or `CODE_PASS_THROUGH`, information. TASK-646.10 to
+// TASK-646.12 judge the names of Rust, Python, Go, C#, Swift and the C family
+// the same way; a Terraform, Nix or Helm module's names are counted and not
+// judged, and keep the one `EXPOSED_UNUSED` on the container (TASK-646.13). TASK-646.06 makes
+// it `EXPOSED_VALUE_COMPUTED`, a warning, on an exported value or getter on
+// which two or more modules write the same math, with each line as evidence.
+// TASK-646.18 adds `INTERFACE_UNDECLARED`, information, on a folder module
+// that declares no interface where only its own files use some of its names,
+// and gives a module the model marks `external` its counts and no finding on
+// its exports.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
@@ -125,7 +151,73 @@ const CodeFindingSchema = VaultDiagnosticSchema.omit({ board: true }).extend({
 	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
 	missing: z.enum(["code", "infrastructure"]).optional(),
 	dropped: DroppedPartSchema.optional(),
+	/** The exported name that a finding of module depth judges, such as `EXPOSED_VALUE`'s value. */
+	export: z.string().optional(),
 });
+
+/**
+ * One export of a bound module (TASK-646.07): its name as a caller spells it,
+ * its kind, and where it is defined. A public method of an exported class is
+ * named `Class.method`.
+ */
+const ModuleExportSchema = z
+	.object({
+		name: z.string(),
+		kind: z.enum(["function", "class", "method", "value", "type"]),
+		path: z.string(),
+		line: z.int().positive(),
+	})
+	.strict();
+
+/**
+ * One bound module measured from its code (TASK-646.04, ADR 0082): the part
+ * that binds it, its directory, the languages whose exports were counted, its
+ * exports by kind, each public method of an exported class counted as its own
+ * export, and the pieces of logic behind them, as evidence and never a score.
+ * `unjudged` names the languages the module holds whose exports no rule reads
+ * yet, so a module read in part never looks clean, and `names` lists each
+ * export it counted (TASK-646.07).
+ */
+const ModuleDepthSchema = z
+	.object({
+		model: z.string(),
+		state: z.string().nullable().optional(),
+		variant: z.string().optional(),
+		subject: CodeCheckSubjectSchema,
+		repo: z.string(),
+		directory: z.string(),
+		languages: z.array(z.string()),
+		unjudged: z.array(z.string()),
+		names: z.array(ModuleExportSchema),
+		exports: z
+			.object({
+				functions: z.int().nonnegative(),
+				classes: z.int().nonnegative(),
+				methods: z.int().nonnegative(),
+				values: z.int().nonnegative(),
+				types: z.int().nonnegative(),
+			})
+			.strict(),
+		logic: z.int().nonnegative(),
+	})
+	.strict();
+
+/**
+ * The modules of one reading that the branch touched (TASK-646.04): those
+ * whose bound code, or a part's inside their module, changed from the merge
+ * base with `base` up to the working tree. `unread` names the parts the History
+ * lens could not read the range of, so no gate takes one for untouched.
+ */
+const TouchedSchema = z
+	.object({
+		model: z.string(),
+		state: z.string().nullable(),
+		/** The base read from, or null when none was named and the vault's checkout has no default. */
+		base: z.string().nullable(),
+		modules: z.array(z.string()),
+		unread: z.array(z.string()),
+	})
+	.strict();
 
 /** A pinned binding's ref, and what its checkout has out instead. */
 const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).strict();
@@ -184,6 +276,11 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   language the check reads has, or whose `package.json` `exports` names no
  *   file of the checkout, so its interface is not held to what the module
  *   exposes (TASK-368.10). Its `detail` names the module.
+ * - `binding-not-a-module`: a part bound to a file that stands for no folder,
+ *   as an entry file such as `index.ts` does, or to a symbol, that no module
+ *   the check measures on its document holds (TASK-646). A part that such a
+ *   module holds is judged through it and is not skipped. Its `detail` names
+ *   the binding.
  * - `module-not-read`: a binding's address inside a Terraform or OpenTofu
  *   module the check does not read: a remote module, which the check never
  *   fetches, with no plan JSON named for its root module (TASK-367.17). Its
@@ -222,6 +319,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *
  * A reason that holds for a whole checkout names its `repo` and no subject,
  * which is how the check says a thing once.
+ *
+ * A skip that names a subject carries the canonical `model` and `state` of its
+ * reading, as a finding does (TASK-646.07). One that names no subject keeps
+ * the document's name in `model` and its `variant`.
  */
 const CodeCheckSkipSchema = z
 	.object({
@@ -244,6 +345,7 @@ const CodeCheckSkipSchema = z
 			"language-server-unready",
 			"language-server-failed",
 			"exposure-unknown",
+			"binding-not-a-module",
 			"module-not-read",
 			"draft-ref-missing",
 			"draft-refs-ambiguous",
@@ -383,6 +485,8 @@ const CodeCheckModelSchema = z.strictObject({
 	model: z.string(),
 	state: z.string().nullable(),
 	revision: ArchitectureModelReadSchema.options[0].shape.revision,
+	/** The model's policy fails plain `archboard check` on a shallow module the branch touched. */
+	failShallowModules: z.boolean().optional(),
 });
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),
@@ -391,6 +495,8 @@ const CodeCheckAnswerSchema = z.object({
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
 	behind: z.array(ModelBehindSchema),
+	depth: z.array(ModuleDepthSchema).optional(),
+	touched: z.array(TouchedSchema).optional(),
 });
 
 /**
@@ -415,6 +521,14 @@ const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 const RememberedModelSchema = CodeCheckModelSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
+	/**
+	 * Each module the pass measured on this reading, those with no findings included (TASK-646.07),
+	 * without the names of its exports: every canvas reads this answer, and only the About page of
+	 * one module reads its names, from `GET /api/vault/code-exports` (TASK-646.08).
+	 */
+	depth: z.array(ModuleDepthSchema.omit({ names: true })).optional(),
+	/** What the pass skipped on this reading, and what it skipped in a whole checkout or language. */
+	skipped: z.array(CodeCheckSkipSchema).optional(),
 });
 const RememberedFindingsSchema = z.object({
 	readings: z.array(RememberedReadingSchema),
@@ -426,6 +540,8 @@ type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
+type ModuleDepth = z.infer<typeof ModuleDepthSchema>;
+type ModuleExport = z.infer<typeof ModuleExportSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
@@ -441,6 +557,8 @@ export {
 	type CodeCheckSkip,
 	type CodeEvidence,
 	type CodeFinding,
+	type ModuleDepth,
+	type ModuleExport,
 	RememberedFindingsSchema,
 	type RememberedFindings,
 	type ServerTypescript,

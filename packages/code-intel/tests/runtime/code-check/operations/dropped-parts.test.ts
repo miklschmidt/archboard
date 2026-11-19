@@ -195,7 +195,8 @@ test("a draft whose ref the checkout lacks, or that names several refs, is skipp
 		["repository-unregistered", "v4", "github.com/test/stranger", undefined],
 		["repository-unregistered", "v5", "github.com/test/stranger", undefined],
 	]);
-	expect(outcome.findings.some((one) => one.variant === "v3" || one.variant === "v4")).toBe(false);
+	const dropped = outcome.findings.filter((one) => one.code === "INHERITED_PART_DROPPED");
+	expect(dropped.some((one) => one.variant === "v3" || one.variant === "v4")).toBe(false);
 });
 
 test("a draft named with --variant is held to what it dropped too", async () => {
