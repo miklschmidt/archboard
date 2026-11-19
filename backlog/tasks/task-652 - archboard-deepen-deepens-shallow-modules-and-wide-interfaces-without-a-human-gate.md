@@ -3,9 +3,11 @@ id: TASK-652
 title: >-
   archboard-deepen deepens shallow modules and wide interfaces without a human
   gate
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T14:03:00Z'
+updated_date: '2026-11-19T14:06:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -47,3 +49,13 @@ The finding messages and the archboard skill state the principles (narrow interf
 - [ ] #5 The archboard skill points agents to it where INTERFACE_WIDE and MODULE_SHALLOW are described, and the site install and pull-request pages name it
 - [ ] #6 The skill-link and init tests cover it, and the skill follows writing-for-agents (one source of truth, leading words, no restated environment)
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Write skills/archboard-deepen/SKILL.md (model-invoked; vocabulary, advisor protocol, eight steps with completion criteria) and references/report.md (the HTML report). Reuse the archboard skill for every architecture operation and archboard-plan's to-tickets and implement-spec sections for slices, the gate and deviations, with the advisors in the user's place.
+2. Wire it in: BUNDLED_SKILLS in init setup choices, init help, release compile, INSTALL.md, site install, first-map and pull-requests pages, .coderabbit.yaml, symlinks in .claude/skills and .agents/skills.
+3. Tests: skill-links BUNDLED_SKILLS and the init system test's skills call.
+4. One pointer line in skills/archboard/references/design-lens.md Module depth.
+5. Run types, lint:all, format:check, test:modules, test:repository, test:system, site build.
+<!-- SECTION:PLAN:END -->
