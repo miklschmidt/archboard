@@ -26,7 +26,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { CHECK_MS, GIT_MS } from "@archboard/timing";
 import { stateDir } from "@archboard/workspace/state-dir";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 import { gitEnvironment } from "#cli/commands/vault/embeds/clients/git-environment.ts";
 
 /** Where the vault of a repository identity was found, or why it was not. */
@@ -201,7 +201,7 @@ function fetchSteps(
 		{
 			cwd: incoming,
 			timeoutMs: local,
-			args: ["sparse-checkout", "set", "--no-cone", `/${VAULT_DIRECTORY}/`],
+			args: ["sparse-checkout", "set", "--no-cone", `/${vaultDirectory()}/`],
 		},
 		// The checkout fetches the blobs of the vault, and only those.
 		{ cwd: incoming, timeoutMs: network, args: ["checkout", "--quiet"] },
@@ -327,7 +327,7 @@ function cachedCommits(cache: string): { commit: string; directory: string }[] {
  * @returns The vault.
  */
 function cachedVault(cache: string, commit: string, fetchFailed?: string): FetchedVault {
-	const vault = path.join(cache, commit, VAULT_DIRECTORY);
+	const vault = path.join(cache, commit, vaultDirectory());
 	return {
 		ok: true,
 		vault: fs.existsSync(vault) ? vault : undefined,

@@ -76,7 +76,7 @@
 // its exports.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
-import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
+import { configurableLanguages } from "@archboard/workspace/languages";
 import { z } from "zod";
 import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/policy";
 
@@ -463,7 +463,7 @@ const CheckTimingSchema = z.discriminatedUnion("check", [
 		.object({
 			check: z.literal("language-server"),
 			elapsedMs: z.number().nonnegative(),
-			language: z.enum(CONFIGURABLE_LANGUAGES),
+			language: z.enum(configurableLanguages()),
 			repo: z.string().optional(),
 			project: z.string(),
 			/** The file name of the program that ran, such as `typescript-language-server`. */

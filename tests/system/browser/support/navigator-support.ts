@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type { z } from "zod";
-import type { RepositoryListingSchema } from "@archboard/workspace/repositories";
+import type { repositoryListingSchema } from "@archboard/workspace/repositories";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type PanesReport = ReturnType<typeof buildPanesReport>;
@@ -30,7 +30,7 @@ async function servedRepository(base: string): Promise<string> {
 	const response = await fetch(`${base}/api/repositories`, {
 		headers: { Origin: base, "Sec-Fetch-Site": "same-origin" },
 	});
-	const body = (await response.json()) as z.infer<typeof RepositoryListingSchema>;
+	const body = (await response.json()) as z.infer<ReturnType<typeof repositoryListingSchema>>;
 	const [served] = body.repositories;
 	if (served === undefined) {
 		throw new Error(`The server at ${base} lists no repository.`);

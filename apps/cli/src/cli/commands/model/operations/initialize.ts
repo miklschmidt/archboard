@@ -13,7 +13,7 @@ import {
 	initializeArchitectureArchive,
 } from "@archboard/model/store-write";
 import { repoRootOf } from "@archboard/workspace/checkouts";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 import { initializeArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { modelArchiveInitContract } from "#cli/commands/model/operations/archive.ts";
 import { findVaultOf } from "#cli/routing/operations/addressed-vault.ts";
@@ -38,7 +38,7 @@ async function makeVault(
 	intent: InitializationIntent,
 	context: Pick<CommandContext, "diagnostic">,
 ): Promise<ArchitectureModuleEditResult> {
-	const vault = path.join(repo, VAULT_DIRECTORY);
+	const vault = path.join(repo, vaultDirectory());
 	fs.mkdirSync(vault, { recursive: true });
 	if ((await repoRootOf(repo)) === undefined) {
 		const archive = await initializeArchitectureArchive(vault);

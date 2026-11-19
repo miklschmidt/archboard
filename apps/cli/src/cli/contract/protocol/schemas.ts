@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { VAULT_ORIGINS } from "@archboard/workspace/vault";
+import { vaultOrigins } from "@archboard/workspace/vault";
 
 const PaneRefSchema = z.looseObject({
 	paneId: z.string(),
@@ -78,7 +78,7 @@ const RegisteredVaultSchema = z.discriminatedUnion("kind", [
 const AnsweredVaultSchema = z.object({
 	/** The vault directory, as its real path. */
 	path: z.string(),
-	origin: z.enum(VAULT_ORIGINS),
+	origin: z.enum(vaultOrigins()),
 	/** Present only on the answer of the command that registered it. */
 	registered: RegisteredVaultSchema.optional(),
 });

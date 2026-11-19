@@ -39,9 +39,9 @@ import {
 import { broadcastEverywhere, movePaneVault } from "#server/panes/connections/state/pane-vaults.ts";
 import { arrivedOnModel } from "#server/panes/connections/routes/pane-routes.ts";
 import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 import type { z } from "zod";
-import { CheckoutChoiceSchema } from "@archboard/workspace/repositories";
+import { checkoutChoiceSchema } from "@archboard/workspace/repositories";
 
 /**
  * The repositories, as the navigator lists them.
@@ -99,8 +99,11 @@ function refuseUnknownCheckout(res: Response, repository: string, root: string):
  * @param res Its response, which carries the refusal when there is one.
  * @returns The repository and the checkout, or null once refused.
  */
-function statedChoice(req: Request, res: Response): z.infer<typeof CheckoutChoiceSchema> | null {
-	const parsed = CheckoutChoiceSchema.safeParse(req.body);
+function statedChoice(
+	req: Request,
+	res: Response,
+): z.infer<ReturnType<typeof checkoutChoiceSchema>> | null {
+	const parsed = checkoutChoiceSchema().safeParse(req.body);
 	if (!parsed.success) {
 		res.status(400).json({
 			success: false,
@@ -121,7 +124,7 @@ function statedChoice(req: Request, res: Response): z.infer<typeof CheckoutChoic
 			success: false,
 			code: "CHECKOUT_UNUSABLE",
 			error: checkout.exists
-				? `${root} has no ${VAULT_DIRECTORY}, so it has no models to read. Choose a checkout of ${repository} that has one.`
+				? `${root} has no ${vaultDirectory()}, so it has no models to read. Choose a checkout of ${repository} that has one.`
 				: `${root} is gone from this machine. Choose another checkout of ${repository}, or remove it with \`archboard repo forget ${root}\`.`,
 		});
 		return null;

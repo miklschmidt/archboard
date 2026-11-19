@@ -255,3 +255,11 @@ export {
 	RELEASE_PORT,
 	worktreePort,
 };
+
+/**
+ * The value `DEFAULT_ARCHBOARD_URL`, for callers that read it.
+ * @returns The value.
+ */
+export function defaultArchboardUrl(): typeof DEFAULT_ARCHBOARD_URL {
+	return DEFAULT_ARCHBOARD_URL;
+}

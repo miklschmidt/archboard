@@ -33,7 +33,7 @@ import {
 } from "#cli/commands/vault/protocol/code-check-result.ts";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
 import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 
 /** How long one check took. */
 type CheckTiming = CodeCheckResult["timings"][number];
@@ -232,7 +232,7 @@ function skippedWithoutVault(
 	if (checkout === null || skipped.length === 0) return undefined;
 	return {
 		checks: skipped,
-		message: `${checkout} holds no ${VAULT_DIRECTORY}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
+		message: `${checkout} holds no ${vaultDirectory()}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
 	};
 }
 
