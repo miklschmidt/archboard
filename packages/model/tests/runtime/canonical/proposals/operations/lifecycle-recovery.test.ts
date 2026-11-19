@@ -1,5 +1,4 @@
 import { afterEach, expect, test } from "bun:test";
-import { modelLockMs } from "@archboard/timing";
 import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,
@@ -36,7 +35,7 @@ test.each([
 		};
 		const { exitCode, output } = await writeInProcess(root, vault, input, point);
 		expect(exitCode, output).toBe(86);
-		Date.now = () => now() + modelLockMs("lease");
+		Date.now = () => now() + 3000;
 		const blocked = readArchitectureModel(vault);
 		expect(blocked).toMatchObject({ success: false, code: "RECOVERY_REQUIRED" });
 		if (blocked.success || blocked.recovery === undefined) throw new Error(JSON.stringify(blocked));

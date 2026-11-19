@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { modelLockMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	VAULT_STATE_DIR,
 	modelMemoryKey,
@@ -329,7 +329,7 @@ function watchModelLocks(watched: WatchedModels | null): void {
 	}
 	const timer = setInterval(() => {
 		sweepModelLocks();
-	}, modelLockMs("watch"));
+	}, durationMs("modelLock.watch"));
 	// The poll must not be the reason a process stays alive.
 	timer.unref();
 	processWatcher.timer = timer;

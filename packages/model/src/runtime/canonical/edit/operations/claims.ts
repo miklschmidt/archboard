@@ -5,7 +5,7 @@ import type {
 } from "#shared/canonical-contracts/schemas/model.ts";
 import { notifyArchitecture } from "#runtime/canonical/installation/news/store/model-news.ts";
 import { isDeepStrictEqual } from "node:util";
-import { claimMs } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import { mintId } from "#shared/rules/ids.ts";
 import {
 	ArchitectureClaimRequestSchema,
@@ -121,7 +121,7 @@ function renewClaim(
 	const claim = {
 		...overlap,
 		reason: request.reason,
-		until: new Date(claimMs("default", Date.now())).toISOString(),
+		until: new Date(deadline("claim.default", Date.now())).toISOString(),
 	};
 	writeState(vault, "claims.json", {
 		...state,
@@ -232,7 +232,7 @@ async function claimArchitectureSubjects(
 				...request,
 				id: mintId(),
 				since: new Date().toISOString(),
-				until: new Date(claimMs("default", Date.now())).toISOString(),
+				until: new Date(deadline("claim.default", Date.now())).toISOString(),
 			};
 			writeState(vault, "claims.json", { ...state, claims: [...live, claim] });
 			return { success: true as const, claim };

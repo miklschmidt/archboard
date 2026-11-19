@@ -1,5 +1,4 @@
 import { afterEach, expect, test } from "bun:test";
-import { modelLockMs } from "@archboard/timing";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/model/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/model/store-write";
 import { fixture, disposeFixtures } from "#tests/runtime/canonical/edit/operations/fixture.ts";
@@ -31,7 +30,7 @@ test("a partial predecessor installation recovers the exact complete family stan
 	};
 	const { exitCode, output } = await writeInProcess(root, vault, intent, "file");
 	expect(exitCode, output).toBe(86);
-	Date.now = () => now() + modelLockMs("lease");
+	Date.now = () => now() + 3000;
 	const blocked = readArchitectureModel(vault);
 	expect(blocked).toMatchObject({ success: false, code: "RECOVERY_REQUIRED" });
 	if (blocked.success || blocked.recovery === undefined) throw new Error(JSON.stringify(blocked));
