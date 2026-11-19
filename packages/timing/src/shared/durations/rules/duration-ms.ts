@@ -5,7 +5,7 @@
 // the registry lock sleeps with `Bun.sleepSync`, a sleep this browser-safe
 // package cannot make.
 
-import { durationOf, type DurationName } from "#shared/durations/names.ts";
+import { durationOf, type DurationName } from "#shared/durations/rules/names.ts";
 
 /** Every duration that something other than a wait or a deadline takes as a number. */
 const READABLE = [

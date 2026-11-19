@@ -29,13 +29,13 @@
 // here and the override stays at the point of use, in the process that has an
 // environment to read.
 
-export { waitUntil } from "#shared/waits/wait-until.ts";
-export { pause } from "#shared/waits/pause.ts";
-export { deadline } from "#shared/durations/deadline.ts";
-export { durationMs } from "#shared/durations/duration-ms.ts";
+export { waitUntil } from "#shared/waits/operations/wait-until.ts";
+export { pause } from "#shared/waits/operations/pause.ts";
+export { deadline } from "#shared/durations/rules/deadline.ts";
+export { durationMs } from "#shared/durations/rules/duration-ms.ts";
 export { codexRestartDelayMs } from "#shared/constants/codex.ts";
 export { localityDefaultSinceSeconds } from "#shared/constants/history-lens.ts";
 export { columnSlideSettledMs } from "#shared/constants/column-motion.ts";
 export { reachHopDelayMs } from "#shared/constants/exploring.ts";
 export { painterPhasesJson } from "#shared/constants/diagram-motion.ts";
-export type { Clock } from "#shared/waits/clock.ts";
+export type { Clock } from "#shared/waits/clients/clock.ts";

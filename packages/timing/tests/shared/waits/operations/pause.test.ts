@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { pause } from "#shared/constants/timing.ts";
-import { fakeClock } from "#tests/shared/waits/fake-clock.ts";
+import { fakeClock } from "#tests/shared/support/fake-clock.ts";
 
 describe("pause", () => {
 	test("sleeps one cadence", async () => {

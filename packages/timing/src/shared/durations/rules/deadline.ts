@@ -1,6 +1,6 @@
 // When a duration that starts at a moment ends.
 
-import { durationOf, type DurationName } from "#shared/durations/names.ts";
+import { durationOf, type DurationName } from "#shared/durations/rules/names.ts";
 
 /**
  * When a duration that starts at a moment ends, never later than an outer cap.

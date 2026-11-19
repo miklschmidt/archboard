@@ -1,8 +1,8 @@
 // Polling until something is there, written once for every wait.
 
-import { durationOf } from "#shared/durations/names.ts";
-import { sleep, SYSTEM_CLOCK, type Clock } from "#shared/waits/clock.ts";
-import { WAITS, type WaitName, type WaitPolicy } from "#shared/waits/policies.ts";
+import { durationOf } from "#shared/durations/rules/names.ts";
+import { sleep, SYSTEM_CLOCK, type Clock } from "#shared/waits/clients/clock.ts";
+import { WAITS, type WaitName, type WaitPolicy } from "#shared/waits/rules/policies.ts";
 
 /** What a wait may be told beyond its name. */
 interface WaitOptions {

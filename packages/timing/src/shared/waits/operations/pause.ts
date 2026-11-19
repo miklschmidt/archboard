@@ -1,8 +1,8 @@
 // One sleep between the passes of a loop that keeps its own decisions.
 
-import { durationOf } from "#shared/durations/names.ts";
-import { sleep, SYSTEM_CLOCK, type Clock } from "#shared/waits/clock.ts";
-import { PAUSES, type CadenceName, type PausePolicy } from "#shared/waits/policies.ts";
+import { durationOf } from "#shared/durations/rules/names.ts";
+import { sleep, SYSTEM_CLOCK, type Clock } from "#shared/waits/clients/clock.ts";
+import { PAUSES, type CadenceName, type PausePolicy } from "#shared/waits/rules/policies.ts";
 
 /** What a pause may be told beyond its name. */
 interface PauseOptions {

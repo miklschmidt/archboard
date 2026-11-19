@@ -1,4 +1,4 @@
-import type { Clock } from "#shared/waits/clock.ts";
+import type { Clock } from "#shared/waits/clients/clock.ts";
 
 /** A clock that moves only when a test advances it, and records every sleep. */
 interface FakeClock extends Clock {

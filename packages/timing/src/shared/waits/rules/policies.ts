@@ -3,7 +3,7 @@
 // whether it sleeps before or after it looks, where it checks the bound and
 // whether the bound's own moment counts, and how its last sleep meets the bound.
 
-import type { DurationName } from "#shared/durations/names.ts";
+import type { DurationName } from "#shared/durations/rules/names.ts";
 
 /** How one poll waits. */
 interface WaitPolicy {
