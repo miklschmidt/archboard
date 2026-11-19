@@ -4,6 +4,10 @@ status: accepted
 
 # A container's interface is what relationships from outside it reach
 
+[ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md) supersedes the parts below
+that give the interface no verdict: the code check now judges module depth from the code. The
+interface measures of the model still give none.
+
 ## Context
 
 A deep module hides a lot of behaviour behind a small interface (Ousterhout,

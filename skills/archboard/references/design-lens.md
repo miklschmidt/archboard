@@ -4,6 +4,7 @@ The design lens reports facts for a design decision.
 `model inspect` and `model compare` read architecture.
 `model locality` and `model footprint` read Git through code bindings.
 Support each fact with its subjects and source evidence. Leave the judgment to the user.
+[Module depth](#module-depth) is the exception: the code check judges it.
 
 | Question                                       | Read                                              |
 | ---------------------------------------------- | ------------------------------------------------- |
@@ -118,6 +119,35 @@ With a proposal, `--fail-preexisting` exits 1 when `preexisting` is not empty.
 The pull-request Action lists these modules in its comment. Its `preexisting` input warns by default and fails only when set to `fail`.
 If a repository cannot read the requested base or head, the command names it and exits with status 2.
 Source refs stay local. The command retains no source history.
+
+## Module depth
+
+The code check measures each bound TypeScript module from its code. Unlike the reads above, it gives verdicts, as findings.
+`depth` lists each module's exports by kind (`functions`, `classes`, `methods`, `values`, `types`) and `logic`, the calls, operators, conditions, loops and hidden values behind them.
+The counts are evidence. Never turn them into a score.
+
+`archboard check code --fail-shallow-modules` judges the modules that the branch touched since its base, uncommitted changes included.
+`--base <ref>` names the base. Without it, the default base decides.
+A vault policy with `codeCheck: { failShallowModules: true }` turns the gate on for plain `archboard check`.
+`BASE_UNRESOLVED` means the check could not read the branch. Name a base that resolves; never treat it as a pass.
+
+Clear each finding at its seam. Never silence one.
+
+- `EXPOSED_VALUE`: callers read an exported value, so they hold logic that belongs to the module.
+  With one reader, move the value into that reader and stop exporting it.
+  With several, move what they compute from it into the module, behind a function such as `restartDelayMs(attempt)`.
+  Where a caller needs the value itself, export a function that returns it.
+- `MODULE_SHALLOW`: every export of the module that is not a type has a finding. Clear those findings, and it clears.
+  If nothing is left to hide, merge the module into its callers.
+
+A language can force a constant. No exemption exists, so use the seam that replaces it:
+
+- A `switch` case label or an array size: export a predicate or a method that answers the question.
+- An `as const` object with types derived from it: export the type, with `isKind` and `allKinds`.
+- An attribute argument or a decorator value: let the module ship the attribute.
+- A compile-time condition such as `#if`: move the condition into the module.
+
+Exported types count for no verdict, so an exported union or enum keeps the compiler's exhaustive checks.
 
 ## Integrate with improve-codebase-architecture
 

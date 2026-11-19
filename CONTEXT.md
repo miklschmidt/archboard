@@ -255,6 +255,7 @@ _Avoid_: group interface, region, group edge
 
 **Design lens**:
 A read that states facts about a design and gives no verdict: an interface, an interface change, locality or a branch footprint.
+Module depth is no design lens: the code check gives its verdicts as findings (ADR 0082).
 _Avoid_: score, audit, lint
 
 **Vault policy**:
@@ -785,6 +786,38 @@ _Avoid_: match, hit, guess, possible finding, unresolved evidence
 One thing that the code check reports about one module, relationship or flow step, with the evidence that it rests on.
 Its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
+
+**Module depth**:
+What the code check measures of one bound module from its code: its exports by kind, the pieces of logic behind them, and the findings on its exported names (ADR 0082).
+The counts are evidence and never a score; only the findings are verdicts.
+_Avoid_: depth score, depth ratio, interface measures (those are what the model claims)
+
+**Export kind**:
+What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
+A type counts for no verdict, and a TypeScript enum is a type.
+_Avoid_: export type (a type is one kind), symbol kind
+
+**Piece of logic**:
+One call, operator, condition, loop or hidden value in a module's own files, which module depth counts as evidence of what the module hides.
+_Avoid_: line count, complexity, implementation size
+
+**Exposed value**:
+An exported value that code outside its module reads at run time, a value that a call makes included: `EXPOSED_VALUE`, a warning.
+A function that returns the value, a getter, is an interface and is no exposed value. A test is no reader.
+_Avoid_: exported constant, leaked config, global
+
+**Shallow module**:
+A module whose every export that is not a type carries a finding of its own: `MODULE_SHALLOW`, information in the answer.
+_Avoid_: thin module, wrapper, pass-through container (that is about the model)
+
+**Shallow-module gate**:
+What fails `archboard check` on a shallow module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`.
+The CLI applies it to the answer, whose severities never depend on the caller.
+_Avoid_: depth gate, shallow check
+
+**Touched module**:
+A module whose bound code, or a part's inside its module, the branch changed between the merge base with its base and the working tree.
+_Avoid_: changed file, dirty module
 
 **Source excerpt**:
 The lines of a file around one piece of evidence that a remembered finding names: the evidence line, with up to 3 lines on each side.

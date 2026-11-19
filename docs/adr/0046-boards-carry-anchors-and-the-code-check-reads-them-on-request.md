@@ -87,6 +87,10 @@ kinds.
 
 ### What the check judges
 
+[ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md) adds the verdicts of module
+depth, which judge the code itself: `EXPOSED_VALUE` is a warning though the board states nothing
+that it contradicts.
+
 Three things make a finding a warning:
 
 - The code contradicts what the board states.
