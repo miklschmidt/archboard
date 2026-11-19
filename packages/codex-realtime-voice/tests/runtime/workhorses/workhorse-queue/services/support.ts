@@ -1,9 +1,6 @@
 import {
 	CodexSessionMutationError,
-	type SessionQueueAddResult,
-	type SessionQueueListResult,
-	type SessionQueueStartResult,
-	type SessionQueueUpdateResult,
+	type SessionResponsePayloads,
 } from "@archboard/codex-app-server/session";
 import { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
 import { createCodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/queue.ts";
@@ -11,13 +8,20 @@ import {
 	type CodexWorkhorseQueue,
 	type WorkhorseQueueBinding,
 	type WorkhorseQueueOperationIdPort,
-	type WorkhorseQueueSessionPort,
+	type WorkhorseQueueOptions,
 } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type IdentityAuthority,
 	type QueuedSubmissionId,
 } from "@archboard/codex-app-server/identity";
+
+type SessionQueueAddResult = SessionResponsePayloads["thread/queue/add"];
+type SessionQueueListResult = SessionResponsePayloads["thread/queue/list"];
+type SessionQueueStartResult = SessionResponsePayloads["thread/queue/start"];
+type SessionQueueUpdateResult = SessionResponsePayloads["thread/queue/update"];
+
+type WorkhorseQueueSessionPort = WorkhorseQueueOptions<string>["session"];
 
 type QueueAddParams = Parameters<WorkhorseQueueSessionPort["queueAdd"]>[0];
 type QueueListParams = Parameters<WorkhorseQueueSessionPort["queueListPage"]>[0];
@@ -173,7 +177,7 @@ interface Fixture {
 }
 
 function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
-	const identity = createIdentityAuthority();
+	const identity = createIdentityAuthorities().identity;
 	const session = new QueueSession(identity);
 	session.state = initial;
 	let currentBinding: WorkhorseQueueBinding | null = binding(identity);

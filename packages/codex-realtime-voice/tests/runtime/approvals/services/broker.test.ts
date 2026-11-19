@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	type ApprovalBinding,
 	type ApprovalResponse,
-	type SpokenEligibilityReason,
+	type SpokenEligibility,
 } from "#runtime/approvals/services/contract.ts";
 import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
@@ -390,7 +390,7 @@ describe("Codex approval presentation and spoken policy", () => {
 				identity: ReturnType<typeof testBroker>["identity"],
 				label: string,
 			) => TransportServerRequest;
-			readonly reason: SpokenEligibilityReason;
+			readonly reason: SpokenEligibility["reason"];
 		}> = [
 			{ name: "file", request: fileRequest, reason: "broader_grant" },
 			{
