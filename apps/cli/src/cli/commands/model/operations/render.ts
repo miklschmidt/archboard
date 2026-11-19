@@ -6,8 +6,8 @@ import {
 import { standaloneThemeSchema } from "@archboard/model/render-reply";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 const InputSchema = architectureRenderRequestSchema().extend({
 	out: z.string(),
 	theme: standaloneThemeSchema().default("auto"),
@@ -131,7 +131,7 @@ const modelRenderContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The exact reading receipt or structured refusal",
 			},
 		],
@@ -143,7 +143,7 @@ const modelRenderContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",

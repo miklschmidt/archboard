@@ -3,7 +3,7 @@
 
 import { useLayoutEffect, useMemo } from "react";
 
-import { FAR_VIEW_SWAP_MS, PICTURE_MS } from "@archboard/timing";
+import { pictureMs } from "@archboard/timing";
 import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 import { FAR_SCALE } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 import type { StagedPicture } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";
@@ -36,12 +36,12 @@ function useStageLook(
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			const line = farView ? FAR_SCALE : 0;
-			stageOf(picture.surface)?.setFarLine(line, reducedMotion ? 0 : FAR_VIEW_SWAP_MS);
+			stageOf(picture.surface)?.setFarLine(line, reducedMotion ? 0 : pictureMs("farViewSwap"));
 		}
 	}, [picture, farView, reducedMotion]);
 	useLayoutEffect(() => {
 		if (picture !== null) {
-			const ms = awaited ? PICTURE_MS.awaitIn : PICTURE_MS.awaitOut;
+			const ms = awaited ? pictureMs("awaitIn") : pictureMs("awaitOut");
 			stageOf(picture.surface)?.setAwaited(awaited && !reducedMotion, reducedMotion ? 0 : ms);
 		}
 	}, [picture, awaited, reducedMotion]);

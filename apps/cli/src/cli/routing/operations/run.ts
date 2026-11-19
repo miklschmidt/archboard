@@ -65,14 +65,7 @@ import {
 	paneOpenContract,
 	panesContract,
 } from "#cli/commands/pane/operations/pane.ts";
-import { repoLanguageServerContract } from "#cli/commands/repo/operations/language-server.ts";
-import {
-	repoAddContract,
-	repoContract,
-	repoForgetContract,
-	repoListContract,
-	repoUseContract,
-} from "#cli/commands/repo/operations/repo.ts";
+import { repoRoute } from "#cli/commands/repo/operations/repo.ts";
 import { initContract } from "#cli/commands/init/operations/init.ts";
 import { telemetryContract } from "#cli/commands/telemetry/operations/telemetry.ts";
 import { type CliBootstrap, runCliWith } from "#cli/routing/operations/session.ts";
@@ -249,24 +242,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 			message: "browser needs a subcommand: panes, open, close, or show",
 		},
 	},
-	repo: {
-		owner: contract(repoContract, "apps/cli/src/cli/commands/repo/operations/repo.ts"),
-		children: {
-			list: child(contract(repoListContract, "apps/cli/src/cli/commands/repo/operations/repo.ts")),
-			add: child(contract(repoAddContract, "apps/cli/src/cli/commands/repo/operations/repo.ts")),
-			use: child(contract(repoUseContract, "apps/cli/src/cli/commands/repo/operations/repo.ts")),
-			forget: child(
-				contract(repoForgetContract, "apps/cli/src/cli/commands/repo/operations/repo.ts"),
-			),
-			"language-server": child(
-				contract(
-					repoLanguageServerContract,
-					"apps/cli/src/cli/commands/repo/operations/language-server.ts",
-				),
-			),
-		},
-		bare: { kind: "default", child: "list", withLeadingOptions: true },
-	},
+	repo: repoRoute(),
 	init: {
 		owner: contract(initContract, "apps/cli/src/cli/commands/init/operations/init.ts"),
 	},

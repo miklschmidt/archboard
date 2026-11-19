@@ -1,5 +1,5 @@
 import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
-import { CODEX_PROCESS_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
@@ -300,7 +300,7 @@ function createProcessGroupCleanup(
 	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
 		const freezeDeadlineAtMs = Math.min(
 			input.deadlineAtMs,
-			clock.now() + CODEX_PROCESS_MS.groupFreeze,
+			clock.now() + codexProcessMs("groupFreeze"),
 		);
 		try {
 			await awaitFrozenGroup(
@@ -321,7 +321,7 @@ function createProcessGroupCleanup(
 					 * @returns A promise settled after the pause.
 					 */
 					wait: (ms) => waitUntil(Math.min(freezeDeadlineAtMs, clock.now() + ms)),
-					pollMs: PROCESS_GROUP_OBSERVATION_POLL_MS,
+					pollMs: processGroupPollMs(),
 				},
 				freezeDeadlineAtMs,
 			);
@@ -366,7 +366,7 @@ function createProcessGroupCleanup(
 	 * @returns False when the group is already quiescent, so nothing needs escalating.
 	 */
 	const awaitTermGrace = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_PROCESS_MS.termGrace);
+		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + codexProcessMs("termGrace"));
 		const firstEvent = await waitForClosedOrAt(input.childClosed, termAtMs);
 		if (!stillOwned(input.identity, "finish TERM cleanup of the Codex process group")) return false;
 		if (firstEvent === "closed" && clock.now() < termAtMs) {
@@ -404,9 +404,7 @@ function createProcessGroupCleanup(
 				return false;
 			}
 			// oxlint-disable-next-line no-await-in-loop -- each observation follows the prior pause in one bounded poll
-			await waitUntil(
-				Math.min(input.deadlineAtMs, clock.now() + PROCESS_GROUP_OBSERVATION_POLL_MS),
-			);
+			await waitUntil(Math.min(input.deadlineAtMs, clock.now() + processGroupPollMs()));
 		}
 		return true;
 	};

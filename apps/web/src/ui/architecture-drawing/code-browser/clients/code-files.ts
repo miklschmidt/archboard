@@ -8,7 +8,7 @@ import { queryOptions } from "@tanstack/react-query";
 import type { z } from "zod";
 import { codeFileSchema, codeFilesSchema } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
-import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
 /** The files of a checkout. */
 type CodeFiles = z.infer<ReturnType<typeof codeFilesSchema>>;
@@ -60,7 +60,7 @@ async function refusalOf(response: Response, what: string): Promise<Error> {
  */
 function codeFilesQuery(vault: string, repo: string | undefined) {
 	return queryOptions({
-		queryKey: [...architectureModelKeys.vault(vault), "code-files", repo ?? null] as const,
+		queryKey: vaultQueryKey(vault, "code-files", repo ?? null),
 		/**
 		 * List the files.
 		 * @param context The query cancellation signal.
@@ -89,8 +89,8 @@ function codeFileQuery(vault: string, place: FilePlace, reading: OwnerReading) {
 	const { repo, path } = place;
 	const { model, state, checkpoint, ref, revision } = reading;
 	return queryOptions({
-		queryKey: [
-			...architectureModelKeys.vault(vault),
+		queryKey: vaultQueryKey(
+			vault,
 			"code-file",
 			repo,
 			path,
@@ -99,7 +99,7 @@ function codeFileQuery(vault: string, place: FilePlace, reading: OwnerReading) {
 			checkpoint,
 			ref,
 			revision,
-		] as const,
+		),
 		/**
 		 * Read the file.
 		 * @param context The query cancellation signal.

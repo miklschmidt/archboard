@@ -1,8 +1,7 @@
 // Server-owned model rendering (ADR 0020): the private Chromium that draws a
 // model to PNG or SVG, and the native clipboard a CLI copy hands the image to.
 //
-// The four renderer bounds keep the flat names the renderer imports while it is
-// rewritten. Group them by their owner when the rewrite lands.
+// The renderer's bounds are one group, `RASTER_MS`, that `rasterMs` reads.
 
 /**
  * Bound for one serialized PNG or SVG job in the private renderer. This is intentionally half the proof harness's 20-second
@@ -35,9 +34,21 @@ const SEMANTIC_RASTER_CLEANUP_MS = 1000;
  */
 const HEADLESS_CHROMIUM_CALL_MS = SEMANTIC_RASTER_JOB_TIMEOUT_MS;
 
-export {
-	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
-	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-	SEMANTIC_RASTER_CLEANUP_MS,
-	HEADLESS_CHROMIUM_CALL_MS,
-};
+/** The renderer's bounds, by what each bounds. */
+const RASTER_MS = Object.freeze({
+	jobTimeout: SEMANTIC_RASTER_JOB_TIMEOUT_MS,
+	startupTimeout: SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
+	cleanup: SEMANTIC_RASTER_CLEANUP_MS,
+	chromiumCall: HEADLESS_CHROMIUM_CALL_MS,
+});
+
+/**
+ * One bound of the private renderer.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function rasterMs(key: keyof typeof RASTER_MS): number {
+	return RASTER_MS[key];
+}
+
+export { rasterMs };

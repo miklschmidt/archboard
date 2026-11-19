@@ -66,8 +66,6 @@ const SemanticRasterReceiptSchema = z.object({
 	}),
 });
 
-export { SemanticRasterReceiptSchema };
-
 const ArchitectureRasterReceiptSchema = architectureRenderResultSchema()
 	.options[0].omit({ svg: true, atlas: true })
 	.extend({
@@ -78,4 +76,39 @@ const ArchitectureRasterReceiptSchema = architectureRenderResultSchema()
 		region: SemanticRasterRegionSchema.nullable(),
 		source: SemanticRasterReceiptSchema.shape.source,
 	});
-export { ArchitectureRasterReceiptSchema };
+
+/** What the rasterizer says about one capture of a legacy board's view. */
+type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
+
+/** What the rasterizer says about one capture of an architecture model. */
+type ArchitectureRasterReceipt = z.infer<typeof ArchitectureRasterReceiptSchema>;
+
+/**
+ * The schema of what the rasterizer says about one capture of an architecture model, for a
+ * contract that answers with it.
+ * @returns The schema.
+ */
+function architectureRasterReceiptSchema(): typeof ArchitectureRasterReceiptSchema {
+	return ArchitectureRasterReceiptSchema;
+}
+
+/**
+ * The receipt a rasterize command answered with, of either kind.
+ * @param answer The command's answer, as parsed JSON.
+ * @returns The receipt, or undefined when the answer is none.
+ */
+function parseRasterReceipt(
+	answer: unknown,
+): ArchitectureRasterReceipt | SemanticRasterReceipt | undefined {
+	const parsed = z
+		.union([ArchitectureRasterReceiptSchema, SemanticRasterReceiptSchema])
+		.safeParse(answer);
+	return parsed.success ? parsed.data : undefined;
+}
+
+export {
+	architectureRasterReceiptSchema,
+	parseRasterReceipt,
+	type ArchitectureRasterReceipt,
+	type SemanticRasterReceipt,
+};

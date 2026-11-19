@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
+import { claimMs, modelLockMs } from "@archboard/timing";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a
@@ -27,8 +27,8 @@ afterEach(() => {
  * @param ms How long.
  */
 async function advanceLockTime(ms: number): Promise<void> {
-	for (let elapsed = 0; elapsed < ms; elapsed += MODEL_LOCK_MS.poll) {
-		jest.advanceTimersByTime(Math.min(MODEL_LOCK_MS.poll, ms - elapsed));
+	for (let elapsed = 0; elapsed < ms; elapsed += modelLockMs("poll")) {
+		jest.advanceTimersByTime(Math.min(modelLockMs("poll"), ms - elapsed));
 		await Promise.resolve();
 		await Promise.resolve();
 	}
@@ -39,7 +39,7 @@ async function advanceLockTime(ms: number): Promise<void> {
  * the clock moves and no timer runs.
  */
 function stallServer(): void {
-	jest.setSystemTime(Date.now() + CLAIM_MS.lease + MODEL_LOCK_MS.renew);
+	jest.setSystemTime(Date.now() + claimMs("lease") + modelLockMs("renew"));
 }
 
 /**
@@ -54,7 +54,7 @@ async function writeUnderClaim(model: string): Promise<void> {
 		{ vault, model, holder: { id: id!, kind: "agent", claimed: true }, waitMs: 0 },
 		() => model,
 	);
-	await advanceLockTime(MODEL_LOCK_MS.stealGuard * 2);
+	await advanceLockTime(modelLockMs("stealGuard") * 2);
 	expect(await written).toBe(model);
 }
 
@@ -75,7 +75,7 @@ test("claims on several models of one server stand through a stall while their h
 		// After the pause, half the holders' writes land before the late renewal
 		// runs and half after it.
 		await Promise.all(models.slice(0, 2).map(writeUnderClaim));
-		await advanceLockTime(MODEL_LOCK_MS.renew);
+		await advanceLockTime(modelLockMs("renew"));
 		await Promise.all(models.slice(2).map(writeUnderClaim));
 	}
 	for (const model of models) {
@@ -108,7 +108,7 @@ test("a claim that ends without a person names what its renewal found", async ()
 		JSON.stringify({ ...record, id: "elsewhere", claimed: false, token: "elsewhere-token" }),
 	);
 	rmSync(join(vault, ".archboard/locks", `${removed}.lock`));
-	await advanceLockTime(MODEL_LOCK_MS.renew);
+	await advanceLockTime(modelLockMs("renew"));
 
 	expect(lock.claimOn(vault, taken)).toBeNull();
 	expect(lock.takeClaimRevocation(vault, taken)).toMatchObject({

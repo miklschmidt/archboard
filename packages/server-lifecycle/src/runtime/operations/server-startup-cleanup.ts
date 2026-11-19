@@ -578,6 +578,5 @@ export {
 	failedServerCleanupTiming,
 	type ServerStartupProtocolReader,
 	createServerStartupProtocolReader,
-	type FailedServerCleanupOperations,
 	completeFailedServerCleanup,
 };

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { CODEX_PROCESS_STDERR_MAX_BYTES, CodexProcessError } from "#runtime/processes/process.ts";
 import { createCodexProcessForTesting } from "#runtime/processes/process.ts";
-import { CODEX_PROCESS_MS, codexRestartDelayMs } from "@archboard/timing";
+import { codexProcessMs, codexRestartDelayMs } from "@archboard/timing";
 import {
 	fixture,
 	processOptions,
@@ -45,7 +45,7 @@ describe("Codex process owner", () => {
 		try {
 			const executable = fixture(
 				root,
-				`process.stdin.resume(); setInterval(() => {}, ${CODEX_PROCESS_MS.termGrace});`,
+				`process.stdin.resume(); setInterval(() => {}, ${codexProcessMs("termGrace")});`,
 			);
 			owner = createCodexProcessForTesting(processOptions(root, executable));
 			await startReady(owner);

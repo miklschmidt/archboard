@@ -8,8 +8,8 @@ import {
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import { packageVersion } from "#cli/routing/store/package-version.ts";
 import {
 	modelReadContract,
@@ -161,7 +161,7 @@ const modelSnapshotContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The written snapshot's receipt or structured diagnostics",
 			},
 		],
@@ -173,7 +173,7 @@ const modelSnapshotContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailableOutcome],
 	relationships: [
 		{

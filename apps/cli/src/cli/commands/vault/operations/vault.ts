@@ -6,7 +6,7 @@ import {
 	type CommandContext,
 	type CommandExecution,
 } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { codeCheckLines } from "#cli/commands/vault/rules/code-check-lines.ts";
 import { embedsCheckLines } from "#cli/commands/vault/rules/embed-state.ts";
 import { EmbedsPartSchema } from "#cli/commands/vault/protocol/embeds-answer.ts";
@@ -98,6 +98,9 @@ const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape)
 	(input) => input.everyDraft !== true || input.state === undefined,
 	"--every-draft reads every draft, and --state one name: use one of them",
 );
+
+/** The server is unreachable, as every command that needs it refuses. */
+const serverRefusal = refusal("server");
 
 const stateNotFoundRefusal = {
 	code: "STATE_NOT_FOUND",

@@ -7,7 +7,7 @@ import {
 	type ReadingReply,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { createStaleBuildNotice } from "#ui/panes/pane-session/state/stale-build.ts";
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
@@ -23,7 +23,7 @@ afterEach(() => {
 
 /** Advance the debounce and drain the send and rejection promises. */
 async function settled(): Promise<void> {
-	jest.advanceTimersByTime(PANE_MS.selectionDebounce);
+	jest.advanceTimersByTime(paneMs("selectionDebounce"));
 	await Promise.resolve();
 	await Promise.resolve();
 }

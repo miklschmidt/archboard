@@ -200,12 +200,13 @@ function resolvePane(registrations: PaneRegistration[], spec?: string): PaneRegi
 	return spec === undefined ? soloPane(registrations) : resolvePaneSpec(registrations, spec);
 }
 
-export {
-	HOW_TO_OPEN_A_PANE,
-	MAX_PANES,
-	addressablePanes,
-	paneWords,
-	resolvePane,
-	resolvePaneSpec,
-	soloPane,
-};
+/**
+ * Whether the screen holds as many panes as it can: another may not be opened.
+ * @param registrations The panes registered.
+ * @returns True when no further pane fits.
+ */
+function panesFull(registrations: readonly PaneRegistration[]): boolean {
+	return addressablePanes(registrations).length >= MAX_PANES;
+}
+
+export { HOW_TO_OPEN_A_PANE, addressablePanes, paneWords, panesFull, resolvePane };

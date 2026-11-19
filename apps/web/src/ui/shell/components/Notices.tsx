@@ -1,5 +1,5 @@
 import { Toaster, toast } from "sonner";
-import { SHELL_CLOCK_MS } from "@archboard/timing";
+import { shellClockMs } from "@archboard/timing";
 import {
 	RiCloseLine,
 	RiErrorWarningLine,
@@ -8,7 +8,7 @@ import {
 } from "@remixicon/react";
 import { useCallback, useEffect, useRef, type JSX } from "react";
 
-import { GitHubHttpsUrlSchema, type CodeTargetNotice } from "@archboard/code-opener/opening";
+import { gitHubHttpsUrl, type CodeTargetNotice } from "@archboard/code-opener/opening";
 import { Alert, Button, buttonVariants, IconButton } from "@archboard/ui-kit/components";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/shell/rules/contracts.ts";
 
@@ -63,12 +63,12 @@ interface GitHubActionProps {
  * @returns The link, or nothing when the URL fails validation.
  */
 function GitHubAction(props: GitHubActionProps): JSX.Element | null {
-	const parsed = GitHubHttpsUrlSchema.safeParse(props.action.href);
-	if (!parsed.success) {
+	const href = gitHubHttpsUrl(props.action.href);
+	if (href === null) {
 		return null;
 	}
 	return (
-		<a href={parsed.data} target="_blank" rel="noopener noreferrer" className={LINK_BUTTON_CLASS}>
+		<a href={href} target="_blank" rel="noopener noreferrer" className={LINK_BUTTON_CLASS}>
 			{props.action.label}
 			<RiExternalLinkLine data-icon="inline-end" />
 		</a>
@@ -194,7 +194,7 @@ function Notices(props: NoticesProps): JSX.Element {
 				if (current.current.get(notice) === id) props.actions.dismissNotice(notice);
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
-				duration: isPersistent(notice) ? Infinity : SHELL_CLOCK_MS.notice,
+				duration: isPersistent(notice) ? Infinity : shellClockMs("notice"),
 				onAutoClose: dismiss,
 				onDismiss: dismiss,
 			});

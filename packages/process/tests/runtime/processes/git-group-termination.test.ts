@@ -1,9 +1,11 @@
 import { expect, test } from "bun:test";
 
-import type { GitGroupTerminationOperations } from "#runtime/processes/git-group-termination.ts";
 import { stopAndKillOwnedGroup } from "#runtime/processes/git-group-termination.ts";
 import type { ProcessGroupIdentity } from "#runtime/processes/group.ts";
 import type { ProcessObservation } from "#runtime/processes/observation.ts";
+
+/** What a Git group's termination asks of the system, as the test fakes it. */
+type GitGroupTerminationOperations = NonNullable<Parameters<typeof stopAndKillOwnedGroup>[2]>;
 
 const group: ProcessGroupIdentity = {
 	group: 41,

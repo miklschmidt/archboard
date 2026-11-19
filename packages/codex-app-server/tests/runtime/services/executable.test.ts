@@ -14,7 +14,7 @@ import {
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import { installation } from "@archboard/workspace/installation";
 
 function temporaryRoot(): string {
@@ -175,7 +175,7 @@ describe("Codex executable ownership", () => {
 			}
 			expect(timedOut).toBeInstanceOf(CodexExecutableError);
 			expect((timedOut as CodexExecutableError).code).toBe("verification_timeout");
-			expect(observedOptions?.["timeout"]).toBe(CODEX_SESSION_MS.requestSettlement);
+			expect(observedOptions?.["timeout"]).toBe(codexSessionMs("requestSettlement"));
 			expect(observedOptions?.["maxBuffer"]).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
 			expect(observedOptions?.["env"]).not.toHaveProperty("OPENAI_API_KEY");
 

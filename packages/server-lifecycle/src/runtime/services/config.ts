@@ -37,4 +37,18 @@ function removedEnvironmentMessage(): string | null {
 	return null;
 }
 
-export { ARCHBOARD_BROWSER_URL, ARCHBOARD_URL, removedEnvironmentMessage, ARCHBOARD_NO_AUTOSTART };
+/**
+ * The Archboard server the CLI talks to.
+ * @returns Its URL.
+ */
+function archboardUrl(): string {
+	return ARCHBOARD_URL;
+}
+
+export {
+	ARCHBOARD_BROWSER_URL,
+	ARCHBOARD_URL,
+	archboardUrl,
+	removedEnvironmentMessage,
+	ARCHBOARD_NO_AUTOSTART,
+};

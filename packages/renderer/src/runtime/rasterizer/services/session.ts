@@ -19,7 +19,7 @@ import {
 	type HeadlessChromium,
 } from "#runtime/headless-chromium/processes/launch.ts";
 import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { processGroupPollMs } from "@archboard/timing";
 
 import { regionOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
 import {
@@ -194,7 +194,7 @@ class RasterSession {
 			signal?.throwIfAborted();
 			if (Date.now() > deadline) throw new Error("The document did not finish loading in time.");
 			// oxlint-disable-next-line no-await-in-loop -- the pause between two probes of one poll
-			await Bun.sleep(PROCESS_GROUP_OBSERVATION_POLL_MS);
+			await Bun.sleep(processGroupPollMs());
 		}
 	}
 

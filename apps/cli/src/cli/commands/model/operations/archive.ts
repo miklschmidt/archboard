@@ -2,7 +2,7 @@ import { z } from "zod";
 import { architectureArchiveInitializationSchema } from "@archboard/model/contract";
 import { initializeArchitectureArchiveOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 
 const modelArchiveInitContract = defineCommand({
 	path: ["model", "archive-init"],
@@ -31,7 +31,7 @@ const modelArchiveInitContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["server-state-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",

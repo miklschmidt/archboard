@@ -25,14 +25,14 @@ import {
 import path from "node:path";
 import { z } from "zod";
 import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
-import { CHECKOUT } from "@archboard/renderer/core";
+import { checkoutPath } from "@archboard/renderer/core";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { compileRelease, TARGETS, type Target } from "./compile.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { thirdPartyNotices } from "./notices.ts";
 
-const OUT = path.join(CHECKOUT, "dist", "release");
-const LAUNCHER = path.join(CHECKOUT, "scripts", "release", "launcher.sh");
+const OUT = checkoutPath("dist", "release");
+const LAUNCHER = checkoutPath("scripts", "release", "launcher.sh");
 const LAUNCHERS = ["archboard", "@archboard/cli"];
 const MB = 1024 * 1024;
 /**
@@ -61,7 +61,7 @@ const root = z
 		bugs: z.object({ url: z.string() }),
 		repository: z.object({ type: z.string(), url: z.string() }),
 	})
-	.parse(JSON.parse(readFileSync(path.join(CHECKOUT, "package.json"), "utf8")));
+	.parse(JSON.parse(readFileSync(checkoutPath("package.json"), "utf8")));
 
 /** What every manifest of the release says alike. */
 const COMMON = {
@@ -101,7 +101,7 @@ function platformOf(target: Target): { os: string; cpu: string; suffix: string }
  * @throws {Error} When LICENSE names no Licensed Work to replace.
  */
 function license(): string {
-	const text = readFileSync(path.join(CHECKOUT, "LICENSE"), "utf8");
+	const text = readFileSync(checkoutPath("LICENSE"), "utf8");
 	if (!LICENSED_WORK.test(text)) {
 		refuse("LICENSE has no `Licensed Work: Archboard <version>` line to name the release.");
 	}
@@ -247,7 +247,7 @@ function pack(name: string): { tarball: string; bytes: number; budget: number } 
 			`${name} packs to ${String(bytes)} bytes, above its budget of ${String(budget)}. Find what grew; raise the budget in scripts/release/build.ts only if the growth is meant.`,
 		);
 	}
-	return { tarball: path.relative(CHECKOUT, tarball), bytes, budget };
+	return { tarball: path.relative(checkoutPath(), tarball), bytes, budget };
 }
 
 rmSync(OUT, { recursive: true, force: true });

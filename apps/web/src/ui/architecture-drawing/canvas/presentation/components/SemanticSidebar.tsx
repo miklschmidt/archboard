@@ -30,8 +30,8 @@ import {
 	type RefObject,
 } from "react";
 
-import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
-import { SIDEBAR_MS } from "@archboard/timing";
+import { shellLength } from "@archboard/renderer/shell-geometry";
+import { sidebarMs } from "@archboard/timing";
 import { cn, IconButton, Tabs } from "@archboard/ui-kit/components";
 import type {
 	Sidebar,
@@ -85,15 +85,15 @@ function SidebarPanel(props: {
  * that the column can start from none when it opens.
  */
 const COLUMN_STYLE: CSSProperties = {
-	"--sidebar-width": `${SIDEBAR_WIDTH}px`,
-	"--sidebar-dock-ms": `${SIDEBAR_MS.dock}ms`,
-	"--sidebar-float-in-ms": `${SIDEBAR_MS.floatIn}ms`,
-	"--sidebar-float-out-ms": `${SIDEBAR_MS.floatOut}ms`,
-	"--sidebar-subject-in-ms": `${SIDEBAR_MS.subjectIn}ms`,
+	"--sidebar-width": `${shellLength("sidebar")}px`,
+	"--sidebar-dock-ms": `${sidebarMs("dock")}ms`,
+	"--sidebar-float-in-ms": `${sidebarMs("floatIn")}ms`,
+	"--sidebar-float-out-ms": `${sidebarMs("floatOut")}ms`,
+	"--sidebar-subject-in-ms": `${sidebarMs("subjectIn")}ms`,
 };
 
 /** The panel's width, whatever the column around it is doing. */
-const PANEL_STYLE: CSSProperties = { width: SIDEBAR_WIDTH };
+const PANEL_STYLE: CSSProperties = { width: shellLength("sidebar") };
 
 /** The two tabs, in order. */
 const TABS: readonly { readonly tab: SidebarTab; readonly label: string }[] = [

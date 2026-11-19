@@ -443,6 +443,40 @@ function framesOf(talk: Pick<Talk, "audio">): number {
 	return Math.ceil(talk.audio.samples / SAMPLES_PER_FRAME);
 }
 
+/** The talk's clock: the voice's samples per second, and the samples of one frame. */
+const TALK_CLOCK = Object.freeze({
+	sampleRate: TALK_SAMPLE_RATE,
+	samplesPerFrame: SAMPLES_PER_FRAME,
+});
+
+/**
+ * One number of the talk's clock.
+ * @param key The voice's samples per second, which is also the clock every event is stamped
+ *   on, or how many of them one frame is.
+ * @returns It.
+ */
+function talkClock(key: keyof typeof TALK_CLOCK): number {
+	return TALK_CLOCK[key];
+}
+
+/**
+ * How long a run of the voice's samples lasts.
+ * @param samples The run, in samples.
+ * @returns Its length, in milliseconds.
+ */
+function talkSamplesMs(samples: number): number {
+	return (samples * 1000) / TALK_SAMPLE_RATE;
+}
+
+/**
+ * How many of the voice's samples a duration holds.
+ * @param ms The duration, in milliseconds.
+ * @returns The samples, not rounded.
+ */
+function talkMsSamples(ms: number): number {
+	return (ms * TALK_SAMPLE_RATE) / 1000;
+}
+
 /**
  * What a page does to render a talk: `load` puts a talk on the page in the options given and
  * resolves once its first frame could be drawn; `frame` draws the next frame, in order from nought,
@@ -495,7 +529,10 @@ export {
 	framesOf,
 	publishReplayPage,
 	replayAskedOf,
+	talkClock,
 	talkFrom,
+	talkMsSamples,
+	talkSamplesMs,
 	voiceLevels,
 	type ReplayOptions,
 	type Talk,

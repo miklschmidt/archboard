@@ -18,7 +18,7 @@ import {
 } from "#cli/server-access/clients/architecture-model.ts";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand, type OutputPolicy } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal, doingRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 
 /**
@@ -81,7 +81,7 @@ const modelClaimContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["local-read", "server-state-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",
@@ -136,7 +136,7 @@ const modelEditContract = defineCommand({
 	],
 	result: architectureModuleEditResultSchema(),
 	prerequisites: ["server", "doing"],
-	refusals: [serverRefusal, doingRefusal],
+	refusals: [refusal("server"), refusal("doing")],
 	relationships: [
 		{
 			method: "POST",

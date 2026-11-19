@@ -173,4 +173,22 @@ const CLAIM_MS = durations({
 	activityLinger: 8000,
 });
 
-export { MODEL_LOCK_MS, CLAIM_MS };
+/**
+ * One duration of a model lock.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function modelLockMs(key: keyof typeof MODEL_LOCK_MS): number {
+	return MODEL_LOCK_MS[key];
+}
+
+/**
+ * One duration of a subject claim.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function claimMs(key: keyof typeof CLAIM_MS): number {
+	return CLAIM_MS[key];
+}
+
+export { modelLockMs, claimMs };

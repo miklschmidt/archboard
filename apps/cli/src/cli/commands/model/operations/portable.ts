@@ -9,8 +9,8 @@ import {
 	importArchitectureModelOnServer,
 } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 const unavailable = {
 	id: "unavailable",
@@ -52,7 +52,7 @@ const modelExportContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The portable bundle file receipt or structured refusal",
 			},
 		],
@@ -64,7 +64,7 @@ const modelExportContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailable],
 	relationships: [
 		{
@@ -141,7 +141,7 @@ const modelImportContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["local-read", "server-state-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailable],
 	relationships: [
 		{

@@ -196,10 +196,7 @@ export {
 	countFindings,
 	findingTitle,
 	type CheckReading,
-	type CodeFinding,
-	type EmbedFinding,
 	type Evidence,
 	type Finding,
-	type FindingCounts,
 	type FindingLevel,
 };

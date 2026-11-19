@@ -9,13 +9,8 @@ import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 import { diagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
-import { SKILL_EVAL_MS } from "@archboard/timing";
-import {
-	SAMPLES_PER_FRAME,
-	TALK_SAMPLE_RATE,
-	framesOf,
-	type Talk,
-} from "@archboard/walkthrough/talk";
+import { skillEvalMs } from "@archboard/timing";
+import { talkMsSamples, talkClock, framesOf, type Talk } from "@archboard/walkthrough/talk";
 import { keepTalk, readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
 	finding,
@@ -97,7 +92,7 @@ function talkOfFixture(
 	if (walkthrough === undefined) {
 		throw new Error(`the fixture's talk: no walkthrough "${fixture.walkthrough}" to present`);
 	}
-	const step = (SKILL_EVAL_MS.talkStep / 1000) * TALK_SAMPLE_RATE;
+	const step = talkMsSamples(skillEvalMs("talkStep"));
 	const samples = step * walkthrough.beats.length;
 	const events: Talk["events"] = [
 		{ kind: "drawn", at: 0, version: document.version },
@@ -105,7 +100,7 @@ function talkOfFixture(
 			{ kind: "step", at: index * step, beat: index },
 			{
 				kind: "said",
-				at: index * step + SAMPLES_PER_FRAME,
+				at: index * step + talkClock("samplesPerFrame"),
 				itemId: beat.id,
 				text: beat.body,
 				final: true,

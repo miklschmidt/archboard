@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { codeCheckAnswerSchema } from "@archboard/code-intel/code-check";
-import { annotationsFor } from "../../../actions/check/annotations.ts";
+import { annotationsForAll } from "../../../actions/check/annotations.ts";
 import { cachedFileReader } from "../../../actions/shared/checkouts.ts";
 import { collectFindings } from "../../../actions/check/findings.ts";
 import type { CheckReading } from "../../../actions/check/findings.ts";
@@ -55,7 +55,7 @@ describe("a finding that crosses a network hop", () => {
 	test("is annotated at each end in one repository, and each annotation carries both ends and both excerpts", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
 		expect(hop).toBeDefined();
-		const annotations = annotationsFor(hop!, locations(workspace));
+		const annotations = annotationsForAll([hop!], locations(workspace)).kept;
 		expect(annotations.map((one) => [one.properties.file, one.properties.line])).toEqual([
 			["app/src/config.ts", 3],
 			["infra/compose.yaml", 4],
@@ -72,7 +72,7 @@ describe("a finding that crosses a network hop", () => {
 
 	test("names files by their path in the checked repository, and annotates no end in another", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
-		const annotations = annotationsFor(hop!, locations());
+		const annotations = annotationsForAll([hop!], locations()).kept;
 		expect(annotations.map((one) => [one.properties.file, one.properties.line])).toEqual([
 			["src/config.ts", 3],
 		]);
@@ -83,7 +83,7 @@ describe("a finding that crosses a network hop", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
 		mkdirSync(join(workspace, "app/.archboard/vault/modules/Shop"), { recursive: true });
 		writeFileSync(join(workspace, "app/.archboard/vault/modules/Shop/rel.module.json"), "{}");
-		const annotations = annotationsFor(hop!, { ...locations(), roots: new Map() });
+		const annotations = annotationsForAll([hop!], { ...locations(), roots: new Map() }).kept;
 		expect(annotations.map((one) => one.properties.file)).toEqual([
 			".archboard/vault/modules/Shop/rel.module.json",
 		]);

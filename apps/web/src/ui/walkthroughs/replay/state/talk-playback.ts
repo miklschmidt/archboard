@@ -8,7 +8,7 @@
 // on nearly every frame, so it is not part of the moment: it is read where it is
 // drawn, as the shell reads the level of a live voice.
 
-import { SAMPLES_PER_FRAME, type Talk } from "@archboard/walkthrough/talk";
+import { talkClock, type Talk } from "@archboard/walkthrough/talk";
 import type { SubtitleSource, VoiceLevel } from "@archboard/workbench/voice";
 import { recordedStep, type RecordedStep } from "#ui/walkthroughs/recording/state/recorder.ts";
 
@@ -32,7 +32,7 @@ const OPENING: TalkMoment = Object.freeze({ step: null, transcript: Object.freez
  * @returns The frame, counted from nought.
  */
 function frameOf(at: number): number {
-	return Math.ceil(at / SAMPLES_PER_FRAME);
+	return Math.ceil(at / talkClock("samplesPerFrame"));
 }
 
 /**

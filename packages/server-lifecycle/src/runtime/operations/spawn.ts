@@ -15,7 +15,7 @@ import {
 import { readPidFile, removePidFile } from "#runtime/store/pidfile.ts";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { serverLifecycleMs } from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
 import { readProcessObservation } from "@archboard/process/observation";
 import {
@@ -419,7 +419,7 @@ async function ensureServerRunning(options: EnsureOptions = {}): Promise<EnsureR
  * @returns The server URL and whether this call started the server.
  */
 async function reachOrStartServer(options: EnsureOptions): Promise<Reached> {
-	const timeoutMs = options.timeoutMs ?? SERVER_LIFECYCLE_MS.startupReadiness;
+	const timeoutMs = options.timeoutMs ?? serverLifecycleMs("startupReadiness");
 	const existing = await healthOrNull();
 	if (existing) {
 		if (!isServerHealth(existing)) {

@@ -60,13 +60,13 @@ const readinessTimeoutMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_READINESS_T
 if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	const timingPath = "@archboard/timing";
 	const actualTiming = await import(timingPath);
+	// Mocking updates the imported namespace in place, so the stand-in keeps the real getter.
+	const { serverLifecycleMs } = actualTiming;
 	await Promise.resolve(
 		mock.module(timingPath, () => ({
 			...actualTiming,
-			SERVER_LIFECYCLE_MS: {
-				...actualTiming.SERVER_LIFECYCLE_MS,
-				startupReadiness: readinessTimeoutMs,
-			},
+			serverLifecycleMs: (key: string) =>
+				key === "startupReadiness" ? readinessTimeoutMs : serverLifecycleMs(key),
 		})),
 	);
 }

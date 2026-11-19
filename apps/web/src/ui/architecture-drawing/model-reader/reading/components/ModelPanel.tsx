@@ -19,7 +19,7 @@ import {
 	type ReactNode,
 	type RefObject,
 } from "react";
-import { SIDEBAR_MS } from "@archboard/timing";
+import { sidebarMs } from "@archboard/timing";
 import { cn, IconButton } from "@archboard/ui-kit/components";
 import { ClaimBadge } from "#ui/shell/components/ActivityLamp.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
@@ -29,7 +29,7 @@ import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules
 
 /** The duration the stylesheet fades a new subject in with. */
 const PANEL_STYLE: CSSProperties = {
-	"--sidebar-subject-in-ms": `${SIDEBAR_MS.subjectIn}ms`,
+	"--sidebar-subject-in-ms": `${sidebarMs("subjectIn")}ms`,
 };
 
 /** No agent claims the subject. */

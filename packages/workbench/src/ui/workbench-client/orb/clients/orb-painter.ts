@@ -11,7 +11,7 @@
 // The canvas it draws on is `SIZE` pixels across, and the circle is in the middle
 // of it, with `PAD` of room all round for the rings of light.
 
-import { VOICE_MS } from "@archboard/timing";
+import { voiceMs } from "@archboard/timing";
 import { rgba, type OrbColors } from "#ui/workbench-client/orb/rules/orb-colors.ts";
 import {
 	TAU,
@@ -122,8 +122,8 @@ function taper(u: number): number {
 function ridge(x: number, row: number, dyn: OrbDynamics): number {
 	const u = x / SHEET_RADIUS;
 	const away = Math.hypot(u - NOW_AT, NOW_SOFTNESS) - NOW_SOFTNESS;
-	const heard = levelAgo(dyn, row * VOICE_MS.rowStep + away * VOICE_MS.trace);
-	const breathing = 0.5 + 0.5 * Math.sin((dyn.clock / VOICE_MS.breath) * TAU - row * 0.55);
+	const heard = levelAgo(dyn, row * voiceMs("rowStep") + away * voiceMs("trace"));
+	const breathing = 0.5 + 0.5 * Math.sin((dyn.clock / voiceMs("breath")) * TAU - row * 0.55);
 	const breath = BREATH * breathing * hill(u, 0, 0.34);
 	const rough = 0.06 * Math.sin(u * 23 + (dyn.clock / 1000) * 6 + row * 2.3) * dyn.spark * heard;
 	return taper(u) * (Math.max(heard, breath) + rough);
@@ -279,7 +279,7 @@ function ringSheen(
 function paintComet(ctx: CanvasRenderingContext2D, dyn: OrbDynamics, colors: OrbColors): void {
 	const waiting = dyn.pending.x;
 	if (waiting < 0.02) return;
-	const head = (dyn.clock / VOICE_MS.comet) * TAU + TOP;
+	const head = (dyn.clock / voiceMs("comet")) * TAU + TOP;
 	ctx.save();
 	ctx.lineCap = "round";
 	ctx.lineWidth = 3;

@@ -1,12 +1,12 @@
 import { launchHeadlessChromium } from "#runtime/headless-chromium/processes/launch.ts";
 import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
-import { SEMANTIC_RASTER_STARTUP_TIMEOUT_MS, SEMANTIC_RASTER_CLEANUP_MS } from "@archboard/timing";
+import { rasterMs } from "@archboard/timing";
 
 try {
 	const chromium = await launchHeadlessChromium({
 		chromiumPath: process.argv[2] ?? "",
-		startupTimeoutMs: SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
-		cleanupTimeoutMs: SEMANTIC_RASTER_CLEANUP_MS,
+		startupTimeoutMs: rasterMs("startupTimeout"),
+		cleanupTimeoutMs: rasterMs("cleanup"),
 	});
 	await chromium.stop();
 	process.exitCode = 1;

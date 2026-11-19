@@ -6,10 +6,10 @@ import { z } from "zod";
 
 import { diagramThemeSchema, layoutEngineSchema } from "@archboard/model/render-reply";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
-import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
+import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { TalkFileError, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
 	containerOf,
 	encoderUnavailableRefusal,
@@ -159,7 +159,7 @@ const modelReplayContract = defineCommand({
 	prerequisites: ["server"],
 	effects: ["local-read", "local-write"],
 	refusals: [
-		serverRefusal,
+		refusal("server"),
 		recorderUnavailableRefusal,
 		encoderUnavailableRefusal,
 		renderFailedRefusal,
@@ -182,7 +182,7 @@ const modelReplayContract = defineCommand({
 		const theme = input.theme ?? talk.theme;
 		const layout = input.layout ?? talk.layout;
 		const made = await renderTalk({
-			serverUrl: ARCHBOARD_URL,
+			serverUrl: archboardUrl(),
 			talk,
 			directory,
 			container,

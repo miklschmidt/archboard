@@ -7,7 +7,7 @@ import {
 	CODEX_PROTOCOL_BINARY_VERSION,
 	CODEX_PROTOCOL_VERSION,
 } from "#runtime/protocol/protocol-version.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 
 const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
 const VERIFICATION_ENVIRONMENT_KEYS = [
@@ -320,7 +320,7 @@ function reportedVersion(executablePath: string, execute: typeof execFileSync): 
 			encoding: "utf8",
 			env: verificationEnvironment(),
 			maxBuffer: CODEX_EXECUTABLE_PROOF_MAX_BYTES,
-			timeout: CODEX_SESSION_MS.requestSettlement,
+			timeout: codexSessionMs("requestSettlement"),
 			killSignal: "SIGKILL",
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true,

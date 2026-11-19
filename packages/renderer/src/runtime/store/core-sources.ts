@@ -68,4 +68,29 @@ function coreSourceHash(checkout: string = CHECKOUT): string {
 	return digest.digest("hex").slice(0, 16);
 }
 
-export { CHECKOUT, CORE_BUILD_COMMAND, CORE_BUILD_DIRECTORY, coreSourceHash };
+/**
+ * A path in the checkout the renderer is built in.
+ * @param segments The path below the checkout's root; none for the root itself.
+ * @returns The absolute path.
+ */
+function checkoutPath(...segments: string[]): string {
+	return join(CHECKOUT, ...segments);
+}
+
+/**
+ * A path in the directory the renderer core's WebAssembly build lands in.
+ * @param segments The path below the directory; none for the directory itself.
+ * @returns The absolute path.
+ */
+function coreBuildPath(...segments: string[]): string {
+	return join(CORE_BUILD_DIRECTORY, ...segments);
+}
+
+export {
+	CHECKOUT,
+	CORE_BUILD_COMMAND,
+	CORE_BUILD_DIRECTORY,
+	checkoutPath,
+	coreBuildPath,
+	coreSourceHash,
+};

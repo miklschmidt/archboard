@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from "react";
 
-import { COLUMN_MS, SIDEBAR_MS } from "@archboard/timing";
+import { columnSlideSettledMs, sidebarMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 
 /** Where the sidebar is. */
@@ -44,7 +44,7 @@ interface Kept {
  * @returns Milliseconds.
  */
 function leavingMs(shownAs: Slide["shownAs"]): number {
-	return shownAs === "docked" ? SIDEBAR_MS.dock : SIDEBAR_MS.floatOut;
+	return shownAs === "docked" ? sidebarMs("dock") : sidebarMs("floatOut");
 }
 
 /**
@@ -96,7 +96,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(leavingMs(shownAs) + COLUMN_MS.slideSettled, () =>
+		const timer = clock.after(columnSlideSettledMs(leavingMs(shownAs)), () =>
 			setKept((now) => ({ ...now, leaving: false })),
 		);
 		return () => clock.cancelAfter(timer);
@@ -106,7 +106,7 @@ function useSidebarSlide(place: Place): Slide {
 			return undefined;
 		}
 		const clock = frameClock();
-		const timer = clock.after(SIDEBAR_MS.dock + COLUMN_MS.slideSettled, () =>
+		const timer = clock.after(columnSlideSettledMs(sidebarMs("dock")), () =>
 			setKept((now) => ({ ...now, motion: "none" })),
 		);
 		return () => clock.cancelAfter(timer);

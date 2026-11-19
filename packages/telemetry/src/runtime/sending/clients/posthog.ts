@@ -1,6 +1,6 @@
 // The one network call of Archboard's telemetry: one event to PostHog EU Cloud (ADR 0079).
 
-import { TELEMETRY_MS } from "@archboard/timing";
+import { telemetryMs } from "@archboard/timing";
 import type { CaptureEvent } from "#runtime/sending/rules/events.ts";
 
 /** PostHog EU Cloud's capture endpoint. */
@@ -21,7 +21,7 @@ type PostResult = "sent" | "refused" | "failed";
 type PostEvent = (event: CaptureEvent) => Promise<PostResult>;
 
 /**
- * Post one event to PostHog, within `TELEMETRY_MS.send`.
+ * Post one event to PostHog, within `telemetryMs("send")`.
  * @param event The event.
  * @returns `sent` for 2xx, `refused` for another 4xx, and `failed` for anything else.
  */
@@ -31,7 +31,7 @@ async function postToPostHog(event: CaptureEvent): Promise<PostResult> {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ api_key: PROJECT_KEY, ...event }),
-			signal: AbortSignal.timeout(TELEMETRY_MS.send),
+			signal: AbortSignal.timeout(telemetryMs("send")),
 		});
 		await reply.body?.cancel();
 		return resultOf(reply.status);

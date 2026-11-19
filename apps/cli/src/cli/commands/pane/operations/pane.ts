@@ -11,10 +11,17 @@ import {
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { PaneRefSchema } from "#cli/contract/protocol/schemas.ts";
-import { serverBrowserRefusals, serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { stagedTokens } from "#cli/commands/pane/rules/staged-tokens.ts";
 import { openCanvas } from "#cli/contract/clients/prerequisites.ts";
+
+/** A pane as the server names it. */
+const PaneRefSchema = z.looseObject({
+	paneId: z.string(),
+	clientId: z.string(),
+	place: z.string(),
+	position: z.number().int(),
+});
 
 const usage = "browser needs a subcommand: panes, open, close, or show.";
 const tokens = z.array(z.string()).default([]);
@@ -122,7 +129,7 @@ const paneOpenContract = defineCommand({
 	},
 	prerequisites: ["server", "browser"],
 	effects: ["browser"],
-	refusals: serverBrowserRefusals,
+	refusals: [refusal("server"), refusal("browser")],
 	relationships: [
 		{ method: "POST", path: "/api/panes/open", cardinality: "one", description: "Open the pane" },
 		{
@@ -235,7 +242,7 @@ const paneCloseContract = defineCommand({
 	},
 	prerequisites: ["server", "browser"],
 	effects: ["browser"],
-	refusals: serverBrowserRefusals,
+	refusals: [refusal("server"), refusal("browser")],
 	relationships: [
 		{
 			method: "POST",
@@ -334,7 +341,7 @@ const panesContract = defineCommand({
 	prerequisites: ["server"],
 	effects: [],
 	// With no pane open, it reports that none is, so it needs no browser.
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	relationships: [
 		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read the panes" },
 	],
@@ -497,7 +504,7 @@ const browserShowContract = defineCommand({
 	},
 	prerequisites: ["server", "browser"],
 	effects: ["browser"],
-	refusals: serverBrowserRefusals,
+	refusals: [refusal("server"), refusal("browser")],
 	relationships: [
 		{
 			method: "POST",

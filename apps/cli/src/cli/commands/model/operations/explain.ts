@@ -5,7 +5,7 @@ import {
 } from "@archboard/workbench/browser-contract";
 import { explainArchitectureOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 
 const modelExplainContract = defineCommand({
@@ -44,7 +44,7 @@ const modelExplainContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["local-read", "server-state-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",

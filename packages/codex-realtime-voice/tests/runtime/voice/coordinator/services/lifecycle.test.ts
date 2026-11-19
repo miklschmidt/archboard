@@ -15,7 +15,7 @@ import {
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import {
 	WORKING_DIRECTORY,
 	coordinatorModel,
@@ -213,7 +213,7 @@ describe("coordinator lifecycle", () => {
 		try {
 			const pending = fixtureValue.coordinator.ensure({ operationId: "settings-timeout" });
 			await flushMicrotasks();
-			jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
+			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
 			const snapshot = await pending;
 			const retry = await fixtureValue.coordinator.ensure({
 				operationId: "settings-timeout-retry",
@@ -246,7 +246,7 @@ describe("coordinator lifecycle", () => {
 			await flushMicrotasks();
 			expect(fixtureValue.session.updateParams).toHaveLength(1);
 
-			jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
+			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
 			await flushMicrotasks();
 			expect(fixtureValue.epoch.unknownCalls).toBe(0);
 

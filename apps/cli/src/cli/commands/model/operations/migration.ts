@@ -12,7 +12,7 @@ import {
 	saveLegacyMappingPlanOnServer,
 } from "#cli/server-access/clients/legacy-migration.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal, doingRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 
 /**
@@ -72,7 +72,7 @@ const modelInventoryContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",
@@ -141,7 +141,7 @@ const modelPlanContract = defineCommand({
 	},
 	prerequisites: ["server", "doing"],
 	effects: ["local-read", "server-state-write"],
-	refusals: [serverRefusal, doingRefusal],
+	refusals: [refusal("server"), refusal("doing")],
 	relationships: [
 		{
 			method: "PUT",

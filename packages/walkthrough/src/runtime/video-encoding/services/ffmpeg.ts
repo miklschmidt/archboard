@@ -5,7 +5,7 @@
 // else runs nixpkgs' through Nix, and refuses when there is none of these: a recording is minutes
 // of a live voice session, and a machine that cannot encode it should find out first.
 
-import { RECORDER_MS } from "@archboard/timing";
+import { recorderMs } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 
 /** The variable that names an ffmpeg executable. */
@@ -173,7 +173,7 @@ async function probeFfmpeg(
 	signal: AbortSignal,
 ): Promise<void> {
 	const label = labelOf(command);
-	const limitMs = command.via === "nix" ? RECORDER_MS.nixFetch : RECORDER_MS.encoderProbe;
+	const limitMs = command.via === "nix" ? recorderMs("nixFetch") : recorderMs("encoderProbe");
 	const ran = await runForEncoders(command, limitMs, signal).catch((error: unknown) => {
 		if (signal.aborted) throw error;
 		const why = error instanceof Error ? error.message : String(error);

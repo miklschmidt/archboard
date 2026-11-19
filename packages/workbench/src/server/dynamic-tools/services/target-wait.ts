@@ -1,6 +1,6 @@
 import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "#runtime/voice/protocol/extension.ts";
 import type { DynamicWaitEvent } from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import type { ArchboardWorkbenchServer } from "#server/workbench-host/services/production.ts";
 
 type WaitInput = Parameters<ArchboardWorkbenchServer["waitForTargets"]>[0];
@@ -110,7 +110,7 @@ async function waitForTargetsWith(
 		const remaining = deadline - Date.now();
 		if (remaining > 0) {
 			// oxlint-disable-next-line no-await-in-loop -- the poll interval is the pause between sequential observations
-			await sleepFor(Math.min(remaining, CODEX_SESSION_MS.waitTargetPoll));
+			await sleepFor(Math.min(remaining, codexSessionMs("waitTargetPoll")));
 		}
 	} while (Date.now() < deadline);
 	return {
