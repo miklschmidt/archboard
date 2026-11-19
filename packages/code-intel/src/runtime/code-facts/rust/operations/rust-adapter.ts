@@ -35,10 +35,10 @@
 //
 // For module depth (TASK-646.10), the file counts its pieces of logic outside
 // its tests, and names the math around each path it uses at run time that no
-// local binding hides (rust-math.ts).
+// local binding hides (math-shapes.ts, through Rust's table in rust-depth.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import type { ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
+import type { Computation, ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { definitionsOf, typeName } from "#runtime/code-facts/rust/operations/rust-definitions.ts";
 import {
@@ -46,13 +46,14 @@ import {
 	importsOf,
 	nestingOf,
 } from "#runtime/code-facts/rust/operations/rust-imports.ts";
-import { computationsOf, type PathUse } from "#runtime/code-facts/rust/operations/rust-math.ts";
 import {
 	bindReferences,
 	outsideUses,
 	type WrittenUse,
 } from "#runtime/code-facts/rust/operations/rust-scopes.ts";
 import { tokenUses } from "#runtime/code-facts/rust/operations/rust-tokens.ts";
+import { RUST_MATH } from "#runtime/code-facts/rust/operations/rust-depth.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
@@ -438,22 +439,29 @@ function modulesOf(
 }
 
 /**
- * The paths a file uses at run time that no local binding hides, each at its
- * whole path and spelled in full, as `timing.PROCESS` for `timing::PROCESS`.
+ * The math a file writes on the paths it uses at run time that no local
+ * binding hides, each read at its whole path and spelled as its references
+ * spell it in full, as `timing.PROCESS` for `timing::PROCESS`.
  * @param written The uses of the file's paths, one for each leading part.
  * @param bound The local bindings.
- * @returns Each path once.
+ * @returns The computations.
  */
-function pathUses(written: readonly WrittenUse[], bound: readonly Node[]): PathUse[] {
-	const paths = new Map<number, PathUse>();
+function mathOf(written: readonly WrittenUse[], bound: readonly Node[]): Computation[] {
+	const spellings = new Map<number, { readonly node: Node; readonly symbol: string }>();
 	for (const each of outsideUses(written, bound)) {
-		const known = paths.get(each.node.id);
-		if (each.typeOnly || (known !== undefined && known.symbol.length >= each.symbol.length)) {
-			continue;
-		}
-		paths.set(each.node.id, { node: each.node, symbol: each.symbol });
+		const known = spellings.get(each.node.id)?.symbol.length ?? 0;
+		if (!each.typeOnly && each.symbol.length > known) spellings.set(each.node.id, each);
 	}
-	return [...paths.values()];
+	const paths = [...spellings.values()].map((each) => each.node);
+	return computationsOf(paths, {
+		...RUST_MATH,
+		/**
+		 * How the file's references spell a path in full.
+		 * @param node The path.
+		 * @returns The spelling.
+		 */
+		spelling: (node) => spellings.get(node.id)?.symbol ?? node.text,
+	});
 }
 
 /**
@@ -511,7 +519,7 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		logic: captured.logic.filter(
 			(node) => !unparsed.holds(node.startIndex) && !testSpans.holds(node.startIndex),
 		).length,
-		computations: computationsOf(pathUses(paths, binding)),
+		computations: mathOf(paths, binding),
 	};
 }
 

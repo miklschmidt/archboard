@@ -34,12 +34,12 @@
 // associated function, which takes no `self`, and an associated constant
 // belong to the type and are named through it, as `Relay::new` is. A
 // function whose body only passes its call on names its callee's root
-// (rust-pass-through.ts).
+// (rust-depth.ts).
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
-import { passesTo } from "#runtime/code-facts/rust/operations/rust-pass-through.ts";
+import { passesTo } from "#runtime/code-facts/rust/operations/rust-depth.ts";
 
 /** Where the walk is: the names that qualify an item, and whether everything around it is open. */
 interface Scope {

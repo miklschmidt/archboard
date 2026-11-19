@@ -1,5 +1,15 @@
-// Whether a Rust function only passes its call on (TASK-646.10), as
-// Ousterhout's pass-through method does: its body is one call, returned,
+// What module depth reads of Rust code (TASK-646.10): the math a file writes
+// around the paths other files define, through Rust's syntax table, and
+// whether a function only passes its call on.
+//
+// Rust writes its math functions as methods of a number, `a.min(b)` and
+// `2u64.pow(n)`, or through a numeric type or `cmp`, `u64::pow(2, n)` and
+// `std::cmp::min(a, b)`; each is the one function `min` or `pow`. A number
+// drops its type suffix, so `2u64` is `2`. A `let` that binds one name is
+// the local variable the math is followed through.
+//
+// A function only passes its call on, as Ousterhout's pass-through method
+// does, when its body is one call, returned,
 // awaited, made as a statement or as the block's value, that hands every
 // argument straight from its own parameters or `self`, borrowed or not.
 // Module depth judges it.
@@ -12,6 +22,80 @@
 // `self.target.send(id)`.
 
 import type { Node } from "web-tree-sitter";
+import { declaredBy, type MathSyntax } from "#runtime/code-facts/operations/math-shapes.ts";
+
+/** The numeric functions of the math. */
+const FUNCTIONS = [
+	"min",
+	"max",
+	"clamp",
+	"pow",
+	"powi",
+	"powf",
+	"abs",
+	"abs_diff",
+	"signum",
+	"sqrt",
+	"hypot",
+	"exp",
+	"ln",
+	"log",
+	"log2",
+	"log10",
+	"floor",
+	"ceil",
+	"round",
+	"trunc",
+	"mul_add",
+	"div_euclid",
+	"rem_euclid",
+	"saturating_add",
+	"saturating_sub",
+	"saturating_mul",
+	"saturating_div",
+	"saturating_pow",
+	"wrapping_add",
+	"wrapping_sub",
+	"wrapping_mul",
+	"wrapping_div",
+	"wrapping_pow",
+];
+
+/** The numeric types, by the suffix a number writes or the path a function is called through. */
+const NUMERIC = "[iu](?:8|16|32|64|128|size)|f32|f64";
+
+/** Rust's syntax, as the math is read through it. */
+const RUST_MATH: MathSyntax = {
+	binary: new Set(["binary_expression"]),
+	unary: new Set(["unary_expression"]),
+	wrappers: new Set(["parenthesized_expression", "type_cast_expression"]),
+	call: { type: "call_expression", callee: "function", arguments: "arguments" },
+	member: { type: "field_expression", object: "value", property: "field" },
+	math: new RegExp(`^(?:(?:(?:std|core)::)?cmp|${NUMERIC})::(?<name>${FUNCTIONS.join("|")})$`, "u"),
+	methods: new Set(FUNCTIONS),
+	sorted: new Set([
+		"min",
+		"max",
+		"hypot",
+		"abs_diff",
+		"saturating_add",
+		"saturating_mul",
+		"wrapping_add",
+		"wrapping_mul",
+	]),
+	numbers: new Set(["integer_literal", "float_literal"]),
+	// The `f32` that ends a hexadecimal number is its digits.
+	suffix: /(?:[iu](?:8|16|32|64|128|size)|(?<!^0x\w*)f(?:32|64))$/u,
+	texts: new Set(["string_literal", "raw_string_literal"]),
+	/**
+	 * The `let` that binds one name to the whole of a value.
+	 * @param held The value.
+	 * @returns The declaration and its variable, or undefined.
+	 */
+	declared: (held) =>
+		declaredBy(held, { type: "let_declaration", value: "value", name: "pattern" }),
+	scopes: new Set(["block"]),
+};
 
 /** Syntax that is no code. */
 const COMMENTS = new Set(["line_comment", "block_comment"]);
@@ -125,4 +209,4 @@ function passesTo(fn: Node): string | undefined {
 	return calleeRoot(call.childForFieldName("function"));
 }
 
-export { passesTo };
+export { passesTo, RUST_MATH };
