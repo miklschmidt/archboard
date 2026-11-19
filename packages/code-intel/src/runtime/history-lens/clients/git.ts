@@ -5,14 +5,18 @@
 // file versions. So the lens runs its commands here, with the whole output, a
 // caller's signal: a request that hangs up,
 // or a server that stops, ends the command. The lens runs only `git log`,
-// `git rev-list`, `git rev-parse`, `git merge-base`, `git cat-file`,
+// `git rev-list`, `git rev-parse`, `git merge-base`, `git cat-file`, `git diff`, `git ls-tree`,
 // `git check-ignore`, `git for-each-ref` and `git symbolic-ref`. None of them starts another program, so killing the one
-// process ends the work.
+// process ends the work. A footprint read up to the working tree also runs `git add`,
+// `git write-tree` and `git commit-tree` against a copy of the index and objects of its own
+// (`working-tree.ts`). `git add` runs the checkout's clean filters, such as Git LFS, as `git status` does.
 
-/** How a caller cancels a command, and what it writes to the command's input. */
+/** How a caller cancels a command, what it writes to the command's input, and Git's environment. */
 interface GitRunOptions {
 	readonly signal?: AbortSignal | undefined;
 	readonly input?: string;
+	/** Variables that point Git at another index or object directory, for the working tree. */
+	readonly env?: Readonly<Record<string, string>> | undefined;
 }
 
 /** What one command answered. */
@@ -39,7 +43,7 @@ function spawnGit(root: string, args: readonly string[], options: GitRunOptions)
 		stderr: "pipe",
 		// A reading must not take the index lock that `git status` refreshes,
 		// or it would make somebody's commit in that checkout fail.
-		env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
+		env: { ...process.env, GIT_OPTIONAL_LOCKS: "0", ...options.env },
 		...(options.signal === undefined ? {} : { signal: options.signal }),
 	});
 }

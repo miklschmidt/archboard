@@ -16,7 +16,9 @@
 // list of its own (TASK-621). Each part says whether the range adds source to
 // it, and a part the proposal adds that gains none is preexisting: its code was
 // there before the branch, or its binding names code that exists nowhere
-// (TASK-637).
+// (TASK-637). A caller can name the working tree as the head: the range then
+// ends at each checkout's uncommitted changes, untracked files included, on top
+// of HEAD, so that a gate run before a commit sees them (TASK-646.02).
 
 import { realpathSync } from "node:fs";
 import { isAbsolute, relative, sep } from "node:path";
@@ -33,12 +35,18 @@ import {
 	walkCommits,
 	type WalkedCommit,
 } from "#runtime/history-lens/operations/commits.ts";
+import {
+	headKey,
+	withRange,
+	type FootprintHead,
+	type Range,
+	type Unread,
+} from "#runtime/history-lens/operations/footprint-range.ts";
 import { unboundFiles } from "#runtime/history-lens/operations/unbound-files.ts";
 import { withHeld, type ChangedPart } from "#runtime/history-lens/operations/held-parts.ts";
-import { gitAnswer, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
+import type { GitRunOptions } from "#runtime/history-lens/clients/git.ts";
 import { namedParts, type Named } from "#runtime/history-lens/operations/named-parts.ts";
 import { partReading, type ReadPart } from "#runtime/history-lens/operations/parts.ts";
-import { commitOf } from "#runtime/history-lens/clients/source-history.ts";
 import type { BehindCommit } from "#shared/protocol/code-check.ts";
 import type {
 	FootprintAnswer,
@@ -74,10 +82,11 @@ interface VariantFootprintRequest {
 	readonly base: string;
 	/**
 	 * Where the commits end, when not at each checkout's HEAD: a branch, tag or
-	 * commit, resolved as the code check resolves a ref a draft pins. It is read
-	 * from Git and never checked out.
+	 * commit, resolved as the code check resolves a ref a draft pins, read from Git
+	 * and never checked out. Or each checkout's working tree, which reads its
+	 * uncommitted changes on top of HEAD.
 	 */
-	readonly head?: string | undefined;
+	readonly head?: FootprintHead | undefined;
 	readonly signal?: AbortSignal | undefined;
 }
 
@@ -93,19 +102,6 @@ interface RepositoryFootprint {
 	readonly commits: readonly BehindCommit[];
 	/** The changed files that no binding holds; none for a range read up to a pinned ref. */
 	readonly unbound: readonly UnboundFile[];
-}
-
-/** Where a checkout's range runs: the ref's commit, the merge base with the head, and the head. */
-interface Range {
-	readonly base: string;
-	readonly mergeBase: string;
-	readonly head: string;
-}
-
-/** Why a checkout's range was not read. */
-interface Unread {
-	readonly reason: "base-unresolved" | "head-unresolved" | "no-merge-base";
-	readonly detail: string;
 }
 
 /**
@@ -176,88 +172,6 @@ function listed(
 		holds: [],
 		newSource,
 	};
-}
-
-/**
- * The commit the range ends at: the head the caller named, resolved as the
- * code check resolves a ref, else the checkout's HEAD.
- * @param root The checkout.
- * @param head The head ref as asked, when the caller named one.
- * @param options The caller's signal.
- * @returns The commit id, or undefined when the checkout has no such commit.
- */
-function headOf(
-	root: string,
-	head: string | undefined,
-	options: GitRunOptions,
-): Promise<string | undefined> {
-	return head === undefined
-		? gitAnswer(root, ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"], options)
-		: commitOf(root, head, options);
-}
-
-/**
- * Where a checkout's range runs between a head and the base. `--end-of-options`
- * keeps a ref that begins with a dash from being read as an option.
- * @param root The checkout.
- * @param base The ref as asked.
- * @param tip The commit the range ends at, when the checkout has one.
- * @param tipName What the commit was asked for as: the head ref, or HEAD.
- * @param options The caller's signal.
- * @returns The range, or why it cannot be read.
- */
-async function rangeBetween(
-	root: string,
-	base: string,
-	tip: string | undefined,
-	tipName: string,
-	options: GitRunOptions,
-): Promise<Range | Unread> {
-	const resolved = await gitAnswer(
-		root,
-		["rev-parse", "--verify", "--quiet", "--end-of-options", `${base}^{commit}`],
-		options,
-	);
-	if (resolved === undefined) {
-		return {
-			reason: "base-unresolved",
-			detail: `"${base}" does not resolve in the checkout at ${root}.`,
-		};
-	}
-	const mergeBase =
-		tip === undefined ? undefined : await gitAnswer(root, ["merge-base", resolved, tip], options);
-	if (tip === undefined || mergeBase === undefined) {
-		return {
-			reason: "no-merge-base",
-			detail: `"${base}" and ${tipName} share no history in the checkout at ${root}.`,
-		};
-	}
-	return { base: resolved, mergeBase, head: tip };
-}
-
-/**
- * Where a checkout's range runs: from the base to the head the caller named,
- * else to HEAD.
- * @param root The checkout.
- * @param base The ref as asked.
- * @param head The head ref as asked, when the caller named one.
- * @param options The caller's signal.
- * @returns The range, or why it cannot be read.
- */
-async function rangeOf(
-	root: string,
-	base: string,
-	head: string | undefined,
-	options: GitRunOptions,
-): Promise<Range | Unread> {
-	const tip = await headOf(root, head, options);
-	if (tip === undefined && head !== undefined) {
-		return {
-			reason: "head-unresolved",
-			detail: `"${head}" does not resolve in the checkout at ${root}.`,
-		};
-	}
-	return rangeBetween(root, base, tip, head ?? "HEAD", options);
 }
 
 /**
@@ -367,28 +281,29 @@ function mappedRepository(
 async function readRepository(
 	repo: string,
 	parts: readonly ReadPart[],
-	refs: { readonly base: string; readonly head: string | undefined },
+	refs: { readonly base: string; readonly head: FootprintHead | undefined },
 	named: Named,
 	scopes: readonly string[] | undefined,
 	options: GitRunOptions,
 ): Promise<RepositoryFootprint> {
 	const root = parts[0]?.root ?? "";
-	const range = await rangeOf(root, refs.base, refs.head, options);
-	if ("reason" in range) return unreadRepository(repo, parts, named, range);
-	const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], options);
-	const [byPart, net] = await Promise.all([
-		attributeCommits(root, range.head, walked, parts, options),
-		netChangedParts(root, { from: range.mergeBase, to: range.head }, parts, options),
-	]);
-	const mapped = mappedRepository(repo, parts, named, range, walked, byPart, net);
-	if (scopes === undefined) return mapped;
-	const changedFiles = new Set(net.files);
-	return {
-		...mapped,
-		unbound: unboundFiles(walked, scopes)
-			.filter((file) => changedFiles.has(file.path))
-			.map((file) => ({ repo, ...file })),
-	};
+	return withRange(root, refs, options, async (range, inRange) => {
+		if ("reason" in range) return unreadRepository(repo, parts, named, range);
+		const walked = await walkCommits(root, [`${range.mergeBase}..${range.head}`], inRange);
+		const [byPart, net] = await Promise.all([
+			attributeCommits(root, range.head, walked, parts, inRange),
+			netChangedParts(root, { from: range.mergeBase, to: range.head }, parts, inRange),
+		]);
+		const mapped = mappedRepository(repo, parts, named, range, walked, byPart, net);
+		if (scopes === undefined) return mapped;
+		const changedFiles = new Set(net.files);
+		return {
+			...mapped,
+			unbound: unboundFiles(walked, scopes)
+				.filter((file) => changedFiles.has(file.path))
+				.map((file) => ({ repo, ...file })),
+		};
+	});
 }
 
 /**
@@ -439,22 +354,29 @@ function scopesOf(
 	];
 }
 
+/** The read parts of one repository that are read up to one head. */
+interface RepositoryGroup {
+	readonly repo: string;
+	readonly head: FootprintHead | undefined;
+	readonly parts: ReadPart[];
+}
+
 /**
  * The read parts of one variant by repository and by where their commits end:
- * the head the caller named, else the ref a part is pinned to that its
- * checkout lacks out, else HEAD (TASK-493).
+ * the ref the caller named, else the ref a part is pinned to that its
+ * checkout lacks out, else the working tree when the caller named it, else HEAD (TASK-493).
  * @param parts The parts.
  * @param head The head the caller named, if any.
  * @returns Each repository with the parts bound there, and the head they are read up to.
  */
 function byRepository(
 	parts: readonly ReadPart[],
-	head: string | undefined,
-): { repo: string; head: string | undefined; parts: ReadPart[] }[] {
-	const grouped = new Map<string, { repo: string; head: string | undefined; parts: ReadPart[] }>();
+	head: FootprintHead | undefined,
+): RepositoryGroup[] {
+	const grouped = new Map<string, RepositoryGroup>();
 	for (const part of parts) {
-		const tip = head ?? part.ref;
-		const key = `${part.repo}\0${tip ?? ""}`;
+		const tip = typeof head === "string" ? head : (part.ref ?? head);
+		const key = `${part.repo}\0${headKey(tip)}`;
 		const held = grouped.get(key) ?? { repo: part.repo, head: tip, parts: [] };
 		held.parts.push(part);
 		grouped.set(key, held);
@@ -552,7 +474,11 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
 	);
 	const common = {
 		base,
-		...(head === undefined ? {} : { head }),
+		...(head === undefined
+			? {}
+			: typeof head === "string"
+				? { head }
+				: { workingTree: true as const }),
 		against: against === undefined ? null : { id: against.id, name: against.name },
 		repositories: repositories.map((one) => one.range),
 		commits: repositories
