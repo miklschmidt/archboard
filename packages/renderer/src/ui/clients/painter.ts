@@ -2,7 +2,10 @@
 // the browser gives a real adapter, Vello GPU on WebGL2 where it gives a
 // hardware WebGL2 context, and Vello on the CPU otherwise. The choice is made
 // once for a canvas, from what the browser says, and the caller shows it.
+// Every painter keeps the page's pace: the phases of a move and the longest step
+// of its clock, which `@archboard/timing` holds (ADR 0071).
 
+import { durationMs, painterPhasesJson } from "@archboard/timing";
 import initPainter, {
 	Painter,
 	sourceHash,
@@ -13,6 +16,15 @@ const PAINTER_WASM = new URL(
 	"../../shared/protocol/generated/core/archboard_painter_wasm_bg.wasm",
 	import.meta.url,
 );
+
+/**
+ * How a painter's stage keeps time, as JSON: at which points of a move each of its parts happens,
+ * and how much of a stall one step of its clock can take.
+ * @returns The pace.
+ */
+function pace(): string {
+	return `{"phases":${painterPhasesJson()},"longestStep":${String(durationMs("picture.longestStep"))}}`;
+}
 
 /** Which painter draws a canvas: Vello on WebGPU, Vello GPU on WebGL2, or Vello on the CPU. */
 type PainterKind = "gpu" | "webgl" | "cpu";
@@ -127,7 +139,7 @@ function warmPainter(): void {
  * @returns The painter.
  */
 function startCpu(canvas: HTMLCanvasElement, dark: boolean, reason: string): StartedPainter {
-	return { painter: Painter.cpu(canvas, dark), canvas, kind: "cpu", reason };
+	return { painter: Painter.cpu(canvas, dark, pace()), canvas, kind: "cpu", reason };
 }
 
 /**
@@ -172,7 +184,7 @@ function contextLoss(canvas: HTMLCanvasElement): NonNullable<StartedPainter["whe
  */
 function startWebgl(canvas: HTMLCanvasElement, dark: boolean, reason: string): StartedPainter {
 	try {
-		const painter = Painter.webgl(canvas, dark);
+		const painter = Painter.webgl(canvas, dark, pace());
 		return { painter, canvas, kind: "webgl", reason, whenGpuStops: contextLoss(canvas) };
 	} catch (cause) {
 		const refused = cause instanceof Error ? cause.message : String(cause);
@@ -193,7 +205,7 @@ function startGpu(
 	whenGpuStops: GpuAnswer["whenGpuStops"],
 ): StartedPainter {
 	return {
-		painter: Painter.gpu(canvas, dark),
+		painter: Painter.gpu(canvas, dark, pace()),
 		canvas,
 		kind: "gpu",
 		reason: null,

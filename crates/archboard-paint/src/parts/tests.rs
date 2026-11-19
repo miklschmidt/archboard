@@ -2,12 +2,13 @@
 //! afresh, byte for byte, while the camera moves (ADR 0074). The picture is the
 //! dogfood vault's "Codex session", the fixture of `archboard-scene`.
 
-use super::{Keeper, MOST_KEPT};
-use crate::canvas::{Canvas, Count, Ink, PartKey};
+use super::{MOST_KEPT, Parts};
+use crate::canvas::{Canvas, Ink, PartKey};
 use crate::cpu::CpuCanvas;
 use crate::palette::Theme;
 use crate::presentation::Camera;
-use crate::stage::Stage;
+use crate::stage::{Arrival, Pace, Stage, Surface};
+use crate::testing::Record;
 use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::Painting;
@@ -24,11 +25,13 @@ const SIZE: (u16, u16) = (400, 300);
 /// A stage that shows the picture.
 fn stage() -> Stage {
     let request: PaintRequest = serde_json::from_str(REQUEST).expect("the fixture is a request");
-    let mut stage = Stage::new(Theme::Dark, (f64::from(SIZE.0), f64::from(SIZE.1)));
-    stage.show(Painting {
+    let size = (f64::from(SIZE.0), f64::from(SIZE.1));
+    let mut stage = Stage::new(Theme::Dark, size, Pace::default());
+    let painting = Painting {
         scene: paint(&request),
         icons: std::collections::BTreeMap::new(),
-    });
+    };
+    stage.arrive(painting, Arrival::Cut);
     stage
 }
 
@@ -62,29 +65,24 @@ const CAMERAS: [Camera; 5] = [
     },
 ];
 
-/// Draw a frame of a stage under a camera.
-fn frame<C: Canvas>(stage: &mut Stage, canvas: &mut C, camera: Camera, now: f64) {
-    stage.set_camera(camera, 0.0, now);
-    stage.draw(canvas, now);
+/// Move the camera of a stage at a moment.
+fn look(stage: &mut Stage, to: Camera, now: f64) {
+    stage.present(crate::testing::camera(to, 0.0, now));
 }
 
 #[test]
 fn a_kept_frame_is_the_frame_drawn_afresh() {
     let (mut kept, mut fresh) = (stage(), stage());
-    let mut keeper = Keeper::new(
-        CpuCanvas::new(SIZE.0, SIZE.1),
-        (f64::from(SIZE.0), f64::from(SIZE.1)),
-    );
+    let mut strips = CpuCanvas::new(SIZE.0, SIZE.1);
     let mut plain = CpuCanvas::new(SIZE.0, SIZE.1);
     for (index, camera) in CAMERAS.into_iter().enumerate() {
         let now = 16.0 * index as f64;
-        keeper.canvas().begin();
-        frame(&mut kept, &mut keeper, camera, now);
-        plain.begin();
-        frame(&mut fresh, &mut plain, camera, now);
-        let drawn = keeper.canvas().finish().to_vec();
+        look(&mut kept, camera, now);
+        kept.draw(Surface::Strips(&mut strips), now);
+        look(&mut fresh, camera, now);
+        fresh.draw(Surface::Direct(&mut plain), now);
         assert!(
-            drawn == plain.finish(),
+            strips.pixels() == plain.pixels(),
             "frame {index} differs from the frame drawn afresh"
         );
     }
@@ -93,17 +91,18 @@ fn a_kept_frame_is_the_frame_drawn_afresh() {
 #[test]
 fn a_kept_part_draws_its_strokes_as_their_outlines() {
     let mut stage = stage();
-    let mut keeper = Keeper::new(Count::default(), (f64::from(SIZE.0), f64::from(SIZE.1)));
+    let mut kept = Record::default();
     // The first two cameras show the whole picture, so nothing is left out.
     for (index, camera) in CAMERAS.into_iter().take(2).enumerate() {
-        *keeper.canvas() = Count::default();
-        frame(&mut stage, &mut keeper, camera, 16.0 * index as f64);
+        kept = Record::default();
+        look(&mut stage, camera, 16.0 * index as f64);
+        stage.draw(Surface::Strips(&mut kept), 16.0 * index as f64);
     }
-    let kept = *keeper.canvas();
-    let mut afresh = Count::default();
-    frame(&mut stage, &mut afresh, CAMERAS[1], 32.0);
-    assert!(kept.strokes < afresh.strokes, "{kept:?} {afresh:?}");
-    assert_eq!(kept.fills + kept.strokes, afresh.fills + afresh.strokes);
+    let mut afresh = Record::default();
+    stage.draw(Surface::Direct(&mut afresh), 32.0);
+    let strokes = |record: &Record| record.ops.iter().filter(|op| op.stroked).count();
+    assert!(strokes(&kept) < strokes(&afresh));
+    assert_eq!(kept.ops.len(), afresh.ops.len());
     assert_eq!(kept.layers, afresh.layers);
 }
 
@@ -113,7 +112,7 @@ fn large_path() -> BezPath {
 }
 
 /// Record one filled path without rasterizing its geometry.
-fn keep_fill(keeper: &mut Keeper<Count>, key: PartKey, path: &BezPath) {
+fn keep_fill<C: Canvas>(keeper: &mut C, key: PartKey, path: &BezPath) {
     assert!(keeper.keep());
     keeper.fill(path, &Ink::Solid(Color::BLACK), false);
     keeper.kept(key, Affine::IDENTITY);
@@ -121,7 +120,9 @@ fn keep_fill(keeper: &mut Keeper<Count>, key: PartKey, path: &BezPath) {
 
 #[test]
 fn evicted_children_still_count_while_their_parent_holds_them() {
-    let mut keeper = Keeper::new(Count::default(), (10.0, 10.0));
+    let mut parts = Parts::new((10.0, 10.0));
+    let mut record = Record::default();
+    let mut keeper = parts.over(&mut record);
     let path = large_path();
     assert!(keeper.keep());
     for key in [PartKey::Text(1), PartKey::Text(2)] {
@@ -131,14 +132,17 @@ fn evicted_children_still_count_while_their_parent_holds_them() {
     // A root must not keep an over-budget graph alive after the child index
     // was cleared. It still draws once, and later parts can be kept normally.
     assert!(!keeper.again(PartKey::Text(3), Affine::IDENTITY));
-    assert_eq!(keeper.canvas().fills, 2);
+    assert_eq!(record.ops.len(), 2);
+    let mut keeper = parts.over(&mut record);
     keep_fill(&mut keeper, PartKey::Text(4), &BezPath::new());
     assert!(keeper.again(PartKey::Text(4), Affine::IDENTITY));
 }
 
 #[test]
 fn shared_child_paths_count_once() {
-    let mut keeper = Keeper::new(Count::default(), (10.0, 10.0));
+    let mut parts = Parts::new((10.0, 10.0));
+    let mut record = Record::default();
+    let mut keeper = parts.over(&mut record);
     let path = large_path();
     keep_fill(&mut keeper, PartKey::Text(1), &path);
     assert!(keeper.keep());

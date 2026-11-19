@@ -18,7 +18,7 @@ impl Stage {
     /// over it, where it was last seen, moved with its pane by `moved` canvas
     /// pixels. `heading` says where the reader went when the picture was never
     /// sent on its way.
-    pub fn enter(
+    pub(super) fn enter(
         &mut self,
         painting: Painting,
         heading: Option<Heading>,
@@ -27,7 +27,7 @@ impl Stage {
         now: f64,
     ) {
         self.now = now;
-        let next_width = painting.scene.width * self.presentation.camera.scale;
+        let next_width = painting.scene.width * self.seen.camera.scale;
         let mut ghost = self.ghost_of_last((heading, next_width), ms, moved, now);
         let handover = ghost.as_ref().map(|ghost| Handover {
             last: &ghost.picture.scene,
@@ -52,7 +52,7 @@ impl Stage {
         self.ghost = ghost;
         self.flight = flight;
         if self.flight.is_some() {
-            self.presentation.warnings = Warnings::default();
+            self.seen.warnings = Warnings::default();
         }
     }
 
@@ -60,7 +60,7 @@ impl Stage {
     /// of the picture it goes to as far as that is known. A picture has no place in
     /// the module tree against no heading, or a view of its own picture.
     pub(super) fn axis_of(&self, heading: Heading, next_width: f64) -> Option<Axis> {
-        let camera = self.presentation.camera;
+        let camera = self.seen.camera;
         let (width, height) = self.size;
         let middle = Point::new(width / 2.0, height / 2.0);
         match heading {
@@ -118,7 +118,7 @@ impl Stage {
             }
             None => (last.picture, (0.0, 0.0)),
         };
-        let camera = self.presentation.camera;
+        let camera = self.seen.camera;
         Some(Ghost {
             picture,
             camera: Camera {
@@ -140,7 +140,7 @@ impl Stage {
 
     /// Put a picture inside its card, and start the fades of the flight between
     /// the two. `flight` is the flight's way, and the card it flies into.
-    pub fn dive(
+    pub(super) fn dive(
         &mut self,
         painting: Painting,
         frame: Rect,
@@ -171,8 +171,8 @@ impl Stage {
     }
 
     /// Take the picture inside a card away, and the fades with it.
-    pub fn end_dive(&mut self) {
+    pub(super) fn end_dive(&mut self) {
         self.dive = None;
-        self.presentation.fading_words = None;
+        self.seen.fading_words = None;
     }
 }

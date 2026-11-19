@@ -2,7 +2,6 @@
 // keeps for a painter that starts late.
 
 import type { startPainter } from "@archboard/renderer/browser";
-import { durationMs, painterPhasesJson } from "@archboard/timing";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import type { DiveWay } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-dive.ts";
 import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
@@ -57,29 +56,109 @@ interface Held {
 	warned: ReadonlySet<string>;
 }
 
+/** Where the reader went from a picture, as the painter reads it. */
+interface StageHeading {
+	readonly way: Departure["way"];
+	readonly toward: Departure["toward"];
+	readonly side: NonNullable<Departure["side"]> | null;
+}
+
+/** A value that changes over a time, from a moment of the frame clock. */
+interface StageTimed<T> {
+	readonly to: T;
+	readonly ms: number;
+	readonly at: number;
+}
+
+/** What the page says about how the picture is seen: each value it states replaces the last. */
+interface StagePresentation {
+	readonly theme?: "light" | "dark";
+	readonly trafficShown?: boolean;
+	readonly heads?: Readonly<Record<string, number>>;
+	readonly warnings?: readonly string[];
+	readonly marks?: { readonly selected: readonly string[]; readonly whole: readonly string[] };
+	/** The subject whose control the pointer rests on, or null for none. */
+	readonly hovered?: { readonly toggle: string | null };
+	readonly camera?: StageTimed<StageCamera>;
+	readonly farLine?: Held["farLine"];
+	readonly awaited?: StageTimed<boolean>;
+	readonly light?: StageLight & { readonly at: number };
+	/** Lines drawn on as they light; no delays take the last sweep away. */
+	readonly sweep?: {
+		readonly delays: Readonly<Record<string, number>>;
+		readonly shortestMs: number;
+		readonly longestMs: number;
+		readonly at: number;
+	};
+}
+
+/** How a picture comes onto the stage. */
+type StageArrival =
+	| { readonly kind: "cut" }
+	| { readonly kind: "carried"; readonly shift: readonly [number, number]; readonly ms: number }
+	| {
+			readonly kind: "entered";
+			readonly heading: StageHeading | null;
+			readonly ms: number;
+			readonly moved: readonly [number, number];
+			readonly at: number;
+	  }
+	| ({ readonly kind: "into"; readonly ms: number; readonly at: number } & StageDive);
+
+/** What becomes of the picture on the stage. */
+type StageDeparture =
+	| {
+			readonly kind: "leaving";
+			readonly heading: StageHeading;
+			readonly ms: number;
+			readonly at: number;
+	  }
+	| { readonly kind: "stayed" | "cleared" | "outOfCard" };
+
 /**
  * Where a picture is going, as the painter reads it.
- * @param heading Where the reader went, if somewhere.
- * @returns The JSON.
+ * @param heading Where the reader went.
+ * @returns The heading.
  */
-function headingJson(heading: Departure | null): string {
-	return JSON.stringify(
-		heading === null
-			? null
-			: { way: heading.way, toward: heading.toward, side: heading.side ?? null },
-	);
+function headingOf(heading: Departure): StageHeading {
+	return { way: heading.way, toward: heading.toward, side: heading.side ?? null };
 }
 
 /**
  * The marks as the painter reads them.
  * @param marks The marks.
- * @returns JSON.
+ * @returns The marks, as lists.
  */
-function marksJson(marks: StageMarks): string {
-	return JSON.stringify({
-		selected: [...marks.selected],
-		whole: [...marks.whole],
-	});
+function marksOf(marks: StageMarks): NonNullable<StagePresentation["marks"]> {
+	return { selected: [...marks.selected], whole: [...marks.whole] };
+}
+
+/**
+ * Tell a painter how the picture is seen.
+ * @param painter The painter.
+ * @param said What changed.
+ */
+function present(painter: StartedPainter["painter"], said: StagePresentation): void {
+	painter.present(JSON.stringify(said));
+}
+
+/**
+ * Bring a picture onto a painter's stage.
+ * @param painter The painter.
+ * @param painting The picture's painting.
+ * @param arrival How it arrives.
+ */
+function arrive(painter: StartedPainter["painter"], painting: string, arrival: StageArrival): void {
+	painter.arrive(painting, JSON.stringify(arrival));
+}
+
+/**
+ * Say what becomes of the picture on a painter's stage.
+ * @param painter The painter.
+ * @param departure What becomes of it.
+ */
+function depart(painter: StartedPainter["painter"], departure: StageDeparture): void {
+	painter.depart(JSON.stringify(departure));
 }
 
 /**
@@ -117,9 +196,12 @@ function fitPainter(started: StartedPainter): void {
 }
 
 export {
+	arrive,
+	depart,
 	fitPainter,
-	headingJson,
-	marksJson,
+	headingOf,
+	marksOf,
+	present,
 	sizeCanvas,
 	type Held,
 	type PictureHand,
@@ -127,6 +209,7 @@ export {
 	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type StagePresentation,
 	type StageShift,
 	type PainterFailure,
 	type StartedPainter,
@@ -136,30 +219,30 @@ export {
  * Hand a painter the current presentation and picture.
  * @param painter The painter.
  * @param held What the page holds.
- * @param arrive How a first picture enters, if its ink still waits.
+ * @param hand How a first picture enters, if its ink still waits.
  * @param dark Whether the page is dark.
  * @param now The clock's time.
  */
 export function briefPainter(
 	painter: StartedPainter["painter"],
 	held: Held,
-	arrive: PictureHand | null,
+	hand: PictureHand | null,
 	dark: boolean,
 	now: number,
 ): void {
 	const { camera, farLine, awaited, marks, light, painting, trafficShown, heads, warned } = held;
-	painter.setPhases(painterPhasesJson());
-	painter.setLongestStep(durationMs("picture.longestStep"));
-	painter.setTheme(dark);
-	painter.setTrafficShown(trafficShown);
-	painter.setHeads(JSON.stringify(heads));
-	painter.setWarnings(JSON.stringify([...warned]));
-	painter.setCamera(camera.x, camera.y, camera.scale, 0, now);
-	painter.setFarLine(farLine.scale, farLine.ms);
-	painter.setAwaited(awaited, 0, now);
-	painter.setMarks(marksJson(marks));
-	if (light !== null) painter.setLight(JSON.stringify(light), now);
-	if (painting === undefined) painter.clear();
-	else if (arrive === null) painter.show(painting);
-	else arrive(painter, painting);
+	present(painter, {
+		theme: dark ? "dark" : "light",
+		trafficShown,
+		heads,
+		warnings: [...warned],
+		marks: marksOf(marks),
+		camera: { to: camera, ms: 0, at: now },
+		farLine,
+		awaited: { to: awaited, ms: 0, at: now },
+		...(light === null ? {} : { light: { ...light, at: now } }),
+	});
+	if (painting === undefined) depart(painter, { kind: "cleared" });
+	else if (hand === null) arrive(painter, painting, { kind: "cut" });
+	else hand(painter, painting);
 }

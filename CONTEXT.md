@@ -725,6 +725,16 @@ What turns a scene into what a frontend shows.
 The SVG painter is part of the renderer core, and a native frontend paints the list itself.
 _Avoid_: rasterizer (that makes a PNG from SVG), backend
 
+**Presentation**:
+What a page says about how a painter's picture is seen, never the picture itself: the theme, the camera, the marks, the light, the far line, the held heads, the warnings, whether the next picture is awaited and whether traffic runs.
+A value it states replaces the last, and one it leaves out stays; a timed value names the moment it starts (ADR 0085).
+_Avoid_: presentation state (the older words of ADR 0071), presentation bar
+
+**Arrival**:
+How a picture comes onto a painter's stage: a cut, carried from the last, entered part by part, or into the card the camera flies into.
+The page decides it, and the stage moves it (ADR 0071, ADR 0085).
+_Avoid_: transition for the cut, show
+
 **Pulse train**:
 The numbers of one traffic mark's pulses that every painter draws: the pieces of its route with their frames, light boxes and bars, the glow, the gradient, and where each piece's bar stands at a moment.
 The scene answers it; each painter spells it and runs the clock (ADR 0084).

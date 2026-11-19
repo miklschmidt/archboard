@@ -11,7 +11,6 @@ import { durationMs } from "@archboard/timing";
 import { startCpuPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";
-import { PHASES } from "./painter-phases";
 import { animate, whileVisible } from "./reveal";
 import { typeLine } from "./type-line";
 
@@ -44,9 +43,7 @@ async function paintShop(canvas: HTMLCanvasElement): Promise<Shop | null> {
 				return answer.text();
 			}),
 		]);
-		painter.setPhases(PHASES);
-		painter.setLongestStep(durationMs("picture.longestStep"));
-		painter.setFarLine(0, 0);
+		painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 } }));
 		return { painter, painting };
 	} catch (cause) {
 		console.warn("The window's painter did not start.", cause);
@@ -76,7 +73,8 @@ export function mountHeroWindow(): void {
 	let visible = false;
 	let next = 0;
 	const loop = (now: number) => {
-		next = visible && painted?.painter.frame(now) ? requestAnimationFrame(loop) : 0;
+		const moves = visible && painted !== null && painted.painter.frame(now) !== "still";
+		next = moves ? requestAnimationFrame(loop) : 0;
 	};
 	const wake = () => {
 		if (visible && painted && next === 0) next = requestAnimationFrame(loop);
@@ -147,7 +145,7 @@ export function mountHeroWindow(): void {
 			const text = line.querySelector<HTMLElement>(".text");
 			if (text) text.textContent = "";
 		}
-		painted?.painter.clear();
+		painted?.painter.depart(JSON.stringify({ kind: "cleared" }));
 		wake();
 	};
 
@@ -159,14 +157,9 @@ export function mountHeroWindow(): void {
 		const ready = await painting;
 		signal.throwIfAborted();
 		if (!ready) return;
-		ready.painter.enter(
-			ready.painting,
-			"null",
-			durationMs("picture.entry"),
-			0,
-			0,
-			performance.now(),
-		);
+		const ms = durationMs("picture.entry");
+		const entered = { kind: "entered", heading: null, ms, moved: [0, 0], at: performance.now() };
+		ready.painter.arrive(ready.painting, JSON.stringify(entered));
 		wake();
 	};
 

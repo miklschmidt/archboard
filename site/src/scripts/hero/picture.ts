@@ -71,9 +71,8 @@ export async function paintPicture(parts: readonly Part[]): Promise<Level[] | nu
 		first.width = sizes[0]?.width ?? 1;
 		first.height = sizes[0]?.height ?? 1;
 		const { painter, canvas } = await startCpuPainter(first, true);
-		painter.setFarLine(0, 0);
-		painter.setTrafficShown(false);
-		painter.show(await painting);
+		painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 }, trafficShown: false }));
+		painter.arrive(await painting, JSON.stringify({ kind: "cut" }));
 		const levels: Level[] = [];
 		for (const { region, width, height } of sizes) {
 			await yieldToPage();

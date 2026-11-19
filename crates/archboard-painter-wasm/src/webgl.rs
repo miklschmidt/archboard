@@ -1,11 +1,11 @@
 //! Vello GPU on WebGL2, the painter of a page with no usable WebGPU (ADR 0074).
 //! This thread cuts each path into sparse strips, and a WebGL2 fragment pass
 //! fills and composes them. It draws the same `Canvas` calls as Vello on the
-//! CPU, and it keeps its parts as the CPU canvas does.
+//! CPU, and the stage keeps its parts as it keeps the CPU canvas's.
 
 use std::cell::OnceCell;
 
-use archboard_paint::{Canvas, Ink, Keeper};
+use archboard_paint::{Canvas, Ink, Layer};
 use kurbo::{Affine, BezPath};
 use peniko::{BlendMode, Color, Compose, Fill, Mix};
 use vello_gpu::{RenderSize, Resources, Scene, WebGlRenderer, WebGlTextureBindings};
@@ -59,23 +59,25 @@ impl Canvas for WebGlCanvas {
         self.scene.stroke_path(path);
     }
 
-    fn push(&mut self, clip: Option<(&BezPath, bool)>, opacity: f32) {
-        self.scene.set_fill_rule(match clip {
-            Some((_, true)) => Fill::EvenOdd,
-            _ => Fill::NonZero,
-        });
-        self.scene
-            .push_layer(clip.map(|(path, _)| path), None, Some(opacity), None, None);
-    }
-
-    fn push_cut(&mut self) {
-        let cut = BlendMode::new(Mix::Normal, Compose::DestOut);
-        self.scene.push_layer(None, Some(cut), None, None, None);
-    }
-
-    fn push_keep(&mut self) {
-        let keep = BlendMode::new(Mix::Normal, Compose::DestIn);
-        self.scene.push_layer(None, Some(keep), None, None, None);
+    fn push(&mut self, layer: Layer<'_>) {
+        match layer {
+            Layer::Over { clip, opacity } => {
+                self.scene.set_fill_rule(match clip {
+                    Some((_, true)) => Fill::EvenOdd,
+                    _ => Fill::NonZero,
+                });
+                self.scene
+                    .push_layer(clip.map(|(path, _)| path), None, Some(opacity), None, None);
+            }
+            Layer::Cut => {
+                let cut = BlendMode::new(Mix::Normal, Compose::DestOut);
+                self.scene.push_layer(None, Some(cut), None, None, None);
+            }
+            Layer::Keep => {
+                let keep = BlendMode::new(Mix::Normal, Compose::DestIn);
+                self.scene.push_layer(None, Some(keep), None, None, None);
+            }
+        }
     }
 
     fn pop(&mut self) {
@@ -87,7 +89,7 @@ impl Canvas for WebGlCanvas {
 pub(crate) struct WebGlTarget {
     renderer: WebGlRenderer,
     resources: Resources,
-    canvas: Keeper<WebGlCanvas>,
+    canvas: WebGlCanvas,
     size: (u16, u16),
 }
 
@@ -194,7 +196,7 @@ impl WebGlTarget {
         Ok(WebGlTarget {
             renderer: starting.finish().map_err(refused)?,
             resources,
-            canvas: Keeper::new(drawing_of(size), (f64::from(size.0), f64::from(size.1))),
+            canvas: drawing_of(size),
             size,
         })
     }
@@ -202,13 +204,12 @@ impl WebGlTarget {
     /// Change the size of the canvas, in pixels.
     pub(crate) fn resize(&mut self, width: u32, height: u32) {
         self.size = (side(width), side(height));
-        self.canvas
-            .replace(drawing_of(self.size), (f64::from(width), f64::from(height)));
+        self.canvas = drawing_of(self.size);
     }
 
     /// The canvas of the next frame, empty.
-    pub(crate) fn begin(&mut self) -> &mut Keeper<WebGlCanvas> {
-        self.canvas.canvas().scene.reset();
+    pub(crate) fn begin(&mut self) -> &mut WebGlCanvas {
+        self.canvas.scene.reset();
         &mut self.canvas
     }
 
@@ -220,7 +221,7 @@ impl WebGlTarget {
         };
         self.renderer
             .render(
-                &self.canvas.canvas().scene,
+                &self.canvas.scene,
                 &mut self.resources,
                 &size,
                 &WebGlTextureBindings::new(),

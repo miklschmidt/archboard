@@ -10,7 +10,7 @@ use archboard_scene::scene::{
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 use peniko::{Color, ColorStop, Extend, Gradient, InterpolationAlphaSpace};
 
-use crate::canvas::{Canvas, Ink};
+use crate::canvas::{Canvas, Ink, Layer};
 use crate::palette::Palette;
 use crate::path::segment_onto;
 
@@ -88,11 +88,14 @@ fn draw_leg<C: Canvas>(
     let ink = Ink::Gradient(gradient.clone(), Affine::IDENTITY);
     canvas.set_transform(transform);
     let clip = Rect::new(room.x, room.y, room.x + room.width, room.y + room.height).to_path(0.1);
-    canvas.push(Some((&clip, false)), 1.0);
+    canvas.push(Layer::Over {
+        clip: Some((&clip, false)),
+        opacity: 1.0,
+    });
     canvas.set_transform(transform * frame_of(leg) * Affine::translate((slide, 0.0)));
     canvas.fill(&body, &ink, false);
     canvas.set_transform(transform);
-    canvas.push_keep();
+    canvas.push(Layer::Keep);
     let joined = leg_path(leg, true);
     let exact = leg_path(leg, false);
     for layer in glow {
