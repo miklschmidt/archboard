@@ -33,6 +33,7 @@ const FINDING_NAMES: Readonly<Record<string, string>> = {
 	EXPOSED_UNUSED: "Exposed and unused",
 	EXPOSED_VALUE: "Exposed value",
 	INHERITED_PART_DROPPED: "Inherited part dropped",
+	INTERFACE_UNDECLARED: "Undeclared interface",
 	MODULE_SHALLOW: "Shallow module",
 	RELATIONSHIP_BACKWARDS: "Backwards relationship",
 	RELATIONSHIP_UNDRAWN: "Missing relationship",
