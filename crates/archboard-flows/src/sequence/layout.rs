@@ -314,12 +314,8 @@ fn head_cards(nodes: Vec<Node>, centres: &[f64], top: f64, heads: &Heads) -> (Ve
         .into_iter()
         .enumerate()
         .map(|(index, node)| {
-            let head = heads.cards.get(&node.id).cloned().unwrap_or(HeadCard {
-                height: 0.0,
-                title_size: 0.0,
-                title_room: 0.0,
-                notes: Vec::new(),
-            });
+            // Every participant of every flow was measured together.
+            let head = heads.cards[&node.id].clone();
             Card {
                 bounds: Rect {
                     x: centres[index] - width / 2.0,
