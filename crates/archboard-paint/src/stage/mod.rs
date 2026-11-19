@@ -20,11 +20,11 @@ use std::collections::HashSet;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
-use crate::between::{Entrance, Phases};
+use crate::between::{Between, Phases};
 use crate::canvas::Canvas;
 use crate::clock::{StageClock, TrafficClock};
 use crate::draw::Picture;
-use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
+use crate::flight::{Arriving, Dive, DiveWay, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::parts::Parts;
@@ -65,7 +65,7 @@ pub struct Stage {
     outlines: Outlines,
     size: (f64, f64),
     phases: Option<Phases>,
-    flight: Option<Flight>,
+    arriving: Option<Arriving>,
     /// How far the picture has stepped back for the next.
     awaited: Fade,
     leaving: Option<Leaving>,
@@ -109,7 +109,7 @@ impl Stage {
             outlines: Outlines::default(),
             size,
             phases: pace.phases,
-            flight: None,
+            arriving: None,
             awaited: Fade::still(0.0),
             leaving: None,
             ghost: None,
@@ -184,7 +184,7 @@ impl Stage {
             near: None,
             far: None,
         });
-        self.flight = None;
+        self.arriving = None;
         self.leaving = None;
         self.ghost = None;
         self.behind.clear();
@@ -202,13 +202,13 @@ impl Stage {
         let enter = self.phases.as_ref().map(|phases| phases.enter);
         self.stand(painting);
         self.lit_afresh = true;
-        self.flight = bloom
+        self.arriving = bloom
             .zip(enter)
-            .and_then(|(bloom, ms)| Flight::landed_from(bloom, ms, self.now));
+            .and_then(|(bloom, ms)| Arriving::landed_from(bloom, ms, self.now));
     }
 
     /// The picture that bloomed inside a card, when a flight has brought it here.
-    fn bloom_of(&mut self, painting: &Painting) -> Option<Entrance> {
+    fn bloom_of(&mut self, painting: &Painting) -> Option<Between> {
         self.dive
             .take_if(|dive| dive.way == DiveWay::In && dive.inset.scene == painting.scene)?
             .bloom
@@ -220,20 +220,21 @@ impl Stage {
     fn carry(&mut self, painting: Painting, shift: (f64, f64), ms: f64) {
         let last = self.shown.take();
         let seen = self
-            .flight
+            .arriving
             .as_ref()
             .zip(last.as_ref())
-            .map(|(flight, last)| flight.seen_at(self.now, &last.picture.scene));
-        let flight = last
+            .map(|(arriving, last)| arriving.seen_at(self.now, &last.picture.scene));
+        let arriving = last
             .as_ref()
             .zip(self.phases.as_ref())
             .map(|(last, phases)| match &seen {
                 Some((scene, back)) => {
                     let shift = (shift.0 + back.0, shift.1 + back.1);
-                    Flight::carry(scene, &painting.scene, shift, phases, ms)
+                    Between::carry(scene, &painting.scene, shift, phases)
                 }
-                None => Flight::carry(&last.picture.scene, &painting.scene, shift, phases, ms),
-            });
+                None => Between::carry(&last.picture.scene, &painting.scene, shift, phases),
+            })
+            .map(|between| Arriving::new(between, ms));
         let ghost = self.ghost.take();
         let behind = std::mem::take(&mut self.behind);
         let leaving = self.leaving.take();
@@ -241,15 +242,15 @@ impl Stage {
         self.ghost = ghost;
         self.behind = behind;
         self.leaving = leaving;
-        self.flight = flight;
-        if self.flight.is_some() {
+        self.arriving = arriving;
+        if self.arriving.is_some() {
             self.seen.warnings = Warnings::default();
         }
     }
 
     /// Land whatever flies, at once.
     fn land(&mut self) {
-        if self.flight.take().is_some() {
+        if self.arriving.take().is_some() {
             self.find_warnings();
         }
     }
@@ -307,14 +308,15 @@ impl Stage {
         };
     }
 
-    /// Start a flight's clock, and tell it where the last picture stands.
+    /// Start the clock of a picture's arrival, and tell it where the last
+    /// picture stands.
     fn take_off(&mut self, now: f64) {
-        let Some(flight) = &mut self.flight else {
+        let Some(arriving) = &mut self.arriving else {
             return;
         };
-        flight.begin(now);
+        arriving.begin(now);
         if let Some(ghost) = &self.ghost {
-            flight.rebase(ghost.camera, self.seen.camera);
+            arriving.rebase(ghost.camera, self.seen.camera);
         }
     }
 
@@ -336,9 +338,9 @@ impl Stage {
             ghost.time.begin(now);
         }
         if self
-            .flight
+            .arriving
             .as_ref()
-            .is_some_and(|flight| flight.landed(now))
+            .is_some_and(|arriving| arriving.landed(now))
         {
             self.land();
         }
@@ -411,7 +413,7 @@ impl Stage {
 
     /// Whether a whole picture is on the move at a moment.
     fn flying(&self, now: f64) -> bool {
-        self.flight.is_some()
+        self.arriving.is_some()
             || self.ghost.is_some()
             || self
                 .leaving

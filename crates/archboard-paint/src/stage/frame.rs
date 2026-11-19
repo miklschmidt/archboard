@@ -9,7 +9,7 @@ use super::Stage;
 use crate::between::departing;
 use crate::canvas::{Canvas, Layer};
 use crate::draw::{Inks, draw_ground, draw_items};
-use crate::flight::{Dive, Flight, Ghost, Leaving};
+use crate::flight::{Arriving, Dive, Ghost, Leaving};
 use crate::passage::Plane;
 use crate::path::{placed, rect_of};
 use crate::presentation::Seen;
@@ -24,7 +24,7 @@ impl Stage {
             palette,
             outlines,
             size,
-            flight,
+            arriving,
             leaving,
             ghost,
             behind,
@@ -43,7 +43,7 @@ impl Stage {
         let transform = plane.transform * placed(camera.x, camera.y, Some(camera.scale));
         let fades = dive.as_ref().map(|dive| dive.fades(now));
         let parent = fades.map_or(1.0, |fades| fades.parent) * plane.shown;
-        let moved = flight.as_mut().map(|flight| flight.items(now));
+        let moved = arriving.as_mut().map(|arriving| arriving.items(now));
         let moved = match leaving.as_ref().filter(|leaving| leaving.axis.is_none()) {
             Some(leaving) => Some(departing(
                 moved.unwrap_or_else(|| picture.scene.body.clone()),
@@ -52,9 +52,9 @@ impl Stage {
             )),
             None => moved,
         };
-        let definitions = flight
+        let definitions = arriving
             .as_ref()
-            .and_then(Flight::definitions)
+            .and_then(Arriving::definitions)
             .unwrap_or(&picture.definitions);
         let items = moved.as_deref().unwrap_or(&picture.scene.body);
         let mut inks = Inks {
@@ -89,7 +89,9 @@ impl Stage {
                 &mut plain_inks,
             );
         }
-        let tray = flight.as_ref().and_then(|flight| flight.holder_at(now));
+        let tray = arriving
+            .as_ref()
+            .and_then(|arriving| arriving.holder_at(now));
         for ghost in behind.iter().chain(ghost.as_ref()) {
             draw_ghost(canvas, ghost, now, tray, &mut plain_inks);
         }

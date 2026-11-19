@@ -23,7 +23,7 @@ const LEAVE_EASING: Curve = Curve(0.4, 0.0, 1.0, 1.0);
 const VISIBLE_FLOOR: f64 = 0.02;
 
 /// How much of a picture shows at a share of its leaving.
-pub(crate) fn visible_at(progress: f64) -> f64 {
+pub(super) fn visible_at(progress: f64) -> f64 {
     1.0 - LEAVE_EASING.at(progress)
 }
 
