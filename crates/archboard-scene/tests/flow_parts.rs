@@ -6,7 +6,7 @@ use archboard_scene::drawing::{DiagramFont, FontFamily};
 use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
-    CardWords, ColumnLimits, HeadCards, Span, activation_span, flow_tab, fragment_bounds,
+    CardWords, ColumnLimits, HeadCard, Span, activation_span, flow_tab, fragment_bounds,
     fragment_head, measure_flow_frame, message_ends, message_plate, note_plate, self_loop,
     sequence_cards, shape_words, width,
 };
@@ -33,8 +33,8 @@ const RESERVES: &str =
 
 /// A plain card and a card with a responsibility that opens another picture,
 /// measured together in the layout's usual limits.
-fn two_cards() -> HeadCards {
-    sequence_cards(
+fn two_cards() -> (f64, f64, Vec<HeadCard>) {
+    let heads = sequence_cards(
         &[
             card("Checkout API", None, false),
             card("Inventory service", Some(RESERVES), true),
@@ -44,21 +44,18 @@ fn two_cards() -> HeadCards {
             most: 192.0,
             floor: 0.0,
         },
-    )
+    );
+    (heads.width, heads.lifeline_drop, heads.cards)
 }
 
 #[test]
 fn a_card_holds_its_whole_responsibility_inside_its_text_run() {
-    let heads = two_cards();
-    assert!((112.0..=192.0).contains(&heads.width));
-    let notes = &heads.cards[1].notes;
+    let (width, _, cards) = two_cards();
+    assert!((112.0..=192.0).contains(&width));
+    let notes = &cards[1].notes;
     assert!(notes.len() > 1);
     for line in notes {
-        assert!(
-            line.width + CARD_CHROME <= heads.width,
-            "{} overruns",
-            line.text
-        );
+        assert!(line.width + CARD_CHROME <= width, "{} overruns", line.text);
     }
     let joined: Vec<&str> = notes.iter().map(|line| line.text.as_str()).collect();
     assert_eq!(joined.join(" "), RESERVES);
@@ -66,18 +63,18 @@ fn a_card_holds_its_whole_responsibility_inside_its_text_run() {
 
 #[test]
 fn a_card_grows_a_note_line_at_a_time_and_keeps_its_mark_beside_its_name() {
-    let heads = two_cards();
-    let [plain, noted] = heads.cards.as_slice() else {
+    let (width, lifeline_drop, cards) = two_cards();
+    let [plain, noted] = cards.as_slice() else {
         panic!("one card each");
     };
     assert_eq!((plain.notes.len(), plain.height), (0, 46.0));
     // One line of a note is 9.5 high at a 1.35 line height.
     let extra = noted.notes.len() as f64 - 1.0;
     assert!((noted.height - (58.0 + extra * 12.825)).abs() < 1e-9);
-    assert_eq!(plain.title_room, heads.width - CARD_CHROME);
-    assert_eq!(noted.title_room, heads.width - CARD_CHROME - 21.0);
+    assert_eq!(plain.title_room, width - CARD_CHROME);
+    assert_eq!(noted.title_room, width - CARD_CHROME - 21.0);
     // The lifeline starts clear of the card's shadow.
-    assert_eq!(heads.lifeline_drop, 13.0);
+    assert_eq!(lifeline_drop, 13.0);
 }
 
 #[test]
