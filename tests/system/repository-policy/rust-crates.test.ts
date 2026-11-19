@@ -1,8 +1,7 @@
-// The shape rules of the Rust crates that clippy cannot hold (TASK-520.09,
-// docs/agents/strict-analysis-rust.md): every crate inherits the workspace lint policy, and
-// every source file keeps the TypeScript's 600-line cap. The vendored third-party crates
-// under crates/vendor keep upstream's shape and are no members of the workspace
-// (crates/vendor/README.md), so neither rule reads them.
+// The shape rules of the Rust crates that clippy cannot hold (TASK-520.09): every crate
+// inherits the workspace lint policy, and every source file keeps the TypeScript's 600-line
+// cap. The vendored third-party crates under crates/vendor keep upstream's shape and are no
+// members of the workspace (crates/vendor/README.md), so neither rule reads them.
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";

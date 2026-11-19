@@ -9,11 +9,9 @@ Where things are written down:
 - Running it and making sure that it works: [TESTING.md](TESTING.md). Installing it elsewhere:
   [INSTALL.md](INSTALL.md)
 - Domain language: [CONTEXT.md](CONTEXT.md)
-- Changing frontend code: [docs/agents/frontend.md](docs/agents/frontend.md)
 - The advisors that stand in for the owner at design gates: [docs/agents/advisors.md](docs/agents/advisors.md)
 - Decisions: [docs/adr/](docs/adr/). Read the ADR before you touch what it decides.
 - The visual authority of the UI: [DESIGN.md](DESIGN.md).
-- Writing tests, and changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
 - Building and publishing a release on npm: [docs/agents/releasing.md](docs/agents/releasing.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)
