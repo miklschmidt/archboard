@@ -1,9 +1,11 @@
 ---
 id: TASK-646.13
 title: Terraform, Nix flakes and Helm modules get export counts
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:03:00Z'
+updated_date: '2026-11-19T01:12:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -53,3 +55,12 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #1 Terraform, Nix flakes and Helm modules show export counts by kind
 - [ ] #2 Terraform keeps `VARIABLE_PASSED_THROUGH` and its own `MODULE_SHALLOW` as they are
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Test first: a code-check pass over a fixture checkout with a bound Terraform module, a Nix flake and a Helm chart asserts depth.exports by kind and that module depth judges none of their names, while Terraform keeps its own MODULE_SHALLOW.
+2. Module depth: count the exports of the infrastructure adapters (terraform, nix, helm) by the kind their adapters already name (a Nix function output is a function, every other output, variable and value a value). Count only a name at the end of its path: a flake output set or a values mapping that holds other names only groups them. Never judge them: no EXPOSED_VALUE and no module-depth MODULE_SHALLOW, so Terraform's VARIABLE_PASSED_THROUGH and MODULE_SHALLOW stay its only verdicts.
+3. Fact analysis needs no change: the Terraform, Nix and Helm adapters already name each definition's kind.
+4. Update comments and docs that say only TypeScript is counted; run archboard check and the gate; finalize.
+<!-- SECTION:PLAN:END -->
