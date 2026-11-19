@@ -6,7 +6,10 @@ const ResponseSchema = z.strictObject({
 	success: z.boolean(),
 });
 
-const OperationId = z.string().min(1).refine((text) => Array.from(text).length <= 128);
+const OperationId = z
+	.string()
+	.min(1)
+	.refine((text) => Array.from(text).length <= 128);
 const ShortText = z
 	.string()
 	.min(1)

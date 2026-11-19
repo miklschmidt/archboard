@@ -190,14 +190,15 @@ type StateKey<State extends RealtimeState> = State extends RealtimeState
 	? `${State["phase"]}:${State["reason"]}`
 	: never;
 
-const missingStates: Record<
-	Exclude<StateKey<RealtimeState>, StateKey<(typeof DECLARED_STATES)[number]>>,
-	never
-> = {};
+/** Each realtime state that has no fixture in `DECLARED_STATES`. */
+type MissingState = Exclude<StateKey<RealtimeState>, StateKey<(typeof DECLARED_STATES)[number]>>;
+
+// A state without a fixture makes this a type error that names the state.
+const everyStateDeclared: [MissingState] extends [never] ? true : MissingState = true;
 
 describe("voice session status mapping", () => {
 	test("maps every declared realtime state to a defined status and sentence", () => {
-		expect(missingStates).toEqual({});
+		expect(everyStateDeclared).toBe(true);
 		const seen = new Set<VoiceSessionStatus>();
 		for (const state of DECLARED_STATES) {
 			const view = project(state);
