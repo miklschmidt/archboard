@@ -32,6 +32,9 @@
 // dependencies. Out-of-line module declarations record whether their files
 // are test code too, including declarations inside inline modules. Code that
 // did not parse holds no facts; its names are kept.
+//
+// For module depth (TASK-646.10), the file counts its pieces of logic outside
+// its tests.
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
@@ -64,6 +67,7 @@ interface Captured {
 	readonly type: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -79,6 +83,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	type: "type",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** The nodes that join the names of a path. */
@@ -127,6 +132,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		type: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
@@ -479,6 +485,9 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 			.flatMap(importsOf),
 		unparsed: unparsedOf(captured.unparsed),
 		rustModules: modulesOf(captured.import, testSpans, unparsed),
+		logic: captured.logic.filter(
+			(node) => !unparsed.holds(node.startIndex) && !testSpans.holds(node.startIndex),
+		).length,
 	};
 }
 

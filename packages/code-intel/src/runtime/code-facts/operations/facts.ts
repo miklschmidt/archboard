@@ -54,6 +54,12 @@ interface Definition {
 	 */
 	readonly type?: true;
 	/**
+	 * The language calls it itself, and no caller names it: Rust's `drop` of
+	 * an `impl Drop`, or the `fmt` of an `impl Display`. Module depth neither
+	 * counts nor judges it (TASK-646.10).
+	 */
+	readonly languageCalls?: true;
+	/**
 	 * It only passes its call on: its body is one call that hands every
 	 * argument straight from its parameters, and this names the callee's root,
 	 * such as `save` for `save(item)` or `this` for `this.target.send(id)`.

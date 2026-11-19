@@ -1,9 +1,11 @@
 ---
 id: TASK-646.10
 title: Rust modules get every module-depth rule
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T02:37:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +57,12 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 A trait implementation used through its trait counts as used, and members that the language calls, such as `Drop`, are not judged
 - [ ] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Test first: a code-check pass over a Rust workspace fixture with a canonical vault (tests/runtime/code-check/languages/operations/rust-depth.test.ts) asserting what the Rust grammar decides: export kinds (fn, struct/enum/union as class, trait and type alias as types, const/static values, a fn-pointer const as a function, public inherent and trait-impl methods), the logic count, uses (EXPOSED_VALUE, per-name EXPOSED_UNUSED), the expression around uses (EXPOSED_VALUE_COMPUTED over Rust spellings and .min/.pow), pass-throughs, a trait impl used through its trait, and Drop/Display members left unjudged.
+2. Fact analysis, Rust: rust.scm gains @logic; rust-definitions marks types, passes and members the language calls (one new optional Definition field); a new rust-math.ts names the computations around each run-time use of a path from another file.
+3. Module depth: add rust to the judged adapters and RUST_FILE to JUDGED_FILES; skip members the language calls by the new field (small shared change, reported).
+4. Update rust-check.test.ts for per-name EXPOSED_UNUSED. Run code-intel tests, type-check, lint, archboard check and the shallow gate; compare findings with feat/module-depth.
+<!-- SECTION:PLAN:END -->

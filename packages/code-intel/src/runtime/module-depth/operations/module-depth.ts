@@ -23,8 +23,8 @@
 // among them, and gives each at most one finding (name-findings.ts):
 // `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE`,
 // `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
-// `toString`, are no export a caller names: they are neither counted nor
-// judged. A method's uses run through values, which a syntax read cannot
+// `toString`, or what its adapter marks so, as Rust's `Drop::drop`, are no
+// export a caller names: they are neither counted nor judged. A method's uses run through values, which a syntax read cannot
 // follow, so no method is judged unused, and an implementation used through
 // its interface counts as used.
 //
@@ -36,7 +36,7 @@
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
-// the kind of each export: TypeScript.
+// the kind of each export: TypeScript and Rust (TASK-646.10).
 //
 // It counts the exports of a Terraform module, a Nix flake and a Helm chart
 // by kind too, and judges none of them (TASK-646.13): a caller sets a
@@ -50,6 +50,7 @@
 import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { RUST_FILE } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	type DepthFinding,
@@ -74,6 +75,7 @@ const GROUPS: ReadonlyMap<
 	keyof Omit<CountedNames, "languages" | "unjudged">
 > = new Map([
 	["typescript", "judged"],
+	["rust", "judged"],
 	["terraform", "infrastructure"],
 	["nix", "infrastructure"],
 	["helm", "infrastructure"],
@@ -85,6 +87,7 @@ const GROUPS: ReadonlyMap<
  */
 const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["typescript", TYPESCRIPT_FILE],
+	["rust", RUST_FILE],
 ]);
 
 /** The members a language calls itself, which no caller names. */
@@ -265,6 +268,7 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
 	return (
 		member.definition.kind === "function" &&
 		!called &&
+		member.definition.languageCalls !== true &&
 		classes.some((each) => each.path === member.path && each.definition.symbol === holder)
 	);
 }

@@ -24,6 +24,13 @@
 // exposure, which a `pub mod` re-exports (rust-imports.ts). A member of a
 // trait's `impl` is exposed when its type is, or when the file does not
 // declare the type.
+//
+// For module depth (TASK-646.10): a trait, a type alias and an associated
+// type declare a type and nothing a caller runs or reads. A `const` or
+// `static` of a function pointer's type can be called, so it is a function.
+// The members of an `impl` of a trait whose members the language's own
+// syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
+// `Display::fmt`, are called by the language: no caller names them.
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
@@ -34,6 +41,63 @@ interface Scope {
 	readonly prefix: readonly string[];
 	readonly open: boolean;
 }
+
+/** The items that declare a type and nothing a caller runs or reads. */
+const TYPE_ITEMS = new Set(["trait_item", "type_item", "associated_type"]);
+
+/**
+ * The traits whose members the language's syntax calls: the end of a scope,
+ * `*`, formatting, the operators, comparison, `for`, `.await` and a call.
+ */
+const LANGUAGE_TRAITS = new Set([
+	"Drop",
+	"Deref",
+	"DerefMut",
+	"Display",
+	"Debug",
+	"LowerHex",
+	"UpperHex",
+	"Octal",
+	"Binary",
+	"LowerExp",
+	"UpperExp",
+	"Pointer",
+	"Add",
+	"Sub",
+	"Mul",
+	"Div",
+	"Rem",
+	"Neg",
+	"Not",
+	"BitAnd",
+	"BitOr",
+	"BitXor",
+	"Shl",
+	"Shr",
+	"AddAssign",
+	"SubAssign",
+	"MulAssign",
+	"DivAssign",
+	"RemAssign",
+	"BitAndAssign",
+	"BitOrAssign",
+	"BitXorAssign",
+	"ShlAssign",
+	"ShrAssign",
+	"Index",
+	"IndexMut",
+	"PartialEq",
+	"Eq",
+	"PartialOrd",
+	"Ord",
+	"Iterator",
+	"IntoIterator",
+	"Future",
+	"IntoFuture",
+	"Fn",
+	"FnMut",
+	"FnOnce",
+]);
 
 /** An item's kind, by its node. */
 const ITEM_KIND: Readonly<Record<string, Definition["kind"]>> = {
@@ -115,6 +179,7 @@ function definition(
 	return {
 		symbol,
 		...shape,
+		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),
@@ -150,7 +215,9 @@ function nameOf(node: Node): string | undefined {
 function namedItem(node: Node): { kind: Definition["kind"]; name: string } | undefined {
 	const kind = ITEM_KIND[node.type];
 	const name = nameOf(node);
-	return kind === undefined || name === undefined ? undefined : { kind, name };
+	if (kind === undefined || name === undefined) return undefined;
+	const pointer = node.childForFieldName("type")?.type === "function_type";
+	return { kind: kind === "value" && pointer ? "function" : kind, name };
 }
 
 /**
@@ -176,14 +243,16 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 	const type = typeName(node.childForFieldName("type"));
 	const body = node.childForFieldName("body");
 	if (type === undefined || body === null) return;
-	const ofTrait = node.childForFieldName("trait") !== null;
+	const trait = node.childForFieldName("trait");
+	const ofTrait = trait !== null;
+	const called = LANGUAGE_TRAITS.has(typeName(trait) ?? "") ? { languageCalls: true as const } : {};
 	const holder = [...scope.prefix, type].join(".");
 	const open = scope.open && walk.types.get(holder) !== false;
 	for (const member of body.namedChildren) {
 		const item = namedItem(member);
 		if (item === undefined) continue;
 		const shape = { kind: item.kind, ...implShape(member, ofTrait, open) };
-		walk.found.push(definition(member, `${holder}.${item.name}`, shape));
+		walk.found.push({ ...definition(member, `${holder}.${item.name}`, shape), ...called });
 	}
 }
 
