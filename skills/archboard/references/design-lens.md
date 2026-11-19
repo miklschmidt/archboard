@@ -122,9 +122,10 @@ Source refs stay local. The command retains no source history.
 
 ## Module depth
 
-The code check measures each bound TypeScript module from its code. Unlike the reads above, it gives verdicts, as findings.
+The code check measures each bound module from its code. Unlike the reads above, it gives verdicts, as findings.
 It also counts the exports of a bound Terraform module, Nix flake and Helm chart by kind, and judges none of them: a variable, an output or a value is there for callers. Terraform keeps its own `VARIABLE_PASSED_THROUGH` and `MODULE_SHALLOW`.
 `depth` lists each module's exports by kind (`functions`, `classes`, `methods`, `values`, `types`) and `logic`, the calls, operators, conditions, loops and hidden values behind them.
+A C# `static` member is read through its class's name, so it counts as a function or a value of its own, and is never judged unused.
 The counts are evidence. Never turn them into a score.
 
 `archboard check code --fail-shallow-modules` judges the modules that the branch touched since its base, uncommitted changes included.
@@ -175,7 +176,7 @@ Clear each finding at its seam. Never silence one.
   Stop exporting it. If files of the module use it, keep it out of the module's root files.
   It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
-  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor or `toString`, are never judged.
+  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor, `toString`, a Python `__repr__` or a Go `String`, are never judged.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
 
