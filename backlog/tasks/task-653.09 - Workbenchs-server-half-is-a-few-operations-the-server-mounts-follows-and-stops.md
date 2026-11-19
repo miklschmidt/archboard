@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T21:02:00Z'
+updated_date: '2026-11-19T21:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -72,6 +72,8 @@ Lifetime. stopWorkbench shares one stop promise per generation (prepareWorkbench
 Tests. New packages/workbench/tests/server/api/server.test.ts: the model, history and explanation routes count the same writes (watched vaults through a model-store stand-in, with a held pane on a loopback socket); overlapping stops with a failing shutdown share one shutdown and each generation stops once (red with the old stop). New system test in architecture-feed.test.ts: SIGTERM closes a feed socket and the server exits on its own (red, hung, when the sockets are not passed). panes-on-screen.test.ts no longer injects a stub activity.
 
 Outside the slice: docs/readme/assets.json (ask clip source path; hash left stale, as TASK-653.07 did); tests/system/browser navigator-support.ts and canonical-model-references.test.ts state the pane-report fields they read instead of importing PanesReport (EXPOSED_UNUSED fixed); WebSocketMessage stops being exported from browser-contract (its last outside user, pane-vaults.ts, went). Vault unchanged: its bindings to the moved files (Pane vaults, Model announcements, Vault requirement, Canonical explanation routes) and anchors naming prepareCodexWorkbench/stopCodexWorkbench/loopbackRefusal wait for the architecture slice.
+
+Ceiling deviation redone as settled (decisions.md, "TASK-653.09 ceiling deviation: SETTLED"); no ceiling rises. listener-address.ts (listenAddress, loopbackRefusal, logHttpServerError) moved whole into apps/server (http/listener/services), private; the address is resolved once, and the app passes { port, httpUrl } to workbench as WorkbenchHooks.address and as prepareWorkbench(signal, address); server-lifecycle is unchanged from deepen/module-depth (16). @archboard/server-requests keeps four names: inVault, requestJson, strictReply and resolveVault(string | null | { upgrade: url }); only the upgrade path recovers a checkout; ReplySchema private, code-opener and web derive it from strictReply. The Express adapters (requireVault, vaultOfRequest with its WeakMap, statedVault translating a refusal to null, query-before-body reading, queryString) live in apps/server http/middleware/request-vault.ts and reach workbench as WorkbenchHooks.requireVault, vaultOfRequest and statedVault, so the write observation and the app's later routes read one WeakMap. server-requests stays at layer 3 (resolveVault reads workspace). Ceilings: workbench 52 (measured, one below 53 since WebSocketMessage went), server-lifecycle 16, server-requests 4; the earlier rises are undone by a later commit, not rewritten. Verified again: build, types, lint:all, format:check, test:modules 5350 pass, test:repository 182, test:system 228 (feed socket closes on stop), test:solo 15, browser lane 50 owners 0 fail; code check: workbench INTERFACE_WIDE 29, no finding on server-requests or server-lifecycle.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
