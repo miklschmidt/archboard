@@ -1,9 +1,11 @@
 ---
 id: TASK-653.06
 title: The docs/design folder is gone
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@implementer'
 created_date: '2026-11-19T16:50:00Z'
+updated_date: '2026-11-19T17:09:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -25,3 +27,13 @@ The owner asked to delete docs/design (owner decisions 19 and 20 in the archboar
 - [ ] #4 No tracked file outside backlog/ names docs/design/ except example text about a consumer's own docs (README.md:280, site/src/components/demos/DocsTiles.astro), and AGENTS.md, TESTING.md, docs/agents/domain.md, scripts/move-source.ts, scripts/painter-bench.ts and .gitignore no longer point there
 - [ ] #5 No lint, type or test rule is weakened, and bun run check passes apart from check:model's known INTERFACE_WIDE and MODULE_SHALLOW findings that TASK-653 clears
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Delete the seven investigation markdown files under docs/design.
+2. Move the wide-board fixtures, measure.ts and timing.ts to packages/renderer/tests/runtime/support/wide-boards/, fix imports, comments and the archboard-renderer skill command; rebind vault modules MCVEWRGl and S6MFhkV7 through archboard model edit.
+3. Move the skill-eval baseline to evals/baseline/archboard, update evals/pins.json, and keep the exposure classifier calling a read of it skill-package exposure now that it sits under evals/.
+4. Point the CLI contract generator's default output at the ignored artifacts/ folder so .gitignore no longer names docs/design; remove the pointers in AGENTS.md, TESTING.md, docs/agents/domain.md, scripts/move-source.ts and scripts/painter-bench.ts.
+5. Run bun run check and the remaining lanes.
+<!-- SECTION:PLAN:END -->

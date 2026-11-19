@@ -19,7 +19,7 @@ const outputDirectory = requestedOutput
 	? isAbsolute(requestedOutput)
 		? requestedOutput
 		: resolve(process.cwd(), requestedOutput)
-	: join(root, "docs", "design", "generated");
+	: join(root, "artifacts", "cli-contract");
 const { artifacts } = await renderCliContractArtifacts(root);
 
 fs.mkdirSync(outputDirectory, { recursive: true });

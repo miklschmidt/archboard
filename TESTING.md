@@ -206,16 +206,11 @@ Three facts decide whether the gate can run to its end:
   A missing prerequisite ends the lane with code 2.
 - A new worktree needs `bun install` and `bun run build` first.
 
-Some checks need a person, because they need a real voice, a microphone and
-speakers:
-
-- [The voice acceptance](docs/design/codex-workbench-voice-acceptance.md), for
-  a change to the Codex workbench or its voice path.
-- [The recording acceptance](docs/design/walkthrough-recording-acceptance.md),
-  for a change to `model record` or `model replay`. Its automated owners
-  run a real headless Chromium with a fake ffmpeg.
-  `tests/system/server-state/canonical-walkthrough-recording.test.ts` records against a
-  fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
+A change to the Codex workbench's voice path, or to `model record` or `model replay`, also needs
+a person to try it with a real voice, a microphone and speakers. The recording's automated owners
+run a real headless Chromium with a fake ffmpeg.
+`tests/system/server-state/canonical-walkthrough-recording.test.ts` records against a
+fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
 
 Run `bun run benchmark` for the separate, uncached renderer corpus.
 It draws the current repository root and every module with children, plus three fixed fixtures, on both layout engines.

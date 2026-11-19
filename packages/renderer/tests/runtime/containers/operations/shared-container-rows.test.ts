@@ -17,8 +17,8 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
-import phone from "../../../../../../docs/design/wide-board-layout-fixtures/phone-ownership.content.json";
-import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
+import phone from "../../support/wide-boards/phone-ownership.content.json";
+import publicApi from "../../support/wide-boards/public-api-independent.content.json";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**

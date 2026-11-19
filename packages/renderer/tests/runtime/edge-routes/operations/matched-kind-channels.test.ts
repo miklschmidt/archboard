@@ -5,7 +5,7 @@ import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
-import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
+import publicApi from "../../support/wide-boards/public-api-independent.content.json";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The gateway lanes that reproduce the live comparison's shared channels. */

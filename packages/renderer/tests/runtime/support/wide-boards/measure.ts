@@ -8,7 +8,7 @@
 // `*.content.json` beside this file.
 //
 // Run from the repository root:
-//   bun docs/design/wide-board-layout-fixtures/measure.ts [outdir]
+//   bun packages/renderer/tests/runtime/support/wide-boards/measure.ts [outdir]
 //
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
@@ -26,14 +26,10 @@ import { renderArchitecture } from "@archboard/renderer/bun";
 import { defaultLayoutEngine, layoutEngineSchema } from "@archboard/model/render-reply";
 import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
-import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
-import {
-	scorecardOf,
-	verdictOf,
-	type Measure,
-} from "../../../packages/renderer/tests/runtime/support/drawn-scorecard.ts";
+import { orderedFixture } from "../ordered-fixture.ts";
+import { scorecardOf, verdictOf, type Measure } from "../drawn-scorecard.ts";
 
-const fixtures = "docs/design/wide-board-layout-fixtures";
+const fixtures = import.meta.dir;
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
