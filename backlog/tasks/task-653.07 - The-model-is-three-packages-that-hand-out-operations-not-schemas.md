@@ -4,7 +4,7 @@ title: The model is three packages that hand out operations, not schemas
 status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T19:35:00Z'
+updated_date: '2026-11-19T20:00:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -76,6 +76,8 @@ apps/cli (diagnosticLine and vaultsBoundTo moved in), apps/server (routes read t
 
 ## ADR
 ADR 0086 (renumbered from 0085, which the Painter stage took on deepen/module-depth).
+
+Merged into deepen/module-depth (85d0cd8754). Footprint gate: exit 1 with recorded exceptions (proposal commit 87430d5e7f; module lists per group in the merge commit and the run's decision log): 38 import switches, 65 parse-operation callers with unchanged edges, 3 CLI command contract, 3 crate comments, 1 moved helper (Render entry), 5 tests only, 28 containers. 91 unbound files (docs, lockfiles, build config, scripts, site build, repository tests). Open for the final pass: 7 RELATIONSHIP_UNDRAWN warnings on model-contract, model-rules, Shared model projection, Module interface, Legacy board schema, diagnostics, code-binding; one ANCHOR_MISMATCH on Runtime control -> Server entry (spawn.ts). Owner deviation: the paletteColor shape key's only consumers are two renderer tests that guard palette completeness.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
