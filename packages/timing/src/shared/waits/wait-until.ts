@@ -7,13 +7,13 @@ import { WAITS, type WaitName, type WaitPolicy } from "#shared/waits/policies.ts
 /** What a wait may be told beyond its name. */
 interface WaitOptions {
 	/** The bound in milliseconds, in place of the one the wait names. */
-	readonly boundMs?: number;
+	readonly boundMs?: number | undefined;
 	/** An outer deadline on the clock that the wait never passes. */
-	readonly capAtMs?: number;
+	readonly capAtMs?: number | undefined;
 	/** Ends the wait: checked before each look, and it wakes a sleep. */
-	readonly signal?: AbortSignal;
+	readonly signal?: AbortSignal | undefined;
 	/** The clock to tell time and sleep on; the runtime's by default. */
-	readonly clock?: Clock;
+	readonly clock?: Clock | undefined;
 }
 
 /** How a wait ended. A refusal carries its bound, so the caller can say it in words. */

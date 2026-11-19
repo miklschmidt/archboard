@@ -7,11 +7,11 @@ import { PAUSES, type CadenceName, type PausePolicy } from "#shared/waits/polici
 /** What a pause may be told beyond its name. */
 interface PauseOptions {
 	/** A moment on the clock that the pause never passes. */
-	readonly untilMs?: number;
+	readonly untilMs?: number | undefined;
 	/** Wakes the pause when it aborts. */
-	readonly signal?: AbortSignal;
+	readonly signal?: AbortSignal | undefined;
 	/** The clock; the runtime's by default. */
-	readonly clock?: Clock;
+	readonly clock?: Clock | undefined;
 }
 
 /**
