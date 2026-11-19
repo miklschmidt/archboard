@@ -92,7 +92,8 @@ so agents in an implementation loop added exported constants and nothing failed.
   module gets `INTERFACE_UNDECLARED`, information, once only its own files
   use one of its names. It says how many of its names files outside it use,
   and how many only its own files import, naming the first five. Declaring
-  the interface, such as with an entry file that offers what callers use,
+  the interface with what callers use, in an entry file (`index.ts`,
+  `__init__.py` or `mod.rs`) or in the package's `exports` in `package.json`,
   keeps the rest inside.
 - **Code the repository does not own gets no verdict** (TASK-646.18). A module
   that the model marks `external`, or that a part marked `external` holds, as
