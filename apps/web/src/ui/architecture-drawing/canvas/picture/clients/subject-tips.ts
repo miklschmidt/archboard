@@ -13,9 +13,13 @@
 // picture draws it, so it reads on its own, away from the part it explains.
 
 import { drillWayWords } from "#ui/architecture-drawing/canvas/picture/rules/drill-way.ts";
-import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
-import type { SemanticEdge, SemanticNode } from "@archboard/model/content";
-import type { SemanticVariant } from "@archboard/model/legacy-board";
+import {
+	type SemanticEdge,
+	type SemanticNode,
+	type SemanticVariant,
+	readFlow,
+	type FlowStep,
+} from "@archboard/model-contract";
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {
 	endsOf,
@@ -225,18 +229,35 @@ function labelTip(
 	if (edge !== undefined) {
 		return edgeTip(edge, appearance);
 	}
-	const step = variant.content.flows
-		.flatMap((flow) => everyStep(flow.steps))
-		.find((candidate) => candidate.id === target.id);
-	if (step === undefined) return null;
-	return isMessage(step)
-		? { ...UNSAID, title: step.label, kind: messageKind(step.kind), appearance }
-		: {
-				...UNSAID,
-				title: stepWords(step),
-				kind: step.kind === "decision" ? "Decision" : "Loop",
-				appearance,
-			};
+	for (const flow of variant.content.flows) {
+		const { every, words } = readFlow(flow.steps);
+		const step = every.find((candidate) => candidate.id === target.id);
+		if (step !== undefined) return stepTip(step, words.get(step.id) ?? step.id, appearance);
+	}
+	return null;
+}
+
+/**
+ * The tip over a step's label.
+ * @param step The step.
+ * @param words What the step says: a message's label, a decision's question, a loop's condition.
+ * @param appearance How the picture draws the line, when it names its kind.
+ * @returns The tip.
+ */
+function stepTip(
+	step: FlowStep,
+	words: string,
+	appearance: AppliedAppearance | undefined,
+): SubjectTip {
+	if (step.kind === "decision" || step.kind === "loop") {
+		return {
+			...UNSAID,
+			title: words,
+			kind: step.kind === "decision" ? "Decision" : "Loop",
+			appearance,
+		};
+	}
+	return { ...UNSAID, title: words, kind: messageKind(step.kind), appearance };
 }
 
 /**

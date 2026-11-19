@@ -11,8 +11,7 @@
 // document the page read from the server and holds as a read-only cache (ADR 0023),
 // so the picture is the server's picture of that document.
 
-import type { LegacyBoard } from "@archboard/model/legacy-board";
-import type { SemanticPolicy } from "@archboard/model/policy";
+import { type LegacyBoard, type SemanticPolicy } from "@archboard/model-contract";
 import { renderSemanticView } from "#shared/render/rules/diagram.ts";
 import { scopedRequest } from "#shared/render/rules/drawing-key.ts";
 import type {

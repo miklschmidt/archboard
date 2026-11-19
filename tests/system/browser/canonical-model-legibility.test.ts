@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
+import { mintId } from "@archboard/model-rules";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -23,7 +24,6 @@ import {
 	chooseFlow,
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
-import { mintId } from "@archboard/model/ids";
 import { unresolvedPaints } from "./support/computed-colours.ts";
 
 /** How long any one thing here is waited for. */

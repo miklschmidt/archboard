@@ -31,8 +31,8 @@ import {
 	CodeCheckResultSchema,
 	type CodeCheckResult,
 } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { diagnosticLine, vaultCheckSchema } from "@archboard/model/policy";
-import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
+import { describeModelSchema, modelShape } from "@archboard/model-contract";
+import { diagnosticLine } from "#cli/commands/vault/rules/diagnostic-line.ts";
 import { vaultDirectory } from "@archboard/workspace/vault";
 
 /** How long one check took. */
@@ -132,7 +132,7 @@ function timingLine(timing: CheckTiming): string {
 }
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
-const SemanticsPartSchema = vaultCheckSchema().extend({
+const SemanticsPartSchema = modelShape("vaultCheck").extend({
 	timings: CodeCheckResultSchema.shape.timings,
 });
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
@@ -541,7 +541,7 @@ const semanticConfigContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ schema: z.boolean().optional() }) },
-	result: z.union([vaultCheckSchema(), z.record(z.string(), z.unknown())]),
+	result: z.union([modelShape("vaultCheck"), z.record(z.string(), z.unknown())]),
 	output,
 	prerequisites: [],
 	effects: ["read"],
@@ -561,7 +561,7 @@ const semanticConfigContract = defineCommand({
 	 * @returns Policy or generated schema.
 	 */
 	async handler(input, context) {
-		if (input.schema) return { result: jsonSchema("vault-config") };
+		if (input.schema) return { result: describeModelSchema("vault-config") };
 		await context.require("server", "model config");
 		return { result: await checkSemanticVaultOnServer() };
 	},

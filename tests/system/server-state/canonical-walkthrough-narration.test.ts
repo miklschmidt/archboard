@@ -1,11 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
-import { readArchitectureModel } from "@archboard/model/store-read";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
+	readArchitectureModel,
+} from "@archboard/model-store";
 
 import { join } from "node:path";
 import { canonicalNarration } from "./support/canonical-narration.ts";
@@ -96,7 +95,7 @@ describe("live narration", () => {
 		const target = { model: current.manifest.id, state: current.selectedState!.id };
 		const writer = "outside-narration-writer";
 		const doing = "Name the live worker after the capture";
-		const claim = await claimArchitectureSubjects(voice.fixture.vault, {
+		const claim = await changeArchitectureClaims(voice.fixture.vault, "claim", {
 			target,
 			writer,
 			reason: doing,
@@ -115,7 +114,10 @@ describe("live narration", () => {
 			});
 			expect(edited).toMatchObject({ success: true });
 		} finally {
-			await releaseArchitectureClaim(voice.fixture.vault, { claim: claim.claim.id, writer });
+			await changeArchitectureClaims(voice.fixture.vault, "release", {
+				claim: claim.claim.id,
+				writer,
+			});
 		}
 		await waitFor(
 			() =>

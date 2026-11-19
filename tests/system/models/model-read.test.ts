@@ -3,19 +3,12 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
-import {
-	architectureCheckpointRetainSchema,
-	architectureCheckpointListSchema,
-	architectureCheckpointRowsSchema,
-	architectureModelReadSchema,
-	architecturePublicationSchema,
-} from "@archboard/model/contract";
-import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel, retainArchitectureCheckpoint } from "@archboard/model-store";
 import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-model-surface-"));
@@ -54,7 +47,7 @@ test("CLI and HTTP expose the same public model read and structured refusal", as
 	const query = new URLSearchParams({ vault, module: "Gateway" });
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const http = architectureModelReadSchema().parse(await response.json());
+	const http = parsedReply("read", await response.json());
 	const runtime = await readArchitectureModel(vault, "Gateway", undefined, {});
 	expect(http).toEqual(JSON.parse(JSON.stringify(runtime)));
 	const cli = runServerCli({
@@ -68,7 +61,7 @@ test("CLI and HTTP expose the same public model read and structured refusal", as
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(cli.stdout));
 	expect(addressed).toMatchObject({ path: vault, origin: "working-directory" });
-	expect(architectureModelReadSchema().parse(cliResult)).toEqual(http);
+	expect(parsedReply("read", cliResult)).toEqual(http);
 	const missingVault = await fetch(`${server.base}/api/architecture/model`);
 	expect(missingVault.status).toBe(400);
 	const unsupportedState = await fetch(
@@ -78,14 +71,14 @@ test("CLI and HTTP expose the same public model read and structured refusal", as
 	writeFileSync(join(vault, "bad.module.json"), "{");
 	const failedHttp = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(failedHttp.status).toBe(422);
-	const failure = architectureModelReadSchema().parse(await failedHttp.json());
+	const failure = parsedReply("read", await failedHttp.json());
 	expect(failure).toMatchObject({ success: false, code: "MODEL_INVALID" });
 	const failedCli = runServerCli({ repoRoot, server, args: ["model", "read"], input: undefined });
 	expect(failedCli.status, failedCli.stderr).toBe(2);
 	const { vault: _vault, ...failedResult } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(failedCli.stdout));
-	expect(architectureModelReadSchema().parse(failedResult)).toEqual(failure);
+	expect(parsedReply("read", failedResult)).toEqual(failure);
 });
 
 test("explanation HTTP adapters refuse malformed envelopes before dispatch", async () => {
@@ -176,7 +169,7 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	const { vault: _retainedVault, ...retainedResult } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(retainedCli.stdout));
-	const retained = architectureCheckpointRetainSchema().parse(retainedResult);
+	const retained = parsedReply("retainCheckpoint", retainedResult);
 	if (!retained.success) throw new Error(JSON.stringify(retained));
 	writeFileSync(join(vault, "gateway.module.json"), "{");
 	const query = new URLSearchParams({
@@ -186,7 +179,7 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	});
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const exact = architectureModelReadSchema().parse(await response.json());
+	const exact = parsedReply("read", await response.json());
 	const runtime = await readArchitectureModel(vault, "Shop#Gateway", undefined, {
 		checkpoint: retained.checkpoint.id,
 	});
@@ -211,7 +204,7 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	const { vault: _readVault, ...readResult } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(readCli.stdout));
-	expect(architectureModelReadSchema().parse(readResult)).toEqual(exact);
+	expect(parsedReply("read", readResult)).toEqual(exact);
 	const listCli = runServerCli({
 		repoRoot,
 		server,
@@ -222,16 +215,16 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	const { vault: _listVault, ...listResult } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(listCli.stdout));
-	const list = architectureCheckpointListSchema().parse(listResult);
+	const list = parsedReply("listCheckpoints", listResult);
 	expect(list).toMatchObject({ success: true, checkpoints: [retained.checkpoint] });
 	const listedHttp = await fetch(
 		`${server.base}/api/architecture/checkpoints?vault=${encodeURIComponent(vault)}`,
 	);
-	expect(architectureCheckpointListSchema().parse(await listedHttp.json())).toEqual(list);
+	expect(parsedReply("listCheckpoints", await listedHttp.json())).toEqual(list);
 	const rows = await fetch(
 		`${server.base}/api/architecture/checkpoints/rows?vault=${encodeURIComponent(vault)}`,
 	);
-	expect(architectureCheckpointRowsSchema().parse(await rows.json())).toEqual({
+	expect(parsedReply("listCheckpointRows", await rows.json())).toEqual({
 		success: true,
 		checkpoints: [
 			{
@@ -256,7 +249,7 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 	const { vault: _unavailableVault, ...unavailableResult } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(unavailableCli.stdout));
-	expect(architectureModelReadSchema().parse(unavailableResult)).toMatchObject({
+	expect(parsedReply("read", unavailableResult)).toMatchObject({
 		success: false,
 		code: "ARCHITECTURE_UNAVAILABLE",
 	});
@@ -330,7 +323,7 @@ test("publication adapters preserve runtime status across a server restart", asy
 	const response = await fetch(`${server.base}/api/architecture/publication?${query}`);
 	expect(response.status).toBe(200);
 	expect(response.headers.get("cache-control")).toBe("no-store");
-	const status = architecturePublicationSchema().parse(await response.json());
+	const status = parsedReply("readPublication", await response.json());
 	expect(status).toMatchObject({
 		success: true,
 		publication: "published",
@@ -346,7 +339,7 @@ test("publication adapters preserve runtime status across a server restart", asy
 	const { vault: _addressed, ...result } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(cli.stdout));
-	expect(architecturePublicationSchema().parse(result)).toEqual(status);
+	expect(parsedReply("readPublication", result)).toEqual(status);
 	const failed = runServerCli({
 		repoRoot,
 		server,
@@ -399,9 +392,7 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 		}),
 	});
 	expect(claimResponse.status).toBe(200);
-	const { architectureClaimResultSchema, architectureModuleEditResultSchema } =
-		await import("@archboard/model/contract");
-	const claim = architectureClaimResultSchema().parse(await claimResponse.json());
+	const claim = parsedReply("claim", await claimResponse.json());
 	if (!claim.success) throw new Error(JSON.stringify(claim));
 	const request = {
 		target,
@@ -433,7 +424,7 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 	const { vault: _vault, ...answer } = z
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(cli.stdout));
-	const result = architectureModuleEditResultSchema().parse(answer);
+	const result = parsedReply("edit", answer);
 	expect(result).toMatchObject({ success: true, applied: true, cleanup: "complete" });
 	if (!result.success) throw new Error(JSON.stringify(result));
 	const retry = await fetch(`${server.base}/api/architecture/module`, {

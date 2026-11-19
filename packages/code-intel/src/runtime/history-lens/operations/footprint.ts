@@ -57,9 +57,8 @@ import type {
 	UnboundFile,
 } from "#shared/protocol/footprint.ts";
 import { nodesAtOwnRef } from "#runtime/history-lens/operations/own-ref.ts";
-import { compareVariants } from "@archboard/model/comparison";
-import { emptyContent, type SemanticNode } from "@archboard/model/content";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import { compareVariants } from "@archboard/model-rules";
+import type { LegacyBoard, SemanticNode, SemanticVariant } from "@archboard/model-contract";
 
 /**
  * What to read, once the variants are chosen (`footprint-reading.ts`): the
@@ -424,7 +423,10 @@ function namedBy(
 	if (proposal === undefined) return new Map();
 	const names = new Map(nodes.map((node) => [node.id, node.name]));
 	return namedParts(
-		compareVariants(against?.content ?? emptyContent(), proposal.content),
+		compareVariants(
+			against?.content ?? { nodes: [], edges: [], flows: [], walkthroughs: [] },
+			proposal.content,
+		),
 		(id) => names.get(id) ?? id,
 	);
 }

@@ -12,7 +12,6 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createRequester, sleep, waitFor } from "./support/http.ts";
-import { semanticPaneContextRoute } from "@archboard/model/pane-context";
 import { productionServer } from "./support/production-server.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 
@@ -132,7 +131,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		};
 		expect(
 			(
-				await request(semanticPaneContextRoute(), {
+				await request("/api/panes/semantic-context", {
 					method: "POST",
 					doing: false,
 					body: {
@@ -204,7 +203,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		).toBe(200);
 		expect(
 			(
-				await request(semanticPaneContextRoute(), {
+				await request("/api/panes/semantic-context", {
 					method: "POST",
 					doing: false,
 					body: {
@@ -246,7 +245,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		// report so the reader can tell this one came after it.
 		expect(
 			(
-				await request(semanticPaneContextRoute(), {
+				await request("/api/panes/semantic-context", {
 					method: "POST",
 					doing: false,
 					body: {
@@ -268,7 +267,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		// A report overtaken by its own successor is dropped. Two reports from one
 		// pane can be in flight at once, and keeping the loser would put the reading
 		// the ordering just rejected in front of every agent.
-		const overtaken = await request<{ kept: boolean }>(semanticPaneContextRoute(), {
+		const overtaken = await request<{ kept: boolean }>("/api/panes/semantic-context", {
 			method: "POST",
 			doing: false,
 			body: {
@@ -389,7 +388,7 @@ test("a command's context is its own pane's while another tab also shows pane A"
 			["other-tab-a", ledger],
 			["own-tab-a", gateway],
 		] as const) {
-			const reported = await request(semanticPaneContextRoute(), {
+			const reported = await request("/api/panes/semantic-context", {
 				method: "POST",
 				doing: false,
 				body: {

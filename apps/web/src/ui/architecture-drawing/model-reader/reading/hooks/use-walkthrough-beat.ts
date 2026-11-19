@@ -3,7 +3,7 @@ import {
 	useWalkthrough,
 	type DrivenPlace,
 } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 type Playback = NonNullable<Model["playback"]>;
 type Reading = Playback["walkthrough"]["beats"][number]["reading"];

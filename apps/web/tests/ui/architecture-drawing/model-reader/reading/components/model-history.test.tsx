@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps, type JSX } from "react";
 import type { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import type { z } from "zod";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });

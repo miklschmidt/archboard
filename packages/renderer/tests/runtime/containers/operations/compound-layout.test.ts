@@ -3,7 +3,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -13,7 +13,6 @@ import {
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const NESTED = orderedFixture({
 	nodes: [
@@ -162,7 +161,7 @@ test("a container's direct dependency leaves its painted header", async () => {
 // card, its lines off both centres and its container that much wider: every
 // member was held under the container's title, and each hold passed beside
 // the cards above it.
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"a chain inside a container keeps its reading and measured cards (%s)",
 	async (layout) => {
 		const stages = ["a", "b", "c", "d"];
@@ -217,7 +216,7 @@ test("stacked cards joined through a label share a column or stand clearly apart
 // A page kept its placement's slack: under Graphviz a frame's trimmed title
 // margin left 52 points above the drawing against 24 below it, and under the
 // block engines a frame at the document's edge stood 32 points in on one side.
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"a %s page keeps the same margin on every side of what it draws",
 	async (layout) => {
 		const drawing = await renderArchitecture({

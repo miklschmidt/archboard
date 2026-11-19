@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 const TEST_SEMANTIC_LEVELS = defaultSemanticPolicy().levels;
 

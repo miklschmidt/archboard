@@ -2,13 +2,16 @@ import { expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { claimArchitectureSubjects, editArchitectureModule } from "@archboard/model/store-write";
-import { architectureClaimResultSchema } from "@archboard/model/contract";
+import {
+	changeArchitectureClaims,
+	editArchitectureModule,
+	readArchitectureModel,
+} from "@archboard/model-store";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { openTestPane, type TestPane } from "../support/pane-websocket.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -66,13 +69,13 @@ test("every pane receives concurrent canonical claims on startup and reconnect",
 			{ name: "working", root: join(root, "working"), addedAt: new Date().toISOString() },
 		]),
 	);
-	const first = await claimArchitectureSubjects(vault, {
+	const first = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "gateway-agent",
 		reason: "Describe routing",
 		subjects: ["Shop#Gateway"],
 	});
-	const second = await claimArchitectureSubjects(vault, {
+	const second = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "worker-agent",
 		reason: "Describe work",
@@ -136,7 +139,8 @@ test("off-screen durable work keeps attribution, refuses failed writes, and clea
 	let pane: TestPane | undefined;
 	try {
 		pane = await openTestPane(server.base, request, "global-activity", 0);
-		const claim = architectureClaimResultSchema().parse(
+		const claim = parsedReply(
+			"claim",
 			(
 				await request("/api/architecture/claims", {
 					method: "POST",
@@ -232,7 +236,8 @@ test("off-screen durable work keeps attribution, refuses failed writes, and clea
 				start,
 			),
 		).toBeDefined();
-		const renewed = architectureClaimResultSchema().parse(
+		const renewed = parsedReply(
+			"claim",
 			(
 				await request("/api/architecture/claims", {
 					method: "POST",

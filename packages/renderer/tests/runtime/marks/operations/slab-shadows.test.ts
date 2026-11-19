@@ -10,8 +10,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { lightnessOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type DiagramTheme } from "@archboard/model-contract";
 
 /** A container that holds two cards, and a card beside it, joined by labelled lines. */
 const DOCUMENT = orderedFixture({

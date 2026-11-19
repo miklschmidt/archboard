@@ -1,9 +1,8 @@
 import { ModelArrivalContext } from "#ui/panes/reading-routing/state/model-arrival.ts";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
-import type { z } from "zod";
-import type { panePresentRequestSchema } from "@archboard/model/pane-context";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
+import type { ModelDocument } from "@archboard/model-contract";
 
 /**
  * Apply an external reading before starting its requested captured presentation.
@@ -16,9 +15,7 @@ function useModelArrival(paneId: string, onError: (message: string) => void) {
 	const { openRequested } = useModelLocation(paneId);
 	const generation = useRef(0);
 	const [arrival, setArrival] = useState(0);
-	const [driven, onPresentRequest] = useState<z.infer<
-		ReturnType<typeof panePresentRequestSchema>
-	> | null>(null);
+	const [driven, onPresentRequest] = useState<ModelDocument<"panePresentRequest"> | null>(null);
 	useEffect(
 		() => () => {
 			generation.current++;

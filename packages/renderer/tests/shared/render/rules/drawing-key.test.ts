@@ -1,7 +1,7 @@
 // A drawing's key holds a digest, moves with everything the core reads, and
 // holds still through an edit the drawing does not read.
 import { expect, test } from "bun:test";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { drawingKey, interfaceContent } from "#shared/render/rules/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 

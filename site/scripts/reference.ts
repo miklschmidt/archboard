@@ -16,10 +16,7 @@ import {
 } from "../../apps/cli/src/cli/commands/vault/operations/check-help.ts";
 import { EMBED_CODES } from "../../apps/cli/src/cli/commands/vault/protocol/embeds-answer.ts";
 import { codeCheckAnswerSchema } from "../../packages/code-intel/src/shared/api/code-check.ts";
-import {
-	SCHEMA_NAMES,
-	jsonSchema,
-} from "../../apps/cli/src/cli/commands/model/operations/schema.ts";
+import { describeModelSchema } from "@archboard/model-contract";
 import {
 	sharedOption,
 	sharedOptionKeys,
@@ -167,8 +164,8 @@ const shared = sharedOptionKeys().map((key) => {
 	};
 });
 
-const schemas = SCHEMA_NAMES.map((name) => {
-	const schema = jsonSchema(name);
+const schemas = describeModelSchema().map(({ name }) => {
+	const schema = describeModelSchema(name);
 	return { name, title: String(schema.title), schema };
 });
 

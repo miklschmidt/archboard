@@ -1,11 +1,16 @@
 // What a render asks for, and what it answers: shared by every grammar's
 // render, so the architecture, the sequence and the flowchart read one request.
 
-import type { ChangeKind } from "@archboard/model/comparison";
-import type { SemanticPolicy } from "@archboard/model/policy";
-import type { LayoutEngineName, StandaloneTheme } from "@archboard/model/render-reply";
-import type { DiagramGrammar } from "@archboard/model/views";
-import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
+import {
+	type DiagramGrammar,
+	type LayoutEngineName,
+	type SemanticEdge,
+	type SemanticNode,
+	type SemanticPolicy,
+	type StandaloneTheme,
+	type VariantContent,
+} from "@archboard/model-contract";
+import { type ChangeKind } from "@archboard/model-rules";
 import type {
 	Drawn,
 	ExportFrame,

@@ -3,14 +3,14 @@
 // dropped or undone, read off the named lines rather than a whole-picture score.
 
 import { expect, test } from "bun:test";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { corridorPoints, routeLabels, turnsOf } from "#tests/runtime/support/drawn-routes.ts";
 import rendererLayout from "#tests/runtime/support/fixtures/renderer-layout.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },

@@ -1,5 +1,5 @@
 import type { Query, QueryClient } from "@tanstack/react-query";
-import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureEvent, ArchitectureModelRead } from "@archboard/model-contract";
 import { createFeedSocket } from "#ui/architecture-drawing/model-reader/access/clients/feed-socket.ts";
 import {
 	ArchitectureReadError,

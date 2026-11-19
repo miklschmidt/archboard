@@ -124,8 +124,16 @@
       "name": "@archboard/diagnostics",
       "version": "0.0.0",
     },
-    "packages/model": {
-      "name": "@archboard/model",
+    "packages/model-contract": {
+      "name": "@archboard/model-contract",
+      "version": "0.0.0",
+    },
+    "packages/model-rules": {
+      "name": "@archboard/model-rules",
+      "version": "0.0.0",
+    },
+    "packages/model-store": {
+      "name": "@archboard/model-store",
       "version": "0.0.0",
     },
     "packages/process": {
@@ -197,7 +205,11 @@
 
     "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
 
-    "@archboard/model": ["@archboard/model@workspace:packages/model"],
+    "@archboard/model-contract": ["@archboard/model-contract@workspace:packages/model-contract"],
+
+    "@archboard/model-rules": ["@archboard/model-rules@workspace:packages/model-rules"],
+
+    "@archboard/model-store": ["@archboard/model-store@workspace:packages/model-store"],
 
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
 

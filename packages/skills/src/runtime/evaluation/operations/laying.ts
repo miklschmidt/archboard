@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel } from "@archboard/model-store";
 import type { Fixture } from "#runtime/evaluation/schemas/fixture.ts";
 import {
 	writeVaultConfiguration,

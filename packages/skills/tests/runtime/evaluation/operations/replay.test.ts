@@ -7,8 +7,8 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { LegacyBoardSchema } from "@archboard/model/legacy-board";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { legacyBoardOf } from "#tests/runtime/support/legacy-board.ts";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { framesOf } from "@archboard/walkthrough/talk";
 import { keepTalk } from "@archboard/walkthrough/recorder";
 import {
@@ -19,7 +19,7 @@ import { inspectVideo, talkOfFixture } from "#runtime/evaluation/operations/repl
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { READING } from "#tests/runtime/support/reading-fixture.ts";
 
-const DOCUMENT = LegacyBoardSchema.parse(
+const DOCUMENT = legacyBoardOf(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",

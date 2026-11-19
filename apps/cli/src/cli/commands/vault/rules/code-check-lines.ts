@@ -5,7 +5,7 @@
 // module-depth codes that the vault policy turns off (TASK-650).
 
 import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { diagnosticLine } from "@archboard/model/policy";
+import { diagnosticLine } from "#cli/commands/vault/rules/diagnostic-line.ts";
 
 /** How far one document is behind its code. */
 type ModelBehind = CodeCheckResult["behind"][number];

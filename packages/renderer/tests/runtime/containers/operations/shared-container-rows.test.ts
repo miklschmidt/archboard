@@ -1,7 +1,10 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import {
+	defaultSemanticPolicy,
+	type DiagramBox,
+	type VariantContent,
+} from "@archboard/model-contract";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
@@ -19,7 +22,6 @@ import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import phone from "../../support/wide-boards/phone-ownership.content.json";
 import publicApi from "../../support/wide-boards/public-api-independent.content.json";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Whether a whole card fits inside its actual parent, including rounded SVG precision.

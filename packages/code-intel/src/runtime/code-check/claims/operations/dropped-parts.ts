@@ -30,8 +30,8 @@ import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
 import { sourceAt } from "#runtime/history-lens/clients/source-history.ts";
 import type { CodeCheckSkip, CodeFinding } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, filesOfBinding, type CodeBinding } from "@archboard/code-binding/bindings";
-import { draftRefs, type SemanticVariant } from "@archboard/model/legacy-board";
-import type { SemanticNode } from "@archboard/model/content";
+import { draftRefs } from "#runtime/history-lens/rules/draft-ref.ts";
+import type { SemanticNode, SemanticVariant } from "@archboard/model-contract";
 
 /** What holding dropped parts to code needs from the pass. */
 interface DroppedContext {

@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** A document of unrelated drafts (so none is drawn against another), whose views name parts only `base` holds; `bare` holds nothing. */
-const DOCUMENT = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const DOCUMENT = fixtureDocument("legacyBoard", {
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "document",
 	name: "Gateway",

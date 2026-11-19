@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 
-import type { SemanticPolicy } from "@archboard/model/policy";
+import { type SemanticPolicy } from "@archboard/model-contract";
 import { iconsNamedBy } from "#shared/render/rules/policy-icons.ts";
 
 /**

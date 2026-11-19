@@ -4,8 +4,8 @@ import { renderArchitecture, renderLegacyBoard } from "#runtime/bun-renderer/ope
 import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-modes.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 test("a plain proposal drawing omits comparison marks and removed context", async () => {
 	const before = orderedFixture({
@@ -20,8 +20,8 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 			{ id: "new", name: "New worker", kind: "module" },
 		],
 	});
-	const document = LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	const document = fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Workers",
@@ -31,7 +31,7 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 		updatedAt: "2026-09-20T00:00:00.000Z",
 		current: "current",
 		variants: [
-			{ id: "current", name: "Current", lifecycle: "current", content: before },
+			{ id: "current", name: "Adopted", lifecycle: "current", content: before },
 			{ id: "draft", name: "Draft", lifecycle: "draft", parent: "current", content: after },
 		],
 	});
@@ -66,8 +66,8 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	];
 	const existing = { id: "existing", from: "source", to: "sink", kind: "call" };
 	const added = { id: "added", from: "source", to: "sink", kind: "call" };
-	const document = LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	const document = fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Parallel connections",
@@ -79,7 +79,7 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 		variants: [
 			{
 				id: "current",
-				name: "Current",
+				name: "Adopted",
 				lifecycle: "current",
 				content: orderedFixture({ nodes, edges: [existing] }),
 			},

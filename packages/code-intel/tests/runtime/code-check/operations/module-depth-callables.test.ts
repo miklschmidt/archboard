@@ -16,7 +16,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import type * as CodeCheckRun from "#runtime/api/code-check-run.ts";
 import { languageServerOf } from "#runtime/language-servers/operations/server-command.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";

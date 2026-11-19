@@ -7,8 +7,7 @@ import {
 	changeDescription,
 	startExplanationServer,
 } from "./support/explanation-captures.ts";
-import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel, retainArchitectureCheckpoint } from "@archboard/model-store";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	prepareProductionFixture,

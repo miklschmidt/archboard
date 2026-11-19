@@ -1,7 +1,10 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import type { DiagramTheme } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import {
+	defaultSemanticPolicy,
+	type DiagramTheme,
+	type VariantContent,
+} from "@archboard/model-contract";
 import { renderArchitecture, renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { type StatedStandings } from "#shared/protocol/render-request.ts";
@@ -16,7 +19,6 @@ import {
 	seenIn,
 } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({

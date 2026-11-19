@@ -4,11 +4,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { architectureFeedFrameSchema, type ArchitectureFeedFrame } from "@archboard/model/contract";
+import type { ArchitectureFeedFrame } from "@archboard/model-contract";
 import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const root = mkdtempSync(join(tmpdir(), "archboard-feed-"));
 const first = vaultIn(join(root, "first"));
@@ -33,7 +34,7 @@ test("one socket follows every vault of a tab and names a vault it cannot read",
 	const frames: ArchitectureFeedFrame[] = [];
 	const heard = new Promise<void>((settle) => {
 		socket.addEventListener("message", (message) => {
-			frames.push(architectureFeedFrameSchema().parse(JSON.parse(String(message.data))));
+			frames.push(parsedReply("feed", JSON.parse(String(message.data))));
 			if (frames.length === 3) settle();
 		});
 	});

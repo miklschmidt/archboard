@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import containerEntry from "#tests/runtime/support/fixtures/container-entry.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["module"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },

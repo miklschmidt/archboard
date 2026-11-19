@@ -1,7 +1,7 @@
 // An exchange told on one clock: every message sends its pulse in its
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
-import { defaultTrafficSpeed } from "@archboard/model/content";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { messageBeams, slidingSpeedOf } from "#tests/runtime/support/drawn-traffic.ts";
 import {
@@ -12,10 +12,10 @@ import {
 	pulsesOn,
 	variant,
 } from "#tests/runtime/support/pulse-fixtures.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
-const FLOWN = defaultTrafficSpeed() * 2;
+const FLOWN = fixtureDocument("edgeTraffic", {}).speed * 2;
 
 /**
  * Every pulse of a picture in the order its message is told: when its bar begins

@@ -1,4 +1,4 @@
-import { architectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
+import { parseDocument, type ArchitectureModelRead } from "@archboard/model-contract";
 type CanonicalModel = Extract<ArchitectureModelRead, { success: true }>;
 /**
  * Require one complete retained playback before recording or replay.
@@ -38,7 +38,9 @@ function readyBeatProblems(playback: NonNullable<CanonicalModel["playback"]>): s
  * @returns Its validated canonical model.
  */
 function canonicalRecordingModel(input: CanonicalModel): CanonicalModel {
-	const model = architectureModelReadSchema().options[0].parse(input);
+	const parsed = parseDocument("model", input);
+	if (!parsed.success) throw parsed.error;
+	const model = parsed.data;
 	const problems = canonicalReadingProblems(model);
 	if (problems.length > 0) throw new Error(problems.join(" "));
 	return model;

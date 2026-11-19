@@ -31,12 +31,9 @@ import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbe
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { LegacyIdentity, PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePart = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
->[number];
+type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
 
 /** What the core reads out of React and writes back into it. */
 interface PaneCorePorts<Transport extends WorkbenchTransportPort> {

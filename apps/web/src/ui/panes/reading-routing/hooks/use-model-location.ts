@@ -3,7 +3,7 @@ import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/s
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { validateWorkspaceSearch } from "#ui/panes/reading-routing/rules/search.ts";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";

@@ -44,7 +44,7 @@ async function registerResourceSet(
 		const lock = await startOwnedPeer({
 			argv: [
 				process.execPath,
-				join(input.repoRoot, "packages/model/tests/runtime/support/process-lock.ts"),
+				join(input.repoRoot, "packages/model-store/tests/runtime/support/process-lock.ts"),
 			],
 			env: {
 				...env,

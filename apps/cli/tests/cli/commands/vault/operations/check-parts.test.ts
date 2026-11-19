@@ -20,12 +20,12 @@ import {
 	CodeCheckResultSchema,
 	type CodeCheckResult,
 } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, modelShape, type ModelReply } from "@archboard/model-contract";
 import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 /** One finding of the code check. */
 type CodeFinding = CodeCheckResult["findings"][number];
@@ -162,7 +162,9 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const SEMANTICS_ROUTE = "/api/vault/check";
 const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
-	semantics: vaultCheckSchema().extend({ timings: CodeCheckResultSchema.shape.timings }).optional(),
+	semantics: modelShape("vaultCheck")
+		.extend({ timings: CodeCheckResultSchema.shape.timings })
+		.optional(),
 	code: CodeCheckResultSchema.optional(),
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });

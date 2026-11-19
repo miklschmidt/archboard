@@ -1,0 +1,15 @@
+{
+	"name": "@archboard/model-store",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The model store: the coherent reader and durable writer of a vault's architecture model, its claims, checkpoints, publication, initialization, import and migration.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		".": "./src/runtime/api/model-store.ts"
+	}
+}

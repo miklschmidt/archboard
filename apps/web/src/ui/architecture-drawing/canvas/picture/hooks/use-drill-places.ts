@@ -25,12 +25,12 @@ import type {
 	PaneHeaderProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/PaneHeader.tsx";
 import type { DrillNavigation } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-down.ts";
-import { readDocument } from "#ui/architecture-drawing/canvas/picture/reads/rules/document.ts";
 import {
 	retainedDocumentQuery,
 	retainedListingQuery,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
+import { parseDocument } from "@archboard/model-contract";
 
 /** What a model calls itself, and its level. */
 interface Named {
@@ -51,8 +51,8 @@ interface Located {
  */
 function namesOf(results: readonly { readonly data: unknown }[]): (Named | undefined)[] {
 	return results.map((result) => {
-		const read = readDocument(result.data);
-		return read.ok ? { name: read.board.name, level: read.board.level } : undefined;
+		const read = parseDocument("legacyBoard", result.data);
+		return read.success ? { name: read.data.name, level: read.data.level } : undefined;
 	});
 }
 

@@ -17,12 +17,9 @@ import type {
 import type { DrillNavigation } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-down.ts";
 import type { DepartureWay } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import type { OpenDown } from "#ui/architecture-drawing/canvas/picture/rules/drill-target.ts";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePart = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
->[number];
+type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
 
 /** What a pane's moves between models are made from. */
 interface DrillMovesInputs {

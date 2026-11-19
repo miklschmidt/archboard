@@ -1,26 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { z } from "zod";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
-	architectureInitializationRequestSchema,
-	architectureModuleEditResultSchema,
+	modelShape,
 	type ArchitectureModuleEditResult,
-} from "@archboard/model/contract";
-import {
-	initializeArchitectureModel,
-	initializeArchitectureArchive,
-} from "@archboard/model/store-write";
+	type ModelRequest,
+} from "@archboard/model-contract";
+import { initializeArchitectureArchive, installArchitectureModel } from "@archboard/model-store";
 import { repoRootOf } from "@archboard/workspace/checkouts";
 import { vaultDirectory } from "@archboard/workspace/vault";
 import { initializeArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { modelArchiveInitContract } from "#cli/commands/model/operations/archive.ts";
+import { requestOf } from "#cli/commands/model/operations/input.ts";
 import { findVaultOf } from "#cli/routing/operations/addressed-vault.ts";
 import { defineCommand, type CommandContext } from "#cli/contract/protocol/contract.ts";
 
 /** One initialization intent, complete with its doing line. */
-type InitializationIntent = z.infer<ReturnType<typeof architectureInitializationRequestSchema>>;
+type InitializationIntent = ModelRequest<"initialize">;
 
 /**
  * Make the vault of a repository that holds none: `<repo>/.archboard/vault`, with the default
@@ -44,7 +41,7 @@ async function makeVault(
 		const archive = await initializeArchitectureArchive(vault);
 		if (!archive.success) return archive;
 	}
-	const initialized = await initializeArchitectureModel(vault, intent);
+	const initialized = await installArchitectureModel(vault, intent);
 	if (!initialized.success) return initialized;
 	await findVaultOf(repo, "-C");
 	context.diagnostic(`Made the architecture of this repository in ${vault}`);
@@ -105,8 +102,8 @@ const modelInitContract = defineCommand({
 		required: true,
 		description,
 	})),
-	input: { ingress: architectureInitializationRequestSchema().omit({ doing: true }) },
-	result: architectureModuleEditResultSchema(),
+	input: { ingress: modelShape("initializationRequest").omit({ doing: true }) },
+	result: modelShape("editResult"),
 	effects: ["write", "server-state-write", "local-write"],
 	relationships: [
 		{
@@ -125,7 +122,7 @@ const modelInitContract = defineCommand({
 	 */
 	async handler(input, context) {
 		if (context.checkout === null) await context.require("server", "model init");
-		const request = context.parse(architectureInitializationRequestSchema(), {
+		const request = context.parse(requestOf("initialize"), {
 			...input,
 			doing: statedInvocation().doing,
 		});

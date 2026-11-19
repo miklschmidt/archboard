@@ -3,7 +3,7 @@ import {
 	architectureHistoryRequestSchema,
 	architectureHistoryResultSchema,
 } from "@archboard/code-intel/history";
-import { architectureResult } from "#cli/server-access/clients/architecture-model.ts";
+import { schemaResult } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
@@ -324,7 +324,7 @@ function historyCommand<I extends z.ZodRawShape>(
 					(entry): entry is [string, string] => typeof entry[1] === "string",
 				),
 			);
-			const answer = await architectureResult(result, `/api/architecture/${name}?${query}`);
+			const answer = await schemaResult(result, `/api/architecture/${name}?${query}`);
 			if (!answer.success) {
 				return {
 					result: answer,

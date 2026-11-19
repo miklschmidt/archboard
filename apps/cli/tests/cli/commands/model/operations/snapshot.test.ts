@@ -1,7 +1,7 @@
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel } from "@archboard/model-store";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
 const current = readArchitectureModel(

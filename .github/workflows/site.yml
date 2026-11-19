@@ -47,7 +47,9 @@ on:
       - scripts/build-core.ts
       - package.json
       - bun.lock
-      - packages/model/**
+      - packages/model-contract/**
+      - packages/model-rules/**
+      - packages/model-store/**
       - packages/renderer/**
       - packages/workbench/package.json
       - packages/workbench/src/ui/workbench-client/orb/clients/**
@@ -77,7 +79,9 @@ on:
       - scripts/build-core.ts
       - package.json
       - bun.lock
-      - packages/model/**
+      - packages/model-contract/**
+      - packages/model-rules/**
+      - packages/model-store/**
       - packages/renderer/**
       - packages/workbench/package.json
       - packages/workbench/src/ui/workbench-client/orb/clients/**

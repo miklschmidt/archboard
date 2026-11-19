@@ -1,5 +1,4 @@
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import { type DiagramBox, type VariantContent } from "@archboard/model-contract";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { across, along, breadth, faceOf } from "#tests/runtime/support/drawn-reading.ts";

@@ -8,15 +8,14 @@
 import { expect, test } from "bun:test";
 
 import { narratedSubjects } from "#server/semantic-context/rules/narrated-subjects.ts";
-import { LEGACY_BOARD_SCHEMA_VERSION, LegacyBoardSchema } from "@archboard/model/legacy-board";
-import { WalkthroughBeatSchema } from "@archboard/model/content";
+import { parseDocument, type WalkthroughBeat } from "@archboard/model-contract";
 
 const GATEWAY = { id: "gw", name: "Gateway", kind: "service", order: 1000 };
 const INTAKE = { id: "in", name: "Legacy intake", kind: "service", order: 2000 };
 const LEDGER = { id: "ld", name: "Ledger", kind: "service", order: 3000 };
 
-const model = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const parsedModel = parseDocument("legacyBoard", {
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "bd",
 	name: "payments",
@@ -48,12 +47,15 @@ const model = LegacyBoardSchema.parse({
 	],
 });
 
-const beat = WalkthroughBeatSchema.parse({
+if (!parsedModel.success) throw new Error(`the fixture board is incoherent: ${parsedModel.error}`);
+const model = parsedModel.data;
+
+const beat: WalkthroughBeat = {
 	id: "b1",
 	heading: "One writer",
 	body: "Only the ledger writes.",
 	subjects: ["ld", "e1", "gw"],
-});
+};
 
 test("a step names what it highlights, and on a draft how each changed", () => {
 	const [current, draft] = model.variants;

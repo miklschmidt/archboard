@@ -1,16 +1,16 @@
 // The design lens through the real CLI and server: `model inspect` states what
 // the model claims about one module or one group, and `model compare` states
 // interface changes first and the measures of each state side by side. The
-// derivation's own rules are owned in `packages/model/tests/shared/{inspect,compare}/rules`.
+// derivation's own rules are owned in `packages/model-rules/tests/shared/{inspect,compare}/rules`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { architectureModelReadSchema } from "@archboard/model/contract";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-design-lens-"));
@@ -46,7 +46,7 @@ function compared(...args: readonly string[]) {
 	const result = run("model", "compare", ...args);
 	expect(result.status, result.stderr).toBe(0);
 	const { vault: _address, ...answer } = JSON.parse(result.stdout);
-	const model = architectureModelReadSchema().parse(answer);
+	const model = parsedReply("read", answer);
 	if (!model.success || model.comparison === undefined) throw new Error(result.stdout);
 	return { comparison: model.comparison, raw: JSON.parse(result.stdout), stderr: result.stderr };
 }
@@ -236,7 +236,7 @@ test("model compare puts competing proposals beside each other, in the order nam
 	const query = new URLSearchParams({ vault, state: "Nightly batch", beside: "Live events" });
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const answer = architectureModelReadSchema().parse(await response.json());
+	const answer = parsedReply("read", await response.json());
 	if (!answer.success) throw new Error(JSON.stringify(answer));
 	expect(answer.comparison?.interfaceMeasures.states).toHaveLength(3);
 });

@@ -1,10 +1,10 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import { themeColor } from "#runtime/theme/store/source.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { chromaOf, hueOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /**
  * A card's or a container's block as painted: the front edge is its body, the
@@ -79,7 +79,7 @@ function lineStroke(markup: string): string {
 	)![1]!;
 }
 
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		azure: { name: "Azure", icon: "RiCloudLine", color: "blue" },
@@ -108,7 +108,7 @@ test("the cards of a group stand together on the document", async () => {
 	}));
 	const drawn = await renderArchitecture({
 		content: orderedFixture({ nodes }),
-		policy: semanticPolicySchema().parse({
+		policy: fixtureDocument("semanticPolicy", {
 			...policy,
 			groups: {
 				first: { name: "First", color: "green" },
@@ -125,7 +125,7 @@ test("the cards of a group stand together on the document", async () => {
 });
 
 describe("a group shows as a tag, and a card's face stays neutral", () => {
-	const grouped = semanticPolicySchema().parse({
+	const grouped = fixtureDocument("semanticPolicy", {
 		...policy,
 		groups: { core: { name: "Core", color: "green" }, shell: { name: "Shell", color: "orange" } },
 	});

@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { importedReadings } from "#ui/architecture-drawing/model-reader/rules/imported-readings.ts";
 import { ModelError } from "#ui/architecture-drawing/model-reader/reading/components/ModelFrame.tsx";
 

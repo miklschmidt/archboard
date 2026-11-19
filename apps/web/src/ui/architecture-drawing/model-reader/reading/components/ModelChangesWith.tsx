@@ -1,7 +1,7 @@
 import { useMemo, type CSSProperties, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge, cn } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";

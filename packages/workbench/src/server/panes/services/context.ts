@@ -13,16 +13,15 @@
 // tab cannot leave a true-looking answer standing after it stopped being true.
 
 import type { Express, Request, Response } from "express";
-import { semanticPaneContextRoute, semanticPaneContextSchema } from "@archboard/model/pane-context";
+import { parseDocument, type ModelDocument } from "@archboard/model-contract";
 import { staleFrontend } from "@archboard/server-lifecycle/server-host";
 import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
 import { panePresentations } from "#server/panes/services/presentation.ts";
 import { paneVaults, panes } from "#server/panes/services/registry.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
 import { requireVault, vaultOfRequest } from "#server/request/services/vault.ts";
-import type { z } from "zod";
 
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
 
 /** The latest report from each pane, by the client id that sent it. */
 const reports = new Map<string, SemanticPaneContext>();
@@ -124,7 +123,7 @@ function forgetSemanticPaneContexts(): void {
  * @param res Its response.
  */
 function reportRoute(req: Request, res: Response): void {
-	const parsed = semanticPaneContextSchema().safeParse(bodyOf(req));
+	const parsed = parseDocument("paneContext", bodyOf(req));
 	if (!parsed.success) {
 		res.status(400).json({
 			success: false,
@@ -187,8 +186,8 @@ function listRoute(req: Request, res: Response): void {
  * @param app The express application.
  */
 function mountSemanticPaneContextRoutes(app: Express): void {
-	app.post(semanticPaneContextRoute(), requireVault, reportRoute);
-	app.get(semanticPaneContextRoute(), requireVault, listRoute);
+	app.post("/api/panes/semantic-context", requireVault, reportRoute);
+	app.get("/api/panes/semantic-context", requireVault, listRoute);
 }
 
 export {

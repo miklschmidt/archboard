@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { ambiguousTrunks } from "#tests/runtime/support/drawn-ink.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import fanout from "#tests/runtime/support/fixtures/mixed-kind-parent-fanout.json";
 
 // Reduced from Voice coordinator: Tab sessions reaches Coordinator tools and
@@ -37,7 +37,7 @@ test("Blocks keeps different kinds distinct from a caller to two parent members"
 test("comparison context cannot merge the visible kinds of overview relationships", async () => {
 	const content = orderedFixture({
 		nodes: ["source", "one", "two"].map((id) => ({ id, name: id, kind: "module" })),
-		edges: ["one", "two"].map((to) => ({ id: to, from: "source", to, kind: "call" })),
+		edges: ["one", "two"].map((to) => ({ id: `s-${to}`, from: "source", to, kind: "call" })),
 	});
 	const request = { policy: defaultSemanticPolicy(), content, layout: "blocks" as const };
 	await renderArchitecture(request);

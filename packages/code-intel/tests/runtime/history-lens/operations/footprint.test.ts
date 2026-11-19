@@ -15,13 +15,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema, type FootprintAnswer } from "#shared/protocol/footprint.ts";
-import {
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-	currentVariant,
-	resolveVariant,
-	type LegacyBoard,
-} from "@archboard/model/legacy-board";
+import { resolveVariant, type LegacyBoard } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-"));
@@ -120,8 +115,8 @@ function document(): LegacyBoard {
 			index,
 		),
 	);
-	return LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	return legacyBoard({
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -164,7 +159,7 @@ function document(): LegacyBoard {
  */
 async function footprint(base: string, proposal?: string, head?: string): Promise<FootprintAnswer> {
 	const value = document();
-	const current = currentVariant(value);
+	const current = resolveVariant(value);
 	if (current === undefined) throw new Error("the document has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(

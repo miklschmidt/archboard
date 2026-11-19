@@ -15,7 +15,9 @@ const ADOPTERS: {
 	name: string;
 	areas: string[];
 }[] = [
-	{ name: "model", areas: ["shared", "runtime"] },
+	{ name: "model-contract", areas: ["shared"] },
+	{ name: "model-rules", areas: ["shared"] },
+	{ name: "model-store", areas: ["shared", "runtime"] },
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
 	{ name: "code-binding", areas: ["shared", "runtime"] },

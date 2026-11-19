@@ -11,7 +11,7 @@ import { afterAll, beforeAll, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import type * as CodeCheck from "@archboard/code-intel/code-check-run";
 
 /** A repository with no remote is named by its directory, here with a space. */

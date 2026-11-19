@@ -1,9 +1,8 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const BASE = {
 	nodes: [
@@ -26,7 +25,7 @@ const RELATIONSHIPS = [
 ] as const;
 
 test.each(
-	layoutEngineSchema().options.flatMap((layout) =>
+	modelShape("layoutEngine").options.flatMap((layout) =>
 		RELATIONSHIPS.map(([name, relationship]) => [name, layout, relationship] as const),
 	),
 )("a frame draws a relationship %s (%s)", async (_, layout, relationship) => {

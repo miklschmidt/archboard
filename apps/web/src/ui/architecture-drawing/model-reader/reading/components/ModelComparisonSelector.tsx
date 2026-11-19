@@ -1,5 +1,5 @@
 import { useCallback, type JSX } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { Select } from "@archboard/ui-kit/components";
 import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hooks/use-comparison-saved-at.ts";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";

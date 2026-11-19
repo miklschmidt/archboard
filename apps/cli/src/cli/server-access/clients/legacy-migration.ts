@@ -1,28 +1,6 @@
-import {
-	legacyInventoryReadSchema,
-	type LegacyInventoryRead,
-	type LegacyMappingWrite,
-} from "@archboard/model/migration";
-import { isRecord } from "@archboard/diagnostics/unknown-record";
-import { statedInvocation, requestJson } from "@archboard/server-lifecycle/server-client";
-
-/**
- * Preserve structured runtime refusals across the HTTP boundary.
- * @param path The explicit migration route.
- * @param init The request method and optional body.
- * @returns The inventory or its actionable refusal.
- */
-async function migrationRequest(path: string, init?: RequestInit): Promise<LegacyInventoryRead> {
-	try {
-		return legacyInventoryReadSchema().parse(await requestJson<unknown>(path, init));
-	} catch (error) {
-		const parsed = legacyInventoryReadSchema().safeParse(
-			isRecord(error) ? error["answer"] : undefined,
-		);
-		if (parsed.success && !parsed.data.success) return parsed.data;
-		throw error;
-	}
-}
+import type { LegacyInventoryRead, LegacyMappingWrite } from "@archboard/model-contract";
+import { statedInvocation } from "@archboard/server-lifecycle/server-client";
+import { architectureResult } from "#cli/server-access/clients/architecture-model.ts";
 
 /**
  * Inventory legacy inputs without changing architecture or creating a plan file.
@@ -30,7 +8,8 @@ async function migrationRequest(path: string, init?: RequestInit): Promise<Legac
  * @returns Original coverage, evidence and any saved mapping choices.
  */
 function readLegacyInventoryOnServer(origin: string): Promise<LegacyInventoryRead> {
-	return migrationRequest(
+	return architectureResult(
+		"readLegacyInventory",
 		`/api/architecture/migration/inventory?${new URLSearchParams({ origin })}`,
 	);
 }
@@ -43,7 +22,7 @@ function readLegacyInventoryOnServer(origin: string): Promise<LegacyInventoryRea
 function saveLegacyMappingPlanOnServer(
 	request: Omit<LegacyMappingWrite, "doing">,
 ): Promise<LegacyInventoryRead> {
-	return migrationRequest("/api/architecture/migration/plan", {
+	return architectureResult("saveLegacyMappingPlan", "/api/architecture/migration/plan", {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ ...request, doing: statedInvocation().doing }),

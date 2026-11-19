@@ -5,14 +5,13 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { z } from "zod";
 
 import {
-	architectureClaimResultSchema,
-	architectureModelReadSchema,
-	architectureModuleEditResultSchema,
-	type architectureModuleEditSchema,
-} from "@archboard/model/contract";
+	readModelReply,
+	type ModelReply,
+	type ModelRequestInput,
+	type ReplyOperation,
+} from "@archboard/model-contract";
 import { repoIdentityAt } from "@archboard/workspace/checkouts";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
@@ -21,7 +20,7 @@ import type { MoveMap } from "./layout.ts";
 const WRITER = "move-source";
 
 /** The current model, as `archboard model read` answers it. */
-type Reading = Extract<z.infer<ReturnType<typeof architectureModelReadSchema>>, { success: true }>;
+type Reading = Extract<ModelReply<"read">, { success: true }>;
 /** A flow step of a reading. */
 type Step = Reading["collections"][number]["flows"][number]["steps"][number];
 /** A binding or an anchor. */
@@ -32,14 +31,11 @@ interface Location {
 }
 /** A statement of an intent, of the three kinds a move writes. */
 type Change = Extract<
-	Extract<
-		z.input<ReturnType<typeof architectureModuleEditSchema>>,
-		{ changes: unknown }
-	>["changes"][number],
+	Extract<ModelRequestInput<"edit">, { changes: unknown }>["changes"][number],
 	{ type: "edit-module" | "edit-relationship" | "edit-step" }
 >;
 /** What the edit answers. */
-type EditAnswer = z.infer<ReturnType<typeof architectureModuleEditResultSchema>>;
+type EditAnswer = ModelReply<"edit">;
 
 /** What deriving the intent needs. */
 interface VaultContext {
@@ -54,17 +50,17 @@ interface VaultContext {
  * discovered, which the shared schemas do not hold.
  * @param root The checkout.
  * @param args The command's arguments, `-C` added.
- * @param schema The schema of the answer.
+ * @param operation The operation the command answers.
  * @param request The JSON request it reads, if any.
  * @returns The parsed answer.
  * @throws {Error} When the command prints no JSON.
  */
-function archboard<T extends z.ZodType>(
+function archboard<O extends ReplyOperation>(
 	root: string,
 	args: string[],
-	schema: T,
+	operation: O,
 	request?: unknown,
-): z.infer<T> {
+): ModelReply<O> {
 	const directory = mkdtempSync(join(tmpdir(), "move-source-"));
 	const input = join(directory, "request.json");
 	try {
@@ -76,7 +72,9 @@ function archboard<T extends z.ZodType>(
 		const result = Bun.spawnSync(command, { cwd: root, stdout: "pipe", stderr: "pipe" });
 		const output = result.stdout.toString();
 		if (!output.trimStart().startsWith("{")) throw new Error(result.stderr.toString() || output);
-		return schema.parse(withoutVault(JSON.parse(output)));
+		const read = readModelReply(operation, withoutVault(JSON.parse(output)));
+		if (!read.success) throw read.error;
+		return read.data;
 	} finally {
 		rmSync(directory, { recursive: true, force: true });
 	}
@@ -100,7 +98,7 @@ function withoutVault(answer: unknown): unknown {
  * @throws {Error} When the model cannot be read.
  */
 function readModel(root: string): Reading {
-	const reading = archboard(root, ["model", "read"], architectureModelReadSchema());
+	const reading = archboard(root, ["model", "read"], "read");
 	if (!reading.success) throw new Error(`model read refused: ${JSON.stringify(reading)}`);
 	return reading;
 }
@@ -224,12 +222,7 @@ function applyVaultChanges(
 				changes,
 			};
 			const doing = ["--doing", "rebinding moved source paths"];
-			const answer = archboard(
-				root,
-				["model", "edit", ...doing],
-				architectureModuleEditResultSchema(),
-				request,
-			);
+			const answer = archboard(root, ["model", "edit", ...doing], "edit", request);
 			const missing = missingSubjects(answer, subjects);
 			if (missing.length === 0) return answer;
 			release(root, claim);
@@ -252,7 +245,7 @@ function applyVaultChanges(
 function claimSubjects(root: string, target: unknown, subjects: readonly string[]): string {
 	const reason = "Rebind the code bindings and anchors of moved source files";
 	const request = { target, writer: WRITER, reason, subjects };
-	const answer = archboard(root, ["model", "claim"], architectureClaimResultSchema(), request);
+	const answer = archboard(root, ["model", "claim"], "claim", request);
 	if (!answer.success) throw new Error(`model claim refused: ${JSON.stringify(answer)}`);
 	return answer.claim.id;
 }

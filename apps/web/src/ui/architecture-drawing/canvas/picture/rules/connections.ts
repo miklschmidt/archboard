@@ -9,7 +9,7 @@
 // parts at their other ends. Several parts picked at once say nothing about their
 // wiring, so they light only themselves and the lines between them (`litBySeveral`).
 
-import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model-contract";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 /** The parts and relationships of a variant, as far as containment and wiring are concerned. */

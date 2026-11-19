@@ -4,7 +4,7 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { installBunHost } from "#runtime/bun-renderer/services/bun-host.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/render/rules/host.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 test.each(["rejected", "thrown"] as const)(
 	"a %s block solve fails the render without speculative work",

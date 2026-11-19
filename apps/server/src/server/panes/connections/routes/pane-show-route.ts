@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { architecturePaneReadingSchema } from "@archboard/model/pane-context";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { projectModel } from "@archboard/model/content";
+import { modelShape, type ModelDocument } from "@archboard/model-contract";
+import { readArchitectureModel } from "@archboard/model-store";
+import { projectModel } from "@archboard/model-rules";
 import { publishPaneContext } from "@archboard/workbench/server";
 import {
 	arrivedOnModel,
@@ -29,9 +29,9 @@ const RequestSchema = z.strictObject({
 	pane: z.string().optional(),
 	agent: z.boolean().optional(),
 	session: z.string().optional(),
-	reading: architecturePaneReadingSchema(),
+	reading: modelShape("paneReading"),
 });
-type Reading = z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
+type Reading = ModelDocument<"paneReading">;
 type Model = Extract<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>;
 type NavigationError = { code: string; error: string };
 /**

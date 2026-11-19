@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
-import { comparedWith as defaultComparisonReference } from "@archboard/model/comparison";
-import type { Model } from "@archboard/model/content";
+import { comparedWith as defaultComparisonReference, type Model } from "@archboard/model-rules";
 import { SHOP } from "#tests/ui/support/model-reader/scene.ts";
 import {
 	chosenComparison,

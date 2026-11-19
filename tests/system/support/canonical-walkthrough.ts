@@ -1,7 +1,6 @@
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
+import { readArchitectureModel, retainArchitectureCheckpoint } from "@archboard/model-store";
 import { vaultIn } from "./test-vault.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");

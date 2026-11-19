@@ -12,15 +12,15 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { APCA, lightnessContrast, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/model/render-reply";
-import { paletteColorSchema, semanticPolicySchema } from "@archboard/model/policy";
+import { modelShape, type DiagramTheme } from "@archboard/model-contract";
 import { themeColor } from "#runtime/theme/store/source.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
-const COLOURS = paletteColorSchema().options;
+const COLOURS = modelShape("paletteColor").options;
 const THEMES: DiagramTheme[] = ["light", "dark"];
 
 /** One card for each colour: in a group of that colour, of a kind of that colour, and a line of it to the next. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
 		COLOURS.map((color) => [color, { name: color, icon: "RiBox3Line", color }]),

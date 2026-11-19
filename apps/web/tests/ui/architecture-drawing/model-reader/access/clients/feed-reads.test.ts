@@ -2,7 +2,7 @@
 // A focus, a mount of cached data and a returning socket read nothing.
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
-import type { ArchitectureFeedFrame } from "@archboard/model/contract";
+import type { ArchitectureFeedFrame } from "@archboard/model-contract";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { architectureModelReadSchema } from "@archboard/model/contract";
+import { modelShape } from "@archboard/model-contract";
 import { LocalityAnswerSchema, PeriodStartSchema } from "#shared/protocol/locality.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { SourceRefsAnswerSchema } from "#shared/protocol/source-refs.ts";
@@ -30,15 +30,15 @@ const ArchitectureSourceRefsRequestSchema = SelectionSchema.extend({
 const IdentitySchema = z.strictObject({
 	success: z.literal(true),
 	model: z.string(),
-	state: architectureModelReadSchema().options[0].shape.selectedState,
-	revision: architectureModelReadSchema().options[0].shape.revision,
+	state: modelShape("selectedState"),
+	revision: modelShape("revision"),
 	checkpoint: z.string().optional(),
 });
 /** The vault a footprint read: the vault on disk, or the vault at the head's ref and commit. */
 const FootprintVaultSchema = z.discriminatedUnion("at", [
 	z.strictObject({ at: z.literal("checkout") }),
-	architectureModelReadSchema()
-		.options[0].shape.sourceRef.unwrap()
+	modelShape("model")
+		.shape.sourceRef.unwrap()
 		.extend({ at: z.literal("ref") }),
 ]);
 const FootprintIdentitySchema = z.strictObject({
@@ -63,7 +63,7 @@ const ArchitectureHistoryResultSchema = z.union([
 		.omit({ model: true, version: true })
 		.extend(FootprintIdentitySchema.shape),
 	SourceRefsAnswerSchema.extend({ ...IdentitySchema.shape, analysis: z.literal("refs") }),
-	architectureModelReadSchema().options[1],
+	modelShape("refusal"),
 ]);
 export {
 	ArchitectureLocalityRequestSchema,

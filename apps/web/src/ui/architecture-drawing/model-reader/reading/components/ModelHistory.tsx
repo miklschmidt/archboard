@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";

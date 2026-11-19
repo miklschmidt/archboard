@@ -6,19 +6,20 @@
 
 import { expect, test } from "bun:test";
 import {
-	semanticPolicySchema,
-	type SemanticPolicy,
 	defaultSemanticPolicy,
-} from "@archboard/model/policy";
-import { layoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+	type LayoutEngineName,
+	modelShape,
+	type SemanticPolicy,
+	type VariantContent,
+} from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import agentWorkbench from "#tests/runtime/support/fixtures/agent-workbench.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		module: { name: "Module", icon: "RiBox3Line" },
@@ -101,7 +102,7 @@ async function stackedPairs(
 	);
 }
 
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"unrelated lines never share one stroke in the gap between two cards (%s)",
 	async (layout) => {
 		expect(await stackedPairs(orderedFixture(agentWorkbench), layout, { policy })).toEqual([]);

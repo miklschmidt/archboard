@@ -1,10 +1,9 @@
 // What the pulse tests draw: the parts, the exchanges and the pictures of them,
 // and the readers of the markup that say where a pulse is.
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, type VariantContent } from "@archboard/model-contract";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { pointsOf } from "#tests/runtime/support/drawn-traffic.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** What a moving mark looks like in the markup, whichever grammar drew it. */
 export const MOTION = /<animate(?:Motion|Transform)?\b|@keyframes|animation:/u;

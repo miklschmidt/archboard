@@ -7,10 +7,9 @@
 
 import { expect, test } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { SemanticRenderReply } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticRenderReply } from "@archboard/model-contract";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 const API = { id: "api", name: "Intake API", kind: "service" };
 const QUEUE = { id: "queue", name: "Work queue", kind: "module" };
@@ -46,8 +45,8 @@ function variantOf(
  * @returns The document.
  */
 function stack(built: boolean) {
-	return LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	return fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Ingest",

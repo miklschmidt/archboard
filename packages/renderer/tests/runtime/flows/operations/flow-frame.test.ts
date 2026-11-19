@@ -1,8 +1,7 @@
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, type DiagramBox } from "@archboard/model-contract";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Whether one box sits wholly inside another, allowing a hair of rounding.

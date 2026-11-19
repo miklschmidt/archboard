@@ -9,18 +9,18 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import { corridorPoints, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import frameDrop from "#tests/runtime/support/fixtures/frame-drop.json";
 import labelBand from "#tests/runtime/support/fixtures/label-band.json";
 import stackedPorts from "#tests/runtime/support/fixtures/stacked-ports.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The spacing of neighbouring lanes. */
 const LANE = 16;
 
 /** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		service: { name: "Service", icon: "RiServerLine", color: "blue" },

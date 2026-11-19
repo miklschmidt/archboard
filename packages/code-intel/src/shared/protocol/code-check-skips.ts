@@ -2,7 +2,7 @@
 // its answer, `archboard check code` and `GET /api/vault/code-check`
 // (code-check.ts).
 
-import { vaultDiagnosticSchema } from "@archboard/model/policy";
+import { modelShape } from "@archboard/model-contract";
 import { z } from "zod";
 
 /** A pinned binding's ref, and what its checkout has out instead. */
@@ -145,7 +145,7 @@ const CodeCheckSkipSchema = z
 		model: z.string().optional(),
 		state: z.string().nullable().optional(),
 		variant: z.string().optional(),
-		subject: vaultDiagnosticSchema().shape.subject.unwrap().optional(),
+		subject: modelShape("diagnosticSubject").optional(),
 		repo: z.string().optional(),
 		ref: OtherRefSchema.optional(),
 		detail: z.string().optional(),

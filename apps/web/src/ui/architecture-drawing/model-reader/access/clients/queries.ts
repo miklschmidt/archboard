@@ -1,15 +1,13 @@
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import { queryOptions, skipToken, type QueryClient } from "@tanstack/react-query";
-import type { z } from "zod";
 import {
-	architectureModelReadSchema,
-	architectureCheckpointRowsSchema,
-	architectureClaimListSchema,
-	moduleNavigationReadSchema,
 	type ArchitectureEvent,
-	architectureRetainedModuleSchema,
 	type ArchitectureModelRead,
-} from "@archboard/model/contract";
+	readModelReply,
+	type ModelReply,
+	type ReplyOperation,
+	type ReplyDelivery,
+} from "@archboard/model-contract";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
 
 type StateSelection = {
@@ -24,7 +22,7 @@ type StateSelection = {
 	readonly reference?: number;
 };
 
-type CheckpointRows = z.infer<ReturnType<typeof architectureCheckpointRowsSchema>>;
+type CheckpointRows = ModelReply<"listCheckpointRows">;
 type ArchitectureSummary = Extract<ArchitectureEvent, { type: "architecture_snapshot" }>["reading"];
 
 /** What a repository row knows of a vault, as the feed last reported it. */
@@ -44,10 +42,7 @@ interface ModuleTarget {
 }
 
 /** Where a removed module was last retained, or null when no reading holds it. */
-type RetainedModule = Extract<
-	z.output<ReturnType<typeof architectureRetainedModuleSchema>>,
-	{ success: true }
->["retained"];
+type RetainedModule = Extract<ModelReply<"readRetainedModule">, { success: true }>["retained"];
 
 /** A failed read retains its structured diagnostics while Query keeps the last coherent data. */
 class ArchitectureReadError extends Error {
@@ -166,18 +161,61 @@ const architectureModelKeys = {
 };
 
 /**
+ * The two readers a strict reply asks for: an answer that came with a success status reads as
+ * the operation's answer, and a body that came with an HTTP failure reads only as its refusal.
+ * @param operation The operation whose answer it is.
+ * @returns The reader of each delivery.
+ */
+function replyReaders<O extends ReplyOperation>(operation: O) {
+	return { answered: replyReader(operation, "answered"), failed: replyReader(operation, "failed") };
+}
+
+/**
+ * The reader of one delivery of an operation's answer.
+ * @param operation The operation whose answer it is.
+ * @param delivery How the body arrived.
+ * @returns A reader that strictReply asks.
+ */
+function replyReader<O extends ReplyOperation>(
+	operation: O,
+	delivery: ReplyDelivery,
+): ReplySchema<ModelReply<O>> {
+	return {
+		/**
+		 * Read one body.
+		 * @param body The body as received.
+		 * @returns The answer, or why the body is not one.
+		 */
+		safeParse: (body) => readModelReply(operation, body, delivery),
+	};
+}
+
+/**
  * Read a shared architecture contract without discarding structured refusals.
  * @param url The explicitly addressed resource.
- * @param schema Its shared runtime schema.
+ * @param reading The model operation whose answer it is, or the schema of another service's
+ *   answer, which a refusal and a success both read as.
  * @param signal Cancels an obsolete request.
  * @returns The shared runtime answer.
  */
-async function readReply<T>(url: string, schema: ReplySchema<T>, signal?: AbortSignal): Promise<T> {
-	const result = await strictReply<T, T | Error>(
+function readReply<O extends ReplyOperation>(
+	url: string,
+	reading: O,
+	signal?: AbortSignal,
+): Promise<ModelReply<O>>;
+function readReply<T>(url: string, reading: ReplySchema<T>, signal?: AbortSignal): Promise<T>;
+async function readReply(
+	url: string,
+	reading: ReplyOperation | ReplySchema<unknown>,
+	signal?: AbortSignal,
+): Promise<unknown> {
+	const { answered, failed } =
+		typeof reading === "string" ? replyReaders(reading) : { answered: reading, failed: reading };
+	const result = await strictReply<unknown, unknown>(
 		url,
 		signal === undefined ? {} : { signal },
-		schema,
-		schema,
+		answered,
+		failed,
 		(error) =>
 			error instanceof Error && "code" in error
 				? error
@@ -211,7 +249,7 @@ async function readModel(
 		),
 	);
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
-	const result = await readReply(url, architectureModelReadSchema(), signal);
+	const result = await readReply(url, "read", signal);
 	if (!result.success) throw new ArchitectureReadError(result);
 	// A walkthrough plays the vault on disk, so a branch reading offers none.
 	return selection.ref == null ? result : { ...result, walkthroughs: [] };
@@ -315,7 +353,7 @@ function architectureModuleQuery(vault: string, target: ModuleTarget, digest: st
 			);
 			const result = await readReply(
 				`${inVault("/api/architecture/module", vault)}&${parameters}`,
-				moduleNavigationReadSchema(),
+				"readModule",
 				context.signal,
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
@@ -341,7 +379,7 @@ function architectureCheckpointsQuery(vault: string) {
 		queryFn: (context) =>
 			readReply(
 				inVault("/api/architecture/checkpoints/rows", vault),
-				architectureCheckpointRowsSchema(),
+				"listCheckpointRows",
 				context.signal,
 			),
 		/**
@@ -372,7 +410,7 @@ function retainedModuleQuery(vault: string, module: string) {
 		 */
 		queryFn: async (context) => {
 			const url = `${inVault("/api/architecture/retained-module", vault)}&${new URLSearchParams({ module })}`;
-			const result = await readReply(url, architectureRetainedModuleSchema(), context.signal);
+			const result = await readReply(url, "readRetainedModule", context.signal);
 			if (!result.success) throw new ArchitectureReadError(result);
 			return result.retained;
 		},
@@ -395,11 +433,7 @@ function architectureClaimsQuery(vault: string) {
 		 * @returns The shared ownership result.
 		 */
 		queryFn: (context) =>
-			readReply(
-				inVault("/api/architecture/claims", vault),
-				architectureClaimListSchema(),
-				context.signal,
-			),
+			readReply(inVault("/api/architecture/claims", vault), "readClaims", context.signal),
 		...followed,
 		retry: false,
 	});
@@ -437,6 +471,7 @@ function invalidateModelQueries(client: QueryClient): Promise<void> {
 
 export {
 	readReply,
+	replyReaders,
 	readModel,
 	architectureModelKeys,
 	invalidateModelQueries,

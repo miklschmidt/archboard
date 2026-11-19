@@ -21,7 +21,7 @@ import { renameSync, rmSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
+import type { DiagramTheme, LayoutEngineName } from "@archboard/model-contract";
 import { shellSize } from "@archboard/renderer/shell-geometry";
 import { durationMs, waitUntil } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";

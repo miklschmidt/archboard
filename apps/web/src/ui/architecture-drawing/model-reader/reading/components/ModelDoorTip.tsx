@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import { doorEndpoints } from "@archboard/model/content";
+import { doorEndpoints } from "@archboard/model-rules";
 import { moduleName } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
 import { TipRelationships } from "#ui/architecture-drawing/model-reader/reading/components/ModelLineTip.tsx";
 import { SubjectTipBox } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSubjectTip.tsx";

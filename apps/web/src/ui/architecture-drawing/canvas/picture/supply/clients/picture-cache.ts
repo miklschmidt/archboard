@@ -24,14 +24,14 @@ import { durationMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
 import { z } from "zod";
-import { architectureRenderResultSchema } from "@archboard/model/contract";
-import type { prepareContentHere } from "@archboard/renderer/browser";
-
 import {
 	defaultLayoutEngine,
-	semanticRenderReplySchema,
+	modelShape,
+	parseDocument,
 	type SemanticRenderReply,
-} from "@archboard/model/render-reply";
+} from "@archboard/model-contract";
+import type { prepareContentHere } from "@archboard/renderer/browser";
+
 import {
 	comparisonKey,
 	type SemanticRenderRequest,
@@ -57,12 +57,12 @@ interface PictureStorage {
 }
 
 type ModelDrawing = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
-const ModelDrawingSchema = architectureRenderResultSchema()
-	.options[0].pick({ svg: true, width: true, height: true, atlas: true, placed: true })
+const ModelDrawingSchema = modelShape("renderSuccess")
+	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
 	.extend({
 		painting: z.string(),
-		appearances: semanticRenderReplySchema().options[0].shape.appearances,
-		legend: semanticRenderReplySchema().options[0].shape.legend,
+		appearances: modelShape("drawnPicture").shape.appearances,
+		legend: modelShape("drawnPicture").shape.legend,
 		readingDirection: z
 			.literal("down" satisfies NonNullable<ModelDrawing["readingDirection"]>)
 			.optional(),
@@ -229,9 +229,7 @@ async function readCachedPicture(
 	current: PictureStamp,
 ): Promise<SemanticRenderReply | undefined> {
 	try {
-		const parsed = semanticRenderReplySchema().safeParse(
-			await storage.get(pictureKey(request, current)),
-		);
+		const parsed = parseDocument("renderReply", await storage.get(pictureKey(request, current)));
 		return parsed.success ? parsed.data : undefined;
 	} catch {
 		return undefined;

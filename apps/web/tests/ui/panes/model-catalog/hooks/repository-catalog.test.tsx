@@ -1,9 +1,8 @@
 // Repository discovery reads no model: the event feed reports each vault's summary.
-import { architectureFeedRequestSchema } from "@archboard/model/contract";
+import { type ArchitectureFeedFrame, parseModelRequest } from "@archboard/model-contract";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import type { ReactNode } from "react";
-import type { ArchitectureFeedFrame } from "@archboard/model/contract";
 
 GlobalRegistrator.register({ url: "http://127.0.0.1:3000/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -83,7 +82,9 @@ class ModelSocket extends EventTarget {
 	 * @param frame One request.
 	 */
 	send(frame: string): void {
-		const { type, vault } = architectureFeedRequestSchema().parse(JSON.parse(frame));
+		const request = parseModelRequest("feed", JSON.parse(frame));
+		if (!request.success) throw request.error;
+		const { type, vault } = request.data;
 		if (type === "subscribe") followed.add(vault);
 		else followed.delete(vault);
 	}

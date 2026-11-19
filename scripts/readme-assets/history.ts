@@ -1,9 +1,6 @@
 // Film exact canonical readings before and after a recorded adoption.
 
-import {
-	architectureCheckpointRetainSchema,
-	type ArchitectureCheckpointRetain,
-} from "@archboard/model/contract";
+import type { ArchitectureCheckpointRetain } from "@archboard/model-contract";
 
 import {
 	encodeTake,
@@ -21,7 +18,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { editModel, modelResult, readModel, showModel } from "./model-authoring.ts";
+import { editModel, modelResult, readModel, showModel, parsedReply } from "./model-authoring.ts";
 
 const MODEL = "Shop";
 type Checkpoint = Extract<ArchitectureCheckpointRetain, { success: true }>["checkpoint"];
@@ -65,7 +62,8 @@ function quoted(reason: string): string {
  */
 async function retainCurrent(server: TakeServer): Promise<Checkpoint> {
 	const model = await readModel(server);
-	const retained = architectureCheckpointRetainSchema().parse(
+	const retained = parsedReply(
+		"retainCheckpoint",
 		modelResult(
 			await server.cli([
 				"model",

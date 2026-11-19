@@ -9,7 +9,7 @@
 
 import type { z } from "zod";
 import type { codeFileSchema } from "@archboard/code-intel/code-check";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import { codeCheck } from "#server/wiring/server-owners.ts";
 import { quoteFile, type Quoted } from "#server/http/handlers/code-files/operations/quoted-file.ts";
 

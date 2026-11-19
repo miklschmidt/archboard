@@ -7,7 +7,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // together decide where a pill lands.
 
 import { describe, expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, type VariantContent } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import {
 	routeLabels,
@@ -16,7 +16,6 @@ import {
 	distanceToFrame,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { detached, covering, overlaps, masking } from "#tests/runtime/support/drawn-labels.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The reported shape: a pane and its routes, wired both ways and labelled both ways. */
 const PAIRED: VariantContent = orderedFixture({
@@ -124,7 +123,7 @@ const CAMERA_FOCUS: VariantContent = orderedFixture({
 		{ id: "advance", from: "stage", to: "focus", kind: "call", label: "advance explanation" },
 		{ id: "fit", from: "focus", to: "camera", kind: "call", label: "fit beat subjects" },
 		{
-			id: "refresh",
+			id: "drop",
 			from: "refresh",
 			to: "fetch",
 			kind: "event",

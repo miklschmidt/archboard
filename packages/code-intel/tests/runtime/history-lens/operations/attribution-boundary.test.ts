@@ -7,11 +7,8 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
-import {
-	currentVariant,
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-} from "@archboard/model/legacy-board";
+import { resolveVariant } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-attribution-boundary-"));
@@ -27,8 +24,8 @@ const together: string[] = [];
 let firstOnly = "";
 let clock = 1_790_000_000;
 
-const document = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const document = legacyBoard({
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "bd",
 	name: "Boundary",
@@ -121,7 +118,7 @@ afterAll(() => {
 });
 
 test("large fallback commits do not suppress coupling among precise ordinary commits", async () => {
-	const current = currentVariant(document);
+	const current = resolveVariant(document);
 	if (current === undefined) throw new Error("missing current variant");
 	const locality = LocalityAnswerSchema.parse(
 		await lens.createVariantLocality().read(scratch, document, current, undefined),
@@ -154,9 +151,9 @@ test("large fallback commits do not suppress coupling among precise ordinary com
 });
 
 test("footprint uses a proposal's changed symbol binding for the same subject id", async () => {
-	const current = currentVariant(document);
+	const current = resolveVariant(document);
 	if (current === undefined) throw new Error("missing current variant");
-	const proposal = LegacyBoardSchema.parse({
+	const proposal = legacyBoard({
 		...document,
 		variants: [
 			...document.variants,

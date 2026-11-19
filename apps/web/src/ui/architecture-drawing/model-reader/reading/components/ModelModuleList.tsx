@@ -1,6 +1,5 @@
 import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
-import type { Model, projectModel } from "@archboard/model/content";
-import type { ChangeKind } from "@archboard/model/comparison";
+import type { Model, projectModel, ChangeKind } from "@archboard/model-rules";
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { ModelAboutTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";

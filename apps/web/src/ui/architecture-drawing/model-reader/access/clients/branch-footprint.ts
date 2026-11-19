@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { z } from "zod";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { inVault } from "@archboard/server-requests";
 import {

@@ -45,7 +45,7 @@ import type {
 	LocalityCommit,
 	LocalityPeriod,
 } from "#shared/protocol/locality.ts";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model-contract";
 import { localityDefaultSinceSeconds } from "@archboard/timing";
 
 /** How many answers the server keeps: the documents that somebody selects parts on. */

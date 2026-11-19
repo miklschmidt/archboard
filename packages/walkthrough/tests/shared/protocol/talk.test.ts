@@ -12,7 +12,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import {
 	TalkSchema,
 	framesOf,

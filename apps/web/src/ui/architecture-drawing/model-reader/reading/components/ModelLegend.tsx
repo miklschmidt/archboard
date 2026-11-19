@@ -1,7 +1,7 @@
 import { RiEyeLine, RiEyeOffLine, type RemixiconComponentType } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
-import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
+import type { Model, ModelFilters, projectModel } from "@archboard/model-rules";
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {

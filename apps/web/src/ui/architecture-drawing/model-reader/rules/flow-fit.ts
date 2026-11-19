@@ -1,5 +1,5 @@
 import { fitRoom, fitScale, shellSize, type Size } from "@archboard/renderer/shell-geometry";
-import type { DiagramGrammar } from "@archboard/model/views";
+import type { DiagramGrammar } from "@archboard/model-contract";
 
 /** The two readings of a flow. */
 type FlowGrammar = Exclude<DiagramGrammar, "architecture">;

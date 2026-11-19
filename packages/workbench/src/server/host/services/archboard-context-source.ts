@@ -1,6 +1,6 @@
 import { semanticChangeFeed } from "#server/panes/services/change-feed.ts";
 import type { WorkbenchContextSource } from "#runtime/voice/protocol/extension.ts";
-import { readArchitectureModel, watchArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel, watchArchitectureModel } from "@archboard/model-store";
 
 // Follow the vault a tab presents. The reusable watcher receives complete formatted snapshots.
 /**

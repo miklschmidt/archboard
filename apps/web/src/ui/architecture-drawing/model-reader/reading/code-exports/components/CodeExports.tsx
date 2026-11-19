@@ -12,7 +12,7 @@ import {
 	type RemixiconComponentType,
 } from "@remixicon/react";
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import { rowTone } from "#ui/shell/rules/row-tone.ts";

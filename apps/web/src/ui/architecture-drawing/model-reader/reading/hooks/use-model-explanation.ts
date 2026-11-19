@@ -1,14 +1,14 @@
 import { useCallback, useContext, useEffect, useMemo } from "react";
-import { diagramGrammarSchema } from "@archboard/model/views";
+import type { Model } from "@archboard/model-rules";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { NOTHING_READ, type PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
-import type { Model } from "@archboard/model/content";
 import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
 import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hooks/use-comparison-saved-at.ts";
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
+import { parseDocument } from "@archboard/model-contract";
 
 type Action = ExplanationInvocation["request"]["action"];
 
@@ -56,7 +56,7 @@ function useModelExplanation(
 	const comparisonRevision = model.comparison?.revision.digest;
 	const display = useReadingDisplay(vault, model);
 	const capture = useMemo(() => {
-		const mode = diagramGrammarSchema().safeParse(grammar);
+		const mode = parseDocument("diagramGrammar", grammar);
 		if (!mode.success || !readsVaultOnDisk(model)) return null;
 		return {
 			vault,

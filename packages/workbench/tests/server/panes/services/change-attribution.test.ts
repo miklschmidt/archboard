@@ -3,12 +3,11 @@ import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	initializeArchitectureModel,
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
-import { readArchitectureModel } from "@archboard/model/store-read";
+	installArchitectureModel,
+	readArchitectureModel,
+} from "@archboard/model-store";
 import { semanticChangeFeed } from "#server/panes/services/change-feed.ts";
 const homes: string[] = [];
 afterEach(() => {
@@ -29,7 +28,7 @@ test("the existing agent feed attributes durable canonical edits without legacy 
 	}
 	const vault = join(home, ".archboard/vault");
 	mkdirSync(vault, { recursive: true });
-	const initialized = await initializeArchitectureModel(vault, {
+	const initialized = await installArchitectureModel(vault, {
 		name: "Shop",
 		operationId: "init",
 		writer: "installer",
@@ -39,7 +38,7 @@ test("the existing agent feed attributes durable canonical edits without legacy 
 	const model = readArchitectureModel(vault);
 	if (!model.success) throw new Error(JSON.stringify(model));
 	const target = { model: model.manifest.id, state: null };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "thread-42",
 		reason: "Plan the initial state",
@@ -72,5 +71,5 @@ test("the existing agent feed attributes durable canonical edits without legacy 
 		]),
 	);
 	expect(events.every((event) => event.cursor > 0)).toBe(true);
-	await releaseArchitectureClaim(vault, { claim: claim.claim.id, writer: "thread-42" });
+	await changeArchitectureClaims(vault, "release", { claim: claim.claim.id, writer: "thread-42" });
 });

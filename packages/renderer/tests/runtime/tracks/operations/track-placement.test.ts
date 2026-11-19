@@ -1,10 +1,11 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import wrappedBlocker from "#tests/runtime/support/fixtures/wrapped-blocker.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /**
  * A card's centre across the page.
@@ -77,7 +78,7 @@ test("a card two cards of one rank feed stands midway under them", async () => {
 });
 
 /** The vocabulary the reduced wrap fixtures draw with. */
-const wrapPolicy = semanticPolicySchema().parse({
+const wrapPolicy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
 		["module", "function", "service", "external"].map((kind) => [

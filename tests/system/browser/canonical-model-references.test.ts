@@ -3,11 +3,11 @@ import { cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:f
 import { join, resolve } from "node:path";
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type {
+	ArchitectureCheckpointRetain,
+	ArchitectureClaimResult,
 	ArchitectureModelRead,
 	ArchitectureModuleEditResult,
-	ArchitectureClaimResult,
-	ArchitectureCheckpointRetain,
-} from "@archboard/model/contract";
+} from "@archboard/model-contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

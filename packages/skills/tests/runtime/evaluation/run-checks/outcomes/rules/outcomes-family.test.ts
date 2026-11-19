@@ -12,7 +12,8 @@ import {
 	type OutcomeCheck,
 } from "#runtime/evaluation/run-checks/outcomes/rules/outcomes.ts";
 import { type Reading } from "#runtime/evaluation/run-checks/outcomes/rules/reading.ts";
-import { LegacyBoardSchema, type LegacyBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model-contract";
+import { legacyBoardOf } from "#tests/runtime/support/legacy-board.ts";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { AFTER, BEFORE, passes, READING } from "#tests/runtime/support/reading-fixture.ts";
 
@@ -200,7 +201,7 @@ describe("family checks", () => {
 	});
 
 	test("on a document nobody has built, nothing is held still and no draft is judged as current", () => {
-		const planned = LegacyBoardSchema.parse(
+		const planned = legacyBoardOf(
 			withFixtureOrders({
 				...BEFORE,
 				current: undefined,
@@ -407,7 +408,7 @@ describe("relationship identity", () => {
 		{ id: "c", name: "C", kind: "module", responsibility: "c" },
 	];
 	const withEdges = (edges: readonly object[], version: number): LegacyBoard =>
-		LegacyBoardSchema.parse(
+		legacyBoardOf(
 			withFixtureOrders({
 				schemaVersion: "2.2.0",
 				kind: "semantic-board",

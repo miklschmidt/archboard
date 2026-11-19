@@ -5,7 +5,7 @@ import {
 	ModelWalkthroughContext,
 } from "#ui/architecture-drawing/model-reader/state/presentation.ts";
 import type { JSX, ReactNode } from "react";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import { RiRefreshLine } from "@remixicon/react";
 import { Button, cn } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";

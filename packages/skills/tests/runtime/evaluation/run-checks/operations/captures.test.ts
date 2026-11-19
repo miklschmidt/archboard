@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model-contract";
 import {
 	CAPTURE_TILE_SIDE_PX,
 	captureFromReceipt,

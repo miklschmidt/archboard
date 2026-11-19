@@ -1,7 +1,7 @@
 // A small talk that renders: a board of two parts and a walkthrough of two steps, told over three
 // seconds of voice. Private test support of the recorder's tests.
 
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { TalkSchema, type Talk } from "#shared/protocol/talk.ts";
 
 /** How many samples of voice the talk has: 3 s at 48 kHz, which is 90 frames. */

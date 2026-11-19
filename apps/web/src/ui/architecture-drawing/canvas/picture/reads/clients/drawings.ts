@@ -2,9 +2,6 @@
 
 import { z } from "zod";
 import { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
-import { vaultCheckSchema } from "@archboard/model/policy";
-import { inVault } from "@archboard/server-requests";
-import { LegacyListingSchema } from "@archboard/model/legacy-listing";
 import {
 	type DiagramAtlas,
 	type DiagramBox,
@@ -12,19 +9,22 @@ import {
 	type LayoutEngineName,
 	type NothingDrawn,
 	type OfferedView,
-} from "@archboard/model/render-reply";
+	type ModelReply,
+	readModelReply,
+	type LegacyListing,
+} from "@archboard/model-contract";
+import { inVault } from "@archboard/server-requests";
 
-type ListedLegacyBoard = z.infer<typeof LegacyListingSchema>["boards"][number];
+type ListedLegacyBoard = LegacyListing["boards"][number];
 
-type LegacyListing = z.infer<typeof LegacyListingSchema>;
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 /** What the server remembers of a vault's code passes. */
 type RememberedFindings = z.infer<ReturnType<typeof rememberedFindingsSchema>>;
 
 // The render contract itself is not described here. It is one external protocol
 // with three consumers — the canvas that serves it, the command that writes a
 // picture beside a file, and this viewer — so it has one owner in
-// `@archboard/model/render-reply`, and every consumer infers its types from that.
+// `@archboard/model-contract`, and every consumer infers its types from that.
 // Two copies of a protocol are two protocols the first time somebody adds a
 // field to one of them.
 
@@ -222,7 +222,9 @@ async function fetchVaultCheck(vault: string, signal?: AbortSignal): Promise<Vau
 	if (!response.ok) {
 		throw new Error("The vault check failed. Check the server connection and try again.");
 	}
-	return vaultCheckSchema().parse(await response.json());
+	const reply = readModelReply("checkVault", await response.json());
+	if (!reply.success) throw reply.error;
+	return reply.data;
 }
 
 /** The route the server answers the findings of the last code pass on. */
