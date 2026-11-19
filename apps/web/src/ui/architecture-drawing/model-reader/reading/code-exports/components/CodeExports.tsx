@@ -5,7 +5,7 @@
 import {
 	RiCodeBoxLine,
 	RiCornerDownRightLine,
-	RiFunctionLine,
+	RiFunctions,
 	RiHashtag,
 	RiTBoxLine,
 	type RemixiconComponentType,
@@ -37,7 +37,7 @@ type Notice = Parameters<typeof activateCodeTarget>[0]["onNotice"];
 
 /** The icon of each kind's list. */
 const KIND_ICONS = {
-	function: RiFunctionLine,
+	function: RiFunctions,
 	class: RiCodeBoxLine,
 	method: RiCornerDownRightLine,
 	value: RiHashtag,
