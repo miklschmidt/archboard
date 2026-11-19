@@ -137,8 +137,21 @@ Clear each finding at its seam. Never silence one.
   With one reader, move the value into that reader and stop exporting it.
   With several, move what they compute from it into the module, behind a function such as `restartDelayMs(attempt)`.
   Where a caller needs the value itself, export a function that returns it.
-- `MODULE_SHALLOW`: every export of the module that is not a type has a finding. Clear those findings, and it clears.
+- `CODE_PASS_THROUGH` (information): a function or public method only passes its call on with its own parameters.
+  Give it a decision of its own, such as a default, a check or a translation, or let callers call the code it passes to.
+  A function that calls a value its own file keeps hidden, such as `parse(input)` over a hidden schema, is the module deciding and has no finding.
+- `REEXPORT_PASS_THROUGH`: the module passes on a name that another module defines.
+  Through one door it is information. It is a warning when files outside both modules also import the defining module directly: two doors to one name.
+  Keep one door. Stop passing the name on, or make every caller import it through this module.
+- `EXPOSED_UNUSED`: no file outside the module uses an exported name, as code or as a type. A test is no user.
+  Stop exporting it. If files of the module use it, keep it out of the module's root files.
+  It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import.
+  A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
+  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor or `toString`, are never judged.
+- `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
+
+Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, because its remedy removes the name.
 
 A language can force a constant. No exemption exists, so use the seam that replaces it:
 
