@@ -2,7 +2,7 @@
 // wire records that cross the socket as JSON and are parsed like anything the
 // gateway sends, plus the branded identities a typed draft needs.
 
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import type { BrowserCommandDraft } from "#ui/transport/state/contract.ts";
 
@@ -21,32 +21,31 @@ interface SnapshotFixture extends WireRecord {
 	lease: WireRecord | null;
 }
 
-const authorities = testAuthorities();
-const { decoder, issuer } = authorities.identity;
+const ids = browserIdentities();
 
 /** Branded identities matching the fixture strings. */
 const fixtureIds = {
-	threadA: decoder.adoptThreadId("thread-a"),
-	threadB: decoder.adoptThreadId("thread-b"),
-	requestA: decoder.adoptJsonRpcRequestId("request-a"),
-	requestZ: decoder.adoptJsonRpcRequestId("request-z"),
-	approvalA: decoder.adoptApprovalId("approval-a"),
-	submissionA: decoder.adoptQueuedSubmissionId("submission-a"),
-	submissionGone: decoder.adoptQueuedSubmissionId("submission-gone"),
-	voiceHandle: issuer.mintBrowserCommandId(),
+	threadA: ids.thread("thread-a"),
+	threadB: ids.thread("thread-b"),
+	requestA: ids.jsonRpcRequest("request-a"),
+	requestZ: ids.jsonRpcRequest("request-z"),
+	approvalA: ids.approval("approval-a"),
+	submissionA: ids.queuedSubmission("submission-a"),
+	submissionGone: ids.queuedSubmission("submission-gone"),
+	voiceHandle: ids.browserCommand(),
 };
 
 /** The same identities as the gateway spells them on the wire. */
 const wire = {
 	threadA: String(fixtureIds.threadA),
 	threadB: String(fixtureIds.threadB),
-	threadResult: String(decoder.adoptThreadId("thread-result")),
+	threadResult: String(ids.thread("thread-result")),
 	requestA: String(fixtureIds.requestA),
-	requestB: String(decoder.adoptJsonRpcRequestId("request-b")),
+	requestB: String(ids.jsonRpcRequest("request-b")),
 	requestZ: String(fixtureIds.requestZ),
 	approvalA: String(fixtureIds.approvalA),
 	submissionA: String(fixtureIds.submissionA),
-	submissionB: String(decoder.adoptQueuedSubmissionId("submission-b")),
+	submissionB: String(ids.queuedSubmission("submission-b")),
 	submissionGone: String(fixtureIds.submissionGone),
 };
 

@@ -1,5 +1,5 @@
-// Fixtures are built through the closed browser model with a real identity
-// authority, so a fixture the contract would refuse fails here instead of
+// Fixtures are built through the closed browser model the browser itself uses,
+// so a fixture the contract would refuse fails here instead of
 // proving something about a shape the server can never publish.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
@@ -12,7 +12,7 @@ import type {
 } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import type { WorkbenchApprovalsInput } from "#ui/approvals/state/contracts.ts";
 import type {
 	ApprovalCommandDraft,
@@ -26,22 +26,21 @@ import type {
 	WorkbenchTransportState,
 } from "#ui/approvals/state/transport-port.ts";
 
-const authorities = testAuthorities();
-const authority = authorities.identity;
-const model = createCodexBrowserModel(authorities);
+const ids = browserIdentities();
+const model = createCodexBrowserModel();
 
 const NOW = 1_700_000_000_000;
 const EXPIRY_MS = 90_000;
 const EXPIRES_AT = NOW + EXPIRY_MS;
 
-const CHILD = model.ChildIdSchema.parse(authority.validator.childId);
-const EPOCH = model.ChildEpochSchema.parse(authority.validator.epoch);
-const THREAD = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("workhorse-a"));
-const OTHER_THREAD = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("workhorse-b"));
-const TURN = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-a"));
-const ITEM = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-a"));
-const APPROVAL_ID = model.ApprovalIdSchema.parse(authority.decoder.adoptApprovalId("approval-a"));
-const COMMAND_ID = model.BrowserCommandIdSchema.parse(authority.issuer.mintBrowserCommandId());
+const CHILD = model.ChildIdSchema.parse(ids.child);
+const EPOCH = model.ChildEpochSchema.parse(ids.epoch);
+const THREAD = model.ThreadIdSchema.parse(ids.thread("workhorse-a"));
+const OTHER_THREAD = model.ThreadIdSchema.parse(ids.thread("workhorse-b"));
+const TURN = model.TurnIdSchema.parse(ids.turn("turn-a"));
+const ITEM = model.ItemIdSchema.parse(ids.item("item-a"));
+const APPROVAL_ID = model.ApprovalIdSchema.parse(ids.approval("approval-a"));
+const COMMAND_ID = model.BrowserCommandIdSchema.parse(ids.browserCommand());
 const CHAT = "primary";
 const HASH = `sha256:${"a".repeat(64)}`;
 
@@ -50,7 +49,7 @@ const HASH = `sha256:${"a".repeat(64)}`;
  * @returns The id.
  */
 function requestId(): BrowserApproval["requestId"] {
-	return model.JsonRpcRequestIdSchema.parse(authority.issuer.mintJsonRpcRequestId());
+	return model.JsonRpcRequestIdSchema.parse(ids.nextJsonRpcRequest());
 }
 
 /**
@@ -59,7 +58,7 @@ function requestId(): BrowserApproval["requestId"] {
  * @returns The id.
  */
 function callId(name: string): BrowserDynamicApproval["identity"]["callId"] {
-	return model.DynamicToolCallIdSchema.parse(authority.decoder.adoptDynamicToolCallId(name));
+	return model.DynamicToolCallIdSchema.parse(ids.dynamicToolCall(name));
 }
 
 /**
@@ -67,7 +66,7 @@ function callId(name: string): BrowserDynamicApproval["identity"]["callId"] {
  * @returns The id.
  */
 function operationId(): BrowserDynamicApproval["identity"]["operationId"] {
-	return model.OperationIdSchema.parse(authorities.operation.issuer.mintOperationId());
+	return model.OperationIdSchema.parse(ids.operation());
 }
 
 /**
@@ -138,7 +137,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 		coordinator: {
 			kind: "coordinator",
 			state: "ready",
-			threadId: model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("coordinator-a")),
+			threadId: model.ThreadIdSchema.parse(ids.thread("coordinator-a")),
 			activeTurnId: null,
 			configuredModel: null,
 			configuredEffort: null,

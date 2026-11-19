@@ -3,14 +3,14 @@ import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import type {
 	ActivityItem,
 	ActivityRun as Run,
 } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import { ActivityRun } from "#ui/workbench-client/thread/components/ActivityRun.tsx";
 
-const { decoder } = testAuthorities().identity;
+const ids = browserIdentities();
 
 let root: Root;
 beforeAll(() => {
@@ -39,7 +39,7 @@ function command(
 ): ActivityItem {
 	return {
 		media: "command",
-		itemId: decoder.adoptItemId(id),
+		itemId: ids.item(id),
 		command: line,
 		status,
 		cwd: "/work",

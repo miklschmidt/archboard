@@ -1,39 +1,24 @@
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserCommand, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
-// The queue carries a server OperationId, so the fixture model needs the complete
-// authority pair rather than the identity half alone.
-const authorities = testAuthorities();
-const authority = authorities.identity;
-const model = createCodexBrowserModel(authorities);
-const childId = model.ChildIdSchema.parse(authority.validator.childId);
-const epoch = model.ChildEpochSchema.parse(authority.validator.epoch);
-const requestId = model.JsonRpcRequestIdSchema.parse(authority.issuer.mintJsonRpcRequestId());
-const commandId = model.BrowserCommandIdSchema.parse(authority.issuer.mintBrowserCommandId());
-const threadId = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("thread-fixture"));
-const turnId = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-fixture"));
-const coordinatorThreadId = model.ThreadIdSchema.parse(
-	authority.decoder.adoptThreadId("coordinator-fixture"),
-);
-const coordinatorTurnId = model.TurnIdSchema.parse(
-	authority.decoder.adoptTurnId("coordinator-turn-fixture"),
-);
-const itemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-fixture"));
-const approvalId = model.ApprovalIdSchema.parse(
-	authority.decoder.adoptApprovalId("approval-fixture"),
-);
-const queueOperationId = model.OperationIdSchema.parse(
-	authorities.operation.issuer.mintOperationId(),
-);
-const queueId = model.QueuedSubmissionIdSchema.parse(
-	authority.decoder.adoptQueuedSubmissionId("queue-fixture"),
-);
-const loginId = model.LoginIdSchema.parse(authority.decoder.adoptLoginId("login-fixture"));
-const realtimeSessionId = model.RealtimeSessionIdSchema.parse(
-	authority.issuer.mintRealtimeSessionId(),
-);
+const ids = browserIdentities();
+const model = createCodexBrowserModel();
+const childId = model.ChildIdSchema.parse(ids.child);
+const epoch = model.ChildEpochSchema.parse(ids.epoch);
+const requestId = model.JsonRpcRequestIdSchema.parse(ids.nextJsonRpcRequest());
+const commandId = model.BrowserCommandIdSchema.parse(ids.browserCommand());
+const threadId = model.ThreadIdSchema.parse(ids.thread("thread-fixture"));
+const turnId = model.TurnIdSchema.parse(ids.turn("turn-fixture"));
+const coordinatorThreadId = model.ThreadIdSchema.parse(ids.thread("coordinator-fixture"));
+const coordinatorTurnId = model.TurnIdSchema.parse(ids.turn("coordinator-turn-fixture"));
+const itemId = model.ItemIdSchema.parse(ids.item("item-fixture"));
+const approvalId = model.ApprovalIdSchema.parse(ids.approval("approval-fixture"));
+const queueOperationId = model.OperationIdSchema.parse(ids.operation());
+const queueId = model.QueuedSubmissionIdSchema.parse(ids.queuedSubmission("queue-fixture"));
+const loginId = model.LoginIdSchema.parse(ids.login("login-fixture"));
+const realtimeSessionId = model.RealtimeSessionIdSchema.parse(ids.realtimeSession());
 
 const target = { commandId, chatId: "chat-fixture", childId, epoch };
 const readiness = { kind: "readiness" as const, state: "thread_capable" as const };
@@ -55,8 +40,8 @@ const threadLink = {
 	canAcceptDirectInput: true as const,
 	reason: null,
 };
-const promptItemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("prompt-fixture"));
-const commandItemId = model.ItemIdSchema.parse(authority.decoder.adoptItemId("command-fixture"));
+const promptItemId = model.ItemIdSchema.parse(ids.item("prompt-fixture"));
+const commandItemId = model.ItemIdSchema.parse(ids.item("command-fixture"));
 const usage = {
 	totalTokens: 1200,
 	inputTokens: 1000,
@@ -198,7 +183,7 @@ export function createFixtureIds(): {
 	browserCommand: BrowserCommand;
 	requestId: typeof requestId;
 	model: typeof model;
-	identity: typeof authority;
+	identity: typeof ids;
 	target: typeof target;
 } {
 	const snapshot: BrowserSnapshot = model.BrowserSnapshotSchema.parse({
@@ -232,5 +217,5 @@ export function createFixtureIds(): {
 		threadId,
 		prompt: "Start",
 	});
-	return { snapshot, textCommand, browserCommand, requestId, model, identity: authority, target };
+	return { snapshot, textCommand, browserCommand, requestId, model, identity: ids, target };
 }

@@ -19,7 +19,7 @@ import {
 	parseBrowserResponse,
 	type BrowserWorkbenchResponseEnvelope,
 } from "#ui/wire/clients/wire-results.ts";
-import { BrowserWorkbenchWireError } from "#ui/wire/clients/wire-identity.ts";
+import { BrowserWorkbenchWireError } from "#shared/browser/schemas/wire-identity.ts";
 
 const SOCKET_OPEN = 1;
 const SOCKET_CLOSING = 2;

@@ -1,10 +1,13 @@
-import { approvalFor, createDynamicFixture } from "#tests/shared/support/dynamic-approval.ts";
+import { createDynamicFixture } from "#tests/shared/support/dynamic-approval.ts";
 import { expect, test } from "bun:test";
 
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import {
+	authorityFixtureSource,
+	testAuthorities,
+} from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import {
 	type BrowserProjectionInput,
@@ -475,12 +478,13 @@ test("settings projection closes loose nested records and refuses secrets", () =
 });
 
 test("browser projection parses and freezes final host approvals without retaining host objects", () => {
-	const fixture = createDynamicFixture();
+	const authorities = testAuthorities();
+	const fixture = createDynamicFixture(authorityFixtureSource(authorities));
 	const fork = fixture.requests.find((request) => request.effect.tool === "fork_thread")!;
-	const approval = approvalFor(fork, "pending", null, null, null);
+	const approval = fixture.approvalFor(fork, "pending", null, null, null);
 	const hostApproval = structuredClone(approval);
 	const result = projectCodexBrowserState(fixture.model, {
-		...projectionInput(fixture.authorities),
+		...projectionInput(authorities),
 		dynamicApprovals: [hostApproval],
 	});
 	expect(result.tag).toBe("projected");

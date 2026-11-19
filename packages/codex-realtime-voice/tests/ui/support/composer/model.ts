@@ -1,12 +1,12 @@
-// Fixtures built through the closed browser model with a real identity
-// authority, so a snapshot the contract would refuse fails here instead of
+// Fixtures built through the closed browser model the browser itself uses,
+// so a snapshot the contract would refuse fails here instead of
 // proving something about a shape the server can never publish.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,
@@ -17,18 +17,17 @@ import {
 } from "#ui/transport/state/contract.ts";
 import type { WorkbenchComposerTransport } from "#ui/composer/state/contract.ts";
 
-const authorities = testAuthorities();
-const authority = authorities.identity;
-const model = createCodexBrowserModel(authorities);
+const ids = browserIdentities();
+const model = createCodexBrowserModel();
 
-const CHILD = model.ChildIdSchema.parse(authority.validator.childId);
-const EPOCH = model.ChildEpochSchema.parse(authority.validator.epoch);
-const THREAD = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("workhorse-a"));
-const OTHER_THREAD = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("workhorse-b"));
-const TURN = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-a"));
-const OTHER_TURN = model.TurnIdSchema.parse(authority.decoder.adoptTurnId("turn-b"));
-const ITEM = model.ItemIdSchema.parse(authority.decoder.adoptItemId("item-a"));
-const COMMAND_ID = model.BrowserCommandIdSchema.parse(authority.issuer.mintBrowserCommandId());
+const CHILD = model.ChildIdSchema.parse(ids.child);
+const EPOCH = model.ChildEpochSchema.parse(ids.epoch);
+const THREAD = model.ThreadIdSchema.parse(ids.thread("workhorse-a"));
+const OTHER_THREAD = model.ThreadIdSchema.parse(ids.thread("workhorse-b"));
+const TURN = model.TurnIdSchema.parse(ids.turn("turn-a"));
+const OTHER_TURN = model.TurnIdSchema.parse(ids.turn("turn-b"));
+const ITEM = model.ItemIdSchema.parse(ids.item("item-a"));
+const COMMAND_ID = model.BrowserCommandIdSchema.parse(ids.browserCommand());
 const CHAT = "primary";
 
 type TurnStatus = NonNullable<BrowserSnapshot["timeline"]>["turns"][number]["status"];
@@ -150,7 +149,7 @@ function snapshot(overrides: Partial<BrowserSnapshot> = {}): BrowserSnapshot {
 		coordinator: {
 			kind: "coordinator",
 			state: "ready",
-			threadId: model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("coordinator-a")),
+			threadId: model.ThreadIdSchema.parse(ids.thread("coordinator-a")),
 			activeTurnId: null,
 			configuredModel: null,
 			configuredEffort: null,

@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { type BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import { type BrowserCommandDraft } from "#ui/transport/state/contract.ts";
 import {
@@ -16,14 +16,14 @@ import {
 	type WireRecord,
 } from "#tests/ui/support/transport/fake-socket.ts";
 
-const authorities = testAuthorities();
-const model = createCodexBrowserModel(authorities);
-const childId = authorities.identity.validator.childId;
-const epoch = authorities.identity.validator.epoch;
-const threadId = authorities.identity.decoder.adoptThreadId("thread-a");
-const turnId = authorities.identity.decoder.adoptTurnId("turn-a");
-const callId = authorities.identity.decoder.adoptDynamicToolCallId("call-a");
-const operationId = authorities.operation.issuer.mintOperationId();
+const ids = browserIdentities();
+const model = createCodexBrowserModel();
+const childId = ids.child;
+const epoch = ids.epoch;
+const threadId = ids.thread("thread-a");
+const turnId = ids.turn("turn-a");
+const callId = ids.dynamicToolCall("call-a");
+const operationId = ids.operation();
 const identity = model.DynamicApprovalIdentitySchema.parse({
 	child: childId,
 	epoch,
@@ -58,7 +58,7 @@ const browserEffect = model.BrowserDynamicApprovalEffectSchema.parse({
 });
 const createdAtMs = 200_000;
 const binding = {
-	commandId: authorities.identity.issuer.mintBrowserCommandId(),
+	commandId: ids.browserCommand(),
 	chatId: "chat-a",
 	capturedLink: { threadId, childId, epoch },
 };
@@ -76,7 +76,7 @@ const pending: BrowserDynamicApproval = model.BrowserDynamicApprovalSchema.parse
 	binding,
 	resumable: false,
 });
-const other = testAuthorities();
+const other = browserIdentities();
 
 /** How the snapshot fixture may differ from the default. */
 interface SnapshotOptions {
@@ -85,7 +85,7 @@ interface SnapshotOptions {
 }
 
 /**
- * A thread-capable snapshot bound to the real authority's child epoch.
+ * A thread-capable snapshot bound to the fixture's child epoch.
  * @param options The differences from the default.
  * @returns The snapshot record.
  */
@@ -259,30 +259,30 @@ test("valid dynamic approval responses require one live pending approval and use
 });
 /**
  * Every draft whose identity, effect hash or captured link names something
- * other than the pending approval. Each alternative is a real identity from
- * another authority, so the refusal is about the mismatch, not the spelling.
+ * other than the pending approval. Each alternative is a well-formed identity of
+ * another child epoch, so the refusal is about the mismatch, not the spelling.
  * The namespace and tool are literal in the closed identity type, so a draft
  * cannot even spell a different one; the wire comparison still covers them.
  * @returns The drafts.
  */
 function changedDrafts(): readonly DynamicDraft[] {
 	const base = dynamicDraft();
-	const otherThread = other.identity.decoder.adoptThreadId("different-thread");
+	const otherThread = other.thread("different-thread");
 	const identities: readonly DynamicDraft["identity"][] = [
-		{ ...identity, child: other.identity.validator.childId },
-		{ ...identity, epoch: other.identity.validator.epoch },
+		{ ...identity, child: other.child },
+		{ ...identity, epoch: other.epoch },
 		{ ...identity, threadId: otherThread },
-		{ ...identity, turnId: other.identity.decoder.adoptTurnId("different-turn") },
-		{ ...identity, callId: other.identity.decoder.adoptDynamicToolCallId("different-call") },
+		{ ...identity, turnId: other.turn("different-turn") },
+		{ ...identity, callId: other.dynamicToolCall("different-call") },
 		{ ...identity, manifestHash: "different-manifest" },
-		{ ...identity, operationId: other.operation.issuer.mintOperationId() },
+		{ ...identity, operationId: other.operation() },
 	];
 	return [
 		...identities.map((changed): DynamicDraft => Object.assign({}, base, { identity: changed })),
 		{ ...base, effectHash: `sha256:${"1".repeat(64)}` },
 		{ ...base, capturedLink: { ...base.capturedLink, threadId: otherThread } },
-		{ ...base, capturedLink: { ...base.capturedLink, childId: other.identity.validator.childId } },
-		{ ...base, capturedLink: { ...base.capturedLink, epoch: other.identity.validator.epoch } },
+		{ ...base, capturedLink: { ...base.capturedLink, childId: other.child } },
+		{ ...base, capturedLink: { ...base.capturedLink, epoch: other.epoch } },
 	];
 }
 
@@ -378,7 +378,7 @@ async function expectExpiredLease(clock: number): Promise<void> {
 		{ command: "queueAdd", prompt: "queue" },
 		{
 			command: "approvalRespond",
-			requestId: authorities.identity.decoder.adoptJsonRpcRequestId("request-a"),
+			requestId: ids.jsonRpcRequest("request-a"),
 			approvalId: null,
 			response: { approvalKind: "apply_patch", decision: "approved" },
 		},

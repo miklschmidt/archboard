@@ -1,16 +1,16 @@
 import { expect, test } from "bun:test";
 
 import type { BrowserTimeline } from "#shared/browser/schemas/snapshot.ts";
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import {
 	conversationTurnId,
 	mergeConversation,
 	projectTimelineTurns,
 } from "#ui/timeline/rules/projection.ts";
 
-const { decoder } = testAuthorities().identity;
-const threadId = decoder.adoptThreadId("thread-timeline");
-const coordinatorThreadId = decoder.adoptThreadId("thread-coordinator");
+const brand = browserIdentities();
+const threadId = brand.thread("thread-timeline");
+const coordinatorThreadId = brand.thread("thread-coordinator");
 
 type BrowserTurn = BrowserTimeline["turns"][number];
 
@@ -31,7 +31,7 @@ function placement(options: TurnOptions): Pick<BrowserTurn, "startedAtMs" | "del
 	const { startedAtMs = 1000, delegatedBy } = options;
 	return {
 		startedAtMs,
-		delegatedBy: delegatedBy === undefined ? null : decoder.adoptTurnId(delegatedBy),
+		delegatedBy: delegatedBy === undefined ? null : brand.turn(delegatedBy),
 	};
 }
 
@@ -44,11 +44,11 @@ function placement(options: TurnOptions): Pick<BrowserTurn, "startedAtMs" | "del
  */
 function turn(id: string, status: BrowserTurn["status"], options: TurnOptions = {}): BrowserTurn {
 	return {
-		turnId: decoder.adoptTurnId(id),
+		turnId: brand.turn(id),
 		status,
 		items: [
-			{ media: "prompt", itemId: decoder.adoptItemId(`${id}-prompt`), text: "Why?" },
-			{ media: "text", itemId: decoder.adoptItemId(`${id}-answer`), text: "Because." },
+			{ media: "prompt", itemId: brand.item(`${id}-prompt`), text: "Why?" },
+			{ media: "text", itemId: brand.item(`${id}-answer`), text: "Because." },
 		],
 		summary: status,
 		outputsIncluded: true,
@@ -86,7 +86,7 @@ function at(startedAtMs: number): TurnOptions {
  * @returns The ids.
  */
 function ids(...names: readonly string[]): BrowserTurn["turnId"][] {
-	return names.map((name) => decoder.adoptTurnId(name));
+	return names.map((name) => brand.turn(name));
 }
 
 /**
@@ -111,9 +111,9 @@ test("each Codex turn is one conversation turn, in order, with its items, timing
 		"workhorse",
 	);
 	expect(turns.map((entry) => [entry.id, entry.outcome])).toEqual([
-		[conversationTurnId(threadId, decoder.adoptTurnId("t1")), "completed"],
-		[conversationTurnId(threadId, decoder.adoptTurnId("t2")), "failed"],
-		[conversationTurnId(threadId, decoder.adoptTurnId("t3")), "running"],
+		[conversationTurnId(threadId, brand.turn("t1")), "completed"],
+		[conversationTurnId(threadId, brand.turn("t2")), "failed"],
+		[conversationTurnId(threadId, brand.turn("t3")), "running"],
 	]);
 	expect(turns[0]?.items.map((item) => item.media)).toEqual(["prompt", "text"]);
 	expect(turns[0]?.durationMs).toBe(3000);
@@ -135,7 +135,7 @@ test("a turn or an item published twice is refused, never merged", () => {
 
 test("one call asked about twice is two approvals in its turn, not a duplicate", () => {
 	const asked = turn("t3", "inProgress");
-	const call = decoder.adoptItemId("t3-call");
+	const call = brand.item("t3-call");
 	/**
 	 * One approval of that call.
 	 * @param id The approval's id.
@@ -144,7 +144,7 @@ test("one call asked about twice is two approvals in its turn, not a duplicate",
 	const approval = (id: string): BrowserTurn["items"][number] => ({
 		media: "approval",
 		itemId: call,
-		approvalId: decoder.adoptApprovalId(id),
+		approvalId: brand.approval(id),
 		status: "pending",
 	});
 	const [projected] = projectTimelineTurns(
@@ -165,10 +165,10 @@ test("a turn says whose thread it is from, and the turn that delegated it", () =
 	);
 	expect(mine).toMatchObject({
 		owner: "workhorse",
-		delegatedBy: { turnId: decoder.adoptTurnId("c1"), shown: false },
+		delegatedBy: { turnId: brand.turn("c1"), shown: false },
 	});
 	expect(theirs).toMatchObject({ owner: "coordinator", delegatedBy: null });
-	expect(theirs?.id).toBe(conversationTurnId(coordinatorThreadId, decoder.adoptTurnId("c1")));
+	expect(theirs?.id).toBe(conversationTurnId(coordinatorThreadId, brand.turn("c1")));
 });
 
 test("the two threads' turns stand in one order by when they started, each thread keeping its own", () => {
@@ -226,8 +226,8 @@ test("a delegated turn knows whether the turn that delegated it is in the conver
 	const merged = mergeConversation(workhorse, coordinator);
 	expect(merged.map((entry) => entry.delegatedBy)).toEqual([
 		null,
-		{ turnId: decoder.adoptTurnId("c1"), shown: true },
-		{ turnId: decoder.adoptTurnId("gone"), shown: false },
+		{ turnId: brand.turn("c1"), shown: true },
+		{ turnId: brand.turn("gone"), shown: false },
 	]);
 	// Without the coordinator's turns the conversation is the workhorse's own.
 	expect(mergeConversation(workhorse, [])).toBe(workhorse);

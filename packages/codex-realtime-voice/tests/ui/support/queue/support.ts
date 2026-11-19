@@ -1,5 +1,5 @@
-// Fixtures for the queue owners: branded identities minted through the real
-// authority, snapshots and transport states. The transport double is in
+// Fixtures for the queue owners: identities branded through the browser model,
+// snapshots and transport states. The transport double is in
 // `fake-transport.ts`.
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
@@ -8,7 +8,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 } from "#shared/browser/schemas/snapshot.ts";
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import type { WorkbenchQueueEntry } from "#ui/queue/state/contracts.ts";
 import type {
 	WorkbenchCommandIntent,
@@ -25,17 +25,16 @@ type Timeline = NonNullable<BrowserSnapshot["timeline"]>;
 type Approval = BrowserSnapshot["approvals"][number];
 type SubmissionId = WorkbenchQueueEntry["submissionId"];
 
-const authorities = testAuthorities();
-const { decoder, issuer, validator } = authorities.identity;
+const ids = browserIdentities();
 
-const THREAD_ID = decoder.adoptThreadId("workhorse-a");
-const CHILD_ID = validator.childId;
-const EPOCH = validator.epoch;
+const THREAD_ID = ids.thread("workhorse-a");
+const CHILD_ID = ids.child;
+const EPOCH = ids.epoch;
 /** Another epoch, so a test can present a queue for a child that was replaced. */
-const OTHER_EPOCH = issuer.mintChildEpoch();
-const COORDINATOR_THREAD_ID = decoder.adoptThreadId("coordinator-a");
-const TURN_ID = decoder.adoptTurnId("turn-a");
-const COMMAND_ID = issuer.mintBrowserCommandId();
+const OTHER_EPOCH = ids.otherEpoch();
+const COORDINATOR_THREAD_ID = ids.thread("coordinator-a");
+const TURN_ID = ids.turn("turn-a");
+const COMMAND_ID = ids.browserCommand();
 const CHAT_ID = "chat-a";
 
 /** The fixture name behind each adopted submission id, so assertions read names. */
@@ -47,7 +46,7 @@ const SUBMISSION_NAMES = new Map<SubmissionId, string>();
  * @returns The id.
  */
 function submission(value: string): SubmissionId {
-	const id = decoder.adoptQueuedSubmissionId(value);
+	const id = ids.queuedSubmission(value);
 	SUBMISSION_NAMES.set(id, value);
 	return id;
 }
@@ -66,7 +65,7 @@ function nameOf(id: SubmissionId): string {
  * @returns The id.
  */
 function operation(): NonNullable<WorkbenchQueueEntry["operationId"]> {
-	return authorities.operation.issuer.mintOperationId();
+	return ids.operation();
 }
 
 /** How one entry is seeded. */
@@ -180,11 +179,11 @@ function pendingApproval(): Approval {
 	return {
 		kind: "approval",
 		approvalKind: "command_execution",
-		requestId: issuer.mintJsonRpcRequestId(),
+		requestId: ids.nextJsonRpcRequest(),
 		threadId: THREAD_ID,
 		turnId: null,
 		itemId: null,
-		approvalId: decoder.adoptApprovalId("approval-a"),
+		approvalId: ids.approval("approval-a"),
 		expiresAtMs: 9_000_000,
 		lifecycle: { state: "pending", decision: null, outcome: null, reason: null },
 		binding: {

@@ -1,5 +1,5 @@
-// Fixtures for the thread-link owners: branded identities minted through the
-// real authority, snapshots, transport states, and a transport double that
+// Fixtures for the thread-link owners: identities branded through the browser
+// model, snapshots, transport states, and a transport double that
 // enforces the captured target the way the real one does, so a caller that
 // forgets to pass its captured target is not silently retargeted onto
 // whatever the chat moved to.
@@ -11,7 +11,7 @@ import type {
 	DeliveryOutcome,
 } from "#shared/browser/schemas/snapshot.ts";
 import { type ThreadId } from "@archboard/codex-app-server/identity";
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
 	type ThreadLinkChatCapture,
@@ -27,18 +27,17 @@ import type {
 	WorkbenchTransportErrorCode,
 } from "#ui/thread-link/state/transport-port.ts";
 
-const authorities = testAuthorities();
-const { decoder, issuer, validator } = authorities.identity;
+const ids = browserIdentities();
 
-const threadA = decoder.adoptThreadId("thread-a");
-const threadB = decoder.adoptThreadId("thread-b");
-const threadC = decoder.adoptThreadId("thread-c");
-const loginA = decoder.adoptLoginId("login-a");
-const loginB = decoder.adoptLoginId("login-b");
-const childA = validator.childId;
-const epochA = validator.epoch;
-const epochB = issuer.mintChildEpoch();
-const commandA = issuer.mintBrowserCommandId();
+const threadA = ids.thread("thread-a");
+const threadB = ids.thread("thread-b");
+const threadC = ids.thread("thread-c");
+const loginA = ids.login("login-a");
+const loginB = ids.login("login-b");
+const childA = ids.child;
+const epochA = ids.epoch;
+const epochB = ids.otherEpoch();
+const commandA = ids.browserCommand();
 
 /**
  * An executable link to one thread.

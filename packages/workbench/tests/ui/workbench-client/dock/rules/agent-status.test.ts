@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import type { AgentSetupSnapshot } from "#ui/agent-setup/state/setup.ts";
 import type { HeldMessage } from "#ui/agent-setup/state/held.ts";
 import { agentStatus } from "#ui/workbench-client/dock/rules/agent-status.ts";
 import type { AgentView } from "#ui/workbench-client/surfaces/state/contracts.ts";
 import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
-const { decoder } = testAuthorities().identity;
-const threadId = decoder.adoptThreadId("thread-status");
+const ids = browserIdentities();
+const threadId = ids.thread("thread-status");
 
 const READY: AgentSetupSnapshot = {
 	phase: { kind: "ready", linked: true },
@@ -30,7 +30,7 @@ function turn(id: string, outcome: ConversationTurn["outcome"]): ConversationTur
 		id,
 		owner: "workhorse",
 		threadId,
-		turnId: decoder.adoptTurnId(id),
+		turnId: ids.turn(id),
 		outcome,
 		items: [],
 		startedAtMs: 1_000,

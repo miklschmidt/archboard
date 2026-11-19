@@ -15,7 +15,7 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			state: "inspect_only",
 			childId: null,
 			epoch: null,
-			threadId: identity.decoder.adoptThreadId("inspect"),
+			threadId: identity.thread("inspect"),
 			sourcePresentation: "standard",
 			status: "notLoaded",
 			loaded: false,
@@ -27,7 +27,7 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			state: "inspect_only",
 			childId: null,
 			epoch: null,
-			threadId: identity.decoder.adoptThreadId("inspect-custom"),
+			threadId: identity.thread("inspect-custom"),
 			sourcePresentation: "custom",
 			status: "idle",
 			loaded: true,
@@ -39,7 +39,7 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			state: "inspect_only",
 			childId: null,
 			epoch: null,
-			threadId: identity.decoder.adoptThreadId("inspect-subagent"),
+			threadId: identity.thread("inspect-subagent"),
 			sourcePresentation: "subagent",
 			status: "active",
 			loaded: true,
@@ -51,7 +51,7 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			state: "inspect_only",
 			childId: null,
 			epoch: null,
-			threadId: identity.decoder.adoptThreadId("inspect-unknown"),
+			threadId: identity.thread("inspect-unknown"),
 			sourcePresentation: "unknown",
 			status: "systemError",
 			loaded: false,
@@ -126,7 +126,7 @@ test("the timeline carries its evidence only within its wire bounds and Codex's 
 		turns: [{ ...turn, ...changes }],
 	});
 	const withItem = (item: unknown) => withTurn({ items: [item] });
-	const itemId = identity.decoder.adoptItemId("bounds-item");
+	const itemId = identity.item("bounds-item");
 	const change = { path: "src/a.ts", kind: "add", movePath: null, added: 1, removed: 0 };
 	const fileChange = (count: number) => ({
 		media: "fileChange",
@@ -234,7 +234,7 @@ test("the coordinator's turns belong to the coordinator's thread, and to a bound
 	expect(
 		parses({
 			...snapshot,
-			coordinatorTimeline: { ...own, threadId: identity.decoder.adoptThreadId("another") },
+			coordinatorTimeline: { ...own, threadId: identity.thread("another") },
 		}),
 	).toBeFalse();
 	expect(
@@ -244,7 +244,7 @@ test("the coordinator's turns belong to the coordinator's thread, and to a bound
 			coordinatorTimeline: own,
 		}),
 	).toBeFalse();
-	const voiceTurn = identity.decoder.adoptTurnId("voice-turn");
+	const voiceTurn = identity.turn("voice-turn");
 	const delegated = turns.map((turn) => Object.assign({}, turn, { delegatedBy: voiceTurn }));
 	expect(parses({ ...snapshot, timeline: { ...timeline, turns: delegated } })).toBeTrue();
 });

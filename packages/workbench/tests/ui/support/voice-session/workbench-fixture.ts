@@ -2,8 +2,7 @@
 // with the overrides they need: another child, epoch, workhorse or
 // coordinator, and server coordinator and voice states.
 
-import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { browserIdentities, type BrowserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
@@ -34,43 +33,43 @@ interface SnapshotOverrides {
 	readonly voice?: Voice;
 }
 
-/** One authority's world: its model and the identities it issued. */
+/** One child epoch's world: its model and the identities it names. */
 interface FixtureWorld {
-	readonly authorities: IdentityAuthorities;
+	readonly ids: BrowserIdentities;
 	readonly model: CodexBrowserModel;
 	readonly childId: string;
 	readonly epoch: string;
 }
 
 /**
- * A fresh authority world.
+ * A fresh world of another child epoch.
  * @returns The world.
  */
 function world(): FixtureWorld {
-	const authorities = testAuthorities();
-	const model = createCodexBrowserModel(authorities);
+	const ids = browserIdentities();
+	const model = createCodexBrowserModel();
 	return {
-		authorities,
+		ids,
 		model,
-		childId: String(authorities.identity.validator.childId),
-		epoch: String(authorities.identity.validator.epoch),
+		childId: String(ids.child),
+		epoch: String(ids.epoch),
 	};
 }
 
 const PRIMARY = world();
 
 /**
- * A branded thread id adopted through one world's authority.
+ * A branded thread id of one world.
  * @param target The world.
  * @param name The thread name.
  * @returns The thread id.
  */
 function threadIdIn(target: FixtureWorld, name: string): Coordinator["threadId"] {
-	return target.model.ThreadIdSchema.parse(target.authorities.identity.decoder.adoptThreadId(name));
+	return target.model.ThreadIdSchema.parse(target.ids.thread(name));
 }
 
 /**
- * A branded thread id adopted through the primary authority.
+ * A branded thread id of the primary world.
  * @param name The thread name.
  * @returns The thread id.
  */
@@ -87,9 +86,9 @@ function executableLink(target: FixtureWorld, workhorse: string): ThreadLink {
 	return target.model.BrowserThreadLinkSchema.parse({
 		kind: "thread_link",
 		state: "executable",
-		childId: target.authorities.identity.validator.childId,
-		epoch: target.authorities.identity.validator.epoch,
-		threadId: target.authorities.identity.decoder.adoptThreadId(workhorse),
+		childId: target.ids.child,
+		epoch: target.ids.epoch,
+		threadId: target.ids.thread(workhorse),
 		sourcePresentation: "standard",
 		status: "idle",
 		loaded: true,
