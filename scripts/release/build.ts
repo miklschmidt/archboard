@@ -27,7 +27,7 @@ import { z } from "zod";
 import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { checkoutPath } from "@archboard/renderer/core";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { compileRelease, TARGETS, type Target } from "./compile.ts";
+import { compileRelease, mapReleaseTargets, type Target } from "./compile.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { thirdPartyNotices } from "./notices.ts";
 
@@ -252,7 +252,7 @@ function pack(name: string): { tarball: string; bytes: number; budget: number } 
 
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
-const platforms = await Promise.all(TARGETS.map(platformPackage));
+const platforms = await Promise.all(mapReleaseTargets(platformPackage));
 for (const name of LAUNCHERS) launcherPackage(name, platforms);
 const packed = [...platforms, ...LAUNCHERS].map((name) => ({ name, ...pack(name) }));
 process.stdout.write(

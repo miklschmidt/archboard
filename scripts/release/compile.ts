@@ -34,6 +34,15 @@ const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64"] as cons
 type Target = (typeof TARGETS)[number];
 
 /**
+ * Map a release operation over every supported platform.
+ * @param operation The operation to run for each platform.
+ * @returns The results in release target order.
+ */
+function mapReleaseTargets<Result>(operation: (target: Target) => Result): Result[] {
+	return TARGETS.map((target) => operation(target));
+}
+
+/**
  * The modules that start on their own, by their path in a checkout. The first is the
  * executable's own entry. The others are imported or started by those paths below the
  * `programRoot` of the installation, which is why the repository is the build's root.
@@ -267,4 +276,4 @@ if (import.meta.main) {
 	process.stdout.write(`${JSON.stringify(made, null, "\t")}\n`);
 }
 
-export { compileRelease, TARGETS, type Target };
+export { compileRelease, mapReleaseTargets, type Target };
