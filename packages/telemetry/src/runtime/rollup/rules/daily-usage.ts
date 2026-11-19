@@ -1,6 +1,6 @@
 // One installation's day as one wide event (ADR 0079): the counts of every record of that day.
 
-import { telemetryMs } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import type { CommandRecord, DayRecord } from "#runtime/records/protocol/records.ts";
 
 /** The properties of a `daily usage` event that its records give. */
@@ -41,7 +41,7 @@ function agentsOverlapped(commands: readonly CommandRecord[]): boolean {
 		.toSorted((a, b) => a.at - b.at);
 	for (const { agent, at } of timed) {
 		for (const [other, seen] of lastSeen) {
-			if (other !== agent && at - seen <= telemetryMs("agentOverlap")) return true;
+			if (other !== agent && at <= deadline("telemetry.agentOverlap", seen)) return true;
 		}
 		lastSeen.set(agent, at);
 	}
