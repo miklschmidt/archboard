@@ -1,11 +1,11 @@
 ---
 id: TASK-646.14.02
 title: Clear the other Rust crates' module-depth warnings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T10:28:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -60,6 +60,8 @@ Code check on this checkout (ARCHBOARD_URL on a free port): the batch's warnings
 Checker bug, outside this batch: rust-crates.ts walk() resolves archboard_svg::colour and archboard_text::shape to a same-named private module file (colour.rs, shape.rs) instead of the pub fn the crate root defines, so a used function read as EXPOSED_UNUSED. The modules were renamed css and shaping here; the resolver still needs the fix.
 Renderer output: bun scripts/render-corpus.ts before (base 609f7552a1) and after: 0 of 1068 drawings differ; with --svg on --variants current --themes light, all 534 SVG documents and 534 paintings are byte-identical. Generated types.ts, the wasm-bindgen JS glue and .d.ts are identical; marks.ts differs only in its header line naming the moved program.
 Tests: vp run types, lint:all, format:check, test:modules (5223 pass), test:repository (174), test:system (304), cargo test --workspace (484) pass; vendored canon and emit tests pass in a copy outside the checkout. After merging refactor/module-depth-cleanup: build, types, lint:all, format:check, test:system, test:repository pass again.
+
+Merged into refactor/module-depth-cleanup and reviewed with sol-loop (4 rounds, gpt-6.2-sol, approved). archboard check: 0 warnings on the layer; check:model exits 0.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

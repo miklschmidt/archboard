@@ -1,11 +1,11 @@
 ---
 id: TASK-646.14.01
 title: Clear archboard-scene's module-depth warnings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T10:33:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -51,6 +51,12 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 4. EXPOSED_VALUE_COMPUTED: geometry::bend_radius and scene::traffic functions own the pulse math both painters repeated.
 5. Prove identity: cargo test --workspace, render-corpus compare, the brief's vp lanes; rerun the check.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merged into refactor/module-depth-cleanup and reviewed with sol-loop (4 rounds, gpt-6.2-sol, approved). archboard check: 0 warnings on the layer; check:model exits 0.
+<!-- SECTION:NOTES:END -->
 
 ## Final Summary
 

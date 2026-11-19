@@ -1,11 +1,11 @@
 ---
 id: TASK-646.14.04
 title: Clear the Codex and workbench packages' module-depth warnings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T10:05:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -55,6 +55,8 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 
 <!-- SECTION:NOTES:BEGIN -->
 codex-app-server (798a8a6fa8): codexProtocolVersion() replaces CODEX_PROTOCOL_VERSION; the binary version moved into executable.ts; codexSessionThreadSource(), codexSessionControl(session), isQueuedSubmission(), parseCodexServerResponse(), parseSupportedLoginAccountParams(), codexFieldSchema(field), codexPendingReverseRequestLimit(), canonicalItemIdMaxLength() replace exported constants and schemas; jsonRpcErrorCode(kind), parseServerRequestParams(), isDynamicDispatcherOwner(), plainResponseOwner() keep the protocol and transport lists inside; createProcessOwner (process-owner.ts) replaces createCodexProcessForTesting; dead decodeClientNotification, decodeLoginAccountParams, isSupportedClientRequestMethod and CLIENT_NOTIFICATION_SCHEMAS removed. Tests outside the package type notification fixtures through the transport type and rebuild restored authorities in their own support. Calls that replaced value reads surface RELATIONSHIP_UNDRAWN (warning) on Codex protocol from Start and stop and Codex executable: the vault needs those relationships.
+
+Merged into refactor/module-depth-cleanup and reviewed with sol-loop (4 rounds, gpt-6.2-sol, approved). archboard check: 0 warnings on the layer; check:model exits 0.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

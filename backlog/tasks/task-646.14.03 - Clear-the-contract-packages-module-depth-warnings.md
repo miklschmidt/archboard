@@ -1,11 +1,11 @@
 ---
 id: TASK-646.14.03
 title: Clear the contract packages' module-depth warnings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T09:54:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -65,6 +65,8 @@ Anchors that name a renamed symbol in a caller file (the check reports 7 ANCHOR_
 - Migration routes -> Migration planning contracts: LegacyMappingWriteSchema -> legacyMappingWriteSchema (apps/server/src/server/http/handlers/reads/routes/migration-routes.ts)
 - Model contract -> Binding contract: CodeBindingSchema -> codeBindingSchema (packages/model/src/shared/canonical-contracts/schemas/model.ts)
 Anchors that cite a schema at its definition stay valid: each private file keeps its const under the old name.
+
+Merged into refactor/module-depth-cleanup and reviewed with sol-loop (4 rounds, gpt-6.2-sol, approved). archboard check: 0 warnings on the layer; check:model exits 0.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

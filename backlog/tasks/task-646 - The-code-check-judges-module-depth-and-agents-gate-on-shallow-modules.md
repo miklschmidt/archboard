@@ -1,10 +1,10 @@
 ---
 id: TASK-646
 title: The code check judges module depth, and agents gate on shallow modules
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-18T22:57:00Z'
-updated_date: '2026-11-18T22:57:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -172,3 +172,9 @@ The browser shows the same data. In Measures, `What a module exposes` gets Model
 - This repository's own `timing` module is the first expected finding. Do not use this repository to choose defaults.
 - The decisions came from a long design interview, with reviews by two advisor agents. The proposal holds the architecture that they settled.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented on feat/module-depth (PR #135) and refactor/module-depth-cleanup (PR #139), a gh stack that merges as one unit. Every subtask is done; this parent closes when the stack merges.
+<!-- SECTION:NOTES:END -->

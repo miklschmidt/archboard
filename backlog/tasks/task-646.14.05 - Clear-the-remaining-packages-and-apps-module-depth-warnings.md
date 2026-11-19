@@ -1,11 +1,11 @@
 ---
 id: TASK-646.14.05
 title: Clear the remaining packages' and apps' module-depth warnings
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T10:05:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -52,6 +52,12 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 5. Keep interface-width ceilings; lower the ones that shrink.
 6. Verify: types, lint, format, test lanes, archboard check code.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merged into refactor/module-depth-cleanup and reviewed with sol-loop (4 rounds, gpt-6.2-sol, approved). archboard check: 0 warnings on the layer; check:model exits 0.
+<!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
