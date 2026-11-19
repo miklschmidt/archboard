@@ -350,12 +350,13 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		expect(
 			await browser.eval<string | null>(`new URLSearchParams(location.search).get('subjectA')`),
 		).toBe(subject);
-		if (index === 1)
-			expect(
-				await browser.eval<boolean>(
-					`document.querySelector('[data-slot="model-connection-details"] [data-slot="model-connection-joins"]') === null`,
-				),
-			).toBe(true);
+		if (index === 1) {
+			const details = await browser.eval<string>(
+				`document.querySelector('[data-slot="model-panel"] [data-slot="model-connection-details"]')?.textContent ?? ""`,
+			);
+			expect(details).toContain("Dispatch request");
+			expect(details).not.toContain("Audit dispatch");
+		}
 		if (index === 2) {
 			await browser.run([
 				"click",
