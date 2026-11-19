@@ -3,8 +3,8 @@
 //
 // The root files are the files the directory's `package.json` `exports`
 // names, where it has one and it names files of the checkout, and otherwise
-// the TypeScript files directly in the directory (`docs/agents/boundaries.md`:
-// a file in a subfolder is private). A bound `index.ts` stands for its
+// the TypeScript files directly in the directory (a file in a subfolder is
+// private). A bound `index.ts` stands for its
 // directory. A target in `exports` that names built output, such as
 // `./dist/index.js`, names no file of the checkout and is left out.
 

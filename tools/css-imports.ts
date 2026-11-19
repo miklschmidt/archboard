@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { transform, type UnknownAtRule, type Url } from "lightningcss";
 import {
+	AREA_DIRECTION_MESSAGE,
 	ENTRYPOINT_MESSAGES,
 	entrypointMessage,
 	isForbiddenAreaImport,
@@ -174,11 +175,7 @@ function referenceProblems(
 	const entry = entrypointMessage(importer, reference.url);
 	if (entry) add("module-entrypoints", entry, ENTRYPOINT_MESSAGES[entry] ?? entry);
 	if (forbiddenArea(context, file, reference.url)) {
-		add(
-			"import-boundaries",
-			"noForbiddenAreaImport",
-			"Use the documented area dependency direction in docs/agents/boundaries.md.",
-		);
+		add("import-boundaries", "noForbiddenAreaImport", AREA_DIRECTION_MESSAGE);
 	}
 	if (cssAliasRequired(context, file, reference.url)) {
 		add(

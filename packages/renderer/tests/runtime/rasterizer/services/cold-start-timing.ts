@@ -1,6 +1,6 @@
 // Test budget for the owners that start a real Chromium. It lives here and not
 // in tests/system/support/timing.ts because a module's tests may not import
-// another test owner (docs/agents/boundaries.md), and it is a literal and not
+// another test owner (the module-entrypoints lint rule), and it is a literal and not
 // computed from the product's startup bound, so that a product change never
 // retunes a test (TASK-154).
 

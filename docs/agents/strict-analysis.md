@@ -5,7 +5,7 @@ rebuild did not wait on a repository-wide migration. TASK-151 adopted the same
 policy, unchanged, for every other authored source file. Today that is
 `packages/**`, `apps/**`, `scripts/**`, `tools/**` and `vite.config.ts`. The old
 roots `src/` and `frontend/` are gone, and so is the `@/` alias. Local imports
-use the `#` entries of the package or app (`docs/agents/boundaries.md`). Tests
+use the `#` entries of the package or app. Tests
 stay on the repository's pre-policy rules by the maintainer's decision
 (2026-09-06), except the tests of a `ui/` area, which the policy holds.
 Generated Codex declarations stay lint-excluded and compiler-checked, and the
@@ -85,6 +85,19 @@ The approved selection is recorded in `strict-analysis-policy.json`. Sequential
 awaiting that is the contract (ordered writes, one analyzer at a time) keeps its
 loop and carries a line-level `no-await-in-loop` disable stating why; a rule is
 never widened or a loop made concurrent to satisfy lint.
+
+## Types a dependency owns
+
+When a dependency publishes the TypeScript type of a structure it owns, that
+type is the authority. Derive each local view from it with aliases, `Pick`,
+`Omit`, `Extract`, `Partial` and intersections, and never redeclare its
+fields, so that an upgrade fails type checking at each assumption it broke.
+Add Archboard's own fields by intersection. A structure that really differs
+gets its own name and one adapter at a named seam. Use the vendor's runtime
+schema where it publishes one; a handwritten parser of untrusted vendor data
+needs a compile-time check against the vendor type. A dependency with no usable
+type gets one local definition that records why, the version it describes,
+and the test that holds it.
 
 ## Documentation for exploration
 
