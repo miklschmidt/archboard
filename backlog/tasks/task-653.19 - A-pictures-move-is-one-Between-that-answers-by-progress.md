@@ -4,7 +4,7 @@ title: A picture's move is one Between that answers by progress
 status: Done
 assignee: []
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-19T20:21:00Z'
+updated_date: '2026-11-19T20:26:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -66,6 +66,8 @@ Gates: build, cargo test --workspace, cargo clippy --workspace --all-targets, ty
 check code --fail-shallow-modules --base deepen/module-depth: no width or depth finding on Picture motion or archboard-paint. It exits 1 on other modules' findings, and on one new ANCHOR_MISMATCH: the relationship Painter stage -> Picture motion (ttPYQNXo) is anchored at flight.rs symbol Between, which flight.rs now only imports; the call is Between::carry in stage/mod.rs and Between::enter in stage/arrival.rs. The vault was left unchanged as instructed, so the anchor and Picture motion's description (which still speaks of a flight in flight.rs) must be updated with the proposal. model footprint --fail-outside exits 1: Picture motion is changed outside the draft sL6y1FLr, and ADR 0087 is unbound.
 
 Outside the slice: none beyond the files the ticket names (between/, stage/, flight.rs, passage.rs, timing.rs) and ADR 0087. Private tests past the seam were kept.
+
+Merged into deepen/module-depth. Footprint gate exits 0 (proposal commit a295c190f7); unbound: ADR 0087 (referenced from Picture motion) and this ticket.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
