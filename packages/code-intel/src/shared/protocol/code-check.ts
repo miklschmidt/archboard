@@ -277,8 +277,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   file of the checkout, so its interface is not held to what the module
  *   exposes (TASK-368.10). Its `detail` names the module.
  * - `binding-not-a-module`: a part bound to a file that stands for no folder,
- *   as an entry file such as `index.ts` does, or to a symbol, so the check
- *   measures no module for it (TASK-646). Its `detail` names the binding.
+ *   as an entry file such as `index.ts` does, or to a symbol, that no module
+ *   the check measures on its document holds (TASK-646). A part that such a
+ *   module holds is judged through it and is not skipped. Its `detail` names
+ *   the binding.
  * - `module-not-read`: a binding's address inside a Terraform or OpenTofu
  *   module the check does not read: a remote module, which the check never
  *   fetches, with no plan JSON named for its root module (TASK-367.17). Its

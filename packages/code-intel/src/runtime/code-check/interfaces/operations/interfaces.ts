@@ -7,7 +7,9 @@
 // module the container binds exposes: a bound directory, or the file that
 // stands for one, such as `index.ts`. Code facts say what a module exposes,
 // by the rule of its language. A container bound to another file or to a
-// symbol names no module, and is skipped as `binding-not-a-module`. A part with no parts of its own
+// symbol names no module. It is judged through the module the document
+// measures that holds it, and skipped as `binding-not-a-module` only where
+// none does. A part with no parts of its own
 // that binds a module is judged too, for what its module exposes, and a part
 // that binds the module of a part that holds it is judged with that part
 // (TASK-646.01).
@@ -340,10 +342,11 @@ function childFindings(
 async function judgeContainer(
 	reading: InterfaceReading,
 	container: SemanticNode,
-	outcome: InterfaceOutcome,
+	outcome: Gathering,
 ): Promise<void> {
-	const judged = await containerToJudge(reading, container, outcome.skipped);
+	const judged = await containerToJudge(reading, container, outcome);
 	if (judged === undefined) return;
+	outcome.measured.push(judged);
 	outcome.findings.push(...testImportFindings(judged));
 	const depthNames = await measureDepth(judged, outcome);
 	const unused = judged.external ? undefined : unusedFinding(judged, depthNames);
@@ -399,23 +402,35 @@ function containerSkip(
 	return { model, variant, subject, ...skip };
 }
 
+/** A part bound to a file or a symbol, which names no module of its own. */
+interface Unmodular {
+	readonly container: SemanticNode;
+	readonly code: ReadPart;
+}
+
+/** What judging one document gathers: its outcome, the modules it measures, and its unmodular parts. */
+interface Gathering extends InterfaceOutcome {
+	readonly measured: Judged[];
+	readonly unmodular: Unmodular[];
+}
+
 /**
  * A node the pass judges as a part bound to a module, with or without parts,
  * or nothing. A part whose code the pass does not read is skipped where its
  * binding is read.
  * @param reading The document and the pass.
  * @param container The node.
- * @param skipped What the document does not judge, which this adds to.
+ * @param gathering What the document gathers, which this adds to.
  * @returns What judging it reads, or undefined.
  */
 function containerToJudge(
 	reading: InterfaceReading,
 	container: SemanticNode,
-	skipped: CodeCheckSkip[],
+	gathering: Gathering,
 ): Promise<Judged | undefined> {
 	const code = reading.codes.get(container.id);
 	return code?.status === "read"
-		? judgedContainer(reading, container, code, skipped)
+		? judgedContainer(reading, container, code, gathering)
 		: Promise.resolve(undefined);
 }
 
@@ -452,8 +467,8 @@ function heldModule(
  * @param reading The document and the pass.
  * @param container The part.
  * @param code The part's code.
- * @param skipped What the document does not judge, which gains the part
- * when its binding names no module, or no language the check reads has its
+ * @param gathering What the document gathers: the part when its binding
+ * names no module, or a skip when no language the check reads has its
  * module's root files.
  * @returns It, or undefined when its binding names no module, a part that
  * holds it binds the same module, or the module is unknown.
@@ -462,12 +477,12 @@ async function judgedContainer(
 	reading: InterfaceReading,
 	container: SemanticNode,
 	code: ReadPart,
-	skipped: CodeCheckSkip[],
+	gathering: Gathering,
 ): Promise<Judged | undefined> {
+	const { skipped } = gathering;
 	const directory = moduleDirectory(code);
 	if (directory === undefined) {
-		const skip = { reason: "binding-not-a-module", repo: code.checkout.repo } as const;
-		skipped.push(containerSkip(reading, container, { ...skip, detail: bindingWords(code) }));
+		gathering.unmodular.push({ container, code });
 		return undefined;
 	}
 	if (heldModule(reading, container, code, directory)) return undefined;
@@ -530,12 +545,39 @@ function moduleDirectory(code: ReadPart): string | undefined {
  * @returns The findings and what was not judged.
  */
 async function judgeInterfaces(reading: InterfaceReading): Promise<InterfaceOutcome> {
-	const outcome: InterfaceOutcome = { findings: [], skipped: [], depth: [] };
+	const gathering: Gathering = {
+		findings: [],
+		skipped: [],
+		depth: [],
+		measured: [],
+		unmodular: [],
+	};
 	for (const node of reading.read.variant.content.nodes) {
 		// oxlint-disable-next-line no-await-in-loop -- one container at a time keeps the findings in document order
-		await judgeContainer(reading, node, outcome);
+		await judgeContainer(reading, node, gathering);
+	}
+	const { measured, unmodular, ...outcome } = gathering;
+	for (const { container, code } of unmodular) {
+		if (measured.some((judged) => holds(judged, code))) continue;
+		const skip = { reason: "binding-not-a-module", repo: code.checkout.repo } as const;
+		outcome.skipped.push(
+			containerSkip(reading, container, { ...skip, detail: bindingWords(code) }),
+		);
 	}
 	return outcome;
+}
+
+/**
+ * Whether a measured module holds a part's bound code, so the part is judged through it.
+ * @param judged The measured module.
+ * @param code The part's code.
+ * @returns True when it does.
+ */
+function holds(judged: Judged, code: ReadPart): boolean {
+	return (
+		judged.checkout.root === code.checkout.root &&
+		within(judged.module.exposure.directory, boundPath(code))
+	);
 }
 
 export { type DepthRecord, type ModuleReadings, judgeInterfaces };

@@ -92,9 +92,11 @@ so agents in an implementation loop added exported constants and nothing failed.
   module gets `INTERFACE_UNDECLARED`, information, once only its own files
   use one of its names. It says how many of its names files outside it use,
   and how many only its own files import, naming the first five. Declaring
-  the interface with what callers use, in an entry file (`index.ts`,
-  `__init__.py` or `mod.rs`) or in the package's `exports` in `package.json`,
-  keeps the rest inside.
+  the interface with what callers use, as the language does, keeps the rest
+  inside: an `index.ts` or the package's `exports` in `package.json` in
+  TypeScript, an `__init__.py` in Python, a `mod.rs` in Rust, and public
+  headers in an include directory in C, C++ and Objective-C. The finding
+  names the ways of the languages its files are in.
 - **Code the repository does not own gets no verdict** (TASK-646.18). A module
   that the model marks `external`, or that a part marked `external` holds, as
   a vendored crate is, keeps its counts and gets no finding on its exports and
