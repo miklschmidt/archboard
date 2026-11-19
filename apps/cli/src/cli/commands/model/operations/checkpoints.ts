@@ -10,7 +10,7 @@ import {
 } from "#cli/server-access/clients/architecture-model.ts";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal, doingRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 
 const modelCheckpointsContract = defineCommand({
 	path: ["model", "checkpoints"],
@@ -39,7 +39,7 @@ const modelCheckpointsContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",
@@ -178,7 +178,7 @@ const modelRetainContract = defineCommand({
 	},
 	prerequisites: ["server", "doing"],
 	effects: ["server-state-write"],
-	refusals: [serverRefusal, doingRefusal],
+	refusals: [refusal("server"), refusal("doing")],
 	outcomes: [
 		{
 			id: "unavailable",

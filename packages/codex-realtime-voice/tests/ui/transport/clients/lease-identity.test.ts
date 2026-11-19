@@ -1,6 +1,6 @@
 import { afterEach, expect, jest, test } from "bun:test";
 
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import { type BrowserWorkbenchTransport } from "#ui/transport/state/contract.ts";
 import {
@@ -44,7 +44,7 @@ test("settles an open-socket request once at the deadline and ignores a late res
 		socket.onRequest = hold;
 
 		const settled = rejection(transport.command(startDraft()));
-		jest.advanceTimersByTime(CODEX_SESSION_MS.requestSettlement);
+		jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
 		expect(await settled).toMatchObject({
 			name: "BrowserWorkbenchTransportError",
 			code: "response_lost",

@@ -24,7 +24,7 @@ import type { CrumbPlace } from "#ui/architecture-drawing/canvas/presentation/co
 import { SemanticStageView } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx";
 import { useAutoFit } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
-import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
+import { shellLength } from "@archboard/renderer/shell-geometry";
 import { useClearOfPanel } from "#ui/architecture-drawing/canvas/picture/hooks/use-clear-of-panel.ts";
 import { useDeparture } from "#ui/architecture-drawing/canvas/picture/hooks/use-departure.ts";
 import {
@@ -171,7 +171,7 @@ const NO_EDGES: readonly never[] = Object.freeze([]);
  * @returns Its width.
  */
 function sidebarWidth(): number {
-	return SIDEBAR_WIDTH;
+	return shellLength("sidebar");
 }
 
 /**

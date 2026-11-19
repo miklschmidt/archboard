@@ -7,7 +7,7 @@
 
 import type { CSSProperties, JSX, ReactNode } from "react";
 
-import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
+import { shellLength } from "@archboard/renderer/shell-geometry";
 import { SemanticPresentation } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import type { WalkthroughReading } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-walkthrough.ts";
 import type { GroupSelection } from "#ui/architecture-drawing/canvas/picture/rules/groups.ts";
@@ -19,7 +19,9 @@ import {
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 
 /** What a floating sidebar covers of the picture's right edge, with the overlay's own gutter beyond it. */
-const CLEAR_OF_SIDEBAR: CSSProperties = { paddingRight: `calc(${SIDEBAR_WIDTH}px + 2rem)` };
+const CLEAR_OF_SIDEBAR: CSSProperties = {
+	paddingRight: `calc(${shellLength("sidebar")}px + 2rem)`,
+};
 
 /** What the stage hands the presentation. */
 interface PresentationView {

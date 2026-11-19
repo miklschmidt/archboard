@@ -1,9 +1,11 @@
 ---
 id: TASK-646.14.05
 title: Clear the remaining packages' and apps' module-depth warnings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T06:02:00Z'
+updated_date: '2026-11-19T06:03:00Z'
 labels:
   - ready-for-agent
 dependencies: []

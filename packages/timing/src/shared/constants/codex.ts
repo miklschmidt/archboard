@@ -119,6 +119,13 @@ const CODEX_REALTIME_MS = durations({
 	 * retry, so a shorter value would hammer a server that is restarting.
 	 */
 	clientReconnect: 3000,
+	/**
+	 * How long a browser tab's conversation outlives its last browser socket. Pulls against a
+	 * reload plus CODEX_REALTIME_MS.clientReconnect redials, which it must outlast or a reload loses the
+	 * conversation, and CODEX_APPROVAL_MS.expiry, which it must stay under so a closed tab's approvals
+	 * end as "tab session ended" rather than expiring unanswered.
+	 */
+	tabSessionGrace: 60_000,
 });
 
 /** A browser command an agent leases, and the approvals a person answers. */
@@ -132,18 +139,65 @@ const CODEX_APPROVAL_MS = durations({
 });
 
 /**
- * How long a browser tab's conversation outlives its last browser socket. Pulls against a
- * reload plus CODEX_REALTIME_MS.clientReconnect redials, which it must outlast or a reload loses the
- * conversation, and CODEX_APPROVAL_MS.expiry, which it must stay under so a closed tab's approvals
- * end as "tab session ended" rather than expiring unanswered.
+ * One duration of the Codex process.
+ * @param key Which one.
+ * @returns It, in milliseconds.
  */
-const TAB_SESSION_GRACE_MS = 60_000;
+function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS): number {
+	return CODEX_PROCESS_MS[key];
+}
+
+/**
+ * One duration of a Codex session.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function codexSessionMs(key: keyof typeof CODEX_SESSION_MS): number {
+	return CODEX_SESSION_MS[key];
+}
+
+/**
+ * One duration of the voice.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function codexRealtimeMs(key: keyof typeof CODEX_REALTIME_MS): number {
+	return CODEX_REALTIME_MS[key];
+}
+
+/**
+ * One duration of a lease or an approval.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function codexApprovalMs(key: keyof typeof CODEX_APPROVAL_MS): number {
+	return CODEX_APPROVAL_MS[key];
+}
+
+/**
+ * When an approval asked for now expires unanswered.
+ * @param nowMs The current time, in milliseconds since the epoch.
+ * @returns The expiry, in milliseconds since the epoch.
+ */
+function codexApprovalExpiresAt(nowMs: number): number {
+	return nowMs + CODEX_APPROVAL_MS.expiry;
+}
+
+/**
+ * Until when a context change captured at a time stays fresh enough to deliver.
+ * @param capturedAtMs When it was captured, in milliseconds since the epoch.
+ * @returns The end of its freshness, in milliseconds since the epoch.
+ */
+function codexContextFreshUntil(capturedAtMs: number): number {
+	return capturedAtMs + CODEX_REALTIME_MS.contextFreshness;
+}
 
 export {
 	codexRestartDelayMs,
-	CODEX_PROCESS_MS,
-	CODEX_SESSION_MS,
-	CODEX_REALTIME_MS,
-	CODEX_APPROVAL_MS,
-	TAB_SESSION_GRACE_MS,
+	codexProcessMs,
+	codexSessionMs,
+	codexRealtimeMs,
+	codexApprovalMs,
+	codexApprovalExpiresAt,
+	codexContextFreshUntil,
 };

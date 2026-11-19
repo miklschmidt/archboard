@@ -5,7 +5,7 @@ import {
 	createReadingPublisher,
 	type PaneReading,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
@@ -25,7 +25,7 @@ afterEach(() => {
 
 /** Advance the debounce and drain the send and rejection promises. */
 async function settled(): Promise<void> {
-	jest.advanceTimersByTime(PANE_MS.selectionDebounce);
+	jest.advanceTimersByTime(paneMs("selectionDebounce"));
 	await Promise.resolve();
 	await Promise.resolve();
 }

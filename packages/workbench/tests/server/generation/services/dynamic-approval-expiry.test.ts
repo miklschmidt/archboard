@@ -3,7 +3,7 @@ import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/author
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { codexApprovalExpiresAt, codexApprovalMs } from "@archboard/timing";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 
@@ -42,7 +42,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			},
 			effectHash: `sha256:${"4".repeat(64)}`,
 			createdAtMs: now,
-			expiresAtMs: now + CODEX_APPROVAL_MS.expiry,
+			expiresAtMs: codexApprovalExpiresAt(now),
 		};
 		const sourceArguments = request.effect.arguments as { prompt: string };
 		const owner = createServerDynamicApprovalOwner({
@@ -75,7 +75,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 		expect(Object.isFrozen(projected.request.effect.arguments)).toBe(true);
 		expect(Object.isFrozen(projected.binding)).toBe(true);
 		expect(Object.isFrozen(projected.binding.capturedLink)).toBe(true);
-		expect(projected.request.expiresAtMs - request.createdAtMs).toBe(CODEX_APPROVAL_MS.expiry);
+		expect(projected.request.expiresAtMs - request.createdAtMs).toBe(codexApprovalMs("expiry"));
 		sourceArguments.prompt = "mutated after presentation";
 		expect(request.effect.arguments.prompt).toBe("mutated after presentation");
 		expect(projected.request.effect.arguments.prompt).toBe("expire without mutation");
@@ -88,7 +88,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			settlements += 1;
 			return value;
 		});
-		jest.advanceTimersByTime(CODEX_APPROVAL_MS.expiry - 1);
+		jest.advanceTimersByTime(codexApprovalMs("expiry") - 1);
 		await Promise.resolve();
 		expect({ pending: owner.pending(TAB_SESSION).length, settlements }).toEqual({
 			pending: 1,
@@ -104,7 +104,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 			decidedAtMs: request.expiresAtMs,
 		});
 		owner.settleAll("server_shutdown");
-		jest.advanceTimersByTime(CODEX_APPROVAL_MS.expiry * 2);
+		jest.advanceTimersByTime(codexApprovalMs("expiry") * 2);
 		await Promise.resolve();
 		expect(settlements).toBe(1);
 	} finally {

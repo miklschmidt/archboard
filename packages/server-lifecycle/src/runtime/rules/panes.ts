@@ -31,12 +31,7 @@ import {
 	arrangementOf,
 	panesInOrder,
 } from "#runtime/rules/panes-layout.ts";
-import {
-	HOW_TO_OPEN_A_PANE,
-	addressablePanes,
-	resolvePaneSpec,
-	soloPane,
-} from "#runtime/rules/panes-addressing.ts";
+import { HOW_TO_OPEN_A_PANE, addressablePanes } from "#runtime/rules/panes-addressing.ts";
 
 type LegacyIdentity = ReturnType<typeof parsePaneKey>;
 type PaneArchitecture = NonNullable<z.infer<typeof SemanticPaneContextSchema>["architecture"]>;
@@ -392,4 +387,4 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 }
 
 export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
-export { buildPanesReport, resolvePaneSpec, soloPane };
+export { buildPanesReport };

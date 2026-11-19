@@ -4,14 +4,14 @@ import { z } from "zod";
 import { logger } from "@archboard/diagnostics/logger";
 import {
 	addressablePanes,
-	MAX_PANES,
+	panesFull,
 	panesInOrder,
 	resolvePane,
 } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { staleFrontend } from "@archboard/server-lifecycle/server-host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 import {
 	serverUrl,
 	bodyOf,
@@ -193,7 +193,7 @@ function postPaneRoute(req: Request, res: Response): void {
 //
 // These two routes ask the browser to change its layout and then wait for the
 // registry to agree. How long they wait is in timing.ts, because the settle
-// cap is waiting out PANE_MS.report, which is a number on the other side of
+// cap is waiting out paneMs("report"), which is a number on the other side of
 // the browser boundary.
 
 /**
@@ -244,7 +244,7 @@ function awaitPaneOpen(): { pending: PendingPaneOpen; opened: Promise<PaneRegist
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, PANE_MS.layoutTimeout),
+			}, paneMs("layoutTimeout")),
 		};
 		pendingPaneOpens.add(pending);
 	});
@@ -266,7 +266,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 		res.status(503).json(noBrowserBody("Opening a pane"));
 		return;
 	}
-	if (addressablePanes([...panes.values()]).length >= MAX_PANES) {
+	if (panesFull([...panes.values()])) {
 		res.status(409).json(tooManyPanesBody());
 		return;
 	}
@@ -346,7 +346,7 @@ function awaitPaneClose(
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, PANE_MS.layoutTimeout),
+			}, paneMs("layoutTimeout")),
 		};
 		pendingPaneCloses.add(pending);
 	});

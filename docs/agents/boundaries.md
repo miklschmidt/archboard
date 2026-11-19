@@ -176,11 +176,10 @@ holds files only. When it grows past about 12 files, split its behavior into sub
 The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
 grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
 `MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
-pulls against written beside it. A caller imports its owner's group and reads a key of it. A
-computation that callers would repeat from a group is one function of the package, such as the
-Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
-named constant. The six flat names that only the renderer imports, such as
-`SEMANTIC_RASTER_JOB_TIMEOUT_MS`, stay until its rewrite lands.
+pulls against written beside it. The groups stay inside: a caller asks the owner's function for one
+duration by its key, such as `paneMs("report")`. A computation that callers would repeat from a
+group is one function of the package, such as the Codex restart backoff `codexRestartDelayMs` or
+the deadline `codexApprovalExpiresAt(nowMs)`, and callers call it.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and

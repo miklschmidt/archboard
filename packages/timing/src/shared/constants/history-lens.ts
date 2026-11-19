@@ -12,4 +12,13 @@
  */
 const LOCALITY_DEFAULT_PERIOD_MS = 365 * 24 * 60 * 60 * 1000;
 
-export { LOCALITY_DEFAULT_PERIOD_MS };
+/**
+ * Where the default period of hotspots and change coupling starts.
+ * @param untilSeconds Where the period ends, in seconds since the epoch.
+ * @returns Where it starts, in seconds since the epoch.
+ */
+function localityDefaultSinceSeconds(untilSeconds: number): number {
+	return untilSeconds - Math.floor(LOCALITY_DEFAULT_PERIOD_MS / 1000);
+}
+
+export { localityDefaultSinceSeconds };

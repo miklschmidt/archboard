@@ -1,5 +1,5 @@
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
-import { queryOptions, skipToken } from "@tanstack/react-query";
+import { queryOptions, skipToken, type QueryClient } from "@tanstack/react-query";
 import type { z } from "zod";
 import {
 	ArchitectureModelReadSchema,
@@ -405,10 +405,43 @@ function architectureClaimsQuery(vault: string) {
 	});
 }
 
+/**
+ * The cache key of a read of one vault that the readers of this module do not make, under the
+ * vault's prefix so that what invalidates the vault invalidates it.
+ * @param vault The explicit vault.
+ * @param rest What the read is, after the vault.
+ * @returns The query key.
+ */
+function vaultQueryKey<const Rest extends readonly unknown[]>(vault: string, ...rest: Rest) {
+	return [...architectureModelKeys.vault(vault), ...rest] as const;
+}
+
+/**
+ * Read every resource of one vault again.
+ * @param client The tab's query client.
+ * @param vault The explicit vault.
+ * @returns When the reads are invalidated.
+ */
+function invalidateVaultQueries(client: QueryClient, vault: string): Promise<void> {
+	return client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
+}
+
+/**
+ * Read every model resource of every vault again.
+ * @param client The tab's query client.
+ * @returns When the reads are invalidated.
+ */
+function invalidateModelQueries(client: QueryClient): Promise<void> {
+	return client.invalidateQueries({ queryKey: architectureModelKeys.all });
+}
+
 export {
 	readReply,
 	readModel,
 	architectureModelKeys,
+	invalidateModelQueries,
+	invalidateVaultQueries,
+	vaultQueryKey,
 	architectureModelQuery,
 	architectureModuleQuery,
 	architectureSummaryQuery,

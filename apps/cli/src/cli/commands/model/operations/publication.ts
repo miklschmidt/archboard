@@ -11,7 +11,7 @@ import {
 	fetchArchitectureHistoryOnServer,
 } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand, type TokenParameter } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 
 const checkpointParameter = {
 	kind: "positional",
@@ -89,7 +89,7 @@ const modelPublicationContract = defineCommand({
 	output: publicationOutput,
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",

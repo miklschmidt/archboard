@@ -3,7 +3,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { TELEMETRY_MS } from "@archboard/timing";
+import { telemetryMs } from "@archboard/timing";
 import { ErrorReportSchema } from "#runtime/records/protocol/records.ts";
 import { dailyUsage } from "#runtime/rollup/rules/daily-usage.ts";
 import { currentConsent } from "#runtime/settings/operations/settings.ts";
@@ -71,7 +71,7 @@ async function sendFile(
  * @returns True when the file can still be sent.
  */
 function fresh(round: Round, pending: Pending): boolean {
-	if (round.now - pending.changedAt <= TELEMETRY_MS.keep) return true;
+	if (round.now - pending.changedAt <= telemetryMs("keep")) return true;
 	remove(pending.file);
 	return false;
 }
@@ -121,7 +121,7 @@ async function sendDays(round: Round): Promise<void> {
 
 /**
  * Send what waits: every error report, and the day files of finished UTC days. A file older than
- * `TELEMETRY_MS.keep` is deleted unsent.
+ * `telemetryMs("keep")` is deleted unsent.
  * @param round The round.
  */
 async function sendRound(round: Round): Promise<void> {
@@ -152,7 +152,7 @@ async function runRound(post: PostEvent): Promise<void> {
 }
 
 /**
- * Start the sender: one round now, then one every `TELEMETRY_MS.round`. A round never throws and
+ * Start the sender: one round now, then one every `telemetryMs("round")`. A round never throws and
  * never keeps the process alive.
  * @param post Posts one event. The server gives none, and the sender posts to PostHog.
  * @returns Stops the sender.
@@ -170,7 +170,7 @@ function startTelemetrySender(post: PostEvent = postToPostHog): () => void {
 			});
 	};
 	tick();
-	const timer = setInterval(tick, TELEMETRY_MS.round);
+	const timer = setInterval(tick, telemetryMs("round"));
 	timer.unref();
 	return function stopTelemetrySender() {
 		clearInterval(timer);

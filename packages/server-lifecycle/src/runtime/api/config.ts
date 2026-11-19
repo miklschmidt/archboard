@@ -1,2 +1,6 @@
 // Where the CLI looks for its server, and the environment variables it refuses.
-export { ARCHBOARD_URL, removedEnvironmentMessage } from "#runtime/services/config.ts";
+export {
+	archboardBrowserUrl,
+	archboardUrl,
+	removedEnvironmentMessage,
+} from "#runtime/services/config.ts";

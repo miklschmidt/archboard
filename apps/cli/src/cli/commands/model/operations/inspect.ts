@@ -7,7 +7,7 @@ import {
 	unavailableOutcome,
 } from "#cli/commands/model/operations/read.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
 	GroupInspectionSchema,
 	ModuleInspectionSchema,
@@ -102,7 +102,7 @@ const modelInspectContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, unknownGroupRefusal],
+	refusals: [refusal("server"), unknownGroupRefusal],
 	outcomes: [unavailableOutcome],
 	relationships: [
 		{

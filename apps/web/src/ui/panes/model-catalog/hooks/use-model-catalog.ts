@@ -9,11 +9,14 @@ import {
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import { architectureFeed } from "#ui/architecture-drawing/model-reader/access/clients/events.ts";
 import {
-	architectureModelKeys,
+	invalidateModelQueries,
 	architectureSummaryQuery,
 	type ModelSummary,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
-import { modelCatalogKeys, repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
+import {
+	invalidateRepositories,
+	repositoriesQuery,
+} from "#ui/panes/model-catalog/clients/queries.ts";
 
 /** One repository and its current architecture authority. */
 interface RepositoryModel {
@@ -43,11 +46,11 @@ interface ModelCatalog {
 function catalogCommands(client: QueryClient) {
 	/** Refresh every known canonical model. */
 	function refresh(): void {
-		void client.invalidateQueries({ queryKey: architectureModelKeys.all });
+		void invalidateModelQueries(client);
 	}
 	/** Refresh repository locations. A vault that this adds starts its own feed. */
 	function reload(): void {
-		void client.invalidateQueries({ queryKey: modelCatalogKeys.repositories });
+		void invalidateRepositories(client);
 	}
 	return {
 		refresh,

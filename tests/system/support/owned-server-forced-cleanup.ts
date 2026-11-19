@@ -7,14 +7,13 @@ import {
 	type CodexProcessGroupIdentity,
 	type CodexProcessGroupOperations,
 } from "@archboard/process/codex-group";
-import { listProcessObservations, readProcessObservation } from "@archboard/process/observation";
+import { readProcessObservation } from "@archboard/process/observation";
+import { childProcesses } from "./process-census.ts";
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
-	const children = listProcessObservations().filter(
-		(observation) => observation.state !== "zombie" && observation.parentPid === parentPid,
-	);
+	const children = childProcesses(parentPid);
 	const operations = createCodexProcessGroupOperations();
 	return children.flatMap((child) => {
 		try {

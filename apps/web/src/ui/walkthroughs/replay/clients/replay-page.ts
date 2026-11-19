@@ -18,10 +18,10 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { REPLAY_MS } from "@archboard/timing";
+import { replayMs } from "@archboard/timing";
 import {
-	SAMPLES_PER_FRAME,
-	TALK_SAMPLE_RATE,
+	talkSamplesMs,
+	talkSamplesPerFrame,
 	type Talk,
 	type publishReplayPage,
 } from "@archboard/walkthrough/talk";
@@ -49,10 +49,10 @@ import { talkReads } from "#ui/walkthroughs/replay/clients/talk-reads.ts";
 type ReplayRenderer = Parameters<typeof publishReplayPage>[0];
 
 /** How long one frame lasts, in milliseconds: a frame is a fixed run of the voice's samples. */
-const FRAME_MS = (SAMPLES_PER_FRAME * 1000) / TALK_SAMPLE_RATE;
+const FRAME_MS = talkSamplesMs(talkSamplesPerFrame());
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
-const PREROLL_FRAMES = Math.ceil(REPLAY_MS.preroll / FRAME_MS);
+const PREROLL_FRAMES = Math.ceil(replayMs("preroll") / FRAME_MS);
 
 /** A talk on the page, and where its rendering has got to. */
 interface Rendering {

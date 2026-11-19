@@ -1,18 +1,6 @@
 import { z } from "zod";
 import { VAULT_ORIGINS } from "@archboard/workspace/vault";
 
-const PaneRefSchema = z.looseObject({
-	paneId: z.string(),
-	clientId: z.string(),
-	place: z.string(),
-	position: z.number().int(),
-});
-
-const ServerStateSchema = z.looseObject({
-	running: z.boolean(),
-	url: z.string(),
-});
-
 const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 	z.object({
 		path: z.string(),
@@ -86,11 +74,20 @@ const AnsweredVaultSchema = z.object({
 type AnsweredVault = z.infer<typeof AnsweredVaultSchema>;
 type RegisteredVault = z.infer<typeof RegisteredVaultSchema>;
 
-export {
-	AnsweredVaultSchema,
-	PaneRefSchema,
-	PendingArtifactSchema,
-	ServerStateSchema,
-	type AnsweredVault,
-	type RegisteredVault,
-};
+/**
+ * The schema of the vault a command addressed, for a contract that describes its answers.
+ * @returns The schema.
+ */
+function answeredVaultSchema(): typeof AnsweredVaultSchema {
+	return AnsweredVaultSchema;
+}
+
+/**
+ * The schema of a file a command writes when it is done, for the result that carries it.
+ * @returns The schema.
+ */
+function pendingArtifactSchema(): typeof PendingArtifactSchema {
+	return PendingArtifactSchema;
+}
+
+export { answeredVaultSchema, pendingArtifactSchema, type AnsweredVault, type RegisteredVault };

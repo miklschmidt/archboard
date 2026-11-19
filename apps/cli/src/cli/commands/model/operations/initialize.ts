@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { z } from "zod";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
-import { serverRefusal, doingRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
 	ArchitectureInitializationRequestSchema,
 	ArchitectureModuleEditResultSchema,
@@ -64,7 +64,7 @@ const modelInitContract = defineCommand({
 	...modelArchiveInitContract,
 	shared: ["url", "directory", "doing"],
 	runsWithoutVault: true,
-	refusals: [serverRefusal, doingRefusal],
+	refusals: [refusal("server"), refusal("doing")],
 	output: {
 		cases: [
 			{

@@ -6,12 +6,12 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 } from "@archboard/model/render-reply";
 import {
-	DEFAULT_RECORDING_LANGUAGE,
-	RecordingLanguageSchema,
+	defaultRecordingLanguage,
+	recordingLanguageInputSchema,
 } from "@archboard/walkthrough/recording";
 import { recordWalkthrough } from "@archboard/walkthrough/recorder";
-import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { archboardUrl } from "@archboard/server-lifecycle/config";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import type { CommandContext } from "#cli/contract/protocol/contract.ts";
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand, CliUsageError } from "#cli/contract/protocol/contract.ts";
@@ -28,7 +28,7 @@ const InputSchema = z.object({
 	talk: z.string().optional(),
 	theme: DiagramThemeSchema.default("dark"),
 	layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
-	language: RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE),
+	language: recordingLanguageInputSchema(),
 });
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 /**
@@ -63,7 +63,7 @@ function recordingRequest(
 	return {
 		architecture,
 		vault: context.vault.path,
-		serverUrl: ARCHBOARD_URL,
+		serverUrl: archboardUrl(),
 		policy: {
 			policy: architecture.policy,
 			configurationValid: true,
@@ -99,7 +99,7 @@ function recordingRequest(
 
 const modelRecordContract = defineCommand({
 	prerequisites: ["server"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	output: {
 		cases: [
 			{
@@ -157,7 +157,7 @@ const modelRecordContract = defineCommand({
 			spellings: ["--language"],
 			value: "required",
 			placeholder: "tag",
-			default: DEFAULT_RECORDING_LANGUAGE,
+			default: defaultRecordingLanguage(),
 			description: "The language of the narration, as a BCP 47 tag such as `en`, `da` or `pt-BR`",
 		},
 		{

@@ -6,7 +6,7 @@
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CHECKOUT } from "@archboard/renderer/core";
+import { checkoutPath } from "@archboard/renderer/core";
 
 /** The packages that are no part of what a platform package holds. */
 const SEPARATE = new Set([
@@ -21,9 +21,9 @@ const BUILD_TOOLS = ["tailwindcss", "vite"];
 /** The crates the renderer core is built from: the core of the server and the painter of the page. */
 const CORE_CRATES = new Set(["archboard-renderer-wasm", "archboard-painter-wasm"]);
 /** The fonts and their license texts. */
-const FONTS = path.join(CHECKOUT, "packages", "renderer", "assets", "fonts");
+const FONTS = checkoutPath("packages", "renderer", "assets", "fonts");
 /** The notice of the code adapted from PR Lens. */
-const PR_LENS_NOTICE = path.join(CHECKOUT, "packages", "renderer", "NOTICE.md");
+const PR_LENS_NOTICE = checkoutPath("packages", "renderer", "NOTICE.md");
 /** A file that holds a license, a copyright or a notice at the top of a package. */
 const LICENSE_FILE = /^(?:licen[cs]e|copying|notice)(?:[-._].*)?$/i;
 
@@ -124,13 +124,13 @@ function unnoticed(name: string): boolean {
  */
 function npmPackages(bundled: readonly string[]): Licensed[] {
 	const manifest = NpmManifest.parse(
-		JSON.parse(readFileSync(path.join(CHECKOUT, "package.json"), "utf8")),
+		JSON.parse(readFileSync(checkoutPath("package.json"), "utf8")),
 	);
 	const leaves = [
-		...bundled.map((directory) => path.join(CHECKOUT, directory)),
-		...resolveAll(BUILD_TOOLS, CHECKOUT),
+		...bundled.map((directory) => checkoutPath(directory)),
+		...resolveAll(BUILD_TOOLS, checkoutPath()),
 	];
-	const roots = resolveAll(Object.keys(manifest.dependencies ?? {}), CHECKOUT);
+	const roots = resolveAll(Object.keys(manifest.dependencies ?? {}), checkoutPath());
 	// The queue is a stack, so the production dependencies and all they depend on come first, and a
 	// package that one of them depends on is followed although the executable bundles it too.
 	const queue = [
@@ -195,7 +195,7 @@ function coreCrates(): Licensed[] {
 			"--filter-platform",
 			"wasm32-unknown-unknown",
 		],
-		{ cwd: CHECKOUT, stdout: "pipe", stderr: "pipe" },
+		{ cwd: checkoutPath(), stdout: "pipe", stderr: "pipe" },
 	);
 	if (asked.exitCode !== 0) {
 		throw new Error(

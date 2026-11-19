@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { ArchitectureCheckpointRetainSchema } from "@archboard/model/contract";
 
 import { readTalk } from "@archboard/walkthrough/recorder";
-import { TALK_SAMPLE_RATE, type Talk } from "@archboard/walkthrough/talk";
+import { talkSamplesMs, type Talk } from "@archboard/walkthrough/talk";
 
 import {
 	encodeThumbnail,
@@ -52,7 +52,7 @@ interface NarratedSpec {
 function stepSeconds(talk: Talk): readonly number[] {
 	const starts = talk.events.flatMap((event) => (event.kind === "step" ? [event.at] : []));
 	const end = talk.events.find((event) => event.kind === "end")?.at ?? talk.audio.samples;
-	return [...starts, end].map((sample) => sample / TALK_SAMPLE_RATE);
+	return [...starts, end].map((sample) => talkSamplesMs(sample) / 1000);
 }
 
 /**
@@ -126,7 +126,7 @@ async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Prom
 function reportDropout(talk: Talk, context: MakeContext): void {
 	const lost = talk.audio.reception?.concealedSamples ?? 0;
 	if (lost === 0 || context.replay) return;
-	const ms = Math.round((lost * 1000) / TALK_SAMPLE_RATE);
+	const ms = Math.round(talkSamplesMs(lost));
 	context.say(`The voice dropped out for ${ms} ms while it was recorded. Record it again.`);
 }
 

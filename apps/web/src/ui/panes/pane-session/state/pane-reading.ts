@@ -15,7 +15,7 @@
 // reports owns; nothing about it is restated here.
 
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 import { createUserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
@@ -200,7 +200,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		if (timer !== null) {
 			clearTimeout(timer);
 		}
-		timer = setTimeout(flush, PANE_MS.selectionDebounce);
+		timer = setTimeout(flush, paneMs("selectionDebounce"));
 	}
 
 	/**

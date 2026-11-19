@@ -8,7 +8,7 @@
 // on nearly every frame, so it is not part of the moment: it is read where it is
 // drawn, as the shell reads the level of a live voice.
 
-import { SAMPLES_PER_FRAME, type Talk } from "@archboard/walkthrough/talk";
+import { talkFrameOf, type Talk } from "@archboard/walkthrough/talk";
 import type { SubtitleSource, VoiceLevel } from "@archboard/workbench/voice";
 import { recordedStep, type RecordedStep } from "#ui/walkthroughs/recording/state/recorder.ts";
 
@@ -25,15 +25,6 @@ interface TalkMoment {
 
 /** Before anything happened. */
 const OPENING: TalkMoment = Object.freeze({ step: null, transcript: Object.freeze([]) });
-
-/**
- * The frame an event first shows on.
- * @param at When it happened, in samples.
- * @returns The frame, counted from nought.
- */
-function frameOf(at: number): number {
-	return Math.ceil(at / SAMPLES_PER_FRAME);
-}
 
 /**
  * A transcript with one utterance as it now reads, in its place when it was already there.
@@ -146,7 +137,7 @@ class TalkPlayback {
 		let moment = this.#moment;
 		for (; this.#next < this.#events.length; this.#next += 1) {
 			const event = this.#events[this.#next]!;
-			if (frameOf(event.at) > frame) break;
+			if (talkFrameOf(event.at) > frame) break;
 			moment = after(moment, event, this.#walkthrough);
 		}
 		if (moment !== this.#moment) {
@@ -168,4 +159,4 @@ class TalkPlayback {
 	}
 }
 
-export { TalkPlayback, frameOf };
+export { TalkPlayback };

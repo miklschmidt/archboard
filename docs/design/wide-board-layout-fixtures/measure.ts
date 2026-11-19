@@ -21,7 +21,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
-import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
+import { shellSize } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
@@ -108,7 +108,9 @@ const saved: Record<string, Result> =
 	against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
 const results: Record<string, Result> = {};
 
-console.log(`reference pane ${REFERENCE_PANE.width}x${REFERENCE_PANE.height}`);
+console.log(
+	`reference pane ${shellSize("referencePane").width}x${shellSize("referencePane").height}`,
+);
 let header = false;
 for (const item of items) {
 	// A fixture authored before subjects carried an order is given one by position.

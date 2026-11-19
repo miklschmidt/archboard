@@ -7,7 +7,7 @@
 
 import { useLayoutEffect, type RefObject } from "react";
 
-import { SIDEBAR_MS } from "@archboard/timing";
+import { sidebarMs } from "@archboard/timing";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { panCamera } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
 
@@ -53,7 +53,7 @@ function useClearOfPanel(
 		if (!floating || selection === null || root === null) return;
 		const under = underPanel(root, selection, width(root.clientWidth));
 		if (under > 0) {
-			glide(panCamera(view().camera, -under, 0), reducedMotion ? 0 : SIDEBAR_MS.floatIn, true);
+			glide(panCamera(view().camera, -under, 0), reducedMotion ? 0 : sidebarMs("floatIn"), true);
 		}
 	}, [picture, floating, selection, view, glide, reducedMotion, width]);
 }

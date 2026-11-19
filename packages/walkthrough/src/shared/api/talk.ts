@@ -3,7 +3,10 @@ export {
 	framesOf,
 	publishReplayPage,
 	replayAskedOf,
-	SAMPLES_PER_FRAME,
-	TALK_SAMPLE_RATE,
+	talkFrameOf,
+	talkMsSamples,
+	talkSampleRate,
+	talkSamplesMs,
+	talkSamplesPerFrame,
 } from "#shared/protocol/talk.ts";
 export type { Talk } from "#shared/protocol/talk.ts";

@@ -1,4 +1,4 @@
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 import { logger } from "@archboard/diagnostics/logger";
 import type {
 	ArchitectureModelRead,
@@ -184,7 +184,7 @@ function observeVault(vault: string) {
 	const unsubscribe = onArchitectureNews(vault, refresh);
 	retained.poll();
 	// Claims and foreign inputs share the existing disk-observation cadence.
-	const timer = setInterval(refresh, MODEL_LOCK_MS.watch);
+	const timer = setInterval(refresh, modelLockMs("watch"));
 	timer.unref();
 	return {
 		/**

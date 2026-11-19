@@ -6,13 +6,17 @@ import {
 	serverStartupTerminalRecord,
 	type ServerStartupProtocolEvent,
 } from "#runtime/protocol/server-startup-terminal.ts";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { serverLifecycleMs } from "@archboard/timing";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,
 	failedServerCleanupTiming,
-	type FailedServerCleanupOperations,
 } from "#runtime/operations/server-startup-cleanup.ts";
+
+/** What a failed server cleanup asks of the system, as the test fakes it. */
+type FailedServerCleanupOperations = Parameters<
+	typeof completeFailedServerCleanup
+>[0]["operations"];
 
 const group = Object.freeze({ leaderPid: 41, pgid: 41, leaderStartTime: "100" });
 
@@ -104,7 +108,7 @@ const timing = Object.freeze({ shutdownDeadlineMs: 80, applicationGraceMs: 30, p
 
 describe("failed public server cleanup", () => {
 	test("keeps production readiness and cleanup inside the reviewed boundaries", () => {
-		expect(SERVER_LIFECYCLE_MS.startupReadiness).toBe(8_000);
+		expect(serverLifecycleMs("startupReadiness")).toBe(8_000);
 		expect(failedServerCleanupTiming()).toEqual({
 			shutdownDeadlineMs: 10_000,
 			applicationGraceMs: 5_000,

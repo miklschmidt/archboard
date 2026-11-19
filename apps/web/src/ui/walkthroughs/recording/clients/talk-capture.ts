@@ -7,14 +7,14 @@
 // the graph's clock are one count. An event is stamped with the graph's clock
 // when it happens, which is at most one render callback from the sound heard
 // then, well under one frame of video. What the voice says is the exception: the
-// browser holds the voice for `RECORDING_MS.voiceBuffer` before it plays it, and
+// browser holds the voice for `recordingMs("voiceBuffer")` before it plays it, and
 // the words are not held, so a line is stamped that much after it arrives, when
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { RECORDING_MS } from "@archboard/timing";
+import { recordingMs } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
-import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
+import { talkMsSamples, talkSampleRate } from "@archboard/walkthrough/talk";
 
 /** The log of a finished talk, as the recording page hands it over. */
 type TalkLog = NonNullable<ReturnType<Parameters<typeof publishRecordingPage>[0]["talk"]>>;
@@ -29,7 +29,7 @@ declare function registerProcessor(name: string, processor: typeof AudioWorkletP
 declare const currentFrame: number;
 
 /** How long after a line arrives its sound is heard, in samples: what the browser buffers of the voice. */
-const VOICE_BUFFER_SAMPLES = Math.round((RECORDING_MS.voiceBuffer * TALK_SAMPLE_RATE) / 1000);
+const VOICE_BUFFER_SAMPLES = Math.round(talkMsSamples(recordingMs("voiceBuffer")));
 
 /** The name the tap is registered by in the audio worklet. */
 const TAP = "archboard-talk-tap";
@@ -115,8 +115,8 @@ function wavOf(samples: Int16Array): Blob {
 	header.setUint32(16, 16, true);
 	header.setUint16(20, 1, true);
 	header.setUint16(22, 1, true);
-	header.setUint32(24, TALK_SAMPLE_RATE, true);
-	header.setUint32(28, TALK_SAMPLE_RATE * 2, true);
+	header.setUint32(24, talkSampleRate(), true);
+	header.setUint32(28, talkSampleRate() * 2, true);
 	header.setUint16(32, 2, true);
 	header.setUint16(34, 16, true);
 	ascii(36, "data");
@@ -169,7 +169,7 @@ class TalkCapture {
 	 * @returns The capture.
 	 */
 	static async open(): Promise<TalkCapture> {
-		const context = new AudioContext({ sampleRate: TALK_SAMPLE_RATE });
+		const context = new AudioContext({ sampleRate: talkSampleRate() });
 		const module = tapModule();
 		try {
 			await context.audioWorklet.addModule(module);
@@ -278,7 +278,7 @@ class TalkCapture {
 	 * @returns Its frame now, in samples.
 	 */
 	#now(): number {
-		return Math.round(this.#context.currentTime * TALK_SAMPLE_RATE);
+		return Math.round(this.#context.currentTime * talkSampleRate());
 	}
 
 	/**
@@ -319,7 +319,7 @@ class TalkCapture {
 	 * @returns Once it has, or once waiting longer would not help.
 	 */
 	async #drained(until: number): Promise<void> {
-		const deadline = performance.now() + RECORDING_MS.tapDrain;
+		const deadline = performance.now() + recordingMs("tapDrain");
 		while (performance.now() < deadline) {
 			const last = this.#blocks.at(-1);
 			if (last !== undefined && last.frame + last.pcm.length >= until) return;

@@ -195,7 +195,6 @@ export {
 	mergeBaseQuery,
 	sourceRefsQuery,
 	type BranchFootprintAnswer,
-	type FootprintRange,
 	type NamedRange,
 	type SourceRefsAnswer,
 };

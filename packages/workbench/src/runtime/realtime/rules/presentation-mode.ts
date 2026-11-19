@@ -39,11 +39,7 @@
 // the voice can only explain what it is told.
 
 import type { ChangeKind } from "@archboard/model/comparison";
-import type { z } from "zod";
-import { languageName, type RecordingNarrationSchema } from "@archboard/walkthrough/recording";
-
-/** What voice is told when it narrates a recording. */
-type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
+import { languageName, type RecordingNarration } from "@archboard/walkthrough/recording";
 
 /** How much of a walkthrough's name a start carries, in characters. */
 const PRESENTATION_NAME_MAX_CHARS = 200;

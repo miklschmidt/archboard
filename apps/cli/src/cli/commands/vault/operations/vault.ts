@@ -6,7 +6,7 @@ import {
 	type CommandContext,
 	type CommandExecution,
 } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { codeCheckLines } from "#cli/commands/vault/rules/code-check-lines.ts";
 import { embedsCheckLines } from "#cli/commands/vault/rules/embed-state.ts";
 import { EmbedsPartSchema } from "#cli/commands/vault/protocol/embeds-answer.ts";
@@ -437,7 +437,13 @@ const checkAllContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
+	refusals: [
+		refusal("server"),
+		stateNotFoundRefusal,
+		stateAmbiguousRefusal,
+		planRefusal,
+		baseRefusal,
+	],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
 	/**
 	 * Run every check.
@@ -470,7 +476,7 @@ const checkEmbedsContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	relationships: embedsRelationships,
 	/**
 	 * Run the embeds check.
@@ -498,7 +504,7 @@ const checkSemanticsContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	relationships: [semanticsRoute],
 	/**
 	 * Run the semantics check.
@@ -532,7 +538,13 @@ const checkCodeContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
+	refusals: [
+		refusal("server"),
+		stateNotFoundRefusal,
+		stateAmbiguousRefusal,
+		planRefusal,
+		baseRefusal,
+	],
 	relationships: [codeRoute],
 	/**
 	 * Run the code check.
@@ -566,7 +578,7 @@ const semanticConfigContract = defineCommand({
 	output,
 	prerequisites: [],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	relationships: [
 		{
 			method: "GET",

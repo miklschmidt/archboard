@@ -81,4 +81,21 @@ function inapplicableSharedOptions(
 	);
 }
 
-export { SHARED_OPTIONS, SHARED_OPTION_KEYS, inapplicableSharedOptions, sharedOptionsFor };
+/**
+ * The keys of the options every command may share.
+ * @returns The keys, in the shared order.
+ */
+function sharedOptionKeys(): readonly SharedOptionKey[] {
+	return SHARED_OPTION_KEYS;
+}
+
+/**
+ * One option every command may share, as help and the parser both describe it.
+ * @param key The option.
+ * @returns Its spellings, placeholder and description.
+ */
+function sharedOption(key: SharedOptionKey): SharedOption {
+	return SHARED_OPTIONS[key];
+}
+
+export { inapplicableSharedOptions, sharedOption, sharedOptionKeys, sharedOptionsFor };

@@ -5,13 +5,13 @@ import {
 	ArchitectureRenderResultSchema,
 } from "@archboard/model/contract";
 import {
-	ArchitectureRasterReceiptSchema,
+	architectureRasterReceiptSchema,
 	createSemanticRasterizer,
-	RasterScaleSchema,
+	rasterScaleSchema,
 } from "@archboard/renderer/rasterizer";
 import { readRenderRecipe, embedRecipeInPng } from "@archboard/renderer/recipe";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import {
 	modelRenderContract,
 	requireGrammarForFlow,
@@ -123,18 +123,18 @@ const modelRasterizeContract = defineCommand({
 		ingress: ArchitectureRenderRequestSchema.extend({
 			out: z.string(),
 			theme: z.enum(["light", "dark"]).default("dark"),
-			scale: RasterScaleSchema.default(1),
+			scale: rasterScaleSchema().default(1),
 			region: RegionSchema.optional(),
 		}),
 	},
-	result: z.union([ArchitectureRasterReceiptSchema, ArchitectureRenderResultSchema.options[1]]),
+	result: z.union([architectureRasterReceiptSchema(), ArchitectureRenderResultSchema.options[1]]),
 	output: {
 		cases: [
 			{
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The canonical PNG receipt",
 			},
 		],

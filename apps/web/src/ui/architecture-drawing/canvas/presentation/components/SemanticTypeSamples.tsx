@@ -11,7 +11,7 @@ import {
 	HEAD_LENGTH,
 	lineInk,
 	OPEN_ARM,
-	NEUTRAL_PULSE,
+	neutralPulse,
 	lineWidth,
 	standingMark,
 	type SubjectStanding,
@@ -185,10 +185,10 @@ function EmphasisSample(props: { readonly width: number }): JSX.Element {
 }
 
 /** The picture's own proportions of a pulse in small: how thick its core is, and how long its light runs. */
-const PULSE = { width: NEUTRAL_PULSE.breadth, span: 40, glow: 3 } as const;
+const PULSE = { width: neutralPulse().breadth, span: 40, glow: 3 } as const;
 
 /** The light of a pulse on the neutral line: the line's colour with white mixed in, as the picture draws it. */
-const PULSE_LIGHT: CSSProperties = { stopColor: NEUTRAL_PULSE.ink };
+const PULSE_LIGHT: CSSProperties = { stopColor: neutralPulse().ink };
 
 /**
  * The light of a pulse along its length: nothing, a tail that gathers toward a

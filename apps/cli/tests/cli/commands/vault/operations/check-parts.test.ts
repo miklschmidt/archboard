@@ -112,7 +112,7 @@ const [config, { cliContractRegistry, runCli }] = await Promise.all([
 	import("@archboard/server-lifecycle/config"),
 	import("#cli/routing/operations/run.ts"),
 ]);
-if (config.ARCHBOARD_URL !== url) {
+if (config.archboardUrl() !== url) {
 	throw new Error(
 		`The CLI loaded before this file pointed it at its stand-in server. Run it in its own process: bun test --isolate ${import.meta.path}`,
 	);

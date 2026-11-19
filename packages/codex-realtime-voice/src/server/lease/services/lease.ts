@@ -1,4 +1,4 @@
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { codexApprovalMs } from "@archboard/timing";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -317,7 +317,7 @@ function createBrowserLeaseManager(options: {
 		const commandId = options.identity.identity.issuer.mintBrowserCommandId();
 		const childId = options.identity.identity.validator.childId;
 		const epoch = options.identity.identity.validator.epoch;
-		const expiresAtMs = assertTime(options.now()) + CODEX_APPROVAL_MS.browserCommandLease;
+		const expiresAtMs = assertTime(options.now()) + codexApprovalMs("browserCommandLease");
 		const record = freezeRecord({
 			lease: {
 				kind: "command_lease",
@@ -374,7 +374,7 @@ function createBrowserLeaseManager(options: {
 		) {
 			throw new Error("the browser command lease belongs to another browser or chat");
 		}
-		const expiresAtMs = assertTime(options.now()) + CODEX_APPROVAL_MS.browserCommandLease;
+		const expiresAtMs = assertTime(options.now()) + codexApprovalMs("browserCommandLease");
 		const renewed = freezeRecord({ ...record, lease: { ...record.lease, expiresAtMs } });
 		setActive(renewed);
 		schedule(renewed);

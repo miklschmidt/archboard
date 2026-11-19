@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 import { git, GitCommandError } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";
@@ -300,8 +300,8 @@ async function withModelLock<T>(
 		throw error;
 	}
 	const timer = setInterval(
-		() => renewRecord(lease.vault, lease.model, id, MODEL_LOCK_MS.lease),
-		MODEL_LOCK_MS.renew,
+		() => renewRecord(lease.vault, lease.model, id, modelLockMs("lease")),
+		modelLockMs("renew"),
 	);
 	timer.unref();
 	try {
