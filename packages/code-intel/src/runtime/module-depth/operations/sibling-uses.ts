@@ -12,7 +12,7 @@
 //
 // What a sibling use keeps used stays visible (TASK-646.18, decision 17):
 // such a module gets `INTERFACE_UNDECLARED`, information, which says how many
-// of its names files outside it use and names those only its own files import.
+// of its names files outside it use and how many only its own files import.
 
 import {
 	type ExposedName,
@@ -117,6 +117,9 @@ async function siblingUses(reading: DepthReading): Promise<SiblingUse[]> {
 	return uses;
 }
 
+/** How many of the names only a module's own files import its finding names. */
+const NAMED_INSIDE = 5;
+
 /** A module as the per-name rules judge it: with the uses of its names by its own files. */
 type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
 
@@ -141,7 +144,7 @@ function userOf(reading: JudgedReading, name: ExposedName): "outside" | "sibling
 /**
  * The finding on a module that declares no interface, where only its own
  * files use some of its names: how many of its names files outside it use,
- * and which only its own files import.
+ * and the first of those only its own files import.
  * @param reading The module.
  * @param names Its exported names, methods aside.
  * @returns The finding, or undefined when no name is used only by its own files.
@@ -154,13 +157,15 @@ function undeclaredFinding(
 	const inside = users.flatMap(([name, user]) => (user === "sibling" ? [name] : []));
 	if (inside.length === 0) return undefined;
 	const outside = users.filter(([, user]) => user === "outside").length;
+	const more = inside.length > NAMED_INSIDE ? `, and ${inside.length - NAMED_INSIDE} more` : "";
+	const named = `${inside.slice(0, NAMED_INSIDE).join(", ")}${more}`;
 	return {
 		severity: "information",
 		code: "INTERFACE_UNDECLARED",
 		message:
 			`${reading.label} declares no interface, so each export of its files is open to every ` +
 			`folder. Files outside it use ${outside} of its ${names.length} exported names, and only ` +
-			`its own files import ${inside.length}: ${inside.join(", ")}. Declare its interface, as an ` +
+			`its own files import ${inside.length}: ${named}. Declare its interface, as an ` +
 			"entry file such as index.ts does, with what callers use, and the names only its own " +
 			"files need stay inside.",
 	};

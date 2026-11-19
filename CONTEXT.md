@@ -828,7 +828,7 @@ An exported name that no file outside its module uses, as code or as a type, and
 _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 
 **Undeclared interface**:
-A folder module that declares no interface, with no file that stands for it (such as `index.ts`) and no `package.json` `exports`, where some exported names are used only by another of its files: `INTERFACE_UNDECLARED`, information. It says how many of its names files outside it use, and names the ones only its own files import.
+A folder module that declares no interface, with no file that stands for it (such as `index.ts`) and no `package.json` `exports`, where some exported names are used only by another of its files: `INTERFACE_UNDECLARED`, information. It says how many of its names files outside it use, and how many only its own files import, naming the first five.
 _Avoid_: missing barrel, missing index
 
 **Shallow module**:

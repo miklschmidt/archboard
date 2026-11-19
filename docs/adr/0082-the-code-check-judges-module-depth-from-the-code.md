@@ -85,8 +85,9 @@ so agents in an implementation loop added exported constants and nothing failed.
 - **What a sibling use keeps used stays visible** (TASK-646.18). Such a
   module gets `INTERFACE_UNDECLARED`, information, once only its own files
   use one of its names. It says how many of its names files outside it use,
-  and names the ones only its own files import. Declaring the interface, such
-  as with an entry file that offers what callers use, keeps the rest inside.
+  and how many only its own files import, naming the first five. Declaring
+  the interface, such as with an entry file that offers what callers use,
+  keeps the rest inside.
 - **Code the repository does not own gets no verdict** (TASK-646.18). A module
   that the model marks `external`, or that a part marked `external` holds, as
   a vendored crate is, keeps its counts and gets no finding on its exports and

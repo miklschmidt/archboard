@@ -181,7 +181,7 @@ Clear each finding at its seam. Never silence one.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
   Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a Python `__repr__`, a Go `String`, what a Rust `impl Drop` or `impl Display` defines, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`. A Rust item that `#[wasm_bindgen]` exports to JavaScript, or a type that derives ts-rs's `TS` for TypeScript, is never judged unused.
 - `INTERFACE_UNDECLARED` (information): a folder module that declares no interface, where some names are used only by another of its files, which keeps them from `EXPOSED_UNUSED`.
-  It says how many of its names files outside it use, and names the ones only its own files import.
+  It says how many of its names files outside it use, and how many only its own files import, naming the first five.
   Declare the interface, such as an `index.ts` that offers what callers use, and the rest stays inside.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
