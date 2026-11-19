@@ -180,8 +180,8 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 		);
 		const depth = reading?.depth.find((module) => module.subject.id === asked.module);
 		if (reading === undefined || depth === undefined) return null;
-		const findings = reading.findings.filter((finding) => finding.subject?.id === asked.module);
-		return { readings: [], models: [{ ...reading, findings, depth: [depth], skipped: [] }] };
+		// The page that asks holds the findings and the skips already, from the findings answer.
+		return { readings: [], models: [{ ...reading, findings: [], depth: [depth], skipped: [] }] };
 	}
 	return { remember, recall, exportsOf };
 }
