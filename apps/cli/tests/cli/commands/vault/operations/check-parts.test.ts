@@ -494,7 +494,10 @@ function shallow(id: string): CodeFinding {
 	};
 }
 
-/** An answer with two shallow modules, one of which the branch touched, and the model's policy. */
+/**
+ * An answer with two shallow modules, one of which the branch touched, and the model's policy. The
+ * route measures each module without the names of its exports.
+ */
 function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
 	return {
 		...codeCheck,
@@ -506,6 +509,17 @@ function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
 				failShallowModules: gate,
 			},
 		],
+		depth: ["Orders#Timing", "Orders#Clock"].map((id) => ({
+			model: "Orders",
+			state: "Built",
+			subject: { kind: "node" as const, id, name: id },
+			repo: "github.com/acme/orders",
+			directory: "src/timing",
+			languages: ["typescript"],
+			unjudged: [],
+			exports: { functions: 0, classes: 0, methods: 0, values: 2, types: 0 },
+			logic: 0,
+		})),
 		findings: [shallow("Orders#Timing"), shallow("Orders#Clock")],
 		touched: [
 			{ model: "Orders", state: "Built", base: "main", modules: ["Orders#Timing"], unread },
@@ -555,6 +569,9 @@ test("the model's policy turns the same gate on without the flag", async () => {
 		answered = shallowAnswer(true);
 		const gated = await run(["check", "code"]);
 		expect(gated.exited).toBe(1);
+		// The measured modules pass through without the names of their exports.
+		const depth = PartsSchema.parse(JSON.parse(gated.stdout)).code?.depth ?? [];
+		expect(depth.map((module) => module.subject.id)).toEqual(["Orders#Timing", "Orders#Clock"]);
 		expect(shallowSeverities(gated.stdout)).toEqual([
 			["Orders#Timing", "warning"],
 			["Orders#Clock", "information"],

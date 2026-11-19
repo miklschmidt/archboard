@@ -2,6 +2,7 @@
 // (TASK-646.07, ADR 0082): its exports by kind, the logic behind them and its findings, or why the
 // pass did not judge it. A module the pass read only in part never looks clean.
 
+import type { QueryStatus } from "@tanstack/react-query";
 import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 type Remembered = NonNullable<RememberedFindings["models"]>[number];
@@ -12,7 +13,7 @@ type Skip = NonNullable<Remembered["skipped"]>[number];
  * How the read of the remembered passes stands, or that the reading is not the vault on disk,
  * which no pass reads.
  */
-type CodeRead = "pending" | "error" | "success" | "elsewhere";
+type CodeRead = QueryStatus | "elsewhere";
 
 /** What stands where no remembered pass read the reading, by how the read stands. */
 const CODE_UNREAD: Readonly<Record<CodeRead, string>> = {
