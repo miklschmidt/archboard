@@ -40,6 +40,7 @@ import {
 } from "#server/sessions/services/workhorses.ts";
 import { guardWorkhorse, stopWorkTree } from "#server/sessions/services/stop.ts";
 import { sessionVoiceStartTrace } from "#server/voice/services/start-trace.ts";
+import { liveWorkhorseCheckouts } from "#server/chat-conversations/browser-state/projections/workhorse-list.ts";
 import {
 	noteCoordinatorTurnStart,
 	recordGivenWork,
@@ -370,6 +371,11 @@ function createCodexWorkbenchSessions(
 			workhorses,
 			workhorse,
 			voiceWorkhorse,
+			/**
+			 * The checkouts of the live workhorses.
+			 * @returns Them, in the order the workhorses were built.
+			 */
+			liveCheckouts: () => liveWorkhorseCheckouts({ workhorses }),
 			stopWork,
 		});
 		return session;

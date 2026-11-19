@@ -1,13 +1,11 @@
-import type { WebSocket } from "ws";
+import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
+import type { TabSessionId, VoiceSocket } from "@archboard/codex-realtime-voice/server";
 
-import type { BrowserConnectionInstance } from "#runtime/voice/protocol/extension.ts";
 import { messageOf } from "#server/request/services/request-fields.ts";
 import {
 	clients,
 	clientIds,
-	codexSocketInstances,
 	currentSocketsByClient,
 	forgetDisplay,
 	latestSocketAcceptanceByClient,
@@ -15,19 +13,12 @@ import {
 	paneVaults,
 	panes,
 	socketVaults,
+	voiceConnections,
 } from "#server/panes/services/registry.ts";
 import { notePaneClosed, rejectPendingLayouts } from "#server/panes/services/pane-arrivals.ts";
 import { unwatchRegistry } from "#server/panes/services/registry-follow.ts";
-import {
-	forgetTabSession,
-	forgetTabSessions,
-	noteTabSession,
-} from "#server/panes/services/tab-sessions.ts";
-import {
-	acceptCodexBrowser,
-	closeCodexBrowser,
-	drainCodexBrowsers,
-} from "#server/workbench-host/services/wiring-hooks.ts";
+import { connectVoice } from "#server/panes/services/voice-agent.ts";
+import { pinnedCheckoutOf } from "#server/sessions/services/panes.ts";
 
 /** What one accepted socket is registered as, before it is presented anything. */
 interface RegisteredSocket {
@@ -39,8 +30,6 @@ interface RegisteredSocket {
 	readonly tabSessionId: TabSessionId | null;
 	/** The token this acceptance is stamped with, so a predecessor cannot take authority back. */
 	readonly acceptanceToken: object | null;
-	/** Its Codex browser connection instance. */
-	readonly codexInstance: BrowserConnectionInstance;
 }
 
 /**
@@ -50,15 +39,15 @@ interface RegisteredSocket {
  */
 function retirePaneOwner(closingId: string): void {
 	currentSocketsByClient.delete(closingId);
-	forgetTabSession(closingId);
 	panes.delete(closingId);
 	notePaneClosed(closingId);
 }
 
 /**
- * Forget a socket that has closed. Exact Codex cleanup is safe for a replaced
- * socket. Client-id keyed server state is not: a replacement may already own
- * that pane identity, so only the socket that owns it retires it.
+ * Forget a socket that has closed. Releasing its voice connection is safe for a replaced
+ * socket: the agent forgets a registration only when its own socket closes. Client-id keyed
+ * server state is not: a replacement may already own that pane identity, so only the socket that
+ * owns it retires it.
  * @param ws The closed socket.
  * @param acceptanceToken The token this socket's acceptance was stamped with.
  */
@@ -67,19 +56,15 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	socketVaults.delete(ws);
 	const closingId = clientIds.get(ws);
 	clientIds.delete(ws);
-	const closingCodexInstance = codexSocketInstances.get(ws);
-	codexSocketInstances.delete(ws);
+	const voice = voiceConnections.get(ws);
+	voiceConnections.delete(ws);
+	void voice?.close().catch((error) => logger().error("Codex browser cleanup failed:", error));
 	if (closingId === undefined) {
 		logger().info("WebSocket connection closed");
 		return;
 	}
 	if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken) {
 		latestSocketAcceptanceByClient.delete(closingId);
-	}
-	if (closingCodexInstance !== undefined) {
-		void closeCodexBrowser(closingCodexInstance, closingId).catch((error) =>
-			logger().error("Codex browser cleanup failed:", error),
-		);
 	}
 	if (currentSocketsByClient.get(closingId) !== ws) {
 		logger().info(`Replaced WebSocket connection closed (client ${closingId})`);
@@ -100,8 +85,6 @@ function registerSocket(
 	named: Pick<RegisteredSocket, "vault" | "clientId" | "tabSessionId">,
 ): RegisteredSocket {
 	const { vault, clientId, tabSessionId } = named;
-	const codexInstance = Object.freeze({});
-	codexSocketInstances.set(ws, codexInstance);
 	socketVaults.set(ws, vault);
 	const acceptanceToken = clientId === null ? null : Object.freeze({});
 	if (clientId !== null && acceptanceToken !== null) {
@@ -109,7 +92,7 @@ function registerSocket(
 		latestSocketAcceptanceByClient.set(clientId, acceptanceToken);
 	}
 	ws.on("close", () => forgetClosedSocket(ws, acceptanceToken));
-	return { vault, clientId, tabSessionId, acceptanceToken, codexInstance };
+	return { vault, clientId, tabSessionId, acceptanceToken };
 }
 
 /**
@@ -187,19 +170,72 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
 	const { clientId, acceptanceToken } = socket;
 	if (clientId === null || acceptanceToken === null) {
 		clients.add(ws);
+		connectPaneVoice(ws, socket);
 		return true;
 	}
 	if (!takePaneAuthority(ws, clientId, acceptanceToken, startingKey, socket.vault)) {
 		return false;
 	}
-	noteTabSession(clientId, socket.tabSessionId);
 	clients.add(ws);
+	connectPaneVoice(ws, socket);
+	return true;
+}
+
+/**
+ * A pane socket as the voice agent sends on it and closes it.
+ * @param ws The socket.
+ * @returns The socket, whose send settles once the socket took the frame.
+ */
+function voiceSocketOf(ws: WebSocket): VoiceSocket {
+	return {
+		/**
+		 * Send one frame, and settle once the socket took it.
+		 * @param data The frame's text.
+		 * @returns Resolves once it was written.
+		 */
+		send: (data) =>
+			new Promise<void>((resolve, reject) => {
+				if (ws.readyState !== WebSocket.OPEN) {
+					reject(new Error("The Codex browser WebSocket is not open."));
+					return;
+				}
+				ws.send(data, (error) => (error ? reject(error) : resolve()));
+			}),
+		/**
+		 * Close the socket.
+		 * @param code The close code.
+		 * @param reason The close reason.
+		 */
+		close: (code, reason) => {
+			ws.close(code, reason);
+		},
+	};
+}
+
+/**
+ * Connect an admitted pane socket to the voice agent: as its pane, which the tab and pane
+ * registration name, or without an identity, whose voice requests the agent refuses.
+ * @param ws The socket.
+ * @param socket What it is registered as.
+ */
+function connectPaneVoice(ws: WebSocket, socket: RegisteredSocket): void {
+	const { clientId, tabSessionId } = socket;
 	try {
-		acceptCodexBrowser(socket.codexInstance, clientId);
+		const connection = connectVoice(
+			voiceSocketOf(ws),
+			clientId === null
+				? { tabSessionId, browserId: null, chat: () => null }
+				: {
+						tabSessionId,
+						browserId: clientId,
+						chat: () => panes.get(clientId)?.paneId ?? null,
+						checkout: () => pinnedCheckoutOf(clientId),
+					},
+		);
+		if (connection !== null) voiceConnections.set(ws, connection);
 	} catch (error) {
 		logger().error("Codex browser acceptance failed:", error);
 	}
-	return true;
 }
 
 /** Collects distinct cleanup failures, flattening aggregates, so one report names them all. */
@@ -238,15 +274,12 @@ class CleanupFailures {
 }
 
 /**
- * Close every Codex browser connection the workbench still holds.
+ * Release every voice connection the panes still hold.
  * @param failures Where to retain what fails.
  */
 async function closeCodexBrowsers(failures: CleanupFailures): Promise<void> {
 	const settled = await Promise.allSettled(
-		Array.from(codexSocketInstances, ([socket, instance]) => {
-			const browserId = clientIds.get(socket);
-			return browserId ? closeCodexBrowser(instance, browserId) : Promise.resolve();
-		}),
+		Array.from(voiceConnections.values(), (connection) => connection.close()),
 	);
 	for (const result of settled) {
 		if (result.status === "rejected") {
@@ -257,8 +290,8 @@ async function closeCodexBrowsers(failures: CleanupFailures): Promise<void> {
 
 /**
  * Tear down every browser-facing owner before the socket server closes: stop following the
- * registry, terminate every socket the server accepted, then close the Codex browsers, pending
- * layout requests and tab sessions, and forget the display. The socket server does not terminate
+ * registry, terminate every socket the server accepted, then release the voice connections and
+ * the pending layout requests, and forget the display. The socket server does not terminate
  * its clients when it closes, and a peer can ignore a close frame, so the server passes every
  * socket it accepted, feed sockets and sockets that never reached presentation included.
  * @param accepted Every socket the server accepted that is still open.
@@ -271,14 +304,8 @@ async function closeBrowserOwners(accepted: Iterable<WebSocket>): Promise<void> 
 		socket.terminate();
 	}
 	await closeCodexBrowsers(failures);
-	try {
-		await drainCodexBrowsers();
-	} catch (error) {
-		failures.retain(error);
-	}
 	rejectPendingLayouts();
 	forgetDisplay();
-	forgetTabSessions();
 	failures.throwIfAny();
 }
 

@@ -1,10 +1,7 @@
 // Archboard's names for the parts of the voice agent's extension contract that it implements.
 // Every type is read from the one contract the voice package publishes, `VoiceAgentExtensions`,
 // so a change of the contract reaches Archboard's code as a type error, not as a drifted copy.
-import type {
-	VoiceAgentBrowserPort,
-	VoiceAgentExtensions,
-} from "@archboard/codex-realtime-voice/server";
+import type { VoiceAgent, VoiceAgentExtensions } from "@archboard/codex-realtime-voice/server";
 import type { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 
 type Extensions = Required<VoiceAgentExtensions>;
@@ -29,10 +26,8 @@ export type CodexWorkbenchDomain = ReturnType<CodexWorkbenchDomainTools["install
 export type WorkbenchOperationAuthority = Parameters<Extensions["contextForOperation"]>[0];
 /** One operation whose context is captured before it runs. */
 export type PendingOperation = Parameters<Extensions["contextForOperation"]>[1];
-/** The core's registry of browser tabs and the conversation each shows. */
-export type TabSessions = Parameters<Extensions["installBrowserSessions"]>[0];
-/** The browser command-lease ledger shared with the host's own sockets. */
-export type BrowserLeaseLedger = Extensions["browserLeaseLedger"];
+/** The agent's browser tabs and the conversation each shows. */
+export type TabSessions = VoiceAgent["tabs"];
 /** One live tab session of a generation. */
 export type CodexWorkbenchTabSession = ReturnType<CodexWorkbenchDomainScope["sessions"]["require"]>;
 /** The durable epoch store of a generation. */
@@ -82,5 +77,3 @@ export type BrowserDynamicApprovalActions = NonNullable<
 export type BrowserActionContext = Parameters<BrowserDynamicApprovalActions["resolve"]>[1];
 /** What answering a browser action resolves with. */
 export type BrowserActionResult = Awaited<ReturnType<BrowserDynamicApprovalActions["resolve"]>>;
-/** The exact physical socket a host registers with the browser port. */
-export type BrowserConnectionInstance = Parameters<VoiceAgentBrowserPort["accept"]>[0];

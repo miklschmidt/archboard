@@ -5,52 +5,61 @@ import { join } from "node:path";
 import { WebSocket } from "ws";
 
 import { serveBunBrowserSockets } from "#server/agent/services/bun-serve.ts";
+import type { VoiceConnection, VoiceSocket } from "#server/agent/services/connect.ts";
 import { createVoiceAgent } from "#server/agent/services/voice-agent.ts";
 
-type BrowserPort = Parameters<typeof serveBunBrowserSockets>[0];
+type Connect = Parameters<typeof serveBunBrowserSockets>[0];
+
+const SURFACE = "?tabSessionId=tab-one&chatId=main";
 
 /**
- * A browser port that records what the adapter hands it and answers each request.
- * @returns The port, the requests it received and the sockets it closed.
+ * A `connect` that answers each voice request on its socket and records what it was handed.
+ * @param answer How it answers one request on the socket.
+ * @returns The connect, the routes it received, the frames handed over and the releases.
  */
-function recordingPort() {
-	const handled: unknown[] = [];
-	const closed: object[] = [];
-	const port: BrowserPort = {
-		accept: () => undefined,
-		handle: async (_instance, _browserId, input, transport) => {
-			handled.push(input);
-			await transport.send({ answered: input });
-		},
-		close: async (instance) => {
-			closed.push(instance);
-		},
-		drain: async () => undefined,
+function recordingConnect(
+	answer: (socket: VoiceSocket, frame: unknown) => Promise<void> = async (socket, frame) =>
+		socket.send(JSON.stringify({ answered: frame })),
+) {
+	const routes: unknown[] = [];
+	const received: unknown[] = [];
+	let closed = 0;
+	const connect: Connect = (socket, route) => {
+		routes.push(route);
+		const connection: VoiceConnection = {
+			receive: (frame) => {
+				if ((frame as { type?: unknown } | null)?.type !== "codex_workbench_request") return false;
+				received.push(frame);
+				return answer(socket, frame);
+			},
+			close: async () => {
+				closed += 1;
+			},
+		};
+		return connection;
 	};
-	return { port, handled, closed };
+	return { connect, routes, received, closed: () => closed };
 }
 
 /**
  * Serve the adapter on a loopback Bun.serve server at port 0, with a host route of its own.
- * @param port The browser port.
- * @returns The server's origin, its detach, and a disposal that stops the server.
+ * @param connect The connect the adapter hands its sockets to.
+ * @param websocket The host's own socket handlers.
+ * @returns The server's origin and socket URL, and a disposal that stops the server.
  */
-function serve(port: BrowserPort) {
-	const { handlers, detach } = serveBunBrowserSockets(port, {
+function serve(connect: Connect, websocket?: Bun.WebSocketHandler<undefined>) {
+	const handlers = serveBunBrowserSockets(connect, new Set(), {
 		path: "/voice",
 		checkout: "/work/checkout",
 		fetch: () => new Response("host", { status: 418 }),
+		...(websocket === undefined ? {} : { websocket }),
 	});
 	const server = Bun.serve({ hostname: "127.0.0.1", port: 0, ...handlers });
 	const origin = server.url.origin;
 	return {
 		origin,
 		socketUrl: `${origin.replace("http:", "ws:")}/voice${SURFACE}`,
-		detach,
-		[Symbol.asyncDispose]: async () => {
-			await detach();
-			await server.stop(true);
-		},
+		[Symbol.asyncDispose]: () => server.stop(true),
 	};
 }
 
@@ -60,13 +69,23 @@ function serve(port: BrowserPort) {
  * @param headers Extra request headers.
  * @returns The open socket, or the refusal status.
  */
-function connect(url: string, headers: Record<string, string> = {}) {
+function open(url: string, headers: Record<string, string> = {}) {
 	return new Promise<WebSocket | number>((resolve, reject) => {
 		const socket = new WebSocket(url, { headers });
 		socket.once("open", () => resolve(socket));
 		socket.once("unexpected-response", (_request, response) => resolve(response.statusCode ?? 0));
 		socket.once("error", reject);
 	});
+}
+
+/**
+ * Require an open socket.
+ * @param socket The socket, or the status its upgrade was refused with.
+ * @returns The socket.
+ */
+function opened(socket: WebSocket | number): WebSocket {
+	if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
+	return socket;
 }
 
 /**
@@ -78,27 +97,35 @@ function closeCode(socket: WebSocket) {
 	return new Promise<number>((resolve) => socket.once("close", resolve));
 }
 
-const SURFACE = "?tabSessionId=tab-one&chatId=main";
-
-test("Bun.serve sockets on the path are answered, and every other request reaches the host", async () => {
-	const { port, handled } = recordingPort();
-	await using host = serve(port);
-	const socket = await connect(host.socketUrl, { Origin: host.origin });
-	if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
+test("Bun.serve hands a socket on the path to connect with its request, and every other request to the host", async () => {
+	const recorded = recordingConnect();
+	await using host = serve(recorded.connect);
+	const socket = opened(await open(host.socketUrl, { Origin: host.origin }));
 	const answer = new Promise<unknown>((resolve) =>
 		socket.once("message", (raw: Buffer) => resolve(JSON.parse(raw.toString()))),
 	);
-	socket.send(JSON.stringify({ type: "probe" }));
-	expect(await answer).toEqual({ answered: { type: "probe" } });
-	expect(handled).toEqual([{ type: "probe" }]);
+	socket.send(JSON.stringify({ type: "codex_workbench_request", requestId: "probe" }));
+	expect(await answer).toEqual({
+		answered: { type: "codex_workbench_request", requestId: "probe" },
+	});
+	expect(recorded.routes).toEqual([
+		{
+			request: { url: `${host.origin}/voice${SURFACE}`, headers: expect.any(Headers) },
+			checkout: "/work/checkout",
+		},
+	]);
 	expect((await fetch(`${host.origin}/voice${SURFACE}`)).status).toBe(418);
 	expect((await fetch(`${host.origin}/other`)).status).toBe(418);
+	const code = closeCode(socket);
 	socket.close();
+	await code;
+	await Bun.sleep(10);
+	expect(recorded.closed()).toBe(1);
 });
 
 test("Bun.serve gives a socket the host upgrades itself to the host's own handlers", async () => {
-	const { port, handled } = recordingPort();
-	const { handlers, detach } = serveBunBrowserSockets<{ readonly room: string }>(port, {
+	const recorded = recordingConnect();
+	const handlers = serveBunBrowserSockets<{ readonly room: string }>(recorded.connect, new Set(), {
 		path: "/voice",
 		checkout: "/work/checkout",
 		fetch: (request, server) =>
@@ -113,96 +140,77 @@ test("Bun.serve gives a socket the host upgrades itself to the host's own handle
 	});
 	const server = Bun.serve({ hostname: "127.0.0.1", port: 0, ...handlers });
 	try {
-		const socket = await connect(`${server.url.origin.replace("http:", "ws:")}/chat`);
-		if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
+		const socket = opened(await open(`${server.url.origin.replace("http:", "ws:")}/chat`));
 		const echo = new Promise<string>((resolve) =>
 			socket.once("message", (raw: Buffer) => resolve(raw.toString())),
 		);
 		socket.send("hello");
 		expect(await echo).toBe("lobby:hello");
-		expect(handled).toEqual([]);
+		expect(recorded.routes).toEqual([]);
 		socket.close();
 	} finally {
-		await detach();
 		await server.stop(true);
 	}
 });
 
-test("Bun.serve refuses a foreign origin with 403 and a missing tab session with 400", async () => {
-	await using host = serve(recordingPort().port);
-	expect(await connect(host.socketUrl, { Origin: "https://other.example" })).toBe(403);
-	expect(await connect(`${host.origin.replace("http:", "ws:")}/voice?chatId=main`)).toBe(400);
+test("Bun.serve refuses a foreign origin with 403 and a missing tab session with 400 before it upgrades", async () => {
+	const recorded = recordingConnect();
+	await using host = serve(recorded.connect);
+	expect(await open(host.socketUrl, { Origin: "https://other.example" })).toBe(403);
+	expect(await open(`${host.origin.replace("http:", "ws:")}/voice?chatId=main`)).toBe(400);
+	expect(recorded.routes).toEqual([]);
 });
 
-test("Bun.serve closes a socket that sends a non-JSON frame with 1003", async () => {
-	const { port, handled } = recordingPort();
-	await using host = serve(port);
-	const socket = await connect(host.socketUrl);
-	if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
-	const code = closeCode(socket);
-	socket.send("not json");
-	expect(await code).toBe(1003);
-	expect(handled).toEqual([]);
+test("Bun.serve closes a socket that sends anything but a voice request with 1003", async () => {
+	const recorded = recordingConnect();
+	await using host = serve(recorded.connect);
+	for (const frame of ["not json", JSON.stringify({ type: "pane_place" })]) {
+		const socket = opened(await open(host.socketUrl));
+		const code = closeCode(socket);
+		socket.send(frame);
+		expect(await code).toBe(1003);
+	}
+	expect(recorded.received).toEqual([]);
 });
 
 test("Bun.serve ends a socket whose frame it dropped over the backpressure limit", async () => {
-	const closed: object[] = [];
 	let dropped: unknown = null;
-	const port: BrowserPort = {
-		accept: () => undefined,
-		handle: async (_instance, _browserId, _input, transport) => {
-			// The first frame outgrows the socket buffers and is queued; Bun drops the next one.
-			await transport.send({ filler: "x".repeat(16 << 20) });
-			await transport.send({ after: true }).catch((error: unknown) => (dropped = error));
-		},
-		close: async (instance) => {
-			closed.push(instance);
-		},
-		drain: async () => undefined,
-	};
-	const { handlers, detach } = serveBunBrowserSockets(port, {
+	const recorded = recordingConnect(async (socket) => {
+		// The first frame outgrows the socket buffers and is queued; Bun drops the next one.
+		await socket.send(JSON.stringify({ filler: "x".repeat(16 << 20) }));
+		try {
+			await socket.send(JSON.stringify({ after: true }));
+		} catch (error) {
+			dropped = error;
+		}
+	});
+	const handlers = serveBunBrowserSockets(recorded.connect, new Set(), {
 		path: "/voice",
 		checkout: "/work/checkout",
 		websocket: { backpressureLimit: 1, message: () => undefined },
 	});
 	const server = Bun.serve({ hostname: "127.0.0.1", port: 0, ...handlers });
 	try {
-		const socket = await connect(`${server.url.origin.replace("http:", "ws:")}/voice${SURFACE}`);
-		if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
+		const socket = opened(
+			await open(`${server.url.origin.replace("http:", "ws:")}/voice${SURFACE}`),
+		);
 		const code = closeCode(socket);
-		socket.send(JSON.stringify({ type: "probe" }));
+		socket.send(JSON.stringify({ type: "codex_workbench_request" }));
 		expect(await code).not.toBe(1000);
 		expect(dropped).toBeInstanceOf(Error);
-		expect(closed).toHaveLength(1);
 	} finally {
-		await detach();
 		await server.stop(true);
 	}
 });
 
-test("Bun.serve detach closes the open socket in the port and refuses the next", async () => {
-	const { port, closed } = recordingPort();
-	await using host = serve(port);
-	const socket = await connect(host.socketUrl);
-	if (typeof socket === "number") throw new Error(`The upgrade was refused with ${socket}.`);
-	const code = closeCode(socket);
-	await host.detach();
-	expect(await code).not.toBe(1000);
-	expect(closed).toHaveLength(1);
-	expect(await connect(host.socketUrl)).toBe(503);
-});
-
-test("an agent's Bun handlers close a socket with 1011 before start, refuse sockets after shutdown, and new handlers serve again", async () => {
+test("an agent's Bun handlers keep a socket that arrives before start, close it at shutdown, and admit the next", async () => {
 	await using directory = new AsyncDisposableStack();
 	const state = mkdtempSync(join(tmpdir(), "voice-bun-serve-"));
 	directory.defer(() => rmSync(state, { recursive: true, force: true }));
 	const agent = createVoiceAgent({
-		storage: { directory: join(state, "private") },
+		directory: join(state, "private"),
 		codex: { executablePath: "/nonexistent/codex" },
 		checkouts: [state],
-		instructions: { coordinator: "Coordinate.", workhorse: "Work." },
-		/** This agent never starts, so it cannot fail. */
-		onFatal: () => undefined,
 	});
 	const server = Bun.serve({
 		hostname: "127.0.0.1",
@@ -211,26 +219,37 @@ test("an agent's Bun handlers close a socket with 1011 before start, refuse sock
 	});
 	directory.defer(() => server.stop(true));
 	const url = `${server.url.origin.replace("http:", "ws:")}/voice${SURFACE}`;
-	const early = await connect(url);
-	if (typeof early === "number") throw new Error(`The upgrade was refused with ${early}.`);
-	expect(await closeCode(early)).toBe(1011);
+	const early = opened(await open(url));
+	const refusal = new Promise<unknown>((resolve) =>
+		early.once("message", (raw: Buffer) => resolve(JSON.parse(raw.toString()))),
+	);
+	early.send(JSON.stringify({ type: "codex_workbench_request", requestId: "r", action: "connect" }));
+	expect(await refusal).toEqual({
+		type: "codex_workbench_result",
+		requestId: "r",
+		action: "connect",
+		ok: false,
+		error: "The Codex workbench is unavailable.",
+	});
+	const code = closeCode(early);
 	await agent.shutdown();
-	expect(await connect(url)).toBe(503);
+	expect(await code).toBe(1001);
 	expect((await fetch(`${server.url.origin}/page`)).status).toBe(404);
-	server.reload({ ...agent.bunHandlers({ path: "/voice" }) });
-	const rearmed = await connect(url);
-	if (typeof rearmed === "number") throw new Error(`The upgrade was refused with ${rearmed}.`);
-	expect(await closeCode(rearmed)).toBe(1011);
+	const later = opened(await open(url));
+	later.close();
 });
 
-test("Bun.serve refuses a path or a named origin that could never admit a socket", () => {
-	const { port } = recordingPort();
-	const serveOn = (path: string, origin?: string) => () =>
-		serveBunBrowserSockets(port, {
-			path,
-			checkout: "/work/checkout",
-			...(origin === undefined ? {} : { origin }),
+test("an agent's Bun handlers refuse a path that could never admit a socket, and a checkout it does not admit", () => {
+	const state = mkdtempSync(join(tmpdir(), "voice-bun-paths-"));
+	try {
+		const agent = createVoiceAgent({
+			directory: join(state, "private"),
+			codex: { executablePath: "/nonexistent/codex" },
+			checkouts: [state],
 		});
-	expect(serveOn("voice")).toThrow(TypeError);
-	expect(serveOn("/voice", "http://127.0.0.1:4100/")).toThrow(TypeError);
+		expect(() => agent.bunHandlers({ path: "voice" })).toThrow(TypeError);
+		expect(() => agent.bunHandlers({ path: "/voice", checkout: "/elsewhere" })).toThrow(TypeError);
+	} finally {
+		rmSync(state, { recursive: true, force: true });
+	}
 });

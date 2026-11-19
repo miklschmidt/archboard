@@ -6,10 +6,7 @@ import type { IncomingMessage } from "http";
 import { WebSocket, type RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import { parsePaneKey } from "@archboard/model-contract";
-import {
-	createServerCodexBrowserSocketSend,
-	parseTabSessionId,
-} from "@archboard/codex-realtime-voice/server";
+import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { placeOfVault } from "@archboard/workspace/vault";
 
 import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
@@ -17,12 +14,13 @@ import { agentActivity } from "#server/panes/services/agent-activity.ts";
 import {
 	admitSocket,
 	registerSocket,
-	type RegisteredSocket,
 } from "#server/panes/services/pane-sockets.ts";
-import { paneKeyForNewPane, paneVaultOf } from "#server/panes/services/registry.ts";
-import { isRecord } from "#server/request/services/request-fields.ts";
+import {
+	paneKeyForNewPane,
+	paneVaultOf,
+	voiceConnections,
+} from "#server/panes/services/registry.ts";
 import { resolveVault } from "@archboard/server-requests/server";
-import { handleCodexBrowserMessage } from "#server/workbench-host/services/wiring-hooks.ts";
 
 /**
  * One socket frame as text. ws hands a frame over as a buffer, an array
@@ -81,78 +79,22 @@ function sendStartingPlace(
 }
 
 /**
- * The failure answer to a Codex workbench request that cannot be routed.
- * @param message The request as parsed.
- * @param error Why it cannot be served.
- * @returns The result message.
- */
-function codexRefusal(message: Record<string, unknown>, error: string): Record<string, unknown> {
-	const requestId = typeof message["requestId"] === "string" ? message["requestId"] : null;
-	const action = typeof message["action"] === "string" ? message["action"] : null;
-	return { type: "codex_workbench_result", requestId, action, ok: false, error };
-}
-
-/**
- * Parse one socket frame as a Codex workbench request, ignoring everything else.
- * @param raw The frame.
- * @returns The request, or null when the frame is not one.
- */
-function codexRequestOf(raw: RawData): Record<string, unknown> | null {
-	let message: unknown;
-	try {
-		message = JSON.parse(frameText(raw));
-	} catch {
-		return null;
-	}
-	return isRecord(message) && message["type"] === "codex_workbench_request" ? message : null;
-}
-
-/**
- * Route the socket's Codex workbench requests to the installed workbench,
- * refusing them while there is no workbench or no authoritative identity.
+ * Hand the socket's voice requests to its voice connection, which answers them, a refusal
+ * included. Every other frame is the pane's.
  * @param ws The socket.
- * @param socket What it is registered as: its pane, its tab and its Codex connection instance.
  */
-function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
-	const { clientId, tabSessionId, codexInstance: codexSocketInstance } = socket;
-	const codexTransport = createServerCodexBrowserSocketSend(ws);
-	/**
-	 * Send one response, logging a transport failure rather than throwing into `ws`.
-	 * @param response The response.
-	 */
-	const send = (response: unknown): void => {
-		void codexTransport
-			.send(response)
-			.catch((error) => logger().error("Codex browser response send failed:", error));
-	};
+function listenForCodexRequests(ws: WebSocket): void {
 	ws.on("message", (raw) => {
-		const message = codexRequestOf(raw);
-		if (message === null) {
+		const connection = voiceConnections.get(ws);
+		if (connection === undefined) return;
+		let frame: unknown;
+		try {
+			frame = JSON.parse(frameText(raw));
+		} catch {
 			return;
 		}
-		if (clientId === null) {
-			send(
-				codexRefusal(
-					message,
-					"The Codex workbench requires an authoritative browser connection identity.",
-				),
-			);
-			return;
-		}
-		if (tabSessionId === null) {
-			send(codexRefusal(message, "The Codex workbench requires the browser tab session identity."));
-			return;
-		}
-		const handling = handleCodexBrowserMessage(
-			codexSocketInstance,
-			clientId,
-			message,
-			codexTransport.send,
-		);
-		if (handling === null) {
-			send(codexRefusal(message, "The Codex workbench is unavailable."));
-			return;
-		}
+		const handling = connection.receive(frame);
+		if (handling === false) return;
 		void handling.catch((error) => logger().error("Codex browser request failed:", error));
 	});
 }
@@ -226,7 +168,7 @@ async function acceptPaneSocket(ws: WebSocket, req: IncomingMessage, named: stri
 	logger().info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	listenForCodexRequests(ws, socket);
+	listenForCodexRequests(ws);
 }
 
 export { acceptPaneSocket };

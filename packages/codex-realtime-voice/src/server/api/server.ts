@@ -1,31 +1,24 @@
+// The voice agent a Bun server runs: create it, start it, and connect each browser socket, from
+// any WebSocket library or through its Bun handlers. Below it, what a host that adds its own
+// domain composes: its role instructions, the turn input of its own tools, and the context policy.
 export { createVoiceAgent } from "#server/agent/services/voice-agent.ts";
+export type {
+	VoiceAgent,
+	VoiceAgentExtensions,
+	VoiceAgentOptions,
+} from "#server/agent/services/voice-agent.ts";
+export type {
+	VoiceConnection,
+	VoiceRoute,
+	VoiceSocket,
+} from "#server/agent/services/connect.ts";
+export type { ContextChange } from "#server/sessions/announce/protocol/contract.ts";
+export { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
+export type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
+export { composeRoleInstructions } from "#runtime/host/rules/instructions.ts";
 export { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
 export {
 	additionalContextPolicy,
 	type OperationOutcome,
 } from "#runtime/workhorses/instructions/rules/context-policy.ts";
-export { composeRoleInstructions } from "#runtime/host/rules/instructions.ts";
 export type { DeepReadonly } from "#runtime/approvals/services/contract.ts";
-export type {
-	VoiceAgent,
-	VoiceAgentBrowserPort,
-	VoiceAgentExtensions,
-	VoiceAgentOptions,
-} from "#server/agent/services/voice-agent.ts";
-export type { ContextChange } from "#server/sessions/announce/protocol/contract.ts";
-
-export { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
-export type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
-
-// Below: seams for a host that serves its own chat sockets, domain tools and dynamic approvals. A
-// host that serves its browser through `attach` needs none of them.
-export { parseWorkhorseLinkKey } from "#server/tab-session/rules/tab-session.ts";
-export {
-	createServerCodexBrowserSocketOwner,
-	createServerCodexBrowserSocketSend,
-} from "#server/browser-socket/services/socket.ts";
-
-export { liveWorkhorseCheckouts } from "#server/chat-conversations/browser-state/projections/workhorse-list.ts";
-
-export { createBrowserLeaseLedger } from "#server/lease/services/lease.ts";
-export { mountVoiceStartTraceRoute } from "#server/voice/services/start-trace.ts";

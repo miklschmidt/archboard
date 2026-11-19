@@ -1,6 +1,4 @@
-import { pinnedCheckoutOf } from "#server/sessions/services/panes.ts";
 import { workbenchTelemetryEnvironment } from "@archboard/telemetry/record";
-import { installWorkbenchTabSessions } from "#server/panes/services/tab-sessions.ts";
 import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
 import { ARCHBOARD_AGENT } from "#runtime/host/services/archboard.ts";
 import path from "node:path";
@@ -49,7 +47,9 @@ function prepareCoordinatorDirectory(directory: string): void {
  * @param port The port this server listens on.
  * @returns The private installation root and process owner directory.
  */
-function createWorkbenchStorage(port: number): VoiceAgentOptions["storage"] {
+function createWorkbenchStorage(
+	port: number,
+): Pick<VoiceAgentOptions, "directory" | "ownerDirectory"> {
 	const root = path.join(stateDir(), "codex-workbench");
 	const ownerDirectory = path.join(root, "canvases", String(port));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
@@ -81,7 +81,7 @@ export function createServerVoiceAgentOptions(
 	const storage = createWorkbenchStorage(address.port);
 
 	return {
-		storage,
+		...storage,
 		checkouts: server.host.resolveCheckout,
 		identity: ARCHBOARD_AGENT.identity,
 		instructions: ARCHBOARD_AGENT.instructions,
@@ -96,10 +96,6 @@ export function createServerVoiceAgentOptions(
 			...(server.host.narrative ? { narrative: server.host.narrative } : {}),
 			...(server.host.domainTools ? { domainTools: server.host.domainTools } : {}),
 			...(server.host.onGeneration ? { onGeneration: server.host.onGeneration } : {}),
-			...(server.host.onBrowserGateway ? { onBrowserGateway: server.host.onBrowserGateway } : {}),
-			browserCheckoutOf: pinnedCheckoutOf,
-			installBrowserSessions: installWorkbenchTabSessions,
-			browserLeaseLedger: server.browserLeaseLedger,
 		},
 		codex: {
 			executablePath,

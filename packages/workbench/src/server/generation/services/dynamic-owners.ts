@@ -14,7 +14,6 @@ import {
 	type ServerDynamicLifecycleOwner,
 } from "#server/generation/services/operation-lifecycle.ts";
 import type { ArchboardWorkbenchServer } from "#server/generation/protocol/archboard-host.ts";
-import { parseWorkhorseLinkKey, type TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 /**
  * Whether a generation's transport is closed. A transport that cannot report its state is.
@@ -80,7 +79,11 @@ function createAuthority(
 		 * @returns The context.
 		 */
 		contextFor: (authorityContext) => {
-			const workhorse = parseWorkhorseLinkKey(authorityContext.authority.linkKey);
+			const workhorse = workhorseOfLinkKey(
+				created,
+				authorityContext.authority.threadId,
+				authorityContext.authority.linkKey,
+			);
 			if (workhorse === null) {
 				throw new Error("The dynamic caller's context authority names no workhorse.");
 			}
@@ -107,12 +110,22 @@ function createAuthority(
 }
 
 /**
- * The tab session of the workhorse a link key names.
- * @param key The link key, or null when the caller has none.
- * @returns The tab session, or null.
+ * The tab session and checkout of the live workhorse that started a thread, while its link key
+ * is still the one a caller holds.
+ * @param created What the graph has built so far.
+ * @param threadId The thread.
+ * @param key The link key the caller holds, or null when it has none.
+ * @returns Both, or null when no live workhorse started the thread or its link moved.
  */
-function tabSessionOfLinkKey(key: string | null): TabSessionId | null {
-	return key === null ? null : (parseWorkhorseLinkKey(key)?.tabSessionId ?? null);
+function workhorseOfLinkKey(
+	created: CodexWorkbenchDomainScope,
+	threadId: Parameters<CodexWorkbenchDomainScope["sessions"]["workhorseForThread"]>[0],
+	key: string | null,
+) {
+	const workhorse = created.sessions.workhorseForThread(threadId);
+	const session = created.sessions.forThread(threadId);
+	if (key === null || workhorse?.key !== key || session === null) return null;
+	return { tabSessionId: session.id, checkout: workhorse.checkout };
 }
 
 /**
@@ -143,9 +156,9 @@ function createApproval(
 		 * @returns The session, and the command and link it captured.
 		 */
 		bindingForCaller: (threadId) => {
-			const tabSessionId = tabSessionOfLinkKey(
-				owners.authority?.executableLinkKeyFor(threadId) ?? null,
-			);
+			const tabSessionId =
+				workhorseOfLinkKey(created, threadId, owners.authority?.executableLinkKeyFor(threadId) ?? null)
+					?.tabSessionId ?? null;
 			if (tabSessionId === null) throw new Error("The dynamic caller has no live tab session.");
 			return {
 				tabSessionId,

@@ -29,7 +29,7 @@ test("the browser client meets an agent's Bun.serve sockets before start and rec
 	const checkout = join(fixture.root, "checkout");
 	mkdirSync(checkout);
 	const agent = createVoiceAgent({
-		storage: { directory: join(fixture.root, "private") },
+		directory: join(fixture.root, "private"),
 		codex: { executablePath: fixture.executablePath },
 		checkouts: [checkout],
 		instructions: { coordinator: "Coordinate.", workhorse: "Work." },

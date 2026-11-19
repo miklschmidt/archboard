@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { WebSocket } from "ws";
 
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import {
@@ -11,59 +10,13 @@ import {
 	type BrowserWorkbenchConnection,
 	type CodexWorkbenchGateway,
 } from "#server/chat-conversations/gateway/protocol/contract.ts";
-import {
-	createServerCodexBrowserSocketOwner,
-	createServerCodexBrowserSocketSend,
-} from "#server/browser-socket/services/socket.ts";
+import { createServerCodexBrowserSocketOwner } from "#server/browser-socket/services/socket.ts";
 
 async function rejectedSend(error: Error): Promise<void> {
 	throw error;
 }
 
 describe("server Codex publication boundary", () => {
-	test("the production socket adapter takes a null callback error as a completed write", async () => {
-		const adapter = createServerCodexBrowserSocketSend({
-			readyState: WebSocket.OPEN,
-			send: (_data, callback) => queueMicrotask(() => callback(null)),
-		});
-		await expect(adapter.send({ written: true })).resolves.toBeUndefined();
-	});
-
-	test("the production socket adapter rejects closing and callback-failed sends", async () => {
-		let attempts = 0;
-		const closing = createServerCodexBrowserSocketSend({
-			readyState: WebSocket.CLOSING,
-			send: () => {
-				attempts += 1;
-			},
-		});
-		await expect(closing.send({ closing: true })).rejects.toThrow("not open");
-		expect(attempts).toBe(0);
-
-		let failWrite!: (error: Error) => void;
-		const callbackReady = Promise.withResolvers<void>();
-		let settled = false;
-		const callbackFailure = createServerCodexBrowserSocketSend({
-			readyState: WebSocket.OPEN,
-			send: (_data, callback) => {
-				attempts += 1;
-				failWrite = (error) => callback(error);
-				callbackReady.resolve();
-			},
-		});
-		const sending = callbackFailure.send({ callback: true });
-		void sending.then(
-			() => void (settled = true),
-			() => void (settled = true),
-		);
-		await callbackReady.promise;
-		expect(settled).toBeFalse();
-		failWrite(new Error("write callback failed"));
-		await expect(sending).rejects.toThrow("write callback failed");
-		expect(settled).toBeTrue();
-		expect(attempts).toBe(1);
-	});
-
 	test("an asynchronous result-send failure cannot confirm its snapshot", async () => {
 		const instance = Object.freeze({ socket: "publication" });
 		let confirmations = 0;
@@ -239,15 +192,12 @@ describe("server Codex publication boundary", () => {
 			openTabSession: () => undefined,
 		});
 		const eventSendFailure = new Error("event write callback failed");
-		const transport = createServerCodexBrowserSocketSend({
-			readyState: WebSocket.OPEN,
-			send: (raw, callback) => {
-				const message = JSON.parse(raw) as { type?: unknown };
-				queueMicrotask(() =>
-					message.type === "codex_workbench_event" ? callback(eventSendFailure) : callback(),
-				);
+		const transport = {
+			send: async (message: unknown) => {
+				await Promise.resolve();
+				if ((message as { type?: unknown }).type === "codex_workbench_event") throw eventSendFailure;
 			},
-		});
+		};
 		try {
 			await owner.handle(
 				instance,

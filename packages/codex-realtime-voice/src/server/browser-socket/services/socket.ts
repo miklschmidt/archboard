@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { WebSocket } from "ws";
 
 import type {
 	BrowserConnectionInstance,
@@ -50,44 +49,6 @@ type BrowserRequestActionsAreExhaustive = AssertNoUnhandledAction<
 
 interface ServerCodexBrowserSocketSend {
 	readonly send: (message: unknown) => Promise<void>;
-}
-
-interface ServerCodexBrowserWebSocket {
-	readonly readyState: number;
-	/** A successful write passes no error: Bun 1.4.3's `ws` passes `undefined`, Bun 1.4.4's passes `null`. */
-	readonly send: (data: string, callback: (error?: Error | null) => void) => void;
-}
-
-/**
- * Adapt the production callback-based WebSocket into an awaitable send
- * boundary.
- * @param socket The socket.
- * @returns The send boundary.
- */
-function createServerCodexBrowserSocketSend(
-	socket: ServerCodexBrowserWebSocket,
-): ServerCodexBrowserSocketSend {
-	return Object.freeze({
-		/**
-		 * Send one message and wait for the socket to have taken it, so a failed
-		 * write is a failed publication rather than a silent one.
-		 * @param message The message.
-		 */
-		send: async (message: unknown): Promise<void> => {
-			if (socket.readyState !== WebSocket.OPEN) {
-				throw new Error("The Codex browser WebSocket is not open.");
-			}
-			await new Promise<void>((resolve, reject) => {
-				try {
-					socket.send(JSON.stringify(message), (error) =>
-						error === undefined || error === null ? resolve() : reject(error),
-					);
-				} catch (error) {
-					reject(error);
-				}
-			});
-		},
-	});
 }
 
 interface ServerCodexBrowserSocketOwnerOptions {
@@ -531,7 +492,5 @@ function createServerCodexBrowserSocketOwner(
 export {
 	type BrowserRequestActionsAreExhaustive,
 	type ServerCodexBrowserSocketSend,
-	type ServerCodexBrowserWebSocket,
-	createServerCodexBrowserSocketSend,
 	createServerCodexBrowserSocketOwner,
 };
