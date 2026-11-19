@@ -4,6 +4,7 @@ title: A callable made by a call counts as a function
 status: To Do
 assignee: []
 created_date: '2026-11-19T01:11:00Z'
+updated_date: '2026-11-19T02:01:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -48,3 +49,9 @@ Follow the same section of TASK-646.05: fix findings on modules you change, leav
 - [ ] #4 The archboard skill shows how a contract module hides its schemas: export a parse function and the derived types, and keep the schema inside
 - [ ] #5 Module depth tests cover each case
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Language servers and code-intel. Language servers: the client asks semantic tokens for the one line that declares a name, so the server decides whether a value can be called; Code check already calls Language servers, so no relationship changes. code-intel: the new test file. Exception recorded in the proposal history (operation task-646-15-exceptions). Cost: about 1.6 s more per pass on this repository.
+<!-- SECTION:NOTES:END -->
