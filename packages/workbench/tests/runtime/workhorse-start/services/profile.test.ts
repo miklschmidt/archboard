@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "#runtime/instructions/rules/authored.ts";
-import { ARCHBOARD_APP_NAMESPACE } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppDynamicTools } from "#runtime/thread-tools/protocol/manifest.ts";
 
 const ARCHBOARD_INSTRUCTIONS = archboardProfiles();
 
@@ -17,5 +17,5 @@ test("the Archboard workhorse profile names Archboard and carries its app tools"
 
 	expect(profile.identity.serviceName).toBe("archboard");
 	expect(profile.identity.threadSource).toBe("archboard");
-	expect(profile.dynamicTools[0]).toEqual(ARCHBOARD_APP_NAMESPACE);
+	expect(profile.dynamicTools[0]).toEqual(archboardAppDynamicTools()[0]);
 });

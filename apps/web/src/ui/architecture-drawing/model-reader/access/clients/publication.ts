@@ -1,18 +1,21 @@
 import type { z } from "zod";
 import { queryOptions } from "@tanstack/react-query";
 import {
-	ArchitecturePublicationSchema,
-	type ArchitecturePublicationDestinationSchema,
-	type ArchitecturePublicationRequestSchema,
+	architecturePublicationSchema,
+	type architecturePublicationDestinationSchema,
+	type architecturePublicationRequestSchema,
 } from "@archboard/model/contract";
 import { inVault, strictReply } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
-type Publication = z.infer<typeof ArchitecturePublicationSchema>;
-type Destination = z.infer<typeof ArchitecturePublicationDestinationSchema>;
+type Publication = z.infer<ReturnType<typeof architecturePublicationSchema>>;
+type Destination = z.infer<ReturnType<typeof architecturePublicationDestinationSchema>>;
 type PublicationCommand =
 	| { action: "configure"; input: Destination }
-	| { action: "publish" | "fetch"; input: z.infer<typeof ArchitecturePublicationRequestSchema> };
+	| {
+			action: "publish" | "fetch";
+			input: z.infer<ReturnType<typeof architecturePublicationRequestSchema>>;
+	  };
 
 /**
  * Preserve publication states and recovery details on unsuccessful HTTP responses.
@@ -27,8 +30,8 @@ async function publicationReply(
 	const result = await strictReply<Publication, Publication | Error>(
 		url,
 		request,
-		ArchitecturePublicationSchema,
-		ArchitecturePublicationSchema,
+		architecturePublicationSchema(),
+		architecturePublicationSchema(),
 		(error) =>
 			error instanceof Error
 				? error

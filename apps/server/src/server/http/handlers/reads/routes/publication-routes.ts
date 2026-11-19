@@ -7,8 +7,8 @@ import {
 	fetchArchitectureHistory,
 } from "@archboard/model/store-write";
 import {
-	ArchitecturePublicationDestinationSchema,
-	ArchitecturePublicationRequestSchema,
+	architecturePublicationDestinationSchema,
+	architecturePublicationRequestSchema,
 } from "@archboard/model/contract";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
@@ -20,7 +20,8 @@ import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
  */
 function mountArchitecturePublicationRoutes(app: Express) {
 	app.get("/api/architecture/publication", requireVault, async (req, res) => {
-		const query = ArchitecturePublicationRequestSchema.pick({ checkpoint: true })
+		const query = architecturePublicationRequestSchema()
+			.pick({ checkpoint: true })
 			.extend({ vault: z.string() })
 			.safeParse(req.query);
 		if (!query.success) {
@@ -35,9 +36,11 @@ function mountArchitecturePublicationRoutes(app: Express) {
 		"/api/architecture/publication/configure",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = ArchitecturePublicationDestinationSchema.extend({
-				vault: z.string().optional(),
-			}).safeParse(req.body);
+			const parsed = architecturePublicationDestinationSchema()
+				.extend({
+					vault: z.string().optional(),
+				})
+				.safeParse(req.body);
 			if (!parsed.success) {
 				res
 					.status(400)
@@ -56,9 +59,11 @@ function mountArchitecturePublicationRoutes(app: Express) {
 			`/api/architecture/publication/${action}`,
 			requireVault,
 			asyncEndpoint(async (req, res) => {
-				const parsed = ArchitecturePublicationRequestSchema.extend({
-					vault: z.string().optional(),
-				}).safeParse(req.body);
+				const parsed = architecturePublicationRequestSchema()
+					.extend({
+						vault: z.string().optional(),
+					})
+					.safeParse(req.body);
 				if (!parsed.success) {
 					res.status(400).json({
 						success: false,

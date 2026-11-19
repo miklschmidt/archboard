@@ -6,11 +6,9 @@ export {
 } from "#runtime/transport/clients/transport-errors.ts";
 export type {
 	CodexTransport,
-	CodexTransportChild,
 	CodexTransportOptions,
 	DynamicServerRequest,
 	HumanApprovalMethod,
-	ResponseOwner,
 	ReverseResponse,
 	TransportServerNotification,
 	TransportServerRequest,

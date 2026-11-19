@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { DiagramBox } from "@archboard/model/render-reply";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Whether one box sits wholly inside another, allowing a hair of rounding.
@@ -27,7 +27,7 @@ test("every message's loop and words lie inside its own flow's frame, on either 
 	const long = "a label long enough to reach past every column of this flow";
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		content: orderedFixture({
 			nodes: [

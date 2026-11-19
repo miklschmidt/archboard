@@ -7,16 +7,16 @@ import {
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type ItemId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
 import {
-	decodeServerNotification,
-	type DecodedServerNotification,
-} from "@archboard/codex-app-server/protocol";
+	serverNotification,
+	type ServerNotification,
+} from "#tests/runtime/support/server-notification.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
@@ -127,7 +127,7 @@ function harness(
 		readonly subscribe: (listener: (change: WorkbenchVoiceInput) => void) => () => void;
 	},
 ): Harness {
-	const identity = createIdentityAuthority();
+	const identity = createIdentityAuthorities().identity;
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [LINKED_WIRE_THREAD_ID, COORDINATOR_WIRE_THREAD_ID, "other-thread"],
 	});
@@ -182,7 +182,7 @@ function startBrief(): string {
 
 function notificationEvent(
 	h: Harness,
-	notification: DecodedServerNotification,
+	notification: ServerNotification,
 	identity: { child: ChildId; epoch: ChildEpoch } = h,
 ): TransportServerNotification {
 	return {
@@ -192,7 +192,7 @@ function notificationEvent(
 }
 
 function notify(h: Harness, method: string, params: unknown): void {
-	h.adapter.onNotification(notificationEvent(h, decodeServerNotification({ method, params })));
+	h.adapter.onNotification(notificationEvent(h, serverNotification({ method, params })));
 }
 
 function correlation(suffix = "") {

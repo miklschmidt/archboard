@@ -448,3 +448,11 @@ export {
 	type OverviewLine,
 	type ReadingScope,
 };
+
+/**
+ * The value `EVERYTHING_VIEW`, for callers that read it.
+ * @returns The value.
+ */
+export function everythingView(): typeof EVERYTHING_VIEW {
+	return EVERYTHING_VIEW;
+}

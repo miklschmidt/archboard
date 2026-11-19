@@ -5,7 +5,7 @@ import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
+import { parseDynamicToolCallResponse } from "./support/codex-workbench-response.ts";
 import { waitFor } from "../server-state/support/http.ts";
 import { processExists } from "../support/owned-server.ts";
 import { records, reverseResponses, snapshot } from "./support/codex-workbench-lifecycle.ts";
@@ -149,7 +149,6 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 				result: { decision: "cancel" },
 			});
 			const dynamic = parseDynamicToolCallResponse(
-				"create_thread",
 				reverseResponses(fixture.logPath, "shutdown-dynamic")[0]?.frame?.result,
 			).envelope;
 			expect(dynamic.tag).toBe("approval_required");

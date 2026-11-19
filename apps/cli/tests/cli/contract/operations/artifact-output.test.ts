@@ -2,7 +2,7 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import fs, { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import { runCommand } from "#cli/contract/operations/runner.ts";
 import {
 	cleanupCommandContractTest,
@@ -281,7 +281,7 @@ describe("command-contract artifact output", () => {
 				resultSchema: z.object({ complete: z.literal(true) }),
 				file: true,
 				artifact,
-				artifactSchema: PendingArtifactSchema.transform((validated) => {
+				artifactSchema: pendingArtifactSchema().transform((validated) => {
 					writeFileSync(join(directory, "0002-B.png"), Uint8Array.from([9, 9]));
 					return validated;
 				}),
@@ -310,7 +310,7 @@ describe("command-contract artifact output", () => {
 				resultSchema: z.object({ complete: z.literal(true) }),
 				file: true,
 				artifact,
-				artifactSchema: PendingArtifactSchema.transform((validated) => {
+				artifactSchema: pendingArtifactSchema().transform((validated) => {
 					writeFileSync(join(directory, "surprise.txt"), "keep");
 					return validated;
 				}),

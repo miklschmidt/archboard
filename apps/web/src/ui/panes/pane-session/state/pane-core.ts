@@ -31,10 +31,12 @@ import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbe
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { LegacyIdentity, PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type SemanticPanePart = NonNullable<
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
+>[number];
 
 /** What the core reads out of React and writes back into it. */
 interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
@@ -213,7 +215,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	/**
 	 * Report what this pane shows, after the debounce or now.
-	 * @param immediate Send now rather than after `PANE_MS.report`.
+	 * @param immediate Send now rather than after `paneMs("report")`.
 	 */
 	function schedulePaneReport(immediate: boolean): void {
 		// A pane being removed has nothing to say about what it shows.

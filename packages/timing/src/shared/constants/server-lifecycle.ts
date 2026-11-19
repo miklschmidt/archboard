@@ -51,4 +51,13 @@ const SERVER_LIFECYCLE_MS = durations({
 	stopProbePoll: 200,
 });
 
-export { SERVER_LIFECYCLE_MS };
+/**
+ * One duration of the server lifecycle.
+ * @param key Which one.
+ * @returns It, in milliseconds.
+ */
+function serverLifecycleMs(key: keyof typeof SERVER_LIFECYCLE_MS): number {
+	return SERVER_LIFECYCLE_MS[key];
+}
+
+export { serverLifecycleMs };

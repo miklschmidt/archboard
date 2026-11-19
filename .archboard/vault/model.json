@@ -3,15 +3,15 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "3rxaeOO6",
-    "name": "Code browser beside the picture",
-    "summary": "A reader opens a file beside the picture, and the picture shows the modules that own it (TASK-648).",
-    "predecessor": "1wIcvaUQ",
-    "baseline": "1e8bda33eacbdd113470b0bce78f6bc90f7dc547",
-    "createdAt": "2026-11-18T23:22:40.363Z",
-    "adoptedAt": "2026-11-19T03:53:57.102Z",
-    "reason": "Branch feat/file-browser-symbol-navigation (TASK-648, TASK-649) implements the code browser: the Code files route, File owners and the Code browser, with Source excerpt removed. The user's full send of this work authorizes preparing its PR, which authorizes this adoption.",
-    "previousCurrent": "1wIcvaUQ"
+    "id": "LzXvT7U7",
+    "name": "Module depth from the code",
+    "summary": "Measures and the gate judge module depth from the code: exposed values, pass-throughs, unused exports, repeated caller math and shallow modules, with no score.",
+    "predecessor": "3rxaeOO6",
+    "baseline": "6bb38aaf53fffdd161e85c6973045c66e4d2f237",
+    "createdAt": "2026-11-19T10:09:43.038Z",
+    "adoptedAt": "2026-11-19T10:10:59.584Z",
+    "reason": "Branch feat/module-depth implements TASK-646 and its subtasks: Module depth, Code exports and the Language server setup brief, the code check of every bound module in every language, the shallow-module gate and the working-tree footprint. The owner authorized this work end to end with a full stop, which authorizes this adoption. It replaces 3nkEfr1W, which followed the former current state 1wIcvaUQ.",
+    "previousCurrent": "3rxaeOO6"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",

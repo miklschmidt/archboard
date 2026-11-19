@@ -12,7 +12,7 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
-import { PICTURE_MS } from "@archboard/timing";
+import { pictureMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import {
@@ -224,7 +224,7 @@ function movedSince(seenAt: Point | null, surface: HTMLElement): Point {
 }
 
 /** How long each way of arriving takes to move into place. */
-const ARRIVAL_MS = { carried: PICTURE_MS.transition, entered: PICTURE_MS.entry, cut: null };
+const ARRIVAL_MS = { carried: pictureMs("transition"), entered: pictureMs("entry"), cut: null };
 
 /**
  * How a picture arrives.

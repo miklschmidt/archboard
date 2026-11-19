@@ -1,7 +1,7 @@
-import type { EvidenceKindSchema } from "@archboard/model/policy";
+import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
+type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
 // What one file tells the code check (ADR 0046): what it defines, what it
 // references and what it imports, or, for a file no grammar reads, its text.
 //

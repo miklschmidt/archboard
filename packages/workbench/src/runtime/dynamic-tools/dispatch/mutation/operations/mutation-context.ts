@@ -13,7 +13,7 @@ import type {
 	SessionTurn,
 } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
-import { ARCHBOARD_APP_DYNAMIC_TOOLS } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppDynamicTools } from "#runtime/thread-tools/protocol/manifest.ts";
 import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import {
 	CodexDynamicToolsError,
@@ -230,7 +230,7 @@ function threadStartParams(workspace: string): SessionParams<"thread/start"> {
 		historyMode: "paginated",
 		sessionStartSource: "startup",
 		threadSource: "archboard",
-		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS],
+		dynamicTools: archboardAppDynamicTools(),
 		experimentalRawEvents: false,
 	};
 }

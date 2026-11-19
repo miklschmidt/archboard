@@ -223,3 +223,35 @@ export {
 	PanePresentRequestSchema,
 	SemanticPaneContextSchema,
 };
+
+/**
+ * The schema `PanePresentRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function panePresentRequestSchema(): typeof PanePresentRequestSchema {
+	return PanePresentRequestSchema;
+}
+
+/**
+ * The value `SEMANTIC_PANE_CONTEXT_ROUTE`, for callers that read it.
+ * @returns The value.
+ */
+export function semanticPaneContextRoute(): typeof SEMANTIC_PANE_CONTEXT_ROUTE {
+	return SEMANTIC_PANE_CONTEXT_ROUTE;
+}
+
+/**
+ * The schema `SemanticPaneContextSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function semanticPaneContextSchema(): typeof SemanticPaneContextSchema {
+	return SemanticPaneContextSchema;
+}
+
+/**
+ * The schema `SemanticSubjectKindSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function semanticSubjectKindSchema(): typeof SemanticSubjectKindSchema {
+	return SemanticSubjectKindSchema;
+}

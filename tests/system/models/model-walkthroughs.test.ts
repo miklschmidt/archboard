@@ -3,8 +3,8 @@ import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:f
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureModelReadSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 import { claimArchitectureSubjects } from "@archboard/model/store-write";
 import { readArchitectureModel } from "@archboard/model/store-read";
@@ -81,7 +81,7 @@ test("CLI narrative authoring and HTTP playback share the public writer and reta
 	});
 	expect(createdCli.status, createdCli.stderr).toBe(0);
 	const { vault: _address, ...receipt } = JSON.parse(createdCli.stdout);
-	const created = ArchitectureModuleEditResultSchema.parse(receipt);
+	const created = architectureModuleEditResultSchema().parse(receipt);
 	if (!created.success) throw new Error(JSON.stringify(created));
 	const query = new URLSearchParams({
 		vault,
@@ -91,7 +91,7 @@ test("CLI narrative authoring and HTTP playback share the public writer and reta
 	});
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const model = ArchitectureModelReadSchema.parse(await response.json());
+	const model = architectureModelReadSchema().parse(await response.json());
 	expect(model.success && model.playback?.checkpoint).toBe(created.checkpoint.id);
 	const readCli = runServerCli({
 		repoRoot,

@@ -6,7 +6,7 @@
 // whole recording must not grow with it, so nothing else is kept.
 
 import { writeFileSync } from "node:fs";
-import { HEADLESS_CHROMIUM_CALL_MS } from "@archboard/timing";
+import { rasterMs } from "@archboard/timing";
 
 import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
 
@@ -194,7 +194,7 @@ class DevTools {
 	async call(
 		method: string,
 		params: JsonRecord = {},
-		timeoutMs: number = HEADLESS_CHROMIUM_CALL_MS,
+		timeoutMs: number = rasterMs("chromiumCall"),
 		signal?: AbortSignal,
 	): Promise<JsonRecord> {
 		if (this.#closed) {

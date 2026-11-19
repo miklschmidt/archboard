@@ -27,7 +27,7 @@ import {
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { CHECKOUT, CORE_BUILD_DIRECTORY, loadCore } from "@archboard/renderer/core";
+import { checkoutPath, coreBuildPath, loadCore } from "@archboard/renderer/core";
 
 /** The platforms a release is built for. */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64"] as const;
@@ -77,8 +77,9 @@ function refuse(message: string): never {
 function releaseCommit(): string {
 	const flake = process.env["ARCHBOARD_RELEASE_COMMIT"];
 	if (flake !== undefined && flake !== "") return flake;
-	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: CHECKOUT });
-	if (commit.exitCode !== 0) refuse(`${CHECKOUT} has no commit to record. Commit, then compile.`);
+	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: checkoutPath() });
+	if (commit.exitCode !== 0)
+		refuse(`${checkoutPath()} has no commit to record. Commit, then compile.`);
 	return commit.stdout.toString().trim();
 }
 
@@ -91,7 +92,7 @@ function releaseCommit(): string {
 function releaseMarker() {
 	const manifest = z
 		.object({ version: z.string(), dependencies: z.object({ "@openai/codex": z.string() }) })
-		.parse(JSON.parse(readFileSync(path.join(CHECKOUT, "package.json"), "utf8")));
+		.parse(JSON.parse(readFileSync(checkoutPath("package.json"), "utf8")));
 	return {
 		version: manifest.version,
 		commit: releaseCommit(),
@@ -123,7 +124,7 @@ function holdsAddon(directory: string): boolean {
  * @returns The packages and addons.
  */
 function nativeInputs(inputs: readonly string[]): string[] {
-	const modules = path.join(CHECKOUT, "node_modules");
+	const modules = checkoutPath("node_modules");
 	const packages = new Set(
 		inputs.flatMap((input) => /^node_modules\/((?:@[^/]+\/)?[^/]+)\//.exec(input)?.[1] ?? []),
 	);
@@ -172,8 +173,8 @@ function runtimeOf(target: Target): { executablePath?: string } {
  */
 async function compileExecutable(target: Target, outfile: string): Promise<string[]> {
 	const built = await Bun.build({
-		entrypoints: ENTRIES.map((entry) => path.join(CHECKOUT, entry)),
-		root: CHECKOUT,
+		entrypoints: ENTRIES.map((entry) => checkoutPath(entry)),
+		root: checkoutPath(),
 		target: "bun",
 		metafile: true,
 		compile: {
@@ -210,14 +211,14 @@ async function compileExecutable(target: Target, outfile: string): Promise<strin
 async function layOutCore(directory: string): Promise<void> {
 	mkdirSync(directory, { recursive: true });
 	const glue = await Bun.build({
-		entrypoints: [path.join(CORE_BUILD_DIRECTORY, CORE_GLUE)],
+		entrypoints: [coreBuildPath(CORE_GLUE)],
 		target: "bun",
 		format: "esm",
 	});
 	const [output] = glue.outputs;
 	if (!glue.success || output === undefined) refuse(`${CORE_GLUE} did not bundle.`);
 	writeFileSync(path.join(directory, CORE_GLUE), await output.text());
-	cpSync(path.join(CORE_BUILD_DIRECTORY, CORE_WASM), path.join(directory, CORE_WASM));
+	cpSync(coreBuildPath(CORE_WASM), path.join(directory, CORE_WASM));
 }
 
 /**
@@ -228,7 +229,7 @@ async function layOutCore(directory: string): Promise<void> {
  * @throws {Error} When the checkout lacks a build, or the executable does not compile.
  */
 async function compileRelease(target: Target, directory: string): Promise<CompiledRelease> {
-	const frontend = path.join(CHECKOUT, "dist", "frontend");
+	const frontend = checkoutPath("dist", "frontend");
 	if (!existsSync(path.join(frontend, "index.html"))) {
 		refuse(`${frontend} holds no browser bundle. Run \`bun run build\`, then compile.`);
 	}
@@ -239,7 +240,7 @@ async function compileRelease(target: Target, directory: string): Promise<Compil
 	cpSync(frontend, path.join(directory, "frontend"), { recursive: true });
 	await layOutCore(path.join(directory, "core"));
 	for (const skill of SKILLS) {
-		cpSync(path.join(CHECKOUT, "skills", skill), path.join(directory, "skills", skill), {
+		cpSync(checkoutPath("skills", skill), path.join(directory, "skills", skill), {
 			recursive: true,
 			dereference: true,
 		});
@@ -266,4 +267,4 @@ if (import.meta.main) {
 	process.stdout.write(`${JSON.stringify(made, null, "\t")}\n`);
 }
 
-export { compileRelease, TARGETS, type CompiledRelease, type Target };
+export { compileRelease, TARGETS, type Target };

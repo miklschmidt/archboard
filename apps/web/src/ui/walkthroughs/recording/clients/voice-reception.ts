@@ -4,9 +4,9 @@
 // The voice is a WebRTC track. Its packets come unevenly at the start of each sentence, and the
 // browser's conversational buffer then runs dry: it makes up sound or stretches what it has,
 // which a listener hears as a call with bad reception. Nobody talks back to a recording, so it
-// trades latency for an unbroken voice (`RECORDING_MS.voiceBuffer`).
+// trades latency for an unbroken voice (`recordingMs("voiceBuffer")`).
 
-import { RECORDING_MS } from "@archboard/timing";
+import { recordingMs } from "@archboard/timing";
 import type { Talk } from "@archboard/walkthrough/talk";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/application/state/pane-handles.ts";
 
@@ -23,7 +23,7 @@ type Reception = NonNullable<Talk["audio"]["reception"]>;
  */
 function bufferVoice(receivers: Receivers): readonly RTCRtpReceiver[] {
 	const browser = receivers.filter((receiver) => receiver instanceof RTCRtpReceiver);
-	for (const receiver of browser) receiver.jitterBufferTarget = RECORDING_MS.voiceBuffer;
+	for (const receiver of browser) receiver.jitterBufferTarget = recordingMs("voiceBuffer");
 	return browser;
 }
 

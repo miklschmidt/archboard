@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { CODEX_SERVER_REQUEST_METHODS } from "@archboard/codex-app-server/contract";
+import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 
 import { composeCodexWorkbenchGeneration } from "#server/generation/services/compose.ts";
 import {
@@ -21,7 +21,7 @@ const ROUTED_OWNERS = {
 	"currentTime/read": ["codex-session"],
 	"account/chatgptAuthTokens/refresh": ["codex-session"],
 	"attestation/generate": ["codex-session"],
-} satisfies Record<(typeof CODEX_SERVER_REQUEST_METHODS)[number], readonly string[]>;
+} satisfies Record<TransportServerRequest["method"], readonly string[]>;
 
 const EVENT_PREFIX: Record<string, string> = {
 	"codex-approvals": "approval",
@@ -52,10 +52,7 @@ test("the production generation creates every owner once before readiness and sh
 		throw new Error("missing private production router");
 	}
 	// The generated union is the authority. A new reverse request fails this
-	// owner at compile time through the satisfies clause and at run time here.
-	expect(Object.keys(ROUTED_OWNERS).toSorted()).toEqual(
-		[...CODEX_SERVER_REQUEST_METHODS].toSorted(),
-	);
+	// owner at compile time through the satisfies clause.
 	const routed: string[] = [];
 	for (const [method, owners] of Object.entries(ROUTED_OWNERS)) {
 		for (const owner of owners) {

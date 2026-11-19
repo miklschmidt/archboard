@@ -1,11 +1,11 @@
 import net from "net";
 import { logger } from "@archboard/diagnostics/logger";
-import { DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
+import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
 
 // The CLI names the port when it starts a server. Started by hand, a server
 // takes the port that the CLI of its installation expects: a checkout's own, or the release
 // port (ADR 0049, 0076).
-const PORT = parseInt(process.env["PORT"] || new URL(DEFAULT_ARCHBOARD_URL).port, 10);
+const PORT = parseInt(process.env["PORT"] || new URL(defaultArchboardUrl()).port, 10);
 const HOST = process.env["HOST"] || "127.0.0.1";
 const LOOPBACK_GUARD_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0", "::"]);
 const LOOPBACK_ADDRESSES = ["127.0.0.1", "::1"];
@@ -21,10 +21,19 @@ function formatHostForUrl(host: string): string {
 
 /**
  * The URL this server is reachable at.
+ * @param scheme The protocol: `http` for the API, `ws` for the panes' socket.
  * @returns The base URL.
  */
-function serverUrl(): string {
-	return `http://${formatHostForUrl(HOST)}:${PORT}`;
+function serverUrl(scheme: "http" | "ws" = "http"): string {
+	return `${scheme}://${formatHostForUrl(HOST)}:${PORT}`;
+}
+
+/**
+ * Where this server listens.
+ * @returns The host and the port it binds.
+ */
+function listenAddress(): { readonly host: string; readonly port: number } {
+	return { host: HOST, port: PORT };
 }
 
 /**
@@ -57,15 +66,14 @@ function canConnect(host: string, port: number): Promise<boolean> {
 }
 
 /**
- * Which loopback address, if any, already has a listener on the port. Both
+ * Which loopback address, if any, already has a listener on this server's port. Both
  * are probed so an IPv4 and an IPv6 server cannot split state between them.
- * @param port The port.
  * @returns The listening loopback address, or null.
  */
-async function findExistingLoopbackListener(port: number): Promise<string | null> {
+async function findExistingLoopbackListener(): Promise<string | null> {
 	for (const host of LOOPBACK_ADDRESSES) {
 		// oxlint-disable-next-line no-await-in-loop -- the first listener found answers; probing both at once would open a second socket for nothing
-		if (await canConnect(host, port)) {
+		if (await canConnect(host, PORT)) {
 			return host;
 		}
 	}
@@ -88,15 +96,15 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 	if (error.code === "EADDRINUSE") {
 		const bound: unknown = Reflect.get(error, "address");
 		const address = typeof bound === "string" ? bound : HOST;
-		logger.error(
+		logger().error(
 			`Archboard server port ${PORT} is already in use on ${formatHostForUrl(address)}.`,
 		);
 	} else if (error.code === "EACCES") {
-		logger.error(
+		logger().error(
 			`Archboard server cannot bind ${formatHostForUrl(HOST)}:${PORT}: permission denied.`,
 		);
 	} else {
-		logger.error("Archboard HTTP server failed:", error);
+		logger().error("Archboard HTTP server failed:", error);
 	}
 }
 
@@ -104,8 +112,7 @@ export {
 	serverUrl,
 	findExistingLoopbackListener,
 	formatHostForUrl,
-	HOST,
 	isLoopbackGuardedHost,
+	listenAddress,
 	logHttpServerError,
-	PORT,
 };

@@ -1,13 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
 import {
-	ExplanationActionRequestSchema,
-	ExplanationActionResultSchema,
+	explanationActionResultSchema,
+	type ExplanationActionRequest,
+	type ExplanationActionResult,
 } from "@archboard/workbench/browser-contract";
 import { inVault } from "@archboard/server-requests";
-import type { z } from "zod";
 
-type ExplanationRequest = z.infer<typeof ExplanationActionRequestSchema>;
-type ExplanationResult = z.infer<typeof ExplanationActionResultSchema>;
+type ExplanationRequest = ExplanationActionRequest;
+type ExplanationResult = ExplanationActionResult;
 type ExplanationAction = Extract<ExplanationResult, { success: true }>["action"];
 type ExplanationInvocation = Omit<
 	Extract<ExplanationRequest, { type: "invoke" }>,
@@ -83,7 +83,7 @@ async function explanationRequest(
 		};
 	}
 	const response = await fetch(inVault(path, vault), init);
-	return ExplanationActionResultSchema.parse(await response.json());
+	return explanationActionResultSchema().parse(await response.json());
 }
 
 export { explanationKey, explanationQuery, explanationRequest };

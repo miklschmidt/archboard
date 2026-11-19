@@ -8,7 +8,7 @@ import { describe, expect, test } from "bun:test";
 import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const NODES = [
 	{ id: "sh", name: "Shell", kind: "external", responsibility: "Invokes the command" },
@@ -56,7 +56,7 @@ function drawnIds(svg: string, kind: "edge" | "step"): string[] {
 describe("a flow drawn on its document", () => {
 	test("each message between two participants is a dashed, open-headed step line; a return, a self step and a repeated pair draw nothing more", async () => {
 		const rendered = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: document(),
 			theme: "light",
 		});
@@ -73,7 +73,7 @@ describe("a flow drawn on its document", () => {
 
 	test("a document with any authored relationship is drawn from its relationships alone", async () => {
 		const rendered = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: document([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
 			theme: "light",
 		});
@@ -83,7 +83,7 @@ describe("a flow drawn on its document", () => {
 
 	test("a standing keyed by the step's id lands on its line", async () => {
 		const rendered = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: document(),
 			theme: "light",
 			standing: { s3: "added" },
@@ -104,7 +104,7 @@ test("a step to a part drawn with children draws nothing: the container receives
 		flows: [FLOW],
 	});
 	const rendered = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});

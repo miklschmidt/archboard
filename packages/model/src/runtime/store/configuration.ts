@@ -120,3 +120,11 @@ function parsePolicy(source: string): {
 	}
 	return { configuration: parsed.data };
 }
+
+/**
+ * The schema `VaultConfigurationSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function vaultConfigurationSchema(): typeof VaultConfigurationSchema {
+	return VaultConfigurationSchema;
+}

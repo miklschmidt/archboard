@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
+import { semanticPaneContextRoute } from "@archboard/model/pane-context";
 import { createPackageCliOwner, packageBin, packageFailure } from "../cli/support/package-cli.ts";
 import {
 	createRepositoryFixture,
@@ -225,7 +225,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		expect(panesFrom(main)["pane-left"]?.own).toBe(true);
 		// What the person picked out on the main checkout's model.
 		const picked = await createRequester({ ...server, vault: mainVault })(
-			SEMANTIC_PANE_CONTEXT_ROUTE,
+			semanticPaneContextRoute(),
 			{
 				method: "POST",
 				doing: false,

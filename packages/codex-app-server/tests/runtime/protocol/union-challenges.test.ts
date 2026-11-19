@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import { SERVER_NOTIFICATION_METHODS } from "#runtime/protocol/protocol-methods.ts";
 import {
 	ProtocolDecodeError,
 	decodeServerNotification,
 } from "#runtime/protocol/protocol-decoder.ts";
-import { notificationFixture } from "#tests/runtime/support/notification-fixtures.ts";
+import {
+	notificationFixture,
+	SERVER_NOTIFICATION_METHODS,
+} from "#tests/runtime/support/notification-fixtures.ts";
 import {
 	assertChallengeFailure,
 	changedPaths,

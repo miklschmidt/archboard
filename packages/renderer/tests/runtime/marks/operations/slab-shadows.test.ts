@@ -11,7 +11,7 @@ import { renderArchitecture, renderSemanticView } from "#runtime/bun-renderer/op
 import { lightnessOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** A container that holds two cards, and a card beside it, joined by labelled lines. */
 const DOCUMENT = orderedFixture({
@@ -124,7 +124,7 @@ test.each(["track", "blocks"] as const)(
 	"every card's shadow lies under every card on a document (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: DOCUMENT,
 			theme: "light",
 			layout,
@@ -144,7 +144,7 @@ test.each(["track", "blocks"] as const)(
 
 test("every participant's shadow lies under every participant of a sequence", async () => {
 	const drawing = await renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: EXCHANGE,
 		grammar: "sequence",
 	});
@@ -247,7 +247,7 @@ test.each(["light", "dark"] as const)(
 			edges: [],
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: lone,
 			theme,
 		});
@@ -295,7 +295,7 @@ test.each(["light", "dark"] as const)(
 	"a shadow fades continuously from under the card to zero at 10x (%s)",
 	async (theme: DiagramTheme) => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: orderedFixture({
 				nodes: [{ id: "card", name: "Orders DB", kind: "database" }],
 				edges: [],

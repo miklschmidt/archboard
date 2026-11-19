@@ -1,8 +1,8 @@
 // An exchange told on one clock: every message sends its pulse in its
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";
-import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
+import { defaultTrafficSpeed } from "@archboard/model/content";
+import { pictureMs } from "@archboard/timing";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { messageBeams, slidingSpeedOf } from "#tests/runtime/support/drawn-traffic.ts";
 import {
@@ -13,10 +13,10 @@ import {
 	pulsesOn,
 	variant,
 } from "#tests/runtime/support/pulse-fixtures.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
-const FLOWN = DEFAULT_TRAFFIC_SPEED * 2;
+const FLOWN = defaultTrafficSpeed() * 2;
 
 /**
  * Every pulse of a picture in the order its message is told: when its bar begins
@@ -89,7 +89,7 @@ describe("an exchange is told on one clock", () => {
 		// are the same thing happening twice.
 		const svg = (
 			await renderSemanticView({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content: TWO_FLOWS,
 				grammar: "sequence",
 				theme: "light",
@@ -113,7 +113,7 @@ describe("an exchange is told on one clock", () => {
 			kind: index % 2 === 0 ? "sync" : "return",
 		}));
 		const { svg } = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: variant({
 				nodes: SAMPLE.nodes,
 				flows: [{ id: "long", name: "Long", participants: ["api", "store"], steps }],
@@ -125,7 +125,7 @@ describe("an exchange is told on one clock", () => {
 			svg,
 			steps.map(({ id }) => id),
 		);
-		expect(told[0]!.cycle).toBeLessThanOrEqual(FLOW_CYCLE_CAP_MS / 1000 + 0.001);
+		expect(told[0]!.cycle).toBeLessThanOrEqual(pictureMs("flowCycleCap") / 1000 + 0.001);
 		for (const { speed } of told) expect(speed).toBeGreaterThan(FLOWN);
 	});
 });

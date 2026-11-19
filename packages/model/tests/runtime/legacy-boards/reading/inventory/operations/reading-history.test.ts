@@ -3,7 +3,7 @@ import { cpSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { narrativeFixture } from "#tests/runtime/legacy-boards/reading/inventory/operations/readings-fixture.ts";
 import { savePreviewPlan } from "#tests/runtime/legacy-boards/reading/inventory/operations/fixture.ts";
 import {
@@ -63,7 +63,7 @@ test("retained preview playback and former addresses use exact original bytes af
 		completeModel: false,
 	});
 	expect(result.migrationPreview?.originals).toEqual(inventory.boards);
-	expect(ArchitectureModelReadSchema.safeParse(result).success).toBe(true);
+	expect(architectureModelReadSchema().safeParse(result).success).toBe(true);
 });
 
 test("historical drill-downs never reuse a current mapping for another original state", async () => {

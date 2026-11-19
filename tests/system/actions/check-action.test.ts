@@ -5,8 +5,8 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
-import { annotationsFor } from "../../../actions/check/annotations.ts";
+import { codeCheckAnswerSchema } from "@archboard/code-intel/code-check";
+import { annotationsForAll } from "../../../actions/check/annotations.ts";
 import { cachedFileReader } from "../../../actions/shared/checkouts.ts";
 import { collectFindings } from "../../../actions/check/findings.ts";
 import type { CheckReading } from "../../../actions/check/findings.ts";
@@ -47,7 +47,7 @@ const locations = (repository = join(workspace, "app")) => ({
 
 describe("the fixture is an answer of the CLI", () => {
 	test("its code part parses with the code check's own schema", () => {
-		expect(() => CodeCheckAnswerSchema.parse(answer.code)).not.toThrow();
+		expect(() => codeCheckAnswerSchema().parse(answer.code)).not.toThrow();
 	});
 });
 
@@ -55,7 +55,7 @@ describe("a finding that crosses a network hop", () => {
 	test("is annotated at each end in one repository, and each annotation carries both ends and both excerpts", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
 		expect(hop).toBeDefined();
-		const annotations = annotationsFor(hop!, locations(workspace));
+		const annotations = annotationsForAll([hop!], locations(workspace)).kept;
 		expect(annotations.map((one) => [one.properties.file, one.properties.line])).toEqual([
 			["app/src/config.ts", 3],
 			["infra/compose.yaml", 4],
@@ -72,7 +72,7 @@ describe("a finding that crosses a network hop", () => {
 
 	test("names files by their path in the checked repository, and annotates no end in another", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
-		const annotations = annotationsFor(hop!, locations());
+		const annotations = annotationsForAll([hop!], locations()).kept;
 		expect(annotations.map((one) => [one.properties.file, one.properties.line])).toEqual([
 			["src/config.ts", 3],
 		]);
@@ -83,7 +83,7 @@ describe("a finding that crosses a network hop", () => {
 		const hop = collectFindings(answer).find((finding) => finding.evidence.length === 2);
 		mkdirSync(join(workspace, "app/.archboard/vault/modules/Shop"), { recursive: true });
 		writeFileSync(join(workspace, "app/.archboard/vault/modules/Shop/rel.module.json"), "{}");
-		const annotations = annotationsFor(hop!, { ...locations(), roots: new Map() });
+		const annotations = annotationsForAll([hop!], { ...locations(), roots: new Map() }).kept;
 		expect(annotations.map((one) => one.properties.file)).toEqual([
 			".archboard/vault/modules/Shop/rel.module.json",
 		]);
@@ -248,7 +248,7 @@ describe("the entry", () => {
 		).toBe(0);
 	});
 
-	test("on a pull request, the check reads the touched modules from the pull request's base, with the history it needs", () => {
+	test("on a pull request, the check reads the touched modules from the pull request's base only when the shallow-module gate can be on", () => {
 		const root = scratch();
 		const git = (cwd: string, ...args: string[]) => {
 			const done = Bun.spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...args], {
@@ -270,15 +270,23 @@ describe("the entry", () => {
 		writeFileSync(join(origin, "three"), "three");
 		git(origin, "add", "-A");
 		git(origin, "commit", "-q", "--no-gpg-sign", "-m", "three");
-		// A runner's checkout: the head of the pull request alone, one commit deep.
-		const runner = join(root, "workspace");
-		mkdirSync(runner);
-		git(runner, "clone", "-q", "--depth", "1", "--branch", "feature", `file://${origin}`, "app");
-		const checkout = join(runner, "app");
 		const folder = scratch();
 		writeFileSync(join(folder, "check.json"), JSON.stringify(answer));
 		writeFileSync(join(folder, "repos.json"), JSON.stringify({ repos: [] }));
-		const argsOf = (inputs: Record<string, string>) => {
+		/**
+		 * Run the entry in a runner's checkout: the head of the pull request alone, one commit deep.
+		 * @param inputs The action's inputs.
+		 * @param configuration The vault configuration of the checkout, if it has one.
+		 * @returns The arguments the check got, and the checkout.
+		 */
+		const run = (inputs: Record<string, string>, configuration?: string) => {
+			const runner = scratch();
+			git(runner, "clone", "-q", "--depth", "1", "--branch", "feature", `file://${origin}`, "app");
+			const checkout = join(runner, "app");
+			if (configuration !== undefined) {
+				mkdirSync(join(checkout, ".archboard/vault/.archboard"), { recursive: true });
+				writeFileSync(join(checkout, ".archboard/vault/.archboard/config.yaml"), configuration);
+			}
 			runEntry(entry, {
 				ARCHBOARD_BIN: writeStandIn(home),
 				FAKE_DIR: folder,
@@ -287,22 +295,54 @@ describe("the entry", () => {
 				ARCHBOARD_INPUT_WORKING_DIRECTORY: "app",
 				...inputs,
 			});
-			return readFileSync(join(folder, "check-args"), "utf8").trim().split("\n");
+			const args = readFileSync(join(folder, "check-args"), "utf8").trim().split("\n");
+			return { args, checkout };
 		};
+		const fetchedBase = (checkout: string) =>
+			git(checkout, "merge-base", "HEAD", "origin/main") === git(origin, "rev-parse", "main");
 
-		expect(argsOf({ GITHUB_BASE_REF: "main" })).toEqual(["check", "all", "--base", "origin/main"]);
-		// The merge base of the head and the base is in the checkout now.
-		expect(git(checkout, "merge-base", "HEAD", "origin/main")).toBe(
-			git(origin, "rev-parse", "main"),
-		);
-		// A base the args name wins, and a run that is no pull request names none.
-		expect(argsOf({ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--base v1" })).toEqual([
+		// The gate is off by default, so the run fetches nothing and names no base.
+		const off = run({ GITHUB_BASE_REF: "main" }, "levels: [system]\n");
+		expect(off.args).toEqual(["check", "all"]);
+		expect(git(off.checkout, "rev-parse", "--is-shallow-repository")).toBe("true");
+		expect(git(off.checkout, "branch", "-r", "--list", "origin/main")).toBe("");
+		// The flag turns the gate on: the run fetches the base with the merge base, and names it.
+		const flagged = run({
+			GITHUB_BASE_REF: "main",
+			ARCHBOARD_INPUT_ARGS: "--fail-shallow-modules",
+		});
+		expect(flagged.args).toEqual([
 			"check",
 			"all",
+			"--fail-shallow-modules",
 			"--base",
-			"v1",
+			"origin/main",
 		]);
-		expect(argsOf({})).toEqual(["check", "all"]);
+		expect(fetchedBase(flagged.checkout)).toBe(true);
+		// So does the vault's configuration, in the one-line form that archboard writes it.
+		const configured = run(
+			{ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_CHECKS: "code" },
+			Bun.YAML.stringify({ levels: ["system"], codeCheck: { failShallowModules: true } }),
+		);
+		expect(configured.args).toEqual(["check", "code", "--base", "origin/main"]);
+		expect(fetchedBase(configured.checkout)).toBe(true);
+		// A check of drafts fetches the base too, because each draft keeps its own gate setting.
+		const drafts = run(
+			{ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--every-draft" },
+			"levels: [system]\n",
+		);
+		expect(drafts.args).toEqual(["check", "all", "--every-draft", "--base", "origin/main"]);
+		expect(fetchedBase(drafts.checkout)).toBe(true);
+		// A base the args name wins, and a run that is no pull request names none.
+		expect(
+			run({ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--fail-shallow-modules --base v1" })
+				.args,
+		).toEqual(["check", "all", "--fail-shallow-modules", "--base", "v1"]);
+		expect(run({ ARCHBOARD_INPUT_ARGS: "--fail-shallow-modules" }).args).toEqual([
+			"check",
+			"all",
+			"--fail-shallow-modules",
+		]);
 	});
 
 	test("allow-codes keeps a finding on the diff and in the summary and lets the step pass", () => {

@@ -11,8 +11,13 @@
 
 import { z } from "zod";
 
-/** The route the browser calls when the person activates a checkout. */
-const SHOWN_CONVERSATION_ROUTE = "/api/panes/conversation";
+/**
+ * The route the browser calls when the person activates a checkout.
+ * @returns The route's path.
+ */
+function shownConversationPath(): string {
+	return "/api/panes/conversation";
+}
 
 /** What the browser says: the pane the act happened in, and for a pick from the list its checkout. */
 const ShownConversationRequestSchema = z
@@ -50,7 +55,7 @@ type ShownConversationReply = z.infer<typeof ShownConversationReplySchema>;
 type ShownConversationRefusal = (typeof SHOWN_CONVERSATION_REFUSALS)[number];
 
 export {
-	SHOWN_CONVERSATION_ROUTE,
+	shownConversationPath,
 	ShownConversationRequestSchema,
 	type ShownConversationRefusal,
 	type ShownConversationReply,

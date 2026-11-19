@@ -1,11 +1,11 @@
 import { z } from "zod";
 import {
-	ArchitectureHistoryRequestSchema,
-	ArchitectureHistoryResultSchema,
+	architectureHistoryRequestSchema,
+	architectureHistoryResultSchema,
 } from "@archboard/code-intel/history";
 import { architectureResult } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
 	type Answer,
 	historyLines,
@@ -243,7 +243,7 @@ function optionWords(name: keyof typeof WORDS, key: string): string {
 function historyCommand<I extends z.ZodRawShape>(
 	name: "locality" | "footprint",
 	input: z.ZodObject<I>,
-	result: typeof ArchitectureHistoryResultSchema,
+	result: ReturnType<typeof architectureHistoryResultSchema>,
 ) {
 	const gated = name === "footprint";
 	const ingress = input.extend(gated ? GatesSchema.shape : {});
@@ -301,7 +301,7 @@ function historyCommand<I extends z.ZodRawShape>(
 			},
 			...(gated ? [outsideOutcome, preexistingOutcome] : []),
 		],
-		refusals: [serverRefusal],
+		refusals: [refusal("server")],
 		relationships: [
 			{
 				method: "GET",
@@ -340,12 +340,12 @@ function historyCommand<I extends z.ZodRawShape>(
 }
 const modelLocalityContract = historyCommand(
 	"locality",
-	ArchitectureHistoryRequestSchema.options[0].omit({ analysis: true }),
-	ArchitectureHistoryResultSchema,
+	architectureHistoryRequestSchema().options[0].omit({ analysis: true }),
+	architectureHistoryResultSchema(),
 );
 const modelFootprintContract = historyCommand(
 	"footprint",
-	ArchitectureHistoryRequestSchema.options[1].omit({ analysis: true }),
-	ArchitectureHistoryResultSchema,
+	architectureHistoryRequestSchema().options[1].omit({ analysis: true }),
+	architectureHistoryResultSchema(),
 );
 export { modelLocalityContract, modelFootprintContract };

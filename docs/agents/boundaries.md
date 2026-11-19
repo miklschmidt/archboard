@@ -176,11 +176,10 @@ holds files only. When it grows past about 12 files, split its behavior into sub
 The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
 grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
 `MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
-pulls against written beside it. A caller imports its owner's group and reads a key of it. A
-computation that callers would repeat from a group is one function of the package, such as the
-Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
-named constant. The six flat names that only the renderer imports, such as
-`SEMANTIC_RASTER_JOB_TIMEOUT_MS`, stay until its rewrite lands.
+pulls against written beside it. The groups stay inside: a caller asks the owner's function for one
+duration by its key, such as `paneMs("report")`. A computation that callers would repeat from a
+group is one function of the package, such as the Codex restart backoff `codexRestartDelayMs` or
+the deadline `codexApprovalExpiresAt(nowMs)`, and callers call it.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
@@ -249,18 +248,19 @@ It imports the lower process, diagnostics, and timing packages.
 It adopts the `api/` role for `shared/` and `runtime/` and exposes six subpaths.
 
 The two shared entries are safe for the browser. The four runtime entries run only in Bun.
-Archboard owns captured architecture context in `workbench` through its `./semantic-context` entry.
+Archboard owns captured architecture context in `workbench`, which keeps its publisher private.
 
 - `shared/api/`: `./contract` holds the authored wrapper over the generated protocol types: the
-  request methods, the status types, the approval decisions and their schemas, and the connection
-  capacity constants. The generated tree is ignored by git. It lives in
+  status types, the approval decisions, `codexFieldSchema`, which hands out the schema of one closed
+  Codex vocabulary for a caller to compose into its own, and the reverse-request limit of a
+  connection. The generated tree is ignored by git. It lives in
   `src/shared/protocol/generated`, and `scripts/generate-codex-app-server-contract.ts` writes it on
   `bun install` and creates its parent directories. The wrapper imports it with `#` and only as
   types, and no other file of the package or outside it does. The capacity test is opt-in
   (`bunx vp run test:opt-in:capacity`). `./identity` holds the identity brands, the authorities, the
   correlations and the ledger.
-- `./protocol` is the pinned Codex version and the decode of a server notification. Outside tests
-  build their notification fixtures with the decoder. The method lists, the request and response
+- `./protocol` is `codexProtocolVersion()`, the pinned Codex version. A test outside the package
+  types its notification fixtures as the transport's `TransportServerNotification`. The decoder, the method lists, the request and response
   schemas and the thread, item and core schemas of `runtime/protocol/` and `runtime/schemas/` stay
   private.
 - `./transport` is the stdio transport of `runtime/transport/clients/`: it creates the transport and carries
@@ -269,17 +269,17 @@ Archboard owns captured architecture context in `workbench` through its `./seman
   `runtime/session/operations/` adopts the identities of a response. `runtime/protocol/wire.ts` decodes the JSON frames. The write-capacity test of the
   transport is opt-in too (`bunx vp run test:opt-in:capacity`).
 - `./session` is the session of `runtime/session/services/`. It creates the session and carries its
-  interface, its options, its errors and its control symbol. It also carries the decoded results of
-  a session request, such as `SessionThread`, and the schemas where code outside the package
-  validates: the reply to a server request, the supported login parameters and a queued
-  submission. The session's storage proof is in `runtime/session/store/`.
+  interface, its options, its errors, `codexSessionControl` for the owner that composed it, and the
+  thread source it reports. It also carries the decoded results of a session request, such as
+  `SessionThread`, and the checks where code outside the package validates: the reply to a server
+  request, the supported login parameters and a queued submission. The session's storage proof is in `runtime/session/store/`.
 - `./process` owns the `codex app-server` child of `runtime/processes/`: it creates the process and
   reports its lifecycle. It also carries the executable check, which finds the Codex executable of
   the installation that runs, through `installation()` of `workspace`, and refuses a global one
   or one of another checkout. `runtime/store/` prepares and locks the private Codex home, and
   `runtime/services/` holds the child's environment and its diagnostics buffer.
-- A test that needs the process owner's injected dependencies imports
-  `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
+- A test that needs the process owner's injected dependencies imports `createProcessOwner` from
+  `runtime/processes/process-owner.ts` inside the package. No test outside the package does, so the
   package has no `./testing` export.
 
 The seventh is `model` (`@archboard/model`).
@@ -658,7 +658,7 @@ It bundles the four MIT packages into ESM and bundled declarations for each publ
 `tsconfig.voice-package.json` names the sources the declarations come from.
 The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
 The release workflow packs that directory and publishes it to npm ([releasing](releasing.md)).
-`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
+`resolveCodexExecutable` finds the installed `@openai/codex` and proves its exact version. The npm build adds it to the published `./server` entry (`PUBLISHED_ADDITIONS` of `scripts/pack-codex-realtime-voice.ts`), and the workspace entry does not pass it on: Archboard imports it from `@archboard/codex-app-server/process`. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
 `tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.
@@ -668,7 +668,7 @@ Its public entries separate browser code from Bun code.
 It holds the transport and media owners, `createConversationControllers` for one chat, and the timeline projection.
 `./contract` holds only the snapshot types a conversation UI renders.
 `./schemas` holds the browser model's schemas and the dynamic approval wire rules, for a host server and its tests.
-`./realtime` holds the realtime contract, transcript events, and state transitions.
+`./realtime` holds the types of a voice run's phase and state.
 `./runtime` and `./server` run only in Bun.
 All four areas adopt the `api/` role.
 
@@ -681,7 +681,7 @@ The identity sets the Codex service name and thread source, with the neutral def
 A host with a domain passes `extensions` (`VoiceAgentExtensions`): context sources, a context codec, domain tools, extra role tools, a voice narrative, and its own browser routing.
 A host that multiplexes its own socket uses `agent.browser` instead of either adapter.
 That extension contract is one type, and a host derives the parts it names from it.
-`./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, instruction byte checks, and the realtime adapter and thread-context delivery its tests build on.
+`./runtime` holds only what Archboard still needs from the core beyond that contract: the wait-graph and callback-engine factories, callback types, and instruction byte checks.
 The namespace of a dynamic approval on the browser wire is whatever the host names; Archboard sends `archboard_app`.
 A consumer never assembles the internal factories.
 Host context events carry generic fields (feed, sequence, freshness, identity, coalescing) and a payload that only the host's policy reads.
@@ -720,9 +720,8 @@ It adopts the `api/` role for `shared/`, `runtime/`, `server/`, and `ui/`.
 
 `./browser-contract` holds Archboard conversation routes and presentation contracts.
 Archboard validates its walkthrough and recording payload before narration starts.
-`./semantic-context` publishes captured architecture context for coordinators and workhorses.
+Captured architecture context for coordinators and workhorses is published inside the package, and no entry exposes it.
 Its capture schemas, brief builder, and catalogue formatting stay in this integration.
-`./runtime` exposes application behavior needed by outside callers.
 
 `./server`, `./panes`, and `./host` expose Archboard server integration.
 The production adapter calls `createVoiceAgent` like any host: Archboard's identity (`archboard`), its role instructions and app tools, admitted vault checkouts, and its extensions.

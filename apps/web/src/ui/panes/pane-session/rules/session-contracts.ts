@@ -13,12 +13,14 @@ import type {
 } from "#ui/panes/pane-session/rules/session-types.ts";
 import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbench-port.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/panes/pane-session/clients/workbench-socket.ts";
-import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
+import type { panePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 
-type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
-type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
+type SemanticPanePart = NonNullable<
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
+>[number];
+type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
 
 /** Which palette the pane draws in. */
 type PaneTheme = "light" | "dark";

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import wrappedBlocker from "#tests/runtime/support/fixtures/wrapped-blocker.json";
@@ -32,7 +32,7 @@ test("independent requests keep a full lane between their ports", async () => {
 	});
 	const drawing = await renderArchitecture({
 		content,
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		theme: "light",
 		layout: "track",
 	});
@@ -65,7 +65,7 @@ test("a card two cards of one rank feed stands midway under them", async () => {
 		),
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -77,7 +77,7 @@ test("a card two cards of one rank feed stands midway under them", async () => {
 });
 
 /** The vocabulary the reduced wrap fixtures draw with. */
-const wrapPolicy = SemanticPolicySchema.parse({
+const wrapPolicy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
 		["module", "function", "service", "external"].map((kind) => [
@@ -165,7 +165,7 @@ test("a line leaving a container stands its label below the container", async ()
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",

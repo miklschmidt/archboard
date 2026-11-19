@@ -58,7 +58,7 @@ function resolveLogFilePath(): string {
 
 const RESOLVED_LOG_FILE_PATH = resolveLogFilePath();
 
-const logger: winston.Logger = winston.createLogger({
+const processLogger: winston.Logger = winston.createLogger({
 	level: process.env["LOG_LEVEL"] || "info",
 
 	format: winston.format.combine(
@@ -91,7 +91,7 @@ const logger: winston.Logger = winston.createLogger({
  * Flush every queued record and close each transport before process exit.
  * @param target The logger to finish; the process logger by default.
  */
-export async function closeLogger(target: winston.Logger = logger): Promise<void> {
+export async function closeLogger(target: winston.Logger = processLogger): Promise<void> {
 	if (target.writableFinished || target.destroyed) {
 		target.close();
 		return;
@@ -121,7 +121,7 @@ export async function closeLogger(target: winston.Logger = logger): Promise<void
  * Terminal fallback for a logger whose normal stream finalization failed.
  * @param target The logger to tear down; the process logger by default.
  */
-export function forceCloseLogger(target: winston.Logger = logger): void {
+export function forceCloseLogger(target: winston.Logger = processLogger): void {
 	for (const transport of target.transports) {
 		transport.destroy();
 	}
@@ -129,4 +129,10 @@ export function forceCloseLogger(target: winston.Logger = logger): void {
 	target.close();
 }
 
-export { logger };
+/**
+ * The logger of this process: every level to the log file, warnings and errors also to standard error.
+ * @returns The process logger.
+ */
+export function logger(): winston.Logger {
+	return processLogger;
+}

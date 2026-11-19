@@ -9,7 +9,7 @@ import { describe, expect, test } from "bun:test";
 import * as RemixIcons from "@remixicon/react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import {
 	iconNames as diagramIconNames,
 	iconPaths as diagramIconPaths,
@@ -49,7 +49,7 @@ describe("type icons", () => {
 
 	test("a card draws its type's icon exactly as the component renders it", async () => {
 		const icons = ["RiServerLine", "RiShipFill", "RiDatabase2Line"];
-		const policy = SemanticPolicySchema.parse({
+		const policy = semanticPolicySchema().parse({
 			levels: ["service"],
 			nodeKinds: Object.fromEntries(
 				icons.map((icon, index) => [`kind${index}`, { name: icon, icon, color: "blue" }]),

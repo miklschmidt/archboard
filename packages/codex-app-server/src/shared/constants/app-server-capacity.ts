@@ -29,3 +29,11 @@ export const CODEX_APP_SERVER_CAPACITY = Object.freeze({
 	}),
 	listenersPerEvent: 1,
 } as const);
+
+/**
+ * How many reverse requests one connection holds unanswered before it refuses the next.
+ * @returns The limit.
+ */
+export function codexPendingReverseRequestLimit(): number {
+	return CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseRequests;
+}

@@ -4,24 +4,24 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-news-"));
-const originalWarn = logger.warn;
+const originalWarn = logger().warn;
 
 test("announcements isolate passenger failure and report release at once", async () => {
 	jest.useFakeTimers();
 	try {
 		const warnings: unknown[][] = [];
-		logger.warn = (...args: unknown[]) => {
+		logger().warn = (...args: unknown[]) => {
 			warnings.push(args);
-			return logger;
+			return logger();
 		};
 		lock.onModelSweep(() => {
 			throw new Error("note-watch fixture failed");
 		});
 		lock.watchModelLocks({ models: () => [{ vault, model: "passenger" }] });
-		jest.advanceTimersByTime(MODEL_LOCK_MS.watch);
+		jest.advanceTimersByTime(modelLockMs("watch"));
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
 		).toBeTrue();
@@ -70,7 +70,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.releaseClaim(vault, "broadcast");
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
-		logger.warn = originalWarn;
+		logger().warn = originalWarn;
 		rmSync(vault, { recursive: true, force: true });
 	}
 }, 30_000);

@@ -16,7 +16,7 @@ import { dirname, join } from "node:path";
 import type { Server } from "node:http";
 
 import { createCodeOpenerPreguard, createCodeOpenerRouter } from "@archboard/code-opener/opener";
-import { CodeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
+import { codeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
 import type { z } from "zod";
 import type { OpenerSelectionReplySchema } from "@archboard/code-opener/opening";
 import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
@@ -198,7 +198,7 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 		if (element !== "node") {
 			return { ok: false, code: "BINDING_UNAVAILABLE", error: "The element is missing." };
 		}
-		const parsed = CodeBindingSchema.safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
+		const parsed = codeBindingSchema().safeParse(JSON.parse(readFileSync(bindingFile, "utf8")));
 		return parsed.success
 			? { ok: true, binding: parsed.data }
 			: { ok: false, code: "BINDING_UNAVAILABLE", error: "Binding is unavailable." };

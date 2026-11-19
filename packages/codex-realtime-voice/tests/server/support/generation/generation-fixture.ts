@@ -1,5 +1,5 @@
 import {
-	CODEX_SESSION_CONTROL,
+	codexSessionControl,
 	type ControlledCodexSession,
 	createCodexSession,
 } from "@archboard/codex-app-server/session";
@@ -156,6 +156,10 @@ export function createCodexWorkbenchGenerationFixture(
 		workingDirectory: "/fixture/coordinator",
 		listenerOwnership: "composition",
 	});
+	// The control's key stays private to the session package: find it on the session it made.
+	const [controlKey] = Object.getOwnPropertySymbols(baseSession) as [
+		Extract<keyof ControlledCodexSession, symbol>,
+	];
 	const session = {
 		...baseSession,
 		respondCurrentTime: async (value: { readonly method: string }) =>
@@ -164,8 +168,8 @@ export function createCodexWorkbenchGenerationFixture(
 			void events.push(`session:${value.method}`),
 		respondUnsupportedAttestation: async (value: { readonly method: string }) =>
 			void events.push(`session:${value.method}`),
-		[CODEX_SESSION_CONTROL]: {
-			...baseSession[CODEX_SESSION_CONTROL],
+		[controlKey]: {
+			...codexSessionControl(baseSession),
 			dispose: () => void events.push("session:dispose"),
 		},
 	} satisfies ControlledCodexSession;

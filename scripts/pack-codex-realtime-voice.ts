@@ -1,7 +1,7 @@
 // Build @archboard/codex-realtime-voice into a directory that `npm publish` can publish: ESM
 // JavaScript and bundled declarations for every public entry, with the MIT workspace packages it
 // imports bundled in, and a manifest that declares only the third-party packages it imports.
-import { copyFile, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -95,6 +95,35 @@ function importOf(names: readonly string[]): string {
 	return `^(?:${names.map((name) => name.replace("/", "\\/")).join("|")})(?:/|$)`;
 }
 
+/**
+ * What the published entries add to the workspace ones: Archboard's own packages import
+ * `resolveCodexExecutable` from `@archboard/codex-app-server/process`, so the workspace `./server`
+ * entry does not pass it on, but a host of the published package has no other door to it.
+ */
+const PUBLISHED_ADDITIONS: Readonly<Record<string, string>> = {
+	"./server": 'export { resolveCodexExecutable } from "@archboard/codex-app-server/process";',
+};
+const entries = path.join(root, "dist/codex-realtime-voice-entries");
+await rm(entries, { recursive: true, force: true });
+await mkdir(entries, { recursive: true });
+/**
+ * The file that the build bundles for one public entry: the workspace file, and what the
+ * published package adds to it.
+ * @param subpath The `exports` key.
+ * @param file The workspace file of the entry.
+ * @returns The file to bundle.
+ */
+async function publishedEntry(subpath: string, file: string): Promise<string> {
+	const addition = PUBLISHED_ADDITIONS[subpath];
+	if (addition === undefined) return path.join(source, file);
+	const entry = path.join(entries, `${entryName(subpath)}.ts`);
+	await writeFile(
+		entry,
+		`export * from ${JSON.stringify(path.join(source, file))};\n${addition}\n`,
+	);
+	return entry;
+}
+
 const packages = [...DEPENDENCIES, ...OPTIONAL_PEERS, "@openai/codex"];
 const external = packages.map((name) => new RegExp(importOf([name])));
 // Every other workspace package stays an import, which `onlyImport` refuses, so the build cannot
@@ -106,10 +135,12 @@ await build({
 	config: false,
 	cwd: source,
 	entry: Object.fromEntries(
-		Object.entries(workspace.exports).map(([subpath, file]) => [
-			entryName(subpath),
-			path.join(source, file),
-		]),
+		await Promise.all(
+			Object.entries(workspace.exports).map(
+				async ([subpath, file]) =>
+					[entryName(subpath), await publishedEntry(subpath, file)] as const,
+			),
+		),
 	),
 	format: "esm",
 	platform: "node",

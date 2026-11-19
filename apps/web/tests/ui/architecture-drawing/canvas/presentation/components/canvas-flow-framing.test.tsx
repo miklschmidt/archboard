@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 
-import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
+import { fitMargin } from "@archboard/renderer/shell-geometry";
 import {
 	drawing,
 	mountStage,
@@ -182,7 +182,7 @@ test("a step about the last message of a short flow brings it up under the flow'
 	const camera = cameraNow();
 	const drop = 180 - 120;
 	expect(head().style.transform).toBe(`translate(0px, ${drop}px)`);
-	expect(camera.y + (30 + drop) * camera.scale).toBeCloseTo(FIT_MARGIN, 3);
+	expect(camera.y + (30 + drop) * camera.scale).toBeCloseTo(fitMargin(), 3);
 });
 
 test("a step about a message far down a tall flow reads it from the top of the room, under the flow's head", async () => {
@@ -194,7 +194,7 @@ test("a step about a message far down a tall flow reads it from the top of the r
 	const drop = 840 - 120;
 	expect(head().style.transform).toBe(`translate(0px, ${drop}px)`);
 	expect(head().classList.contains("is-stuck")).toBe(true);
-	expect(camera.y + (30 + drop) * camera.scale).toBeCloseTo(FIT_MARGIN, 3);
+	expect(camera.y + (30 + drop) * camera.scale).toBeCloseTo(fitMargin(), 3);
 	expect(camera.scale).toBeGreaterThanOrEqual(1);
 	// Leaving gives the head back where the picture drew it.
 	press("Escape");

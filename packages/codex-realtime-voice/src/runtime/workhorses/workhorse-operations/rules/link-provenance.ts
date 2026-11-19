@@ -1,4 +1,4 @@
-import { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session";
+import { codexSessionThreadSource } from "@archboard/codex-app-server/session";
 import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
 import type {
 	ExecutableThreadLink,
@@ -11,7 +11,7 @@ import {
 } from "#runtime/workhorses/workhorse-operations/rules/operation-errors.ts";
 
 const WORKHORSE_CREATION_KIND = "create_thread";
-const WORKHORSE_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
+const WORKHORSE_THREAD_SOURCE = codexSessionThreadSource();
 
 /**
  * Check that a durable record's correlation names the target's child, epoch and operation.

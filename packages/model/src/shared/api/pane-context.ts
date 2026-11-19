@@ -1,8 +1,8 @@
 // The context of a pane: what it shows, what is present in it, and its route.
 export {
-	PanePresentRequestSchema,
-	SEMANTIC_PANE_CONTEXT_ROUTE,
-	SemanticPaneContextSchema,
-	SemanticSubjectKindSchema,
+	panePresentRequestSchema,
+	semanticPaneContextRoute,
+	semanticPaneContextSchema,
+	semanticSubjectKindSchema,
 } from "#shared/protocol/pane-context.ts";
-export { ArchitecturePaneReadingSchema } from "#shared/schemas/model-pane.ts";
+export { architecturePaneReadingSchema } from "#shared/schemas/model-pane.ts";

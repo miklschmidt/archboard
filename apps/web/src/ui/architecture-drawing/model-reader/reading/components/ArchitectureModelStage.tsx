@@ -32,7 +32,7 @@ import { shownRepository } from "@archboard/ui-kit/components";
 import {
 	ArchitectureReadError,
 	architectureModelQuery,
-	architectureModelKeys,
+	invalidateVaultQueries,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import { ModelComparisonSelector } from "#ui/architecture-drawing/model-reader/reading/components/ModelComparisonSelector.tsx";
 import { ModelStateDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
@@ -187,7 +187,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const unread = isUnread(query.error);
 	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
-		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
+		void invalidateVaultQueries(client, vault);
 		void retryFailedDrawings(client);
 	}, [client, vault]);
 	if (differentModel(resolvedId, requestedModel)) {

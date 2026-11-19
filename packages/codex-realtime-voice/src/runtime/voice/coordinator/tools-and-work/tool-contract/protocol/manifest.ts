@@ -259,71 +259,38 @@ function renderCoordinatorNamespace(
 	return deepFreeze({ role, text, namespace, sha256: sha256(Buffer.from(text, "utf8")) });
 }
 
-/**
- * Validate a candidate namespace from exact bytes or a closed object snapshot against the one a
- * host named: exact digest first, then canonical encoding, then shape and content.
- * @param reviewed - The rendered namespace the candidate claims to be.
- * @param candidate - Manifest text, raw bytes, or an already-parsed object.
- * @throws {TypeError} When the candidate is not that namespace byte for byte or field for field.
- */
-function assertCanonicalManifest(reviewed: ReviewedNamespace, candidate: unknown): void {
-	const label = `${reviewed.namespace.name} manifest`;
-	let received: CanonicalNamespace;
-	if (typeof candidate === "string" || candidate instanceof Uint8Array) {
-		const bytes =
-			typeof candidate === "string" ? Buffer.from(candidate, "utf8") : Buffer.from(candidate);
-		const actualSha256 = sha256(bytes);
-		if (actualSha256 !== reviewed.sha256) {
-			throw new TypeError(
-				`${label} hash drifted. Expected SHA-256 ${reviewed.sha256}, received ${actualSha256}.`,
-			);
-		}
-		received = parseManifestText(decodeCanonicalBytes(bytes, label), label);
-	} else {
-		received = CanonicalNamespaceSchema.parse(candidate);
-	}
-	assertManifestShape(received, reviewed.role);
-	if (JSON.stringify(received) !== JSON.stringify(reviewed.namespace)) {
-		throw new TypeError(`${label} does not match the reviewed snapshot.`);
-	}
-}
+/** A namespace role and tool name pair that the reviewed manifests declare. */
+type DeclaredTool =
+	| { readonly role: "workhorse"; readonly tool: WorkhorseToolName }
+	| { readonly role: "voice"; readonly tool: VoiceToolName };
 
-/** Each role's tools, which no host name changes. */
-const TEMPLATE_TOOLS = Object.freeze({
-	workhorse: renderCoordinatorNamespace("workhorse", "template").namespace.tools,
-	voice: renderCoordinatorNamespace("voice", "template").namespace.tools,
-});
+const DeclaredToolSchema = z.union([
+	z.object({ role: z.literal("workhorse"), tool: z.enum(WORKHORSE_TOOL_NAMES) }),
+	z.object({ role: z.literal("voice"), tool: z.enum(VOICE_TOOL_NAMES) }),
+]);
 
 /**
- * Finds one reviewed tool declaration by name.
- * @param role - The role of the namespace that declares the tool.
- * @param toolName - The tool to look up.
- * @returns The reviewed tool declaration.
+ * Find the reviewed declaration of a namespace role and tool name pair a call carries.
+ * @param role - The namespace role the call arrived in.
+ * @param tool - The tool name the call carries.
+ * @returns The pair when the reviewed manifests declare it, otherwise null.
  */
-function canonicalTool(
-	role: CoordinatorNamespaceRole,
-	toolName: CoordinatorToolName,
-): CanonicalTool {
-	const tool = TEMPLATE_TOOLS[role].find((candidate) => candidate.name === toolName);
-	if (!tool) {
-		throw new TypeError(`The ${role} namespace does not declare ${toolName}.`);
-	}
-	return tool;
+function parseDeclaredTool(role: unknown, tool: unknown): DeclaredTool | null {
+	const declared = DeclaredToolSchema.safeParse({ role, tool });
+	return declared.success ? declared.data : null;
 }
 
 export {
-	type JsonSchema,
-	type CanonicalTool,
 	type CanonicalNamespace,
 	type CoordinatorNamespaceRole,
 	type ReviewedNamespace,
-	WORKHORSE_TOOL_NAMES,
-	VOICE_TOOL_NAMES,
 	type WorkhorseToolName,
 	type VoiceToolName,
 	type CoordinatorToolName,
+	type DeclaredTool,
+	WORKHORSE_TOOL_NAMES,
+	VOICE_TOOL_NAMES,
 	renderCoordinatorNamespace,
-	assertCanonicalManifest,
-	canonicalTool,
+	parseDeclaredTool,
 	deepFreeze,
 };

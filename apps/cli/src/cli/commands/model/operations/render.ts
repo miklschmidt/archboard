@@ -1,16 +1,16 @@
 import { z } from "zod";
 import {
-	ArchitectureRenderRequestSchema,
-	ArchitectureRenderResultSchema,
+	architectureRenderRequestSchema,
+	architectureRenderResultSchema,
 } from "@archboard/model/contract";
-import { StandaloneThemeSchema } from "@archboard/model/render-reply";
+import { standaloneThemeSchema } from "@archboard/model/render-reply";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
-const InputSchema = ArchitectureRenderRequestSchema.extend({
+import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+const InputSchema = architectureRenderRequestSchema().extend({
 	out: z.string(),
-	theme: StandaloneThemeSchema.default("auto"),
+	theme: standaloneThemeSchema().default("auto"),
 });
 /**
  * Refuse a flow that the architecture grammar would silently ignore.
@@ -76,7 +76,7 @@ const modelRenderContract = defineCommand({
 			spellings: ["--grammar"],
 			value: "required",
 			placeholder: "grammar",
-			choices: ArchitectureRenderRequestSchema.shape.grammar.removeDefault().options,
+			choices: architectureRenderRequestSchema().shape.grammar.removeDefault().options,
 			description: "Draw `sequence` or `flowchart`",
 		},
 		{
@@ -103,7 +103,7 @@ const modelRenderContract = defineCommand({
 			spellings: ["--legend"],
 			value: "required",
 			placeholder: "layout",
-			choices: ArchitectureRenderRequestSchema.shape.legend.removeDefault().options,
+			choices: architectureRenderRequestSchema().shape.legend.removeDefault().options,
 			default: "horizontal",
 			description:
 				"Draw the legend under the picture, beside it (`vertical`), or not at all (`none`)",
@@ -120,10 +120,10 @@ const modelRenderContract = defineCommand({
 	],
 	input: { ingress: InputSchema },
 	result: z.union([
-		ArchitectureRenderResultSchema.options[0]
-			.omit({ svg: true, atlas: true })
+		architectureRenderResultSchema()
+			.options[0].omit({ svg: true, atlas: true })
 			.extend({ file: z.string() }),
-		ArchitectureRenderResultSchema.options[1],
+		architectureRenderResultSchema().options[1],
 	]),
 	output: {
 		cases: [
@@ -131,7 +131,7 @@ const modelRenderContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The exact reading receipt or structured refusal",
 			},
 		],
@@ -143,7 +143,7 @@ const modelRenderContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [
 		{
 			id: "unavailable",

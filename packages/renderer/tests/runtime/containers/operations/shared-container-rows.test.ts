@@ -19,7 +19,7 @@ import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import phone from "../../../../../../docs/design/wide-board-layout-fixtures/phone-ownership.content.json";
 import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Whether a whole card fits inside its actual parent, including rounded SVG precision.
@@ -143,7 +143,7 @@ for (const fixture of [
 	test(`${fixture.name}: connected containers retain clearer, shorter wiring`, async () => {
 		const content = orderedFixture(fixture.content);
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "dark",
 			// These measured wiring limits belong to the Track shared-row regression.

@@ -9,7 +9,7 @@ import type {
 import type { BrowserDynamicApprovalResponse } from "#shared/dynamic-approval/schemas/approval.ts";
 import type { BrowserCommandId, JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import { parseApprovalResponse } from "#runtime/approvals/services/response.ts";
-import { SupportedLoginAccountParamsSchema } from "@archboard/codex-app-server/session";
+import { parseSupportedLoginAccountParams } from "@archboard/codex-app-server/session";
 import type { BrowserLeaseManager } from "#server/lease/services/lease.ts";
 import {
 	CodexWorkbenchGatewayError,
@@ -90,7 +90,7 @@ function normalizeBrowserCommand(command: BrowserCommand): OwnedBrowserCommand {
 	if (command.command === "accountLogin")
 		return {
 			...command,
-			login: SupportedLoginAccountParamsSchema.parse(command.login),
+			login: parseSupportedLoginAccountParams(command.login),
 		};
 	if (command.command === "approvalRespond")
 		return {

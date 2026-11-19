@@ -88,3 +88,19 @@ const CodeFileSchema = z.object({
 });
 
 export { CodeFileSchema, CodeFilesSchema };
+
+/**
+ * The schema `CodeFileSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function codeFileSchema(): typeof CodeFileSchema {
+	return CodeFileSchema;
+}
+
+/**
+ * The schema `CodeFilesSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function codeFilesSchema(): typeof CodeFilesSchema {
+	return CodeFilesSchema;
+}

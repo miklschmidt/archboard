@@ -14,7 +14,7 @@ function releaseCapture(entry: Entry): void {
 		rmSync(entry.captureDirectory, { recursive: true, force: true });
 		delete entry.captureDirectory;
 	} catch (error) {
-		logger.error("Cannot remove a temporary explanation capture:", error);
+		logger().error("Cannot remove a temporary explanation capture:", error);
 	}
 }
 

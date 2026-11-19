@@ -2,13 +2,13 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // Track reads downward. Blocks also permits a rightward reading within one scope.
 
 import { describe, expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { readingOf } from "#tests/runtime/support/drawn-reading.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * One hub with a fan of many dependents: a row of them across the page is
@@ -40,7 +40,7 @@ const CHAIN = orderedFixture({
 describe("architecture diagrams read top to bottom", () => {
 	test("a wide fan stays below its source, and the document records downward reading", async () => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: fan(16),
 			theme: "light",
 		});
@@ -70,7 +70,7 @@ describe("architecture diagrams read top to bottom", () => {
 			})),
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 		});
@@ -81,7 +81,7 @@ describe("architecture diagrams read top to bottom", () => {
 
 	test("a short chain reads down the page", async () => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: CHAIN,
 			theme: "light",
 		});
@@ -92,8 +92,8 @@ describe("architecture diagrams read top to bottom", () => {
 
 	test("geometry is the same on every render", async () => {
 		const [one, other] = await Promise.all([
-			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: fan(16), theme: "light" }),
-			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: fan(16), theme: "dark" }),
+			renderArchitecture({ policy: defaultSemanticPolicy(), content: fan(16), theme: "light" }),
+			renderArchitecture({ policy: defaultSemanticPolicy(), content: fan(16), theme: "dark" }),
 		]);
 		expect(one.readingDirection).toBe(other.readingDirection);
 		expect(one.atlas).toEqual(other.atlas);
@@ -128,7 +128,7 @@ function pipeline(length: number, framed = false): VariantContent {
 // continues the chain at the top of a column to the right. A frame's grid folds
 // by rows, and a row can run back so that every step stays one cell long.
 test.each(
-	LayoutEngineSchema.options.flatMap((layout) =>
+	layoutEngineSchema().options.flatMap((layout) =>
 		[false, true].map((framed) => [layout, framed] as const),
 	),
 )(
@@ -136,7 +136,7 @@ test.each(
 	async (layout, framed) => {
 		const content = pipeline(12, framed);
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,

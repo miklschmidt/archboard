@@ -29,7 +29,7 @@ import type {
 	AppliedAppearance,
 	PictureLegend,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
-import { LINE_MARKS, type LineMark } from "@archboard/renderer/picture";
+import { lineMarks, type LineMark } from "@archboard/renderer/picture";
 
 /** How wide every sample of the legend is, so its labels start on one line. */
 const SAMPLE_WIDTH = 28;
@@ -72,7 +72,7 @@ function Lines(props: { readonly relationships: readonly AppliedAppearance[] }):
 					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
 				</Entry>
 			))}
-			{LINE_MARKS.map(({ mark, word }) => (
+			{lineMarks().map(({ mark, word }) => (
 				<Entry key={mark} label={word}>
 					<LineMarkSample mark={mark} />
 				</Entry>

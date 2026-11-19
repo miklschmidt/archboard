@@ -143,12 +143,8 @@ function isClientRequestMethodWithoutParams(
 }
 
 export {
-	CLIENT_REQUEST_METHODS,
-	CLIENT_REQUEST_METHODS_WITHOUT_PARAMS,
 	RESPONSE_METHODS,
 	CLIENT_NOTIFICATION_METHODS,
-	SERVER_REQUEST_METHODS,
-	SERVER_NOTIFICATION_METHODS,
 	type ResponseMethod,
 	type ClientRequestMethod,
 	type ClientRequestMethodWithoutParams,

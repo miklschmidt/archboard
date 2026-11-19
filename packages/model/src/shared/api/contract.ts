@@ -1,33 +1,33 @@
-export { ArchitectureArchiveInitializationSchema } from "#shared/canonical-contracts/schemas/model.ts";
-export { ArchitectureModelReadSchema } from "#shared/canonical-contracts/schemas/model.ts";
+export { architectureArchiveInitializationSchema } from "#shared/canonical-contracts/schemas/model.ts";
+export { architectureModelReadSchema } from "#shared/canonical-contracts/schemas/model.ts";
 export {
-	ArchitecturePublicationDestinationSchema,
-	ArchitecturePublicationRequestSchema,
-	ArchitecturePublicationSchema,
+	architecturePublicationDestinationSchema,
+	architecturePublicationRequestSchema,
+	architecturePublicationSchema,
 } from "#shared/canonical-contracts/schemas/model.ts";
 export type { ArchitectureModelRead } from "#shared/canonical-contracts/schemas/model.ts";
-export { ModelSnapshotSchema } from "#shared/canonical-contracts/schemas/model-snapshot.ts";
+export { modelSnapshotSchema } from "#shared/canonical-contracts/schemas/model-snapshot.ts";
 export {
-	ArchitectureCheckpointRequestSchema,
-	ArchitectureCheckpointRetainSchema,
-	ArchitectureCheckpointListSchema,
-	ArchitectureCheckpointRowsSchema,
-	ModuleNavigationReadSchema,
-	ArchitectureRetainedModuleSchema,
+	architectureCheckpointRequestSchema,
+	architectureCheckpointRetainSchema,
+	architectureCheckpointListSchema,
+	architectureCheckpointRowsSchema,
+	moduleNavigationReadSchema,
+	architectureRetainedModuleSchema,
 } from "#shared/canonical-contracts/schemas/model.ts";
 export {
-	ArchitectureModuleEditSchema,
-	ArchitectureRenderRequestSchema,
-	ArchitectureRenderResultSchema,
-	ArchitectureModuleEditResultSchema,
-	ArchitectureRecoveryResultSchema,
-	ArchitectureClaimRequestSchema,
-	ArchitectureClaimResultSchema,
-	ArchitectureClaimListSchema,
-	ArchitectureClaimReleaseSchema,
-	ArchitectureClaimTakeBackSchema,
-	ArchitectureFeedFrameSchema,
-	ArchitectureFeedRequestSchema,
+	architectureModuleEditSchema,
+	architectureRenderRequestSchema,
+	architectureRenderResultSchema,
+	architectureModuleEditResultSchema,
+	architectureRecoveryResultSchema,
+	architectureClaimRequestSchema,
+	architectureClaimResultSchema,
+	architectureClaimListSchema,
+	architectureClaimReleaseSchema,
+	architectureClaimTakeBackSchema,
+	architectureFeedFrameSchema,
+	architectureFeedRequestSchema,
 } from "#shared/canonical-contracts/schemas/model-operations.ts";
 export type {
 	ArchitectureModuleEdit,
@@ -40,13 +40,13 @@ export type {
 } from "#shared/canonical-contracts/schemas/model-operations.ts";
 
 export {
-	ArchitectureImportRequestSchema,
-	ArchitectureExportResultSchema,
+	architectureImportRequestSchema,
+	architectureExportResultSchema,
 } from "#shared/schemas/model-portable.ts";
 
-export { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";
+export { architectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";
 
-export { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-portable.ts";
+export { architectureInitializationRequestSchema } from "#shared/schemas/model-portable.ts";
 
 export type { ArchitectureCheckpointRetain } from "#shared/canonical-contracts/schemas/model.ts";
 

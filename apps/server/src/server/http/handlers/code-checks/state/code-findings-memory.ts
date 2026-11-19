@@ -25,10 +25,10 @@
 // on a document, and a pane shows it only over the version it was found on.
 
 import type { z } from "zod";
-import type { CodeCheckAnswer, RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer, rememberedFindingsSchema } from "@archboard/code-intel/code-check";
 
 /** What the server remembers of a vault's code passes, as the findings route answers it. */
-type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
+type RememberedFindings = z.infer<ReturnType<typeof rememberedFindingsSchema>>;
 
 type RememberedModel = NonNullable<RememberedFindings["models"]>[number];
 

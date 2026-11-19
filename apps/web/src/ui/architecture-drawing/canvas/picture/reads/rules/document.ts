@@ -19,7 +19,7 @@ import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
 import type { FlowStep, SemanticFlow } from "@archboard/model/flow";
 import type { SemanticView } from "@archboard/model/views";
 import type { SemanticEdge, SemanticNode } from "@archboard/model/content";
-import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import type { variantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
 import type { VariantContent } from "@archboard/model/content";
 
@@ -28,7 +28,7 @@ type Shelving = NonNullable<LegacyBoard["shelvings"]>[number];
 type Adoption = NonNullable<LegacyBoard["adoptions"]>[number];
 
 type VariantComparison = ReturnType<typeof compareVariants>;
-type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
+type VariantLifecycle = z.infer<ReturnType<typeof variantLifecycleSchema>>;
 
 /** One node, with the containment around it. */
 interface NodeSubject {

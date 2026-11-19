@@ -3,7 +3,6 @@ export { CodexProcessError } from "#runtime/processes/process-contract.ts";
 export type {
 	CodexProcess,
 	CodexProcessChild,
-	CodexProcessFailureCode,
 	CodexProcessOptions,
 	CodexProcessSnapshot,
 } from "#runtime/processes/process-contract.ts";

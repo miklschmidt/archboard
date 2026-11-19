@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 /** A document of unrelated drafts (so none is drawn against another), whose views name parts only `base` holds; `bare` holds nothing. */
@@ -60,7 +60,7 @@ async function emptyCode(variant: string, view?: string): Promise<string | undef
 	const outcome = await renderLegacyBoard(
 		DOCUMENT,
 		{ theme: "light", variant, view },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!outcome.ok) throw new Error(outcome.error);
 	return "empty" in outcome.reply ? outcome.reply.empty : undefined;
