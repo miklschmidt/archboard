@@ -11,5 +11,14 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#iOyrvcQp",
   "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "render",
+      "label": "the selected module's code exports and findings",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#moKRYQRu",
+      "to": "vKEsyHFk#51X5gvya"
+    }
+  ]
 }

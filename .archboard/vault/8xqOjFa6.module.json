@@ -1,0 +1,15 @@
+{
+  "order": 21500,
+  "name": "Language server setup brief",
+  "kind": "module",
+  "responsibility": "Writes the brief that tells an agent how to set up the missing language servers of a checkout",
+  "description": "It sits beside the configurable languages in the browser-safe languages entry. One brief serves archboard init and Fix with Codex. It names the languages that lack a server and tells the agent to follow the repository's own rules for development tools, to show its plan first, and to write .archboard/language-servers.json. Choosing a terminal agent and starting it stay in the CLI.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/shared/api/language-server-setup.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#8xqOjFa6",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "outgoing": []
+}
