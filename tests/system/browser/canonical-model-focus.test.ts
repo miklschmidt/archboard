@@ -121,10 +121,9 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		WAIT,
 	);
 	expect(focusedReport.body.panes.find((pane) => pane.paneId === "A")?.byUser).toContain("view");
-	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-about"] [data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
+			`[...document.querySelectorAll('[data-slot="model-panel"] [data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
 		),
 	).toEqual(["Shop#Decode", "Shop#Gateway"]);
 	await openAbout(browser);

@@ -18,13 +18,8 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import {
-	compareCheckpoint,
-	fixtureGit,
-	initializeSource,
-	selectModule,
-} from "./support/canonical-model.ts";
-import { openAbout, refreshModel } from "./support/canonical-page.ts";
+import { compareCheckpoint, fixtureGit, initializeSource } from "./support/canonical-model.ts";
+import { openAbout, openModule, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -90,10 +85,23 @@ async function visible(browser: AgentBrowserSession, selector: string): Promise<
 	);
 }
 
+/** The description of Gateway reads on its own About page, so the helper opens the module once. */
 async function description(browser: AgentBrowserSession, value: string): Promise<void> {
 	await openAbout(browser);
-	await visible(browser, '[data-slot="module-list"] [data-module-id="Shop#Gateway"]');
-	await selectModule(browser, "Shop#Gateway", (text) => text.includes(value), "header");
+	const title = `document.querySelector('[data-slot="model-about-title"] h2')?.textContent ?? ""`;
+	if (!(await browser.eval<string>(title)).toLowerCase().includes("gateway")) {
+		await openModule(browser, "Shop#Gateway");
+		await openAbout(browser);
+	}
+	await pollUntil(
+		() =>
+			browser.eval<string>(
+				`document.querySelector('[data-slot="model-about-title"]')?.textContent ?? ""`,
+			),
+		(text) => text.includes(value),
+		`the description ${value}`,
+		WAIT,
+	);
 }
 
 async function openHistory(browser: AgentBrowserSession): Promise<void> {

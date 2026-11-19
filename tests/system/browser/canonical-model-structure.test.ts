@@ -34,6 +34,11 @@ async function roots(browser: AgentBrowserSession): Promise<string[]> {
 	);
 }
 
+/** Whether the panel lists the line that runs from Worker into Gateway among a direction's lines. */
+function lineOf(way: "receives" | "sends"): string {
+	return `document.querySelector('[data-slot="model-panel"] [data-slot="model-panel-${way}"] [data-from="Shop#Worker"][data-to="Shop#Gateway"]') !== null`;
+}
+
 async function selectedName(browser: AgentBrowserSession): Promise<string | null> {
 	return browser.eval<string | null>(
 		`document.querySelector('[data-slot="module-details"] :is(h2, h3)')?.textContent ?? null`,
@@ -149,23 +154,15 @@ test("structural writes refresh current modules while exact history and selected
 	).toEqual(["Cache"]);
 
 	await selectReading(browser, "current");
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() => selectedName(browser),
 		(name) => name === "API",
 		"the renamed current module",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"] [data-about-section="receives"]').textContent`,
-		),
-	).toContain("Dispatch request");
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"] [data-about-section="sends"]')?.textContent ?? ""`,
-		),
-	).not.toContain("Dispatch request");
+	// The transferred relationship now runs from Worker into the renamed module.
+	expect(await browser.eval<boolean>(lineOf("receives"))).toBe(true);
+	expect(await browser.eval<boolean>(lineOf("sends"))).toBe(false);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(JSON.stringify(after.body));
 	const cache = after.body.modules.find((module) => module.name === "Cache");
@@ -181,11 +178,10 @@ test("structural writes refresh current modules while exact history and selected
 		"the reparented module to leave the roots",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[data-slot="module-parent"]')?.textContent ?? null`,
+				`document.querySelector('[data-slot="model-panel"] [data-slot="module-parent"]')?.textContent ?? null`,
 			),
 		(name) => name === "Worker",
 		"the selected module's new parent",

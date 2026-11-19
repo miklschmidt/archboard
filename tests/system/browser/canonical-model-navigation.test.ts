@@ -372,7 +372,6 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		WAIT,
 	);
 	await browser.run(["click", line]);
-	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
@@ -391,12 +390,12 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		),
 	).toEqual(["Shop#Whole"]);
 	await browser.run(["click", '[data-slot="model-connections"] [data-connection-id="Shop#Self"]']);
-	await openAbout(browser, "selection");
+	// One relationship is not a list: the panel names the relationship, and both ends are Gateway.
 	expect(
 		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
+			`[...document.querySelectorAll('[data-slot="model-panel"] [data-slot="model-connection-details"] [data-end-id]')].map(node => node.getAttribute('data-end-id'))`,
 		),
-	).toEqual(["Shop#Self"]);
+	).toEqual(["Shop#Gateway", "Shop#Gateway"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

@@ -83,7 +83,6 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	);
 	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -98,10 +97,14 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	);
 	// Authored values are behavior. Product wording is not pinned by this test.
 	expect(details).toContain("Accepts shopping requests");
-	expect(details).toContain("Authenticates callers and sends shopping requests to the worker.");
 	expect(details).toContain("src/gateway.ts");
 	expect(details).toContain("docs/gateway.md");
-	expect(details).toContain("Dispatch request");
+	// The panel lists the line to Worker by its other end.
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="module-details"] [data-slot="model-panel-sends"] [data-to="Shop#Worker"]') !== null`,
+		),
+	).toBe(true);
 
 	// A repository that lost its vault says so, and reads again once the vault is back.
 	const movedVault = `${vault}-moved`;
@@ -170,11 +173,11 @@ test("current model readings refresh after external edits and reconnect with exp
 		);
 	const gatewayPath = join(vault, "gateway.module.json");
 	const gateway = JSON.parse(readFileSync(gatewayPath, "utf8")) as Record<string, unknown>;
-	gateway["description"] = "Observed external description";
+	gateway["responsibility"] = "Observed external responsibility";
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	await pollUntil(
 		details,
-		(text) => text.includes("Observed external description"),
+		(text) => text.includes("Observed external responsibility"),
 		"the external edit without a manual refresh",
 		WAIT,
 	);
@@ -191,12 +194,12 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	expect(await stale()).toBe(true);
-	expect(await details()).toContain("Observed external description");
-	gateway["description"] = "Repaired external description";
+	expect(await details()).toContain("Observed external responsibility");
+	gateway["responsibility"] = "Repaired external responsibility";
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	await pollUntil(
 		details,
-		(text) => text.includes("Repaired external description"),
+		(text) => text.includes("Repaired external responsibility"),
 		"the repaired current reading",
 		WAIT,
 	);
@@ -230,13 +233,13 @@ test("current model readings refresh after external edits and reconnect with exp
 			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
 			// Losing the stream says nothing about ownership, so its last known mark stays.
 			expect(await claimVisible()).toBe(true);
-			expect(await details()).toContain("Repaired external description");
+			expect(await details()).toContain("Repaired external responsibility");
 			const released = await releaseArchitectureClaim(vault, {
 				claim: claimId,
 				writer: "reconnecting-agent",
 			});
 			if (!released.success) throw new Error(released.error);
-			gateway["description"] = "Changed while disconnected";
+			gateway["responsibility"] = "Changed while disconnected";
 			writeFileSync(gatewayPath, JSON.stringify(gateway));
 		},
 	});
