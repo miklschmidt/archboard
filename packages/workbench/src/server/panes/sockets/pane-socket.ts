@@ -12,7 +12,8 @@ import {
 } from "@archboard/codex-realtime-voice/server";
 import { repositoryOfVault } from "@archboard/workspace/repository-listing";
 
-import type { AgentActivityMessage, WebSocketMessage } from "#shared/protocol/pane-messages.ts";
+import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
+import { agentActivity } from "#server/panes/services/agent-activity.ts";
 import {
 	admitSocket,
 	registerSocket,
@@ -20,39 +21,8 @@ import {
 } from "#server/panes/services/pane-sockets.ts";
 import { paneKeyForNewPane, paneVaultOf } from "#server/panes/services/registry.ts";
 import { isRecord } from "#server/request/services/request-fields.ts";
-import { namedVault } from "#server/request/services/vault.ts";
+import { namedVault } from "@archboard/server-requests/server";
 import { handleCodexBrowserMessage } from "#server/workbench-host/services/wiring-hooks.ts";
-
-/** The canonical model activity a pane's socket holds open and hears on arrival. */
-interface PaneActivity {
-	hold(vault: string): () => void;
-	snapshots(): readonly AgentActivityMessage[];
-}
-
-let activity: PaneActivity | null = null;
-
-/**
- * Name the activity every pane socket follows from now on. The pane routes name it when they are
- * mounted, because the server lends both from one place.
- * @param followed The activity.
- */
-function followPaneActivity(followed: PaneActivity): void {
-	activity = followed;
-}
-
-/**
- * The activity pane sockets follow.
- * @returns It.
- * @throws {Error} When the pane routes have not been mounted, so no activity was named.
- */
-function followedActivity(): PaneActivity {
-	if (activity === null) {
-		throw new Error(
-			"A pane socket was accepted before the pane routes were mounted, so it has no model activity to follow. Mount the pane routes first.",
-		);
-	}
-	return activity;
-}
 
 /**
  * One socket frame as text. ws hands a frame over as a buffer, an array
@@ -235,7 +205,6 @@ function vaultOfReturningPane(req: IncomingMessage, named: string): string {
  * @returns Resolves once the socket is admitted, or has been turned away.
  */
 async function acceptPaneSocket(ws: WebSocket, req: IncomingMessage, named: string): Promise<void> {
-	const followed = followedActivity();
 	const vault = vaultOfReturningPane(req, named);
 	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
 	const socket = registerSocket(ws, {
@@ -252,12 +221,12 @@ async function acceptPaneSocket(ws: WebSocket, req: IncomingMessage, named: stri
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
-	ws.once("close", followed.hold(vault));
-	for (const snapshot of followed.snapshots()) ws.send(JSON.stringify(snapshot));
+	ws.once("close", agentActivity.hold(vault));
+	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	logger().info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
 	listenForCodexRequests(ws, socket);
 }
 
-export { acceptPaneSocket, followPaneActivity };
+export { acceptPaneSocket };

@@ -16,7 +16,7 @@ import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { isVaultLayout } from "@archboard/workspace/vault";
-import { bodyOf, queryString } from "#server/request/services/request-fields.ts";
+import { bodyOf, queryString } from "#server/services/request-fields.ts";
 
 /** The query parameter, and the body field, that name the vault. */
 const VAULT_PARAMETER = "vault";

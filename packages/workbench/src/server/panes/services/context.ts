@@ -19,7 +19,7 @@ import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks
 import { panePresentations } from "#server/panes/services/presentation.ts";
 import { paneVaults, panes } from "#server/panes/services/registry.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { requireVault, vaultOfRequest } from "#server/request/services/vault.ts";
+import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
 
 type SemanticPaneContext = ModelDocument<"paneContext">;
 

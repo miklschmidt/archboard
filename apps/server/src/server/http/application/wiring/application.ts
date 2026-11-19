@@ -11,8 +11,8 @@ import {
 import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "#server/http/listener/wiring/server-app.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { agentActivity, checkoutWork } from "#server/wiring/server-owners.ts";
+import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
+import { checkoutWork } from "#server/wiring/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { mountCodeFilesRoute } from "#server/http/handlers/code-files/routes/code-files-route.ts";
 import { startServer } from "#server/start-stop/lifecycle/server-startup.ts";
@@ -21,12 +21,9 @@ import {
 	mountMutationAdmission,
 	trackMutationWork,
 } from "#server/http/middleware/mutation-work.ts";
-import { mountPaneRoutes } from "@archboard/workbench/panes";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
-import {
-	followRegistry,
-	mountRepositoryRoutes,
-} from "#server/http/handlers/repositories/routes/repository-routes.ts";
+import { mountWorkbenchRoutes } from "@archboard/workbench/server";
+import { refusalStatus } from "#server/http/handlers/routes/model-response.ts";
+import { mountRepositoryRoutes } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/reads/routes/configuration-routes.ts";
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
@@ -105,18 +102,11 @@ app.use(
 	}),
 );
 
-mountPaneRoutes(app, {
-	runMutation: asyncEndpoint,
-	refuseRead: respond,
-	followRegistry,
-	agentActivity,
-});
+// Before the model and history routes: its first middleware holds every route under
+// /api/architecture to a vault and observes each write there.
+mountWorkbenchRoutes(app, { runMutation: asyncEndpoint, refusalStatus });
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
-app.use("/api/architecture", requireVault, (req, _res, next) => {
-	if (req.method !== "GET") agentActivity.addressed(vaultOfRequest(req));
-	next();
-});
 mountArchitectureModelRoutes(app);
 mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);

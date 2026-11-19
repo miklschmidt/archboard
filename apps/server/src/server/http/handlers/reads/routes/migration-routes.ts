@@ -7,7 +7,7 @@ import {
 import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import type { Express, Response } from "express";
 import { z } from "zod";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
 const QuerySchema = z.strictObject({ vault: z.string(), origin: z.string().min(1) });

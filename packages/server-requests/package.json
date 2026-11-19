@@ -2,7 +2,7 @@
 	"name": "@archboard/server-requests",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Every browser call to the server: the JSON requests, the refusal read one way, and the vault a page opens in, which each call names (ADR 0049).",
+	"description": "Every call between the browser and the server: on the browser side the JSON requests, the refusal read one way, and the vault a page opens in; on the server side the vault a request or a socket upgrade names, or the refusal that says how to name one (ADR 0049).",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -10,6 +10,7 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		".": "./src/ui/api/server-requests.ts"
+		".": "./src/ui/api/server-requests.ts",
+		"./server": "./src/server/api/server.ts"
 	}
 }

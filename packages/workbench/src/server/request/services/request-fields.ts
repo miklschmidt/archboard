@@ -1,10 +1,4 @@
-// What a request says about the model it is for, and the two shapes every
-// route reads a body through.
-//
-// Small on purpose. A request names a model, and whether that model exists is
-// the semantic store's question, not this file's: every route asks the store
-// and answers with the store's own refusal, so there is one account of "no
-// such model" rather than one per route.
+// The shape a route reads a body through, and a thrown value as the message it answers with.
 
 import type { Request } from "express";
 
@@ -30,17 +24,6 @@ function bodyOf(req: Request): JsonRecord {
 }
 
 /**
- * One string field of a request's query string.
- * @param req The request.
- * @param key The field.
- * @returns The value, or undefined when it is absent or repeated.
- */
-function queryString(req: Request, key: string): string | undefined {
-	const value = req.query[key];
-	return typeof value === "string" ? value : undefined;
-}
-
-/**
  * A thrown value as the message a route answers with.
  * @param error The thrown value.
  * @returns Its message, or the value's string form when it is not an Error.
@@ -49,4 +32,4 @@ function messageOf(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-export { bodyOf, isRecord, messageOf, queryString };
+export { bodyOf, isRecord, messageOf };

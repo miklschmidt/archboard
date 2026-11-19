@@ -7,7 +7,7 @@ import { serverCodeState } from "@archboard/server-lifecycle/server-process";
 import { mutationAdmission } from "#server/wiring/server-owners.ts";
 import { serverPhase } from "#server/start-stop/lifecycle/server-startup.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
-import { admittedClientCount } from "@archboard/workbench/panes";
+import { admittedClientCount } from "@archboard/workbench/server";
 
 /**
  * Serve the frontend's page.

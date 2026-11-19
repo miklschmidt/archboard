@@ -1,4 +1,8 @@
-import { semanticPaneContextFor, onSemanticPaneContext } from "#server/panes/services/context.ts";
+import {
+	forgetSemanticPaneContexts,
+	onSemanticPaneContext,
+	semanticPaneContextFor,
+} from "#server/panes/services/context.ts";
 import { createExplanationActions } from "#server/explanations/services/actions.ts";
 import { installExplanationActions } from "#server/explanations/services/dispatch.ts";
 import { basename } from "node:path";
@@ -22,6 +26,9 @@ import {
 	codexWiring,
 	resetCodexWorkbenchWiring,
 } from "#server/workbench-host/services/wiring-hooks.ts";
+import { agentActivity } from "#server/panes/services/agent-activity.ts";
+import { forgetPanePresentations } from "#server/panes/services/presentation.ts";
+import { unwatchRegistry, watchRegistry } from "#server/panes/services/registry-follow.ts";
 import { semanticChangeFeed } from "#server/panes/services/change-feed.ts";
 import { workbenchFeedFor } from "#server/sessions/services/feed.ts";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
@@ -476,26 +483,49 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	};
 	return integration;
 }
+/** The Codex workbench application of this generation, from its preparation until its stop. */
 let codexApplication: VoiceAgent | null = null;
 
-/** Shut the Codex workbench application down and forget its wiring. */
-async function stopCodexWorkbench(): Promise<void> {
-	const application = codexApplication;
-	if (application === null) {
-		resetCodexWorkbenchWiring();
-		return;
-	}
-	await application.shutdown();
-	if (codexApplication === application) {
-		codexApplication = null;
-	}
-	resetCodexWorkbenchWiring();
-}
+/** The stop of this generation, shared by every caller once one has begun. */
+let generationStop: Promise<void> | null = null;
+
 /**
- * Prepare the Codex workbench application and shut it down if startup is canceled.
+ * Stop one generation: dispose the agent activity, shut the application down, and forget that
+ * generation's pane memories and browser wiring even when the shutdown failed.
+ * @param application The generation's application, or null when none was prepared.
+ */
+async function stopGeneration(application: VoiceAgent | null): Promise<void> {
+	try {
+		unwatchRegistry();
+		agentActivity.dispose();
+		await application?.shutdown();
+	} finally {
+		if (codexApplication === application) {
+			codexApplication = null;
+		}
+		forgetSemanticPaneContexts();
+		forgetPanePresentations();
+		resetCodexWorkbenchWiring();
+	}
+}
+
+/**
+ * Stop the workbench once the HTTP server has closed. Every call during one generation shares the
+ * same stop, so an overlapping or a forced stop never shuts the application down twice, and a
+ * failed shutdown still forgets what the generation held.
+ * @returns Resolves once the generation has stopped; rejects with the shutdown's failure.
+ */
+function stopWorkbench(): Promise<void> {
+	generationStop ??= stopGeneration(codexApplication);
+	return generationStop;
+}
+
+/**
+ * Prepare the Codex workbench application, shutting it down if startup is canceled, then follow
+ * the checkout registry. The watch starts last, so a preparation that fails watches nothing.
  * @param signal Cancels the preparation.
  */
-async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
+async function prepareWorkbench(signal: AbortSignal): Promise<void> {
 	const productionModule = await import("#server/workbench-host/services/production.ts");
 	if (signal.aborted) {
 		throw new Error("Codex startup was canceled before installation.");
@@ -504,6 +534,7 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 		productionModule.createServerVoiceAgentOptions(createArchboardWorkbenchServer()),
 	);
 	codexApplication = application;
+	generationStop = null;
 	/** Shut the application down on cancellation, swallowing the shutdown's own failure. */
 	const cancel = (): void => {
 		void application.shutdown().catch(() => undefined);
@@ -514,5 +545,6 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	} finally {
 		signal.removeEventListener("abort", cancel);
 	}
+	watchRegistry();
 }
-export { prepareCodexWorkbench, stopCodexWorkbench };
+export { prepareWorkbench, stopWorkbench };

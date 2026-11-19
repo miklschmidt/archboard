@@ -28,7 +28,7 @@ import {
 } from "#server/panes/services/tab-sessions.ts";
 import { panes, paneVaults } from "#server/panes/services/registry.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { vaultOfRequest } from "#server/request/services/vault.ts";
+import { vaultOfRequest } from "@archboard/server-requests/server";
 
 /** The pane an activation happened in, and the tab it belongs to. */
 interface ActivatedPane {

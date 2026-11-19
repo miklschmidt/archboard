@@ -9,7 +9,7 @@ import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { installation } from "@archboard/workspace/installation";
 import { stateDir } from "@archboard/workspace/state-dir";
-import { listenAddress, serverUrl } from "#server/host/services/listener-address.ts";
+import { listenAddress } from "@archboard/server-lifecycle/server-process";
 import type { ArchboardWorkbenchServer } from "#server/generation/protocol/archboard-host.ts";
 
 /**
@@ -98,7 +98,7 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 		codex: {
 			executablePath,
 			hostEnvironment: {
-				ARCHBOARD_URL: serverUrl(),
+				ARCHBOARD_URL: listenAddress().httpUrl,
 				ARCHBOARD_NO_AUTOSTART: "1",
 				...workbenchTelemetryEnvironment(),
 			},

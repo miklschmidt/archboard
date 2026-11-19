@@ -1,11 +1,9 @@
-import type { ArchitectureModelRead } from "@archboard/model-contract";
-import type { Express, Request, RequestHandler, Response } from "express";
+import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { staleFrontend } from "@archboard/server-lifecycle/server-process";
+import { listenAddress, staleFrontend } from "@archboard/server-lifecycle/server-process";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 
-import type { AgentActivityMessage } from "#shared/protocol/pane-messages.ts";
 import { shownConversationPath } from "#shared/protocol/shown-conversation.ts";
 import type { PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 import {
@@ -18,33 +16,9 @@ import { mountSemanticPaneContextRoutes } from "#server/panes/services/context.t
 import { panesReport } from "#server/panes/services/panes-report.ts";
 import { shownConversationRoute } from "#server/panes/services/shown-conversation.ts";
 import { showPaneRoute } from "#server/panes/routes/pane-show-route.ts";
-import { followPaneActivity } from "#server/panes/sockets/pane-socket.ts";
-import { serverUrl } from "#server/host/services/listener-address.ts";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { requireVault, statedVault, vaultOfRequest } from "#server/request/services/vault.ts";
-
-/** What the server lends the pane routes and sockets: the parts of a request and a show it owns. */
-interface PaneHooks {
-	/**
-	 * Run an async route under the request's mutation lease, its failure reaching Express.
-	 * @param route The route.
-	 * @returns An ordinary Express handler.
-	 */
-	runMutation(route: (req: Request, res: Response) => Promise<void>): RequestHandler;
-	/**
-	 * Answer a model read that was refused, with the status the server gives that refusal.
-	 * @param res The response.
-	 * @param refusal The refused read.
-	 */
-	refuseRead(res: Response, refusal: Extract<ArchitectureModelRead, { success: false }>): void;
-	/** Move every pane to its repository's chosen checkout, after a show chose one. */
-	followRegistry(): void;
-	/** Canonical model activity: a pane's socket holds its vault open and hears every snapshot on arrival. */
-	agentActivity: {
-		hold(vault: string): () => void;
-		snapshots(): readonly AgentActivityMessage[];
-	};
-}
+import { requireVault, statedVault, vaultOfRequest } from "@archboard/server-requests/server";
 
 /**
  * No pane means no browser, which is a different thing from a bad request.
@@ -57,7 +31,7 @@ function noBrowserBody(what: string): Record<string, unknown> {
 		code: "BROWSER_REQUIRED",
 		error:
 			`${what} needs a canvas open in a browser. A pane exists only while a tab is rendering it, ` +
-			`so there is nothing on screen to split or close. Open ${browserUrl(serverUrl())} and retry.`,
+			`so there is nothing on screen to split or close. Open ${browserUrl(listenAddress().httpUrl)} and retry.`,
 	};
 }
 
@@ -224,13 +198,11 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Mount the pane telemetry, layout, reading and model-showing routes, and hand the pane sockets
- * the activity they follow.
+ * Mount the pane telemetry, layout, reading and model-showing routes.
  * @param app The application to mount on.
  * @param hooks What the server lends them.
  */
-function mountPaneRoutes(app: Express, hooks: PaneHooks): void {
-	followPaneActivity(hooks.agentActivity);
+function mountPaneRoutes(app: Express, hooks: WorkbenchHooks): void {
 	app.post("/api/panes", requireVault, postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
 	app.post(["/api/panes/show", "/api/browser/show"], requireVault, showPaneRoute(hooks));
@@ -247,4 +219,3 @@ function mountPaneRoutes(app: Express, hooks: PaneHooks): void {
 }
 
 export { mountPaneRoutes, noBrowserBody };
-export type { PaneHooks };

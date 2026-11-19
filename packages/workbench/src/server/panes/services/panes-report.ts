@@ -12,7 +12,7 @@ import { buildPanesReport } from "#server/panes/rules/pane-report.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
 import { paneKeyOf, paneOf, paneRegistrations } from "#server/panes/services/registry.ts";
 import { tabSessionOf } from "#server/panes/services/tab-sessions.ts";
-import { serverUrl } from "#server/host/services/listener-address.ts";
+import { listenAddress } from "@archboard/server-lifecycle/server-process";
 
 type SemanticPaneContext = ModelDocument<"paneContext">;
 
@@ -89,7 +89,7 @@ function panesReport(caller: string | null): PanesOnScreen {
 		 * @returns The reading, or null when the pane has reported none.
 		 */
 		architecture: (clientId) => semanticPaneContextFor(clientId)?.architecture ?? null,
-		serverUrl: browserUrl(serverUrl()),
+		serverUrl: browserUrl(listenAddress().httpUrl),
 	});
 	return {
 		...report,

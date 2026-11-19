@@ -3,7 +3,9 @@ import { afterEach, expect, mock, test } from "bun:test";
 const running = new Set<string>();
 let started = 0;
 
+const store = await import("@archboard/model-store");
 await mock.module("@archboard/model-store", () => ({
+	...store,
 	/**
 	 * Record one watcher's life.
 	 * @param vault The followed vault.
@@ -15,7 +17,7 @@ await mock.module("@archboard/model-store", () => ({
 		return () => running.delete(vault);
 	},
 }));
-const { createAgentActivity } = await import("#server/panes/announcements/state/agent-activity.ts");
+const { createAgentActivity } = await import("#server/panes/services/agent-activity.ts");
 
 afterEach(() => {
 	running.clear();

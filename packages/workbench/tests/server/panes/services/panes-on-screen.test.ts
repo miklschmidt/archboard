@@ -20,7 +20,7 @@ import {
 import { closeBrowserOwners } from "#server/panes/services/pane-sockets.ts";
 import { panesReport } from "#server/panes/services/panes-report.ts";
 import { paneFromRequest } from "#server/panes/services/registry.ts";
-import { acceptPaneSocket, followPaneActivity } from "#server/panes/sockets/pane-socket.ts";
+import { acceptPaneSocket } from "#server/panes/sockets/pane-socket.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-panes-on-screen-"));
 const VAULT = join(scratch, "vault");
@@ -33,9 +33,6 @@ const browsers = new Set<WebSocket>();
 beforeAll(async () => {
 	// The registry of repositories is read to name a pane's repository; this one is empty.
 	process.env["ARCHBOARD_REPOS"] = join(scratch, "repos.json");
-	// One snapshot, which a socket hears only once it owns its pane.
-	const snapshot = { type: "agent_activity" as const, vault: VAULT, activity: [] };
-	followPaneActivity({ hold: () => () => undefined, snapshots: () => [snapshot] });
 	http = createServer();
 	sockets = new WebSocketServer({ server: http });
 	sockets.on("connection", (ws, req) => void acceptPaneSocket(ws, req, VAULT));
@@ -48,7 +45,7 @@ afterEach(async () => {
 	for (const browser of browsers) browser.terminate();
 	browsers.clear();
 	forgetSemanticPaneContexts();
-	await closeBrowserOwners();
+	await closeBrowserOwners(sockets.clients);
 });
 
 afterAll(async () => {
@@ -71,13 +68,10 @@ async function present(
 ): Promise<PaneRegistration> {
 	const browser = new WebSocket(`${address}/?clientId=${clientId}&reading=canonical`);
 	browsers.add(browser);
-	// The model it is on, then the activity snapshot it hears once its socket owns the pane.
+	// The model it is on. The server's socket owns the pane once that message has left it, which is
+	// before this end hears it.
 	await new Promise((resolve, reject) => {
-		let heard = 0;
-		browser.on("message", () => {
-			heard += 1;
-			if (heard === 2) resolve(undefined);
-		});
+		browser.once("message", resolve);
 		browser.once("error", reject);
 	});
 	const registration: PaneRegistration = {
