@@ -21,7 +21,10 @@ import {
 	type OpenerSettingsReply,
 	type OpenerTestReply,
 } from "#shared/schemas/opener-settings.ts";
-import { strictReply, type ReplySchema } from "@archboard/server-requests";
+import { strictReply } from "@archboard/server-requests";
+
+/** The schema a reply of type T is read through, as `strictReply` takes it. */
+type ReplySchema<T> = Parameters<typeof strictReply<T, unknown>>[2];
 
 /**
  * The failure reported when the server's reply matches no schema.

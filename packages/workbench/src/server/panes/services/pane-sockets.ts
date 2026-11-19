@@ -5,7 +5,6 @@ import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import type { BrowserConnectionInstance } from "#runtime/voice/protocol/extension.ts";
 import { messageOf } from "#server/request/services/request-fields.ts";
 import {
-	acceptedSockets,
 	clients,
 	clientIds,
 	codexSocketInstances,
@@ -18,6 +17,7 @@ import {
 	socketVaults,
 } from "#server/panes/services/registry.ts";
 import { notePaneClosed, rejectPendingLayouts } from "#server/panes/services/pane-arrivals.ts";
+import { unwatchRegistry } from "#server/panes/services/registry-follow.ts";
 import {
 	forgetTabSession,
 	forgetTabSessions,
@@ -41,16 +41,6 @@ interface RegisteredSocket {
 	readonly acceptanceToken: object | null;
 	/** Its Codex browser connection instance. */
 	readonly codexInstance: BrowserConnectionInstance;
-}
-
-/**
- * Keep an accepted transport on the books until it closes, so that teardown can terminate a peer
- * that never reaches presentation or ignores a close frame.
- * @param ws The accepted socket.
- */
-function trackAcceptedSocket(ws: WebSocket): void {
-	acceptedSockets.add(ws);
-	ws.once("close", () => acceptedSockets.delete(ws));
 }
 
 /**
@@ -266,12 +256,18 @@ async function closeCodexBrowsers(failures: CleanupFailures): Promise<void> {
 }
 
 /**
- * Tear down every browser-facing owner: sockets, Codex browsers, pending
- * layout requests and tab sessions, then forget the display.
+ * Tear down every browser-facing owner before the socket server closes: stop following the
+ * registry, terminate every socket the server accepted, then close the Codex browsers, pending
+ * layout requests and tab sessions, and forget the display. The socket server does not terminate
+ * its clients when it closes, and a peer can ignore a close frame, so the server passes every
+ * socket it accepted, feed sockets and sockets that never reached presentation included.
+ * @param accepted Every socket the server accepted that is still open.
+ * @throws {AggregateError} Naming every cleanup that failed, once all of them have run.
  */
-async function closeBrowserOwners(): Promise<void> {
+async function closeBrowserOwners(accepted: Iterable<WebSocket>): Promise<void> {
+	unwatchRegistry();
 	const failures = new CleanupFailures();
-	for (const socket of acceptedSockets) {
+	for (const socket of accepted) {
 		socket.terminate();
 	}
 	await closeCodexBrowsers(failures);
@@ -286,5 +282,5 @@ async function closeBrowserOwners(): Promise<void> {
 	failures.throwIfAny();
 }
 
-export { admitSocket, closeBrowserOwners, registerSocket, trackAcceptedSocket };
+export { admitSocket, closeBrowserOwners, registerSocket };
 export type { RegisteredSocket };

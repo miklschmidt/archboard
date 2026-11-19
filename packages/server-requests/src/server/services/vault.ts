@@ -13,12 +13,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { NextFunction, Request, Response } from "express";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { isVaultLayout } from "@archboard/workspace/vault";
-import { bodyOf, queryString } from "#server/request/services/request-fields.ts";
 
-/** The query parameter, and the body field, that name the vault. */
+/** The query parameter of an upgrade that names the vault. */
 const VAULT_PARAMETER = "vault";
 
 /** Why a call's vault cannot be used. */
@@ -123,54 +121,6 @@ function namedVault(raw: unknown): NamedVault {
 			};
 }
 
-/** The vault each request named, once the requirement has run on it. */
-const requestVaults = new WeakMap<Request, string>();
-
-/**
- * Refuse a call that names no usable vault, and remember the one it names.
- * @param req The request.
- * @param res Its response.
- * @param next Continues to the route.
- */
-function requireVault(req: Request, res: Response, next: NextFunction): void {
-	const named = namedVault(queryString(req, VAULT_PARAMETER) ?? bodyOf(req)[VAULT_PARAMETER]);
-	if (!named.ok) {
-		const { status, code, error } = named.refusal;
-		res.status(status).json({ success: false, code, error });
-		return;
-	}
-	requestVaults.set(req, named.vault);
-	next();
-}
-
-/**
- * The vault a request names, when it names one the server can read, for a
- * route that reads no model and answers either way.
- * @param req The request.
- * @returns The canonical vault, or null when the request names none that can be read.
- */
-function statedVault(req: Request): string | null {
-	const named = namedVault(queryString(req, VAULT_PARAMETER) ?? bodyOf(req)[VAULT_PARAMETER]);
-	return named.ok ? named.vault : null;
-}
-
-/**
- * The vault a request named. Every route that reads or writes a model mounts
- * `requireVault` before its handler, so a request that reaches one has named a vault.
- * @param req The request.
- * @returns The canonical vault.
- * @throws {Error} When the route was mounted without the requirement.
- */
-function vaultOfRequest(req: Request): string {
-	const vault = requestVaults.get(req);
-	if (vault === undefined) {
-		throw new Error(
-			`${req.method} ${req.path} reads a vault but was mounted without requireVault.`,
-		);
-	}
-	return vault;
-}
-
 /**
  * A readable vault for a pane whose own vault cannot be read.
  * @param raw The absolute vault the pane named.
@@ -203,4 +153,21 @@ function vaultOfUpgrade(url: string | undefined): NamedVault {
 	return placeInstead(raw) ?? named;
 }
 
-export { namedVault, requireVault, statedVault, vaultOfRequest, vaultOfUpgrade };
+/**
+ * The vault a call names, made canonical, or the refusal that says how to name one (ADR 0049).
+ *
+ * A request states its vault: the value of its `?vault=` or of the `vault` field of its body,
+ * which the caller reads, the query first. A socket upgrade is tagged by its URL, and only an
+ * upgrade recovers a vault that is gone by putting its pane in the vault of its repository's
+ * chosen checkout.
+ * @param named What a request stated, null when it stated nothing a vault can be, or the URL of
+ *   a socket upgrade.
+ * @returns The canonical vault, or the refusal.
+ */
+function resolveVault(named: string | null | { readonly upgrade: string | undefined }): NamedVault {
+	return named !== null && typeof named === "object"
+		? vaultOfUpgrade(named.upgrade)
+		: namedVault(named);
+}
+
+export { resolveVault };

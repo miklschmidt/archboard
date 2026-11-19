@@ -1,3 +1,6 @@
+// Where this server process listens, the refusal to start beside a server on the other loopback
+// address, and the words for a listener that failed.
+
 import net from "net";
 import { logger } from "@archboard/diagnostics/logger";
 import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
@@ -19,21 +22,30 @@ function formatHostForUrl(host: string): string {
 	return host.includes(":") ? `[${host}]` : host;
 }
 
-/**
- * The URL this server is reachable at.
- * @param scheme The protocol: `http` for the API, `ws` for the panes' socket.
- * @returns The base URL.
- */
-function serverUrl(scheme: "http" | "ws" = "http"): string {
-	return `${scheme}://${formatHostForUrl(HOST)}:${PORT}`;
+/** Where this server listens, and the URLs it is reached at. */
+interface ListenAddress {
+	readonly host: string;
+	readonly port: number;
+	/** The base URL of the API. */
+	readonly httpUrl: string;
+	/** The base URL of the panes' socket. */
+	readonly wsUrl: string;
 }
+
+/** Where this server listens, resolved once: the process reads its environment at start. */
+const ADDRESS: ListenAddress = Object.freeze({
+	host: HOST,
+	port: PORT,
+	httpUrl: `http://${formatHostForUrl(HOST)}:${PORT}`,
+	wsUrl: `ws://${formatHostForUrl(HOST)}:${PORT}`,
+});
 
 /**
  * Where this server listens.
- * @returns The host and the port it binds.
+ * @returns The host and the port it binds, and the URLs they make.
  */
-function listenAddress(): { readonly host: string; readonly port: number } {
-	return { host: HOST, port: PORT };
+function listenAddress(): ListenAddress {
+	return ADDRESS;
 }
 
 /**
@@ -70,7 +82,7 @@ function canConnect(host: string, port: number): Promise<boolean> {
  * are probed so an IPv4 and an IPv6 server cannot split state between them.
  * @returns The listening loopback address, or null.
  */
-async function findExistingLoopbackListener(): Promise<string | null> {
+async function existingLoopbackListener(): Promise<string | null> {
 	for (const host of LOOPBACK_ADDRESSES) {
 		// oxlint-disable-next-line no-await-in-loop -- the first listener found answers; probing both at once would open a second socket for nothing
 		if (await canConnect(host, PORT)) {
@@ -81,11 +93,26 @@ async function findExistingLoopbackListener(): Promise<string | null> {
 }
 
 /**
- * Whether the configured host is one the duplicate-listener guard applies to.
- * @returns True for a loopback or wildcard host.
+ * Refuse to start beside a server already listening on the other loopback
+ * address, which would split state between an IPv4 and an IPv6 server. The
+ * refusal is logged as well as returned.
+ * @returns The refusal, or null when the host is not a loopback or wildcard one, or the port is
+ *   free on both loopback addresses.
  */
-function isLoopbackGuardedHost(): boolean {
-	return LOOPBACK_GUARD_HOSTS.has(HOST);
+async function loopbackRefusal(): Promise<string | null> {
+	if (!LOOPBACK_GUARD_HOSTS.has(HOST)) {
+		return null;
+	}
+	const existingHost = await existingLoopbackListener();
+	if (!existingHost) {
+		return null;
+	}
+	const message =
+		`Refusing to start Archboard server on ${formatHostForUrl(HOST)}:${PORT}: ` +
+		`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
+		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
+	logger().error(message);
+	return message;
 }
 
 /**
@@ -108,11 +135,4 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 	}
 }
 
-export {
-	serverUrl,
-	findExistingLoopbackListener,
-	formatHostForUrl,
-	isLoopbackGuardedHost,
-	listenAddress,
-	logHttpServerError,
-};
+export { listenAddress, logHttpServerError, loopbackRefusal };

@@ -20,10 +20,6 @@ import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server
 
 /** Sockets admitted to broadcasts: the ones that have received their initial scene. */
 const clients = new Set<WebSocket>();
-// Accepted transport ownership begins before checkout presentation. A socket
-// is broadcast-admitted only after initial_elements, but teardown must be able
-// to terminate a peer that never reaches that point or ignores a close frame.
-const acceptedSockets = new Set<WebSocket>();
 // Client id per socket, from the ?clientId= connect param. Every selection
 // post sends it too, so a disconnect retires that client's selection.
 const clientIds = new Map<WebSocket, string>();
@@ -420,7 +416,6 @@ function paneResponse(pane: PaneRegistration | null): { pane: PaneRef | null } {
  * stopping and there is no screen any more.
  */
 function forgetDisplay(): void {
-	acceptedSockets.clear();
 	clients.clear();
 	clientIds.clear();
 	socketVaults.clear();
@@ -435,7 +430,6 @@ function forgetDisplay(): void {
 
 export type { PaneRef };
 export {
-	acceptedSockets,
 	admittedClientCount,
 	arrivedOnModel,
 	browserLeaseLedger,

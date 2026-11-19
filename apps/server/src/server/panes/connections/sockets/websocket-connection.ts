@@ -2,7 +2,7 @@
 // the architecture feed or to the pane it presents.
 
 import type { IncomingMessage } from "http";
-import { WebSocketServer } from "ws";
+import { WebSocketServer, type WebSocket } from "ws";
 import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import { logger } from "@archboard/diagnostics/logger";
 
@@ -11,8 +11,8 @@ import {
 	serveArchitectureFeed,
 } from "#server/panes/connections/sockets/architecture-feed.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
-import { acceptPaneSocket, trackAcceptedSocket } from "@archboard/workbench/panes";
-import { vaultOfUpgrade } from "@archboard/workbench/host";
+import { acceptPaneSocket } from "@archboard/workbench/server";
+import { resolveVault } from "@archboard/server-requests/server";
 
 let wss: WebSocketServer | null = null;
 
@@ -52,7 +52,7 @@ function startWebSocketServer(): void {
 			}
 			// A pane belongs to one vault from its first message (ADR 0049), so a socket
 			// that names none is turned away before it can own a pane.
-			const vault = vaultOfUpgrade(info.req.url);
+			const vault = resolveVault({ upgrade: info.req.url });
 			if (!vault.ok) {
 				done(false, vault.refusal.status, `${vault.refusal.code}: ${vault.refusal.error}`);
 				return;
@@ -62,7 +62,6 @@ function startWebSocketServer(): void {
 		},
 	});
 	owner.on("connection", (socket, request) => {
-		trackAcceptedSocket(socket);
 		// A socket error with no listener would end the whole server, whichever socket it hit.
 		socket.on("error", (error) => {
 			logger().error("WebSocket error:", error);
@@ -83,6 +82,14 @@ function startWebSocketServer(): void {
 		});
 	});
 	wss = owner;
+}
+
+/**
+ * Every socket the server accepted that is still open, feed sockets included.
+ * @returns The sockets, or none while no WebSocket server is installed.
+ */
+function acceptedSockets(): Iterable<WebSocket> {
+	return wss?.clients ?? [];
 }
 
 /**
@@ -109,4 +116,4 @@ function closeWebSocketServer(): Promise<void> {
 	});
 }
 
-export { closeWebSocketServer, startWebSocketServer };
+export { acceptedSockets, closeWebSocketServer, startWebSocketServer };

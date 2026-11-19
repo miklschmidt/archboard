@@ -1,18 +1,10 @@
 import { logger } from "@archboard/diagnostics/logger";
-import { forgetModelMemory } from "@archboard/model-store";
 import { recordServerPid, releaseServerPid } from "@archboard/server-lifecycle/server-process";
+import {
+	listenAddress,
+	logHttpServerError,
+} from "#server/http/listener/services/listener-address.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
-import { forgetPanePresentations, forgetSemanticPaneContexts } from "@archboard/workbench/panes";
-import { listenAddress, logHttpServerError, serverUrl } from "@archboard/workbench/host";
-
-/**
- * Forget every engine-level announcement, watch and record this process holds.
- */
-function forgetEngineState(): void {
-	forgetModelMemory();
-	forgetSemanticPaneContexts();
-	forgetPanePresentations();
-}
 
 /** The HTTP listener's own phase, distinct from the lifetime's. */
 type HttpPhase = "idle" | "starting" | "running" | "failed" | "stopping";
@@ -119,7 +111,7 @@ function listen(
 					return;
 				}
 				http.phase = "running";
-				logger().info(`POC server running on ${serverUrl()}`);
+				logger().info(`POC server running on ${listenAddress().httpUrl}`);
 				recordServerPid(port);
 				settleStart();
 			});
@@ -151,5 +143,5 @@ async function stopListening(http: HttpOwnership): Promise<void> {
 	await closeHttpServer(http);
 }
 
-export { closeHttpServer, forgetEngineState, listen, stopListening };
+export { closeHttpServer, listen, stopListening };
 export type { HttpOwnership };

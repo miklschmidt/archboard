@@ -13,4 +13,4 @@ export type {
 	ExplanationActionRequest,
 	ExplanationActionResult,
 } from "#shared/schemas/architecture-explanation.ts";
-export type { AgentActivityMessage, WebSocketMessage } from "#shared/protocol/pane-messages.ts";
+export type { AgentActivityMessage } from "#shared/protocol/pane-messages.ts";

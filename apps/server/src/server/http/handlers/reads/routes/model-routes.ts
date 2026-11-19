@@ -1,5 +1,4 @@
 import { mountArchitecturePortableRoutes } from "#server/http/handlers/architecture-writes/routes/portable-routes.ts";
-import { mountArchitectureExplanationRoutes } from "#server/http/handlers/reads/routes/explanation-routes.ts";
 import { mountArchitectureFlowRoutes } from "#server/http/handlers/reads/routes/flow-routes.ts";
 import { mountArchitecturePublicationRoutes } from "#server/http/handlers/reads/routes/publication-routes.ts";
 import type { Express } from "express";
@@ -14,7 +13,7 @@ import {
 } from "@archboard/model-store";
 import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/http/handlers/architecture-writes/routes/model-edit-routes.ts";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
 const QuerySchema = z
@@ -87,7 +86,6 @@ const RetainedModuleQuerySchema = ListQuerySchema.extend({ module: z.string().mi
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
-	mountArchitectureExplanationRoutes(app);
 	mountArchitecturePublicationRoutes(app);
 	mountArchitecturePortableRoutes(app);
 	mountArchitectureEditRoutes(app);

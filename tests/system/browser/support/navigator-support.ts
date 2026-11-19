@@ -1,16 +1,19 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { PanesReport } from "@archboard/workbench/panes";
 import type { z } from "zod";
 import type { repositoryListingSchema } from "@archboard/workspace/repositories";
 import type { ModelDocument } from "@archboard/model-contract";
 
-type PanesBody = Omit<PanesReport, "panes"> & {
+/** What these tests read of the pane report that `GET /api/panes` answers with. */
+type PanesBody = {
 	success: boolean;
-	panes: (PanesReport["panes"][number] & {
+	paneCount: number;
+	panes: {
+		paneId: string;
+		clientId: string;
 		architecture: ModelDocument<"paneContext">["architecture"] | null;
-	})[];
+	}[];
 };
 type HealthBody = { websocket_clients: number };
 type ElementsBody = { elements: unknown[] };

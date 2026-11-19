@@ -20,12 +20,13 @@ import {
 	sendToPane,
 } from "#server/panes/services/registry.ts";
 import { messageOf } from "#server/request/services/request-fields.ts";
-import { vaultOfRequest } from "#server/request/services/vault.ts";
 import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
-import { noBrowserBody, type PaneHooks } from "#server/panes/routes/pane-routes.ts";
+import { noBrowserBody } from "#server/panes/routes/pane-routes.ts";
+import { followRegistry } from "#server/panes/services/registry-follow.ts";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 
-/** What a show needs of the server: how it answers a refused read and follows a checkout choice. */
-type ShowHooks = Pick<PaneHooks, "followRegistry" | "refuseRead">;
+/** What a show needs of the server: the vault a request names, how it refuses a read, its URL. */
+type ShowHooks = Pick<WorkbenchHooks, "refusalStatus" | "vaultOfRequest" | "address">;
 const RequestSchema = z.strictObject({
 	vault: z.string().optional(),
 	pane: z.string().optional(),
@@ -143,7 +144,6 @@ function agentSwitch(body: z.infer<typeof RequestSchema>, clientId: string) {
  * @param model The resolved architecture.
  * @param pane The selected pane.
  * @param res The navigation receipt.
- * @param hooks How the server follows a choice of checkout.
  */
 function showResolvedPane(
 	body: z.infer<typeof RequestSchema>,
@@ -151,7 +151,6 @@ function showResolvedPane(
 	model: Model,
 	pane: PaneRegistration,
 	res: Response,
-	hooks: ShowHooks,
 ): void {
 	const reading = addressedReading(model, body.reading);
 	const moved = agentSwitch(body, pane.clientId);
@@ -172,7 +171,7 @@ function showResolvedPane(
 	);
 	arrivedOnModel(pane.clientId, `model:${model.manifest.id}`);
 	publishPaneContext(pane.clientId, "focus", [], moved);
-	if (chose !== undefined) hooks.followRegistry();
+	if (chose !== undefined) followRegistry();
 	res.json({
 		success: true,
 		model: model.manifest.id,
@@ -227,15 +226,18 @@ function answerUnread(
 	res: Response,
 	hooks: ShowHooks,
 ): void {
-	const pane = opensUnread(model, body) ? showablePane(vault, body.pane, res) : undefined;
-	if (pane === undefined) hooks.refuseRead(res, model);
+	const pane = opensUnread(model, body)
+		? showablePane(vault, body.pane, res, hooks.address.httpUrl)
+		: undefined;
+	if (pane === undefined)
+		res.set("Cache-Control", "no-store").status(hooks.refusalStatus(model)).json(model);
 	else if (pane !== null) moveUnread(vault, pane, res);
 }
 /**
  * Resolve a canonical reading before pointing the existing pane at it.
  * @param req The explicit vault and reading.
  * @param res The navigation receipt or refusal.
- * @param hooks How the server answers a refused read and follows a choice of checkout.
+ * @param hooks How the server answers a refused read.
  */
 async function showPane(req: Request, res: Response, hooks: ShowHooks): Promise<void> {
 	const parsed = RequestSchema.safeParse(req.body);
@@ -246,7 +248,7 @@ async function showPane(req: Request, res: Response, hooks: ShowHooks): Promise<
 		return;
 	}
 	const body = parsed.data,
-		vault = vaultOfRequest(req);
+		vault = hooks.vaultOfRequest(req);
 	const {
 		module,
 		flow,
@@ -269,13 +271,13 @@ async function showPane(req: Request, res: Response, hooks: ShowHooks): Promise<
 		res.status(422).json({ success: false, ...refused });
 		return;
 	}
-	const pane = showablePane(vault, body.pane, res);
-	if (pane !== null) showResolvedPane(body, vault, model, pane, res, hooks);
+	const pane = showablePane(vault, body.pane, res, hooks.address.httpUrl);
+	if (pane !== null) showResolvedPane(body, vault, model, pane, res);
 }
 
 /**
  * The route that points a pane at a canonical reading.
- * @param hooks How the server answers a refused read and follows a choice of checkout.
+ * @param hooks How the server answers a refused read.
  * @returns The route.
  */
 function showPaneRoute(hooks: ShowHooks): (req: Request, res: Response) => Promise<void> {
@@ -317,9 +319,15 @@ function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefi
  * @param vault The vault the model is in: an unnamed pane must be one of that vault's.
  * @param spec The pane spec the caller stated, if any.
  * @param res The response.
+ * @param httpUrl Where this server is reached, which a refusal for want of a browser names.
  * @returns The pane, or null.
  */
-function showablePane(vault: string, spec: unknown, res: Response): PaneRegistration | null {
+function showablePane(
+	vault: string,
+	spec: unknown,
+	res: Response,
+	httpUrl: string,
+): PaneRegistration | null {
 	let pane: PaneRegistration | null;
 	try {
 		pane = paneFromRequest(vault, spec);
@@ -328,7 +336,7 @@ function showablePane(vault: string, spec: unknown, res: Response): PaneRegistra
 		return null;
 	}
 	if (pane === null) {
-		res.status(503).json(noBrowserBody("Showing a model"));
+		res.status(503).json(noBrowserBody("Showing a model", httpUrl));
 	}
 	return pane;
 }

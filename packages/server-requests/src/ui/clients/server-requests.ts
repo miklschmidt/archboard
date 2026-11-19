@@ -190,4 +190,4 @@ async function strictReply<T, F>(
 	}
 }
 
-export { inVault, requestJson, strictReply, type ReplySchema };
+export { inVault, requestJson, strictReply };

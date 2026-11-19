@@ -1,38 +1,30 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
 import { releaseServerPid, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
+import {
+	listenAddress,
+	logHttpServerError,
+	loopbackRefusal,
+} from "#server/http/listener/services/listener-address.ts";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { durationMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,
 } from "#server/start-stop/lifecycle/application-lifetime.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
-import { closeBrowserOwners } from "@archboard/workbench/panes";
-import { prepareCodexWorkbench, stopCodexWorkbench } from "@archboard/workbench/server";
+import { closeBrowserOwners, prepareWorkbench, stopWorkbench } from "@archboard/workbench/server";
 import { checkoutWork, mutationAdmission } from "#server/wiring/server-owners.ts";
 import {
 	closeHttpServer,
-	forgetEngineState,
 	listen,
 	stopListening,
 	type HttpOwnership,
 } from "#server/start-stop/lifecycle/server-resources.ts";
-import {
-	findExistingLoopbackListener,
-	formatHostForUrl,
-	isLoopbackGuardedHost,
-	listenAddress,
-	logHttpServerError,
-	serverUrl,
-	messageOf,
-} from "@archboard/workbench/host";
-import { agentActivity } from "#server/wiring/server-owners.ts";
-import {
-	unwatchRegistry,
-	watchRegistry,
-} from "#server/http/handlers/repositories/routes/repository-routes.ts";
+import { forgetModelMemory } from "@archboard/model-store";
 import { serverStartupFailureMessage } from "#server/start-stop/lifecycle/startup-error.ts";
 import {
+	acceptedSockets,
 	closeWebSocketServer,
 	startWebSocketServer,
 } from "#server/panes/connections/sockets/websocket-connection.ts";
@@ -64,35 +56,13 @@ function isRecoverableServerStopError(error: unknown): boolean {
  * @param error The failure.
  */
 function reportServerStopError(error: unknown): void {
-	const message = `Archboard server shutdown refused or failed: ${messageOf(error)}`;
+	const message = `Archboard server shutdown refused or failed: ${errorMessage(error)}`;
 	if (isRecoverableServerStopError(error)) {
 		logger().error(message);
 	} else {
 		process.stderr.write(message + "\n");
 		process.exitCode = 1;
 	}
-}
-
-/**
- * Refuse to start beside a server already listening on the other loopback
- * address, which would split state between an IPv4 and an IPv6 server.
- * @returns The refusal, or null when the port is free on both.
- */
-async function loopbackRefusal(): Promise<string | null> {
-	if (!isLoopbackGuardedHost()) {
-		return null;
-	}
-	const existingHost = await findExistingLoopbackListener();
-	if (!existingHost) {
-		return null;
-	}
-	const { host, port } = listenAddress();
-	const message =
-		`Refusing to start Archboard server on ${formatHostForUrl(host)}:${port}: ` +
-		`${formatHostForUrl(existingHost)}:${port} is already listening. ` +
-		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
-	logger().error(message);
-	return message;
 }
 
 /** The signal and error handling around one running lifetime. */
@@ -257,16 +227,21 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				start: () => {
 					// The vault is read on demand; this process holds nothing of it.
 				},
-				/** Forget every engine-level record. */
+				/** Forget every model this process read. */
 				stop: () => {
-					forgetEngineState();
+					forgetModelMemory();
 				},
 			},
 			{
-				name: "codex-workbench",
-				start: prepareCodexWorkbench,
-				stop: stopCodexWorkbench,
-				forceStop: stopCodexWorkbench,
+				name: "workbench",
+				/**
+				 * Prepare the workbench at the address this server listens on.
+				 * @param signal Cancels the preparation.
+				 * @returns Resolves once it is ready.
+				 */
+				start: (signal) => prepareWorkbench(signal, listenAddress()),
+				stop: stopWorkbench,
+				forceStop: stopWorkbench,
 			},
 			{
 				name: "telemetry-sender",
@@ -277,13 +252,6 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Stop sending. A round under way finishes on its own or is dropped with the process. */
 				stop: () => {
 					stopTelemetrySender();
-				},
-			},
-			{
-				name: "agent-activity",
-				/** Stop the activity tracker with its owning receiver. */
-				stop: () => {
-					agentActivity.dispose();
 				},
 			},
 			{
@@ -314,16 +282,18 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Accept panes. */
 				start: () => {
 					startWebSocketServer();
-					logger().info(`WebSocket server running on ${serverUrl("ws")}`);
+					logger().info(`WebSocket server running on ${listenAddress().wsUrl}`);
 				},
 				stop: closeWebSocketServer,
 			},
 			{
-				name: "registry-watch",
-				start: watchRegistry,
-				stop: unwatchRegistry,
+				name: "browser-and-pending-operations",
+				/**
+				 * Close every browser owner, terminating every socket the server accepted.
+				 * @returns Resolves once they have closed.
+				 */
+				stop: () => closeBrowserOwners(acceptedSockets()),
 			},
-			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
 			{
 				name: "checkout-snapshot-work",
 				/** Admit checkout snapshots. */

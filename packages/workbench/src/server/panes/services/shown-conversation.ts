@@ -28,7 +28,6 @@ import {
 } from "#server/panes/services/tab-sessions.ts";
 import { panes, paneVaults } from "#server/panes/services/registry.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { vaultOfRequest } from "#server/request/services/vault.ts";
 
 /** The pane an activation happened in, and the tab it belongs to. */
 interface ActivatedPane {
@@ -128,9 +127,9 @@ function shownFor(res: Response, pane: ActivatedPane, picked: string | undefined
  * Show the conversation of the checkout the person activated, in every pane of the pane's tab.
  * @param req The request: `{ clientId, checkout? }`, in the vault of that pane.
  * @param res Its response: the shown checkout, and whether the call changed it.
+ * @param vault The vault the request named.
  */
-function shownConversationRoute(req: Request, res: Response): void {
-	const vault = vaultOfRequest(req);
+function shownConversationRoute(req: Request, res: Response, vault: string): void {
 	const { vault: _named, ...body } = bodyOf(req);
 	const parsed = ShownConversationRequestSchema.safeParse(body);
 	if (!parsed.success) {

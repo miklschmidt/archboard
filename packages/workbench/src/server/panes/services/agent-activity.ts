@@ -3,7 +3,8 @@
 // Only the ordinary model feed can supply claims and durable doing attribution.
 import { watchArchitectureModel } from "@archboard/model-store";
 import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/model-contract";
-import type { AgentActivityMessage } from "@archboard/workbench/browser-contract";
+import type { AgentActivityMessage } from "#shared/protocol/pane-messages.ts";
+import { sendToEveryClient } from "#server/panes/services/registry.ts";
 import { durationMs } from "@archboard/timing";
 
 type AgentActivity = AgentActivityMessage["activity"][number];
@@ -219,4 +220,10 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 		},
 	};
 }
-export { createAgentActivity };
+/**
+ * The server's one activity tracker, which tells every admitted socket of every vault: a vault's
+ * account of agent work names its vault (ADR 0022), so any tab can show it.
+ */
+const agentActivity = createAgentActivity((message) => sendToEveryClient(JSON.stringify(message)));
+
+export { agentActivity, createAgentActivity };
