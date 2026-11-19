@@ -15,7 +15,7 @@
 // findings included, and what the pass skipped, so a pane tells a clean module
 // from one the pass did not read (TASK-646.07). It keeps the names of each module's exports too,
 // but every canvas reads `recall`, and a module's names are for its About page alone, so `recall`
-// leaves them out and `exportsOf` answers them for one module (TASK-646.08).
+// leaves them out and `exportsOf` answers a reading narrowed to one module, with them (TASK-646.08).
 //
 // It lives in memory and nowhere else. Nothing writes a finding into a document,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
@@ -24,11 +24,7 @@
 // It is no copy of a document either: it answers what the code said, never what is
 // on a document, and a pane shows it only over the version it was found on.
 
-import type {
-	CodeCheckAnswer,
-	RememberedExports,
-	RememberedFindings,
-} from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer, RememberedFindings } from "@archboard/code-intel/code-check";
 
 type RememberedModel = NonNullable<RememberedFindings["models"]>[number];
 
@@ -66,12 +62,13 @@ interface CodeFindingsMemory {
 	 */
 	recall(vault: string): RememberedFindings;
 	/**
-	 * The exports of one module that the last pass over one exact reading counted.
+	 * What the last pass over one exact reading found of one module, with the names of its exports.
 	 * @param vault The vault.
 	 * @param asked The reading, by its model, state and the digest of its version, and the module.
-	 * @returns The exports, or null when no remembered pass measured the module on that version.
+	 * @returns The reading narrowed to the module, or null when no remembered pass measured the
+	 * module on that version.
 	 */
-	exportsOf(vault: string, asked: ExportsAsked): RememberedExports | null;
+	exportsOf(vault: string, asked: ExportsAsked): RememberedFindings | null;
 }
 
 /**
@@ -169,12 +166,12 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 		};
 	}
 	/**
-	 * The exports of one module that the last pass over one exact reading counted.
+	 * What the last pass over one exact reading found of one module, with the names of its exports.
 	 * @param vault The vault.
 	 * @param asked The reading and the module.
-	 * @returns The exports, or null when no remembered pass measured the module on that version.
+	 * @returns The reading narrowed to the module, or null when no remembered pass measured it.
 	 */
-	function exportsOf(vault: string, asked: ExportsAsked): RememberedExports | null {
+	function exportsOf(vault: string, asked: ExportsAsked): RememberedFindings | null {
 		const reading = models(vault).find(
 			(kept) =>
 				kept.model === asked.model &&
@@ -183,7 +180,8 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 		);
 		const depth = reading?.depth.find((module) => module.subject.id === asked.module);
 		if (reading === undefined || depth === undefined) return null;
-		return { checkedAt: reading.checkedAt, repo: depth.repo, names: depth.names };
+		const findings = reading.findings.filter((finding) => finding.subject?.id === asked.module);
+		return { readings: [], models: [{ ...reading, findings, depth: [depth], skipped: [] }] };
 	}
 	return { remember, recall, exportsOf };
 }

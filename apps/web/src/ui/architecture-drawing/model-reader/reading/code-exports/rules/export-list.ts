@@ -4,10 +4,11 @@
 // directory. The roll-up of a shallow module stands over the list; the module's other findings are
 // about the map, not its exports, and stand under Code and evidence.
 
-import type { RememberedExports } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 
-type Name = RememberedExports["names"][number];
+type Measured = NonNullable<NonNullable<RememberedFindings["models"]>[number]["depth"]>[number];
+type Name = NonNullable<Measured["names"]>[number];
 type Finding = ModelCodeReading["findings"][number];
 
 /** One export, with the findings of the pass on it. */

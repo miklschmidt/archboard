@@ -528,11 +528,14 @@ const RememberedModelSchema = CodeCheckModelSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
 	/**
-	 * Each module the pass measured on this reading, those with no findings included (TASK-646.07),
-	 * without the names of its exports: every canvas reads this answer, and only the About page of
-	 * one module reads its names, from `GET /api/vault/code-exports` (TASK-646.08).
+	 * Each module the pass measured on this reading, those with no findings included (TASK-646.07).
+	 * Every canvas reads the findings answer, so it leaves out the names of the exports.
+	 * `GET /api/vault/code-exports` answers this reading narrowed to one module, and only there do
+	 * they stand (TASK-646.08).
 	 */
-	depth: z.array(ModuleDepthSchema.omit({ names: true })).optional(),
+	depth: z
+		.array(ModuleDepthSchema.extend({ names: ModuleDepthSchema.shape.names.optional() }))
+		.optional(),
 	/** What the pass skipped on this reading, and what it skipped in a whole checkout or language. */
 	skipped: z.array(CodeCheckSkipSchema).optional(),
 });
@@ -541,30 +544,8 @@ const RememberedFindingsSchema = z.object({
 	models: z.array(RememberedModelSchema).optional(),
 });
 
-/**
- * The answer of `GET /api/vault/code-exports` (TASK-646.08): the exports of one module that the
- * last pass over one exact reading counted, with the repository their paths are in and when the
- * pass ran. The route answers it beside `success: true`.
- */
-const RememberedExportsSchema = z.object({
-	checkedAt: z.iso.datetime(),
-	repo: z.string(),
-	names: z.array(ModuleExportSchema),
-});
-
-/**
- * Read the answer of `GET /api/vault/code-exports`.
- * @param body The answer's body.
- * @returns The exports it holds.
- * @throws {z.ZodError} When the body is no such answer.
- */
-function parseRememberedExports(body: unknown): RememberedExports {
-	return RememberedExportsSchema.parse(body);
-}
-
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
-type RememberedExports = z.infer<typeof RememberedExportsSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
@@ -588,8 +569,6 @@ export {
 	type ModuleDepth,
 	type ModuleExport,
 	CodeSourceLinesSchema,
-	parseRememberedExports,
-	type RememberedExports,
 	RememberedFindingsSchema,
 	type RememberedFindings,
 	type ServerTypescript,

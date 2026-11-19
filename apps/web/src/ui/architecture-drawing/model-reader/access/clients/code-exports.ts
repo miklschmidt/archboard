@@ -1,7 +1,15 @@
 import { queryOptions } from "@tanstack/react-query";
-import { parseRememberedExports, type RememberedExports } from "@archboard/code-intel/code-check";
+import {
+	RememberedFindingsSchema,
+	type RememberedFindings,
+} from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+
+/** One module the pass measured, with the names of its exports. */
+type MeasuredModule = NonNullable<
+	NonNullable<RememberedFindings["models"]>[number]["depth"]
+>[number];
 
 /** The pass whose exports of one module are asked for, by the reading it read and when it ran. */
 interface ExportsOfPass {
@@ -14,13 +22,24 @@ interface ExportsOfPass {
 }
 
 /**
+ * The one module of an answer narrowed to it.
+ * @param body The answer.
+ * @returns The module, or null when the answer holds none.
+ */
+function measuredModule(body: unknown): MeasuredModule | null {
+	const narrowed = RememberedFindingsSchema.parse(body);
+	return narrowed.models?.[0]?.depth?.[0] ?? null;
+}
+
+/**
  * The exports of one module that one remembered code pass counted (TASK-646.08). The answer that
  * every canvas reads leaves the names out, so only the About page of a module reads them, for that
  * module alone. A pass counts its names once, so they stay as they are, and the next pass has its
  * own key. A 404 says that the server no longer remembers the pass, as after a restart.
  * @param vault The vault of the reading.
  * @param pass The pass and the module.
- * @returns The query options, whose data is the exports, or null for a pass the server forgot.
+ * @returns The query options, whose data is the module with its exports, or null for a pass the
+ * server forgot.
  */
 function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 	const { model, state, revision, checkedAt, module } = pass;
@@ -37,9 +56,9 @@ function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 		/**
 		 * Read the exports.
 		 * @param context The query cancellation signal.
-		 * @returns The exports, or null when the server remembers no such pass.
+		 * @returns The module, or null when the server remembers no such pass.
 		 */
-		queryFn: async (context): Promise<RememberedExports | null> => {
+		queryFn: async (context): Promise<MeasuredModule | null> => {
 			const parameters = new URLSearchParams({ model, revision, module });
 			if (state !== null) parameters.set("state", state);
 			const response = await fetch(`${inVault("/api/vault/code-exports", vault)}&${parameters}`, {
@@ -47,7 +66,7 @@ function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 			});
 			if (response.status === 404) return null;
 			if (!response.ok) throw new Error(`The code exports could not be read (${response.status}).`);
-			return parseRememberedExports(await response.json());
+			return measuredModule(await response.json());
 		},
 		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,

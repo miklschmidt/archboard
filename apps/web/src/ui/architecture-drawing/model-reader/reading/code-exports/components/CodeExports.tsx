@@ -83,13 +83,14 @@ function ReadExports(
 	const { vault, reading, module, code } = props;
 	const counted = exportCount(code.exports) > 0;
 	const query = useCodeExports(vault, reading, module, counted);
-	const list = useMemo(() => {
-		const directory = reading.depth?.find((each) => each.subject.id === module)?.directory;
-		return exportList(query.data?.names ?? [], reading.findings, {
-			id: module,
-			directory: directory ?? "",
-		});
-	}, [query.data, reading, module]);
+	const list = useMemo(
+		() =>
+			exportList(query.data?.names ?? [], reading.findings, {
+				id: module,
+				directory: query.data?.directory ?? "",
+			}),
+		[query.data, reading.findings, module],
+	);
 	return (
 		<div data-slot="code-exports" className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">

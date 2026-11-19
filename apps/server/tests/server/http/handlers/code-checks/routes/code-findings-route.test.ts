@@ -16,11 +16,7 @@ import { join } from "node:path";
 import express from "express";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { createCodeFindingsMemory } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
-import {
-	parseRememberedExports,
-	RememberedFindingsSchema,
-	type CodeCheckAnswer,
-} from "@archboard/code-intel/code-check";
+import { RememberedFindingsSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
 const ownVault = vaultIn(scratch);
@@ -355,9 +351,13 @@ test("every canvas reads no export names, and the exports of one module are read
 		);
 	const gateway = await exportsOf("gateway");
 	expect(gateway.status).toBe(200);
-	const read = parseRememberedExports(await gateway.json());
-	expect(read.repo).toBe("example/shop");
-	expect(read.names.map(({ name, line }) => ({ name, line }))).toEqual([
+	const narrowed = RememberedFindingsSchema.parse(await gateway.json()).models ?? [];
+	expect(narrowed.map(({ model, state }) => ({ model, state }))).toEqual([
+		{ model: "Shop", state: "Now" },
+	]);
+	const measured = narrowed[0]?.depth ?? [];
+	expect(measured.map((module) => module.subject.id)).toEqual(["gateway"]);
+	expect(measured[0]?.names?.map(({ name, line }) => ({ name, line }))).toEqual([
 		{ name: "run0", line: 1 },
 		{ name: "run1", line: 2 },
 	]);

@@ -4,7 +4,6 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
-import type { RememberedExports } from "@archboard/code-intel/code-check";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -87,7 +86,7 @@ const VAULT = "/work/shop/.archboard/vault";
 const GATEWAY = { kind: "node", id: "Shop#Gateway", name: "Gateway" } as const;
 
 /** What the last pass counted of the gateway: a function, a class with a method, a value, a type. */
-const NAMES: RememberedExports["names"] = [
+const NAMES: NonNullable<NonNullable<Reading["depth"]>[number]["names"]> = [
 	{ name: "open", kind: "function", path: "src/gateway/index.ts", line: 3 },
 	{ name: "Gate", kind: "class", path: "src/gateway/gate.ts", line: 1 },
 	{ name: "Gate.pass", kind: "method", path: "src/gateway/gate.ts", line: 4 },
@@ -143,7 +142,30 @@ function measured(): Reading {
 }
 
 /**
- * Answer the server: the gateway's names from the exports route, and an open of code.
+ * What the server answers an address: the gateway narrowed to it with its names, an open of code,
+ * and nothing else.
+ * @param url The address.
+ * @returns The answer.
+ */
+function answerTo(url: string): Response {
+	if (url.includes("/api/vault/code-exports")) {
+		const narrowed = measured();
+		const depth = (narrowed.depth ?? []).map((module) => ({ ...module, names: NAMES }));
+		return Response.json({ success: true, readings: [], models: [{ ...narrowed, depth }] });
+	}
+	if (url.includes("/api/code-targets/open"))
+		return Response.json({
+			success: true,
+			code: "CODE_TARGET_OPENED",
+			repository: "example/shop",
+			path: "src/gateway/limits.ts",
+			kind: "file",
+		});
+	return Response.json({ success: false, error: "not here" }, { status: 404 });
+}
+
+/**
+ * Answer the server as `answerTo` says, keeping each address asked for.
  * @returns Each address asked for, with its body.
  */
 function serving(): { url: string; body: unknown }[] {
@@ -152,22 +174,7 @@ function serving(): { url: string; body: unknown }[] {
 		async (input: RequestInfo | URL, init?: RequestInit) => {
 			const url = String(input instanceof Request ? input.url : input);
 			asked.push({ url, body: typeof init?.body === "string" ? JSON.parse(init.body) : null });
-			if (url.includes("/api/vault/code-exports"))
-				return Response.json({
-					success: true,
-					checkedAt: "2026-11-01T12:00:00.000Z",
-					repo: "example/shop",
-					names: NAMES,
-				});
-			if (url.includes("/api/code-targets/open"))
-				return Response.json({
-					success: true,
-					code: "CODE_TARGET_OPENED",
-					repository: "example/shop",
-					path: "src/gateway/limits.ts",
-					kind: "file",
-				});
-			return Response.json({ success: false, error: "not here" }, { status: 404 });
+			return answerTo(url);
 		},
 		{ preconnect: realFetch.preconnect },
 	);
