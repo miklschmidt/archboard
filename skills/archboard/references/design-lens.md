@@ -143,6 +143,7 @@ Clear each finding at its seam. Never silence one.
   Where a caller needs the value itself, export a function that returns it.
   An export that can be called is a function, even when a call makes it: a compound component made by `Object.assign(Root, { Item })`, or the helper that `cva(...)` returns.
   The check follows the name that `Object.assign` extends, and asks the language server whether any other value can be called.
+  Without that server, the finding on a value a call makes is information: set the server up to judge it.
   A schema cannot be called, so it is a value. A contract module keeps its schemas inside and exports a parse function and the types derived from them:
 
   ```ts

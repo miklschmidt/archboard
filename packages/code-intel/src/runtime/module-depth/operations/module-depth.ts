@@ -70,9 +70,9 @@ import {
 	passedOn,
 } from "#runtime/module-depth/operations/depth-reading.ts";
 import {
+	handsInsides,
 	type NameKind,
 	nameFinding,
-	SHALLOW_CODES,
 } from "#runtime/module-depth/operations/name-findings.ts";
 import { siblingUses } from "#runtime/module-depth/operations/sibling-uses.ts";
 import type { ModuleExport } from "#shared/protocol/code-check.ts";
@@ -499,8 +499,7 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time keeps the findings in export order
 		const finding = await nameFinding({ ...reading, unread, siblings }, name, kind);
 		if (finding !== undefined) findings.push(finding);
-		if (rolledUp(reading, name, kind))
-			rollUp.set(name.name, finding !== undefined && SHALLOW_CODES.has(finding.code));
+		if (rolledUp(reading, name, kind)) rollUp.set(name.name, handsInsides(finding));
 	}
 	const shallowFinding = shallow(reading, rollUp);
 	return {

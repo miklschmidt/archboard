@@ -18,7 +18,9 @@
 // - `EXPOSED_VALUE_COMPUTED`, a warning: two or more modules write the same
 //   math on an exported value or getter (computed-math.ts). It is the sharper
 //   `EXPOSED_VALUE`: it names the math that belongs to the module.
-// - `EXPOSED_VALUE`, a warning: code outside reads an exported value at run time.
+// - `EXPOSED_VALUE`, a warning: code outside reads an exported value at run
+//   time. Information where a call made the value and no language server
+//   typed it, since it may be a function.
 // - `CODE_PASS_THROUGH`, information: a function or a public method only
 //   passes its call on, as its code facts say, unless the callee is a value
 //   its own file keeps at module level, as a parse function over a hidden
@@ -134,18 +136,32 @@ function reexported(reading: DepthReading, name: ExposedName): DepthFinding {
 }
 
 /**
- * The finding on an exported value that outside code reads.
+ * Whether no checker tells what an exported value is: a call made it, and no
+ * language server typed it, so it may be a function.
+ * @param reading The module.
+ * @param name The value.
+ * @returns True when none does.
+ */
+async function untyped(reading: DepthReading, name: ExposedName): Promise<boolean> {
+	return name.definition.madeByCall === true && (await reading.tokenType(name)) === undefined;
+}
+
+/**
+ * The finding on an exported value that outside code reads. A value a call
+ * made that no language server typed may be a function, so its finding is
+ * information.
  * @param reading The module.
  * @param name The value.
  * @param reads Its uses at run time by files outside the module.
  * @returns The finding, or undefined when no code outside reads it at run time.
  */
-function exposedValue(
+async function exposedValue(
 	reading: DepthReading,
 	name: ExposedName,
 	reads: readonly DepthUse[],
-): DepthFinding | undefined {
+): Promise<DepthFinding | undefined> {
 	if (reads.length === 0) return undefined;
+	const unknown = await untyped(reading, name);
 	const readers = readersOf(reads);
 	const value = `${reading.label} exports the value ${name.name}`;
 	const remedy =
@@ -153,13 +169,16 @@ function exposedValue(
 			? `Only ${quoted(readers)} reads it: move the value into ${quoted(readers)} and stop exporting it.`
 			: `${readers.length} modules read it: ${quoted(readers)}. Move what they do with it into ` +
 				`${reading.label}, behind a function, and stop exporting the value.`;
+	const why = unknown
+		? " This is information because a call makes it and no language server typed it, so it may be a function."
+		: "";
 	return {
-		severity: "warning",
+		severity: unknown ? "information" : "warning",
 		code: "EXPOSED_VALUE",
 		export: name.name,
 		message:
 			`${value}, which code outside it reads: its callers hold logic that belongs to it. ` +
-			`${remedy} Where a caller needs the value itself, export a function that returns it.`,
+			`${remedy} Where a caller needs the value itself, export a function that returns it.${why}`,
 		evidence: evidenceOf(reading, reads),
 	};
 }
@@ -253,4 +272,16 @@ const SHALLOW_CODES: ReadonlySet<string> = new Set([
 	"REEXPORT_PASS_THROUGH",
 ]);
 
-export { type NameKind, SHALLOW_CODES, nameFinding };
+/**
+ * Whether a name's finding says it hands its insides to its callers, which
+ * `MODULE_SHALLOW` rolls up. An exposed value is information only where no
+ * checker typed it, and it may be a function, so it rolls nothing up.
+ * @param finding The finding.
+ * @returns True when it does.
+ */
+function handsInsides(finding: DepthFinding | undefined): boolean {
+	if (finding === undefined || !SHALLOW_CODES.has(finding.code)) return false;
+	return finding.code !== "EXPOSED_VALUE" || finding.severity === "warning";
+}
+
+export { type NameKind, handsInsides, nameFinding };

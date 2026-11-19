@@ -72,6 +72,14 @@ interface Definition {
 	 */
 	readonly aliases?: string;
 	/**
+	 * It holds what a call returns, as `const buttonClass = cva(...)` and
+	 * `const User = z.object(...)` do, so only a checker can tell whether it
+	 * can be called. TypeScript names it; module depth asks the language
+	 * server, and where none answers it judges the value only as information
+	 * (TASK-646.15).
+	 */
+	readonly madeByCall?: true;
+	/**
 	 * The language calls it itself, and no caller names it: a constructor, a
 	 * `toString`, a Python special method such as `__repr__`, a Go `String`,
 	 * a C++ destructor or operator, Swift's `hash(into:)`, Objective-C's

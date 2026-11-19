@@ -1,14 +1,16 @@
 // An export that can be called counts as a function, even when a call makes
 // it (TASK-646.15): a compound component made by `Object.assign` onto a
 // function, and a helper that a factory returns, as `cva(...)` does. An
-// exported zod schema is a value still.
+// exported zod schema is a value still. Without a language server, no checker
+// tells what a call made, so its `EXPOSED_VALUE` is information.
 //
 // The checkout `shop` holds a canonical vault. `ui` exports three compound
 // components: one onto a function of its own file, one onto a function that
 // `primitives` defines, and one onto an arrow function. `style` exports a
-// class-name helper that a factory makes. `contract` exports a zod schema.
-// `app` calls each of them. Where this platform has no native tsc, the case
-// that needs the language server skips.
+// class-name helper that a factory makes. `contract` exports a zod schema and
+// a frozen literal, which is a value whatever a server says. `app` calls each
+// of them. Where this platform has no native tsc, the case that needs the
+// language server skips.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
@@ -95,15 +97,16 @@ beforeAll(async () => {
 		"src/contract/index.ts": [
 			'import { z } from "zod";',
 			"export const UserSchema = z.object({ name: z.string() });",
+			"export const LIMITS = Object.freeze({ names: 3 });",
 			"",
 		].join("\n"),
 		"src/app/main.ts": [
 			'import { Dialog, Gap, Panel } from "../ui";',
 			'import { buttonClass } from "../style";',
-			'import { UserSchema } from "../contract";',
+			'import { LIMITS, UserSchema } from "../contract";',
 			"const user = UserSchema.parse({ name: 'a' });",
 			"console.log(Dialog({ open: true }), Dialog.Title(), Panel({ wide: false }), Gap(2));",
-			"console.log(buttonClass('primary'), user.name);",
+			"console.log(buttonClass('primary'), user.name, LIMITS.names);",
 			"",
 		].join("\n"),
 	});
@@ -163,17 +166,28 @@ function counts(answer: CodeCheckAnswer, name: string) {
 }
 
 /**
- * The exports that carry `EXPOSED_VALUE`, with their modules.
+ * The exports that carry `EXPOSED_VALUE`, with their modules and severities.
  * @param answer The answer.
  * @returns Each.
  */
 function exposedValues(answer: CodeCheckAnswer) {
 	return answer.findings
 		.filter((each) => each.code === "EXPOSED_VALUE")
-		.map((each) => [each.subject?.name, each.export]);
+		.map((each) => [each.subject?.name, each.export, each.severity]);
 }
 
-test("a compound component made by Object.assign onto a function counts as a function without a language server, and a zod schema is a value", async () => {
+/**
+ * The modules `MODULE_SHALLOW` names.
+ * @param answer The answer.
+ * @returns Their names.
+ */
+function shallow(answer: CodeCheckAnswer) {
+	return answer.findings
+		.filter((each) => each.code === "MODULE_SHALLOW")
+		.map((each) => each.subject?.name);
+}
+
+test("a compound component made by Object.assign onto a function counts as a function without a language server, and a value a call makes is information there", async () => {
 	write(shop, {
 		".archboard/language-servers.json": JSON.stringify({
 			typescript: { command: "archboard-no-such-typescript-server" },
@@ -182,12 +196,16 @@ test("a compound component made by Object.assign onto a function counts as a fun
 	try {
 		const answer = await check();
 		expect(counts(answer, "Ui")).toEqual({ functions: 3, values: 0 });
-		expect(counts(answer, "Contract")).toEqual({ functions: 0, values: 1 });
+		expect(counts(answer, "Contract")).toEqual({ functions: 0, values: 2 });
+		// Without a server, no checker tells whether what a call makes can be called.
+		// Object.freeze returns its argument, so the literal says what LIMITS is.
 		expect(exposedValues(answer)).toEqual([
-			// Without a server, a callable a factory makes reads as a value.
-			["Style", "buttonClass"],
-			["Contract", "UserSchema"],
+			["Style", "buttonClass", "information"],
+			["Contract", "UserSchema", "information"],
+			["Contract", "LIMITS", "warning"],
 		]);
+		// Nor does a module shallow on such a value alone.
+		expect(shallow(answer)).toEqual([]);
 	} finally {
 		rmSync(join(shop, ".archboard", "language-servers.json"));
 	}
@@ -199,6 +217,10 @@ test.skipIf(!native)(
 		const answer = await check();
 		expect(counts(answer, "Style")).toEqual({ functions: 1, values: 0 });
 		expect(counts(answer, "Ui")).toEqual({ functions: 3, values: 0 });
-		expect(exposedValues(answer)).toEqual([["Contract", "UserSchema"]]);
+		expect(exposedValues(answer)).toEqual([
+			["Contract", "UserSchema", "warning"],
+			["Contract", "LIMITS", "warning"],
+		]);
+		expect(shallow(answer)).toEqual(["Contract"]);
 	},
 );
