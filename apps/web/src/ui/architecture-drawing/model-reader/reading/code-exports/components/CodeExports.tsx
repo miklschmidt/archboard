@@ -12,7 +12,7 @@ import {
 	type RemixiconComponentType,
 } from "@remixicon/react";
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
-import type { CodeBinding } from "@archboard/code-binding/bindings";
+import type { Model } from "@archboard/model/content";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import { rowTone } from "#ui/shell/rules/row-tone.ts";
@@ -65,10 +65,7 @@ interface CodeExportsProps {
 }
 
 /** A module of a reading, which may be bound to code. */
-interface ReadingModule {
-	readonly id: string;
-	readonly binding?: CodeBinding | undefined;
-}
+type ReadingModule = Pick<Model["modules"][number], "id" | "binding">;
 
 /**
  * A module whose code exports a page or the panel lists: one bound to code, in a reading of the
