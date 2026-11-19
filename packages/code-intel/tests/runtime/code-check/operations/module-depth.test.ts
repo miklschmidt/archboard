@@ -327,6 +327,23 @@ test("the check marks the modules that the branch touched, working tree included
 	expect(severities(asked)).toEqual(severities(plain));
 });
 
+test("a module bound through its index is touched by a change to any file of its directory", async () => {
+	const math = "export function add(a: number, b: number): number {\n\treturn b + a;\n}\n";
+	// Only a file no part binds changes in the module, and its part inside it is as committed.
+	write(shop, {
+		"src/kit/lib/math.ts": math.replace("b + a", "a + b"),
+		"src/kit/extra.ts": "export const EXTRA = 1;\n",
+	});
+	try {
+		const answer = await check({ touched: true });
+		expect(answer.touched?.[0]?.modules).toContain("Shop#Kit");
+		expect(answer.touched?.[0]?.modules).not.toContain("Shop#Math");
+	} finally {
+		rmSync(join(shop, "src/kit/extra.ts"));
+		write(shop, { "src/kit/lib/math.ts": math });
+	}
+});
+
 test("a named base that does not resolve is a refusal, never a pass", async () => {
 	const answer = await codeCheck.run({
 		vault,

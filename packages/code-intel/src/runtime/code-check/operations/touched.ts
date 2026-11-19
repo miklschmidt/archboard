@@ -4,10 +4,10 @@
 // The History lens reads each reading's footprint from the merge base with the
 // base up to each checkout's working tree, uncommitted changes included, so a
 // gate run before a commit sees them (TASK-646.02). A judged module is touched
-// when its own part changed, or a changed part's binding lies inside its
-// module's directory: a module bound through its `index.ts` holds the parts of
-// its directory. A part whose range the lens could not read is unread, never
-// untouched.
+// when a file of its module's directory changed: a part bound through the file
+// that stands for its module, as `index.ts` does, is read as that directory, and
+// a module holds the changed parts bound inside its directory. A part whose
+// range the lens could not read is unread, never untouched.
 //
 // Without a named base, the default-base lookup of the vault's own checkout
 // decides. A caller that names a base or asks for the touched modules is
@@ -18,7 +18,8 @@
 import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
 import type { DepthRecord } from "#runtime/code-check/interfaces/operations/interfaces.ts";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
-import { within } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { moduleOf, within } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { normalizeBoundPath } from "#runtime/history-lens/operations/commits.ts";
 import { readFootprintEvidence } from "#runtime/history-lens/operations/footprint.ts";
 import { defaultBaseOf } from "#runtime/history-lens/operations/source-refs.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
@@ -86,6 +87,25 @@ function refusal(base: string | undefined): BaseUnresolved {
 }
 
 /**
+ * A reading's variant as its modules: a part bound through the file that
+ * stands for its module, as `index.ts` does, binds the module's directory, so
+ * that a change to any file of the module touches it.
+ * @param variant The variant.
+ * @returns The variant, its parts bound to their modules.
+ */
+function asModules(variant: StateToCheck["variant"]): StateToCheck["variant"] {
+	const nodes = variant.content.nodes.map((node) => {
+		const { binding } = node;
+		if (binding === undefined || binding.symbol !== undefined) return node;
+		const path = normalizeBoundPath(binding.path);
+		const directory = path === undefined ? undefined : moduleOf(path, "file");
+		if (directory === undefined) return node;
+		return { ...node, binding: { ...binding, path: directory === "" ? "." : directory } };
+	});
+	return { ...variant, content: { ...variant.content, nodes } };
+}
+
+/**
  * The footprint of one reading from the base up to the working tree.
  * @param request What to read.
  * @param read The reading.
@@ -100,7 +120,7 @@ async function footprintOf(
 	const evidence = await readFootprintEvidence({
 		vault: request.vault,
 		document: read.document,
-		against: read.variant,
+		against: asModules(read.variant),
 		base,
 		head: { workingTree: true },
 		signal: request.signal,
