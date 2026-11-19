@@ -4,6 +4,7 @@ title: External modules get no verdicts, and an undeclared interface shows
 status: To Do
 assignee: []
 created_date: '2026-11-19T04:22:00Z'
+updated_date: '2026-11-19T05:06:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -52,3 +53,9 @@ Follow the same section of TASK-646.05.
 - [ ] #4 The archboard skill and ADR 0082 describe all three
 - [ ] #5 Code-check tests cover each case
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Commands (help text for INTERFACE_UNDECLARED and external modules), Model reading (the finding chip and the exports list words) and code-intel (tests). No architecture change; exception recorded in the proposal history (operation task-646-18-exceptions). Warnings on this repository: EXPOSED_UNUSED 1480 to 472, EXPOSED_VALUE 396 to 358, REEXPORT_PASS_THROUGH 5 to 1; INTERFACE_UNDECLARED information on 37 modules.
+<!-- SECTION:NOTES:END -->
