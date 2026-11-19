@@ -2,7 +2,7 @@
 
 import { existsSync } from "node:fs";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { serverLifecycleMs, waitUntil } from "@archboard/timing";
+import { waitUntil } from "@archboard/timing";
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { type HealthStatus } from "#runtime/clients/server-client.ts";
 import { foreignServiceError } from "#runtime/clients/server-client-transport.ts";
@@ -114,20 +114,14 @@ function verifiedServerPid(health: HealthStatus): number | null {
  * @returns The stop result once `/health` stops answering.
  */
 async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
-	const deadline = Date.now() + serverLifecycleMs("stopConfirm");
-	while (Date.now() < deadline) {
-		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
-		const postSignalHealth = await healthOrNull();
-		if (!postSignalHealth) {
-			removePidFile(port);
-			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
-		}
-		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, serverLifecycleMs("stopProbePoll")));
-	}
-	throw new Error(
-		`Archboard server (pid ${pid}) did not stop within ${serverLifecycleMs("stopConfirm") / 1000}s.`,
+	const stopped = await waitUntil("serverLifecycle.stopConfirm", async () =>
+		(await healthOrNull()) ? undefined : true,
 	);
+	if (stopped.ok) {
+		removePidFile(port);
+		return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
+	}
+	throw new Error(`Archboard server (pid ${pid}) did not stop within ${stopped.boundSeconds}s.`);
 }
 
 /**
