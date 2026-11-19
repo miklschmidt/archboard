@@ -74,6 +74,29 @@ interface Definition {
 	 */
 	readonly data?: true;
 	/**
+	 * It declares methods that other types implement: a Rust trait, a Swift
+	 * protocol, a C# or Go interface. It is a type, and a caller learns its
+	 * methods once, so module depth counts them once, for it, and an
+	 * exported type's methods that implement it add nothing (TASK-651). A type
+	 * implements a `declared` contract where its declaration names it, as in
+	 * Rust, Swift and C#, and a `structural` one by having a method of each of
+	 * its names, as in Go.
+	 */
+	readonly contract?: "declared" | "structural";
+	/**
+	 * It implements a member of a contract, whichever contract, as each member
+	 * of a Rust `impl Trait for Type` does. A caller learns it from the
+	 * contract, so module depth neither counts nor judges it (TASK-651).
+	 */
+	readonly implementation?: true;
+	/**
+	 * The names the declaration that holds this member says its type derives
+	 * from or conforms to, by their last name: a Swift type's or extension's
+	 * inheritance clause, a C# type's base list. A member whose name a
+	 * `declared` contract named there requires implements it (TASK-651).
+	 */
+	readonly conforms?: readonly string[];
+	/**
 	 * It only passes its call on: its body is one call that hands every
 	 * argument straight from its parameters, and this names the callee's root,
 	 * such as `save` for `save(item)` or `this` for `this.target.send(id)`.

@@ -13,7 +13,10 @@
 // method, in whichever of its files (`Definition.data`, TASK-651). A member
 // that belongs to an exported class rather than to an instance, as a C#
 // `static` member does, is read through the class's name and counts as a
-// function or a value of its own (TASK-646.11). It counts the pieces of
+// function or a value of its own (TASK-646.11). A definition counts once,
+// however many public paths reach it. A contract, such as a Rust trait,
+// is a type whose methods count once, for it, and the members of an exported
+// type that implement a contract count for none (TASK-651). It counts the pieces of
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
 //
@@ -92,6 +95,7 @@ import {
 } from "#runtime/module-depth/operations/sibling-uses.ts";
 import {
 	dataOnly,
+	implementations,
 	methodOf,
 	staticMember,
 } from "#runtime/module-depth/operations/class-members.ts";
@@ -273,11 +277,31 @@ async function countedNames(reading: DepthReading): Promise<CountedNames> {
 		if (!names.has(name.name)) names.set(name.name, name);
 	}
 	return {
-		judged: [...groups.judged.values()],
+		judged: oncePerDefinition([...groups.judged.values()]),
 		infrastructure: [...groups.infrastructure.values()],
 		languages: [...languages],
 		unjudged: [...unjudged],
 	};
+}
+
+/**
+ * Each definition once, however many public paths reach it, as a Rust item
+ * that both `pub mod` and `pub use` pass on, or a TypeScript function that
+ * one file exports by name and another through `export * as`. It keeps the
+ * shortest spelling, in the place of the first.
+ * @param names The names, each spelled once.
+ * @returns One name per definition.
+ */
+function oncePerDefinition(names: readonly ExposedName[]): ExposedName[] {
+	const kept = new Map<string, ExposedName>();
+	for (const name of names) {
+		const site = `${name.path}:${name.definition.start}:${name.definition.symbol}`;
+		const other = kept.get(site);
+		if (other === undefined || name.name.split(".").length < other.name.split(".").length) {
+			kept.set(site, name);
+		}
+	}
+	return [...kept.values()];
 }
 
 /**
@@ -309,19 +333,24 @@ async function countExports(
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
 	readonly listed: readonly ModuleExport[];
 }> {
+	const top = names.judged.filter((each) => topLevel(each, names.judged));
+	const contracts = top.filter((each) => each.definition.contract !== undefined);
+	const implemented = implementations(names.judged, contracts);
+	const own = names.judged.filter((each) => !implemented.has(each));
 	const declared: (readonly [ExposedName, ExportKind])[] = [];
-	for (const name of names.judged.filter((each) => topLevel(each, names.judged))) {
+	for (const name of top) {
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
 		declared.push([name, await kindOf(reading, name)]);
 	}
 	const holders = ofKind(declared, "class");
-	const top = declared.map(([name, kind]): readonly [ExposedName, ExportKind] => [
-		name,
-		kind === "class" && dataOnly(name, names.judged) ? "type" : kind,
-	]);
-	const classes = ofKind(top, "class");
-	const kinds = new Map(top);
-	for (const name of names.judged) {
+	const kinds = new Map(
+		declared.map(([name, kind]): readonly [ExposedName, ExportKind] => [
+			name,
+			kind === "class" && dataOnly(name, own) ? "type" : kind,
+		]),
+	);
+	const classes = ofKind([...kinds], "class");
+	for (const name of own) {
 		if (!kinds.has(name) && staticMember(name, holders))
 			kinds.set(name, declaredKind(name.definition));
 	}
@@ -329,10 +358,10 @@ async function countExports(
 		...kinds,
 		...pathEnds(names.infrastructure).map((name) => [name, declaredKind(name.definition)] as const),
 	];
-	const judged = names.judged.flatMap((name): (readonly [ExposedName, NameKind])[] => {
+	const judged = own.flatMap((name): (readonly [ExposedName, NameKind])[] => {
 		const kind = kinds.get(name);
 		if (kind !== undefined) return [[name, kind]];
-		return methodOf(name, classes) ? [[name, "method"]] : [];
+		return methodOf(name, [...classes, ...contracts]) ? [[name, "method"]] : [];
 	});
 	const listed = [...judged, ...counted.filter(([name]) => !names.judged.includes(name))].map(
 		([name, kind]) => exportOf(name, kind),

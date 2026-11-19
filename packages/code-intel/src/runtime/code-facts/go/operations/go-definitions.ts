@@ -15,7 +15,8 @@
 // interface, but no other package can name it.
 //
 // For module depth (TASK-646.11), an interface and an alias declare a type
-// alone. A struct and any other named type hold data: a type unless a file of
+// alone, and an interface is a contract, whose methods module depth counts
+// once (TASK-651). A struct and any other named type hold data: a type unless a file of
 // its package declares a method on it (`Definition.data`, TASK-651). A function or a method that only passes
 // its call on names its callee's root, and `Error`, `String`, `GoString` and
 // `Format`, which Go and `fmt` call themselves, are marked so (go-depth.ts).
@@ -172,8 +173,10 @@ function typesOf(declaration: Node): Definition[] {
  */
 function ownDefinition(spec: Node, name: string, type: Node | null): Definition {
 	const own = definition(spec, name, "class", exportedName(name));
-	const alone = spec.type !== "type_spec" || type?.type === "interface_type";
-	return alone ? { ...own, type: true } : { ...own, data: true };
+	if (spec.type === "type_spec" && type?.type === "interface_type") {
+		return { ...own, type: true, contract: "structural" };
+	}
+	return spec.type === "type_spec" ? { ...own, data: true } : { ...own, type: true };
 }
 
 /**

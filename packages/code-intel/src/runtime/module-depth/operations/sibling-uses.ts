@@ -11,7 +11,7 @@
 // stays unused, and the remedy there is to stop exporting it.
 //
 // Such a module's width counts only the names a file outside it uses, a
-// member as its class (decision 16): a name only its own files import, or
+// member as its class or its contract (decision 16): a name only its own files import, or
 // that nothing uses, costs a caller nothing.
 //
 // What a sibling use keeps used stays visible (TASK-646.18, decision 17):
@@ -208,7 +208,7 @@ const WIDTH_KINDS: ReadonlyMap<string, "functions" | "classes" | "methods" | "va
 /**
  * The width of a module that declares no interface (decision 16): the names
  * a file outside it uses, or a caller the model draws whose code the pass did
- * not read. A member counts as its class does. A name only the module's own
+ * not read. A member counts as its class or its contract does. A name only the module's own
  * files import, and one nothing uses, cost a caller nothing.
  * @param reading The module, with the uses of its names by its own files.
  * @param judged Each judged export with its kind.
@@ -220,11 +220,13 @@ function undeclaredWidth(
 	judged: readonly (readonly [ExposedName, string])[],
 	counts: ExportCounts,
 ): Pick<ModuleMeasure, "exports" | "undeclared"> {
-	const classes = judged.flatMap(([name, kind]) => (kind === "class" ? [name] : []));
+	const holders = judged.flatMap(([name, kind]) =>
+		kind === "class" || name.definition.contract !== undefined ? [name] : [],
+	);
 	const users = judged.flatMap(([name, kind]) => {
 		const key = WIDTH_KINDS.get(kind);
 		if (key === undefined) return [];
-		const holder = kind === "class" ? undefined : classes.find((each) => heldBy(name, [each]));
+		const holder = kind === "class" ? undefined : holders.find((each) => heldBy(name, [each]));
 		const user = holder ?? name;
 		const seen = reading.unseen(user).length > 0 ? "outside" : userOf(reading, user);
 		return [[key, seen] as const];

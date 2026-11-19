@@ -835,7 +835,7 @@ A folder module that declares no interface, with no file that stands for it (suc
 _Avoid_: missing barrel, missing index
 
 **Module width**:
-The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. It differs from the interface width of ADR 0058, which counts types. In a folder module that declares no interface, it counts only the names a file outside it uses: a name only its own files import, or that nothing uses, costs a caller nothing.
+The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. It differs from the interface width of ADR 0058, which counts types. In a folder module that declares no interface, it counts only the names a file outside it uses: a name only its own files import, or that nothing uses, costs a caller nothing. Each name counts once, however many public paths reach it, and a contract's methods (a Rust trait, a Swift protocol, a C# or Go interface) count once, for the contract, not again for each exported type that implements it.
 _Avoid_: export count, surface area
 
 **Wide interface**:

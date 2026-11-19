@@ -226,6 +226,8 @@ test("a C# project's exports are counted by kind, a static member as an export o
 		["Shop.Timing.Durations.JitterMs", "function"],
 		["Shop.Timing.Durations.Send", "function"],
 		["Shop.Timing.IWindow", "type"],
+		// An interface's method counts once, for the interface.
+		["Shop.Timing.IWindow.Span", "method"],
 		["Shop.Timing.Mode", "type"],
 		["Shop.Timing.Handler", "type"],
 		// A struct or a record with no method is a type that holds data.

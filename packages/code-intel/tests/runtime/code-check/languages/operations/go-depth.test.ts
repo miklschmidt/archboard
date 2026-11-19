@@ -213,6 +213,8 @@ test("a Go package's exports are counted by kind, without the methods Go calls i
 		["Limit", "value"],
 		["Duration", "type"],
 		["Window", "type"],
+		// An interface's method counts once, for the interface.
+		["Window.Span", "method"],
 		// A named type with a method, in any file of its package, is a class.
 		["Mode", "class"],
 		// A struct with no method is a type that holds data.
