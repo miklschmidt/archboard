@@ -834,17 +834,25 @@ _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 A folder module that declares no interface, with no file that stands for it (such as `index.ts`) and no `package.json` `exports`, where some exported names are used only by another of its files: `INTERFACE_UNDECLARED`, information. It says how many of its names files outside it use, and how many only its own files import, naming the first five.
 _Avoid_: missing barrel, missing index
 
+**Module width**:
+The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included. Exported types count zero. It differs from the interface width of ADR 0058, which counts types.
+_Avoid_: export count, surface area
+
+**Wide interface**:
+A module whose width is above 20: `INTERFACE_WIDE`, a warning. A narrow interface is the few operations callers need.
+_Avoid_: fat module, large API
+
 **Shallow module**:
-A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding: `MODULE_SHALLOW`, information in the answer.
+A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding, or whose width is at least 8 with fewer than 4 pieces of logic behind each name: `MODULE_SHALLOW`, a warning. A deep module hides much logic behind few names. The measured grounds need a complete reading of judged languages, and an `external` module gets neither code.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)
 
 **Shallow-module gate**:
-What fails `archboard check` on a shallow module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`.
+What fails `archboard check` on an information `MODULE_SHALLOW` or `INTERFACE_WIDE` of a module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`. Both codes are warnings without a rule, so the gate matters where a rule sets them to information: debt mode, where old modules stay information and touched ones fail.
 The CLI applies it to the answer, whose severities never depend on the caller.
 _Avoid_: depth gate, shallow check
 
 **Module-depth rule**:
-The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers; `failShallowModules` stays the only promotion.
+The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers, and `failShallowModules` stays the only promotion. `off` on `MODULE_SHALLOW` or `INTERFACE_WIDE` beside the gate is an invalid configuration.
 _Avoid_: lint rule, suppression, allow list (that is the Action's `allow-codes`)
 
 **Touched module**:

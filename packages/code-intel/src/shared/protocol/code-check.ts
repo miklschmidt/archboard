@@ -76,6 +76,11 @@
 // its exports. TASK-650 applies the vault's module-depth rules to each
 // reading's findings once `MODULE_SHALLOW` is derived, and `models[].rules`
 // carries them: `information` caps a finding, `off` removes it.
+// TASK-651 adds `INTERFACE_WIDE`, a warning on a module with more than 20
+// exports that are not types, and makes `MODULE_SHALLOW` a warning that also
+// names a module with at least 8 such exports and fewer than 4 pieces of
+// logic behind each. The CLI's gate fails on either at information only on a
+// touched module.
 
 import { architectureModelReadSchema } from "@archboard/model/contract";
 import { configurableLanguages } from "@archboard/workspace/languages";

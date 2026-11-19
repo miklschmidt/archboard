@@ -130,6 +130,8 @@ test("every module-depth rule reads the Swift grammar's facts: repeated math thr
 			"jitter EXPOSED_VALUE_COMPUTED warning",
 			"Timer.fire CODE_PASS_THROUGH information",
 			"unused EXPOSED_UNUSED warning",
+			// Ten names hide eight pieces of logic.
+			"(module) MODULE_SHALLOW warning",
 		].toSorted(),
 	);
 	const lines = answer.findings

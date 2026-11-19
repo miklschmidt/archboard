@@ -78,7 +78,7 @@ Open Measures in the left column. It lists every module and sorts by the measure
 | Change amplification: one change touches many places       | Commits, Changes with, and Callers. Select a module to see what changes with it in the Right panel. Each pair states its shared commits.             |
 | Information leakage: two modules that share a secret       | Unjoined counts modules that change together without an authored relationship. Sort by Unjoined to see modules with the most such connections first. |
 
-Archboard gives you no score. Each count is evidence, and you judge what it means. The code check also measures each bound module from its code. In What a module exposes, its Code columns sit beside the model's: the exports, the exported values and the logic behind them. The code check names what makes a module shallow as findings, such as an exported value that callers read. `archboard check --fail-shallow-modules` fails on a shallow module that your branch touched.
+Archboard gives you no score. Each count is evidence, and you judge what it means. The code check also measures each bound module from its code. In What a module exposes, its Code columns sit beside the model's: the exports, the exported values and the logic behind them. The code check names what makes a module shallow as findings, such as an exported value that callers read. It also fails on a module as a whole: a wide interface, with more than 20 names that callers must learn, and a shallow module, with at least 8 names and fewer than 4 pieces of logic behind each.
 
 Your agent reads the same facts through the CLI, a command-line interface. Use `archboard model inspect <module>` for an interface. Use `archboard model locality` for commit counts and modules that change together.
 
@@ -422,7 +422,7 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 <details><summary><b>Does Archboard score my design?</b></summary>
 <br>
 
-No. Archboard gives no score. Measures states how many entries a module has, what it hides, and what changes with it. The code check reads each bound module's code and names what it finds, one finding at a time: an exported value that code outside reads, an export that only passes its call on, an export that nothing uses, and a shallow module, whose every export carries such a finding. Each finding names the code and says how to clear it. A count can still look bad for a good reason, so you and your agent read the code and judge.
+No. Archboard gives no score. Measures states how many entries a module has, what it hides, and what changes with it. The code check reads each bound module's code and names what it finds, one finding at a time: an exported value that code outside reads, an export that only passes its call on, an export that nothing uses, a wide interface, and a shallow module. A finding on a name says how to clear it. A finding on a module gives the counts and the principle, and your agent reasons out the fix. A count can still look bad for a good reason, so you and your agent read the code and judge.
 </details>
 
 <details><summary><b>Which agents does it work with?</b></summary>

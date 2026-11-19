@@ -31,7 +31,7 @@ const baseRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"The base that `--base` names, or the default base, does not resolve, so the check cannot tell which modules the branch touched. Also a shallow module that the gate judges whose range the check could not read. A gate never passes because it read nothing.",
+		"The base that `--base` names, or the default base, does not resolve, so the check cannot tell which modules the branch touched. Also a module that the gate judges whose range the check could not read. A gate never passes because it read nothing.",
 };
 
 const ruleRefusal = {
@@ -39,7 +39,7 @@ const ruleRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"`--fail-shallow-modules` fails the check on MODULE_SHALLOW, and the vault policy's `codeCheck.rules.MODULE_SHALLOW` lowers it. Leave out the flag, or remove the rule.",
+		"`--fail-shallow-modules` fails the check on MODULE_SHALLOW and INTERFACE_WIDE in a touched module, and the vault policy's `codeCheck.rules` turns one of them off. Leave out the flag, or set the rule to information.",
 };
 
 /** The code check's refusals, in the order the help lists them. */

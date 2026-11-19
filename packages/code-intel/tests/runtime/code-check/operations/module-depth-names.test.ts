@@ -298,7 +298,7 @@ test("a function or public method that only passes its call on is information, a
 	const relay = answer.depth?.find((each) => each.subject.name === "Relay");
 	expect(relay?.names.map((each) => each.name)).toEqual(["put", "Relay", "Relay.send"]);
 	// Every export that is not a type, each public method among them, passes its call on.
-	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Relay", undefined, "information"]]);
+	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Relay", undefined, "warning"]]);
 });
 
 test("a re-export is information through one door, and a warning when outside callers also import the defining module", async () => {

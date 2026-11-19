@@ -208,7 +208,7 @@ test("every module-depth rule reads the C grammar's facts: values, repeated math
 	);
 	expect(depthFindings(answer, "Config")).toEqual([
 		"config_retries EXPOSED_VALUE warning",
-		"(module) MODULE_SHALLOW information",
+		"(module) MODULE_SHALLOW warning",
 	]);
 });
 

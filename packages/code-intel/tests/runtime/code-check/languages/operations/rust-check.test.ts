@@ -174,6 +174,8 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			// The money module has no parts, and its interface is read all the same.
 			...Array.from({ length: 3 }, () => "EXPOSED_UNUSED pMoney warning"),
 			"EXPOSED_VALUE pMoney warning",
+			// The ledger module exposes many names over little logic.
+			"MODULE_SHALLOW pLed warning",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			// The cart's relationship to the entry stands for these two calls into the ledger.
 			"RELATIONSHIP_UNDRAWN pLed information",
