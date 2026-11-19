@@ -1,11 +1,11 @@
 ---
 id: TASK-646.03
 title: One language-server setup brief, used by archboard init
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T00:24:00Z'
+updated_date: '2026-11-19T00:26:00Z'
 labels:
   - ready-for-agent
 dependencies: []
