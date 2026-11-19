@@ -114,7 +114,10 @@ so agents in an implementation loop added exported constants and nothing failed.
   counts. A TypeScript class stays a class. This width differs
   from the interface width of
   [ADR 0058](0058-an-interface-is-the-few-operations-its-callers-need.md),
-  which counts types.
+  which counts types. In a folder module that declares no interface, the
+  width counts only the names a file outside it uses, a member as its class,
+  since a name only its own files import, or that nothing uses, costs a caller
+  nothing (decision 16), and the `INTERFACE_WIDE` message says so.
 - **`INTERFACE_WIDE` is a warning on a width above 20**, on every module kind
   alike. Its message gives the counts by kind and the principle: a narrow
   interface is the few operations callers need.

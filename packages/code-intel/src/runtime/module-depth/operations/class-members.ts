@@ -82,4 +82,4 @@ function staticMember(member: ExposedName, classes: readonly ExposedName[]): boo
 	return counted && heldBy(member, classes);
 }
 
-export { dataOnly, methodOf, staticMember };
+export { dataOnly, heldBy, methodOf, staticMember };

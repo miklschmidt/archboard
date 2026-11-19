@@ -39,7 +39,9 @@
 // its interface counts as used.
 //
 // The module as a whole gets `INTERFACE_WIDE` and `MODULE_SHALLOW`, warnings
-// (module-measure.ts, TASK-651). The roll-up is one ground of `MODULE_SHALLOW`:
+// (module-measure.ts, TASK-651). In a module that declares no interface, the
+// width counts only the names a file outside it uses, a member as its class
+// (decision 16). The roll-up is one ground of `MODULE_SHALLOW`:
 // every export that is not a type carries `EXPOSED_VALUE`,
 // `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its public
 // methods. Types are no verdict's concern, so an exported union or enum keeps
@@ -83,7 +85,11 @@ import {
 	type NameKind,
 	nameFinding,
 } from "#runtime/module-depth/operations/name-findings.ts";
-import { siblingUses, undeclaredFinding } from "#runtime/module-depth/operations/sibling-uses.ts";
+import {
+	siblingUses,
+	undeclaredFinding,
+	undeclaredWidth,
+} from "#runtime/module-depth/operations/sibling-uses.ts";
 import {
 	dataOnly,
 	methodOf,
@@ -505,7 +511,14 @@ async function depthFindings(
 		if (finding !== undefined) findings.push(finding);
 		if (rolledUp(reading, name, kind)) rollUp.set(name.name, handsInsides(finding));
 	}
-	const module = moduleFindings({ ...whole, label: reading.label, rolledUp: everyOne(rollUp) });
+	const width =
+		judging.siblings === undefined ? {} : undeclaredWidth(judging, judged, whole.exports);
+	const module = moduleFindings({
+		...whole,
+		...width,
+		label: reading.label,
+		rolledUp: everyOne(rollUp),
+	});
 	const exported = judged.flatMap(([name, kind]) => (kind === "method" ? [] : [name]));
 	const undeclared = undeclaredFinding(judging, exported);
 	return {

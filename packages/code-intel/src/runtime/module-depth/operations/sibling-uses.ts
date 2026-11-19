@@ -10,10 +10,19 @@
 // Go's and Swift's do, gives no such use: an exported name only they use
 // stays unused, and the remedy there is to stop exporting it.
 //
+// Such a module's width counts only the names a file outside it uses, a
+// member as its class (decision 16): a name only its own files import, or
+// that nothing uses, costs a caller nothing.
+//
 // What a sibling use keeps used stays visible (TASK-646.18, decision 17):
 // such a module gets `INTERFACE_UNDECLARED`, information, which says how many
 // of its names files outside it use and how many only its own files import.
 
+import { heldBy } from "#runtime/module-depth/operations/class-members.ts";
+import type {
+	ExportCounts,
+	ModuleMeasure,
+} from "#runtime/module-depth/operations/module-measure.ts";
 import { C_FAMILY_FILE } from "#runtime/code-facts/c/operations/c-pairs.ts";
 import {
 	type ExposedName,
@@ -66,7 +75,7 @@ function directoryOf(file: string): string {
  * @param reading The module.
  * @returns True when it does.
  */
-async function declared(reading: DepthReading): Promise<boolean> {
+async function declares(reading: DepthReading): Promise<boolean> {
 	const { directory, rootFiles } = reading.exposure;
 	const entry = [...reading.checkout.files].some(
 		(file) => directoryOf(file) === directory && moduleOf(file, "file") === directory,
@@ -109,10 +118,11 @@ async function usesIn(reading: DepthReading, file: string): Promise<SiblingUse[]
  * The uses of a module's names by its own files, its tests aside, where the
  * module declares no interface; none where it does.
  * @param reading The module.
- * @returns Each use, at the definition it reaches.
+ * @returns Each use, at the definition it reaches, or undefined where the
+ * module declares its interface.
  */
-async function siblingUses(reading: DepthReading): Promise<SiblingUse[]> {
-	if (await declared(reading)) return [];
+async function siblingUses(reading: DepthReading): Promise<SiblingUse[] | undefined> {
+	if (await declares(reading)) return undefined;
 	const uses: SiblingUse[] = [];
 	for (const file of reading.files) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
@@ -132,8 +142,11 @@ const DECLARATIONS: readonly (readonly [RegExp, string])[] = [
 	[C_FAMILY_FILE, "public headers in an include directory"],
 ];
 
-/** A module as the per-name rules judge it: with the uses of its names by its own files. */
-type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
+/**
+ * A module as the per-name rules judge it: with the uses of its names by its
+ * own files, or undefined where it declares its interface.
+ */
+type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] | undefined };
 
 /**
  * Who uses an exported name: a file outside the module, else only another of
@@ -148,7 +161,7 @@ function userOf(reading: JudgedReading, name: ExposedName): "outside" | "sibling
 	const { directory } = reading.exposure;
 	if (parts.some((part) => usesOf(directory, part, reading.uses).length > 0)) return "outside";
 	const sibling = parts.some((part) =>
-		reading.siblings.some((use) => use.file !== part.path && reaches(part, use)),
+		(reading.siblings ?? []).some((use) => use.file !== part.path && reaches(part, use)),
 	);
 	return sibling ? "sibling" : undefined;
 }
@@ -184,4 +197,53 @@ function undeclaredFinding(
 	};
 }
 
-export { type JudgedReading, type SiblingUse, siblingUses, undeclaredFinding, userOf };
+/** The count of exports that each kind of name that is not a type adds to. */
+const WIDTH_KINDS: ReadonlyMap<string, "functions" | "classes" | "methods" | "values"> = new Map([
+	["function", "functions"],
+	["class", "classes"],
+	["method", "methods"],
+	["value", "values"],
+]);
+
+/**
+ * The width of a module that declares no interface (decision 16): the names
+ * a file outside it uses, or a caller the model draws whose code the pass did
+ * not read. A member counts as its class does. A name only the module's own
+ * files import, and one nothing uses, cost a caller nothing.
+ * @param reading The module, with the uses of its names by its own files.
+ * @param judged Each judged export with its kind.
+ * @param counts The module's exports by kind.
+ * @returns The exports the width counts, and the names it leaves out.
+ */
+function undeclaredWidth(
+	reading: JudgedReading,
+	judged: readonly (readonly [ExposedName, string])[],
+	counts: ExportCounts,
+): Pick<ModuleMeasure, "exports" | "undeclared"> {
+	const classes = judged.flatMap(([name, kind]) => (kind === "class" ? [name] : []));
+	const users = judged.flatMap(([name, kind]) => {
+		const key = WIDTH_KINDS.get(kind);
+		if (key === undefined) return [];
+		const holder = kind === "class" ? undefined : classes.find((each) => heldBy(name, [each]));
+		const user = holder ?? name;
+		const seen = reading.unseen(user).length > 0 ? "outside" : userOf(reading, user);
+		return [[key, seen] as const];
+	});
+	const exports = { ...counts, functions: 0, classes: 0, methods: 0, values: 0 };
+	for (const [key, user] of users) if (user === "outside") exports[key] += 1;
+	const outside = users.filter(([, user]) => user === "outside").length;
+	const inside = users.filter(([, user]) => user === "sibling").length;
+	return {
+		exports,
+		undeclared: { inside, unused: users.length - outside - inside },
+	};
+}
+
+export {
+	type JudgedReading,
+	type SiblingUse,
+	siblingUses,
+	undeclaredFinding,
+	undeclaredWidth,
+	userOf,
+};
