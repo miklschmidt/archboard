@@ -10,30 +10,23 @@ import {
 	readProcessObservation,
 	type ProcessObservation,
 } from "#runtime/processes/observation.ts";
-import { deadline, gitMs } from "@archboard/timing";
+import { deadline, pause, type Clock } from "@archboard/timing";
 
 type KillableProcess = Pick<Subprocess, "kill">;
 type CapturedMembers = Map<number, ProcessObservation>;
 
 /** Injectable process operations for deterministic cleanup-failure coverage. */
 interface GitGroupTerminationOperations {
-	readonly now: () => number;
-	readonly wait: (ms: number) => Promise<void>;
+	/** The clock the freeze tells time and sleeps on; the runtime's when none. */
+	readonly clock?: Clock;
 	readonly members: (group: ProcessGroupIdentity) => readonly ProcessObservation[];
 	readonly signalGroup: (group: ProcessGroupIdentity, signal: NodeJS.Signals) => boolean;
 	readonly readProcess: (pid: number) => ProcessObservation | undefined;
 	readonly signalPid: (pid: number, signal: NodeJS.Signals) => void;
 }
 
-/** Production process observation, signalling, clock, and wait operations. */
+/** Production process observation and signalling, on the runtime's clock. */
 const productionOperations: GitGroupTerminationOperations = {
-	now: Date.now,
-	/**
-	 * Wait for the next bounded group observation.
-	 * @param ms The polling interval.
-	 * @returns A promise settled after the interval.
-	 */
-	wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 	members: ownedProcessGroupMembers,
 	signalGroup: signalOwnedProcessGroup,
 	readProcess: readProcessObservation,
@@ -172,11 +165,18 @@ async function freezeGroup(
 			stop: () => {
 				operations.signalGroup(group, "SIGSTOP");
 			},
-			now: operations.now,
-			wait: operations.wait,
-			pollMs: gitMs("groupPoll"),
+			/**
+			 * The time now.
+			 * @returns Milliseconds on the freeze's clock.
+			 */
+			now: () => operations.clock?.now() ?? Date.now(),
+			/**
+			 * Sleep one group poll.
+			 * @returns A promise settled after the pause.
+			 */
+			pause: () => pause("git.groupPoll", { clock: operations.clock }),
 		},
-		deadline("git.groupCleanup", operations.now()),
+		deadline("git.groupCleanup", operations.clock?.now() ?? Date.now()),
 	);
 	if (!frozen) {
 		throw new Error(`Process group ${group.group} did not stop within its cleanup grace.`);

@@ -12,9 +12,8 @@ interface FrozenGroupSeam {
 	/** Send SIGSTOP to the whole group. */
 	readonly stop: () => void;
 	readonly now: () => number;
-	readonly wait: (ms: number) => Promise<void>;
-	/** The gap between two censuses. */
-	readonly pollMs: number;
+	/** Sleep the gap between two censuses. */
+	readonly pause: () => Promise<unknown>;
 }
 
 /**
@@ -60,7 +59,7 @@ async function awaitFrozenGroup(seam: FrozenGroupSeam, deadlineAtMs: number): Pr
 		}
 		if (census === undefined) seam.stop();
 		// oxlint-disable-next-line no-await-in-loop -- a process group is sampled until the bounded barrier
-		await seam.wait(seam.pollMs);
+		await seam.pause();
 	}
 }
 

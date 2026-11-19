@@ -1,5 +1,5 @@
 import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
-import { deadline, processGroupPollMs, waitUntil, type Clock } from "@archboard/timing";
+import { deadline, pause, waitUntil, type Clock } from "@archboard/timing";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
@@ -308,11 +308,9 @@ function createProcessGroupCleanup(
 					now: clock.now,
 					/**
 					 * Pause one poll on the injected clock, never past the freeze bound.
-					 * @param ms - The pause.
 					 * @returns A promise settled after the pause.
 					 */
-					wait: (ms) => sleepUntil(Math.min(freezeDeadlineAtMs, clock.now() + ms)),
-					pollMs: processGroupPollMs(),
+					pause: () => pause("processGroup.poll", { untilMs: freezeDeadlineAtMs, clock }),
 				},
 				freezeDeadlineAtMs,
 			);
