@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T09:55:00Z'
+updated_date: '2026-11-19T10:05:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -37,9 +37,9 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 `archboard check code` reports no warning on a module bound under this batch's paths
-- [ ] #2 No lint, type, test or check rule, policy, waiver or exemption is weakened or added to pass
-- [ ] #3 Behavior is unchanged: the existing tests of the touched packages pass, and renderer output is identical where a crate draws
-- [ ] #4 Each removed or renamed symbol that a vault anchor names is reported with its replacement
+- [x] #2 No lint, type, test or check rule, policy, waiver or exemption is weakened or added to pass
+- [x] #3 Behavior is unchanged: the existing tests of the touched packages pass, and renderer output is identical where a crate draws
+- [x] #4 Each removed or renamed symbol that a vault anchor names is reported with its replacement
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,3 +52,16 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 5. Keep interface-width ceilings; lower the ones that shrink.
 6. Verify: types, lint, format, test lanes, archboard check code.
 <!-- SECTION:PLAN:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Cleared 109 of the batch's 116 module-depth warnings (EXPOSED_VALUE 72 -> 0, EXPOSED_VALUE_COMPUTED 8 -> 0, EXPOSED_UNUSED 36 -> 6); 1 new RELATIONSHIP_UNDRAWN on timing.
+
+timing: every group stays inside behind a keyed getter (paneMs("report"), codexProcessMs(...)), and the repeated math became functions: gitGroupCleanupDeadline, codexApprovalExpiresAt, codexContextFreshUntil, recorderPageReadyDeadline/Seconds, columnSlideSettledMs, reachHopDelayMs, localityDefaultSinceSeconds, painterPhasesJson. The scalars folded into groups (gitMs("cliInterruptCleanup"), codexRealtimeMs("tabSessionGrace"), rasterMs, pictureMs("farViewSwap"/"flowCycleCap"), processGroupPollMs). About 220 caller files changed by codemod, across every package that reads timing.
+Other packages: renderer (shellLength/shellSize/fitMargin/fitRoom, checkoutPath/coreBuildPath, themeColors, rasterScaleSchema, architectureRasterReceiptSchema/parseRasterReceipt, lineMarks, neutralPulse), walkthrough (talkClock, talkSamplesMs, talkMsSamples, recordingLanguageInputSchema, recordingNarrationSchema), server-lifecycle (archboardUrl, panesFull; frontend-bundle choice moved to services/frontend-bundle.ts), code-opener (gitHubHttpsUrl), process (unused census listProcessObservations removed; tests use a ps helper), apps/cli (refusal(kind), sharedOption/sharedOptionKeys, repoRoute, single-reader schemas moved to their readers), apps/web (vaultQueryKey, invalidateVaultQueries, invalidateModelQueries, invalidateRepositories), actions/check (summaryLimits; unused exports dropped).
+
+Verification: tsc (source and frontend), lint:all, format:check, test:modules 5223 pass, test:repository 174 pass, test:system 304 pass. Interface ceilings lowered: process 13, renderer 56, timing 37; none raised.
+
+Open: AC1 not met. 6 EXPOSED_UNUSED remain where only tests import a name (code-opener openInEditor and three reply schemas, walkthrough recordingPageUrl, skills anchorsOf); they need an owner decision because removing them removes cross-owner contract tests (anchorsOf is public by an earlier recorded decision). RELATIONSHIP_UNDRAWN on timing: 86 modules now call timing functions, which the vault must draw. Vault anchors to repoint: CODEX_APPROVAL_MS -> codexApprovalExpiresAt (broker.ts), CODEX_PROCESS_MS -> codexProcessMs (group-cleanup.ts), CODEX_SESSION_MS -> codexSessionMs (executable.ts), SemanticRasterReceiptSchema -> parseRasterReceipt (captures.ts).
+<!-- SECTION:FINAL_SUMMARY:END -->
