@@ -66,7 +66,10 @@ function unreadWhy(unread: readonly string[]): string[] {
  * @returns The finding, or undefined when a file uses it.
  */
 function unused(reading: DepthReading, name: ExposedName): DepthFinding | undefined {
-	if (usesOf(reading.exposure.directory, name, reading.uses).length > 0) return undefined;
+	// A name can have parts in several files, as a C# partial class does: a use of any part is a use.
+	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
+	const { directory } = reading.exposure;
+	if (parts.some((part) => usesOf(directory, part, reading.uses).length > 0)) return undefined;
 	const unseen = reading.unseen(name);
 	const why = [
 		...unreadWhy(reading.unread),
@@ -190,7 +193,10 @@ async function nameFinding(
 	name: ExposedName,
 	kind: NameKind,
 ): Promise<DepthFinding | undefined> {
-	const idle = kind === "method" ? undefined : unused(reading, name);
+	// A static member may be used by its bare name from a class that derives
+	// from its own, which the syntax cannot see: it is never judged unused.
+	const idle =
+		kind === "method" || name.definition.static === true ? undefined : unused(reading, name);
 	if (idle !== undefined || kind === "type") return idle;
 	return passedOn(reading.exposure.directory, name)
 		? reexported(reading, name)
