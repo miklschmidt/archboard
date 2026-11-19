@@ -20,36 +20,33 @@ interface ModelInterfaceLineProps {
 	readonly projection: Pick<Projection, "complete" | "opened" | "expanded">;
 	/** Show subjects selected on the picture of a module. */
 	readonly onShow: (ids: readonly string[], module: string) => void;
-	/** Open the interface section of a module's About, opening the module when it is not open. */
-	readonly onAbout: (module: string) => void;
+	/** Open the interface section of the open module's About. Without it, the line has no key. */
+	readonly onAbout?: (() => void) | undefined;
 }
 
 /**
  * What a module offers the rest of the model, in one line, and the parts it keeps to itself apart
  * from it, because those are its implementation (ADR 0044). A count selects what it counts on the
- * module's own picture, so a reader sees the shape, and the heading holds the way to the whole of
- * it in About.
+ * module's own picture, so a reader sees the shape. For the open module, the heading holds the way
+ * to the whole of it in About.
  * @param props The module and what its line does.
  * @returns The line, or nothing for a module with no parts: it has no interface.
  */
 function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null {
 	const { inspection, projection, onShow, onAbout } = props;
-	const container = inspection?.container.id;
-	const openAbout = useCallback((): void => {
-		if (container !== undefined) onAbout(container);
-	}, [onAbout, container]);
 	const about = useMemo(
-		() => (
-			<button
-				type="button"
-				data-slot="model-interface-about"
-				onClick={openAbout}
-				className="text-body quiet-key rounded-control flex h-6 shrink-0 items-center px-2 font-semibold"
-			>
-				Open in About
-			</button>
-		),
-		[openAbout],
+		() =>
+			onAbout && (
+				<button
+					type="button"
+					data-slot="model-interface-about"
+					onClick={onAbout}
+					className="text-body quiet-key rounded-control flex h-6 shrink-0 items-center px-2 font-semibold"
+				>
+					Open in About
+				</button>
+			),
+		[onAbout],
 	);
 	if (inspection?.holdsParts !== true) return null;
 	const module = inspection.container.id;

@@ -103,8 +103,8 @@ interface ReadingPanelProps {
 	readonly code: ReturnType<typeof useModelCodeFindings>;
 	readonly actions: SelectionActions;
 	readonly onReveal: () => void;
-	/** Open the interface section of a module's About. */
-	readonly onAbout: (module: string) => void;
+	/** Open the interface section of the open module's About. */
+	readonly onAbout: () => void;
 	/** Hold the slot that About puts its outline in, at the top of the panel while About is open. */
 	readonly outlineSlot: (slot: HTMLElement | null) => void;
 }
@@ -172,7 +172,7 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 		},
 		[about, onDiagram, showHere],
 	);
-	const line = useMemo(() => ({ onShow: showInterface, onAbout }), [showInterface, onAbout]);
+	const line = useMemo(() => ({ onShow: showInterface }), [showInterface]);
 	const subject = {
 		vault: reader.vault,
 		paneId: props.paneId,
@@ -209,6 +209,7 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 					>
 						<ModelInterfaceLine
 							{...line}
+							onAbout={onAbout}
 							inspection={projection.inspection}
 							projection={projection}
 						/>

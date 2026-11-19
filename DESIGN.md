@@ -651,7 +651,7 @@ walkthrough's row ends with its steps. The flow on screen rises as the row on sc
 
 A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. Each count is a row of the panel, one to a line, so the counts read as a small table: what it counts at the start, and its number in the mono face and muted ink at the end. A count of none is a row that is off, in muted ink.
 
-Each count selects what it counts on the module's picture, and a count of none is disabled. `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
+Each count selects what it counts on the module's picture, and a count of none is disabled. For the open module, `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. A selected module has no such key, because About describes the open module. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
 
 With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
 

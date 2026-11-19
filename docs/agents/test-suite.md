@@ -882,7 +882,7 @@ Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `searc
 `reader-context.test.ts` covers the right panel's lists for the open module or the selection.
 It covers rows that open a flow or a walkthrough, and a door that lists its endpoints on hover and opens on click.
 Interface counts select parts on the module's diagram.
-The Open in About button opens that module and focuses the Interface heading.
+The open module's Open in About button opens its About and focuses the Interface heading.
 It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader. Each further hop has its own grade, across the doors, and the trace goes with the pick.

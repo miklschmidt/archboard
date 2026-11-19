@@ -60,7 +60,7 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	/** Expand a door or collapse a frame. */
 	readonly onToggle: (id: string) => boolean;
 	/** What the interface line of a module does. */
-	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow" | "onAbout">;
+	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow">;
 	/** How the kinds look, with the icons the picture draws them with. */
 	readonly look: KindLook;
 }

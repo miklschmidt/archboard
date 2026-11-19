@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { pressSettings } from "./support/shell-dom.ts";
-import { openAbout, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
+import { openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const DOOR = `[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]`;
@@ -225,8 +225,8 @@ test("the right column follows what a reader looks at, and the left column holds
 	await lists(browser, { flows: ["Shop#Drain"], walkthroughs: ["Shop#Work"] });
 
 	// A selected module that holds parts says what it offers. Its one caller names the module itself,
-	// so nothing reaches its part, and the line says so. Open in About opens the module and
-	// focuses its Interface section, which names that part.
+	// so nothing reaches its part, and the line says so. About describes the open module, so the
+	// selection has no way there.
 	expect(await measures(browser)).toEqual({
 		entryPoints: "0",
 		hiddenParts: "1",
@@ -234,23 +234,14 @@ test("the right column follows what a reader looks at, and the left column holds
 		wholeModule: "1",
 		passThrough: "0",
 	});
-	expect(await followMeasures(browser)).toEqual(["Shop#Queue"]);
-	await settledOn(browser, "Shop#Worker");
-
-	// An inbound line can select the open module while the reader is already on About.
-	await openAbout(browser);
-	await browser.run([
-		"click",
-		'[data-slot="model-about"] [data-connection-id][data-to="Shop#Worker"]',
-	]);
-	await browser.run(["click", '[data-end-id="Shop#Worker"]']);
-	await browser.run(["click", '[data-slot="model-interface-about"]']);
 	expect(
-		await browser.eval<string | null>(
-			`document.activeElement?.closest('[data-about-section]')?.getAttribute('data-about-section') ?? null`,
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-interface-about"]') === null`,
 		),
-	).toBe("interface");
-	await openDiagram(browser);
+	).toBe(true);
+	await browser.run(["click", CLEAR]);
+	await lists(browser, { flows: [], walkthroughs: [] });
+	expect(await measures(browser)).toBeNull();
 
 	// The open module decides them while nothing is selected. A long list shows a few rows.
 	await browser.run(["click", '[data-module-row="Shop#Gateway"]']);
@@ -357,6 +348,9 @@ test("the right column follows what a reader looks at, and the left column holds
 	await selectedCard(browser, "Shop#Queue");
 	await browser.run(["click", CLEAR]);
 
+	// The open module's line opens its About at the Interface section, which names that part.
+	expect(await followMeasures(browser)).toEqual(["Shop#Queue"]);
+
 	// Callers are selected where the picture draws them.
 	await browser.run(["click", COUNT("callers")]);
 	await selectedCard(browser, "Shop#Gateway");
@@ -399,29 +393,3 @@ test("the right column follows what a reader looks at, and the left column holds
 	await browser.run(["press", "Escape"]);
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);
-
-test("Open in About follows a selected module's folded scope to its interface", async () => {
-	await using resources = new AsyncDisposableStack();
-	const browser = await openReader(resources, "folded-about", (vault) => {
-		const parts = [
-			{ id: "Shop#Wrapper", name: "Wrapper", parent: undefined },
-			{ id: "Shop#Inner", name: "Inner", parent: "Shop#Wrapper" },
-			{ id: "Shop#Leaf", name: "Leaf", parent: "Shop#Inner" },
-		];
-		for (const [index, part] of parts.entries()) {
-			writeFileSync(
-				join(vault, `folded-about-${index}.module.json`),
-				JSON.stringify({
-					...part,
-					schemaVersion: 1,
-					kind: "module",
-					order: 50 + index,
-					outgoing: [],
-				}),
-			);
-		}
-	});
-
-	await pick(browser, "Shop#Wrapper");
-	expect(await followMeasures(browser)).toEqual(["Shop#Leaf"]);
-}, 30_000);

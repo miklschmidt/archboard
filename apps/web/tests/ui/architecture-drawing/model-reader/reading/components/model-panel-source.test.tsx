@@ -128,7 +128,7 @@ test("a removed module reads its change partners and references from its retaine
 				onToggle: noToggle,
 				context: null,
 				flowHead: null,
-				line: { onShow: nothing, onAbout: nothing },
+				line: { onShow: nothing },
 			}),
 		),
 	);
