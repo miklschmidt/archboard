@@ -862,7 +862,8 @@ Their cache identity includes the renderer build and the exact prepared scene.
 
 `semantic-traffic.test.ts` uses canonical relationships and an independent sequence flow.
 It holds that traffic reaches the page only as painted motion, that reduced motion stills it, and that it comes back.
-The Rust tests of `archboard-paint` own the look of a pulse and the clock across versions of a picture.
+The Rust tests of `archboard-scene` own a pulse's numbers, the pulse train that both painters draw.
+The Rust tests of `archboard-paint` own the clock across versions of a picture.
 Ordinary readers keep their drawing surface while local layout runs and show progress.
 Captured walkthroughs retain their existing picture-readiness contract.
 

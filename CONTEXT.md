@@ -720,6 +720,11 @@ What turns a scene into what a frontend shows.
 The SVG painter is part of the renderer core, and a native frontend paints the list itself.
 _Avoid_: rasterizer (that makes a PNG from SVG), backend
 
+**Pulse train**:
+The numbers of one traffic mark's pulses that every painter draws: the pieces of its route with their frames, light boxes and bars, the glow, the gradient, and where each piece's bar stands at a moment.
+The scene answers it; each painter spells it and runs the clock (ADR 0083).
+_Avoid_: beam, glow or bar for the whole train (each names one part of it)
+
 ### Commits
 
 **Locality**:
