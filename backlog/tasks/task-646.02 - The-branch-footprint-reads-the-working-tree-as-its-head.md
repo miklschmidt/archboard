@@ -1,11 +1,11 @@
 ---
 id: TASK-646.02
 title: The branch footprint reads the working tree as its head
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T00:19:00Z'
+updated_date: '2026-11-19T00:21:00Z'
 labels:
   - ready-for-agent
 dependencies: []
