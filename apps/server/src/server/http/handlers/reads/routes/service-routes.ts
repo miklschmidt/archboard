@@ -3,7 +3,7 @@ import { recordError } from "@archboard/telemetry/record";
 import type { Express, NextFunction, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
 import { installation } from "@archboard/workspace/installation";
-import { frontendState, sourceState } from "@archboard/server-lifecycle/server-host";
+import { serverCodeState } from "@archboard/server-lifecycle/server-process";
 import { mutationAdmission } from "#server/wiring/server-owners.ts";
 import { serverPhase } from "#server/start-stop/lifecycle/server-startup.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
@@ -57,8 +57,7 @@ function healthRoute(_req: Request, res: Response): void {
 		// Whether this process is running the source that is on disk now, and
 		// which build the frontend has been rebuilt to. A long-lived process has no
 		// symptom of its own for either, so it has to be asked (TASK-056).
-		source: sourceState(),
-		frontendBuild: frontendState(null).current,
+		...serverCodeState(),
 	});
 }
 

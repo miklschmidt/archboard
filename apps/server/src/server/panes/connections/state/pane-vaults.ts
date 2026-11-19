@@ -1,6 +1,6 @@
 // News about the machine rather than one vault goes to every tab (ADR 0050).
 
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { WebSocketMessage } from "@archboard/workbench/browser-contract";
 import { sendToEveryClient } from "@archboard/workbench/panes";
 
 /**

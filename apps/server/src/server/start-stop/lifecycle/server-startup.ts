@@ -1,6 +1,6 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
-import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
+import { releaseServerPid, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
 import { durationMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
@@ -95,34 +95,6 @@ async function loopbackRefusal(): Promise<string | null> {
 	return message;
 }
 
-/** Reports the startup protocol's terminal record exactly once. */
-interface StartupTerminal {
-	report: (message?: string | null) => void;
-}
-
-/**
- * The terminal reporter for one startup, which says whether cleanup was
- * proven by the lifetime once one exists.
- * @param cleanupProven How to ask whether cleanup was proven.
- * @returns The reporter.
- */
-function startupTerminal(cleanupProven: () => boolean): StartupTerminal {
-	let reported = false;
-	return {
-		/**
-		 * Write the terminal record, the first time only.
-		 * @param message Why startup ended, or null for an ordinary stop.
-		 */
-		report: (message = null) => {
-			if (reported) {
-				return;
-			}
-			reported = true;
-			reportStartupEnd({ cleanupProven: cleanupProven(), message });
-		},
-	};
-}
-
 /** The signal and error handling around one running lifetime. */
 interface ProcessHandlers {
 	onTerm: () => void;
@@ -133,17 +105,11 @@ interface ProcessHandlers {
 
 /**
  * The process-level handlers for one lifetime: signals stop it, an HTTP
- * runtime error stops it and fails the process, exit removes the pidfile.
+ * runtime error stops it and fails the process, exit releases the pidfile.
  * @param lifetimeOf How to reach the lifetime once it exists.
- * @param http The HTTP ownership.
- * @param terminal The startup terminal reporter.
  * @returns The handlers.
  */
-function processHandlers(
-	lifetimeOf: () => ServerLifetime,
-	http: HttpOwnership,
-	terminal: StartupTerminal,
-): ProcessHandlers {
+function processHandlers(lifetimeOf: () => ServerLifetime): ProcessHandlers {
 	let runtimeServerStop: Promise<void> | null = null;
 	/** Stop the server after an HTTP runtime error, failing the process. */
 	const stopServerAfterHttpError = async (): Promise<void> => {
@@ -170,7 +136,7 @@ function processHandlers(
 		} catch (error) {
 			reportServerStopError(error);
 		} finally {
-			terminal.report();
+			reportStartupEnd({ cleanupProven: lifetimeOf().cleanupProven(), message: null });
 		}
 	};
 	/**
@@ -190,11 +156,9 @@ function processHandlers(
 		onInterrupt: () => {
 			shutdown("SIGINT");
 		},
-		/** Remove the pidfile this process wrote, as the process exits. */
+		/** Release the pidfile this process recorded, as the process exits. */
 		onExit: () => {
-			if (http.ownsPidFile) {
-				removePidFile(listenAddress().port);
-			}
+			releaseServerPid(listenAddress().port);
 		},
 		/**
 		 * Stop the server after an HTTP error while it was running, once.
@@ -373,34 +337,21 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 }
 
 /**
- * Nothing has been acquired yet, so there is nothing whose cleanup could have
- * failed: a startup that ends before the lifetime exists proves its own cleanup.
- * @returns Always true.
- */
-function cleanupProvenBeforeResourceAcquisition(): boolean {
-	return true;
-}
-
-/**
  * Start the server: refuse beside a duplicate listener, then run every resource
  * through the lifetime. A server needs no vault, because every call names its own (ADR 0049).
  */
 async function startServer(): Promise<void> {
-	let cleanupProven = cleanupProvenBeforeResourceAcquisition;
-	const terminal = startupTerminal(() => cleanupProven());
 	const refusal = await loopbackRefusal();
 	if (refusal !== null) {
-		terminal.report(refusal);
+		// Nothing has been acquired yet, so there is nothing whose cleanup could have failed: a
+		// startup that ends before the lifetime exists proves its own cleanup.
+		reportStartupEnd({ cleanupProven: true, message: refusal });
 		throw new Error(refusal);
 	}
-	// Only the process that actually wrote the pidfile may remove it —
-	// a concurrent-start loser exiting on EADDRINUSE must not delete the
-	// winner's pidfile.
 	const http: HttpOwnership = {
 		phase: "idle",
 		startPromise: null,
 		errorListener: null,
-		ownsPidFile: false,
 		closePromise: null,
 	};
 	let lifetime: ServerLifetime | null = null;
@@ -414,13 +365,15 @@ async function startServer(): Promise<void> {
 		}
 		return lifetime;
 	};
-	lifetime = buildLifetime(http, processHandlers(lifetimeOf, http, terminal));
+	lifetime = buildLifetime(http, processHandlers(lifetimeOf));
 	serverLifetime = lifetime;
-	cleanupProven = lifetime.cleanupProven;
 	try {
 		await lifetime.start();
 	} catch (error) {
-		terminal.report(serverStartupFailureMessage(error));
+		reportStartupEnd({
+			cleanupProven: lifetime.cleanupProven(),
+			message: serverStartupFailureMessage(error),
+		});
 		throw error;
 	}
 }

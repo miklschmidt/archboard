@@ -2,7 +2,7 @@
 	"name": "@archboard/workbench",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Archboard integration for the reusable Codex agent workbench: board context, vault admission, domain tools, narration, pane services, and the browser shell.",
+	"description": "Archboard integration for the reusable Codex agent workbench: board context, vault admission, domain tools, narration, the browser shell, and the panes: their registry, how a pane is addressed, laid out and reported, the pane routes and pane socket the server mounts, and the messages it sends a pane.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {

@@ -1,4 +1,4 @@
-import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
+import type { PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 
 /** What choosing a presenting pane needs to know about a pane on screen. */
 type PresentablePane = Readonly<Pick<PaneRegistration, "paneId" | "focused" | "recording">>;

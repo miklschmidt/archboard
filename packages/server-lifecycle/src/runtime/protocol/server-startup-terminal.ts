@@ -204,14 +204,24 @@ function reportStartupOwnership(codexGroup: ServerStartupProcessGroupIdentity): 
 	);
 }
 
+/** Whether this process has reported its end: the protocol has one terminal record per process. */
+let endReported = false;
+
 /**
  * Tell the launcher that this server process is ending, and whether it proved
- * its own cleanup, so the launcher knows what is left to do.
+ * its own cleanup, so the launcher knows what is left to do. The first report of
+ * a process is its end, and a later one writes nothing: the launcher takes the
+ * message of every terminal record it reads, so a second record would replace
+ * the reason the first one gave.
  * @param ending - What this process can say about its end.
  * @param ending.cleanupProven - Whether it proved its cleanup completed.
  * @param ending.message - Why it ended, for the launcher to show, or null for an ordinary stop.
  */
 function reportStartupEnd(ending: { cleanupProven: boolean; message: string | null }): void {
+	if (endReported) {
+		return;
+	}
+	endReported = true;
 	writeServerStartupProtocolRecord(
 		serverStartupTerminalRecord({
 			serverPid: process.pid,

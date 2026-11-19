@@ -1,6 +1,6 @@
 import { logger } from "@archboard/diagnostics/logger";
 import { forgetModelMemory } from "@archboard/model-store";
-import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
+import { recordServerPid, releaseServerPid } from "@archboard/server-lifecycle/server-process";
 import { server } from "#server/http/listener/wiring/server-app.ts";
 import { forgetPanePresentations, forgetSemanticPaneContexts } from "@archboard/workbench/panes";
 import { listenAddress, logHttpServerError, serverUrl } from "@archboard/workbench/host";
@@ -22,7 +22,6 @@ interface HttpOwnership {
 	phase: HttpPhase;
 	startPromise: Promise<void> | null;
 	errorListener: ((error: NodeJS.ErrnoException) => void) | null;
-	ownsPidFile: boolean;
 	closePromise: Promise<void> | null;
 }
 
@@ -122,7 +121,6 @@ function listen(
 				http.phase = "running";
 				logger().info(`POC server running on ${serverUrl()}`);
 				recordServerPid(port);
-				http.ownsPidFile = true;
 				settleStart();
 			});
 		} catch (error) {
@@ -133,7 +131,7 @@ function listen(
 
 /**
  * Stop listening: close the server, wait out a start still in flight, detach
- * the error listener and remove the pidfile this process wrote.
+ * the error listener and release the pidfile this process recorded.
  * @param http The HTTP ownership.
  */
 async function stopListening(http: HttpOwnership): Promise<void> {
@@ -149,10 +147,7 @@ async function stopListening(http: HttpOwnership): Promise<void> {
 		server.off("error", http.errorListener);
 		http.errorListener = null;
 	}
-	if (http.ownsPidFile) {
-		removePidFile(listenAddress().port);
-		http.ownsPidFile = false;
-	}
+	releaseServerPid(listenAddress().port);
 	await closeHttpServer(http);
 }
 

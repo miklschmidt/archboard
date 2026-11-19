@@ -7,8 +7,7 @@ import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,
 } from "#runtime/voice/protocol/extension.ts";
-import { panesInOrder } from "@archboard/server-lifecycle/panes";
-import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
+import { panesInOrder, type PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { presentingPane } from "#server/pane/rules/presenting-pane.ts";
 import type {

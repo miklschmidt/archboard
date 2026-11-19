@@ -2,9 +2,9 @@ import type { BrowserConnectionInstance } from "#runtime/voice/protocol/extensio
 import type { BrowserLeaseLedger } from "#runtime/voice/protocol/extension.ts";
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
-import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
+import { addressablePanes, resolvePane } from "#server/panes/rules/pane-addressing.ts";
+import { panesInOrder, type PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 import { readArchitectureModel } from "@archboard/model-store";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
@@ -337,7 +337,7 @@ function copyableModels(clientId: string, vault: string): string[] {
  * A named pane is taken literally. An unnamed one is only allowed where it
  * cannot be wrong: one pane on screen means that pane, no pane on screen means
  * the model is loaded without being shown, and two panes means say which
- * (packages/server-lifecycle/src/runtime/rules/panes.ts). The response always names where the model landed.
+ * (rules/pane-addressing.ts). The response always names where the model landed.
  * A named pane may show another repository's model now, and the show moves it
  * into the model's vault (ADR 0050). An unnamed one is only one of the model's
  * own vault, so a model is never put in front of a pane nobody pointed at it.
@@ -381,12 +381,20 @@ function primaryPane(): PaneRegistration | null {
 	return registrations.find((pane) => pane.primary) ?? registrations[0] ?? null;
 }
 
+/** One pane, named the way a human would point at it: "the left pane". */
+interface PaneRef {
+	paneId: string;
+	clientId: string;
+	place: string;
+	position: number;
+}
+
 /**
- * One pane, named the way a human would point at it: "the left pane".
+ * One pane, named the way a human would point at it.
  * @param pane The pane to describe.
  * @returns Its ids, place and reading-order position.
  */
-function paneRef(pane: PaneRegistration): Record<string, unknown> {
+function paneRef(pane: PaneRegistration): PaneRef {
 	const entry = panesInOrder(addressablePanes([...panes.values()])).find(
 		(p) => p.pane.clientId === pane.clientId,
 	);
@@ -403,7 +411,7 @@ function paneRef(pane: PaneRegistration): Record<string, unknown> {
  * @param pane The pane it landed in, or null when no pane showed it.
  * @returns The `pane` field of a model answer.
  */
-function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
+function paneResponse(pane: PaneRegistration | null): { pane: PaneRef | null } {
 	return { pane: pane ? paneRef(pane) : null };
 }
 
@@ -425,6 +433,7 @@ function forgetDisplay(): void {
 	browserLeaseLedger.sessions.clear();
 }
 
+export type { PaneRef };
 export {
 	acceptedSockets,
 	admittedClientCount,

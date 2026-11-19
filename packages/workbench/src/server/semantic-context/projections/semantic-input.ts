@@ -5,7 +5,7 @@ import type {
 	CodexWorkbenchWorkhorseComponents,
 } from "#runtime/voice/protocol/extension.ts";
 import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "#runtime/voice/protocol/extension.ts";
-import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
+import type { PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 import {
 	ArchboardContextSchema,
 	type ArchboardContext,

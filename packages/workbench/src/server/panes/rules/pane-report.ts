@@ -33,8 +33,8 @@ import {
 	MAX_IDS,
 	arrangementOf,
 	panesInOrder,
-} from "#runtime/rules/panes-layout.ts";
-import { HOW_TO_OPEN_A_PANE, addressablePanes } from "#runtime/rules/panes-addressing.ts";
+} from "#server/panes/rules/pane-layout.ts";
+import { HOW_TO_OPEN_A_PANE, addressablePanes } from "#server/panes/rules/pane-addressing.ts";
 
 type PaneArchitecture = NonNullable<ModelDocument<"paneContext">["architecture"]>;
 
@@ -388,5 +388,4 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	};
 }
 
-export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
 export { buildPanesReport };

@@ -3,27 +3,29 @@ import { z } from "zod";
 import { modelShape, type ModelDocument } from "@archboard/model-contract";
 import { readArchitectureModel } from "@archboard/model-store";
 import { projectModel } from "@archboard/model-rules";
-import { publishPaneContext } from "@archboard/workbench/server";
-import {
-	arrivedOnModel,
-	movePaneVault,
-	paneFromRequest,
-	paneResponse,
-	semanticPaneContextFor,
-	sendKeylessToPane,
-	sendToPane,
-} from "@archboard/workbench/panes";
-import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { logger } from "@archboard/diagnostics/logger";
-import { noBrowserBody } from "#server/panes/connections/routes/pane-routes.ts";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import { followRegistry } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import {
 	chooseKnownCheckout,
 	registeredRepositoryOfVault as registeredRepositoryOf,
 } from "@archboard/workspace/checkouts";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
+import type { PaneRegistration } from "#server/panes/rules/pane-layout.ts";
+import { semanticPaneContextFor } from "#server/panes/services/context.ts";
+import { movePaneVault } from "#server/panes/services/pane-vaults.ts";
+import {
+	arrivedOnModel,
+	paneFromRequest,
+	paneResponse,
+	sendKeylessToPane,
+	sendToPane,
+} from "#server/panes/services/registry.ts";
+import { messageOf } from "#server/request/services/request-fields.ts";
+import { vaultOfRequest } from "#server/request/services/vault.ts";
+import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
+import { noBrowserBody, type PaneHooks } from "#server/panes/routes/pane-routes.ts";
+
+/** What a show needs of the server: how it answers a refused read and follows a checkout choice. */
+type ShowHooks = Pick<PaneHooks, "followRegistry" | "refuseRead">;
 const RequestSchema = z.strictObject({
 	vault: z.string().optional(),
 	pane: z.string().optional(),
@@ -141,6 +143,7 @@ function agentSwitch(body: z.infer<typeof RequestSchema>, clientId: string) {
  * @param model The resolved architecture.
  * @param pane The selected pane.
  * @param res The navigation receipt.
+ * @param hooks How the server follows a choice of checkout.
  */
 function showResolvedPane(
 	body: z.infer<typeof RequestSchema>,
@@ -148,6 +151,7 @@ function showResolvedPane(
 	model: Model,
 	pane: PaneRegistration,
 	res: Response,
+	hooks: ShowHooks,
 ): void {
 	const reading = addressedReading(model, body.reading);
 	const moved = agentSwitch(body, pane.clientId);
@@ -168,7 +172,7 @@ function showResolvedPane(
 	);
 	arrivedOnModel(pane.clientId, `model:${model.manifest.id}`);
 	publishPaneContext(pane.clientId, "focus", [], moved);
-	if (chose !== undefined) followRegistry();
+	if (chose !== undefined) hooks.followRegistry();
 	res.json({
 		success: true,
 		model: model.manifest.id,
@@ -214,23 +218,26 @@ function moveUnread(vault: string, pane: PaneRegistration, res: Response): void 
  * @param body The parsed navigation request.
  * @param vault The addressed vault.
  * @param res The navigation receipt or refusal.
+ * @param hooks How the server answers a refused read.
  */
 function answerUnread(
 	model: Parameters<typeof opensUnread>[0],
 	body: z.infer<typeof RequestSchema>,
 	vault: string,
 	res: Response,
+	hooks: ShowHooks,
 ): void {
 	const pane = opensUnread(model, body) ? showablePane(vault, body.pane, res) : undefined;
-	if (pane === undefined) respond(res, model);
+	if (pane === undefined) hooks.refuseRead(res, model);
 	else if (pane !== null) moveUnread(vault, pane, res);
 }
 /**
  * Resolve a canonical reading before pointing the existing pane at it.
  * @param req The explicit vault and reading.
  * @param res The navigation receipt or refusal.
+ * @param hooks How the server answers a refused read and follows a choice of checkout.
  */
-async function showPaneRoute(req: Request, res: Response): Promise<void> {
+async function showPane(req: Request, res: Response, hooks: ShowHooks): Promise<void> {
 	const parsed = RequestSchema.safeParse(req.body);
 	if (!parsed.success) {
 		res
@@ -254,7 +261,7 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 	} = body.reading;
 	const model = await readArchitectureModel(vault, module, flow, selectors);
 	if (!model.success) {
-		answerUnread(model, body, vault, res);
+		answerUnread(model, body, vault, res, hooks);
 		return;
 	}
 	const refused = selectionRefusal(model, body.reading, body.agent === true);
@@ -263,7 +270,16 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		return;
 	}
 	const pane = showablePane(vault, body.pane, res);
-	if (pane !== null) showResolvedPane(body, vault, model, pane, res);
+	if (pane !== null) showResolvedPane(body, vault, model, pane, res, hooks);
+}
+
+/**
+ * The route that points a pane at a canonical reading.
+ * @param hooks How the server answers a refused read and follows a choice of checkout.
+ * @returns The route.
+ */
+function showPaneRoute(hooks: ShowHooks): (req: Request, res: Response) => Promise<void> {
+	return (req, res) => showPane(req, res, hooks);
 }
 /** A choice of checkout that a show or a move made, as its answer names it. */
 interface ShowChoice {
