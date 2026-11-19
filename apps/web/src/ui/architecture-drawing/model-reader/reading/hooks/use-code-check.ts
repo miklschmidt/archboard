@@ -41,9 +41,7 @@ function useCodeCheck(
 		 * @returns Whether the view can start its first attempt.
 		 */
 		enabled: (pass) =>
-			remembered.read === "success" &&
-			!remembered.matched &&
-			pass.state.status === "pending",
+			remembered.read === "success" && !remembered.matched && pass.state.status === "pending",
 	});
 	const { refetch } = query;
 	const retry = useCallback((): void => {

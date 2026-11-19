@@ -108,7 +108,7 @@ beforeAll(async () => {
 			"\t\treturn describe(hint);",
 			"\t}",
 			"\t*[Symbol.iterator](): Iterator<string> {",
-			"\t\tyield describe(\"all\");",
+			'\t\tyield describe("all");',
 			"\t}",
 			"}",
 			"",

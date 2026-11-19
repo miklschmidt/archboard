@@ -320,9 +320,7 @@ test("a server that forgot the pass reads as forgotten, and any other refusal of
 		);
 		showExports(measured());
 		// oxlint-disable-next-line no-await-in-loop -- one refusal at a time, each on its own page
-		await waitFor(() =>
-			expect(document.querySelectorAll(`[data-slot='${slot}']`)).toHaveLength(1),
-		);
+		await waitFor(() => expect(document.querySelectorAll(`[data-slot='${slot}']`)).toHaveLength(1));
 		cleanup();
 	}
 });

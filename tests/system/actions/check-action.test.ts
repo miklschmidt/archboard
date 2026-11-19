@@ -292,7 +292,9 @@ describe("the entry", () => {
 
 		expect(argsOf({ GITHUB_BASE_REF: "main" })).toEqual(["check", "all", "--base", "origin/main"]);
 		// The merge base of the head and the base is in the checkout now.
-		expect(git(checkout, "merge-base", "HEAD", "origin/main")).toBe(git(origin, "rev-parse", "main"));
+		expect(git(checkout, "merge-base", "HEAD", "origin/main")).toBe(
+			git(origin, "rev-parse", "main"),
+		);
 		// A base the args name wins, and a run that is no pull request names none.
 		expect(argsOf({ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--base v1" })).toEqual([
 			"check",
