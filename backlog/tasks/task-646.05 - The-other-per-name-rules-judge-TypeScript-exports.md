@@ -4,6 +4,7 @@ title: The other per-name rules judge TypeScript exports
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:38:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -58,3 +59,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #6 The check gives one finding per name, grouped by module
 - [ ] #7 The archboard skill shows how to clear each of these findings
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Commands (the check help text lists the new codes) and code-intel (the code-check protocol header comment and tests), with their holders. No architecture change, so the exception is recorded in the proposal history (operation task-646-05-exceptions). Fact analysis changed inside the plan. Unbound: CONTEXT.md, ADR 0082 and the archboard skill. New findings on unchanged modules: EXPOSED_UNUSED warning on 44 modules (813 names), information on 28; CODE_PASS_THROUGH information on 5; REEXPORT_PASS_THROUGH warning on codex-realtime-voice; EXPOSED_VALUE on Pane rules. TASK-646.14 clears them.
+<!-- SECTION:NOTES:END -->
