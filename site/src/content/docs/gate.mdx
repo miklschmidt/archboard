@@ -88,7 +88,7 @@ A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request,
 
 ## Set the level of a module-depth rule
 
-The code check reports seven module-depth codes: `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED`, `CODE_PASS_THROUGH`, `REEXPORT_PASS_THROUGH`, `EXPOSED_UNUSED`, `INTERFACE_UNDECLARED` and `MODULE_SHALLOW`. Several are warnings, so they fail the check. If you upgrade and write no rules, your repository gets these warnings, and the check fails on them.
+The code check reports seven module-depth codes: [`EXPOSED_VALUE`](../reference/findings/#exposed-value), [`EXPOSED_VALUE_COMPUTED`](../reference/findings/#exposed-value-computed), [`CODE_PASS_THROUGH`](../reference/findings/#code-pass-through), [`REEXPORT_PASS_THROUGH`](../reference/findings/#reexport-pass-through), [`EXPOSED_UNUSED`](../reference/findings/#exposed-unused), [`INTERFACE_UNDECLARED`](../reference/findings/#interface-undeclared) and [`MODULE_SHALLOW`](../reference/findings/#module-shallow). Several are warnings, so they fail the check. If you upgrade and write no rules, your repository gets these warnings, and the check fails on them.
 
 To lower a code for the whole repository, set its level in the vault's configuration:
 
@@ -99,9 +99,9 @@ codeCheck:
     CODE_PASS_THROUGH: "off"
 ```
 
-A code set to `information` stays in the answer, and its warnings become information, which never fails the check. Its message says that the vault policy set it. A code set to `off` has no findings at all: no line, no count, nothing in Measures and no annotation. The check prints one line that names the codes that are off, for example `code check: off by vault policy: CODE_PASS_THROUGH`. A code without a rule keeps its built-in level.
+A code set to information stays in the answer, and its warnings become information, which never fails the check. Its message says that the vault policy set it. A code set to off has no findings at all: no line, no count, nothing in Measures and no annotation. The check prints one line that names the codes that are off, for example `code check: off by vault policy: CODE_PASS_THROUGH`. A code without a rule keeps its built-in level.
 
-A rule can only lower a code. The check derives `MODULE_SHALLOW` before it applies the rules, so a rule that turns off `EXPOSED_VALUE` does not change which modules are shallow. Another code, or another level such as `warning`, makes the configuration invalid, and the semantics check names the entry. A rule on `MODULE_SHALLOW` beside `failShallowModules: true` is invalid too. Beside `--fail-shallow-modules`, the check refuses with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
+A rule can only lower a code. The check derives shallow modules before it applies the rules, so a rule that turns off exposed values does not change which modules are shallow. Another code, or another level such as warning, makes the configuration invalid, and the semantics check names the entry. A rule on the shallow-module code beside `failShallowModules: true` is invalid too. Beside `--fail-shallow-modules`, the check refuses with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
 
 ## In a Git hook
 
