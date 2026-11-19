@@ -1,7 +1,7 @@
 // A drawing's key holds a digest, moves with everything the core reads, and
 // holds still through an edit the drawing does not read.
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { drawingKey, interfaceContent } from "#shared/render/rules/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
@@ -31,7 +31,7 @@ function keyOf(variant: typeof whole, overrides: Partial<Parameters<typeof drawi
 		grammar: "architecture",
 		content: { ...variant, nodes: scoped, edges: [] },
 		variant: interfaceContent(variant),
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		...overrides,
 	});
 }
@@ -80,7 +80,7 @@ test("every fact the drawing depends on moves the key", () => {
 	expect(keyOf(whole, { held: whole })).not.toBe(key);
 	expect(
 		keyOf(whole, {
-			policy: { ...DEFAULT_SEMANTIC_POLICY, groups: { g: { name: "G", color: "red" } } },
+			policy: { ...defaultSemanticPolicy(), groups: { g: { name: "G", color: "red" } } },
 		}),
 	).not.toBe(key);
 });

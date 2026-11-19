@@ -5,7 +5,7 @@ import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts
 // reach the wall.
 
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import {
 	corridorPoints,
@@ -17,7 +17,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import requestPath from "#tests/runtime/support/fixtures/request-path.json";
 
 /** The vocabulary of the reduced fixture. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
 		["service", "route", "external", "system", "module"].map((kind) => [

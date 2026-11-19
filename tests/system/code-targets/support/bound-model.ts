@@ -1,7 +1,7 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { mintId } from "@archboard/model/ids";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 /** Canonical input and bound module for opener integration fixtures. */
 interface BoundFixture {
 	readonly key: string;
@@ -22,7 +22,7 @@ async function boundFixture(
 ): Promise<BoundFixture> {
 	mkdirSync(vault, { recursive: true });
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	const key = mintId(),
 		node = `${key}#Payments`,
 		file = join(vault, "payments.module.json");

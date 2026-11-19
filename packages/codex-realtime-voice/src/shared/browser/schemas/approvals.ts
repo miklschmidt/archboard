@@ -4,7 +4,7 @@
 import { z } from "zod";
 
 import {
-	CodexFileChangeApprovalDecisionSchema,
+	codexFieldSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 	type CodexCommandExecutionApprovalDecision,
 } from "@archboard/codex-app-server/contract";
@@ -209,7 +209,7 @@ function createBrowserApprovalSchemas(identity: IdentitySchemas, context: Identi
 					approvalKind: z.literal("file_change"),
 					...ApprovalEnvelope,
 					...ApprovalReason,
-					availableDecisions: z.array(CodexFileChangeApprovalDecisionSchema),
+					availableDecisions: z.array(codexFieldSchema("fileChangeApprovalDecision")),
 				})
 				.strict(),
 			z

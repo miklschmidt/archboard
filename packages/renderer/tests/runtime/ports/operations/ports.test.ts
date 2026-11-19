@@ -10,7 +10,7 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { bodyShift, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The well of a port, the first shape of its inside: its outline's top edge, from end to end of its straight run. */
 const WELL = /ab-port"><path d="M(-?[\d.]+),(-?[\d.]+)H(-?[\d.]+)A(-?[\d.]+),/u;
@@ -24,7 +24,7 @@ test("a port is cut where a line meets the foot of a card, and nowhere else", as
 		edges: [{ id: "down", from: "upper", to: "lower", kind: "call" }],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -79,7 +79,7 @@ test("a pulse that arrives in an arrowhead at a card's foot rides on over the he
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});

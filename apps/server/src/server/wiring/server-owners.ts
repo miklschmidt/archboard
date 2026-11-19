@@ -1,6 +1,6 @@
 import { createAgentActivity } from "#server/panes/announcements/state/agent-activity.ts";
 import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { serverLifecycleMs } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
 	type ServerMutationLease,
@@ -11,7 +11,7 @@ import { createCodeCheck } from "@archboard/code-intel/code-check-run";
 
 /** Admits mutation requests while the server is running and drains them when it stops. */
 const mutationAdmission = createServerMutationAdmission({
-	drainTimeoutMs: SERVER_LIFECYCLE_MS.mutationDrain,
+	drainTimeoutMs: serverLifecycleMs("mutationDrain"),
 });
 
 /** The lease each admitted mutation request holds, so its later work can be tracked. */

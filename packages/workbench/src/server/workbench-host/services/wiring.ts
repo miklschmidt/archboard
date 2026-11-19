@@ -6,7 +6,7 @@ import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
 	CodexWorkbenchTabSession,
 } from "#runtime/voice/protocol/extension.ts";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createVoiceAgent, type VoiceAgent } from "@archboard/codex-realtime-voice/server";
 import { createArchboardAnnouncements } from "#server/host/services/archboard-announcements.ts";
 import { ARCHBOARD_VOICE_PRESENTATION } from "#server/workbench-host/narration/services/archboard-presentation.ts";
@@ -221,7 +221,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 * @param error Why.
 		 */
 		onError: (error) => {
-			logger.error("Cannot announce an Archboard context change:", error);
+			logger().error("Cannot announce an Archboard context change:", error);
 		},
 	});
 	/**
@@ -256,9 +256,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			},
 			narrative: ARCHBOARD_VOICE_PRESENTATION,
 			domainTools: {
-				registrations: [
-					{ namespace: "archboard_app", manifestHash: ARCHBOARD_APP_MANIFEST_SHA256 },
-				],
+				registrations: [archboardAppBinding()],
 				/**
 				 * Install Archboard domain tools under the current generation's capabilities.
 				 * @param scope The capabilities that the core grants to Archboard.
@@ -443,7 +441,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					if (kind === "selection") semanticPublisher.publishPaneSelection(input);
 					else semanticPublisher.publishPaneFocus(input);
 				} catch (error) {
-					logger.error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
+					logger().error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
 			};
 			/**
@@ -473,7 +471,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 * @param error The fault.
 		 */
 		onFatal: (error) => {
-			logger.error("Fatal Codex workbench fault:", error);
+			logger().error("Fatal Codex workbench fault:", error);
 		},
 	};
 	return integration;

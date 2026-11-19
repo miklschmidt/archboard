@@ -1,7 +1,7 @@
 // The icons a picture drawn under a vault policy can name. The browser fetches
 // these before it draws, and a model snapshot carries their paths.
 
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import { OWN_ICONS } from "#shared/protocol/generated/core/marks.ts";
 
 /**
@@ -13,7 +13,7 @@ import { OWN_ICONS } from "#shared/protocol/generated/core/marks.ts";
 function iconsNamedBy(policy: SemanticPolicy): Set<string> {
 	const kinds = [
 		...Object.values(policy.nodeKinds),
-		...Object.values(DEFAULT_SEMANTIC_POLICY.nodeKinds),
+		...Object.values(defaultSemanticPolicy().nodeKinds),
 	];
 	return new Set([...OWN_ICONS, ...kinds.map((kind) => kind.icon)]);
 }

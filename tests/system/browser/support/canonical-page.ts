@@ -2,7 +2,7 @@ import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 import type { z } from "zod";
 import type {
 	ArchitectureModelRead,
-	ArchitectureModuleEditSchema,
+	architectureModuleEditSchema,
 	ArchitectureModuleEditResult,
 	ArchitectureClaimResult,
 } from "@archboard/model/contract";
@@ -10,7 +10,7 @@ import type { createJsonRequester } from "../../support/http.ts";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { mintId } from "@archboard/model/ids";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type { Model, VariantContent } from "@archboard/model/content";
 import { readArchitectureModel } from "@archboard/model/store-read";
 
@@ -59,7 +59,7 @@ async function seedCanonicalModel(vault: string, name: string, scene: Scene = SM
 	if (existsSync(join(vault, "model.json")))
 		throw new Error("This fixture already contains a canonical model.");
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	const id = mintId();
 	const ids = new Map(scene.nodes.map((node) => [node.name, `${id}#${mintId()}`]));
 	const subject = (label: string): string => {
@@ -130,7 +130,10 @@ async function modelDrawn(evaluate: <T>(expression: string) => Promise<T>): Prom
 	);
 }
 
-type StructuralEdit = Extract<z.input<typeof ArchitectureModuleEditSchema>, { changes: unknown }>;
+type StructuralEdit = Extract<
+	z.input<ReturnType<typeof architectureModuleEditSchema>>,
+	{ changes: unknown }
+>;
 type Changes = StructuralEdit["changes"];
 /**
  * Apply a claimed structural edit through the shared public HTTP interface.

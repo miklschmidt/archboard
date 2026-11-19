@@ -3,6 +3,7 @@
   "name": "Fact analysis",
   "kind": "module",
   "responsibility": "Parses each supported language or format, resolves references, finds definitions, and reads module exposure",
+  "description": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-facts"

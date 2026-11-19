@@ -6,10 +6,10 @@
 import type { JSX } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
-import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import type { variantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
 
-type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
+type VariantLifecycle = z.infer<ReturnType<typeof variantLifecycleSchema>>;
 
 const FAINT_RING =
 	"shadow-[inset_0_0_0_2px_color-mix(in_oklch,var(--muted-foreground)_55%,transparent)]";

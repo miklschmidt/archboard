@@ -1,23 +1,18 @@
 import { createHash } from "node:crypto";
 
 import {
-	VOICE_TOOL_NAMES,
-	WORKHORSE_TOOL_NAMES,
+	parseDeclaredTool,
 	type CoordinatorToolName,
 	type CoordinatorNamespaceRole,
+	type DeclaredTool,
 } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
 import { toolRoleOf } from "#runtime/host/toolset/rules/toolset.ts";
 import {
-	DelegateToWorkhorseInputSchema,
-	InspectWorkhorseInputSchema,
-	ManageWorkhorseQueueInputSchema,
-	ResolveSpokenApprovalInputSchema,
-	SteerWorkhorseInputSchema,
-	StopWorkhorsesInputSchema,
 	parseCoordinatorToolInput,
 	type DelegateToWorkhorseInput,
 	type InspectWorkhorseInput,
 	type ManageWorkhorseQueueInput,
+	type ParsedToolInput,
 	type ResolveSpokenApprovalInput,
 	type SteerWorkhorseInput,
 	type StopWorkhorsesInput,
@@ -50,24 +45,6 @@ import {
 	type WorkhorseCoordinatorCall,
 	type WorkhorseOperationBinding,
 } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
-import { z } from "zod";
-
-/** The reviewed namespace role and tool name pair a logical call may carry. */
-const DeclaredToolSchema = z.union([
-	z.object({ role: z.literal("workhorse"), tool: z.enum(WORKHORSE_TOOL_NAMES) }),
-	z.object({ role: z.literal("voice"), tool: z.enum(VOICE_TOOL_NAMES) }),
-]);
-
-type DeclaredTool = z.infer<typeof DeclaredToolSchema>;
-
-/** One parsed tool input, tagged with the tool so its shape is known wherever it travels. */
-type ParsedToolInput =
-	| { readonly tool: "inspect_workhorse"; readonly input: InspectWorkhorseInput }
-	| { readonly tool: "delegate_to_workhorse"; readonly input: DelegateToWorkhorseInput }
-	| { readonly tool: "manage_workhorse_queue"; readonly input: ManageWorkhorseQueueInput }
-	| { readonly tool: "steer_workhorse"; readonly input: SteerWorkhorseInput }
-	| { readonly tool: "stop_workhorses"; readonly input: StopWorkhorsesInput }
-	| { readonly tool: "resolve_spoken_approval"; readonly input: ResolveSpokenApprovalInput };
 
 interface ValidatedCallEvidence {
 	readonly call: WorkhorseCoordinatorCall;
@@ -203,29 +180,6 @@ function inputFingerprint(namespace: string, parsed: ParsedToolInput): string {
 }
 
 /**
- * Parse an already namespace-checked input against the tool's own closed schema and tag it.
- * @param tool - The reviewed tool name.
- * @param parsed - The input after the contract's namespace-level parse.
- * @returns The tagged, typed input.
- */
-function taggedInput(tool: CoordinatorToolName, parsed: unknown): ParsedToolInput {
-	switch (tool) {
-		case "inspect_workhorse":
-			return { tool, input: InspectWorkhorseInputSchema.parse(parsed) };
-		case "delegate_to_workhorse":
-			return { tool, input: DelegateToWorkhorseInputSchema.parse(parsed) };
-		case "manage_workhorse_queue":
-			return { tool, input: ManageWorkhorseQueueInputSchema.parse(parsed) };
-		case "steer_workhorse":
-			return { tool, input: SteerWorkhorseInputSchema.parse(parsed) };
-		case "stop_workhorses":
-			return { tool, input: StopWorkhorsesInputSchema.parse(parsed) };
-		default:
-			return { tool, input: ResolveSpokenApprovalInputSchema.parse(parsed) };
-	}
-}
-
-/**
  * Parse the dynamic tool arguments against the reviewed closed schema.
  * @param role - The role of the reviewed namespace.
  * @param tool - The reviewed tool name.
@@ -238,7 +192,7 @@ function parseInput(
 	value: unknown,
 ): ParsedToolInput {
 	try {
-		return taggedInput(tool, parseCoordinatorToolInput(role, tool, value));
+		return parseCoordinatorToolInput(role, tool, value);
 	} catch (error) {
 		return fail(
 			"invalid_call",
@@ -259,14 +213,11 @@ function declaredTool(
 	options: CodexCoordinatorToolsOptions,
 	call: LogicalToolCallCorrelation,
 ): DeclaredTool {
-	const declared = DeclaredToolSchema.safeParse({
-		role: toolRoleOf(options.tools, call),
-		tool: call.tool,
-	});
-	if (!declared.success) {
+	const declared = parseDeclaredTool(toolRoleOf(options.tools, call), call.tool);
+	if (declared === null) {
 		fail("invalid_call", `The reviewed namespace does not declare ${call.tool}.`);
 	}
-	return declared.data;
+	return declared;
 }
 
 /**

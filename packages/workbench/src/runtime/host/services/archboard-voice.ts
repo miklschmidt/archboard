@@ -1,6 +1,6 @@
 import type { WorkbenchVoicePolicy } from "#runtime/voice/protocol/extension.ts";
 import { z } from "zod";
-import { RecordingNarrationSchema } from "@archboard/walkthrough/recording";
+import { recordingNarrationSchema } from "@archboard/walkthrough/recording";
 import {
 	ARCHBOARD_RECORDING_VOICE_PROMPT,
 	ARCHBOARD_VOICE_PROMPT,
@@ -18,7 +18,7 @@ import {
 const ArchboardPresentationSchema = z.object({
 	walkthrough: z.string(),
 	name: z.string(),
-	recording: RecordingNarrationSchema.nullable(),
+	recording: recordingNarrationSchema().nullable(),
 });
 /**
  * Parse opaque narration input as Archboard presentation data.

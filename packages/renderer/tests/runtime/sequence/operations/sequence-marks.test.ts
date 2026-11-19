@@ -22,7 +22,7 @@ import {
 	drawnSequence,
 	subject,
 } from "#tests/runtime/support/sequence-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * The ink a start tag is filled with, as an attribute or in its style.
@@ -205,7 +205,7 @@ describe("a stated standing on a sequence", () => {
 			subjectGroups(
 				(
 					await renderSemanticView({
-						policy: DEFAULT_SEMANTIC_POLICY,
+						policy: defaultSemanticPolicy(),
 						content: noted,
 						standing,
 						grammar: "sequence",

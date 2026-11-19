@@ -406,13 +406,23 @@ test("a container whose module exposes nothing the check can read is listed as n
 	expect(outcome.findings.some((each) => each.model === "Docs")).toBe(false);
 });
 
-test("a part bound to a file that stands for no folder, or to a symbol, is listed as not judged, with its binding", () => {
-	const skips = outcome.skipped.filter((each) => each.reason === "binding-not-a-module");
-	expect(skips.find((each) => each.model === "Shop" && each.subject?.id === "Inner")).toMatchObject(
-		{ repo: SHOP, detail: "src/store/lib/inner.ts" },
+test("a part bound to a file or a symbol is judged through the measured module that holds it, and listed as not judged only when none does", () => {
+	const skips = outcome.skipped
+		.filter((each) => each.reason === "binding-not-a-module")
+		.map((each) => [each.model, each.subject?.id, each.detail]);
+	// The store holds Inner and its own parts, the flake its version, and the chart its template.
+	// The manual exposes nothing the check reads, and the routes, a compose file and a plain
+	// manifest lie in no folder a measured module stands for, so their parts stay listed.
+	expect(skips.toSorted()).toEqual(
+		[
+			["Docs", "Guide", "docs/guide.md"],
+			["Chart", "Routes", "infra/routes.yaml"],
+			["Compose", "Module", "infra/compose/compose.yaml"],
+			["Compose", "Content", "infra/compose/compose.yaml"],
+			["Manifest", "Module", "infra/plain/config.yaml"],
+			["Manifest", "Content", "infra/plain/config.yaml"],
+		].toSorted(),
 	);
-	const version = skips.find((each) => each.model === "Flake" && each.subject?.id === "Version");
-	expect(version?.detail).toBe("lib.version in infra/flake/flake.nix");
 });
 
 test("external tests use public entry files, while tests inside the module can exercise private files", () => {

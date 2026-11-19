@@ -6,7 +6,7 @@ import {
 	listRegistry,
 	readServers,
 	setServer,
-	LanguageServersSchema,
+	languageServersSchema,
 } from "@archboard/workspace/checkouts";
 import {
 	CliUsageError,
@@ -14,14 +14,14 @@ import {
 	type CommandContext,
 } from "#cli/contract/protocol/contract.ts";
 import { commandLine, type NamedServer } from "#cli/commands/repo/rules/command-line.ts";
-import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
+import { configurableLanguages } from "@archboard/workspace/languages";
 
 const tail = z.array(z.string()).default([]);
 
 const RepoLanguageServerInputSchema = z.object({
 	language: z
-		.enum(CONFIGURABLE_LANGUAGES, {
-			error: `repo language-server takes a language: ${CONFIGURABLE_LANGUAGES.join(", ")}. Use c for C, C++ and Objective-C.`,
+		.enum(configurableLanguages(), {
+			error: `repo language-server takes a language: ${configurableLanguages().join(", ")}. Use c for C, C++ and Objective-C.`,
 		})
 		.optional(),
 	command: z.string().min(1).optional(),
@@ -34,7 +34,7 @@ const RepoLanguageServerInputSchema = z.object({
 type RepoLanguageServerInput = z.infer<typeof RepoLanguageServerInputSchema>;
 const ServerFileResultSchema = z.object({
 	file: z.string(),
-	servers: LanguageServersSchema,
+	servers: languageServersSchema(),
 	problem: z.string().optional(),
 });
 const RepoLanguageServerResultSchema = z.object({
@@ -92,7 +92,9 @@ const repoLanguageServerContract = defineCommand({
 			kind: "positional",
 			key: "language",
 			name: "language",
-			description: `One of ${CONFIGURABLE_LANGUAGES.map((language) => `\`${language}\``).join(", ")}; without it, the command shows both files`,
+			description: `One of ${configurableLanguages()
+				.map((language) => `\`${language}\``)
+				.join(", ")}; without it, the command shows both files`,
 		},
 		{
 			kind: "positional",

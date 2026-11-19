@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import {
 	createIdentityAuthorities,
-	restoreIdentityAuthorities,
 	type JsonRpcRequestId,
 	type OperationId,
 } from "@archboard/codex-app-server/identity";
@@ -12,6 +11,7 @@ import {
 	fixture as standaloneFixture,
 	turn,
 } from "#tests/runtime/workhorses/workhorse-operations/operations/support.ts";
+import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
 
 const fixture = useFixtureGroup();
 

@@ -15,10 +15,10 @@
 // still runs or could not be read, the workhorse takes no new work. After it ends all work, no
 // coordinator turn that asked for a stop starts work either, so only a fresh request does.
 
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexSessionMs } from "@archboard/timing";
 import type { ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import type { CoordinatorToolWorkhorse } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
-import { REMAINING_WORK_LIMIT } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
+import { boundRemainingWork } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 import type { BuiltWorkhorse } from "#server/generation/protocol/session-contract.ts";
 import type {
 	CodexWorkbenchWorkhorse,
@@ -192,7 +192,7 @@ function stopOf(
 	outcome: WorkhorseStop["outcome"],
 	remaining: readonly RemainingWork[],
 ): WorkhorseStop {
-	return { checkout, outcome, remaining: remaining.slice(0, REMAINING_WORK_LIMIT) };
+	return { checkout, outcome, remaining: boundRemainingWork(remaining) };
 }
 
 /**
@@ -221,7 +221,7 @@ async function settle(
 	session: WorkTreeStopSession,
 	clock: WorkTreeStopClock,
 ): Promise<WorkhorseStop> {
-	const deadline = clock.now() + CODEX_SESSION_MS.workTreeStopSettle;
+	const deadline = clock.now() + codexSessionMs("workTreeStopSettle");
 	const interrupted = new Set<TurnId>();
 	let acted = false;
 	let confirming = false;
@@ -244,7 +244,7 @@ async function settle(
 		await act(session, tree, interrupted);
 		acted = true;
 		// oxlint-disable-next-line no-await-in-loop -- the next pass waits for Codex to report what the interrupts ended
-		await clock.wait(CODEX_SESSION_MS.workTreeStopPoll);
+		await clock.wait(codexSessionMs("workTreeStopPoll"));
 	}
 }
 

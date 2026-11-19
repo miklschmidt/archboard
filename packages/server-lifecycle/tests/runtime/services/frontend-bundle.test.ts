@@ -1,7 +1,7 @@
 // What a restart does to the frontend bundle: a release builds nothing (ADR 0076).
 
 import { expect, spyOn, test } from "bun:test";
-import { bundleToServe } from "#runtime/operations/restart.ts";
+import { bundleToServe } from "#runtime/services/frontend-bundle.ts";
 
 test("a release restart runs no build", async () => {
 	const spawn = spyOn(Bun, "spawn");

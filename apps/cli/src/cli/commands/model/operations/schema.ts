@@ -5,19 +5,19 @@
 
 import { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureInitializationRequestSchema,
-	ArchitectureModuleEditSchema,
-	ArchitectureImportRequestSchema,
-	ArchitectureMigrationRequestSchema,
+	architectureModelReadSchema,
+	architectureInitializationRequestSchema,
+	architectureModuleEditSchema,
+	architectureImportRequestSchema,
+	architectureMigrationRequestSchema,
 } from "@archboard/model/contract";
-import { VaultConfigurationSchema } from "@archboard/model/vault-policy";
+import { vaultConfigurationSchema } from "@archboard/model/vault-policy";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 
-const model = ArchitectureModelReadSchema.options[0];
+const model = architectureModelReadSchema().options[0];
 
 /** The JSON that `model edit` reads. `--doing` gives the doing line, so the JSON leaves it out. */
-const [correction, proposal, description, batch] = ArchitectureModuleEditSchema.options;
+const [correction, proposal, description, batch] = architectureModuleEditSchema().options;
 const ModelEditRequestSchema = z.union([
 	correction.omit({ doing: true }),
 	proposal.omit({ doing: true }),
@@ -43,11 +43,14 @@ const SCHEMAS: Readonly<Record<SchemaName, readonly [string, z.ZodType]>> = {
 	"model-manifest": ["Canonical model manifest", model.shape.manifest],
 	module: ["Canonical module definition", model.shape.modules.element.omit({ file: true })],
 	flows: ["Independent flow collection", model.shape.collections.element.omit({ file: true })],
-	"model-initialize": ["Canonical initialization intent", ArchitectureInitializationRequestSchema],
+	"model-initialize": [
+		"Canonical initialization intent",
+		architectureInitializationRequestSchema(),
+	],
 	"model-edit": ["Claimed canonical edit intent", ModelEditRequestSchema],
-	"model-import": ["Portable canonical installation", ArchitectureImportRequestSchema],
-	"model-migrate": ["Explicit legacy migration intent", ArchitectureMigrationRequestSchema],
-	"vault-config": ["Shared semantic vocabulary", VaultConfigurationSchema],
+	"model-import": ["Portable canonical installation", architectureImportRequestSchema()],
+	"model-migrate": ["Explicit legacy migration intent", architectureMigrationRequestSchema()],
+	"vault-config": ["Shared semantic vocabulary", vaultConfigurationSchema()],
 };
 
 /**

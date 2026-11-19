@@ -14,7 +14,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { PANE_MS } from "@archboard/timing";
+import { paneMs } from "@archboard/timing";
 import {
 	paneKeyOfClient,
 	panes,
@@ -22,15 +22,15 @@ import {
 	sendKeylessToPane,
 } from "#server/panes/services/registry.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
-import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
+import type { panePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type SemanticPanePresentation = NonNullable<
-	z.infer<typeof SemanticPaneContextSchema>["presentation"]
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["presentation"]
 >;
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
-type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
+type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
 
 /** Why a pane could not be shown the step it was asked for. */
 type PresentRefusal =
@@ -264,7 +264,7 @@ function awaitAnswer(
 		// A slow pane keeps its request, so only a pane that has gone ends the wait.
 		const watch = setInterval(() => {
 			if (parts.paneFor(clientId) === null) settle({ kind: "refused", reason: "no_pane" });
-		}, PANE_MS.presentationPaneCheck);
+		}, paneMs("presentationPaneCheck"));
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.
@@ -427,4 +427,14 @@ const panePresentations = createPanePresentations({
 			: sendToPane(pane.clientId, message, pane.model),
 });
 
-export { createPanePresentations, panePresentations, type UserPresentationChange };
+/** Forget every walkthrough this server was presenting, because the engine state is being cleared. */
+function forgetPanePresentations(): void {
+	panePresentations.forget();
+}
+
+export {
+	createPanePresentations,
+	forgetPanePresentations,
+	panePresentations,
+	type UserPresentationChange,
+};

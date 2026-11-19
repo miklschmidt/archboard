@@ -12,8 +12,8 @@ import {
 	type CoordinatorSnapshot,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import {
-	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL,
+	reviewedCoordinatorEffort,
+	reviewedCoordinatorModel,
 	listCoordinatorModels,
 	selectCoordinatorModel,
 	type CoordinatorModelSelection,
@@ -39,8 +39,8 @@ import {
  */
 function configuredSettings(selection: CoordinatorModelSelection): CoordinatorConfiguredSettings {
 	return Object.freeze({
-		model: COORDINATOR_MODEL,
-		effort: COORDINATOR_EFFORT,
+		model: reviewedCoordinatorModel(),
+		effort: reviewedCoordinatorEffort(),
 		serviceTier: selection.configuredServiceTier,
 	});
 }

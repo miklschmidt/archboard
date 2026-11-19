@@ -7,7 +7,7 @@ import { Window } from "happy-dom";
 
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { SEQUENCE } from "#tests/runtime/support/sequence-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * One numerical attribute of a painted shape.
@@ -24,7 +24,7 @@ test.each(["light", "dark"] as const)(
 	async (theme) => {
 		const rendered = await renderSemanticView({
 			grammar: "sequence",
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: SEQUENCE,
 			theme,
 		});
@@ -81,7 +81,7 @@ test.each(["light", "dark"] as const)(
 test("a sequence reserves only seven more units per flow and keeps the lifeline dash phase", async () => {
 	const rendered = await renderSemanticView({
 		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: SEQUENCE,
 	});
 	// The name and the summary stand in the frame's tab, which takes no room of the well.

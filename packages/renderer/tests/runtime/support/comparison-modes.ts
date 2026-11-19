@@ -7,7 +7,7 @@ import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DrawnPicture, LayoutEngineName } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * A document whose draft lacks what its current variant has, drawn with its
@@ -49,8 +49,8 @@ async function bothModes(
 	const ask = { variant: "draft", layout: how.layout } as const;
 	const view = how.view === undefined ? {} : { view: "view" };
 	const [compared, plain] = await Promise.all([
-		renderLegacyBoard(document, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
-		renderLegacyBoard(document, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
+		renderLegacyBoard(document, { ...ask, ...view }, defaultSemanticPolicy()),
+		renderLegacyBoard(document, { ...ask, ...view, comparison: false }, defaultSemanticPolicy()),
 	]);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
 		throw new Error("Expected two drawn proposals");

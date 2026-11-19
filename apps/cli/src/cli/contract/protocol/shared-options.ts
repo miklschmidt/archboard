@@ -7,7 +7,7 @@
 // those, and one it does not read is refused instead of accepted in silence.
 
 import type { OptionParameter, SharedOptionKey } from "#cli/contract/protocol/contract.ts";
-import { DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
+import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
 
 /** One shared option, as help and the parser both describe it. */
 type SharedOption = Omit<OptionParameter, "kind" | "key" | "route" | "hidden"> & {
@@ -21,7 +21,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		value: "required",
 		placeholder: "url",
 		description: "The Archboard server to talk to; overrides ARCHBOARD_URL",
-		default: DEFAULT_ARCHBOARD_URL,
+		default: defaultArchboardUrl(),
 	},
 	directory: {
 		key: "directory",
@@ -81,4 +81,21 @@ function inapplicableSharedOptions(
 	);
 }
 
-export { SHARED_OPTIONS, SHARED_OPTION_KEYS, inapplicableSharedOptions, sharedOptionsFor };
+/**
+ * The keys of the options every command may share.
+ * @returns The keys, in the shared order.
+ */
+function sharedOptionKeys(): readonly SharedOptionKey[] {
+	return SHARED_OPTION_KEYS;
+}
+
+/**
+ * One option every command may share, as help and the parser both describe it.
+ * @param key The option.
+ * @returns Its spellings, placeholder and description.
+ */
+function sharedOption(key: SharedOptionKey): SharedOption {
+	return SHARED_OPTIONS[key];
+}
+
+export { inapplicableSharedOptions, sharedOption, sharedOptionKeys, sharedOptionsFor };

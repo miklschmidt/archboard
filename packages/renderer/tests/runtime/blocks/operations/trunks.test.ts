@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -12,7 +12,7 @@ test.each(fixtures.map((fixture) => [fixture.name, fixture] as const))(
 		const content = orderedFixture(fixture.content);
 		const drawing = await renderArchitecture({
 			content,
-			policy: SemanticPolicySchema.parse(fixture.policy),
+			policy: semanticPolicySchema().parse(fixture.policy),
 			theme: "light",
 			layout: "blocks",
 		});

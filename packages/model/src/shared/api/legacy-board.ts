@@ -13,4 +13,4 @@ export {
 export type { LegacyBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
 export { draftRefs, nodesPinnedTo, ownRefs, refOfBinding } from "#shared/schemas/draft-ref.ts";
 export type { OwnRef } from "#shared/schemas/draft-ref.ts";
-export { VariantLifecycleSchema } from "#shared/schemas/vocabulary.ts";
+export { variantLifecycleSchema } from "#shared/schemas/vocabulary.ts";

@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/model/store-read";
 import { editArchitectureModule } from "@archboard/model/store-write";
-import { ArchitectureModuleEditResultSchema } from "@archboard/model/contract";
+import { architectureModuleEditResultSchema } from "@archboard/model/contract";
 import {
 	proposal,
 	request,
@@ -57,7 +57,7 @@ test("recreating an ancestor module under a new identity requires confirmation",
 	};
 	const result = await editArchitectureModule(vault, confirmed);
 	expect(result).toMatchObject({ success: true, confirmed: ["PART_RECREATED"] });
-	expect(ArchitectureModuleEditResultSchema.safeParse(result).success).toBe(true);
+	expect(architectureModuleEditResultSchema().safeParse(result).success).toBe(true);
 	expect(await editArchitectureModule(vault, confirmed)).toEqual(result);
 	const selected = await readArchitectureModel(vault, undefined, undefined, {
 		state: child.target.state!,

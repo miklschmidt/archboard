@@ -362,3 +362,99 @@ export {
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 };
+
+/**
+ * The schema `ArchitectureModuleEditSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureModuleEditSchema(): typeof ArchitectureModuleEditSchema {
+	return ArchitectureModuleEditSchema;
+}
+
+/**
+ * The schema `ArchitectureRenderRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureRenderRequestSchema(): typeof ArchitectureRenderRequestSchema {
+	return ArchitectureRenderRequestSchema;
+}
+
+/**
+ * The schema `ArchitectureRenderResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureRenderResultSchema(): typeof ArchitectureRenderResultSchema {
+	return ArchitectureRenderResultSchema;
+}
+
+/**
+ * The schema `ArchitectureModuleEditResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureModuleEditResultSchema(): typeof ArchitectureModuleEditResultSchema {
+	return ArchitectureModuleEditResultSchema;
+}
+
+/**
+ * The schema `ArchitectureRecoveryResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureRecoveryResultSchema(): typeof ArchitectureRecoveryResultSchema {
+	return ArchitectureRecoveryResultSchema;
+}
+
+/**
+ * The schema `ArchitectureClaimRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureClaimRequestSchema(): typeof ArchitectureClaimRequestSchema {
+	return ArchitectureClaimRequestSchema;
+}
+
+/**
+ * The schema `ArchitectureClaimResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureClaimResultSchema(): typeof ArchitectureClaimResultSchema {
+	return ArchitectureClaimResultSchema;
+}
+
+/**
+ * The schema `ArchitectureClaimListSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureClaimListSchema(): typeof ArchitectureClaimListSchema {
+	return ArchitectureClaimListSchema;
+}
+
+/**
+ * The schema `ArchitectureClaimReleaseSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureClaimReleaseSchema(): typeof ArchitectureClaimReleaseSchema {
+	return ArchitectureClaimReleaseSchema;
+}
+
+/**
+ * The schema `ArchitectureClaimTakeBackSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureClaimTakeBackSchema(): typeof ArchitectureClaimTakeBackSchema {
+	return ArchitectureClaimTakeBackSchema;
+}
+
+/**
+ * The schema `ArchitectureFeedFrameSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureFeedFrameSchema(): typeof ArchitectureFeedFrameSchema {
+	return ArchitectureFeedFrameSchema;
+}
+
+/**
+ * The schema `ArchitectureFeedRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureFeedRequestSchema(): typeof ArchitectureFeedRequestSchema {
+	return ArchitectureFeedRequestSchema;
+}

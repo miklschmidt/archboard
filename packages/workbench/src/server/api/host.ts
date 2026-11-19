@@ -2,10 +2,9 @@
 export {
 	findExistingLoopbackListener,
 	formatHostForUrl,
-	HOST,
 	isLoopbackGuardedHost,
+	listenAddress,
 	logHttpServerError,
-	PORT,
 	serverUrl,
 } from "#server/host/services/listener-address.ts";
 export {
@@ -18,7 +17,6 @@ export {
 	namedVault,
 	requireVault,
 	statedVault,
-	VAULT_PARAMETER,
 	vaultOfRequest,
+	vaultOfUpgrade,
 } from "#server/request/services/vault.ts";
-export type { NamedVault } from "#server/request/services/vault.ts";

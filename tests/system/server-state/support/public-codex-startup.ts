@@ -2,15 +2,14 @@ import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
-import { listProcessObservations } from "@archboard/process/observation";
+import { childProcesses } from "../../support/process-census.ts";
 import { listOnlyVault, vaultIn } from "../../support/test-vault.ts";
 
 const repositoryRoot = join(import.meta.dir, "../../../..");
 const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-preload.ts");
 
 function serverChildPids(pid: number): number[] {
-	return listProcessObservations()
-		.filter((observation) => observation.state !== "zombie" && observation.parentPid === pid)
+	return childProcesses(pid)
 		.map((observation) => observation.pid)
 		.filter((child) => !isGitOrphanGuard(child));
 }

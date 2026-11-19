@@ -8,7 +8,7 @@ import {
 	importArchitectureModel,
 	recoverArchitectureModel,
 } from "@archboard/model/store-write";
-import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelLockMs } from "@archboard/timing";
 import { fixture, git } from "#tests/runtime/canonical/edit/operations/fixture.ts";
 import {
 	destination,
@@ -50,7 +50,7 @@ test("an interrupted portable installation blocks readers and preserves foreign 
 		{ env: { ...process.env, ARCHBOARD_EDIT_CRASH: "file" }, stdout: "pipe", stderr: "pipe" },
 	);
 	expect(await child.exited, await new Response(child.stderr).text()).toBe(86);
-	Date.now = () => now() + MODEL_LOCK_MS.lease;
+	Date.now = () => now() + modelLockMs("lease");
 	expect(readArchitectureModel(target.vault)).toMatchObject({
 		success: false,
 		code: "RECOVERY_REQUIRED",

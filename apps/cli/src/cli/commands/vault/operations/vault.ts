@@ -6,7 +6,7 @@ import {
 	type CommandContext,
 	type CommandExecution,
 } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { codeCheckLines } from "#cli/commands/vault/rules/code-check-lines.ts";
 import { embedsCheckLines } from "#cli/commands/vault/rules/embed-state.ts";
 import { EmbedsPartSchema } from "#cli/commands/vault/protocol/embeds-answer.ts";
@@ -31,9 +31,9 @@ import {
 	CodeCheckResultSchema,
 	type CodeCheckResult,
 } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
+import { diagnosticLine, vaultCheckSchema } from "@archboard/model/policy";
 import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 
 /** How long one check took. */
 type CheckTiming = CodeCheckResult["timings"][number];
@@ -99,6 +99,9 @@ const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape)
 	"--every-draft reads every draft, and --state one name: use one of them",
 );
 
+/** The server is unreachable, as every command that needs it refuses. */
+const serverRefusal = refusal("server");
+
 const stateNotFoundRefusal = {
 	code: "STATE_NOT_FOUND",
 	exit: 2,
@@ -153,7 +156,7 @@ function timingLine(timing: CheckTiming): string {
 }
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
-const SemanticsPartSchema = VaultCheckSchema.extend({
+const SemanticsPartSchema = vaultCheckSchema().extend({
 	timings: CodeCheckResultSchema.shape.timings,
 });
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
@@ -232,7 +235,7 @@ function skippedWithoutVault(
 	if (checkout === null || skipped.length === 0) return undefined;
 	return {
 		checks: skipped,
-		message: `${checkout} holds no ${VAULT_DIRECTORY}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
+		message: `${checkout} holds no ${vaultDirectory()}, so the ${skipped.join(" and ")} checks did not run, because they read a vault. The embeds check read the embeds of this checkout.`,
 	};
 }
 
@@ -562,7 +565,7 @@ const semanticConfigContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ schema: z.boolean().optional() }) },
-	result: z.union([VaultCheckSchema, z.record(z.string(), z.unknown())]),
+	result: z.union([vaultCheckSchema(), z.record(z.string(), z.unknown())]),
 	output,
 	prerequisites: [],
 	effects: ["read"],

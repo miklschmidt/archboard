@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { inVault } from "@archboard/server-requests";
 import {
 	architectureModelKeys,
@@ -44,7 +44,7 @@ function modelHistoryQuery(
 		queryFn: async () => {
 			const result = await readReply(
 				`${inVault("/api/architecture/locality", vault)}&${parameters}`,
-				ArchitectureHistoryResultSchema,
+				architectureHistoryResultSchema(),
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
 			if (result.analysis !== "locality")

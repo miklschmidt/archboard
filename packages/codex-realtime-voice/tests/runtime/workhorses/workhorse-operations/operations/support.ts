@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import { TEST_CONTEXT_SCHEMA } from "#tests/runtime/support/host.ts";
 import { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
-import { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session";
+import { codexSessionThreadSource } from "@archboard/codex-app-server/session";
 import type {
 	SessionParams,
 	SessionThread,
@@ -183,7 +183,7 @@ export function prepareFixture(
 				"coordinator-link",
 				"link",
 				coordinatorThreadId,
-				CODEX_SESSION_THREAD_SOURCE,
+				codexSessionThreadSource(),
 				"turn/start",
 			),
 		),
@@ -194,7 +194,7 @@ export function prepareFixture(
 				"workhorse-create",
 				"create_thread",
 				workhorseThreadId,
-				CODEX_SESSION_THREAD_SOURCE,
+				codexSessionThreadSource(),
 				"thread/start",
 			),
 		),
@@ -278,7 +278,7 @@ export function buildFixture(
 					: "direct_input_false";
 		const thread = {
 			id: target.threadId,
-			source: CODEX_SESSION_THREAD_SOURCE,
+			source: codexSessionThreadSource(),
 			status:
 				targetStatus === "active"
 					? { type: "active" as const, activeFlags: [] }
@@ -299,7 +299,7 @@ export function buildFixture(
 				childId: identity.validator.childId,
 				epoch: identity.validator.epoch,
 				threadId: target.threadId,
-				source: CODEX_SESSION_THREAD_SOURCE,
+				source: codexSessionThreadSource(),
 				status: targetStatus,
 				loaded: targetStatus !== "notLoaded",
 				canAcceptDirectInput: targetControllable,
@@ -311,7 +311,7 @@ export function buildFixture(
 				persistedRows: 1,
 				loaded: targetStatus !== "notLoaded",
 				loadedOccurrences: 1,
-				source: CODEX_SESSION_THREAD_SOURCE,
+				source: codexSessionThreadSource(),
 				status: targetStatus,
 				canAcceptDirectInput: targetControllable,
 			},

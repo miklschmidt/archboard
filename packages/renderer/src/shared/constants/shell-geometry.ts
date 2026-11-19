@@ -115,16 +115,55 @@ function fitIn(size: Size): number {
 	return Math.min(1, fitScale(REFERENCE_PANE, size));
 }
 
-export {
-	AGENT_PANEL_WIDTH,
-	CHROME_HEIGHT,
-	FIT_MARGIN,
-	NAVIGATOR_WIDTH,
-	REFERENCE_PANE,
-	SIDEBAR_WIDTH,
-	SHELL_VIEWPORT,
-	STAGE,
-	fitIn,
-	fitScale,
-	type Size,
-};
+/** The shell's lengths a caller lays out by, in CSS pixels. */
+const SHELL_LENGTHS = Object.freeze({
+	navigator: NAVIGATOR_WIDTH,
+	sidebar: SIDEBAR_WIDTH,
+	agentPanel: AGENT_PANEL_WIDTH,
+	chrome: CHROME_HEIGHT,
+});
+
+/** The shell's sizes a caller lays out by, in CSS pixels. */
+const SHELL_SIZES = Object.freeze({
+	viewport: SHELL_VIEWPORT,
+	stage: STAGE,
+	referencePane: REFERENCE_PANE,
+});
+
+/**
+ * One length of the shell: the navigator's or a sidebar's width, the agent panel's, or the
+ * chrome row's height.
+ * @param key Which one.
+ * @returns It, in CSS pixels.
+ */
+function shellLength(key: keyof typeof SHELL_LENGTHS): number {
+	return SHELL_LENGTHS[key];
+}
+
+/**
+ * One size of the shell: its viewport, a lone pane's stage, or the pane a layout is fitted to.
+ * @param key Which one.
+ * @returns It, in CSS pixels.
+ */
+function shellSize(key: keyof typeof SHELL_SIZES): Size {
+	return SHELL_SIZES[key];
+}
+
+/**
+ * The margin a fitted picture keeps from each edge of its room.
+ * @returns It, in CSS pixels.
+ */
+function fitMargin(): number {
+	return FIT_MARGIN;
+}
+
+/**
+ * The room a picture is fitted into: a room less the margin on every side.
+ * @param room The room.
+ * @returns The room inside the margins.
+ */
+function fitRoom(room: Size): Size {
+	return { width: room.width - 2 * FIT_MARGIN, height: room.height - 2 * FIT_MARGIN };
+}
+
+export { fitIn, fitMargin, fitRoom, fitScale, shellLength, shellSize, type Size };

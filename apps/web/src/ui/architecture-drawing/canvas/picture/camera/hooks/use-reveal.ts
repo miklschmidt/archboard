@@ -13,8 +13,8 @@
 
 import { useCallback, useEffect, useRef } from "react";
 
-import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
-import { EXPLORING_MS } from "@archboard/timing";
+import { fitMargin } from "@archboard/renderer/shell-geometry";
+import { exploringMs } from "@archboard/timing";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { Rect } from "#ui/architecture-drawing/canvas/picture/camera/rules/camera.ts";
@@ -101,10 +101,10 @@ function showPick(inputs: RevealInputs, previous: string | null): void {
 		camera.view().camera,
 		room,
 		boxesFor(inputs, previous),
-		FIT_MARGIN * 2,
+		2 * fitMargin(),
 	);
 	if (target !== null) {
-		camera.glide(target, reducedMotion ? 0 : EXPLORING_MS.reveal, true);
+		camera.glide(target, reducedMotion ? 0 : exploringMs("reveal"), true);
 	}
 }
 

@@ -6,7 +6,7 @@
 // and out of the component is what lets "a refetch did not move the camera" be
 // a fact about one function rather than a claim about a render.
 
-import { FIT_MARGIN, fitScale, type Size } from "@archboard/renderer/shell-geometry";
+import { fitMargin, fitRoom, fitScale, type Size } from "@archboard/renderer/shell-geometry";
 
 /** Where the pane is looking: the diagram's origin, and how magnified it is. */
 interface Camera {
@@ -200,7 +200,7 @@ function pinchCamera(camera: Camera, before: Fingers, after: Fingers): Camera {
  * @returns The fitted camera, or null when there is nothing to fit.
  */
 function fitRect(viewport: Size, rect: Rect, ceiling: number, anchor?: "top"): Camera | null {
-	const room = { width: viewport.width - FIT_MARGIN * 2, height: viewport.height - FIT_MARGIN * 2 };
+	const room = fitRoom(viewport);
 	if (room.width <= 0 || room.height <= 0 || rect.width <= 0 || rect.height <= 0) {
 		return null;
 	}
@@ -212,7 +212,7 @@ function fitRect(viewport: Size, rect: Rect, ceiling: number, anchor?: "top"): C
 		x: viewport.width / 2 - (rect.x + rect.width / 2) * scale,
 		y:
 			anchor === "top"
-				? FIT_MARGIN - rect.y * scale
+				? fitMargin() - rect.y * scale
 				: viewport.height / 2 - (rect.y + rect.height / 2) * scale,
 	};
 }
@@ -255,8 +255,8 @@ function flowCamera(viewport: Size, content: Size): Camera | null {
 	const width = content.width * FLOW_FLOOR;
 	return {
 		scale: FLOW_FLOOR,
-		x: width <= viewport.width - FIT_MARGIN * 2 ? (viewport.width - width) / 2 : FIT_MARGIN,
-		y: FIT_MARGIN,
+		x: width <= fitRoom(viewport).width ? (viewport.width - width) / 2 : fitMargin(),
+		y: fitMargin(),
 	};
 }
 

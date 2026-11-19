@@ -1,6 +1,5 @@
 import type { IdentityAuthority } from "@archboard/codex-app-server/identity";
 import {
-	type EpochOperationOutcome,
 	type EpochOperationRecord,
 	type EpochOperationStatus,
 } from "#runtime/epoch/store/manifest-contract.ts";
@@ -12,10 +11,26 @@ import type {
 	SessionParams,
 } from "@archboard/codex-app-server/session";
 import {
+	type CodexThreadLinkClassifierOptions,
+	type ThreadLinkClassification,
 	type ThreadLinkCurrentEpoch,
 	type ThreadLinkStatus,
 	type ThreadLinkTarget,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
+import { createCodexThreadLinkClassifier } from "#runtime/workhorses/thread-link/rules/classifier.ts";
+
+/**
+ * Classifies one target through a one-shot classifier.
+ * @param options The session and the epoch source or store.
+ * @param linkTarget The target.
+ * @returns The classification.
+ */
+function classifyCodexThreadLink(
+	options: CodexThreadLinkClassifierOptions,
+	linkTarget: ThreadLinkTarget,
+): Promise<ThreadLinkClassification> {
+	return createCodexThreadLinkClassifier(options).classify(linkTarget);
+}
 
 interface ThreadOptions {
 	readonly source?: SessionThreadSource;
@@ -111,7 +126,7 @@ interface RecordOptions {
 	readonly kind?: string;
 	readonly rpc?: string | null;
 	readonly status?: EpochOperationStatus;
-	readonly outcome?: EpochOperationOutcome;
+	readonly outcome?: EpochOperationRecord["outcome"];
 	readonly provenanceThreadId?: string | null;
 }
 
@@ -173,6 +188,7 @@ function target(
 }
 
 export {
+	classifyCodexThreadLink,
 	type ThreadOptions,
 	thread,
 	threadPage,

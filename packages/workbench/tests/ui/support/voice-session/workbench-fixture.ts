@@ -6,13 +6,22 @@ import {
 	createIdentityAuthorities,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import {
-	BROWSER_IDLE_SPOKEN_APPROVAL,
-	createCodexBrowserModel,
-} from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { CodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+
+type CodexBrowserModel = ReturnType<typeof createCodexBrowserModel>;
+
+/** The spoken-approval state of a snapshot with no spoken approval in flight. */
+const IDLE_SPOKEN_APPROVAL: BrowserSnapshot["spokenApproval"] = Object.freeze({
+	kind: "spoken_approval",
+	state: "idle",
+	approval: null,
+	gate: null,
+	capturedUserFinal: null,
+	settlement: null,
+	reason: null,
+});
 
 type Coordinator = BrowserSnapshot["coordinator"];
 type Voice = BrowserSnapshot["voice"];
@@ -175,7 +184,7 @@ function snapshotIn(target: FixtureWorld, overrides: SnapshotOverrides): Browser
 		contextDelivery: null,
 		coordinator: overrides.coordinator ?? coordinatorIn(target),
 		voice: overrides.voice ?? voice(),
-		spokenApproval: BROWSER_IDLE_SPOKEN_APPROVAL,
+		spokenApproval: IDLE_SPOKEN_APPROVAL,
 		lease: null,
 		operation: null,
 	});
@@ -210,4 +219,13 @@ const DEFAULT_BINDING = Object.freeze({
 	workhorseThreadId: String(threadId("workhorse-a")),
 });
 
-export { DEFAULT_BINDING, UNBOUND_LINK, coordinator, repointed, snapshot, threadId, voice };
+export {
+	DEFAULT_BINDING,
+	IDLE_SPOKEN_APPROVAL,
+	UNBOUND_LINK,
+	coordinator,
+	repointed,
+	snapshot,
+	threadId,
+	voice,
+};

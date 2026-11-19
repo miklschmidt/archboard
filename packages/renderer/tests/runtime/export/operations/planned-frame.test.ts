@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DiagramBox } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
 
@@ -48,7 +48,7 @@ async function drawn(built: boolean) {
 	const outcome = await renderLegacyBoard(
 		documentOf(built),
 		{ theme: "light" },
-		DEFAULT_SEMANTIC_POLICY,
+		defaultSemanticPolicy(),
 	);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;

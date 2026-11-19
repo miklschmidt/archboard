@@ -19,14 +19,14 @@ import { type ThreadLinkClassification } from "#runtime/workhorses/thread-link/r
 import type { ReverseResponse } from "@archboard/codex-app-server/transport";
 import { type WorkhorseOperationEvent } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import {
-	restoreIdentityAuthorities,
 	type IdentityAuthorities,
 	type LogicalToolCallCorrelation,
 } from "@archboard/codex-app-server/identity";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/codex-realtime-voice/realtime";
+} from "#shared/protocol/realtime-contract.ts";
+import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;

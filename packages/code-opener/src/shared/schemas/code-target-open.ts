@@ -61,6 +61,16 @@ const GitHubHttpsUrlSchema = z
 	}, "GitHub actions require an https://github.com URL");
 type GitHubHttpsUrl = z.infer<typeof GitHubHttpsUrlSchema>;
 
+/**
+ * A URL that a GitHub action may link to: an https://github.com one.
+ * @param href The URL a notice carries.
+ * @returns The URL, or null when it is not an https://github.com URL.
+ */
+function gitHubHttpsUrl(href: string): GitHubHttpsUrl | null {
+	const parsed = GitHubHttpsUrlSchema.safeParse(href);
+	return parsed.success ? parsed.data : null;
+}
+
 const CodeTargetNoticeActionSchema = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("settings"), label: z.literal("Opener settings") }).strict(),
 	z
@@ -113,6 +123,7 @@ export {
 	CodeTargetFailureCodeSchema,
 	type CodeTargetFailureCode,
 	GitHubHttpsUrlSchema,
+	gitHubHttpsUrl,
 	type GitHubHttpsUrl,
 	CodeTargetOpenSuccessSchema,
 	type CodeTargetOpenSuccess,

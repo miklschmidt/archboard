@@ -9,7 +9,7 @@ import {
 	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	evaluateOutcomes,
 	type OutcomeCheck,
@@ -202,7 +202,7 @@ const READING: Reading = {
 	documents: new Map([["Flask", AFTER]]),
 	snapshot: new Map([["Flask", BEFORE]]),
 	policy: {
-		...DEFAULT_SEMANTIC_POLICY,
+		...defaultSemanticPolicy(),
 		groups: { "request-lifecycle": { name: "Request lifecycle", color: "blue" } },
 	},
 	diagnostics: [],

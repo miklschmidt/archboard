@@ -1,7 +1,7 @@
 {
 	// The declarations of the npm build of @archboard/codex-realtime-voice
 	// (scripts/pack-codex-realtime-voice.ts): the package and the workspace packages that the build
-	// bundles. TypeScript emits no declaration for a file it reaches through node_modules, so each
+	// bundles, and the entries that the pack script writes. TypeScript emits no declaration for a file it reaches through node_modules, so each
 	// one is named here, and the file sits at the root so that all of them are under its rootDir.
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
@@ -12,7 +12,8 @@
 		"packages/codex-app-server/src",
 		"packages/process/src",
 		"packages/timing/src",
-		"packages/diagnostics/src"
+		"packages/diagnostics/src",
+		"dist/codex-realtime-voice-entries"
 	],
-	"exclude": ["node_modules", "dist"]
+	"exclude": ["node_modules", "dist/codex-realtime-voice", "dist/frontend"]
 }

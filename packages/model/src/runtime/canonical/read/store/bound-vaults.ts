@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { chosenCheckouts, listRegistry } from "@archboard/workspace/checkouts";
-import { VAULT_DIRECTORY, isVaultLayout, type BoundVault } from "@archboard/workspace/vault";
+import { vaultDirectory, isVaultLayout, type BoundVault } from "@archboard/workspace/vault";
 import { readArchitectureModel } from "#runtime/canonical/read/operations/model-read.ts";
 
 /**
@@ -14,7 +14,7 @@ import { readArchitectureModel } from "#runtime/canonical/read/operations/model-
  */
 function servedVaultOf(holder: string): string | undefined {
 	try {
-		const vault = fs.realpathSync.native(path.join(holder, VAULT_DIRECTORY));
+		const vault = fs.realpathSync.native(path.join(holder, vaultDirectory()));
 		return isVaultLayout(vault) && fs.statSync(vault).isDirectory() ? vault : undefined;
 	} catch {
 		return undefined;

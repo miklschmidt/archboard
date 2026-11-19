@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: ["a", "b"].map((id) => ({ id, name: id, kind: "module" })),
 	edges: [{ id: "ab", from: "a", to: "b", kind: "call" }],
 });
-const request = { policy: DEFAULT_SEMANTIC_POLICY, content, layout: "blocks" as const };
+const request = { policy: defaultSemanticPolicy(), content, layout: "blocks" as const };
 
 test("a flat relief changes how blocks are painted and never where they stand", async () => {
 	const raised = await renderArchitecture(request);

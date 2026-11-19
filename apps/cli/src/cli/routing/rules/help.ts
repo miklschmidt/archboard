@@ -8,8 +8,9 @@
 import { Command } from "commander";
 import { declareCommand } from "#cli/contract/rules/commander.ts";
 import { HELP_STYLE, afterText, heading } from "#cli/routing/rules/help-style.ts";
-import { SHARED_OPTIONS, SHARED_OPTION_KEYS } from "#cli/contract/protocol/shared-options.ts";
+import { sharedOption, sharedOptionKeys } from "#cli/contract/protocol/shared-options.ts";
 import type { CommandRoute, CommandRoutes } from "#cli/routing/protocol/route.ts";
+import type { SharedOptionKey } from "#cli/contract/protocol/contract.ts";
 import { ENVIRONMENT, EXIT_CODES } from "#cli/routing/protocol/conventions.ts";
 
 /** The program every usage line starts with. */
@@ -26,8 +27,8 @@ interface HelpTree {
  * @param key - The shared option.
  * @returns The spelling.
  */
-function sharedSpelling(key: (typeof SHARED_OPTION_KEYS)[number]): string {
-	const option = SHARED_OPTIONS[key];
+function sharedSpelling(key: SharedOptionKey): string {
+	const option = sharedOption(key);
 	return `${option.spellings[0]} <${option.placeholder ?? "value"}>`;
 }
 
@@ -49,10 +50,10 @@ function collectSharedKeys(table: CommandRoutes, read: Set<string>): void {
  * @param routes - The command table.
  * @returns The keys, in the shared order.
  */
-function readSharedKeys(routes: CommandRoutes): (typeof SHARED_OPTION_KEYS)[number][] {
+function readSharedKeys(routes: CommandRoutes): SharedOptionKey[] {
 	const read = new Set<string>();
 	collectSharedKeys(routes, read);
-	return SHARED_OPTION_KEYS.filter((key) => read.has(key));
+	return sharedOptionKeys().filter((key) => read.has(key));
 }
 
 /**
@@ -69,7 +70,7 @@ function conventions(routes: CommandRoutes): string {
 		"",
 		heading("Shared options (each command's help lists the ones it reads; any other is refused):"),
 		...keys.map(
-			(key) => `  ${sharedSpelling(key).padEnd(width)}  ${SHARED_OPTIONS[key].description}`,
+			(key) => `  ${sharedSpelling(key).padEnd(width)}  ${sharedOption(key).description}`,
 		),
 		"",
 		"Commands that contact the Archboard server start it when nothing answers, unless",

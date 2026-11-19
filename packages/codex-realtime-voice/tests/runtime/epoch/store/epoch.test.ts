@@ -14,10 +14,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import {
-	createIdentityAuthority,
-	restoreIdentityAuthority,
-} from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
 import {
 	defaultCodexEpochFileSystem,
@@ -29,6 +26,7 @@ import {
 	type EpochCasToken,
 	type EpochStageInput,
 } from "#runtime/epoch/store/contract.ts";
+import { restoreIdentityAuthority } from "#tests/runtime/support/identity.ts";
 
 const INSTRUCTION_HASH = "1".repeat(64);
 const MANIFEST_HASH = "2".repeat(64);
@@ -36,7 +34,7 @@ const MANIFEST_HASH = "2".repeat(64);
 describe("codex epoch ownership", () => {
 	test("stages and commits a new epoch with durable provenance", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			const input = epochInput(authority, "epoch-start", "epoch_start");
 
@@ -61,7 +59,7 @@ describe("codex epoch ownership", () => {
 
 	test("serializes link, create, and fork effects with exact CAS", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
 			const thread = authority.decoder.adoptThreadId("thread-1");
@@ -104,7 +102,7 @@ describe("codex epoch ownership", () => {
 
 	test("rejects stale writers and same-generation races", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			const competingStore = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
@@ -121,7 +119,7 @@ describe("codex epoch ownership", () => {
 
 	test("persists rollback and outcome_unknown tombstones without retry", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
 
@@ -158,7 +156,7 @@ describe("codex epoch ownership", () => {
 
 	test("makes replacement children inspect-only and rejects late old writers", () => {
 		withState((state) => {
-			const firstAuthority = createIdentityAuthority();
+			const firstAuthority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(epochInput(firstAuthority, "epoch-start-a", "epoch_start"));
 			const oldThread = firstAuthority.decoder.adoptThreadId("lost-thread");
@@ -171,7 +169,7 @@ describe("codex epoch ownership", () => {
 			);
 			store.markOutcomeUnknown(oldOperation, "link settlement was lost", { threadId: oldThread });
 
-			const replacementAuthority = createIdentityAuthority();
+			const replacementAuthority = createIdentityAuthorities().identity;
 			store.startEpoch(
 				epochInput(replacementAuthority, "epoch-start-b", "epoch_start", store.snapshot().cas),
 			);
@@ -216,7 +214,7 @@ describe("codex epoch ownership", () => {
 
 	test("a garbage manifest reads as no prior epochs and the next write replaces it", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
 			const original = readFileSync(store.manifestPath);
@@ -245,7 +243,7 @@ describe("codex epoch ownership", () => {
 			symlinkSync(join(state.codexHome, "sentinel.db"), store.manifestPath);
 			expect(store.snapshot().manifest).toEqual(emptyManifest());
 
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			store.startEpoch(epochInput(replacement, "epoch-start-b", "epoch_start"));
 			expect(lstatSync(store.manifestPath).isSymbolicLink()).toBe(false);
 			expect(store.snapshot().manifest.revision).toBe(2);
@@ -257,7 +255,7 @@ describe("codex epoch ownership", () => {
 	test("writes the manifest with one temp write and one rename", () => {
 		withState((state) => {
 			const calls: string[] = [];
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state, recordingFileSystem(calls, state.root));
 			store.stageEpoch(epochInput(authority, "epoch-start", "epoch_start"));
 			expect(calls.filter((call) => call.startsWith("rename:"))).toEqual([
@@ -271,7 +269,7 @@ describe("codex epoch ownership", () => {
 
 	test("a crash before the rename leaves the old manifest and the store usable", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
 			const before = readFileSync(store.manifestPath, "utf8");
@@ -299,14 +297,14 @@ describe("codex epoch ownership", () => {
 		withState((state) => {
 			const beforeCodex = sentinel(state.codexHome);
 			const beforeSqlite = sentinel(state.sqliteHome);
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const store = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
 			const staged = store.stageOperation(
 				effectInput(authority, "rollback", "other", store.snapshot().cas),
 			);
 			store.rollbackOperation(staged, "not delivered");
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			store.startEpoch(epochInput(replacement, "replacement", "epoch_start", store.snapshot().cas));
 			expect(() =>
 				store.assertCurrent({
@@ -324,7 +322,7 @@ describe("codex epoch ownership", () => {
 
 	test("refuses an epoch spelled under another record prefix than its child", () => {
 		withState((state) => {
-			const authority = createIdentityAuthority();
+			const authority = createIdentityAuthorities().identity;
 			const input = epochInput(authority, "epoch-start", "epoch_start");
 			// The same child and epoch tokens, minted under another host's record prefix.
 			const other = (value: string): string => value.replace(/^[^:]+:/u, "other:");
@@ -391,7 +389,7 @@ function makeStore(state: TestState, fileSystem?: CodexEpochFileSystem): CodexEp
 }
 
 function epochInput(
-	authority: ReturnType<typeof createIdentityAuthority>,
+	authority: ReturnType<typeof createIdentityAuthorities>["identity"],
 	operationId: string,
 	kind: string,
 	expected?: EpochCasToken,
@@ -410,7 +408,7 @@ function epochInput(
 }
 
 function effectInput(
-	authority: ReturnType<typeof createIdentityAuthority>,
+	authority: ReturnType<typeof createIdentityAuthorities>["identity"],
 	operationId: string,
 	kind: string,
 	expected: EpochCasToken,

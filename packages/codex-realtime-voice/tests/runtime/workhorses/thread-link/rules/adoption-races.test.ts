@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createCodexThreadLink } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
 import { type ThreadLinkTarget } from "#runtime/workhorses/thread-link/rules/contract.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
 	loadedPage,
 	thread,
@@ -16,7 +16,7 @@ import {
 } from "#tests/runtime/workhorses/thread-link/rules/epoch-fixtures.ts";
 
 async function withFixture<T>(action: (fixture: RealEpochFixture) => Promise<T>): Promise<T> {
-	const fixture = realEpochFixture(createIdentityAuthority());
+	const fixture = realEpochFixture(createIdentityAuthorities().identity);
 	try {
 		return await action(fixture);
 	} finally {

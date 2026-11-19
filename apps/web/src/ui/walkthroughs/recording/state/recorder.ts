@@ -10,9 +10,9 @@
 // stamped as they happen. The recorder outside the page reads the state and
 // takes the talk; this owns nothing else (TASK-381).
 
-import { RECORDING_MS } from "@archboard/timing";
+import { recordingMs } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
-import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
+import { talkSamplesMs } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
 import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
@@ -286,7 +286,7 @@ class WalkthroughRecorder {
 			step: stepOf(this.#talk, of),
 			of,
 			failure: readiness.failure,
-			durationMs: kept === null ? null : (kept.log.samples * 1000) / TALK_SAMPLE_RATE,
+			durationMs: kept === null ? null : talkSamplesMs(kept.log.samples),
 		};
 	}
 
@@ -312,7 +312,7 @@ class WalkthroughRecorder {
 			walkthrough,
 			recording: { language, ...(against === null ? {} : { against }) },
 		});
-		this.#timer = setInterval(this.#tick.bind(this), RECORDING_MS.paceTick);
+		this.#timer = setInterval(this.#tick.bind(this), recordingMs("paceTick"));
 	}
 
 	/**

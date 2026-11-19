@@ -9,7 +9,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { corridorPoints, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import frameDrop from "#tests/runtime/support/fixtures/frame-drop.json";
@@ -20,7 +20,7 @@ import stackedPorts from "#tests/runtime/support/fixtures/stacked-ports.json";
 const LANE = 16;
 
 /** The vocabulary the fixtures reduced from dogfood documents draw with, its groups in the vault's order. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		service: { name: "Service", icon: "RiServerLine", color: "blue" },

@@ -1,13 +1,12 @@
 import { expect } from "bun:test";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
+import { parseDynamicToolCallResponse } from "./codex-workbench-response.ts";
 import { reverseResponses } from "./codex-workbench-lifecycle.ts";
 
 const operationPattern = /^archboard:operation:h[a-f0-9]{32}\.h[a-f0-9]{32}\.h[a-f0-9]{32}$/;
 
 function expectGeneralQueryEnvelopes(logPath: string): void {
 	const list = parseDynamicToolCallResponse(
-		"list_threads",
 		reverseResponses(logPath, "general-list")[0]?.frame?.result,
 	).envelope;
 	if (list.tag !== "ok") {
@@ -34,7 +33,6 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 		},
 	});
 	const read = parseDynamicToolCallResponse(
-		"read_thread",
 		reverseResponses(logPath, "general-read")[0]?.frame?.result,
 	).envelope;
 	if (read.tag !== "ok") {
@@ -59,7 +57,6 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 		},
 	});
 	const wait = parseDynamicToolCallResponse(
-		"wait_threads",
 		reverseResponses(logPath, "general-wait")[0]?.frame?.result,
 	).envelope;
 	if (wait.tag !== "ok") {
@@ -81,7 +78,7 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 
 function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): void {
 	if (kind === "fork") {
-		const envelope = parseDynamicToolCallResponse("fork_thread", result).envelope;
+		const envelope = parseDynamicToolCallResponse(result).envelope;
 		if (envelope.tag !== "ok") {
 			throw new Error("The controlled fork was not successful.");
 		}
@@ -106,7 +103,7 @@ function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): 
 		});
 		return;
 	}
-	const envelope = parseDynamicToolCallResponse("send_message_to_thread", result).envelope;
+	const envelope = parseDynamicToolCallResponse(result).envelope;
 	if (envelope.tag !== "ok") {
 		throw new Error("The controlled send was not successful.");
 	}

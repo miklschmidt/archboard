@@ -21,14 +21,14 @@ import {
 	jsonSchema,
 } from "../../apps/cli/src/cli/commands/model/operations/schema.ts";
 import {
-	SHARED_OPTIONS,
-	SHARED_OPTION_KEYS,
+	sharedOption,
+	sharedOptionKeys,
 } from "../../apps/cli/src/cli/contract/protocol/shared-options.ts";
 import { ENVIRONMENT, EXIT_CODES } from "../../apps/cli/src/cli/routing/protocol/conventions.ts";
 import { CliUsageError } from "../../apps/cli/src/cli/contract/protocol/contract.ts";
 import { FIRST_NATIVE_TYPESCRIPT } from "../../packages/code-intel/src/runtime/language-servers/operations/server-command.ts";
 import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
-import { DETAILED_FINDINGS, TABLE_ROWS } from "../../actions/check/summary.ts";
+import { summaryLimits } from "../../actions/check/summary.ts";
 import { ANNOTATION_LIMIT_PER_LEVEL } from "../../actions/shared/workflow-commands.ts";
 
 const ROOT = join(import.meta.dir, "../..");
@@ -156,8 +156,8 @@ const commands = registry.map(({ name, parent, bare, contract }) => ({
 	refusals: contract.refusals.map(({ code, exit, description }) => ({ code, exit, description })),
 }));
 
-const shared = SHARED_OPTION_KEYS.map((key) => {
-	const option = SHARED_OPTIONS[key];
+const shared = sharedOptionKeys().map((key) => {
+	const option = sharedOption(key);
 	return {
 		key,
 		spellings: [...option.spellings],
@@ -291,9 +291,9 @@ const facts = {
 	/** The port of a release server. */
 	releasePort: RELEASE_PORT,
 	/** The findings that the job summary of the check Action lists. */
-	summaryRows: TABLE_ROWS,
+	summaryRows: summaryLimits().rows,
 	/** The errors and warnings whose evidence that summary shows. */
-	summaryDetails: DETAILED_FINDINGS,
+	summaryDetails: summaryLimits().details,
 	/** The annotations of each level that GitHub shows for one step. */
 	annotationsPerLevel: ANNOTATION_LIMIT_PER_LEVEL,
 	/** The exit of a usage error, such as a group command run without its subcommand. */

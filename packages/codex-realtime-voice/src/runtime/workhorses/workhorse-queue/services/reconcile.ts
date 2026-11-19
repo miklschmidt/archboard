@@ -1,5 +1,5 @@
 import {
-	QueuedSubmissionSchema,
+	isQueuedSubmission,
 	type SessionQueuedSubmission,
 } from "@archboard/codex-app-server/session";
 import type {
@@ -87,7 +87,7 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
  * @returns True when the schema accepts it.
  */
 function isSessionQueuedSubmission(value: unknown): value is SessionQueuedSubmission {
-	return QueuedSubmissionSchema.safeParse(value).success;
+	return isQueuedSubmission(value);
 }
 
 /**

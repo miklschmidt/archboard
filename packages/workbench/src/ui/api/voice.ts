@@ -11,7 +11,6 @@ export { useSubtitlesWanted } from "#ui/workbench-client/subtitles/hooks/use-sub
 export { useVoiceBoxed } from "#ui/workbench-client/subtitles/hooks/use-voice-boxed.ts";
 export type { SubtitleSource } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 export { useVoiceSurface } from "#ui/workbench-client/voice/hooks/use-voice-surface.ts";
-export { subtitlePreference } from "#ui/workbench-client/subtitles/state/preference.ts";
 export type {
 	AgentVoiceView,
 	VoiceLevel,

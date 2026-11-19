@@ -2,23 +2,8 @@ import { logger } from "@archboard/diagnostics/logger";
 import { forgetModelMemory } from "@archboard/model/lock";
 import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
 import { server } from "#server/http/listener/wiring/server-app.ts";
-import {
-	panePresentations,
-	forgetSemanticPaneContexts,
-	acceptedSockets,
-	clientIds,
-	codexSocketInstances,
-	forgetDisplay,
-	rejectPendingLayouts,
-} from "@archboard/workbench/panes";
-import { codexWiring, forgetTabSessions } from "@archboard/workbench/server";
-import {
-	formatHostForUrl,
-	HOST,
-	logHttpServerError,
-	PORT,
-	messageOf,
-} from "@archboard/workbench/host";
+import { forgetPanePresentations, forgetSemanticPaneContexts } from "@archboard/workbench/panes";
+import { listenAddress, logHttpServerError, serverUrl } from "@archboard/workbench/host";
 
 /**
  * Forget every engine-level announcement, watch and record this process holds.
@@ -26,85 +11,7 @@ import {
 function forgetEngineState(): void {
 	forgetModelMemory();
 	forgetSemanticPaneContexts();
-	panePresentations.forget();
-}
-
-/** Collects distinct cleanup failures, flattening aggregates, so one report names them all. */
-class CleanupFailures {
-	readonly failures: unknown[] = [];
-	private readonly retained = new Set<unknown>();
-
-	/**
-	 * Retain one failure, or each failure inside an aggregate.
-	 * @param error The failure.
-	 */
-	retain(error: unknown): void {
-		if (error instanceof AggregateError) {
-			for (const nested of error.errors) {
-				this.retain(nested);
-			}
-			return;
-		}
-		if (this.retained.has(error)) {
-			return;
-		}
-		this.retained.add(error);
-		this.failures.push(error);
-	}
-
-	/**
-	 * Throw one aggregate naming every retained failure, if there were any.
-	 */
-	throwIfAny(): void {
-		if (this.failures.length === 0) {
-			return;
-		}
-		const detail = this.failures.map((error) => messageOf(error)).join("; ");
-		throw new AggregateError(this.failures, `Browser cleanup failed: ${detail}`);
-	}
-}
-
-/**
- * Close every Codex browser connection the workbench still holds.
- * @param failures Where to retain what fails.
- */
-async function closeCodexBrowsers(failures: CleanupFailures): Promise<void> {
-	const closeBrowser = codexWiring.codex.closeBrowser;
-	if (closeBrowser === null) {
-		return;
-	}
-	const settled = await Promise.allSettled(
-		Array.from(codexSocketInstances, ([socket, instance]) => {
-			const browserId = clientIds.get(socket);
-			return browserId ? closeBrowser(instance, browserId) : Promise.resolve();
-		}),
-	);
-	for (const result of settled) {
-		if (result.status === "rejected") {
-			failures.retain(result.reason);
-		}
-	}
-}
-
-/**
- * Tear down every browser-facing owner: sockets, Codex browsers, pending
- * layout requests and the presentation owner, then forget the display.
- */
-export async function closeBrowserOwners(): Promise<void> {
-	const failures = new CleanupFailures();
-	for (const socket of acceptedSockets) {
-		socket.terminate();
-	}
-	await closeCodexBrowsers(failures);
-	try {
-		await codexWiring.codex.drainBrowsers?.();
-	} catch (error) {
-		failures.retain(error);
-	}
-	rejectPendingLayouts();
-	forgetDisplay();
-	forgetTabSessions();
-	failures.throwIfAny();
+	forgetPanePresentations();
 }
 
 /** The HTTP listener's own phase, distinct from the lifetime's. */
@@ -207,13 +114,14 @@ function listen(
 			return;
 		}
 		try {
-			server.listen({ port: PORT, host: HOST, signal: listenController.signal }, () => {
+			const { host, port } = listenAddress();
+			server.listen({ port, host, signal: listenController.signal }, () => {
 				if (settled || signal.aborted) {
 					return;
 				}
 				http.phase = "running";
-				logger.info(`POC server running on http://${formatHostForUrl(HOST)}:${PORT}`);
-				recordServerPid(PORT);
+				logger().info(`POC server running on ${serverUrl()}`);
+				recordServerPid(port);
 				http.ownsPidFile = true;
 				settleStart();
 			});
@@ -242,7 +150,7 @@ async function stopListening(http: HttpOwnership): Promise<void> {
 		http.errorListener = null;
 	}
 	if (http.ownsPidFile) {
-		removePidFile(PORT);
+		removePidFile(listenAddress().port);
 		http.ownsPidFile = false;
 	}
 	await closeHttpServer(http);

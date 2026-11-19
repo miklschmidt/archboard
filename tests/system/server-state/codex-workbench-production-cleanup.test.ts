@@ -1,5 +1,5 @@
 import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
-import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { describe, expect, test } from "bun:test";
 import {
 	chmodSync,
@@ -73,7 +73,7 @@ describe.serial("production Codex setup cleanup", () => {
 				if (scenario === "early-exit") {
 					writePublicCodexExecutable(
 						executable,
-						`if (process.argv.includes("--version")) console.log("${CODEX_PROTOCOL_BINARY_VERSION}"); else { require("node:fs").writeFileSync(${JSON.stringify(pidLog)}, String(process.pid)); process.exit(19); }`,
+						`if (process.argv.includes("--version")) console.log("codex-cli ${codexProtocolVersion()}"); else { require("node:fs").writeFileSync(${JSON.stringify(pidLog)}, String(process.pid)); process.exit(19); }`,
 					);
 				}
 				const environment = publicStartEnvironment(root, base, executable);

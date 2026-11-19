@@ -15,10 +15,10 @@ import {
 import type { JSX } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
-import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import type { variantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
 
-type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
+type VariantLifecycle = z.infer<ReturnType<typeof variantLifecycleSchema>>;
 
 /** The mark of each lifecycle. */
 const LIFECYCLE_ICONS: Readonly<Record<VariantLifecycle, RemixiconComponentType>> = {

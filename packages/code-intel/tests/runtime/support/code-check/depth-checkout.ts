@@ -4,7 +4,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type { CodeCheckAnswer, ModuleDepth } from "#shared/protocol/code-check.ts";
 import { git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
@@ -44,7 +44,7 @@ async function depthCheckout(
 			name: "Shop",
 			current: { id: "Built", name: "Built" },
 		}),
-		".archboard/config.yaml": Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY),
+		".archboard/config.yaml": Bun.YAML.stringify(defaultSemanticPolicy()),
 	});
 	for (const [index, [name, path]] of Object.entries(modules).entries()) {
 		write(vault, {

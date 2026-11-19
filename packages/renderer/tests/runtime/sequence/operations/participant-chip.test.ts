@@ -6,7 +6,7 @@ import { expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [
@@ -32,7 +32,7 @@ const content = orderedFixture({
 
 test("a participant card with a responsibility holds its chip in the top corner", async () => {
 	const card = subjectGroups(
-		(await renderSemanticView({ policy: DEFAULT_SEMANTIC_POLICY, content, grammar: "sequence" }))
+		(await renderSemanticView({ policy: defaultSemanticPolicy(), content, grammar: "sequence" }))
 			.svg,
 	).find((group) => group.id === "a" && group.markup.includes("ab-chip"))!;
 	const slab = /<rect x="([\d.]+)" y="([\d.]+)" width="[\d.]+" height="([\d.]+)"/.exec(

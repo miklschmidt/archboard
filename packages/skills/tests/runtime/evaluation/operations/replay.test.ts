@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { LegacyBoardSchema } from "@archboard/model/legacy-board";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { framesOf } from "@archboard/walkthrough/talk";
 import { keepTalk } from "@archboard/walkthrough/recorder";
 import {
@@ -57,7 +57,7 @@ const DOCUMENT = LegacyBoardSchema.parse(
 );
 
 const CHECKED = {
-	policy: DEFAULT_SEMANTIC_POLICY,
+	policy: defaultSemanticPolicy(),
 	configurationValid: true,
 	configurationFile: "config.yaml",
 	fingerprint: "f",

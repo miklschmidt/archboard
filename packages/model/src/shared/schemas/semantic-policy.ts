@@ -293,3 +293,51 @@ export {
 	type VaultDiagnostic,
 	VaultCheckSchema,
 };
+
+/**
+ * The value `DEFAULT_SEMANTIC_POLICY`, for callers that read it.
+ * @returns The value.
+ */
+export function defaultSemanticPolicy(): typeof DEFAULT_SEMANTIC_POLICY {
+	return DEFAULT_SEMANTIC_POLICY;
+}
+
+/**
+ * The schema `EvidenceKindSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function evidenceKindSchema(): typeof EvidenceKindSchema {
+	return EvidenceKindSchema;
+}
+
+/**
+ * The schema `PaletteColorSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function paletteColorSchema(): typeof PaletteColorSchema {
+	return PaletteColorSchema;
+}
+
+/**
+ * The schema `SemanticPolicySchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function semanticPolicySchema(): typeof SemanticPolicySchema {
+	return SemanticPolicySchema;
+}
+
+/**
+ * The schema `VaultCheckSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function vaultCheckSchema(): typeof VaultCheckSchema {
+	return VaultCheckSchema;
+}
+
+/**
+ * The schema `VaultDiagnosticSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function vaultDiagnosticSchema(): typeof VaultDiagnosticSchema {
+	return VaultDiagnosticSchema;
+}

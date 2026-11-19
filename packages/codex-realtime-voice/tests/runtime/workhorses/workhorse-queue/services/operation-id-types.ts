@@ -1,10 +1,12 @@
 import { createCodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/queue.ts";
 import {
 	type WorkhorseQueueBinding,
-	type WorkhorseQueueIdentityPort,
 	type WorkhorseQueueOperationIdPort,
-	type WorkhorseQueueSessionPort,
+	type WorkhorseQueueOptions,
 } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
+
+type WorkhorseQueueSessionPort = WorkhorseQueueOptions<string>["session"];
+type WorkhorseQueueIdentityPort = WorkhorseQueueOptions<string>["identity"];
 
 declare const operationIdBrand: unique symbol;
 

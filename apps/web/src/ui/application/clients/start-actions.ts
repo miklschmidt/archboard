@@ -5,7 +5,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { useRouter } from "@tanstack/react-router";
 
-import { modelCatalogKeys } from "#ui/panes/model-catalog/clients/queries.ts";
+import { invalidateRepositories } from "#ui/panes/model-catalog/clients/queries.ts";
 import { chooseCheckout } from "#ui/panes/model-catalog/clients/repositories.ts";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
@@ -62,7 +62,7 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 	const choose = async (repository: string, root: string): Promise<void> => {
 		try {
 			await chooseCheckout({ repository, root });
-			await client.invalidateQueries({ queryKey: modelCatalogKeys.repositories });
+			await invalidateRepositories(client);
 			await open(null, repository);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);

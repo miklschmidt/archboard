@@ -1,15 +1,15 @@
 // What a render answers and the theme it draws with.
 export {
-	DEFAULT_LAYOUT_ENGINE,
-	DiagramThemeSchema,
-	LayoutEngineSchema,
-	LegendLayoutSchema,
-	OfferedViewSchema,
-	PictureReceiptShape,
-	RenderedVariantSchema,
-	SemanticRenderReplySchema,
-	StandaloneThemeSchema,
-	SubjectStandingSchema,
+	defaultLayoutEngine,
+	diagramThemeSchema,
+	layoutEngineSchema,
+	legendLayoutSchema,
+	offeredViewSchema,
+	pictureReceiptShape,
+	renderedVariantSchema,
+	semanticRenderReplySchema,
+	standaloneThemeSchema,
+	subjectStandingSchema,
 	wasDrawn,
 } from "#shared/protocol/render-reply.ts";
 export type {

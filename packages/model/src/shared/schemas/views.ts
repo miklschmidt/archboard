@@ -13,7 +13,7 @@
 // carries two opinions eventually carries two different ones.
 
 import { z } from "zod";
-import { CodeAnchorSchema } from "@archboard/code-binding/bindings";
+import { codeAnchorSchema } from "@archboard/code-binding/bindings";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
@@ -50,7 +50,7 @@ const FlowMessageSchema = z
 		kind: MessageKindSchema.default("sync"),
 		note: DescriptionSchema.optional(),
 		repeat: z.int().min(2).optional(),
-		anchor: CodeAnchorSchema.optional(),
+		anchor: codeAnchorSchema().optional(),
 	})
 	.refine((step) => (step.kind === "self") === (step.from === step.to), {
 		message: "a step is 'self' exactly when it begins and ends at the same node",

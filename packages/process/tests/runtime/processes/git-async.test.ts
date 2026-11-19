@@ -13,8 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { GIT_MS } from "@archboard/timing";
-import { listProcessObservations, readProcessObservation } from "#runtime/processes/observation.ts";
+import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
+import { readProcessObservation } from "#runtime/processes/observation.ts";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -81,7 +81,7 @@ function recordedPid(file: string): number {
 }
 
 async function expectPidAbsent(pid: number): Promise<void> {
-	const deadline = Date.now() + GIT_MS.groupCleanup;
+	const deadline = gitGroupCleanupDeadline(Date.now());
 	while (readProcessObservation(pid) !== undefined && Date.now() < deadline) {
 		await Bun.sleep(5);
 	}
@@ -165,6 +165,25 @@ function withStalledFirstReader<T>(work: () => Promise<T>): {
 	}
 }
 
+/**
+ * The children of a process, as the process table lists them now.
+ * @param parentPid The parent.
+ * @returns Their pids.
+ */
+function childPids(parentPid: number): number[] {
+	const table = Bun.spawnSync(["ps", "-A", "-o", "pid=,ppid="], {
+		stdout: "pipe",
+		stderr: "ignore",
+	});
+	return table.stdout
+		.toString()
+		.trim()
+		.split("\n")
+		.map((line) => line.trim().split(/\s+/).map(Number))
+		.filter(([, parent]) => parent === parentPid)
+		.map(([pid]) => pid!);
+}
+
 test("the death of the parent ends every Git in flight and its guard", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-orphan-"));
 	const executable = join(root, "git");
@@ -188,9 +207,9 @@ test("the death of the parent ends every Git in flight and its guard", async () 
 	try {
 		await Promise.all(markers.map((marker) => waitForFile(`${marker}.leader`)));
 		const leaders = markers.map((marker) => recordedPid(`${marker}.leader`));
-		const guard = listProcessObservations().find(
-			({ pid, parentPid }) => parentPid === parent.pid && !leaders.includes(pid),
-		);
+		const guard = childPids(parent.pid)
+			.filter((pid) => !leaders.includes(pid))
+			.map((pid) => ({ pid }))[0];
 		if (guard === undefined) throw new Error("The parent runs no guard.");
 		parent.kill("SIGKILL");
 		await parent.exited;
@@ -280,7 +299,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			await expect(git(root, [mode, marker], { executable })).rejects.toMatchObject({
 				failure: "output",
 			});
-			expect(performance.now() - started).toBeLessThan(GIT_MS.groupCleanup);
+			expect(performance.now() - started).toBeLessThan(gitMs("groupCleanup"));
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -306,7 +325,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 		await expect(git(root, ["descendant", descendantMarker], { executable })).rejects.toMatchObject(
 			{ failure: "cleanup" },
 		);
-		expect(performance.now() - descendantStarted).toBeLessThan(GIT_MS.groupCleanup);
+		expect(performance.now() - descendantStarted).toBeLessThan(gitMs("groupCleanup"));
 		await waitForFile(`${descendantMarker}.descendant`);
 		await expectPidAbsent(recordedPid(`${descendantMarker}.leader`));
 		await expectPidAbsent(recordedPid(`${descendantMarker}.descendant`));
@@ -339,7 +358,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			if (outcome.kind === "rejected") {
 				expect(outcome.error).toMatchObject({ failure });
 			}
-			expect(performance.now() - started).toBeLessThan(GIT_MS.groupCleanup);
+			expect(performance.now() - started).toBeLessThan(gitMs("groupCleanup"));
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -385,7 +404,7 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 		}
 		const outcome = await Promise.race([
 			stalledOutcome,
-			Bun.sleep(3 * GIT_MS.groupCleanup).then(() => ({ kind: "deadline" as const })),
+			Bun.sleep(3 * gitMs("groupCleanup")).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(outcome.kind).toBe("rejected");
 		if (outcome.kind === "rejected") {

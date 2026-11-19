@@ -1,16 +1,16 @@
 import { z } from "zod";
 import {
-	ArchitectureExportResultSchema,
-	ArchitectureImportRequestSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureExportResultSchema,
+	architectureImportRequestSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 import {
 	exportArchitectureModelOnServer,
 	importArchitectureModelOnServer,
 } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
-import { PendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
+import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 const unavailable = {
 	id: "unavailable",
@@ -44,7 +44,7 @@ const modelExportContract = defineCommand({
 			model: z.string(),
 			revision: z.string(),
 		}),
-		ArchitectureExportResultSchema.options[1],
+		architectureExportResultSchema().options[1],
 	]),
 	output: {
 		cases: [
@@ -52,7 +52,7 @@ const modelExportContract = defineCommand({
 				id: "file",
 				when: {},
 				mode: "file-receipt",
-				artifact: PendingArtifactSchema,
+				artifact: pendingArtifactSchema(),
 				description: "The portable bundle file receipt or structured refusal",
 			},
 		],
@@ -64,7 +64,7 @@ const modelExportContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailable],
 	relationships: [
 		{
@@ -123,7 +123,7 @@ const modelImportContract = defineCommand({
 		},
 	],
 	input: { ingress: z.strictObject({ input: z.string().optional() }) },
-	result: ArchitectureModuleEditResultSchema,
+	result: architectureModuleEditResultSchema(),
 	output: {
 		cases: [
 			{
@@ -141,7 +141,7 @@ const modelImportContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["local-read", "server-state-write"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailable],
 	relationships: [
 		{
@@ -160,7 +160,7 @@ const modelImportContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model import");
 		const result = await importArchitectureModelOnServer(
-			context.parse(ArchitectureImportRequestSchema, await statedJson(input, context)),
+			context.parse(architectureImportRequestSchema(), await statedJson(input, context)),
 		);
 		return {
 			result,

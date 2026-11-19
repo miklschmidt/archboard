@@ -19,7 +19,7 @@ import {
 } from "#shared/protocol/shown-conversation.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import { type TabSessionId } from "@archboard/codex-realtime-voice/server";
-import { codexWiring } from "#server/workbench-host/services/wiring-hooks.ts";
+import { liveWorkhorseCheckouts } from "#server/workbench-host/services/wiring-hooks.ts";
 import { paneCheckoutOf, panesOfTabSession } from "#server/sessions/services/panes.ts";
 import {
 	currentShownCheckout,
@@ -59,7 +59,7 @@ function refuse(
  * @returns The checkouts.
  */
 function showableCheckouts(tabSessionId: TabSessionId): ReadonlySet<string> {
-	const live = codexWiring.codex.liveWorkhorseCheckouts?.(tabSessionId) ?? [];
+	const live = liveWorkhorseCheckouts(tabSessionId);
 	const shown = currentShownCheckout(tabSessionId);
 	return new Set([
 		...live,
@@ -152,7 +152,7 @@ function shownConversationRoute(req: Request, res: Response): void {
 	}
 	const changed = showConversation(pane.tabSessionId, shown);
 	if (changed) {
-		logger.info(`Tab ${pane.tabSessionId} shows the conversation of ${shown}`);
+		logger().info(`Tab ${pane.tabSessionId} shows the conversation of ${shown}`);
 	}
 	res.json({ success: true, shown, changed } satisfies ShownConversationReply);
 }

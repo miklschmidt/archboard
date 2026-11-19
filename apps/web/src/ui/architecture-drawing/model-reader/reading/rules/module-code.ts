@@ -60,7 +60,7 @@ const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
 const NOT_JUDGED: Readonly<Partial<Record<Skip["reason"], string>>> = {
 	unbound: "no code binding",
 	"exposure-unknown": "no root file in a language the check reads",
-	"binding-not-a-module": "bound to a file or a symbol, not to a folder",
+	"binding-not-a-module": "bound to a file or a symbol that no measured module holds",
 	"repository-unregistered": "repository not registered here",
 	"checkout-unavailable": "checkout could not be read",
 	"ref-not-checked-out": "its ref is not checked out",
