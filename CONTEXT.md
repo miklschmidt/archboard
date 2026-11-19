@@ -808,6 +808,7 @@ _Avoid_: line count, complexity, implementation size
 
 **Exposed value**:
 An exported value that code outside its module reads at run time, a value that a call makes included: `EXPOSED_VALUE`, a warning.
+Where a call makes the value and no language server types it, it may be a function, so the finding is information.
 A function that returns the value, a getter, is an interface and is no exposed value. A test is no reader.
 _Avoid_: exported constant, leaked config, global
 
