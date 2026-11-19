@@ -3,9 +3,7 @@
 //! (`archboard-layout`) and the frontends that paint a scene read: each a
 //! function, so the sheet itself stays the crate's own.
 
-use crate::sizes::{
-    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FLOW_KIND, TAB_SHOULDER,
-};
+use crate::sizes::{ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, TAB_SHOULDER};
 
 /// The space around the final drawing.
 pub const fn diagram_margin() -> f64 {
@@ -37,29 +35,4 @@ pub fn header_words_width(header_width: f64) -> f64 {
 /// The narrowest a container's header is that holds words of some width.
 pub fn header_width_for(words_width: f64) -> f64 {
     words_width + ARCHITECTURE_HEADER_PADDING
-}
-
-/// The kind of a flowchart's frame, which holds a flow.
-pub const fn flow_kind() -> &'static str {
-    FLOW_KIND
-}
-
-/// Whether a node's kind is that of a flowchart's frame.
-pub fn is_flow_kind(kind: &str) -> bool {
-    kind == FLOW_KIND
-}
-
-/// The icon a part without a known icon is drawn with.
-pub const fn fallback_icon() -> &'static str {
-    super::icons::FALLBACK_ICON
-}
-
-/// The icon of a flow's frame.
-pub const fn flow_icon() -> &'static str {
-    super::icons::FLOW_ICON
-}
-
-/// Every icon a picture can draw, whatever its policy says.
-pub const fn own_icons() -> [&'static str; 2] {
-    super::icons::OWN_ICONS
 }

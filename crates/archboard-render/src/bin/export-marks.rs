@@ -6,7 +6,7 @@
 
 use archboard_scene::js;
 use archboard_scene::names::word;
-use archboard_scene::paint::design::own_icons;
+use archboard_scene::paint::own_icons;
 use archboard_scene::paint::viewer_marks;
 use archboard_scene::request::PaletteColor;
 use archboard_scene::scene::Colour;
