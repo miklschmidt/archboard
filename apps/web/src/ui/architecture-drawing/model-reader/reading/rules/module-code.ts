@@ -36,9 +36,6 @@ const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
 	cpp: "C++",
 	rust: "Rust",
 	go: "Go",
-	terraform: "Terraform",
-	nix: "Nix",
-	helm: "Helm",
 };
 
 /** Why the pass did not judge a module, in words, for the reasons a part can be skipped for. */
