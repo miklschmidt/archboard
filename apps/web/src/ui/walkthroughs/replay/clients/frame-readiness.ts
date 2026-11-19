@@ -7,8 +7,31 @@
 // loads and React's commits all run on the browser's own time, and this is
 // where the stepped clock waits for them.
 
-import { waitUntil } from "@archboard/timing";
-import { PAGE_CLOCK } from "#ui/walkthroughs/replay/clients/page-clock.ts";
+import { waitUntil, type Clock } from "@archboard/timing";
+
+/**
+ * The page's monotonic clock, so a change of the system clock never cuts the wait for a frame
+ * short or stretches it.
+ */
+const FRAME_CLOCK: Clock = Object.freeze({
+	/**
+	 * The time now.
+	 * @returns Milliseconds on the monotonic clock.
+	 */
+	now: () => performance.now(),
+	/**
+	 * Run once after a delay.
+	 * @param ms The delay.
+	 * @param run What to run.
+	 * @returns Cancels it.
+	 */
+	after: (ms: number, run: () => void) => {
+		const timer = setTimeout(run, ms);
+		return () => {
+			clearTimeout(timer);
+		};
+	},
+});
 
 /** Watches a page for the moment a frame of it is ready. */
 class FrameReadiness {
@@ -46,7 +69,7 @@ class FrameReadiness {
 				look.seen = this.#changes;
 				return undefined;
 			},
-			{ clock: PAGE_CLOCK },
+			{ clock: FRAME_CLOCK },
 		);
 		if (!ready.ok) throw notReady(frame, look.waiting, ready.boundSeconds);
 	}

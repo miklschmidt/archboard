@@ -12,8 +12,7 @@
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { durationMs, waitUntil } from "@archboard/timing";
-import { PAGE_CLOCK } from "#ui/walkthroughs/replay/clients/page-clock.ts";
+import { durationMs, waitUntil, type Clock } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { talkClock, talkMsSamples } from "@archboard/walkthrough/talk";
 
@@ -128,6 +127,30 @@ function wavOf(samples: Int16Array): Blob {
 	}
 	return new Blob([header.buffer, body.buffer], { type: "audio/wav" });
 }
+
+/**
+ * The page's monotonic clock, so a change of the system clock never cuts the wait for the tap
+ * short or stretches it.
+ */
+const TAP_CLOCK: Clock = Object.freeze({
+	/**
+	 * The time now.
+	 * @returns Milliseconds on the monotonic clock.
+	 */
+	now: () => performance.now(),
+	/**
+	 * Run once after a delay.
+	 * @param ms The delay.
+	 * @param run What to run.
+	 * @returns Cancels it.
+	 */
+	after: (ms: number, run: () => void) => {
+		const timer = setTimeout(run, ms);
+		return () => {
+			clearTimeout(timer);
+		};
+	},
+});
 
 /** A talk being kept, from the voice's first word to the end of its last step. */
 class TalkCapture {
@@ -316,7 +339,7 @@ class TalkCapture {
 				const last = this.#blocks.at(-1);
 				return last !== undefined && last.frame + last.pcm.length >= until ? true : undefined;
 			},
-			{ clock: PAGE_CLOCK },
+			{ clock: TAP_CLOCK },
 		);
 	}
 
