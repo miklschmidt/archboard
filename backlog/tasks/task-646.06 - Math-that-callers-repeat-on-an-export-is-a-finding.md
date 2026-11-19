@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T02:20:00Z'
+updated_date: '2026-11-19T02:21:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -91,5 +91,5 @@ What changed:
 - Docs: archboard skill design lens (the exporter owns the math as a function), CONTEXT.md, ADR 0082, protocol header, check help.
 Verification: new module-depth-computed test; test:modules 5153 pass, test:repository 174 pass, types, lint, format clean.
 Surfaced on modules this ticket does not change: EXPOSED_VALUE_COMPUTED on 3 modules (timing 6 names, renderer 1, walkthrough 1); each replaces an EXPOSED_VALUE that was already there, so the warning total is unchanged.
-Risks / follow-ups: matches are by shape, so unrelated math of one form matches (the accepted deadline/jitter case; on this repository the  matches are of that kind). The web chip has no label for the new code and reads it as words (Exposed value computed). Footprint exits 1 on Commands and code-intel as listed in the notes.
+Risks / follow-ups: matches are by shape, so unrelated math of one form matches (the accepted deadline/jitter case; on this repository the matches of the form X.field + … are of that kind). The web chip has no label for the new code and reads it as words (Exposed value computed). Footprint exits 1 on Commands and code-intel as listed in the notes.
 <!-- SECTION:FINAL_SUMMARY:END -->
