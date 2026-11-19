@@ -48,8 +48,9 @@ did not read must never look like a part that no commit changed.
 Locality and footprint share one declaration mapping. The existing
 code-facts adapters read immutable Git sources before and after each commit.
 A commit counts when the bound declaration changes its source text or file path.
-Unrelated declarations in the same file do not count. The reader never uses
-uncommitted checkout files. Unsupported formats, unparsed code, and ambiguous
+Unrelated declarations in the same file do not count. The reader uses
+uncommitted checkout files only for a footprint whose caller names the working
+tree as its head. Unsupported formats, unparsed code, and ambiguous
 definitions use path-wide fallback, and the answer labels it. The reader does
 not infer identity between renamed symbols.
 
@@ -132,6 +133,13 @@ two parts carry (Ousterhout's information leakage).
 
 A footprint reads the commits from the merge base of a named ref and HEAD up to
 HEAD, in each checkout.
+
+A caller can name the working tree as the head (TASK-646.02), so that a gate
+run before a commit sees the change it judges. The lens then reads the
+uncommitted changes, untracked files included and ignored files left out, as
+one more commit on top of HEAD. It writes that commit with a copy of the index
+into objects of its own, and removes them after the read. The checkout gains no
+object, and its index stays as it was.
 
 A part changed when its bound declarations or paths differ between the merge
 base and the head.
