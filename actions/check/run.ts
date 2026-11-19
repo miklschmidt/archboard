@@ -28,10 +28,13 @@ const CHECKS = ["all", "semantics", "code", "embeds"];
 const GATED_CHECKS = new Set(["all", "code"]);
 /** The vault configuration, from the root of a checkout: only `<root>/.archboard/vault` counts. */
 const VAULT_CONFIGURATION = ".archboard/vault/.archboard/config.yaml";
+/** The args that check drafts, which keep the gate setting each draft was made with. */
+const DRAFT_ARGS = ["--every-draft", "--state"];
 
 /**
- * Whether the shallow-module gate can be on: the args name `--fail-shallow-modules`, or the vault
- * configuration of the checkout sets `codeCheck.failShallowModules: true`. Node reads no YAML, and
+ * Whether the shallow-module gate can be on: the args name `--fail-shallow-modules`, the args check
+ * drafts (`--every-draft` or `--state`), each of which keeps the setting it was made with, or the
+ * vault configuration of the checkout sets `codeCheck.failShallowModules: true`. Node reads no YAML, and
  * the schema allows that key nowhere else, so the text decides. A match the YAML would not read,
  * such as a comment, costs one fetch and nothing else.
  * @param request What the action was asked to do.
@@ -39,6 +42,12 @@ const VAULT_CONFIGURATION = ".archboard/vault/.archboard/config.yaml";
  */
 function gateCanBeOn(request: Request): boolean {
 	if (request.args.includes("--fail-shallow-modules")) return true;
+	if (
+		request.args.some((arg) =>
+			DRAFT_ARGS.some((name) => arg === name || arg.startsWith(`${name}=`)),
+		)
+	)
+		return true;
 	const configuration = join(repositoryRoot(request.directory), VAULT_CONFIGURATION);
 	if (!existsSync(configuration)) return false;
 	return /\bfailShallowModules["']?\s*:\s*(?:true|True|TRUE)\b/u.test(

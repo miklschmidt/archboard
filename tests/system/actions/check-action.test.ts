@@ -326,6 +326,13 @@ describe("the entry", () => {
 		);
 		expect(configured.args).toEqual(["check", "code", "--base", "origin/main"]);
 		expect(fetchedBase(configured.checkout)).toBe(true);
+		// A check of drafts fetches the base too, because each draft keeps its own gate setting.
+		const drafts = run(
+			{ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--every-draft" },
+			"levels: [system]\n",
+		);
+		expect(drafts.args).toEqual(["check", "all", "--every-draft", "--base", "origin/main"]);
+		expect(fetchedBase(drafts.checkout)).toBe(true);
 		// A base the args name wins, and a run that is no pull request names none.
 		expect(
 			run({ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--fail-shallow-modules --base v1" })

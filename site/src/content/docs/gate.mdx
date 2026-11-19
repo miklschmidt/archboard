@@ -77,7 +77,7 @@ codeCheck:
   failShallowModules: true
 ```
 
-A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request, the [check Action](../reference/actions/) needs neither: when the gate is on, by the flag in its [`args`](../reference/actions/#check-args) or by the configuration, it fetches the pull request's base branch, with the whole history when the checkout is shallow, and passes it as `--base origin/<base branch>`. With the gate off, it fetches nothing. A `--base` in the args wins. On a push, name the base there, and give `actions/checkout` the history with `fetch-depth: 0`:
+A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request, the [check Action](../reference/actions/) needs neither: when the gate can be on, by the flag in its [`args`](../reference/actions/#check-args), by the configuration, or because the args check drafts, which keep the setting each was made with, it fetches the pull request's base branch, with the whole history when the checkout is shallow, and passes it as `--base origin/<base branch>`. With the gate off, it fetches nothing. A `--base` in the args wins. On a push, name the base there, and give `actions/checkout` the history with `fetch-depth: 0`:
 
 ```yaml
 - uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}
