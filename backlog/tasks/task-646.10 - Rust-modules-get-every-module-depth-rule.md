@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T02:37:00Z'
+updated_date: '2026-11-19T03:01:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -52,17 +52,32 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The Rust grammar queries name the kind of each export, the pieces of logic in each body, and the expression around each use
-- [ ] #2 Every module-depth rule applies to Rust modules
-- [ ] #3 A trait implementation used through its trait counts as used, and members that the language calls, such as `Drop`, are not judged
-- [ ] #4 Each language's tests assert only what its grammar decides
+- [x] #1 The Rust grammar queries name the kind of each export, the pieces of logic in each body, and the expression around each use
+- [x] #2 Every module-depth rule applies to Rust modules
+- [x] #3 A trait implementation used through its trait counts as used, and members that the language calls, such as `Drop`, are not judged
+- [x] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Test first: a code-check pass over a Rust workspace fixture with a canonical vault (tests/runtime/code-check/languages/operations/rust-depth.test.ts) asserting what the Rust grammar decides: export kinds (fn, struct/enum/union as class, trait and type alias as types, const/static values, a fn-pointer const as a function, public inherent and trait-impl methods), the logic count, uses (EXPOSED_VALUE, per-name EXPOSED_UNUSED), the expression around uses (EXPOSED_VALUE_COMPUTED over Rust spellings and .min/.pow), pass-throughs, a trait impl used through its trait, and Drop/Display members left unjudged.
-2. Fact analysis, Rust: rust.scm gains @logic; rust-definitions marks types, passes and members the language calls (one new optional Definition field); a new rust-math.ts names the computations around each run-time use of a path from another file.
-3. Module depth: add rust to the judged adapters and RUST_FILE to JUDGED_FILES; skip members the language calls by the new field (small shared change, reported).
-4. Update rust-check.test.ts for per-name EXPOSED_UNUSED. Run code-intel tests, type-check, lint, archboard check and the shallow gate; compare findings with feat/module-depth.
+1. Test first: a code-check pass over a Rust crate with a canonical vault (packages/code-intel/tests/runtime/code-check/languages/operations/rust-depth.test.ts) asserting what the Rust grammar decides: export kinds, logic, uses, the math around uses, pass-throughs, trait implementations and members the language calls.
+2. Fact analysis, Rust: rust.scm gains @logic; rust-definitions marks types, function pointers, associated items (static) and members of language-called trait impls (calledByLanguage, shared with TASK-646.11); rust-depth.ts holds Rust's math table and the pass-through reader.
+3. The shared math reader (math-shapes.ts) learns method-style math, a math-name group, number suffixes and a use's spelling, so Rust uses it instead of a copy.
+4. Module depth: rust joins the judged adapters. Code check: a whole-module import leaves a Rust read complete.
+5. Update rust-check.test.ts for per-name findings; docs (CONTEXT.md, design lens, check help). Run lanes, archboard check, the shallow gate and the footprint.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Evidence:
+- AC1: packages/code-intel/tests/runtime/code-check/languages/operations/rust-depth.test.ts drives the code check over a Rust crate. Kinds: Port (trait) and Amount (type alias) are types, Kind (enum), Relay, Account (structs) classes, HANDLER (const of fn type) and post functions, Relay.RETRIES a value and Relay.new a function (associated items), Kind.is_debit, Relay.send, Account.send methods; Timing counts 1 function, 1 class, 4 values. Logic: Ledger counts 9 (calls, matches!, operators, the if, the hidden FEE), its #[cfg(test)] module aside. Uses and the expression around them: PROCESS gets EXPOSED_VALUE_COMPUTED from codex (PROCESS.restart_max.min(PROCESS.restart_base * 2u64.pow(n))) and relay (std::cmp::min through two let locals), evidence codex line 3 and relay line 5; jitter_ms() likewise (codex 6, worker 3); DEADLINE compared and masked stays EXPOSED_VALUE; LIMIT EXPOSED_VALUE; UNUSED read only by tests is an EXPOSED_UNUSED warning.
+- AC2: the same test shows EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED, EXPOSED_UNUSED and CODE_PASS_THROUGH (post, Relay.send) on Rust modules; rust-check.test.ts now expects per-name EXPOSED_UNUSED warnings and EXPOSED_VALUE on money::ZERO (with REEXPORT_PASS_THROUGH and MODULE_SHALLOW reached through the shared roll-up). On this repository Rust crates now get every code: see below.
+- AC3: Account.send (impl Port for Account) is counted as a method with no finding; Account.drop (impl Drop, whose body only passes self on) is neither listed nor judged.
+- AC4: rust-depth.test.ts asserts only grammar decisions (kinds, logic, uses, math around uses, pass-through roots, language-called members); the rules and roll-up stay asserted in the TypeScript tests.
+- Lanes: test:modules 5171 pass 0 fail; code-intel 433 pass; types, lint:policy, lint:tests, format:check clean.
+- archboard check on this repository against feat/module-depth's code-intel: new on Rust crates only (24 modules): EXPOSED_UNUSED warning 1373 names on 24 modules, EXPOSED_VALUE warning 174 on 7, EXPOSED_VALUE_COMPUTED warning 16 on 4, CODE_PASS_THROUGH information 41 on 13, REEXPORT_PASS_THROUGH information 66 on 4 and warning 4 on 2; the container-level EXPOSED_UNUSED information on those 24 modules is gone. No MODULE_SHALLOW on a Rust module. Nothing new on a module this ticket changes.
+- check code --fail-shallow-modules --base feat/module-depth: touched Packages, Code check, code-intel, Fact analysis; no MODULE_SHALLOW on them (only Repositories, untouched, information); exit 1 on pre-existing warnings.
+- Footprint --fail-outside exits 1: namedAndChanged Code check (module-reading.ts: a whole-module Rust import leaves the read complete), Module depth (rust added to the judged tables, 4 lines), Fact analysis (slice); changedNotNamed code-intel (test files) and Packages (holder). Unbound: CONTEXT.md, design lens, check help (Commands).
+<!-- SECTION:NOTES:END -->
