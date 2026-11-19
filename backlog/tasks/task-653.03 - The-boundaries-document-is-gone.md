@@ -1,11 +1,11 @@
 ---
 id: TASK-653.03
 title: The boundaries document is gone
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T16:36:00Z'
-updated_date: '2026-11-19T16:40:00Z'
+updated_date: '2026-11-19T16:48:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -21,9 +21,9 @@ The owner decided (owner decision 19 in the archboard-deepen run's decision log)
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 docs/agents/boundaries.md is deleted, and no tracked file outside backlog/ names it: AGENTS.md, the docs under docs/agents, the oxlint plugin's messages, the repository-policy tests and the code comments that cite it
-- [ ] #2 Every lint and test failure message that pointed at the document instead says the rule itself, so an agent that hits it knows what to change
-- [ ] #3 Each rule the document held that no code, test, lint rule, ADR or vault entry enforces is moved to where it applies or dropped, and the task notes list each one with its outcome
+- [x] #1 docs/agents/boundaries.md is deleted, and no tracked file outside backlog/ names it: AGENTS.md, the docs under docs/agents, the oxlint plugin's messages, the repository-policy tests and the code comments that cite it
+- [x] #2 Every lint and test failure message that pointed at the document instead says the rule itself, so an agent that hits it knows what to change
+- [x] #3 Each rule the document held that no code, test, lint rule, ADR or vault entry enforces is moved to where it applies or dropped, and the task notes list each one with its outcome
 - [ ] #4 bun run check passes
 <!-- AC:END -->
 
@@ -57,4 +57,12 @@ Dropped (they only described the layout or were soft advice):
 - Keep a component used only inside its package private and delete one with no caller: covered by ADR 0055 (every public name has an outside caller) and ordinary dead-code removal.
 - Put large test data in a non-TypeScript fixture: one of several ways to meet the enforced 500-line cap.
 - Moving a command file means editing run.ts: scripts/move-source.ts rewrites repository paths.
+
+Validation: bun run check ran every lane; all passed except check:model, which fails on the 19 INTERFACE_WIDE and MODULE_SHALLOW findings (17 + 2) that TASK-653 exists to clear and that this branch does not touch. test:system (227 pass), test:solo (15 pass) and test:serial-browser (1 pass), which check stopped before, pass when run alone. AC #4 stays unchecked until TASK-653 clears those findings.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Deleted docs/agents/boundaries.md. The area-direction lint message, for TypeScript and CSS, now states the directions itself. The vendor-type rule moved to docs/agents/strict-analysis.md and the generated Codex contract rule to docs/agents/codex-upgrades.md; every other rule was already enforced by lint, the repository-policy tests, an ADR or the vault, or only described the layout and was dropped (listed in the notes). Every pointer to the document is gone. bun run check passes every lane except check:model, whose 19 width and depth findings predate this branch and belong to TASK-653.
+<!-- SECTION:FINAL_SUMMARY:END -->
