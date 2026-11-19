@@ -19,6 +19,7 @@ use crate::drawing::ReadingDirection;
 pub mod colour;
 pub mod definition;
 pub mod group;
+mod pulse;
 pub mod shape;
 pub mod text;
 pub mod traffic;
@@ -30,6 +31,10 @@ pub use definition::{
 };
 pub use group::{
     EntryKind, Group, LineFacts, Role, ShadowOf, Slot, Subject, SubjectKind, Transform,
+};
+pub use pulse::{
+    Bar, GlowLayer, LegMotion, PulseLeg, PulseStop, PulseTrain, pulse_breadth, pulse_slide,
+    pulse_train, turn_distance,
 };
 pub use shape::{Cap, Geometry, Join, PathStep, Pointer, Purpose, Shape, Stroke};
 pub use text::{GlyphPlace, Icon, Text, Viewport};

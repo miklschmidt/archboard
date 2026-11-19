@@ -1,9 +1,11 @@
 ---
 id: TASK-653.01
 title: Scene computes the pulse train once for both painters
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T16:20:00Z'
+updated_date: '2026-11-19T16:23:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -36,3 +38,17 @@ Candidate 2 of the archboard-deepen run. crates/archboard-scene/src/scene is wid
 - [ ] #5 About five Rust tests cover a bent route, a piece under LEAST_PIECE, a crowded and an uncrowded train, the turn window clamping, and a slide on and off a leg
 - [ ] #6 CONTEXT.md defines Pulse train, and an ADR states that the painter owns the clock and the scene maps a moment to a position
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Baseline: WASM corpus hashes (render-corpus render), native SVG hashes of the same paintings (scratch example, not committed), export-types and export-marks outputs, CPU (and GPU/WebGL when a windowed browser runs) paint parity on traffic.
+2. Counting spike on a scratch branch: move one counted setter to paint/build.rs; check Scene's and Painting's counts; list the 13 counted methods.
+3. Shared implementation in scene/traffic (private submodules): pulse_train, pulse_slide, pulse_breadth, turn_distance with PulseTrain, PulseLeg, LegMotion, PulseStop, GlowLayer, Bar; SVG math operation for operation; ~5 Rust tests through pulse_train and pulse_slide.
+4. SVG painter onto the pulse train; delete archboard-svg/src/legs.rs; native and WASM hashes identical.
+5. GPU painter onto the pulse train and pulse_slide; parity compared.
+6. Painting onto pulse_breadth and turn_distance; delete the 11 old functions; six scene submodules private.
+7. Builders to private paint/build.rs; Colour::token deleted; archboard-paint's outlined-rectangle helper and fixture helpers.
+8. Width gate: archboard check code --fail-shallow-modules shows no finding on Scene.
+9. Records: Pulse train in CONTEXT.md, ADR (painter owns the clock, scene maps a moment to a position), test-suite.md ownership line.
+<!-- SECTION:PLAN:END -->
