@@ -4,6 +4,7 @@ title: The code check reads every bound module in every language
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T00:26:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -53,3 +54,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 A bound module that holds two languages reports the exports of both languages
 - [ ] #3 A code-check fixture test covers a bound leaf module that holds two languages
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on code-intel only, because code-intel alone binds packages/code-intel/tests (the new two-language fixture test and the updated expected findings). No architectural meaning, so the exception is recorded in the proposal history (operation task-646-01-code-intel-exception). New findings on unchanged modules: TEST_IMPORT_UNEXPOSED on 2 modules (5 warnings), EXPOSED_UNUSED information on 55 modules; TASK-646.14 clears them.
+<!-- SECTION:NOTES:END -->
