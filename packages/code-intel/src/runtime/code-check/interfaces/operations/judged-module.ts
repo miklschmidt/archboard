@@ -118,7 +118,8 @@ function readHere(judged: Judged, id: string): boolean {
 /**
  * The callers of an exported name that the document draws from outside the
  * part, and whose code the pass did not read: relationships into the part
- * that owns the name, or into a part that holds it up to the judged part.
+ * that owns the name, or into a part that holds it up to the judged part. A
+ * name the part passes on from another module is reached through the part.
  * @param judged The part and its module.
  * @param name The name.
  * @returns The callers' names.
@@ -126,7 +127,8 @@ function readHere(judged: Judged, id: string): boolean {
 function unseenCallers(judged: Judged, name: ExposedName): string[] {
 	const { reading, container } = judged;
 	const side = sideOf(reading, container.id);
-	const owner = ownersOfSite(judged.owners, name)[0]?.node.id ?? container.id;
+	const found = ownersOfSite(judged.owners, name)[0]?.node.id;
+	const owner = found !== undefined && side.has(found) ? found : container.id;
 	const chain = new Set([...(reading.lineages.get(owner) ?? [owner])].filter((id) => side.has(id)));
 	const { nodes, edges } = reading.read.variant.content;
 	const callers = edges.filter(
