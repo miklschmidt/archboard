@@ -1,0 +1,119 @@
+{
+  "id": "HzM8ZFZU",
+  "name": "Sketch: Workspace answers the place questions its callers assemble",
+  "summary": "workspace answers which checkout a repository or vault reads and chooses only a usable one, so code-binding, the CLI and the server stop filtering the raw registry.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:42:36.050Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "4f90f1b980b5f0e12bf898b60d50a7ab5e55d836",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#Ggbqp1CU"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#qwdogTBE"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#0UfEjekU",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Checkout questions",
+        "kind": "function",
+        "responsibility": "Answers which checkout a repository or vault reads, chosen, unchosen or unknown, and chooses a known checkout that holds a vault",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/services/checkout-questions.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#0UfEjekU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#0UfEjekU",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AJJujZb7",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the chosen and known checkouts",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#AJJujZb7",
+        "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AJJujZb7",
+      "placement": {
+        "holder": "vKEsyHFk#0UfEjekU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#x9qm6P7V",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "which checkout holds the vault",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#x9qm6P7V",
+        "to": "vKEsyHFk#IvTUZ8Hk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#x9qm6P7V",
+      "placement": {
+        "holder": "vKEsyHFk#0UfEjekU"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+      "field": "label",
+      "value": "choose a checkout that exists and holds a vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+      "field": "to",
+      "value": "vKEsyHFk#0UfEjekU"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Zv6ZZwJP",
+      "field": "label",
+      "value": "the checkouts a vault reads"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Zv6ZZwJP",
+      "field": "to",
+      "value": "vKEsyHFk#0UfEjekU"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#fEJJNr2X",
+      "field": "description",
+      "value": "Reads and writes the repository's and this machine's language server files. It applies the stored-path rule itself: a command inside the checkout is stored relative to its root, and one outside is refused."
+    }
+  ],
+  "retiredIds": [
+    "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
+    "vKEsyHFk/HBlhIeSD#qwdogTBE"
+  ]
+}

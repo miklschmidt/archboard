@@ -1,0 +1,114 @@
+{
+  "id": "MAUP1htL",
+  "name": "Sketch: Each model resource's query lives with the behavior that reads it",
+  "summary": "The branch footprint and code export queries move to the behaviors that read them, under the shared key prefix, so Model queries keeps only the readings many behaviors share.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:41:23.676Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "e51bd24c7d875cc003589a6a8a0a7cf1cd771f22",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#MTXzrty6"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dGLKtnK8",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Code exports query",
+        "kind": "function",
+        "responsibility": "The selected module's export names and lines, under the vault's shared key",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports/clients"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#dGLKtnK8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dGLKtnK8",
+      "placement": {
+        "holder": "vKEsyHFk#51X5gvya"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#NqQSFaBz",
+      "field": "label",
+      "value": "the vault's shared key prefix"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NqQSFaBz",
+      "placement": {
+        "holder": "vKEsyHFk#dGLKtnK8"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#sIinJqLk",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Branch footprint queries",
+        "kind": "function",
+        "responsibility": "The footprint, merge base and source refs queries, under the vault's shared key",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint/clients"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#sIinJqLk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#sIinJqLk",
+      "placement": {
+        "holder": "vKEsyHFk#y39xN3Ne"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#tLRnKy0B",
+      "placement": {
+        "holder": "vKEsyHFk#sIinJqLk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vA8FPrAu",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the vault's shared key prefix",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#vA8FPrAu",
+        "to": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vA8FPrAu",
+      "placement": {
+        "holder": "vKEsyHFk#sIinJqLk"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#guvtYApo",
+      "field": "responsibility",
+      "value": "The readings that many behaviors share, the live feed, and the one owner of every query key"
+    }
+  ],
+  "retiredIds": [
+    "vKEsyHFk#MTXzrty6"
+  ]
+}

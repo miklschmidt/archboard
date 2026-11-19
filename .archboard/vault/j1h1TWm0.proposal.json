@@ -1,0 +1,131 @@
+{
+  "id": "j1h1TWm0",
+  "name": "Sketch: Codex app-server: one connection operation, one frame decoder, one failure reader",
+  "summary": "codex-app-server opens one connection that builds its sessions, decodes each frame once, and reads a failure for callers, so callers stop assembling the ledger, authorities and transport.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:40:39.173Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "41a9b7a2feb148a0adc2edbb8de5abb58b6437b1",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#LByiH5MN",
+      "kind": "module",
+      "value": {
+        "order": 5,
+        "name": "Codex connection",
+        "kind": "function",
+        "responsibility": "Opens the identity ledger, its authorities and the transport once, and builds each session over them",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/connection"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#LByiH5MN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#LByiH5MN",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fXUcdndW",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "a session over the connection",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#fXUcdndW",
+        "to": "vKEsyHFk#W7H379Zc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fXUcdndW",
+      "placement": {
+        "holder": "vKEsyHFk#LByiH5MN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#mdcqWERb",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the transport that outlives a child",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#mdcqWERb",
+        "to": "vKEsyHFk#Q2Jc26oO"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#mdcqWERb",
+      "placement": {
+        "holder": "vKEsyHFk#LByiH5MN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YThH2AEw",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "Frame decoder",
+        "kind": "function",
+        "responsibility": "Classifies each JSON-RPC line once: response, remote error, notification, server request or invalid frame; and encodes frames",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/protocol/frames.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#YThH2AEw"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YThH2AEw",
+      "placement": {
+        "holder": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+      "field": "label",
+      "value": "one connection that a restarted child rejoins"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+      "field": "to",
+      "value": "vKEsyHFk#LByiH5MN"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#8QpDaiD6",
+      "field": "responsibility",
+      "value": "Answers a mutation's outcome, a transport misuse and a startup failure for callers, in place of the error classes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+      "field": "label",
+      "value": "one classified message per frame"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+      "field": "to",
+      "value": "vKEsyHFk#YThH2AEw"
+    }
+  ]
+}

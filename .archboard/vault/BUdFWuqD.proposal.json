@@ -1,0 +1,69 @@
+{
+  "id": "BUdFWuqD",
+  "name": "Sketch: Renderer hands out finished marks and tool operations, not paint constants and DevTools",
+  "summary": "The renderer hands the canvas finished line samples and drives pages through the window that launch returns, so the paint constants and the DevTools connection go private.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:41:38.995Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "44384cdaee792571b383d928ae29fa575fe34de9",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#AVCQVNqI",
+      "field": "description",
+      "value": "Private to the headless browser. Callers drive a page through the window that launch returns."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#8rmq24D9",
+      "field": "label",
+      "value": "a window per page: evaluate, then screenshot each frame"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#8rmq24D9",
+      "field": "to",
+      "value": "vKEsyHFk/SMjRfwN3#6uHnaygd"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Ut8M2UHc",
+      "field": "responsibility",
+      "value": "Hands out finished marks: the standing mark, the warning glyphs and the key's line samples"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
+      "field": "label",
+      "value": "evaluate in its window, stream its Blob"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
+      "field": "to",
+      "value": "vKEsyHFk/SMjRfwN3#6uHnaygd"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#bLvUOgDi",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "a finished line sample for each kind",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#bLvUOgDi",
+        "to": "vKEsyHFk#Ut8M2UHc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bLvUOgDi",
+      "placement": {
+        "holder": "vKEsyHFk#ksn35ZHp"
+      }
+    }
+  ]
+}

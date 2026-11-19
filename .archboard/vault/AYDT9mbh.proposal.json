@@ -1,0 +1,61 @@
+{
+  "id": "AYDT9mbh",
+  "name": "Sketch: Step frames through one recording clock, and move single-caller parts to their caller",
+  "summary": "ui-kit hands the replay one stepped-frames operation that returns a recording clock, and keeps only the parts that more than one UI module draws with.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:41:49.434Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "b442ec96222d07515bf64129435cdc0e97a98899",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Lwe4ZiPX",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Stepped frames",
+        "kind": "function",
+        "responsibility": "Creates a stepped clock, drives frames from it, and hands back the recording clock",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/ui-kit/src/ui/frame-clock/state/stepped-frames.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Lwe4ZiPX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Lwe4ZiPX",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#MAtwLWd8",
+      "field": "label",
+      "value": "shared buttons and dialogs"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "field": "label",
+      "value": "step the recording, one frame at a time"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "field": "to",
+      "value": "vKEsyHFk#Lwe4ZiPX"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#OeR1aoDr",
+      "field": "description",
+      "value": "Only the parts that more than one UI module draws with. Checkbox, Command and Resizable move to the web app; InputGroup, RadioGroup and Separator move to the code opener."
+    }
+  ]
+}

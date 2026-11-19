@@ -1,0 +1,105 @@
+{
+  "id": "0L6aBtx3",
+  "name": "Sketch: Pane addressing joins the pane registry, and the server process gets one host owner",
+  "summary": "The pane rules move into workbench beside the registry that holds the panes, and server-lifecycle gives the server process one host owner for its pid, startup end and freshness.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:42:20.537Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "cee80099afbf7e06816764924daeefc2d997da26",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Q3izYGFz",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Server host owner",
+        "kind": "function",
+        "responsibility": "Records and releases the pid once per port, reports the end of startup once, and reads source and frontend freshness together",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-lifecycle/src/runtime/services/server-host.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Q3izYGFz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Q3izYGFz",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#doujM3ih"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#5VRa2Rdm",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "source and frontend freshness",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#5VRa2Rdm",
+        "to": "vKEsyHFk#apyQZjM7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5VRa2Rdm",
+      "placement": {
+        "holder": "vKEsyHFk#Q3izYGFz"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#aZ0mbyGS",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "record the pid, release it once, report startup's end",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#aZ0mbyGS",
+        "to": "vKEsyHFk#Q3izYGFz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#aZ0mbyGS",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
+      "field": "label",
+      "value": "place, order and report the panes it holds"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#hhuZHtcv",
+      "field": "to",
+      "value": "vKEsyHFk#Q3izYGFz"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#PmExcyj9",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/rules"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PmExcyj9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    }
+  ]
+}

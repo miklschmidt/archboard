@@ -1,0 +1,94 @@
+{
+  "id": "4siJT9S5",
+  "name": "Sketch: One move per flight: Picture motion answers the carry and the entrance through one value",
+  "summary": "Picture motion hands the stage one move, a carry or an entrance sampled by progress, so the flight stops forwarding ten methods to two types.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:42:57.981Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "28d7dd70d5f60a1367e62a11af4c33cbcafcf780",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AzIRz0PZ",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "Picture move",
+        "kind": "function",
+        "responsibility": "A carry or an entrance, sampled by progress: items, masks, holder and opening",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/between/mod.rs",
+          "symbol": "Move"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#AzIRz0PZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AzIRz0PZ",
+      "placement": {
+        "holder": "vKEsyHFk#9jix9Dsx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lfw8YQ25",
+      "kind": "module",
+      "value": {
+        "order": 20,
+        "name": "Ghost departure",
+        "kind": "function",
+        "responsibility": "What the leaving picture's ghost still shows as it departs",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/between/departure.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#lfw8YQ25"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lfw8YQ25",
+      "placement": {
+        "holder": "vKEsyHFk#9jix9Dsx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zFEaAIIo",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the ghost of the picture that leaves",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#zFEaAIIo",
+        "to": "vKEsyHFk#lfw8YQ25"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zFEaAIIo",
+      "placement": {
+        "holder": "vKEsyHFk#ttPYQNXo"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#xalAnyTh",
+      "field": "label",
+      "value": "one move per flight, sampled by progress"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#xalAnyTh",
+      "field": "to",
+      "value": "vKEsyHFk#AzIRz0PZ"
+    }
+  ]
+}

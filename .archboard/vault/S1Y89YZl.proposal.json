@@ -1,0 +1,113 @@
+{
+  "id": "S1Y89YZl",
+  "name": "Sketch: archboard-scene keeps only what other crates use",
+  "summary": "SVG number spelling moves to archboard-svg and the layout-only route checks move to archboard-layout, so archboard-scene exposes only names that its readers share.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:39:58.997Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "fbdb4618af0fcc70b114412c3440ebd4601528fb",
+  "changes": [
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "responsibility",
+      "value": "Rounds numbers exactly as JavaScript does, so every frontend draws the same picture; their SVG spelling lives in archboard-svg"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Hklab1Mc",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "SVG number spelling",
+        "kind": "function",
+        "responsibility": "Spells numbers in SVG: radix, padding and fixed decimals, which only the SVG painter writes",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-svg/src/numbers.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Hklab1Mc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Hklab1Mc",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#XawB6l7u",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "round as JavaScript does",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#XawB6l7u",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#XawB6l7u",
+      "placement": {
+        "holder": "vKEsyHFk#Hklab1Mc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#wZF1BPQm",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Route curve checks",
+        "kind": "function",
+        "responsibility": "Reverses a route and compares two rounded curves within the route tolerance, which only layout asks",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-layout/src/architecture/curves.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#wZF1BPQm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#wZF1BPQm",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#Y0smyqtZ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#keP5apyO",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the curve each route rounds into",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#keP5apyO",
+        "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#keP5apyO",
+      "placement": {
+        "holder": "vKEsyHFk#wZF1BPQm"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "responsibility",
+      "value": "Rounds a routed polyline into a curve; the route checks only layout asks live in archboard-layout"
+    }
+  ]
+}

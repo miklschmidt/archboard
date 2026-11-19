@@ -1,0 +1,127 @@
+{
+  "id": "1KBdGl8W",
+  "name": "Sketch: Hand out model operations and derived types, not schemas",
+  "summary": "model keeps its operation schemas inside one wire contract that parses requests and reads replies for the server, the CLI and the web, and hands out derived types.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:41:08.259Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "ca08a0fa7bb17f98112eabb4e63129633c230582",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#P13rLJNF",
+      "kind": "module",
+      "value": {
+        "order": 15,
+        "name": "Operation wire contract",
+        "kind": "module",
+        "responsibility": "Keeps each server operation's request and result schemas inside and answers parseModelRequest, readModelReply and modelJsonSchema",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model/src/shared/contract"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#P13rLJNF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#P13rLJNF",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Uk82Jyss",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the request and result schemas",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#Uk82Jyss",
+        "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Uk82Jyss",
+      "placement": {
+        "holder": "vKEsyHFk#P13rLJNF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZWlFN4et",
+      "field": "label",
+      "value": "parse each request, its vault included"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZWlFN4et",
+      "field": "to",
+      "value": "vKEsyHFk#P13rLJNF"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#txWnt33L",
+      "field": "label",
+      "value": "parse the flow render request"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#txWnt33L",
+      "field": "to",
+      "value": "vKEsyHFk#P13rLJNF"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#UAzA1cai",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "read each reply or its refusal",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#UAzA1cai",
+        "to": "vKEsyHFk#P13rLJNF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#UAzA1cai",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#TsCise1I"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#vZUWUgyb",
+      "field": "description",
+      "value": "Keeps the legacy board schema and its version inside. Callers parse with parseLegacyBoard and name its derived types."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vN5qiXDF",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "read each reply or its refusal",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#vN5qiXDF",
+        "to": "vKEsyHFk#P13rLJNF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vN5qiXDF",
+      "placement": {
+        "holder": "vKEsyHFk#guvtYApo"
+      }
+    }
+  ]
+}

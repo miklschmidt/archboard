@@ -1,0 +1,145 @@
+{
+  "id": "qfeEIAIe",
+  "name": "Sketch: codex-realtime-voice: one operation per side for the socket-owning host",
+  "summary": "A host that owns its socket gets one hosted conversation in the browser and the agent's browser side on the server, so Archboard stops assembling the transport, media and controllers.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:43:13.419Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "4645d6367ffcf32693c996e278c39d8381f5f363",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#iFI1NxOm",
+      "kind": "module",
+      "value": {
+        "order": 20,
+        "name": "Hosted conversation",
+        "kind": "function",
+        "responsibility": "One operation for a host that owns its socket: the transport, media and controllers a pane reads",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/voice-client/clients/hosted-conversation.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#iFI1NxOm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#iFI1NxOm",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#eOG7Eo1U"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#XCFHtG0P",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the pane's controllers",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#XCFHtG0P",
+        "to": "vKEsyHFk/yejBBUFY#hO56iL2W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#XCFHtG0P",
+      "placement": {
+        "holder": "vKEsyHFk#iFI1NxOm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vYQQCdnx",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the socket the host owns",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#vYQQCdnx",
+        "to": "vKEsyHFk/yejBBUFY#941UBxya"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vYQQCdnx",
+      "placement": {
+        "holder": "vKEsyHFk#iFI1NxOm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xxqMwbyW",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the browser voice",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#xxqMwbyW",
+        "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xxqMwbyW",
+      "placement": {
+        "holder": "vKEsyHFk#iFI1NxOm"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+      "field": "description",
+      "value": "createVoiceAgent. Its browser side owns a host's socket whole: the socket owner, the send, the lease ledger and the live workhorse checkouts, so a host that multiplexes its own socket wires one operation."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#bFY85rkM",
+      "field": "label",
+      "value": "the shared browser voice, from the hosted conversation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#bFY85rkM",
+      "field": "to",
+      "value": "vKEsyHFk#iFI1NxOm"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#xV2HMQ01",
+      "field": "label",
+      "value": "host Archboard, its browser socket included"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "field": "label",
+      "value": "one hosted conversation per socket generation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "field": "to",
+      "value": "vKEsyHFk#iFI1NxOm"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "field": "label",
+      "value": "one pane's controllers, from its hosted conversation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "field": "to",
+      "value": "vKEsyHFk#iFI1NxOm"
+    }
+  ]
+}

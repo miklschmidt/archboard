@@ -1,0 +1,339 @@
+{
+  "id": "jynh4DJE",
+  "name": "Sketch: Timing owns the waiting: named waits, deadlines, ages and timers in place of duration getters",
+  "summary": "timing answers waits, deadlines, ages, timers and plain durations by named policy, so callers stop writing poll loops and deadline math over duration getters.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:42:04.902Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "4928d3c1b490fbc047c6225c8e42e05036022e50",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#o8rKE5nj",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "Waits",
+        "kind": "function",
+        "responsibility": "Polls a probe on a policy's cadence until it answers or the bound passes, and words the refusal",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/timing/src/shared/waits"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#o8rKE5nj"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#o8rKE5nj",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#NzNJxChX",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "a policy's bound and cadence",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#NzNJxChX",
+        "to": "vKEsyHFk#1H7QZAi9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NzNJxChX",
+      "placement": {
+        "holder": "vKEsyHFk#o8rKE5nj"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AahcOuQl",
+      "kind": "module",
+      "value": {
+        "order": 20,
+        "name": "Deadlines and ages",
+        "kind": "function",
+        "responsibility": "When a policy's bound lapses, and whether a moment is older than it",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/timing/src/shared/deadlines"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#AahcOuQl"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AahcOuQl",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#S5al3WuJ",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "a policy's bound",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#S5al3WuJ",
+        "to": "vKEsyHFk#1H7QZAi9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#S5al3WuJ",
+      "placement": {
+        "holder": "vKEsyHFk#AahcOuQl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#0qtc6W1r",
+      "kind": "module",
+      "value": {
+        "order": 30,
+        "name": "Timers",
+        "kind": "function",
+        "responsibility": "A one-shot or repeating timer on a policy, with its cancel",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/timing/src/shared/timers"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#0qtc6W1r"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#0qtc6W1r",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#83XYCdbS",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "a policy's delay and repeat",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#83XYCdbS",
+        "to": "vKEsyHFk#1H7QZAi9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#83XYCdbS",
+      "placement": {
+        "holder": "vKEsyHFk#0qtc6W1r"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6P9kgQM2",
+      "kind": "module",
+      "value": {
+        "order": 40,
+        "name": "Durations",
+        "kind": "function",
+        "responsibility": "A policy's duration as a number, for an API that takes one",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/timing/src/shared/durations"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#6P9kgQM2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6P9kgQM2",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YU9gF7Pm",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "a policy's duration",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#YU9gF7Pm",
+        "to": "vKEsyHFk#1H7QZAi9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YU9gF7Pm",
+      "placement": {
+        "holder": "vKEsyHFk#6P9kgQM2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1H7QZAi9",
+      "kind": "module",
+      "value": {
+        "order": 50,
+        "name": "Timing policies",
+        "kind": "config",
+        "responsibility": "Each owner's durations and what they pull against, kept inside",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/timing/src/shared/constants"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#1H7QZAi9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1H7QZAi9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#zAZwER1T",
+      "field": "label",
+      "value": "raster job and start-up timeouts"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#zAZwER1T",
+      "field": "to",
+      "value": "vKEsyHFk#6P9kgQM2"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N2puYRTF",
+      "field": "label",
+      "value": "wait for a layout request"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N2puYRTF",
+      "field": "to",
+      "value": "vKEsyHFk#o8rKE5nj"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#EX4mlIeV",
+      "field": "to",
+      "value": "vKEsyHFk#6P9kgQM2"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
+      "field": "to",
+      "value": "vKEsyHFk#AahcOuQl"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#zAB848k7",
+      "field": "label",
+      "value": "an elapsed clock for inspection work"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#zAB848k7",
+      "field": "to",
+      "value": "vKEsyHFk#6P9kgQM2"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#jY19Jvh2",
+      "field": "to",
+      "value": "vKEsyHFk#6P9kgQM2"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#iFWjFhbg",
+      "field": "label",
+      "value": "whether two uses overlap"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#iFWjFhbg",
+      "field": "to",
+      "value": "vKEsyHFk#AahcOuQl"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Y3nWPghd",
+      "field": "label",
+      "value": "wait for the page to be ready"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Y3nWPghd",
+      "field": "to",
+      "value": "vKEsyHFk#o8rKE5nj"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#a2fjUiQD",
+      "field": "label",
+      "value": "wait for the server to start and stop"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#a2fjUiQD",
+      "field": "to",
+      "value": "vKEsyHFk#o8rKE5nj"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#icqdO00L",
+      "field": "label",
+      "value": "when a claim lapses"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#icqdO00L",
+      "field": "to",
+      "value": "vKEsyHFk#AahcOuQl"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
+      "field": "label",
+      "value": "session timers and restart delays"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
+      "field": "to",
+      "value": "vKEsyHFk#0qtc6W1r"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "field": "label",
+      "value": "wait for a group to go quiet"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "field": "to",
+      "value": "vKEsyHFk#o8rKE5nj"
+    }
+  ]
+}

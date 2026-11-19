@@ -1,0 +1,127 @@
+{
+  "id": "FHFYSnyt",
+  "name": "Sketch: The scene is data with one door per name, and the traffic mark answers its pulses",
+  "summary": "Scene keeps one door per name, answers a traffic mark's pulse train once for both painters, and lets Painting own the builders only it calls.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:39:21.431Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "9c63ee5bd327db0caa123621f56fb1364512a82a",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ganpIU7o",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "Pulse train",
+        "kind": "function",
+        "responsibility": "Answers a traffic mark's legs, glow, gradient stops and per-leg timing as numbers, in the core's deterministic math",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/scene/train.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#ganpIU7o"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ganpIU7o",
+      "placement": {
+        "holder": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#U4Q7nid1",
+      "field": "description",
+      "value": "The scene contract: typed data that every painter and the TypeScript bindings read. Each name has one door: the submodules are private and their items are re-exported once. The setters and producer-only constructors live with Painting, the one producer."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#rvyJUse8",
+      "kind": "module",
+      "value": {
+        "order": 900,
+        "name": "Scene builders",
+        "kind": "function",
+        "responsibility": "The setters and producer-only constructors of groups, shapes, strokes and text, visible to Painting alone",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/build.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#rvyJUse8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#rvyJUse8",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xJTCYBeD",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "each pulse's legs, stops and timing",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#xJTCYBeD",
+        "to": "vKEsyHFk#ganpIU7o"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xJTCYBeD",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#P5grw9af",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "each pulse's legs, stops and timing",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#P5grw9af",
+        "to": "vKEsyHFk#ganpIU7o"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#P5grw9af",
+      "placement": {
+        "holder": "vKEsyHFk#NFwqWgrm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#2DHe1toA",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "build each group, shape and run",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#2DHe1toA",
+        "to": "vKEsyHFk#rvyJUse8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#2DHe1toA",
+      "placement": {
+        "holder": "vKEsyHFk#8oId5pfI"
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "id": "9fVQ84WE",
+  "name": "Sketch: workbench: pane connections and voice surfaces as a few operations",
+  "summary": "The pane routes and socket move behind one mount in workbench, so apps/server stops connecting thirty pane registry pieces and starts and stops the workbench once.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:40:57.676Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "75bb2953842c637050341983680ef59bbf26f8c1",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lUGLU51b",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "mount the pane routes and the pane socket",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#lUGLU51b",
+        "to": "vKEsyHFk/Oi6SBIAM#UvFpXmwp"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lUGLU51b",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#2naazvac"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
+      "field": "label",
+      "value": "one start and stop, browser owners included"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/connections/routes/pane-routes.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/connections/sockets/websocket-connection.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/connections/state/pane-vaults.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Am1mLDP5",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/connections/routes/pane-report-route.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/connections"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+      "field": "description",
+      "value": "The pane routes and the pane socket, mounted by the app as one route mount and one socket handler. The registry pieces they connect stay private to workbench."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#RZTsoQN5",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/connections/routes/pane-show-route.ts"
+      }
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "id": "dsJPblSv",
+  "name": "Sketch: The stage takes the page's decisions whole: one arrival, its own clock, its surfaces",
+  "summary": "The painter stage owns its clock, takes one arrival per picture, and archboard-paint hands out one strip surface, so the wasm painter stops repeating the clock and the canvas assembly.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:40:14.955Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "dcf18021913ca1b5481b4267250d3686fa649eb0",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YhoeUKzr",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "Stage clock",
+        "kind": "function",
+        "responsibility": "The stage's own time: the host's moment less the stalls, held inside the stage",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/clock.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#YhoeUKzr"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YhoeUKzr",
+      "placement": {
+        "holder": "vKEsyHFk#ttPYQNXo"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#bzHFN53n",
+      "kind": "module",
+      "value": {
+        "order": 15,
+        "name": "Strip surface",
+        "kind": "function",
+        "responsibility": "A canvas with its kept outlines that draws one stage frame; the CPU surface also hands back its pixels",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/surface.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#bzHFN53n"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bzHFN53n",
+      "placement": {
+        "holder": "vKEsyHFk#NFwqWgrm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Rflk7vUz",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "draw one frame",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#Rflk7vUz",
+        "to": "vKEsyHFk#ttPYQNXo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Rflk7vUz",
+      "placement": {
+        "holder": "vKEsyHFk#bzHFN53n"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#bpRBYR5M",
+      "kind": "module",
+      "value": {
+        "order": 20,
+        "name": "Arrival",
+        "kind": "function",
+        "responsibility": "One arrival per picture: show, carry, enter or dive, as the page decided",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/stage/arrival.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#bpRBYR5M"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bpRBYR5M",
+      "placement": {
+        "holder": "vKEsyHFk#ttPYQNXo"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#mYJXKF2v",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the CPU and WebGL strip frames",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#mYJXKF2v",
+        "to": "vKEsyHFk#bzHFN53n"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#mYJXKF2v",
+      "placement": {
+        "holder": "vKEsyHFk#UpjzNLKH"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#RaRMc6Gn",
+      "field": "label",
+      "value": "one stage; one arrival per picture"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "id": "IPBEnGWZ",
+  "name": "Sketch: Sequence and shape parts are measured where cards are, and the size sheet goes",
+  "summary": "A sequence part measure answers card, frame and self-call geometry for the sequence layout and its painter, so the size sheet stays private to the crate.",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T15:39:42.913Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "74ff255c490abdbbc1ecba65884c32be2cf15568",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6kHe2DoD",
+      "kind": "module",
+      "value": {
+        "order": 35,
+        "name": "Sequence part measures",
+        "kind": "function",
+        "responsibility": "Measures a sequence card, a frame's tab and a self-call's room before layout places them",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/measure/sequence.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#6kHe2DoD"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6kHe2DoD",
+      "placement": {
+        "holder": "vKEsyHFk#9gGvxWHp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#G0k4zMVB",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the sizes a sequence part is drawn at",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#G0k4zMVB",
+        "to": "vKEsyHFk#w44DwfpV"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#G0k4zMVB",
+      "placement": {
+        "holder": "vKEsyHFk#6kHe2DoD"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#w44DwfpV",
+      "field": "description",
+      "value": "The size sheet stays private to the crate. Only the architecture layout's own sizes, the card icon and the far-line width leave it; sequence and shape sizes are answered as measures."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N9jW1gq2",
+      "field": "label",
+      "value": "measure each card, frame and self-call"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N9jW1gq2",
+      "field": "to",
+      "value": "vKEsyHFk#6kHe2DoD"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#oapHN0t2",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the same card and frame geometry",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#oapHN0t2",
+        "to": "vKEsyHFk#6kHe2DoD"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#oapHN0t2",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#CtoOMxca"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#PLVZZKxC",
+      "field": "label",
+      "value": "a flow node's kind and icon, as one answer"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#gJg0IMG5",
+      "field": "label",
+      "value": "the icon a card shows"
+    }
+  ]
+}
