@@ -267,8 +267,10 @@ The reader sends what an action puts in the composer. No state writes to the mod
 
 A failed draw keeps the last picture, names the failure and
 offers Retry and Back. A healthy refresh shows nothing. A lost server overlays the picture and does not move
-it. A removed module says that it was removed, and offers its retained reading. A filtered empty result offers
-`Show whole scope`. A loading message appears only after a delay, and names the destination.
+it. A removed module says that it was removed, and offers its retained reading. When a filter hides every
+module, the pane names the hidden relationship kinds and offers to show them. An empty focus or exact view
+offers `Show whole scope`. An empty reading of the whole scope has no action. A loading message appears only
+after a delay, and names the destination.
 
 Warnings sit on the one subject that they concern. The model-wide count moves to About.
 

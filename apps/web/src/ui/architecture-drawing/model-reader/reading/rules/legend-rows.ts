@@ -1,7 +1,7 @@
 // What the legend lists. Its rows come from the whole reading, not from what the picture draws at
-// this moment: a hidden kind takes its lines off the picture, and the doors that only those lines
-// reached, with their part kinds and groups. Each list keeps one order, the policy's, so hiding a
-// kind or showing it again moves no row.
+// this moment: a hidden kind takes its lines off the picture, and the cards and doors that only
+// those lines reached, with their part kinds and groups. Each list keeps one order, the policy's,
+// so hiding a kind or showing it again moves no row.
 
 import { LINE_MARKS } from "@archboard/renderer/picture";
 import type { Model, projectModel } from "@archboard/model/content";

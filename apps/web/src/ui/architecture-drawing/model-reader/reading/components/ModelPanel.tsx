@@ -86,6 +86,8 @@ interface ModelPanelProps {
 	readonly selecting: boolean;
 	/** Let go of the selection, which the panel offers while a selection stands. */
 	readonly onClose: () => void;
+	/** Keep the filter switches reachable when a filter leaves no card to select. */
+	readonly keepOnNarrow?: boolean;
 	/** What stands over everything else and never scrolls, such as the outline of About. */
 	readonly top?: ReactNode;
 	/** Its `ModelPanel.Scroll`, then any `ModelPanel.Foot`. */
@@ -106,18 +108,36 @@ function focusPicture(panel: HTMLElement | null): void {
 }
 
 /**
- * Give the keyboard back to the picture when a selection lets go of what held it: the control that
- * held it left with the subject, so nothing holds it now.
- * @param panel The panel's element, which stands beside the picture.
- * @param selecting Whether a selection stands.
+ * Whether the keyboard lost its place when the panel let go: the control that held it left with
+ * the subject, or a narrow pane hid the panel around it.
+ * @param panel The panel's element.
+ * @returns True when nothing visible holds the keyboard.
  */
-function useFocusBack(panel: RefObject<HTMLElement | null>, selecting: boolean): void {
-	const was = useRef(selecting);
+function lostFocus(panel: HTMLElement | null): boolean {
+	const active = document.activeElement;
+	if (active === document.body) return true;
+	return panel?.contains(active) === true && panel.getClientRects().length === 0;
+}
+
+/**
+ * Give the keyboard back to the picture when a selection ends or a filtered reading draws cards again.
+ * @param panel The panel's element, which stands beside the picture.
+ * @param selecting Whether the panel shows a selection.
+ * @param keepOnNarrow Whether an empty filtered reading keeps the Legend reachable.
+ */
+function useFocusBack(
+	panel: RefObject<HTMLElement | null>,
+	selecting: boolean,
+	keepOnNarrow: boolean,
+): void {
+	const previous = useRef({ selecting, keepOnNarrow });
 	useLayoutEffect(() => {
-		const letGo = was.current && !selecting;
-		was.current = selecting;
-		if (letGo && document.activeElement === document.body) focusPicture(panel.current);
-	}, [panel, selecting]);
+		const selectionEnded = previous.current.selecting && !selecting;
+		const emptyReadingEnded = previous.current.keepOnNarrow && !keepOnNarrow;
+		previous.current = { selecting, keepOnNarrow };
+		if ((selectionEnded || emptyReadingEnded) && lostFocus(panel.current))
+			focusPicture(panel.current);
+	}, [panel, selecting, keepOnNarrow]);
 }
 
 /**
@@ -128,7 +148,8 @@ function useFocusBack(panel: RefObject<HTMLElement | null>, selecting: boolean):
 function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 	const panel = useRef<HTMLElement>(null);
 	const { onClose, selecting } = props;
-	useFocusBack(panel, selecting);
+	const keepOnNarrow = props.keepOnNarrow === true;
+	useFocusBack(panel, selecting, keepOnNarrow);
 	return (
 		<aside
 			ref={panel}
@@ -138,7 +159,8 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 			style={PANEL_STYLE}
 			className={cn(
 				"bg-sidebar relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col in-data-presenting:hidden",
-				!selecting && "@max-[900px]/reading:hidden",
+				// A narrow pane hides the panel unless a selection or an empty filtered reading holds it.
+				!selecting && !keepOnNarrow && "@max-[900px]/reading:hidden",
 			)}
 		>
 			{props.top}

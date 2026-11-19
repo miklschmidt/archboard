@@ -440,6 +440,8 @@ _Avoid_: highlight, focus (that is part of a reading)
 **Filter**:
 A choice in a reading to hide a relationship kind.
 It acts on relationships before they join, and the model keeps every relationship.
+A part of a scope that drew only lines of hidden kinds leaves the picture.
+A part that never drew a line stays, and so does each subject of a focus.
 _Avoid_: legend (that explains the marks)
 
 **Grammar**:
