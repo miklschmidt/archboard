@@ -250,7 +250,7 @@ test("code exports list a module's exports by kind, each with its findings, read
 test("a module no pass measured reads no exports, and says why", () => {
 	const asked = serving();
 	showExports(pass());
-	expect(document.querySelectorAll("[data-slot='code-exports-unread']")).toHaveLength(1);
+	expect(document.querySelectorAll("[data-slot='code-exports-unmeasured']")).toHaveLength(1);
 	cleanup();
 	showExports(null);
 	expect(document.querySelectorAll("[data-slot='code-exports-unread']")).toHaveLength(1);

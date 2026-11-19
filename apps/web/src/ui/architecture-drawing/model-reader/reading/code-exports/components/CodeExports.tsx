@@ -49,11 +49,15 @@ function CodeExports(props: CodeExportsProps): JSX.Element {
 		() => (reading === null ? undefined : codeByModule(reading).get(module)),
 		[reading, module],
 	);
-	if (reading === null || code === undefined)
+	if (reading === null)
 		return (
 			<Words slot="code-exports-unread">
 				No code check read this version of the reading. The first view of Measures runs one.
 			</Words>
+		);
+	if (code === undefined)
+		return (
+			<Words slot="code-exports-unmeasured">The last code check did not measure this module.</Words>
 		);
 	if (code.kind === "skipped")
 		return (
