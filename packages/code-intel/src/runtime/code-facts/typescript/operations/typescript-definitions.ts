@@ -107,6 +107,9 @@ const CLASSES = new Set([
 	"enum_declaration",
 ]);
 
+/** Declarations of a type alone, which a caller neither runs nor reads. */
+const TYPES = new Set(["interface_declaration", "type_alias_declaration", "enum_declaration"]);
+
 /**
  * The kind syntax proves, including callable and class literals assigned to a name.
  * @param declaration The declaration or its value.
@@ -316,6 +319,7 @@ function definitionOf(
 		source: sourceRange(sourceOf(declaration)),
 		visibility,
 		exposed,
+		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
 	};
 }
 

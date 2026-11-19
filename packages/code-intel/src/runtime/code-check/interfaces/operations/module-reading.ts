@@ -56,6 +56,8 @@ interface OutsideUse {
 	 * (TASK-367.28, TASK-436.15).
 	 */
 	readonly runs: boolean;
+	/** A use only as a type, which reads no value. */
+	readonly typeOnly: boolean;
 	readonly site: DefinitionSite;
 }
 
@@ -116,7 +118,8 @@ async function usesIn(
 		// oxlint-disable-next-line no-await-in-loop -- one site at a time; each search reads files the cache holds
 		const site = await definitionSite(facts, checkout, file, symbol);
 		if (site !== undefined && within(directory, site.path)) {
-			uses.push({ file, line, symbol, runs: runsCode(reference, site), site });
+			const { typeOnly } = reference;
+			uses.push({ file, line, symbol, runs: runsCode(reference, site), typeOnly, site });
 		}
 	}
 	return uses;
@@ -189,13 +192,20 @@ function callUses(
 	const set = file.definitions.flatMap(({ symbol, start, visibility }) => {
 		const [, call = "", name] = ARGUMENT.exec(symbol) ?? [];
 		const named = visibility === "argument" && calls.has(call);
-		return named ? [{ line: start, symbol, name: `var.${name}`, runs: true }] : [];
+		return named ? [{ line: start, symbol, name: `var.${name}`, runs: true, typeOnly: false }] : [];
 	});
 	const outputs = [...exposed.keys()].filter((name) => name.startsWith("output."));
 	const read = file.references.flatMap((reference) => {
 		const { symbol, line, kind } = reference;
 		const runs = kind === "call" || kind === "configured-path";
-		return outputsRead(reference, calls, outputs).map((name) => ({ line, symbol, name, runs }));
+		const { typeOnly } = reference;
+		return outputsRead(reference, calls, outputs).map((name) => ({
+			line,
+			symbol,
+			name,
+			runs,
+			typeOnly,
+		}));
 	});
 	return [...set, ...read].flatMap(({ name, ...use }) => {
 		const site = exposed.get(name);

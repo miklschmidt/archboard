@@ -7,7 +7,7 @@
 // and that directory is removed after the read. So the checkout gains no object, its index stays
 // as it was, and a commit in it at the same time is not blocked.
 
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gitAnswer, gitText, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
@@ -47,8 +47,10 @@ async function commitWorkingTree(
 	const own = join(scratch, "objects");
 	mkdirSync(own);
 	// The copy keeps the checkout's staged changes and what it knows of each file, so only the files
-	// that changed are read again.
-	if (existsSync(index)) copyFileSync(index, join(scratch, "index"));
+	// that changed are read again. It keeps the index's time too: Git reads a file again whose time
+	// is not before the index's, because it may have changed in the second the index was written,
+	// and a copy with a later time would take such a file for unchanged.
+	if (existsSync(index)) cpSync(index, join(scratch, "index"), { preserveTimestamps: true });
 	const env = {
 		GIT_INDEX_FILE: join(scratch, "index"),
 		GIT_OBJECT_DIRECTORY: own,

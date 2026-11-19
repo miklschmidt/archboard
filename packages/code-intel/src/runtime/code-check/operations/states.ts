@@ -164,4 +164,10 @@ async function readEveryDraftToCheck(vault: string): Promise<StatesToCheck | NoS
 		skipped: [],
 	};
 }
-export { type StateToCheck, type NoSuchDraft, readStatesToCheck, readEveryDraftToCheck };
+export {
+	type StateToCheck,
+	type StatesToCheck,
+	type NoSuchDraft,
+	readStatesToCheck,
+	readEveryDraftToCheck,
+};

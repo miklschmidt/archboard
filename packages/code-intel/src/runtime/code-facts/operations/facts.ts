@@ -47,6 +47,13 @@ interface Definition {
 	 */
 	readonly declaration?: true;
 	/**
+	 * It declares a type and nothing a caller runs or reads: a TypeScript
+	 * interface, type alias or enum. The code check counts it as an exported
+	 * type and never judges it, so an exported union or enum keeps the
+	 * compiler's exhaustive checks (TASK-646.04).
+	 */
+	readonly type?: true;
+	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a
 	 * compose service, or, where that context is the compose file's own
@@ -185,6 +192,11 @@ interface ParsedFacts {
 	 * A false value preserves a production declaration of the same module.
 	 */
 	readonly rustModules?: ReadonlyMap<string, boolean>;
+	/**
+	 * The pieces of logic the file holds, where its adapter counts them: calls,
+	 * operators, conditions and loops (TASK-646.04).
+	 */
+	readonly logic?: number;
 }
 
 /**
@@ -286,6 +298,8 @@ interface SyntaxFacts {
 	/** Test-only imports retained for interface checks, never production dependencies. */
 	readonly testImports?: readonly ResolvedImport[];
 	readonly unparsed: readonly Unparsed[];
+	/** The pieces of logic the file holds, where its adapter counts them (`ParsedFacts.logic`). */
+	readonly logic?: number;
 }
 
 /** A file no adapter reads: its text, which the text reading tests (ADR 0046). */

@@ -34,6 +34,10 @@
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
 //   outside it uses, as code or as a type.
 //
+// - Module depth (module-depth.ts, TASK-646.04): each judged module's exports
+//   counted by kind, the logic behind them, `EXPOSED_VALUE` and
+//   `MODULE_SHALLOW`, from what this check already read of the module.
+//
 // What a module exposes and how the files outside it use it is read once a
 // pass (module-reading.ts). A Terraform module is reached only through its
 // outputs, so no entry point of it is judged unexposed, and its container
@@ -51,7 +55,6 @@ import {
 	moduleReading,
 	type ModuleReading,
 	type ModuleReadings,
-	type OutsideUse,
 } from "#runtime/code-check/interfaces/operations/module-reading.ts";
 import type { PartCode, ReadPart, RepoCheckout } from "#runtime/code-check/operations/part-code.ts";
 import { siteOf } from "#runtime/code-check/evidence/operations/relationships.ts";
@@ -61,10 +64,16 @@ import {
 	within,
 	type ExposedName,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
-import { type Definition } from "#runtime/code-facts/operations/facts.ts";
+import { isTestPath } from "#runtime/code-check/operations/part-code.ts";
+import { moduleDepth, reaches, topLevel } from "#runtime/module-depth/operations/module-depth.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
 import { nodeSubject } from "@archboard/model/vault-policy";
-import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
+import type {
+	CodeCheckSkip,
+	CodeEvidence,
+	CodeFinding,
+	ModuleDepth,
+} from "#shared/protocol/code-check.ts";
 import { inspectContainer } from "@archboard/model/container-interface";
 import type { SemanticNode } from "@archboard/model/content";
 import { describeSubject } from "@archboard/model/policy";
@@ -84,10 +93,14 @@ interface InterfaceReading {
 	readonly modules: ModuleReadings;
 }
 
+/** One judged module measured from its code, at its document and variant. */
+type DepthRecord = Omit<ModuleDepth, "state">;
+
 /** What the containers of one document give. */
 interface InterfaceOutcome {
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
+	readonly depth: DepthRecord[];
 }
 
 /** One part bound to a module, and what judging it reads. */
@@ -97,47 +110,6 @@ interface Judged {
 	readonly module: ModuleReading;
 	readonly checkout: RepoCheckout;
 	readonly owners: Owners;
-}
-
-/**
- * Whether a C++ definition is a member of another by its name, as
- * `shop::Store::open` is of `shop::Store`: a method is often defined in
- * another file than its class.
- * @param member The definition.
- * @param holder The other definition.
- * @returns True when it is.
- */
-function memberOf(member: Definition, holder: Definition): boolean {
-	return member.symbol.startsWith(`${holder.symbol}::`);
-}
-
-/**
- * Whether a use reaches an exposed definition or one inside it, such as a member.
- * @param name The exposed name.
- * @param use The use.
- * @returns True when it does.
- */
-function reaches(name: ExposedName, use: OutsideUse): boolean {
-	const { path, definition } = use.site;
-	const inside =
-		path === name.path &&
-		name.definition.start <= definition.start &&
-		definition.end <= name.definition.end;
-	return inside || memberOf(definition, name.definition);
-}
-
-/**
- * Whether an exposed name is a declaration of its file, not a member of one,
- * as its language's rule says where its names say more than their dots: a C#
- * type is qualified by its namespace.
- * @param name The exposed name.
- * @param exposed Every name its module exposes.
- * @returns True for a top-level name.
- */
-function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
-	if (name.member !== undefined) return !name.member;
-	const member = exposed.some((holder) => memberOf(name.definition, holder.definition));
-	return !name.definition.symbol.includes(".") && !member;
 }
 
 /**
@@ -407,9 +379,49 @@ async function judgeContainer(
 	outcome.findings.push(...testImportFindings(judged));
 	const unused = unusedFinding(judged);
 	if (unused !== undefined) outcome.findings.push(unused);
+	await measureDepth(judged, outcome);
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
 	const inspection = inspectContainer(reading.read.variant.content, container);
 	if (inspection.holdsParts) await judgeChildren(judged, inspection, outcome.findings);
+}
+
+/**
+ * Measure a judged module from its code, and judge its exports, with what the
+ * pass already read of it: its exposure, the uses outside it with the part that
+ * owns each, and its own files.
+ * @param judged The part and its module.
+ * @param outcome What the document gives, which gains the module's depth and findings.
+ */
+async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<void> {
+	const { container, module, checkout, owners, reading } = judged;
+	const { directory } = module.exposure;
+	const subject = nodeSubject(container);
+	const site = siteOf(reading.read, `nodes.${container.id}`, subject);
+	const uses = module.uses.map((use) => {
+		const owner = ownersAtLine(owners, use.file, use.line)[0]?.node;
+		return { ...use, reader: owner === undefined ? { name: use.file } : owner };
+	});
+	const files = [...checkout.files].filter((file) => within(directory, file) && !isTestPath(file));
+	const depth = await moduleDepth({
+		facts: reading.facts,
+		checkout,
+		exposure: module.exposure,
+		uses,
+		files,
+		label: describeSubject(subject),
+	});
+	outcome.findings.push(...depth.findings.map((finding) => ({ ...site, ...finding })));
+	const { exports, logic } = depth;
+	outcome.depth.push({
+		model: reading.read.document.name,
+		variant: reading.read.variant.id,
+		subject,
+		repo: checkout.repo,
+		directory,
+		languages: [...depth.languages],
+		exports,
+		logic,
+	});
 }
 
 /**
@@ -555,7 +567,7 @@ function moduleDirectory(code: ReadPart): string | undefined {
  * @returns The findings and what was not judged.
  */
 async function judgeInterfaces(reading: InterfaceReading): Promise<InterfaceOutcome> {
-	const outcome: InterfaceOutcome = { findings: [], skipped: [] };
+	const outcome: InterfaceOutcome = { findings: [], skipped: [], depth: [] };
 	for (const node of reading.read.variant.content.nodes) {
 		// oxlint-disable-next-line no-await-in-loop -- one container at a time keeps the findings in document order
 		await judgeContainer(reading, node, outcome);
@@ -563,4 +575,4 @@ async function judgeInterfaces(reading: InterfaceReading): Promise<InterfaceOutc
 	return outcome;
 }
 
-export { type ModuleReadings, judgeInterfaces };
+export { type DepthRecord, type ModuleReadings, judgeInterfaces };
