@@ -33,8 +33,26 @@ interface ReaderInputs {
 	readonly reducedMotion: boolean;
 }
 
-/** The module that About was opened on, or undefined while About is closed. */
-type AboutScope = string | null | undefined;
+/**
+ * The module that About was opened on. It is pending while the reader moves to it, and a move to
+ * any other module ends a pending About, so a move that fails or is abandoned leaves no About
+ * waiting for a later visit.
+ */
+interface AboutChoice {
+	readonly scope: string | null;
+	readonly pending: boolean;
+}
+
+/**
+ * What a move does to About: a pending About arrives at its module, and ends at any other.
+ * @param about The choice.
+ * @param opened The module the reader moved to.
+ * @returns The choice after the move.
+ */
+function arrive(about: AboutChoice | undefined, opened: string | null): AboutChoice | undefined {
+	if (about?.pending !== true) return about;
+	return about.scope === opened ? { scope: opened, pending: false } : undefined;
+}
 
 /**
  * How the open module is read. The page is kept with the module it was chosen on, so another
@@ -44,14 +62,24 @@ type AboutScope = string | null | undefined;
  * @returns The page, and how to change it.
  */
 function useReaderPage(opened: string | null, shown: string | null) {
-	const [about, setAbout] = useState<AboutScope>(undefined);
+	const [about, setAbout] = useState<AboutChoice | undefined>(undefined);
+	const [seen, setSeen] = useState(opened);
+	if (seen !== opened) {
+		setSeen(opened);
+		setAbout(arrive(about, opened));
+	}
 	const onPage = useCallback(
-		(next: Page): void => setAbout(next === "about" ? opened : undefined),
+		(next: Page): void =>
+			setAbout(next === "about" ? { scope: opened, pending: false } : undefined),
 		[opened],
 	);
 	const onDiagram = useCallback((): void => setAbout(undefined), []);
-	const page: Page = about === opened && about === shown ? "about" : "diagram";
-	return { page, onPage, onDiagram, setAbout };
+	const showAbout = useCallback(
+		(scope: string): void => setAbout({ scope, pending: scope !== opened }),
+		[opened],
+	);
+	const page: Page = about?.scope === opened && opened === shown ? "about" : "diagram";
+	return { page, onPage, onDiagram, showAbout };
 }
 
 /**
@@ -133,15 +161,15 @@ function useReader(inputs: ReaderInputs) {
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const { setAbout, ...places } = useReaderPage(opened, shown.projection.opened);
+	const { showAbout, ...places } = useReaderPage(opened, shown.projection.opened);
 	// About of any module: the module opens, and its About shows once it is the open scope.
 	const openAbout = useCallback(
 		(scope: string): void => {
 			const destination = tree.owner.get(scope)?.end ?? scope;
 			if (destination !== opened) onOpen(scope);
-			setAbout(destination);
+			showAbout(destination);
 		},
-		[opened, onOpen, setAbout, tree],
+		[opened, onOpen, showAbout, tree],
 	);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
