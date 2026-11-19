@@ -9,7 +9,8 @@
 // test exercises code and is not its caller at run time, so a test file is no
 // caller. The files outside that the pass could not read whole are named, so
 // a judge never takes an incomplete read for a complete one: a file no grammar
-// read, code that did not parse and names what the module exposes, a relative
+// read that writes a name the module exposes, as JavaScript, a Vue or a Svelte
+// component can import TypeScript, code that did not parse and names what the module exposes, a relative
 // import that resolves to no file, and an import of the whole module, as
 // `import * as ns`, a bare `import()` or `typeof import()` is, whose names no
 // reference spells. In Rust, so is a file with a use that leads to a name in
@@ -49,6 +50,7 @@ import {
 	type TestImport,
 } from "#runtime/code-check/interfaces/operations/test-imports.ts";
 import {
+	type FileFacts,
 	type Import,
 	type Reference,
 	type SyntaxFacts,
@@ -265,7 +267,8 @@ async function usesIn(
 	file: string,
 ): Promise<{ readonly uses: OutsideUse[]; readonly whole: boolean }> {
 	const read = await search.facts.read(search.checkout, file);
-	if (read === undefined || read.adapter === "text") return { uses: [], whole: false };
+	if (read === undefined) return { uses: [], whole: false };
+	if (read.adapter === "text") return { uses: [], whole: !hidesUse(read, search.exposure) };
 	const uses: OutsideUse[] = [];
 	let whole = readWhole(read, search.exposure);
 	for (const reference of read.references) {
@@ -277,22 +280,31 @@ async function usesIn(
 	return { uses, whole };
 }
 
-/** A specifier that names a file by a path from the importing file. */
-const RELATIVE = /^\.\.?\//u;
-/** The extensions a relative import of code writes, or none. */
-const CODE_EXTENSION = /(?:^|\/)[^./]+$|\.[cm]?[jt]sx?$/u;
+/** A word a file may write: a name, as JavaScript spells one. */
+const WORD = /[\p{L}\p{N}_$]+/gu;
 
 /**
- * Whether code that did not parse may hide a use of a module: it names one
- * of the names the module exposes, which the grammar records even there.
+ * Whether a file may use a module where the grammar read no use: it names
+ * what the module exposes in code that did not parse, which the grammar
+ * records even there, or anywhere in a file no grammar reads, as JavaScript
+ * beside TypeScript, where an import names a default export freely.
  * @param read The file's facts.
  * @param exposure What the module exposes.
  * @returns True when it may.
  */
-function hidesUse(read: SyntaxFacts, exposure: ModuleExposure): boolean {
-	const named = new Set(read.unparsed.flatMap((region) => region.names));
+function hidesUse(read: FileFacts, exposure: ModuleExposure): boolean {
+	const named = new Set(
+		read.adapter === "text"
+			? [...(read.text.match(WORD) ?? []), "default"]
+			: read.unparsed.flatMap((region) => region.names),
+	);
 	return exposure.exposed.some((name) => named.has(name.name.split(".")[0] ?? name.name));
 }
+
+/** A specifier that names a file by a path from the importing file. */
+const RELATIVE = /^\.\.?\//u;
+/** The extensions a relative import of code writes, or none. */
+const CODE_EXTENSION = /(?:^|\/)[^./]+$|\.[cm]?[jt]sx?$/u;
 
 /**
  * The adapters whose code reaches a module it takes whole only by names it

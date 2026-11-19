@@ -8,6 +8,21 @@ type Remembered = NonNullable<RememberedFindings["models"]>[number];
 type Depth = NonNullable<Remembered["depth"]>[number];
 type Skip = NonNullable<Remembered["skipped"]>[number];
 
+/**
+ * How the read of the remembered passes stands, or that the reading is not the vault on disk,
+ * which no pass reads.
+ */
+type CodeRead = "pending" | "error" | "success" | "elsewhere";
+
+/** What stands where no remembered pass read the reading, by how the read stands. */
+const CODE_UNREAD: Readonly<Record<CodeRead, string>> = {
+	pending: "Reading the last code check…",
+	error: "The last code check could not be read from the Archboard server.",
+	success:
+		"No code check has read this version of the reading. Where the map and the code disagree runs one, and so does archboard check code.",
+	elsewhere: "The code check reads the vault, and this reading is not in it.",
+};
+
 /** What the code pass says of one module. */
 type ModuleCode =
 	| {
@@ -24,6 +39,8 @@ type ModuleCode =
 			/** Why, as a key: the skip's reason, or `unjudged` for a module no rule reads. */
 			readonly reason: string;
 			readonly words: string;
+			/** What the skip names, such as the binding of a module bound to a file or a symbol. */
+			readonly detail?: string;
 	  };
 
 /** The names of the languages a pass reads, as a reader spells them. */
@@ -42,6 +59,7 @@ const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
 const NOT_JUDGED: Readonly<Partial<Record<Skip["reason"], string>>> = {
 	unbound: "no code binding",
 	"exposure-unknown": "no root file in a language the check reads",
+	"binding-not-a-module": "bound to a file or a symbol, not to a folder",
 	"repository-unregistered": "repository not registered here",
 	"checkout-unavailable": "checkout could not be read",
 	"ref-not-checked-out": "its ref is not checked out",
@@ -138,7 +156,8 @@ function findingsBySubject(findings: Remembered["findings"]): ReadonlyMap<string
  */
 function skippedModule(skip: Skip): ModuleCode {
 	const words = NOT_JUDGED[skip.reason] ?? skip.reason.replaceAll("-", " ");
-	return { kind: "skipped", reason: skip.reason, words };
+	const { reason, detail } = skip;
+	return { kind: "skipped", reason, words, ...(detail === undefined ? {} : { detail }) };
 }
 
 /**
@@ -208,10 +227,12 @@ function missingServers(reading: Remembered): readonly MissingServers[] {
 }
 
 export {
+	CODE_UNREAD,
 	codeByModule,
 	languageName,
 	missingServers,
 	notJudgedWords,
+	type CodeRead,
 	type MissingServers,
 	type ModuleCode,
 };

@@ -85,7 +85,7 @@ test("the count of About stays for a pass with no warning, and offers nothing to
 
 const VAULT = "/work/shop/.archboard/vault";
 const GATEWAY = { kind: "node", id: "Shop#Gateway", name: "Gateway" } as const;
-/** The code the gateway is bound to. */
+/** A file the gateway could be bound to, which stands for no folder. */
 const BOUND = "src/gateway/gateway.ts";
 
 /** What the last pass counted of the gateway: a function, a class with a method, a value, a type. */
@@ -186,8 +186,12 @@ function serving(): { url: string; body: unknown }[] {
 /**
  * Show the code exports of the gateway.
  * @param reading The pass that read the reading on screen, or null.
+ * @param read How the read of the remembered passes stands.
  */
-function showExports(reading: Reading | null): void {
+function showExports(
+	reading: Reading | null,
+	read: ComponentProps<typeof CodeExports>["read"] = "success",
+): void {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	clients.push(client);
 	render(
@@ -196,8 +200,9 @@ function showExports(reading: Reading | null): void {
 			{ client },
 			createElement(CodeExports, {
 				vault: VAULT,
-				module: { id: GATEWAY.id, binding: { repo: "example/shop", path: BOUND } },
+				module: GATEWAY.id,
 				reading,
+				read,
 				onNotice: selectNothing,
 			}),
 		),
@@ -266,13 +271,35 @@ test("code exports list a module's exports by kind, each with its findings, read
 test("a module no pass measured reads no exports, and says why", () => {
 	const asked = serving();
 	showExports(pass());
-	// A module bound to a file that is no folder's entry: the words name the binding the pass passed.
-	expect(document.querySelector("[data-slot='code-exports-unmeasured']")?.textContent).toContain(
+	expect(document.querySelectorAll("[data-slot='code-exports-unmeasured']")).toHaveLength(1);
+	cleanup();
+	// A module bound to a file that stands for no folder: the words name the binding the pass skipped.
+	showExports({
+		...pass(),
+		skipped: [
+			{
+				reason: "binding-not-a-module",
+				model: "Shop",
+				state: "Current",
+				subject: GATEWAY,
+				detail: BOUND,
+			},
+		],
+	});
+	expect(document.querySelector("[data-slot='code-exports-skipped']")?.textContent).toContain(
 		BOUND,
 	);
 	cleanup();
 	showExports(null);
 	expect(document.querySelectorAll("[data-slot='code-exports-unread']")).toHaveLength(1);
+	// While the remembered passes are read, after their read failed, and for a reading that is not
+	// the vault on disk, the words say so, and never that no pass read the reading.
+	for (const read of ["pending", "error", "elsewhere"] as const) {
+		cleanup();
+		showExports(null, read);
+		const words = document.querySelector("[data-slot='code-exports-unread']");
+		expect(words?.getAttribute("data-read")).toBe(read);
+	}
 	cleanup();
 	showExports({
 		...pass(),
@@ -280,6 +307,22 @@ test("a module no pass measured reads no exports, and says why", () => {
 	});
 	expect(document.querySelectorAll("[data-slot='code-exports-skipped']")).toHaveLength(1);
 	expect(asked).toHaveLength(0);
+});
+
+test("a server that forgot the pass reads as forgotten, and any other refusal of the exports as a failure", async () => {
+	for (const [code, slot] of [
+		["CODE_EXPORTS_UNREAD", "code-exports-forgotten"],
+		["VAULT_UNREGISTERED", "code-exports-unavailable"],
+	] as const) {
+		globalThis.fetch = Object.assign(
+			async () => Response.json({ success: false, code, error: "refused" }, { status: 404 }),
+			{ preconnect: realFetch.preconnect },
+		);
+		showExports(measured());
+		// oxlint-disable-next-line no-await-in-loop -- one refusal at a time, each on its own page
+		await waitFor(() => expect(document.querySelectorAll(`[data-slot='${slot}']`)).toHaveLength(1));
+		cleanup();
+	}
 });
 
 /**
@@ -300,6 +343,7 @@ function panelExports(
 			model,
 			module: { id: GATEWAY.id, binding: { repo: "example/shop", path: "src/gateway" } },
 			reading: measured(),
+			read: "success",
 			onNotice: selectNothing,
 		}),
 	);

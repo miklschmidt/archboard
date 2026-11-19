@@ -165,9 +165,9 @@ function undeclaredFinding(
 		message:
 			`${reading.label} declares no interface, so each export of its files is open to every ` +
 			`folder. Files outside it use ${outside} of its ${names.length} exported names, and only ` +
-			`its own files import ${inside.length}: ${named}. Declare its interface, as an ` +
-			"entry file such as index.ts does, with what callers use, and the names only its own " +
-			"files need stay inside.",
+			`its own files import ${inside.length}: ${named}. Declare its interface with what ` +
+			"callers use, in an entry file (index.ts, __init__.py or mod.rs) or in its package's " +
+			"exports in package.json, and the names only its own files need stay inside.",
 	};
 }
 

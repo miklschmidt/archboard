@@ -7,10 +7,10 @@ import {
 import {
 	codeByModule,
 	missingServers,
+	type CodeRead,
 	type MissingServers,
 	type ModuleCode,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
-import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /** What the last code pass says of the modules of the reading on screen, for a table of Measures. */
 interface ModuleCodeRead {
@@ -21,7 +21,7 @@ interface ModuleCodeRead {
 	/** The checkouts of the pass that miss the server of a language. */
 	readonly missing: readonly MissingServers[];
 	/** How the read of the remembered passes stands, or that the reading is not in the vault. */
-	readonly read: "pending" | "error" | "success" | "elsewhere";
+	readonly read: CodeRead;
 }
 
 /**
@@ -36,7 +36,7 @@ function useModuleCode(vault: string, model: CodeReadingName, wanted: boolean): 
 	const { reading, read } = useModelCodeFindings(vault, model, wanted);
 	const modules = useMemo(() => (reading === null ? undefined : codeByModule(reading)), [reading]);
 	const missing = useMemo(() => (reading === null ? [] : missingServers(reading)), [reading]);
-	return { reading, modules, missing, read: readsVaultOnDisk(model) ? read : "elsewhere" };
+	return { reading, modules, missing, read };
 }
 
 export { useModuleCode, type ModuleCodeRead };

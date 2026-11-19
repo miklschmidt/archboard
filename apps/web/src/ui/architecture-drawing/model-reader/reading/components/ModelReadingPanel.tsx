@@ -199,6 +199,7 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 		onReveal: props.onReveal,
 		onRevealFlow: reader.openFlow,
 		code: code.reading,
+		codeRead: code.read,
 		pathOf,
 		context,
 		flowHead,

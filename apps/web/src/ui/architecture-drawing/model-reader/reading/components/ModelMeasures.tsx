@@ -26,7 +26,10 @@ import {
 	useModuleCode,
 	type ModuleCodeRead,
 } from "#ui/architecture-drawing/model-reader/reading/hooks/use-module-code.ts";
-import { notJudgedWords } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
+import {
+	CODE_UNREAD,
+	notJudgedWords,
+} from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 import { ModelMeasureServers } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasureServers.tsx";
 import { CheckedAt } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 import { historyDay } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
@@ -224,7 +227,7 @@ function MeasureFoot(props: {
 			<p data-slot="model-measures-key" className="text-body text-muted-foreground">
 				{props.history
 					? "0 is none. A dash was not read, and says why on hover."
-					: "0 is none. A blank has no count: a module with no parts has no interface, and the code check measures only modules bound to a folder or to its entry file. A dash was not judged, and says why on hover."}
+					: "0 is none. A blank has no count: a module with no parts has no interface, and the code check measures only bound modules. A dash was not judged, and says why on hover."}
 			</p>
 		</div>
 	);
@@ -318,15 +321,6 @@ type CodeStatusProps = ModuleCodeRead & {
 	readonly wanted: boolean;
 	/** How many modules the table holds. */
 	readonly rows: number;
-};
-
-/** What the code line says while no remembered pass read the reading, by how the read stands. */
-const CODE_UNREAD: Readonly<Record<CodeStatusProps["read"], string>> = {
-	pending: "Reading the last code check…",
-	error: "The last code check could not be read from the Archboard server.",
-	success:
-		"No code check has read this version of the reading. Where the map and the code disagree runs one, and so does archboard check code.",
-	elsewhere: "The code check reads the vault, and this reading is not in it.",
 };
 
 /**

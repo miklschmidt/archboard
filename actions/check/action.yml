@@ -27,7 +27,9 @@ inputs:
   args:
     description: >-
       Extra arguments for `archboard check`, such as `--every-draft` or `--state "Queued fulfilment"`.
-      Quotes group words. No shell runs them.
+      Quotes group words. No shell runs them. On a pull request, when they name no `--base` and the
+      check is `all` or `code`, the Action fetches the pull request's base branch, with the whole
+      history when the checkout is shallow, and adds `--base origin/<base branch>`.
     default: ""
   repos:
     description: >-

@@ -33,7 +33,9 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/code-exports/rules/export-list.ts";
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import {
+	CODE_UNREAD,
 	codeByModule,
+	type CodeRead,
 	type ModuleCode,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 
@@ -52,10 +54,12 @@ type Finding = ModelCodeReading["findings"][number];
 /** Inputs for the code exports of one module. */
 interface CodeExportsProps {
 	readonly vault: string;
-	/** The module, by its identity and the code it is bound to. */
-	readonly module: { readonly id: string; readonly binding: CodeBinding };
+	/** The module, by its identity. */
+	readonly module: string;
 	/** The pass that read the reading on screen, or null when none did. */
 	readonly reading: ModelCodeReading | null;
+	/** How the read of the remembered passes stands, which says why no pass stands behind the page. */
+	readonly read: CodeRead;
 	/** Where an open of code tells what went wrong. */
 	readonly onNotice: Notice;
 }
@@ -71,14 +75,13 @@ interface ReadingModule {
  * vault on disk, which is the only reading the code check reads.
  * @param model The reading.
  * @param module The module.
- * @returns The module with its binding, or null when no code check reads its code.
+ * @returns The module's identity, or null when no code check reads its code.
  */
 function checkedModule(
 	model: Parameters<typeof readsVaultOnDisk>[0],
 	module: ReadingModule,
-): CodeExportsProps["module"] | null {
-	const { id, binding } = module;
-	return binding === undefined || !readsVaultOnDisk(model) ? null : { id, binding };
+): string | null {
+	return module.binding === undefined || !readsVaultOnDisk(model) ? null : module.id;
 }
 
 /**
@@ -103,10 +106,11 @@ function ModuleCodeExports(
 			list={false}
 		>
 			<CodeExports
-				key={module.id}
+				key={module}
 				vault={props.vault}
 				module={module}
 				reading={props.reading}
+				read={props.read}
 				onNotice={props.onNotice}
 			/>
 		</ModelPanel.Section>
@@ -121,20 +125,34 @@ function ModuleCodeExports(
 function CodeExports(props: CodeExportsProps): JSX.Element {
 	const { reading, module } = props;
 	const code = useMemo(
-		() => (reading === null ? undefined : codeByModule(reading).get(module.id)),
-		[reading, module.id],
+		() => (reading === null ? undefined : codeByModule(reading).get(module)),
+		[reading, module],
 	);
 	if (reading === null)
 		return (
-			<Words slot="code-exports-unread">
-				No code check read this version of the reading. The first view of Measures runs one.
-			</Words>
+			<p
+				data-slot="code-exports-unread"
+				data-read={props.read}
+				className="text-body text-muted-foreground max-w-[68ch]"
+			>
+				{CODE_UNREAD[props.read]}
+			</p>
 		);
-	if (code === undefined) return <Unmeasured binding={module.binding} />;
+	if (code === undefined)
+		return (
+			<Words slot="code-exports-unmeasured">The last code check did not measure this module.</Words>
+		);
 	if (code.kind === "skipped")
 		return (
 			<Words slot="code-exports-skipped">
-				The code check did not judge this module: {code.words}.
+				The code check did not judge this module: {code.words}
+				{code.detail !== undefined && (
+					<>
+						{" "}
+						(<code className="font-mono [overflow-wrap:anywhere]">{code.detail}</code>)
+					</>
+				)}
+				.
 			</Words>
 		);
 	return <ReadExports {...props} reading={reading} code={code} />;
@@ -153,7 +171,7 @@ function ReadExports(
 	},
 ): JSX.Element {
 	const { vault, reading, code } = props;
-	const { id } = props.module;
+	const { module: id } = props;
 	const counted = exportCount(code.exports) > 0;
 	const query = useCodeExports(vault, reading, id, counted);
 	const list = useMemo(
@@ -205,7 +223,7 @@ function ExportsBody(
 		);
 	if (query.data === null)
 		return (
-			<Words slot="code-exports-unavailable">
+			<Words slot="code-exports-forgotten">
 				The server no longer remembers this code check. Run it again to list the exports.
 			</Words>
 		);
@@ -347,30 +365,6 @@ function FindingChip(props: { readonly finding: Finding }): JSX.Element {
 			<span className="sr-only">{SEVERITY_WORDS[finding.severity]}: </span>
 			{findingName(finding.code)}
 		</Badge>
-	);
-}
-
-/**
- * Why the pass did not measure a bound module: it measures a module bound to a folder, or to the
- * entry file of one, and says nothing of a binding to another file or to a symbol.
- * @param props The module's binding.
- * @param props.binding The binding.
- * @returns The words.
- */
-function Unmeasured(props: { readonly binding: CodeBinding }): JSX.Element {
-	const { path, symbol } = props.binding;
-	return (
-		<Words slot="code-exports-unmeasured">
-			The last code check did not measure this module. It measures a module bound to a folder, or to
-			the entry file of one such as <code className="font-mono">index.ts</code>, and this one is
-			bound to{" "}
-			{symbol !== undefined && (
-				<>
-					the symbol <code className="font-mono">{symbol}</code> in{" "}
-				</>
-			)}
-			<code className="font-mono [overflow-wrap:anywhere]">{path}</code>.
-		</Words>
 	);
 }
 

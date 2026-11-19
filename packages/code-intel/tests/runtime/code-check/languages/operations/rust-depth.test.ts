@@ -8,7 +8,8 @@
 // values. `codex` and `relay` write the restart backoff on `PROCESS` with
 // their own spellings, `relay` through local variables, and `codex` and
 // `worker` the same math on the getter `jitter_ms`. `worker` and `relay`
-// compare and mask `DEADLINE`, which is no math. Only `worker` reads `LIMIT`,
+// compare and mask `DEADLINE`, which is no math, and hand it to a method
+// named `log`, which is no math either. Only `worker` reads `LIMIT`,
 // and only its tests read `UNUSED`. `ledger` exports a trait, a type alias,
 // an enum, a function pointer, a type with an associated constant that passes
 // calls on, and one that implements the trait and `Drop`.
@@ -105,6 +106,9 @@ beforeAll(async () => {
 			"pub fn late(elapsed: u64, flags: u64) -> bool {",
 			"    elapsed == timing::DEADLINE || (flags & timing::DEADLINE) > 0",
 			"}",
+			"fn trace(log: &Tracer) -> u64 {",
+			"    log.log(timing::DEADLINE)",
+			"}",
 			"",
 		].join("\n"),
 		"src/worker/mod.rs": [
@@ -114,6 +118,9 @@ beforeAll(async () => {
 			"}",
 			"pub fn due(now: u64) -> bool {",
 			"    now != DEADLINE && (now | DEADLINE) > u64::from(timing::LIMIT)",
+			"}",
+			"fn note(log: &Tracer) -> u64 {",
+			"    log.log(DEADLINE)",
 			"}",
 			"#[cfg(test)]",
 			"mod tests {",
@@ -276,7 +283,7 @@ test("the pieces of logic of a Rust module are its calls, macro calls, operators
 test("Rust uses and the math around them judge each export, whatever the spelling or a local variable", () => {
 	expect(findingsOn("Timing")).toEqual([
 		["PROCESS", "EXPOSED_VALUE_COMPUTED", "warning"],
-		// Comparing and masking is no math.
+		// Comparing and masking is no math, nor is a method named `log`.
 		["DEADLINE", "EXPOSED_VALUE", "warning"],
 		["LIMIT", "EXPOSED_VALUE", "warning"],
 		// A test is no user.

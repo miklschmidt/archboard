@@ -4,6 +4,7 @@ import type { Model } from "@archboard/model/content";
 import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { codeFindingsQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
+import type { CodeRead } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 
 type ModelCodeReading = NonNullable<RememberedFindings["models"]>[number];
 
@@ -25,7 +26,7 @@ interface CodeReadingName {
  * @param model The coherent current, proposal, or retained architecture, by its name.
  * @param wanted Whether the caller shows the findings now; a caller that does not reads nothing.
  * @returns Its matching findings, the subjects that carry warning marks, and how the read of the
- * remembered findings stands.
+ * remembered findings stands, or that the reading is not the vault on disk, which no pass reads.
  */
 function useModelCodeFindings(vault: string, model: CodeReadingName, wanted = true) {
 	const id = model.manifest.id;
@@ -38,7 +39,7 @@ function useModelCodeFindings(vault: string, model: CodeReadingName, wanted = tr
 	const onDisk = readsVaultOnDisk(model);
 	const query = useQuery({ ...codeFindingsQuery(vault), select, enabled: wanted && onDisk });
 	const reading = onDisk ? (query.data ?? null) : null;
-	const read = query.status;
+	const read: CodeRead = onDisk ? query.status : "elsewhere";
 	const warnings = useMemo(() => warnedSubjects(reading), [reading]);
 	return { reading, warnings, read };
 }

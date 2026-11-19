@@ -248,6 +248,63 @@ describe("the entry", () => {
 		).toBe(0);
 	});
 
+	test("on a pull request, the check reads the touched modules from the pull request's base, with the history it needs", () => {
+		const root = scratch();
+		const git = (cwd: string, ...args: string[]) => {
+			const done = Bun.spawnSync(["git", "-c", "user.name=t", "-c", "user.email=t@t", ...args], {
+				cwd,
+				env: { PATH: process.env["PATH"] ?? "", HOME: root, GIT_CONFIG_NOSYSTEM: "1" },
+			});
+			if (done.exitCode !== 0) throw new Error(done.stderr.toString());
+			return done.stdout.toString().trim();
+		};
+		const origin = join(root, "origin");
+		mkdirSync(origin);
+		git(origin, "init", "-q", "-b", "main");
+		for (const commit of ["one", "two"]) {
+			writeFileSync(join(origin, commit), commit);
+			git(origin, "add", "-A");
+			git(origin, "commit", "-q", "--no-gpg-sign", "-m", commit);
+		}
+		git(origin, "checkout", "-q", "-b", "feature");
+		writeFileSync(join(origin, "three"), "three");
+		git(origin, "add", "-A");
+		git(origin, "commit", "-q", "--no-gpg-sign", "-m", "three");
+		// A runner's checkout: the head of the pull request alone, one commit deep.
+		const runner = join(root, "workspace");
+		mkdirSync(runner);
+		git(runner, "clone", "-q", "--depth", "1", "--branch", "feature", `file://${origin}`, "app");
+		const checkout = join(runner, "app");
+		const folder = scratch();
+		writeFileSync(join(folder, "check.json"), JSON.stringify(answer));
+		writeFileSync(join(folder, "repos.json"), JSON.stringify({ repos: [] }));
+		const argsOf = (inputs: Record<string, string>) => {
+			runEntry(entry, {
+				ARCHBOARD_BIN: writeStandIn(home),
+				FAKE_DIR: folder,
+				GITHUB_WORKSPACE: runner,
+				RUNNER_TEMP: folder,
+				ARCHBOARD_INPUT_WORKING_DIRECTORY: "app",
+				...inputs,
+			});
+			return readFileSync(join(folder, "check-args"), "utf8").trim().split("\n");
+		};
+
+		expect(argsOf({ GITHUB_BASE_REF: "main" })).toEqual(["check", "all", "--base", "origin/main"]);
+		// The merge base of the head and the base is in the checkout now.
+		expect(git(checkout, "merge-base", "HEAD", "origin/main")).toBe(
+			git(origin, "rev-parse", "main"),
+		);
+		// A base the args name wins, and a run that is no pull request names none.
+		expect(argsOf({ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_ARGS: "--base v1" })).toEqual([
+			"check",
+			"all",
+			"--base",
+			"v1",
+		]);
+		expect(argsOf({})).toEqual(["check", "all"]);
+	});
+
 	test("allow-codes keeps a finding on the diff and in the summary and lets the step pass", () => {
 		const allowed = step(1, {
 			ARCHBOARD_INPUT_ALLOW_CODES: "OTHER_CODE,\nRELATIONSHIP_UNSUPPORTED",

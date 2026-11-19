@@ -9,13 +9,13 @@
 // shallow module whose range the check could not read is a refusal, never a
 // pass.
 
-import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
 
 /** One finding of the code check. */
-type CodeFinding = CodeCheckAnswer["findings"][number];
+type CodeFinding = CodeCheckResult["findings"][number];
 
 /** The touched modules of one reading. */
-type Touched = NonNullable<CodeCheckAnswer["touched"]>[number];
+type Touched = NonNullable<CodeCheckResult["touched"]>[number];
 
 /** What the gate reads of the command's options. */
 interface GateOptions {
@@ -84,7 +84,7 @@ function sameReading(
  * @param flag Whether `--fail-shallow-modules` was given.
  * @returns True when it does.
  */
-function gated(code: CodeCheckAnswer, finding: CodeFinding, flag: boolean): boolean {
+function gated(code: CodeCheckResult, finding: CodeFinding, flag: boolean): boolean {
 	if (finding.code !== "MODULE_SHALLOW") return false;
 	return (
 		flag ||
@@ -110,7 +110,7 @@ function readFor(touched: Touched | undefined, id: string): touched is Touched {
  * @param finding The finding.
  * @returns The finding, or undefined when the check could not read the branch for its module.
  */
-function gatedFinding(code: CodeCheckAnswer, finding: CodeFinding): CodeFinding | undefined {
+function gatedFinding(code: CodeCheckResult, finding: CodeFinding): CodeFinding | undefined {
 	const id = finding.subject?.id ?? "";
 	const touched = code.touched?.find((each) => sameReading(each, finding));
 	if (!readFor(touched, id)) return undefined;
@@ -124,7 +124,7 @@ function gatedFinding(code: CodeCheckAnswer, finding: CodeFinding): CodeFinding 
  * @param flag Whether `--fail-shallow-modules` was given.
  * @returns The answer with the gate applied.
  */
-function gateShallowModules(code: CodeCheckAnswer, flag: boolean): CodeCheckAnswer {
+function gateShallowModules(code: CodeCheckResult, flag: boolean): CodeCheckResult {
 	const unread: string[] = [];
 	const findings = code.findings.map((finding) => {
 		const gate = gated(code, finding, flag) ? gatedFinding(code, finding) : finding;

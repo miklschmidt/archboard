@@ -406,6 +406,15 @@ test("a container whose module exposes nothing the check can read is listed as n
 	expect(outcome.findings.some((each) => each.model === "Docs")).toBe(false);
 });
 
+test("a part bound to a file that stands for no folder, or to a symbol, is listed as not judged, with its binding", () => {
+	const skips = outcome.skipped.filter((each) => each.reason === "binding-not-a-module");
+	expect(skips.find((each) => each.model === "Shop" && each.subject?.id === "Inner")).toMatchObject(
+		{ repo: SHOP, detail: "src/store/lib/inner.ts" },
+	);
+	const version = skips.find((each) => each.model === "Flake" && each.subject?.id === "Version");
+	expect(version?.detail).toBe("lib.version in infra/flake/flake.nix");
+});
+
 test("external tests use public entry files, while tests inside the module can exercise private files", () => {
 	for (const documentName of ["Shop", "Store alone"]) {
 		const privateImports = findings("TEST_IMPORT_UNEXPOSED", documentName);

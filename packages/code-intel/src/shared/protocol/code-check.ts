@@ -276,6 +276,9 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   language the check reads has, or whose `package.json` `exports` names no
  *   file of the checkout, so its interface is not held to what the module
  *   exposes (TASK-368.10). Its `detail` names the module.
+ * - `binding-not-a-module`: a part bound to a file that stands for no folder,
+ *   as an entry file such as `index.ts` does, or to a symbol, so the check
+ *   measures no module for it (TASK-646). Its `detail` names the binding.
  * - `module-not-read`: a binding's address inside a Terraform or OpenTofu
  *   module the check does not read: a remote module, which the check never
  *   fetches, with no plan JSON named for its root module (TASK-367.17). Its
@@ -340,6 +343,7 @@ const CodeCheckSkipSchema = z
 			"language-server-unready",
 			"language-server-failed",
 			"exposure-unknown",
+			"binding-not-a-module",
 			"module-not-read",
 			"draft-ref-missing",
 			"draft-refs-ambiguous",
