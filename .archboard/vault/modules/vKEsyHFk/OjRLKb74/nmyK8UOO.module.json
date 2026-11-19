@@ -132,6 +132,19 @@
       },
       "id": "vKEsyHFk#gJg0IMG5",
       "to": "vKEsyHFk#w44DwfpV"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "print the viewer's marks as constants for the pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/bin/export-marks.rs",
+        "symbol": "main"
+      },
+      "id": "vKEsyHFk#d0AyIVw1",
+      "to": "vKEsyHFk#GqMdZbTF"
     }
   ]
 }
