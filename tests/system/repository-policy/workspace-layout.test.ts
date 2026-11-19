@@ -2,7 +2,7 @@
 // apps/*, and the old roots and the @/ alias are gone. Each check catches a legacy path coming
 // back that lint cannot see, because lint only reads the folders it is given.
 // Inside each area, code is grouped by behavior first, and the role folder is the last folder of
-// a path (ADR 0075, docs/agents/boundaries.md).
+// a path (ADR 0075).
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";

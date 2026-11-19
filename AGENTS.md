@@ -8,8 +8,7 @@ Where things are written down:
 - Who archboard serves and the rules every surface keeps: [PRODUCT.md](PRODUCT.md)
 - Running it and making sure that it works: [TESTING.md](TESTING.md). Installing it elsewhere:
   [INSTALL.md](INSTALL.md)
-- Domain language: [CONTEXT.md](CONTEXT.md). Module layout and import rules:
-  [docs/agents/boundaries.md](docs/agents/boundaries.md)
+- Domain language: [CONTEXT.md](CONTEXT.md)
 - Changing frontend code: [docs/agents/frontend.md](docs/agents/frontend.md)
 - The advisors that stand in for the owner at design gates: [docs/agents/advisors.md](docs/agents/advisors.md)
 - Decisions: [docs/adr/](docs/adr/). Read the ADR before you touch what it decides.

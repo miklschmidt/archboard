@@ -27,6 +27,8 @@ Run `bun install` to generate the new contract.
 Compare the generated versions under `packages/codex-app-server/src/shared/protocol/generated/versions/`.
 
 Adapt the handwritten schemas to the generated types.
+Only `packages/codex-app-server/src/shared/protocol/app-server-contract.ts` imports the generated tree, and only its types.
+Every other file takes Codex types from that wrapper, so an upgrade is adapted in one place.
 Keep the type assertions that test compatibility in both directions.
 Update required fields in the standalone fake servers as well as TypeScript fixtures.
 The standalone servers include fixtures under `tests/system/server-state/fixtures` and `tests/system/process-contracts`.

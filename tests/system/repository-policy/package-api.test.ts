@@ -8,8 +8,7 @@ import { sourceOf } from "./support/package-sources.ts";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const packagesRoot = path.join(repoRoot, "packages");
 
-// An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
-// "Packages"). A package that adopts it points the `exports` of an area only into that area's
+// An `api/` folder is a package's interface over private implementation (ADR 0058). A package that adopts it points the `exports` of an area only into that area's
 // `api/`, and nothing private reaches back up into it. Each package lists the areas it adopts it
 // for.
 const ADOPTERS: {
