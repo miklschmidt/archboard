@@ -300,7 +300,7 @@ function ModuleHistory(props: ComponentProps<typeof ModelHistory>): JSX.Element 
 }
 
 /**
- * What a module is: its name, its kind and code path, and its responsibility.
+ * What a module is: its name, its kind and code path, its responsibility and its longer account.
  * @param props The module and the model that defines it.
  * @returns The head.
  */
@@ -317,6 +317,14 @@ function ModuleHead(
 				path={props.pathOf(module.id)}
 			/>
 			{module.responsibility && <Summary>{module.responsibility}</Summary>}
+			{module.description && (
+				<p
+					data-slot="module-description"
+					className="text-body text-muted-foreground whitespace-pre-wrap"
+				>
+					{module.description}
+				</p>
+			)}
 		</Identity>
 	);
 }

@@ -97,6 +97,7 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	);
 	// Authored values are behavior. Product wording is not pinned by this test.
 	expect(details).toContain("Accepts shopping requests");
+	expect(details).toContain("Authenticates callers and sends shopping requests to the worker.");
 	expect(details).toContain("src/gateway.ts");
 	expect(details).toContain("docs/gateway.md");
 	// The panel lists the line to Worker by its other end.

@@ -50,7 +50,7 @@ function useReaderPage(opened: string | null) {
 	);
 	const onDiagram = useCallback((): void => setAbout(undefined), []);
 	const page: Page = about === opened ? "about" : "diagram";
-	return { page, onPage, onDiagram };
+	return { page, onPage, onDiagram, setAbout };
 }
 
 /**
@@ -132,7 +132,15 @@ function useReader(inputs: ReaderInputs) {
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPage(opened);
+	const { setAbout, ...places } = useReaderPage(opened);
+	// About of any module: the module opens, and its About shows once it is the open scope.
+	const openAbout = useCallback(
+		(scope: string): void => {
+			if (scope !== opened) onOpen(scope);
+			setAbout(scope);
+		},
+		[opened, onOpen, setAbout],
+	);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
 		model,
@@ -197,6 +205,7 @@ function useReader(inputs: ReaderInputs) {
 		onToggle,
 		onMove,
 		openFlow,
+		openAbout,
 	};
 }
 

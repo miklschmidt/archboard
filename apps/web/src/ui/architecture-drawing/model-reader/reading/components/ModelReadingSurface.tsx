@@ -156,11 +156,14 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	useReaderKeys(reader.onMove);
 	const about = aboutKey(reader);
 	const place = useAboutPlace(about);
-	const { onPage } = reader;
-	const onInterface = useCallback((): void => {
-		place.ask("interface");
-		onPage("about");
-	}, [place, onPage]);
+	const { openAbout } = reader;
+	const onInterface = useCallback(
+		(module: string): void => {
+			place.ask("interface");
+			openAbout(module);
+		},
+		[place, openAbout],
+	);
 	const [outlineSlot, setOutlineSlot] = useState<HTMLElement | null>(null);
 	const aboutPage = useMemo(
 		() =>

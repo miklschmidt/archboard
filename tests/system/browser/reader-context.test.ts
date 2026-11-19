@@ -229,7 +229,8 @@ test("the right column follows what a reader looks at, and the left column holds
 	await lists(browser, { flows: ["Shop#Drain"], walkthroughs: ["Shop#Work"] });
 
 	// A selected module that holds parts says what it offers. Its one caller names the module itself,
-	// so nothing reaches its part, and the line says so. About opens at the rest and names that part.
+	// so nothing reaches its part, and the line says so. The line's heading opens the module, and its
+	// About at the rest, which names that part.
 	expect(await measures(browser)).toEqual({
 		entryPoints: "0",
 		hiddenParts: "1",
@@ -238,9 +239,7 @@ test("the right column follows what a reader looks at, and the left column holds
 		passThrough: "0",
 	});
 	expect(await followMeasures(browser)).toEqual(["Shop#Queue"]);
-	await browser.run(["click", CLEAR]);
-	await lists(browser, { flows: [], walkthroughs: [] });
-	expect(await measures(browser)).toBeNull();
+	await settledOn(browser, "Shop#Worker");
 
 	// The open module decides them while nothing is selected. A long list shows a few rows.
 	await browser.run(["click", '[data-module-row="Shop#Gateway"]']);

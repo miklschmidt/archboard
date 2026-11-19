@@ -877,18 +877,13 @@ Existing canonical navigation, code, and reference owners cover containment and 
 Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
 `presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
-`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, and the door that opens at one click and lists its endpoints on hover.
+`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens the module and its About at the Interface section, and the door that opens at one click and lists its endpoints on hover.
 It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader. Each further hop has its own grade, across the doors, and the trace goes with the pick.
 `reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
 `module-measures.test.ts` owns the one order of each measure and how a reading stands with history. `model-measures.test.tsx` owns the views of the dialog and what a table says in each state of a read. `model-code-evidence.test.tsx` owns the pager of the findings and the source lines round a finding's evidence.
 `relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
-
-`canonical-model-groups.test.ts` replaces the legacy board group browser fixture.
-It retains computed selection-ring assertions.
-It also covers membership across recursive scopes, hidden selection counts, and explicit Focus.
-The existing group UI owner continues to cover shared chips and controls used by retained replay.
 
 `canonical-model-attention.test.ts` replaces `semantic-board-exploring.test.ts`.
 It retains neighbor lighting, readable relationship labels at actual far zoom, and complete selected ink across shared routes.
