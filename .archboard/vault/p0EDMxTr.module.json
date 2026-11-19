@@ -102,6 +102,14 @@
       },
       "id": "vKEsyHFk#3ooGgy80",
       "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "order": 970000,
+      "kind": "call",
+      "label": "in Code mode, list the files and show the open one",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#VelaZ2cn",
+      "to": "vKEsyHFk#2EpLFgGU"
     }
   ]
 }

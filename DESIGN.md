@@ -7,7 +7,6 @@ colors:
   muted-ink: "oklch(0.48 0.008 75)"
   body-ink: "oklch(0.3 0.008 75)"
   chrome-chalk: "oklch(0.973 0.004 88)"
-  tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
   well-floor: "oklch(0.95 0.005 85)"
   tab-piece: "oklch(1 0 0)"
@@ -251,7 +250,6 @@ every role and changes the values. The file theme.css holds both themes.
 - **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on the About page.
-- **Tray Chalk** (`--raised`, oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): the agent's card, which stands on the chrome under the left column's list and holds Working now and the agent dock.
 - **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the trough that holds tabs or a switch. It is also the floor of a field or a count cell sunk into a surface. It is the floor of a nested container on the picture.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
 - **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
@@ -320,8 +318,13 @@ The shell puts columns around the picture. The left column lists where to
 go, and the agent dock is at its foot. It starts at 280px, a sidebar of the usual width, because History
 and Measures open in dialogs of their own. A handle on its edge drags it between 240px and 520px, so long names read whole, and a double click puts it back to 280px. The browser keeps the width. The line of the handle takes the chrome's tone at rest, so the column and the pane's header stay one plane, and it shows under the pointer and takes the gold while it is dragged. The panes are in the centre, one or two side
 by side. The conversation opens between the column and the panes: it slides
-in and out, and a handle on its edge, a grip on a line that takes the gold while
+in and out, and a handle on its edge, a grip that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
+Its line, 1px in the rule's ink, runs the full height of its left edge, against the
+column, and its right edge has none: the handle there takes the chrome's tone at rest,
+so no line stands beside the picture's rounded sheet. In Code mode the code view opens
+the same way between the column and the conversation (560px, between 360px and 1100px),
+with its line on its left edge too, and dragging it shut leaves Code mode.
 Every Diagram reading of the canonical reader has a right panel beside its picture
 (360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
 that it leaves. A selection never refits the picture. A retained legacy board recording keeps a sidebar (280px). Every
@@ -352,9 +355,8 @@ The file app.css holds the values for both themes and gives each one a
 ### Shadow Vocabulary
 
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
-- **tray** (`--elevation-tray`): the agent's card under the left column's list. A lit top edge, and a soft shadow that rises from it.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **sheet** (`--elevation-sheet`): the picture and the About page. The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane, and it casts no shadow. The picture lies on it as a sheet, framed by a lit top edge, a faint ring of 1px and a short shadow under its foot that stays within the chrome below it. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. Two panes are parted by the chrome alone, with no line between them. While two panes share the centre, the active pane's picture carries a quiet edge of 1px in Ink at 32% that follows the rounded corners. It is never gold, so it stays below a chosen card, and one pane alone has no such edge. The composer and the keys at the foot of the right panel lie on the chrome, with no tone of their own, no line and no shadow. In the left column the agent's card stands on the chrome under the list, 8px from the window's foot as the picture is: Tray Chalk, 12px corners, 8px of chrome on every side, and the tray depth (`--elevation-tray`): a lit top edge and a soft shadow that rises from it over the list. Working now stands at its top while an agent works, and the dock under it.
+- **sheet** (`--elevation-sheet`): the picture and the About page. The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane, and it casts no shadow. The picture lies on it as a sheet, framed by a lit top edge, a faint ring of 1px and a short shadow under its foot that stays within the chrome below it. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. Two panes are parted by the chrome alone, with no line between them. While two panes share the centre, the active pane's picture carries a quiet edge of 1px in Ink at 32% that follows the rounded corners. It is never gold, so it stays below a chosen card, and one pane alone has no such edge. The composer and the keys at the foot of the right panel lie on the chrome, with no tone of their own, no line and no shadow. In the left column the agent stands on the chrome under the list, with no card: a 1px line in the rule's ink parts it from the list, and the dock's keys sit at the window's foot, so their row has the column's width. Working now stands at its top while an agent works, and the dock under it.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. An open tree row uses `shadow-raised` and carries no gold.
@@ -554,7 +556,7 @@ The words of a chip keep APCA Lc 60: white on the chalk orange, near black on th
 
 ### Wait notice
 
-A wait that lasts 800ms names what it waits for, under the top of the pane, which it never moves. The notice is 30px high on the popover face, with a 1px Rule edge, 6px corners and `shadow-float`. Its words are Body in Body Ink. It comes down 4px into place over 200ms.
+A wait that lasts 800ms names what it waits for, under the top of the pane, which it never moves. What is wrong with a reading is a toast at the window's foot, one for each pane: a read that failed under the picture, a server that stopped answering, or a reading the server has not confirmed. So is a listing that failed. A toast's dismiss key stands in its top right corner, and its actions, such as Retry, stand in a row under its words. The notice is 30px high on the popover face, with a 1px Rule edge, 6px corners and `shadow-float`. Its words are Body in Body Ink. It comes down 4px into place over 200ms.
 
 A little picture of three cards stands before the words. A spark in Gold Mark draws it again and again while the wait lasts, as the picture itself arrives (The Spark Rule). The spark runs along a line from the card that nothing feeds. Then it runs both ways round the card it lands on, and that card's own line starts. The lines leave together, and the next round draws the mirror picture. A round takes 2600ms. The cards are Face with a Diagram Slate edge, and the lines are Line Ink. With reduced motion, the notice and its picture stand still and drawn.
 
@@ -756,6 +758,34 @@ An explanation of the selection stands at the foot of its pane. The foot is Chro
 
 The head of the plate is 40px high. It holds the status of Codex in Body semibold, with the OpenAI mark in Gold Mark before it. The status is accent text, which is gold on graphite and Ink on chalk. After the status come what the answer is about, in muted ink and cut short, and the retry and cancel keys when they apply. A ghost key closes the reply. The words are Body in Body Ink, 48rem wide at most, and they scroll under the head.
 
+### Code browser
+
+The code browser reads code back to the model. The switch at the foot of the left column
+turns it on: in Code mode the file tree takes the place of the column's lists, and the code
+view takes its own column beside it. The tree lies on the chrome, as the
+column's lists do: rows 28px high in Onest at 12px, and the open file's row raised as a
+Control Face. A row whose file or folder a module binds ends with a small diamond in muted
+ink, and its tooltip names the module. A file whose text Archboard never shows ends with a
+`⊘` mark, and its tooltip says so. A deep row has room for a mark, but not for words. The
+tree finds a file by name from its own search field.
+
+The code view lies on the chrome, as the conversation does, so the picture stays the one
+sheet. Its chrome row holds the file's name and then its folder in mono and muted ink,
+"Code" while no file is open. Under it, after "Owned by" in muted ink, stand the modules that own the file as quiet keys
+(28px high, never pressed, because opening the file selects them all): the module's name, then
+what it binds here in mono, `whole file`, its folder, or its symbol. A symbol that the code
+facts cannot find says `not found` in Changed Orange. A reading of a proposal, a saved
+reading or a branch adds one line that says the code is the checkout on disk now.
+
+The lines are mono at 11px on 20px rows, with their numbers in muted ink, 16px in from the
+column's left edge, under the head's words. A long line wraps, and its text stops 8px before the
+picture, as the navigator's pieces stop 8px before its edge. A thin edge after the numbers marks the lines of each bound
+definition: the rule's ink, or Gold Mark while its module is selected. A name that a module
+binds is a button: a faint wash and a dotted underline in muted ink. A name that anchors a
+relationship has a dashed underline and no wash. A pressed name, the name of a selected
+subject, takes a gold wash and a solid gold underline, and its text keeps its colour. The
+pointer or the keyboard resting on a name or an owner key lights its subject in the picture.
+
 ### Pane sidebar
 
 A retained legacy board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
@@ -854,11 +884,11 @@ Three Well Floor cells, Entries, Hidden and Callers, hold the counts in the mono
 
 ### Agent dock
 
-The agent dock is the foot of the agent's card, which stands on the chrome under the navigator's
-list: Tray Chalk, 12px corners and 8px of chrome round it, with a lit top edge and a soft shadow
-that rises from it.
-While an agent works, Working now stands at the top of the card, and the card grows. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
-a key to the conversation, an icon alone. The conversation's key is pressed in,
+The agent dock stands on the chrome under the navigator's list, under a 1px line in the rule's ink,
+with no card round it. Its parts keep 8px from the column's edges, as the repository switcher and
+the file tree's search do.
+While an agent works, Working now stands at the top of the dock, and the dock grows. While voice is off it is calm. A row stands at its foot, all 32px tall: the switch of what the column lists, Architecture or Code, as wide as the room, each word with a 12px inset, then two quiet keys (32px, 4px corners), each an icon alone: Talk, a microphone, and
+a key to the conversation. Their names are their tooltips. The state's line is as tall as its key, such as Stop (28px), and 4px part it from what the agent is doing under it. While voice is on, the switch has its own row under the plan. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is
 on and its plan stand above the keys. When it is ready and on nothing, the dock
@@ -867,7 +897,7 @@ head of the dock, with the gold ring and the lines of light, beside the state,
 what the agent is on and the voice's own line, and the conversation's key becomes
 a quiet icon in the voice line, beside mute and subtitles. That is where voice is
 while the person does not want subtitles. While they do, the voice is in the voice
-box over the picture (below), and the dock is calm again: the Talk key reads End
+box over the picture (below), and the dock is calm again: the Talk key is named End
 voice, with a handset and the gold edge of the circle, and ends voice, and the
 voice line, mute and the subtitles control are in the box. In a fullscreen
 presentation the dock is off screen, so the box carries the voice there whatever

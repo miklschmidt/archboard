@@ -789,8 +789,8 @@ Its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
 
 **Source excerpt**:
-The lines of a file around one piece of evidence that a remembered finding names: the evidence line, with up to 3 lines on each side.
-It is the only text of a file that Archboard quotes, within the limits of ADR 0046 ("Where the pass runs").
+The lines of a file around one piece of evidence: the evidence line, with up to 3 lines on each side.
+The browser cuts it from the whole file that the code browser's file route quotes, within the limits of ADR 0080.
 _Avoid_: snippet, preview, code context, quote
 
 ### Walkthroughs and voice

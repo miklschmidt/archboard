@@ -18,6 +18,7 @@ import {
 } from "#runtime/code-check/operations/states.ts";
 import { checkCode } from "#runtime/code-check/operations/check.ts";
 import { readPlans, type PlanRefused } from "#runtime/code-check/operations/plans.ts";
+import { readFileOwners } from "#runtime/code-check/operations/file-owners.ts";
 
 /** What one run reads: the vault, the draft to read where a document has one, the plans an agent named, and how to cancel. */
 interface CodeCheckRequest {
@@ -46,6 +47,13 @@ interface CodeCheck {
 	 * @returns The answer, or why the run is refused.
 	 */
 	run(request: CodeCheckRequest): Promise<CodeCheckAnswer | CodeCheckRefusal>;
+	/**
+	 * The modules of one reading that own a file, by the rule the check judges with (ADR 0080),
+	 * and the definitions of the file's text. It reads through the facts the runs share.
+	 * @param request The file, the reading and the signal that cancels it.
+	 * @returns The owners and definitions, or the model route's refusal.
+	 */
+	fileOwners: typeof readFileOwners;
 }
 
 /**
@@ -125,6 +133,7 @@ function findingOwner(
  */
 function createCodeCheck(): CodeCheck {
 	return {
+		fileOwners: readFileOwners,
 		/**
 		 * Run the code check with behind beside it.
 		 * @param request What to read, and the signal that cancels it.

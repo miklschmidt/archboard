@@ -20,6 +20,19 @@ interface ReadingTarget {
 	readonly scope: string | null;
 }
 
+/** A file to show beside the picture, and where the picture goes with it. */
+interface FileTarget {
+	/** The file, relative to its repository, or null to show no file. */
+	readonly file: string | null;
+	/** Its repository, when it is not the model's own. */
+	readonly repo: string | undefined;
+	/** The picture with it: a scope to open, a focus on these subjects, or the picture as it is. */
+	readonly picture:
+		| { readonly scope: string | null }
+		| { readonly focus: readonly string[] }
+		| null;
+}
+
 /**
  * Module navigation shares the application's router and browser history.
  * @param paneId The pane that owns this reading.
@@ -55,6 +68,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
 	const expanded = search[`expand${paneId}`];
+	const file = nullableParameter(search[`file${paneId}`]);
+	const fileRepo = search[`fileRepo${paneId}`];
 	const filters = useMemo(
 		() => ({
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
@@ -229,6 +244,17 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[explore, scope, expand],
 	);
+	// A file opens in one move with the picture it brings, so Back returns both together.
+	const showFile = useCallback(
+		(next: FileTarget): void => {
+			explore({
+				file: next.file ?? undefined,
+				fileRepo: next.file === null ? undefined : next.repo,
+				...filePicture(next.picture, scope, expand),
+			});
+		},
+		[explore, scope, expand],
+	);
 	// A reading of a ref and a state, opened on one module, as a branch footprint shows its list.
 	const openReading = useCallback(
 		(next: ReadingTarget): void => {
@@ -395,6 +421,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		focus,
 		expand,
 		setExpand,
+		file,
+		fileRepo,
+		showFile,
 		filters,
 		toggleFilter,
 		showAllKinds,
@@ -455,6 +484,26 @@ function referenceFocus(reading: Model, subject: string): ModelAddress["focus"] 
 }
 
 /**
+ * The reading fields that the picture beside a file takes: a scope opens as a module does, and a
+ * focus starts a picture of its own.
+ * @param picture The picture with the file, or null to leave it as it is.
+ * @param scope The scope open now.
+ * @param expand The modules expanded beside it now.
+ * @returns The fields to change.
+ */
+function filePicture(
+	picture: FileTarget["picture"],
+	scope: string | null,
+	expand: readonly string[],
+): Partial<ModelAddress> {
+	if (picture === null) return {};
+	const away = { grammar: undefined, flow: undefined, subject: undefined };
+	if ("focus" in picture) return { ...away, focus: picture.focus, expand: undefined };
+	const next = picture.scope;
+	return { ...away, scope: next, focus: undefined, expand: next === scope ? expand : undefined };
+}
+
+/**
  * Missing optional address fields have one absent-value convention in the reader.
  * @param value A validated string parameter, or absence.
  * @returns The requested value or null.
@@ -475,7 +524,7 @@ function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefine
 	return value.length === 0 ? undefined : value.join(",");
 }
 
-export { useModelLocation, type ReadingTarget };
+export { useModelLocation, type FileTarget, type ReadingTarget };
 
 /**
  * The address field of a resolved request's comparison.

@@ -102,7 +102,7 @@ interface CodeCheckOutcome {
 	readonly skipped: CodeCheckSkip[];
 }
 
-/** The code facts of every pass, kept in the server's memory by file content. */
+/** The code facts of every pass, kept in the server's memory by file content. The file owners read through it too. */
 const codeFacts = createCodeFacts();
 
 /** A checkout a claim reads, with the repository it is. */
@@ -570,4 +570,4 @@ async function checkCode(
 	return pass.outcome;
 }
 
-export { type CodeCheckOutcome, checkCode };
+export { type CodeCheckOutcome, checkCode, codeFacts };

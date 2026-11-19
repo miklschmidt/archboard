@@ -177,7 +177,7 @@ test("planning readings use retained predecessors and preserve unavailable state
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="STATE_NOT_FOUND"]') !== null`,
+				`document.querySelector('[data-slot="model-error"][data-code="STATE_NOT_FOUND"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code="STATE_NOT_FOUND"]') !== null`,
 			),
 		Boolean,
 		"the explicit unavailable state",

@@ -145,8 +145,6 @@
 	--color-primary-subtle: var(--primary-subtle);
 	/* The rim of a primary action's gold (`primary-finish`). */
 	--color-primary-edge: var(--primary-edge);
-	/* The agent dock: a card that stands on the left column's chrome. */
-	--color-raised: var(--raised);
 	/* The picture's own pieces, which the left column is built from: the face of a
 	   slab, the floor a well sinks to, and the lighter piece raised on a well's edge. */
 	--color-slab-face: var(--slab-face);
@@ -201,7 +199,6 @@
 	   per plane (`shadow-well`, `shadow-raised`, `shadow-float` and the rest). */
 	--shadow-well: var(--elevation-well);
 	--shadow-slab: var(--elevation-slab);
-	--shadow-tray: var(--elevation-tray);
 	--shadow-raised: var(--elevation-raised);
 	--shadow-pressed: var(--elevation-pressed);
 	--shadow-card: var(--elevation-card);
@@ -621,9 +618,8 @@
               no shadow. The picture lies on the chrome as a sheet with
               rounded corners (`picture-corners`), framed by --elevation-sheet:
               a lit top edge, a faint ring and a short shadow under its foot.
-              The legend and the composer lie on the chrome too. In the left
-              column the agent's card stands on the chrome (`--raised`), 8px
-              from the window's foot: Working now at its top, then the dock.
+              The legend, the composer and the agent under the left column's
+              list lie on the chrome too.
      raised   a control, a key cap or the chosen row of a list, standing on
               a surface (--elevation-raised): a lit top edge, a contact line and
               a short shadow. Pressed, a control sinks into a trough
@@ -648,11 +644,6 @@
 	--elevation-slab:
 		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
 		0 3px 4px -1px var(--slab-shadow);
-	/* The agent's card on the left column's chrome: a lit top edge and a soft shadow
-	   that rises from it over the list. */
-	--elevation-tray:
-		inset 0 1px 0 var(--highlight), 0 -1px 0 oklch(0.33 0.035 65 / 0.06),
-		0 -10px 24px -12px oklch(0.33 0.035 65 / 0.2);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.33 0.035 65 / 0.16),
 		0 2px 6px -1px oklch(0.33 0.035 65 / 0.16);
@@ -683,7 +674,6 @@
 :root[data-theme="dark"] {
 	/* Depth on graphite: the site's own values. */
 	--elevation-well: inset 0 2px 4px oklch(0.04 0.004 75 / 0.6), inset 0 -1px 0 var(--highlight);
-	--elevation-tray: inset 0 1px 0 var(--highlight), 0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
 	--elevation-raised:
 		inset 0 1px 0 var(--highlight), 0 1px 0 oklch(0.06 0.004 75 / 0.7),
 		0 2px 6px -1px oklch(0.06 0.006 75 / 0.5);
@@ -956,7 +946,8 @@
    voice circle are one button and the conversation's key is one control; the
    grid only puts them somewhere else, and use-dock-motion plays each from its old
    place to its new one. Calm: what the agent is on, its plan and the keys at the
-   foot, Talk as wide as the room. Live: the circle (64px, the voice orb's) at the
+   foot, the host's control (data-part="lead") as wide as the room, then Talk and the
+   conversation, each a 32px icon key. Live: the circle (64px, the voice orb's) at the
    head, beside what the agent is on and the voice's line, the plan under them
    in the same column. A part that is not there leaves no row. The page lists the
    parts in the order the eye reads them in each layout (AgentDock), so the grid
@@ -971,7 +962,7 @@
 	isolation: isolate;
 	overflow: clip;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 32px;
+	grid-template-columns: minmax(0, 1fr) 32px 32px;
 	align-content: start;
 	align-items: center;
 	column-gap: 8px;
@@ -992,18 +983,23 @@
 [data-slot="agent-dock"] > [data-part="conversations"] {
 	grid-column: 1 / -1;
 }
-[data-slot="agent-dock"] > [data-part="voice"] {
+[data-slot="agent-dock"] > [data-part="lead"] {
 	grid-column: 1;
+}
+[data-slot="agent-dock"] > [data-part="voice"] {
+	grid-column: 2;
+	width: 32px;
 	height: 32px;
 }
 [data-slot="agent-dock"] > [data-part="chat"] {
-	grid-column: 2;
+	grid-column: 3;
 }
 [data-slot="agent-dock"][data-live="true"] {
 	grid-template-columns: 64px minmax(0, 1fr) 24px;
 	column-gap: 12px;
 }
 [data-slot="agent-dock"][data-live="true"] > [data-part="voice"] {
+	grid-column: 1;
 	grid-row: 1 / span 2;
 	align-self: center;
 	width: 64px;
@@ -1031,6 +1027,9 @@
 }
 [data-slot="agent-dock"][data-live="true"] > [data-part="wide"] {
 	grid-row: 4;
+}
+[data-slot="agent-dock"][data-live="true"] > [data-part="lead"] {
+	grid-column: 1 / -1;
 }
 
 /* The voice control. The plate is the key and then the circle: use-dock-motion

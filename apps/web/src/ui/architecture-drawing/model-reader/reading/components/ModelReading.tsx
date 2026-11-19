@@ -9,6 +9,8 @@ import {
 	ModelColumn,
 	type ColumnSection,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelColumn.tsx";
+import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
+import { CodeBrowser } from "#ui/architecture-drawing/code-browser/components/CodeBrowser.tsx";
 import { ModelFind } from "#ui/architecture-drawing/model-reader/reading/components/ModelFind.tsx";
 import { ModelFlows } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlows.tsx";
 import {
@@ -226,14 +228,16 @@ function ReadingSections(props: {
 }
 
 /**
- * The left column of a reading: Find, the keys of History and Measures, and one list of sections.
- * A reading with no record of its own, a migration candidate, has no History.
+ * The left column of a reading: Find, the keys of History and Measures, and one list of sections,
+ * or in Code mode the files of the code and the code view beside the column. A reading with no
+ * record of its own, a migration candidate, has no History.
  * @param props The reader.
  * @param props.reader The reader.
+ * @param props.code Whether the file tree takes the place of the architecture lists.
  * @returns The parts of the column, and the dialogs its keys open.
  */
-function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
-	const { reader } = props;
+function ReadingColumn(props: { readonly reader: Reader; readonly code: boolean }): JSX.Element {
+	const { reader, code } = props;
 	const { model, location, choices, walk } = reader;
 	const [finding, setFinding] = useState(false);
 	const [query, setQuery] = useState("");
@@ -267,29 +271,31 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					onChoose={choices.chooseFind}
 				/>
 			</ModelColumn.Find>
-			<ModelColumn.Lists>
-				<ModelColumn.Keys>
-					{records && (
+			{!code && (
+				<ModelColumn.Lists>
+					<ModelColumn.Keys>
+						{records && (
+							<ModelColumn.Key
+								dialog="history"
+								label="History"
+								icon={RiHistoryLine}
+								open={reader.history}
+								onOpen={reader.openHistory}
+							/>
+						)}
 						<ModelColumn.Key
-							dialog="history"
-							label="History"
-							icon={RiHistoryLine}
-							open={reader.history}
-							onOpen={reader.openHistory}
+							dialog="measures"
+							label="Measures"
+							icon={RiBarChart2Line}
+							open={measuring}
+							onOpen={openMeasures}
 						/>
-					)}
-					<ModelColumn.Key
-						dialog="measures"
-						label="Measures"
-						icon={RiBarChart2Line}
-						open={measuring}
-						onOpen={openMeasures}
-					/>
-				</ModelColumn.Keys>
-				<ModelColumn.Sections>
-					<ReadingSections reader={reader} folds={folds} onTypeAhead={typeAhead} />
-				</ModelColumn.Sections>
-			</ModelColumn.Lists>
+					</ModelColumn.Keys>
+					<ModelColumn.Sections>
+						<ReadingSections reader={reader} folds={folds} onTypeAhead={typeAhead} />
+					</ModelColumn.Sections>
+				</ModelColumn.Lists>
+			)}
 			{records && (
 				<ModelHistoryDialog
 					open={reader.history}
@@ -376,6 +382,18 @@ function ReadingHeading(props: {
 }
 
 /**
+ * Keep Code beside a walkthrough, or inside the picture's attention context in ordinary readings.
+ * @param reader The reading and its presentation.
+ * @returns The code browser in the place that owns it.
+ */
+function useReadingCode(reader: Reader) {
+	const code = usePaneChrome().column?.mode === "code";
+	const browser = code ? <CodeBrowser reader={reader} /> : null;
+	const [presentedCode, pictureCode] = reader.presenting ? [browser, null] : [null, browser];
+	return { code, presentedCode, pictureCode };
+}
+
+/**
  * A scope changes the reading of the existing model without copying its content. The
  * reading owns the left column and the header of its pane, and they stay while a
  * walkthrough has the middle.
@@ -385,15 +403,21 @@ function ReadingHeading(props: {
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const reader = useReader(props);
 	useChangeKeys(reader.walk.step);
+	const { code, presentedCode, pictureCode } = useReadingCode(reader);
 	return (
 		<>
-			<ReadingColumn reader={reader} />
+			<ReadingColumn reader={reader} code={code} />
+			{presentedCode}
 			<ReadingHeading
 				reader={reader}
 				comparison={reader.presenting ? null : props.comparison?.(reader.accepted.shown.model)}
 			/>
 			<Activity mode={reader.presenting ? "hidden" : "visible"}>
-				<ModelReadingSurface {...props} reader={reader} />
+				<ModelReadingSurface {...props} reader={reader}>
+					{props.children}
+					{/* The portals read the same picture attention context as the diagram. */}
+					{pictureCode}
+				</ModelReadingSurface>
 			</Activity>
 		</>
 	);

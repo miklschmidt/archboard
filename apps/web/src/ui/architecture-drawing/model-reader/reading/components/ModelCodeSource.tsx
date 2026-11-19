@@ -4,14 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import {
 	codeTokensQuery,
 	type CodeToken,
-} from "#ui/architecture-drawing/model-reader/access/clients/code-highlighter.ts";
+} from "#ui/architecture-drawing/code-highlighting/clients/code-highlighter.ts";
 import { sourceLinesQuery } from "#ui/architecture-drawing/model-reader/access/clients/source-lines.ts";
 import type { CodeEvidence } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 
 /**
  * The source that a piece of evidence rests on, beside the card: the file, and the lines round the
- * evidence line with their numbers and that line marked. The lines come from the server, which
- * answers only for a place that a remembered finding names.
+ * evidence line with their numbers and that line marked. The lines are cut from the whole file that
+ * the server quotes, through the guards that every quote keeps (ADR 0080).
  * @param props The piece, and the pass that found it.
  * @param props.vault The vault of the reading.
  * @param props.evidence The piece, or nothing for a finding that names no code.

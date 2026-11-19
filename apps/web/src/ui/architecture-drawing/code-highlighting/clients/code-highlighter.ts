@@ -1,4 +1,4 @@
-// The colours of a source excerpt (TASK-590.15), from shiki.
+// The colours of source code, from shiki: a source excerpt (TASK-590.15) and a whole file of the code browser (TASK-648).
 //
 // One highlighter core serves the page, with the JavaScript regular-expression engine, so no
 // WebAssembly is loaded. Its one theme names CSS variables in place of colours (`--code-*`), and
@@ -13,7 +13,7 @@ import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import {
 	GRAMMARS,
 	type CodeLanguage,
-} from "#ui/architecture-drawing/model-reader/access/clients/code-grammars.ts";
+} from "#ui/architecture-drawing/code-highlighting/clients/code-grammars.ts";
 
 /** The language of each file extension the excerpt colours. */
 const EXTENSIONS: Readonly<Record<string, CodeLanguage>> = {
@@ -67,6 +67,9 @@ const THEME = createCssVariablesTheme({
 	fontStyle: false,
 });
 
+/** A line at least this long keeps its plain colour, as a minified bundle's would. */
+const MAX_COLOURED_LINE = 2000;
+
 let highlighter: Promise<HighlighterCore> | undefined;
 
 /**
@@ -95,14 +98,14 @@ function languageOf(path: string): CodeLanguage | null {
 }
 
 /**
- * The tokens of each line of an excerpt.
- * @param path The file the lines are from, whose name says their language.
- * @param lines The lines.
- * @returns One list of tokens for each line, or null when the lines keep their plain text.
+ * The tokens of each line of a text: a whole file, or an excerpt of one.
+ * @param path The file the text is from, whose name says its language.
+ * @param text The text, its lines joined by `\n`.
+ * @returns One list of tokens for each line, or null when the text keeps its plain colour.
  */
-async function codeTokens(
+async function textTokens(
 	path: string,
-	lines: readonly string[],
+	text: string,
 ): Promise<readonly (readonly CodeToken[])[] | null> {
 	const language = languageOf(path);
 	if (language === null) return null;
@@ -110,11 +113,28 @@ async function codeTokens(
 		const shiki = await core();
 		if (!shiki.getLoadedLanguages().includes(language))
 			await shiki.loadLanguage(GRAMMARS[language]());
-		const rows = shiki.codeToTokensBase(lines.join("\n"), { lang: language, theme: THEME_NAME });
+		const rows = shiki.codeToTokensBase(text, {
+			lang: language,
+			theme: THEME_NAME,
+			tokenizeMaxLineLength: MAX_COLOURED_LINE,
+		});
 		return rows.map((row) => row.map(({ content, color }) => ({ content, color })));
 	} catch {
 		return null;
 	}
+}
+
+/**
+ * The tokens of each line of an excerpt.
+ * @param path The file the lines are from, whose name says their language.
+ * @param lines The lines.
+ * @returns One list of tokens for each line, or null when the lines keep their plain text.
+ */
+function codeTokens(
+	path: string,
+	lines: readonly string[],
+): Promise<readonly (readonly CodeToken[])[] | null> {
+	return textTokens(path, lines.join("\n"));
 }
 
 /**
@@ -136,4 +156,4 @@ function codeTokensQuery(path: string, lines: readonly string[]) {
 	});
 }
 
-export { codeTokensQuery, languageOf, type CodeToken };
+export { codeTokensQuery, languageOf, textTokens, type CodeToken };

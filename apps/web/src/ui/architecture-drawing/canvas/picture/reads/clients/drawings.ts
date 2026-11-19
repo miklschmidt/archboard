@@ -1,10 +1,7 @@
 // Shared retained drawing types and live vault evidence reads.
 
 import { z } from "zod";
-import {
-	RememberedFindingsSchema,
-	type RememberedFindings,
-} from "@archboard/code-intel/code-check";
+import { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { VaultCheckSchema } from "@archboard/model/policy";
 import { inVault } from "@archboard/server-requests";
 import { LegacyListingSchema } from "@archboard/model/legacy-listing";
@@ -21,6 +18,8 @@ type ListedLegacyBoard = z.infer<typeof LegacyListingSchema>["boards"][number];
 
 type LegacyListing = z.infer<typeof LegacyListingSchema>;
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
+/** What the server remembers of a vault's code passes. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 
 // The render contract itself is not described here. It is one external protocol
 // with three consumers — the canvas that serves it, the command that writes a
@@ -283,6 +282,7 @@ async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<R
 
 export {
 	ReadingError,
+	type RememberedFindings,
 	fetchCodeFindings,
 	runCodeCheck,
 	type CodeCheckReading,

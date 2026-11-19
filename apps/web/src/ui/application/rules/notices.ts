@@ -3,11 +3,14 @@
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { ShellNotice } from "#ui/shell/rules/contracts.ts";
+import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 
 /** The ids of the notices that carry a shell action, reported back by id. */
 const NOTICE_ACTIONS = Object.freeze({
 	settings: "settings",
 	reloadFrontend: "reload-frontend",
+	retryReading: "retry-reading",
+	retryListing: "retry-listing",
 	dismissPresentation: "dismiss-presentation",
 });
 
@@ -24,6 +27,52 @@ function modelErrorNotice(paneId: string, error: string): ShellNotice {
 		description: error,
 		tone: "destructive",
 		actions: [],
+	};
+}
+
+/**
+ * The id of the toast that says what is wrong with a pane's reading, one for each pane.
+ * @param paneId The pane.
+ * @returns The id.
+ */
+function readingNoticeId(paneId: string): string {
+	return `reading:${paneId}`;
+}
+
+/**
+ * What is wrong with a pane's reading. Its Retry reads the models again.
+ * @param paneId The pane.
+ * @param trouble What is wrong, in the toast's words.
+ * @returns The notice.
+ */
+function readingNotice(paneId: string, trouble: ReadingTrouble): ShellNotice {
+	return {
+		id: readingNoticeId(paneId),
+		code: trouble.code ?? undefined,
+		title: trouble.title,
+		description: trouble.description,
+		tone: trouble.tone,
+		actions: trouble.retry
+			? [{ kind: "select", id: NOTICE_ACTIONS.retryReading, label: "Retry" }]
+			: [],
+	};
+}
+
+/** The id of the toast that says the navigator cannot list what it should. */
+const LISTING_NOTICE_ID = "listing";
+
+/**
+ * The navigator could not list the repositories. Its Retry reads the listing again.
+ * @param failure What failed, in words.
+ * @returns The notice.
+ */
+function listingNotice(failure: string): ShellNotice {
+	return {
+		id: LISTING_NOTICE_ID,
+		title: "The navigator cannot list everything",
+		description: failure,
+		tone: "destructive",
+		actions: [{ kind: "select", id: NOTICE_ACTIONS.retryListing, label: "Retry" }],
 	};
 }
 
@@ -149,16 +198,20 @@ function withNotice(notices: readonly ShellNotice[], notice: ShellNotice): reado
 }
 
 /**
- * The notices without one id.
+ * The notices without the one its owner cleared or the person dismissed.
  * @param notices The notices.
- * @param id The id to drop.
+ * @param target The id to clear or the exact notice shown by the toast.
  * @returns The notices without it.
  */
-function withoutNotice(notices: readonly ShellNotice[], id: string): readonly ShellNotice[] {
-	// Same reference when there was nothing to drop, for the reason above.
-	return notices.some((candidate) => candidate.id === id)
-		? notices.filter((candidate) => candidate.id !== id)
-		: notices;
+function withoutNotice(
+	notices: readonly ShellNotice[],
+	target: string | ShellNotice,
+): readonly ShellNotice[] {
+	const current = notices.find((candidate) =>
+		typeof target === "string" ? candidate.id === target : candidate === target,
+	);
+	if (current === undefined) return notices;
+	return notices.filter((candidate) => candidate !== current);
 }
 
 export {
@@ -169,6 +222,10 @@ export {
 	infoNotice,
 	presentationNotice,
 	staleFrontendNotice,
+	LISTING_NOTICE_ID,
+	listingNotice,
+	readingNotice,
+	readingNoticeId,
 	unreachableModelsNotice,
 	unreachableRepositoryNotice,
 	withNotice,

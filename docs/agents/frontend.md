@@ -385,9 +385,12 @@ The picture, inspection, Ask and pane reports read the accepted scene, through `
 A pane reports a reading as drawn only when `ready` is true.
 An empty or unavailable reading is an accepted scene with no picture, so the last picture never stands in for it.
 A failed drawing or a failed read of a destination leaves the accepted scene where it is, and `pending` is false, because nothing is on its way.
-The failure lies over the picture with Retry and Back, and with `No comparison` when a comparison can be what failed.
+A failed drawing lies over the picture as a floating card, with Retry and Back, and with `No comparison` when a comparison can be what failed.
+A failed read under a kept picture, a lost server and an unconfirmed reading are the shell's toast, one for each pane: `readingTrouble` says what is wrong, `useTroubleReport` hands it to the pane's `onTrouble` when it changes, and the application raises or dismisses the notice `reading:<pane>`, which carries the refusal's code as `data-code`.
+Its Retry reads every model again. A lost server's toast has none and goes when the server answers.
+A failed listing of the repositories is a toast too, with Retry, from `useListingNotice`.
 Back is the browser's, so a reading opened directly has none.
-Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
+What stays in the pane lies over the picture in `model-notices`, so nothing moves it.
 A claim is status, and no surface offers an action on it.
 `useClaimedSubjects` reads the claims of a live reading for the state that it shows, and `useReader` hands them on as `claimed`.
 The module tree, Flows and Walkthroughs mark each claimed row with `ClaimMark`.
@@ -421,12 +424,18 @@ A live `architecture_snapshot` has no `states`, so the History dialog and the ti
 The History dialog is `ModelHistoryDialog`. Its open state is in `useReader`, because the key in the column and the state chip of the header both open it.
 `ModelMeasuresDialog` is the `Measures` dialog, which the key in the column opens. Its content selector shows one of three views, and only the open view reads.
 `ModelCodeEvidence` pages through the findings of the matching code pass and selects the subject of each finding.
-`ModelCodeSource` reads the lines round a finding's evidence through `sourceLinesQuery`. A 404 or a failure says that the source is unavailable.
+`ModelCodeSource` reads the lines round a finding's evidence through `sourceLinesQuery`, which reads the whole file from `GET /api/code/file` and cuts the excerpt with `model-reader/reading/rules/source-excerpt.ts`. A refused file, a 404, a line the file no longer has or a failure says that the source is unavailable.
 `ModelMeasures` draws one table of the accepted scene. `model-reader/reading/rules/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
 That rule also holds the one order of each measure, and each measure's name and what it counts.
 `MeasureHead` sorts from the head of each column, and `ModelMeasureRow` draws one row of a native table.
 A row closes the dialog and then selects through `findModule`, the path of Find and of a count in the interface line.
 The dialog keeps its view and the sort of each table while it is closed.
+
+`code-browser` owns the code of a reading (TASK-648, TASK-649). `useNavigatorMode` in `application` holds whether the navigator lists the architecture or the code, one choice for the window, kept in this browser; a `fileX` in the address on load starts in Code. The shell passes the mode and the code view's column to the focused pane through `PaneColumn`, and in Code the reading portals the tree into the navigator and the code view into that column (`ModelColumn.Lists`, `ModelColumn.Viewer`), so the shell knows nothing about code. `SideColumn` is the one resizable column beside the navigator, for the code view and the conversation.
+The open file is reading intent, so `fileX` names it, and `fileRepoX` names its repository when that is not the model's own. In Architecture mode the address keeps the file, so Code shows it again: the one place where the address names something that is not on screen. `showFile` changes the file and the picture with it in one history entry.
+`useOpenFile` reads the file before it moves, because its owners decide the picture: owners with one parent open that parent, and owners with several parents become a focus (`rules/file-owners.ts`). The server names the owners by the code check's own rule, so the browser holds no copy of it.
+`useFollowSelection` opens the file that the one picked module binds. Only a pick moves the code, and the code never moves the pick.
+`code-highlighting` owns the one Shiki highlighter that the code view and the evidence excerpt share. The code view cuts the highlighter's runs at the names the model marks (`rules/line-segments.ts`), so a bound name is a button.
 
 Find reads the complete selected model, including modules outside the visible scope.
 It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.

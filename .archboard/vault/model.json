@@ -3,16 +3,15 @@
   "id": "vKEsyHFk",
   "name": "Archboard",
   "current": {
-    "id": "1wIcvaUQ",
-    "name": "ADR citations after the audit",
-    "summary": "Module descriptions cite only ADR text that still exists after the ADR audit (TASK-642).",
-    "documents": [],
-    "predecessor": "7D3sm8BE",
-    "baseline": "89bb75b1246de7594d5d3d692cfdc16d8f83eeea",
-    "createdAt": "2026-11-17T03:30:40.956Z",
-    "adoptedAt": "2026-11-17T03:31:12.539Z",
-    "reason": "Branch docs/adr-audit (TASK-642) deletes and cuts ADR text, so four module descriptions now cite only ADR text that still exists. The user's full send of the ADR audit authorized this adoption.",
-    "previousCurrent": "7D3sm8BE"
+    "id": "3rxaeOO6",
+    "name": "Code browser beside the picture",
+    "summary": "A reader opens a file beside the picture, and the picture shows the modules that own it (TASK-648).",
+    "predecessor": "1wIcvaUQ",
+    "baseline": "1e8bda33eacbdd113470b0bce78f6bc90f7dc547",
+    "createdAt": "2026-11-18T23:22:40.363Z",
+    "adoptedAt": "2026-11-19T03:53:57.102Z",
+    "reason": "Branch feat/file-browser-symbol-navigation (TASK-648, TASK-649) implements the code browser: the Code files route, File owners and the Code browser, with Source excerpt removed. The user's full send of this work authorizes preparing its PR, which authorizes this adoption.",
+    "previousCurrent": "1wIcvaUQ"
   },
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#lcZxhHuv",
@@ -1657,6 +1656,11 @@
     "vKEsyHFk/SJ2JMVyz#GxqAt622",
     "vKEsyHFk/SJ2JMVyz#h0BKG447",
     "vKEsyHFk/SJ2JMVyz#7TzJNwiF",
-    "vKEsyHFk/SJ2JMVyz#rP5D38QT"
+    "vKEsyHFk/SJ2JMVyz#rP5D38QT",
+    "vKEsyHFk#WNmQf72c",
+    "vKEsyHFk#NHiOFhOn",
+    "vKEsyHFk#fiQ2exOC",
+    "vKEsyHFk#nbkmjsU3",
+    "vKEsyHFk#8sC6QgHh"
   ]
 }

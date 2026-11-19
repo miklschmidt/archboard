@@ -37,6 +37,7 @@ import {
 	type Fullscreen,
 } from "#ui/application/hooks/use-fullscreen.ts";
 import { useNotices, type NoticeStack } from "#ui/application/hooks/use-notices.ts";
+import { useListingNotice } from "#ui/application/hooks/use-listing-notice.ts";
 import { usePanes, type Panes } from "#ui/application/hooks/use-panes.ts";
 import { useAgentActivity, type AgentActivity } from "#ui/application/hooks/use-agent-activity.ts";
 import { useReducedMotion } from "#ui/application/hooks/use-reduced-motion.ts";
@@ -71,6 +72,8 @@ import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voi
 import { AnswerFilesContext } from "@archboard/workbench/agent";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/application/components/AgentSurfaceSlots.tsx";
+import { NavigatorModeSwitch } from "#ui/application/components/NavigatorModeSwitch.tsx";
+import { useNavigatorMode } from "#ui/application/hooks/use-navigator-mode.ts";
 import { PresentationVoiceKey } from "#ui/application/components/PresentationVoiceKey.tsx";
 import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { StartShell } from "#ui/application/components/StartShell.tsx";
@@ -118,6 +121,8 @@ interface AgentSlotSources {
 	readonly reducedMotion: boolean;
 	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
 	readonly dockless: boolean;
+	/** The switch of what the navigator lists, at the start of the dock's keys. */
+	readonly lead: ReactNode;
 }
 
 /**
@@ -129,7 +134,7 @@ interface AgentSlotSources {
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, reducedMotion, dockless } = sources;
+	const { agent, workbench, reducedMotion, dockless, lead } = sources;
 	return useMemo(
 		() => ({
 			dock: (
@@ -138,12 +143,13 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 					workbench={workbench}
 					reducedMotion={reducedMotion}
 					dockless={dockless}
+					lead={lead}
 				/>
 			),
 			panel: <AgentPanelSlot agent={agent} workbench={workbench} />,
 			voiceControls: <PresentationVoiceKey />,
 		}),
-		[agent, workbench, reducedMotion, dockless],
+		[agent, workbench, reducedMotion, dockless, lead],
 	);
 }
 
@@ -227,6 +233,7 @@ function vaultOfPane(panes: Panes, start: OpenStart, paneId: string): string {
 interface ApplicationBodyProps {
 	readonly start: OpenStart;
 	readonly catalog: ModelCatalog;
+	readonly notices: NoticeStack;
 }
 
 /**
@@ -235,10 +242,9 @@ interface ApplicationBodyProps {
  * @returns The shell, the settings dialogs and the workbench.
  */
 function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
-	const { start, catalog } = props;
+	const { start, catalog, notices } = props;
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
-	const notices = useNotices();
 	const [settings, setSettings] = useState<SettingsSurface | null>(null);
 	const closeSettings = useCallback((): void => setSettings(null), []);
 
@@ -306,7 +312,12 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const fullscreen = useFullscreen({ onRefused });
 	// The agent dock is off screen while a pane is presented fullscreen.
 	const dockless = fullscreen.snapshot.paneId !== null;
-	const slots = useAgentSlots({ agent, workbench, reducedMotion, dockless });
+	const listing = useNavigatorMode();
+	const modeSwitch = useMemo(
+		() => <NavigatorModeSwitch mode={listing.mode} onMode={listing.setMode} />,
+		[listing.mode, listing.setMode],
+	);
+	const slots = useAgentSlots({ agent, workbench, reducedMotion, dockless, lead: modeSwitch });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	const repositoryVaults = useVaultOf(catalog);
@@ -512,6 +523,8 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 									agentPanel={slots.panel}
 									agentPanelOpen={agent.panel.open}
 									onAgentPanelClose={agent.panel.closePanel}
+									navigatorMode={listing.mode}
+									onLeaveCode={listing.leaveCode}
 									attachStage={fullscreen.attachStage}
 								/>
 								<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
@@ -531,8 +544,11 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 function ApplicationStart(): JSX.Element {
 	const catalog = useModelCatalog();
 	const start = useStart(catalog);
-	if (start.kind === "open") return <ApplicationBody start={start} catalog={catalog} />;
-	return <StartShell start={start} catalog={catalog} />;
+	const notices = useNotices();
+	useListingNotice(catalog, notices);
+	if (start.kind === "open")
+		return <ApplicationBody start={start} catalog={catalog} notices={notices} />;
+	return <StartShell start={start} catalog={catalog} notices={notices} />;
 }
 
 /**

@@ -332,7 +332,7 @@ test(
 					const notice = [...document.querySelectorAll('[data-slot="alert"]')].find(node =>
 						node.querySelector('[data-slot="alert-description"]')?.textContent?.trim() === ${JSON.stringify(PERSISTENT_NOTICE_TEXT)});
 					const text = notice?.querySelector('[data-slot="alert-description"]');
-					const action = notice?.querySelector('[data-slot="alert-action"] button');
+					const action = notice?.querySelector('[data-slot="notice-actions"] button');
 					const dismiss = notice?.querySelector('button[aria-label^="Dismiss notice"]');
 					if (!notice || !text || !action || !dismiss) return null;
 					// The toast slides in with a transform, which a box measured mid-flight carries.

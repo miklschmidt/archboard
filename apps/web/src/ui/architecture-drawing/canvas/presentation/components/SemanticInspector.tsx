@@ -25,7 +25,7 @@ import type { SemanticNode } from "@archboard/model/content";
 import { RelationshipChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { DetailsPanel } from "#ui/architecture-drawing/canvas/presentation/components/DetailsPanel.tsx";
 import { LineBody } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorLine.tsx";
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import {
 	Account,

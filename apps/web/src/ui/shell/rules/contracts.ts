@@ -14,6 +14,9 @@ import type { AgentActivityEntry, PaneStatus } from "#ui/panes/pane-session/rule
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
 
+/** What the navigator lists: the reading's architecture, or the files of its code. */
+type NavigatorMode = "architecture" | "code";
+
 /** What a pane opens of a model, when it opens more than its roots. */
 type PaneOpening = Omit<z.input<typeof ArchitecturePaneReadingSchema>, "model" | "beat">;
 
@@ -41,6 +44,8 @@ type ShellNoticeAction = SelectableNoticeAction | CodeTargetNotice["actions"][nu
 /** A persistent notice: it stays up until its owner clears it or the person dismisses it. */
 interface ShellNotice {
 	id: string;
+	/** The refusal's code, when the notice reports one, so a test or a tool can tell it. */
+	code?: string | undefined;
 	title: string;
 	description: string;
 	tone: "default" | "destructive";
@@ -89,8 +94,6 @@ interface ShellView {
 	theme: ThemeChoice;
 	/** Every repository the navigator lists, in the server's order. */
 	repositories: readonly ShellRepository[];
-	/** Why the repositories could not be read, or null while they are current. */
-	modelsError: string | null;
 	/** The repositories have not answered yet and nothing of them is in hand. */
 	modelsLoading: boolean;
 	/** The page starts on the chooser, so the chooser takes the keys. */
@@ -156,11 +159,13 @@ interface ShellActions {
 	present(presentation: ShellPresentation | null): void;
 	openSettings(surface: SettingsSurface): void;
 	selectNoticeAction(noticeId: string, actionId: string): void;
-	dismissNotice(noticeId: string): void;
+	/** Dismiss the specific notice shown by the toast. */
+	dismissNotice(shown: ShellNotice): void;
 }
 
 export type {
 	ThemeChoice,
+	NavigatorMode,
 	PaneOpening,
 	ShellPane,
 	ShellNoticeAction,

@@ -37,6 +37,19 @@
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     },
     {
+      "order": 40000,
+      "kind": "http",
+      "label": "read the file an evidence excerpt cuts its lines from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/source-lines.ts",
+        "symbol": "sourceLinesQuery"
+      },
+      "id": "vKEsyHFk#mgj7wHRP",
+      "to": "vKEsyHFk#fCXk4gkF"
+    },
+    {
       "order": 67000,
       "kind": "call",
       "label": "Fetch the canonical model",

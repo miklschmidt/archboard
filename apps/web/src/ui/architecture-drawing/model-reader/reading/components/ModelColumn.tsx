@@ -66,6 +66,18 @@ function ColumnLists(props: { readonly children: ReactNode }): JSX.Element | nul
 }
 
 /**
+ * Put a reader's code view in the code view's column while its pane has focus and the navigator
+ * lists files.
+ * @param props The code view.
+ * @param props.children The code view.
+ * @returns The code view in its column, or nothing while another pane has focus.
+ */
+function ColumnViewer(props: { readonly children: ReactNode }): JSX.Element | null {
+	const slot = usePaneChrome().column?.viewer ?? null;
+	return slot === null ? null : <>{createPortal(props.children, slot)}</>;
+}
+
+/**
  * The keys over the list, each a {@link ColumnKey}, which open the dialogs.
  * @param props The keys.
  * @param props.children The keys.
@@ -205,6 +217,7 @@ function ColumnSectionList(props: ColumnSectionProps): JSX.Element {
 const ModelColumn = {
 	Find: ColumnFind,
 	Lists: ColumnLists,
+	Viewer: ColumnViewer,
 	Keys: ColumnKeys,
 	Key: ColumnKey,
 	Sections: ColumnSections,
