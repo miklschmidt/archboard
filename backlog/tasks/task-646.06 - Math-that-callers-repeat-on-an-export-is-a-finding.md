@@ -4,7 +4,7 @@ title: Math that callers repeat on an export is a finding
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:11:00Z'
+updated_date: '2026-11-19T02:21:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -57,3 +57,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #4 The finding lists each caller line as evidence
 - [ ] #5 The archboard skill shows the fix: the exporter owns the math as a function
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Commands (check help lists EXPOSED_VALUE_COMPUTED) and code-intel (protocol header comment and the new test), with their holders. No architecture change; exception recorded in the proposal history (operation task-646-06-exceptions). On this repository the rule raises 8 EXPOSED_VALUE_COMPUTED findings on 3 modules (timing, renderer, walkthrough), each replacing an EXPOSED_VALUE warning.
+<!-- SECTION:NOTES:END -->
