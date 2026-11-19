@@ -431,14 +431,11 @@ function settingsMismatchReason(
 	configured: CoordinatorConfiguredSettings,
 	reviewed: CoordinatorReviewHashes,
 ): string | null {
-	// Both sides are typed from the reviewed constants, so the compiler reads these two
-	// comparisons as redundant. They are not: the left side is retained evidence of what a
-	// coordinator was actually started under, which a constant bump leaves behind.
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- retained evidence, not a constant
+	// The left side is retained evidence of what a coordinator was actually started under, which
+	// a bump of the reviewed model or effort leaves behind.
 	if (persistence.settings.configured.model !== configured.model) {
 		return "The retained coordinator model does not match the reviewed model.";
 	}
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- retained evidence, not a constant
 	if (persistence.settings.configured.effort !== configured.effort) {
 		return "The retained coordinator effort does not match the reviewed effort.";
 	}

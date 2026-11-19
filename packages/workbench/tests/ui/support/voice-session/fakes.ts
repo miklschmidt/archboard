@@ -2,6 +2,7 @@
 // a realtime port with its own output level source, both publishing the way
 // the real owners do.
 
+import { z } from "zod";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import type {
@@ -19,6 +20,10 @@ import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
 type RealtimeCorrelation = NonNullable<RealtimeMediaSnapshot["correlation"]>;
 
+// The brands of the voice package's realtime ids, which the package leaves its tests to build.
+const SESSION_ID = z.string().brand<"BrowserRealtimeSessionId">();
+const CORRELATION_ID = z.string().brand<"BrowserRealtimeCorrelationId">();
+
 /**
  * A correlation whose session and correlation ids are both the given id.
  * @param id The id.
@@ -26,8 +31,8 @@ type RealtimeCorrelation = NonNullable<RealtimeMediaSnapshot["correlation"]>;
  */
 function correlation(id: string): RealtimeCorrelation {
 	return Object.freeze({
-		sessionId: id as RealtimeCorrelation["sessionId"],
-		correlationId: id as RealtimeCorrelation["correlationId"],
+		sessionId: SESSION_ID.parse(id),
+		correlationId: CORRELATION_ID.parse(id),
 	});
 }
 

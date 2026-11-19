@@ -1,6 +1,9 @@
 import { z } from "zod";
 
-import { additionalContextPolicy, type OperationOutcome } from "@archboard/codex-realtime-voice/runtime";
+import {
+	additionalContextPolicy,
+	type OperationOutcome,
+} from "@archboard/codex-realtime-voice/runtime";
 import { DiagramGrammarSchema } from "@archboard/model/views";
 import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
 import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
@@ -134,8 +137,7 @@ const ArchboardContextRawSchema = z.strictObject({
 			reason: z.enum(threadLinkReasonValues).nullable(),
 		})
 		.superRefine((value, refinementContext) => {
-			const reasonNullStates: readonly string[] =
-				contextPolicy.threadLink.reasonNullStates;
+			const reasonNullStates: readonly string[] = contextPolicy.threadLink.reasonNullStates;
 			if (reasonNullStates.includes(value.state)) {
 				if (value.reason !== null) {
 					refinementContext.addIssue({
@@ -260,9 +262,7 @@ const ArchboardContextRawSchema = z.strictObject({
 			if (value.id === null) {
 				return;
 			}
-			const producer = contextPolicy.operation.producers.find(
-				({ kind }) => kind === value.kind,
-			);
+			const producer = contextPolicy.operation.producers.find(({ kind }) => kind === value.kind);
 			const allowedRpcs: readonly string[] = producer?.rpcs ?? [];
 			if (allowedRpcs.includes(value.rpc)) {
 				return;

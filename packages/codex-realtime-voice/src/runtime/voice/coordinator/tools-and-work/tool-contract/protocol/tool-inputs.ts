@@ -139,7 +139,7 @@ function parseWorkhorseToolInput(toolName: WorkhorseToolName, input: unknown): P
 			return { tool: toolName, input: ManageWorkhorseQueueInputSchema.parse(input) };
 		case "steer_workhorse":
 			return { tool: toolName, input: SteerWorkhorseInputSchema.parse(input) };
-		case "stop_workhorses":
+		default:
 			return { tool: toolName, input: StopWorkhorsesInputSchema.parse(input) };
 	}
 }
