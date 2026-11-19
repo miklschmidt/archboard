@@ -278,7 +278,12 @@ function ModuleSubject(
 			/>
 			<ModuleLines {...props} model={source} id={module.id} />
 			{props.context}
-			<ModelPanel.Section title="Code and evidence" slot="module-evidence" list={false}>
+			<ModelPanel.Section
+				icon={SECTION_ICONS.codeEvidence}
+				title="Code and evidence"
+				slot="module-evidence"
+				list={false}
+			>
 				<div className="flex flex-col gap-3">
 					<ModuleEvidence module={module} model={source} />
 					<ModuleDefinition module={module} />
