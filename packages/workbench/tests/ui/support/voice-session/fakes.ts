@@ -17,7 +17,7 @@ import type {
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/voice-session/state/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
-type RealtimeCorrelation = RealtimeMediaSnapshot["correlation"];
+type RealtimeCorrelation = NonNullable<RealtimeMediaSnapshot["correlation"]>;
 
 /**
  * A correlation whose session and correlation ids are both the given id.
