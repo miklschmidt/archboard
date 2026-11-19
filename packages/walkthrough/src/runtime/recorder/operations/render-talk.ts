@@ -20,16 +20,10 @@
 import { renameSync, rmSync } from "node:fs";
 import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
-import { setTimeout as delay } from "node:timers/promises";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import { shellSize } from "@archboard/renderer/shell-geometry";
-import {
-	durationMs,
-	recorderMs,
-	recorderPageReadyDeadline,
-	recorderPageReadySeconds,
-} from "@archboard/timing";
+import { durationMs, waitUntil } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import {
 	REPLAY_PAGE_GLOBAL,
@@ -53,6 +47,7 @@ import {
 import { type FfmpegCommand } from "#runtime/video-encoding/services/ffmpeg.ts";
 import { WalkthroughRecordingError } from "#runtime/recorder/operations/recording-errors.ts";
 import { FrameOrder } from "#runtime/recorder/operations/frame-order.ts";
+import { PAGE_CLOCK } from "#runtime/recorder/clients/page-clock.ts";
 import { voiceSamples } from "#runtime/recorder/store/talk-files.ts";
 import { resolveEncoder, startBrowser } from "#runtime/recorder/services/recording-tools.ts";
 
@@ -212,21 +207,21 @@ async function openReplayPage(
  * @throws {Error} When the page never publishes it: the server serves a frontend built without.
  */
 async function pageReady(window: HeadlessWindow, signal: AbortSignal): Promise<void> {
-	const deadline = recorderPageReadyDeadline(performance.now());
-	for (;;) {
-		signal.throwIfAborted();
-		// oxlint-disable-next-line no-await-in-loop -- each look waits for the answer of the one before
-		const published = await window.page.evaluate(`typeof ${PAGE}?.frame === "function"`, {
-			timeoutMs: durationMs("recorder.call"),
-		});
-		if (published === true) return;
-		if (performance.now() >= deadline) {
-			throw new Error(
-				`The canvas page never offered a replay within ${recorderPageReadySeconds()} seconds: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server.`,
-			);
-		}
-		// oxlint-disable-next-line no-await-in-loop -- a poll waits between looks
-		await delay(recorderMs("poll"), undefined, { signal });
+	const published = await waitUntil(
+		"recorder.pageReady",
+		async () =>
+			(await window.page.evaluate(`typeof ${PAGE}?.frame === "function"`, {
+				timeoutMs: durationMs("recorder.call"),
+			})) === true
+				? true
+				: undefined,
+		{ signal, clock: PAGE_CLOCK },
+	);
+	signal.throwIfAborted();
+	if (!published.ok) {
+		throw new Error(
+			`The canvas page never offered a replay within ${published.boundSeconds} seconds: the Archboard server serves a frontend built without it. Run \`archboard restart\` to build the frontend and restart the server.`,
+		);
 	}
 }
 
