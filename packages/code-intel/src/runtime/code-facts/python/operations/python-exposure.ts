@@ -39,4 +39,4 @@ const PYTHON: ExposureRule = {
 	},
 };
 
-export { PYTHON };
+export { PYTHON, PYTHON_FILE };

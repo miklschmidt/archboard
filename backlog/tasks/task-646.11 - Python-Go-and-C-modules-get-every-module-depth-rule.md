@@ -1,8 +1,9 @@
 ---
 id: TASK-646.11
 title: Python, Go and C# modules get every module-depth rule
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:03:00Z'
 updated_date: '2026-11-19T02:49:00Z'
 labels:
@@ -51,14 +52,55 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The Python, Go and C# grammar queries name the kind of each export, the pieces of logic in each body, and the expression around each use
-- [ ] #2 Every module-depth rule applies to Python, Go and C# modules
-- [ ] #3 Members that each language calls are not judged
-- [ ] #4 Each language's tests assert only what its grammar decides
+- [x] #1 The Python, Go and C# grammar queries name the kind of each export, the pieces of logic in each body, and the expression around each use
+- [x] #2 Every module-depth rule applies to Python, Go and C# modules
+- [x] #3 Members that each language calls are not judged
+- [x] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Fact analysis: Definition gains calledByLanguage (each adapter marks the members its language calls; TypeScript moves its five names out of Module depth) and static (C# static and const members).
+2. A language-neutral math-shape engine (code-facts/operations/math-shapes.ts) driven by a per-language syntax table; Python, Go and C# give ParsedFacts.computations through it. TypeScript keeps typescript-math.ts (migration is a follow-up).
+3. Python: @logic captures, Definition.type (type alias statements, X: TypeAlias), Definition.passes, computations around uses of imported names; dunders called by the language.
+4. Go: @logic, Definition.type (interfaces, aliases, named non-struct types without methods in their file; struct and named types with methods are classes), passes, computations around package-qualified uses; String/Error/GoString/Format called by the language.
+5. C#: @logic, Definition.type (interface, enum, delegate), static members (static/const fields, static properties, a property with a body is a getter function), passes, computations around run-time chains; constructors, finalizers and override ToString/Equals/GetHashCode called by the language.
+6. Module depth (small, shared): python, go and csharp judged; a static member of an exported class counts as a top-level export of its kind, and is never judged EXPOSED_UNUSED; members marked calledByLanguage are neither counted nor judged.
+7. Tests: one fixture test per language under code-check/languages asserting export kinds, logic, uses, passes and the math around uses.
+8. archboard check, gate run, footprint, finalization.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+Evidence:
+- AC1, AC3, AC4: packages/code-intel/tests/runtime/code-check/languages/operations/{python,go,csharp}-depth.test.ts drive the code check pass over a fixture checkout per language and assert only what each grammar decides: each export's kind (Python TypeAlias and type statements, Go interfaces, aliases and method-less named types as types, a Go named type with methods as a class, C# interface/enum/delegate as types, C# static members as functions or values, a C# property with a body as a getter), the pieces of logic (10, 11, 12), the members each language calls (Python __init__/__repr__, Go String, C# constructor and override ToString) neither listed nor judged, and the verdicts their uses, bodies and math earn.
+- AC2: same tests: EXPOSED_VALUE (a value compared), EXPOSED_VALUE_COMPUTED (two modules write the backoff on two values, with their own names, a local variable, the full or module-qualified name, and the jitter on a getter), CODE_PASS_THROUGH (a function and a method; a Python docstring is no statement), EXPOSED_UNUSED (unused types). REEXPORT_PASS_THROUGH and MODULE_SHALLOW read the same per-name findings; their rules are asserted once in TypeScript.
+- go-check and csharp-check now expect per-name EXPOSED_UNUSED warnings (a whole read); interfaces.test (Kit) and module-depth.test (Mixed) expect Python judged.
+- Found and fixed: a C# partial class whose first part sits in another file than the members callers use was judged unused; a use of any part of a name is now a use.
+- Lanes after merging feat/module-depth: test:modules 5167 pass, 1 skip; tsc, lint:policy on code-intel and apps/cli/src, format clean. lint:tests shows only errors in files this ticket does not touch.
+- archboard check on this repository: findings identical to the base code (1305); this repository binds no Python, Go or C# module. Only code-intel's logic count moves. check code --fail-shallow-modules --base feat/module-depth: no MODULE_SHALLOW on a touched module (Repositories, untouched, information); exit 1 from pre-existing warnings.
+- Footprint --fail-outside exits 1: namedAndChanged Module depth and Fact analysis; changedNotNamed Commands (check help no longer says only TypeScript) and code-intel (tests), with holders Packages and Agent CLI. Unbound: CONTEXT.md, the design lens, this task.
 Merge gate (orchestrator): footprint exits 1 on Commands (check help text) and code-intel (tests), with their holders. No architecture change; exception recorded in the proposal history (operation task-646-11-exceptions). Module depth and Fact analysis changed inside the plan.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Python, Go and C# modules now get every module-depth rule, as TypeScript ones do.
+
+What changed:
+- Fact analysis: Definition gains calledByLanguage (each adapter marks the members its language calls; TypeScript's five names moved out of Module depth) and static (C#). A language-neutral math-shape reader (code-facts/operations/math-shapes.ts) takes one syntax table per language; Python, Go and C# give ParsedFacts.computations through it.
+- Python (python-depth.ts, python.scm): pieces of logic, type aliases, functions and methods that only pass their call on (a docstring aside), special methods as called by Python, math around uses of imported names (min, max, abs, round, pow, math.*, ** and //).
+- Go (go-depth.ts, go.scm): pieces of logic, interfaces, aliases and method-less named types as types (a struct or a named type with methods in its file is a class), pass-through functions and methods, String/Error/GoString/Format as called by Go, math around package-qualified uses (min, max, math.*).
+- C# (csharp-depth.ts, csharp.scm): pieces of logic, interfaces, enums and delegates as types, static and const members, a property with a body as a getter function, pass-through methods, constructors, override ToString/Equals/GetHashCode and the pattern methods (Dispose, GetEnumerator, Deconstruct, GetAwaiter ...) as called by C#, math around run-time chains not bound in the file (Math.*).
+- Module depth (shared, small): python, go and csharp are judged; a static member of an exported class counts as a function or a value of its own and is never judged EXPOSED_UNUSED (a bare use from a derived class is invisible to syntax); a private static value is a hidden value; a use of any part of a partial class is a use of it.
+- Docs: check help, the archboard skill's design lens and CONTEXT.md no longer say only TypeScript is judged.
+
+Verification: three new language tests; test:modules 5167 pass; tsc, lint, format clean. archboard check findings identical to the base.
+
+Surfaced on modules this ticket does not change: none (this repository binds no Python, Go or C# module).
+
+Risks / follow-ups: TypeScript keeps typescript-math.ts; moving it onto math-shapes.ts (and Rust/Swift adding tables, not copies) is a follow-up. Members of a C# partial class or a Go type declared in another file than the type are not counted (Module depth requires the same file). TypeScript static class fields stay unjudged (its adapter does not set static). Python class attributes are not judged as values. Footprint exits 1 on Commands (help text) and code-intel (tests).
+<!-- SECTION:FINAL_SUMMARY:END -->
