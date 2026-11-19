@@ -112,6 +112,13 @@ function measured(): Reading {
 				message: "Gateway exports the value LIMITS, and outside code reads it.",
 			},
 			{
+				code: "CALLER_UNDRAWN",
+				severity: "warning",
+				file: "modules/gateway.json",
+				subject: GATEWAY,
+				message: "The code of Worker reaches Gateway, and no relationship joins them.",
+			},
+			{
 				code: "MODULE_SHALLOW",
 				severity: "information",
 				file: "modules/gateway.json",
@@ -219,10 +226,10 @@ test("code exports list a module's exports by kind, each with its findings, read
 		type: ["Options"],
 	});
 	expect(
-		document
-			.querySelector("[data-slot='code-exports-module'] [data-finding-code]")
-			?.getAttribute("data-finding-code"),
-	).toBe("MODULE_SHALLOW");
+		[...document.querySelectorAll("[data-slot='code-exports-module'] [data-finding-code]")].map(
+			(chip) => chip.getAttribute("data-finding-code"),
+		),
+	).toEqual(["MODULE_SHALLOW"]);
 	const read = new URL(asked[0]?.url ?? "", "http://archboard.test");
 	expect(asked).toHaveLength(1);
 	expect(read.pathname).toBe("/api/vault/code-exports");

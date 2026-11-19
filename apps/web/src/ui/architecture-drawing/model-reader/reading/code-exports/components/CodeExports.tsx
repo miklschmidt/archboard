@@ -83,10 +83,13 @@ function ReadExports(
 	const { vault, reading, module, code } = props;
 	const counted = exportCount(code.exports) > 0;
 	const query = useCodeExports(vault, reading, module, counted);
-	const list = useMemo(
-		() => exportList(query.data?.names ?? [], reading.findings, module),
-		[query.data, reading.findings, module],
-	);
+	const list = useMemo(() => {
+		const directory = reading.depth?.find((each) => each.subject.id === module)?.directory;
+		return exportList(query.data?.names ?? [], reading.findings, {
+			id: module,
+			directory: directory ?? "",
+		});
+	}, [query.data, reading, module]);
 	return (
 		<div data-slot="code-exports" className="flex flex-col gap-6">
 			<div className="flex flex-col gap-1">
@@ -97,7 +100,7 @@ function ReadExports(
 					</p>
 				)}
 			</div>
-			{list.module.length > 0 && <ModuleFindings findings={list.module} />}
+			{list.rollUp.length > 0 && <RollUp findings={list.rollUp} />}
 			<ExportsBody {...props} counted={counted} query={query} kinds={list.kinds} />
 		</div>
 	);
@@ -149,12 +152,12 @@ function ExportsBody(
 }
 
 /**
- * The findings of the pass on the module and on none of its names, such as its roll-up.
+ * The roll-up of a shallow module, over its exports.
  * @param props The findings.
  * @param props.findings The findings.
  * @returns Each with its chip and its words.
  */
-function ModuleFindings(props: { readonly findings: readonly Finding[] }): JSX.Element {
+function RollUp(props: { readonly findings: readonly Finding[] }): JSX.Element {
 	return (
 		<ul data-slot="code-exports-module" className="flex flex-col gap-2">
 			{props.findings.map((finding) => (
@@ -214,18 +217,17 @@ function ownerOf(entry: ListedExport): string {
  */
 function ExportRow(props: KindListProps & { readonly entry: ListedExport }): JSX.Element {
 	const { entry, vault, repo, onNotice } = props;
-	const { name, path, line } = entry;
+	const { name, path, line, file } = entry;
 	const open = useCallback((): void => {
 		activateCodeTarget({ vault, target: { repo, path, symbol: name, line }, onNotice });
 	}, [vault, repo, path, name, line, onNotice]);
-	const place = `${path}:${line}`;
 	return (
 		<li className="flex">
 			<button
 				type="button"
 				data-slot="code-export"
 				data-export={name}
-				title={`Open ${place}`}
+				title={`Open ${path}:${line}`}
 				onClick={open}
 				className={cn(
 					rowTone({ lit: false }),
@@ -238,8 +240,9 @@ function ExportRow(props: KindListProps & { readonly entry: ListedExport }): JSX
 						<FindingChip key={`${finding.code}:${finding.message}`} finding={finding} />
 					))}
 				</span>
-				<span className="text-body text-muted-foreground min-w-0 flex-1 truncate text-right font-mono">
-					{place}
+				<span className="text-body text-muted-foreground flex min-w-0 flex-1 justify-end font-mono">
+					<span className="truncate">{file}</span>
+					<span className="shrink-0">:{line}</span>
 				</span>
 			</button>
 		</li>
