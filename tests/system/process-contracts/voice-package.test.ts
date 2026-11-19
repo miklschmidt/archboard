@@ -166,11 +166,11 @@ test("an outside Bun project installs the packed package, uses every public entr
 			[
 				"bun",
 				"-e",
-				`const server = await import("${manifest.name}/server"); console.log(typeof server.createVoiceAgent, typeof server.resolveCodexExecutable);`,
+				`const server = await import("${manifest.name}/server"); console.log(typeof server.createVoiceAgent);`,
 			],
 			project,
 		);
-		expect(imported.trim()).toBe("function function");
+		expect(imported.trim()).toBe("function");
 	} finally {
 		rmSync(project, { recursive: true, force: true });
 	}

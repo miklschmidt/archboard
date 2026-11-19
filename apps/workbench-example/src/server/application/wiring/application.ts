@@ -1,7 +1,6 @@
 import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
 import type { ExampleOptions } from "#server/startup/rules/options.ts";
 import { WORKBENCH_SOCKET_PATH, type ExampleConfiguration } from "#shared/protocol/application.ts";
@@ -89,12 +88,9 @@ export async function startExample(
 	signal: AbortSignal,
 ) {
 	requireAssets(options.browserDirectory);
-	const executablePath = resolveCodexExecutable(
-		options.codex === undefined ? {} : { executablePath: options.codex },
-	);
 	const agent = createVoiceAgent({
 		storage: { directory: options.state },
-		codex: { executablePath },
+		codex: options.codex === undefined ? {} : { executablePath: options.codex },
 		checkouts: [options.checkout],
 		identity: { serviceName: "workbench-example", threadSource: "workbench-example" },
 		instructions: {

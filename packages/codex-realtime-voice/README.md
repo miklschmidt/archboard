@@ -35,11 +35,10 @@ The quickstart is two files in the root of your project: a server and a React pa
 ```ts
 import { homedir } from "node:os";
 import path from "node:path";
-import { createVoiceAgent, resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
+import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
 
 const agent = createVoiceAgent({
 	storage: { directory: path.join(homedir(), ".my-voice-agent") },
-	codex: { executablePath: resolveCodexExecutable() },
 	checkouts: [process.cwd()],
 	instructions: {
 		coordinator: "Answer short questions yourself. Give sustained work to the workhorse.",
@@ -316,23 +315,25 @@ The state directory is the directory that you give as `storage.directory`. It ho
 
 ### `createVoiceAgent(options)`
 
-`createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory, when an instruction is empty, or when an `identity` value has the wrong shape.
+`createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory, when an instruction is empty, or when an `identity` value has the wrong shape. Without `codex.executablePath`, it also finds the installed Codex and proves it: an absolute, regular, executable file that reports exactly `codex-cli 0.166.0`, never looked up on `PATH`. When the proof fails, it throws a `CodexExecutableError` with a `code`. Each `start()` proves the executable again, a given `executablePath` included.
 
-| Field                      | Default                      | What it does                                                                                                                                                                                                                                                                                                    |
-| -------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage.directory`        | Required                     | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and not be a symbolic link. A link above it that you or root own, in directories no other user can change, such as `/tmp` on macOS, is resolved once. Keep it outside every checkout. |
-| `storage.ownerDirectory`   | `<directory>/owner`          | Where the process-owner lock and records live.                                                                                                                                                                                                                                                                  |
-| `codex.executablePath`     | Required                     | The absolute path of the Codex executable. Use `resolveCodexExecutable()`.                                                                                                                                                                                                                                      |
-| `codex.hostEnvironment`    | None                         | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                                                                                                                                |
-| `codex.pathPrefixes`       | None                         | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                                                                                                                                |
-| `codex.diagnosticSecrets`  | None                         | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                                                                                                                                |
-| `codex.onGroupOwned`       | None                         | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                                                                                                                                       |
-| `checkouts`                | Required                     | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.                                                                                                                      |
-| `instructions.coordinator` | Required                     | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                                                                                                                                   |
-| `instructions.workhorse`   | Required                     | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                                                                                                                                    |
-| `identity`                 | See the identity table below | How the agent names itself to Codex and to the person. See the next table.                                                                                                                                                                                                                                      |
-| `onFatal`                  | Required                     | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                                                                                                                                |
-| `extensions`               | None                         | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                                                                                                                                          |
+| Field                      | Default                               | What it does                                                                                                                                                                                                                                                                                                    |
+| -------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage.directory`        | Required                              | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and not be a symbolic link. A link above it that you or root own, in directories no other user can change, such as `/tmp` on macOS, is resolved once. Keep it outside every checkout. |
+| `storage.ownerDirectory`   | `<directory>/owner`                   | Where the process-owner lock and records live.                                                                                                                                                                                                                                                                  |
+| `codex.executablePath`     | The installed `@openai/codex` package | An absolute path of the Codex executable, in place of the installed package. `start()` proves it.                                                                                                                                                                                                               |
+| `codex.installedIn`        | None                                  | Refuses an installed `@openai/codex` that is not in `<installedIn>/node_modules`, such as a global install. It does not apply to `executablePath`.                                                                                                                                                              |
+| `codex.releasedIn`         | None                                  | For a host's compiled release: the platform package whose `@openai/codex-<os>-<cpu>` dependency holds the native binary. It does not apply to `executablePath`.                                                                                                                                                 |
+| `codex.hostEnvironment`    | None                                  | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                                                                                                                                |
+| `codex.pathPrefixes`       | None                                  | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                                                                                                                                |
+| `codex.diagnosticSecrets`  | None                                  | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                                                                                                                                |
+| `codex.onGroupOwned`       | None                                  | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                                                                                                                                       |
+| `checkouts`                | Required                              | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.                                                                                                                      |
+| `instructions.coordinator` | Required                              | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                                                                                                                                   |
+| `instructions.workhorse`   | Required                              | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                                                                                                                                    |
+| `identity`                 | See the identity table below          | How the agent names itself to Codex and to the person. See the next table.                                                                                                                                                                                                                                      |
+| `onFatal`                  | Required                              | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                                                                                                                                |
+| `extensions`               | None                                  | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                                                                                                                                          |
 
 The agent that `createVoiceAgent` returns has these members:
 
@@ -379,16 +380,6 @@ A socket that arrives before `start()` is ready is closed with `1011`. After `sh
 ```ts
 agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
 ```
-
-### `resolveCodexExecutable(options)`
-
-`resolveCodexExecutable` finds the Codex executable and proves it before anything runs it. It must be an absolute path to a regular, executable file that reports exactly `codex-cli 0.166.0`. It never looks on `PATH`. It returns the absolute path, and throws a `CodexExecutableError` with a `code` when the proof fails.
-
-| Field            | Default                               | What it does                                                                                                                                                    |
-| ---------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `executablePath` | The installed `@openai/codex` package | An absolute path to prove in place of the installed package.                                                                                                    |
-| `installedIn`    | None                                  | Refuses an installed `@openai/codex` that is not in `<installedIn>/node_modules`, such as a global install. It does not apply to `executablePath`.              |
-| `releasedIn`     | None                                  | For a host's compiled release: the platform package whose `@openai/codex-<os>-<cpu>` dependency holds the native binary. It does not apply to `executablePath`. |
 
 ### `createVoiceClient(options)`
 
@@ -532,29 +523,29 @@ In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts un
 
 ### Entry points
 
-| Entry           | What it holds                                                                                                                                                                                                    |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `./server`      | `createVoiceAgent`, `resolveCodexExecutable` and their types. The remaining exports are lower-level parts for a host that routes its own sockets. A host that uses `bunHandlers` or `attach` needs none of them. |
-| `./browser`     | `createVoiceClient` and its types.                                                                                                                                                                               |
-| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                                                                     |
-| `./controllers` | The transport, media and conversation parts under the client.                                                                                                                                                    |
-| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                                                            |
-| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                                                           |
-| `./realtime`    | The phase and state types of a voice run.                                                                                                                                                                        |
-| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the wait graph.                                                                                                                                     |
+| Entry           | What it holds                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `./server`      | `createVoiceAgent` and its types. The remaining exports are lower-level parts for a host that routes its own sockets. A host that uses `bunHandlers` or `attach` needs none of them. |
+| `./browser`     | `createVoiceClient` and its types.                                                                                                                                                   |
+| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                                         |
+| `./controllers` | The transport, media and conversation parts under the client.                                                                                                                        |
+| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                                |
+| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                               |
+| `./realtime`    | The phase and state types of a voice run.                                                                                                                                            |
+| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the wait graph.                                                                                                         |
 
 ## Troubleshooting
 
 ### Codex reports another version
 
-`resolveCodexExecutable` throws `CodexExecutableError` with code `wrong_version` and the message "The configured Codex executable reported an unexpected version; expected codex-cli 0.166.0." The executable it found is not Codex 0.166.0.
+`createVoiceAgent` throws `CodexExecutableError` with code `wrong_version` and the message "The configured Codex executable reported an unexpected version; expected codex-cli 0.166.0." The executable it found is not Codex 0.166.0. When you pass `executablePath`, `start()` rejects instead, with code `startup_failed` and this reason in its `cause`.
 
 1. Run `bun add @openai/codex@0.166.0` in your project.
 2. If you pass `executablePath`, make sure that it names a Codex 0.166.0 executable.
 
 ### The Codex executable is not found
 
-`resolveCodexExecutable` throws `CodexExecutableError`. Code `missing` means that `@openai/codex` is not installed where the package can find it, or that `executablePath` names no file. Code `not_absolute` means that `executablePath` is a relative path or a bare name: the package never looks on `PATH`. Code `version_unavailable` means that the executable did not run. With the installed package, the usual cause is that no `node` is on `PATH`.
+`createVoiceAgent` throws `CodexExecutableError`. Code `missing` means that `@openai/codex` is not installed where the package can find it, or that `executablePath` names no file. Code `not_absolute` means that `executablePath` is a relative path or a bare name: the package never looks on `PATH`. Code `version_unavailable` means that the executable did not run. With the installed package, the usual cause is that no `node` is on `PATH`. When you pass `executablePath`, `start()` rejects instead, with code `startup_failed` and the reason in its `cause`.
 
 1. Run `bun add @openai/codex@0.166.0` in the project that runs the server. Package managers that skip peer dependencies leave it out.
 2. If you pass `executablePath`, give an absolute path.

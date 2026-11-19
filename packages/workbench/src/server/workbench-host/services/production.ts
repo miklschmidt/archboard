@@ -6,7 +6,6 @@ import { ARCHBOARD_AGENT } from "#runtime/host/services/archboard.ts";
 import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
-import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { installation } from "@archboard/workspace/installation";
 import { stateDir } from "@archboard/workspace/state-dir";
 import { listenAddress, serverUrl } from "#server/host/services/listener-address.ts";
@@ -62,16 +61,12 @@ function createWorkbenchStorage(): VoiceAgentOptions["storage"] {
 
 /**
  * Build the one mandatory real production voice agent options used by the
- * server application: the proven executable, the storage under it, Archboard's
+ * server application: where the pinned Codex lies, the storage, Archboard's
  * identity, instructions and tools, and the extensions each generation uses.
  * @param server What the server provides the workbench.
  * @returns The voice agent options.
  */
 export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer): VoiceAgentOptions {
-	// Prove the mandatory runtime before creating any workbench storage. The
-	// process owner proves it again at each spawn so a later replacement cannot
-	// inherit a stale verification.
-	const executablePath = resolveCodexExecutable(installation().codexLocation);
 	const storage = createWorkbenchStorage();
 
 	return {
@@ -96,7 +91,7 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 			browserLeaseLedger: server.browserLeaseLedger,
 		},
 		codex: {
-			executablePath,
+			...installation().codexLocation,
 			hostEnvironment: {
 				ARCHBOARD_URL: serverUrl(),
 				ARCHBOARD_NO_AUTOSTART: "1",

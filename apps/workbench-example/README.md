@@ -63,8 +63,8 @@ The host inputs are the checkout, the state directory, the port, the browser bui
 By default, the server serves `dist/workbench-example/index.html`, `app.js` and `app.css` from this repository.
 Use `--browser-directory <path>` to serve another build directory that holds those three files.
 Use `--codex /absolute/path/to/executable` to give an executable that reports the exact pinned Codex version.
-When you leave out this flag, `resolveCodexExecutable` finds the executable that the repository installed.
-The server checks the version of the executable before it starts the agent.
+When you leave out this flag, the voice agent finds the executable that the repository installed.
+The agent checks the version of the executable before it starts Codex.
 
 The browser reads `GET /api/config` for the label and path of the checkout and for the socket path `/api/workbench`.
 The socket URL carries `chatId=main` and the `tabSessionId` of the tab.
