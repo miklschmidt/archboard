@@ -11,6 +11,10 @@
 // the last pass found on the current variants. A reading belongs to the vault
 // the pass read (ADR 0049): a document of one name in two vaults has two.
 //
+// A canonical reading also keeps each module the pass measured, those with no
+// findings included, and what the pass skipped, so a pane tells a clean module
+// from one the pass did not read (TASK-646.07).
+//
 // It lives in memory and nowhere else. Nothing writes a finding into a document,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
 // restarted server knows nothing until somebody runs the code check, with
@@ -55,6 +59,20 @@ function keyOf(vault: string, document: string, variant: string): string {
 }
 
 /**
+ * Whether an entry of an answer belongs to one canonical reading.
+ * @param read The reading, by its model and state.
+ * @param read.model The model.
+ * @param read.state The state, or null.
+ * @returns The test of an entry by the model and state it names.
+ */
+function ofReading(read: { readonly model: string; readonly state: string | null }) {
+	return (entry: {
+		readonly model?: string | undefined;
+		readonly state?: string | null | undefined;
+	}): boolean => entry.model === read.model && entry.state === read.state;
+}
+
+/**
  * A memory of code passes, empty until the first pass finishes.
  * @returns The memory.
  */
@@ -68,17 +86,20 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	 */
 	function remember(vault: string, answer: CodeCheckAnswer, checkedAt: Date): void {
 		const at = checkedAt.toISOString();
-		for (const read of answer.models ?? [])
+		for (const read of answer.models ?? []) {
+			const mine = ofReading(read);
 			readings.set(keyOf(vault, read.model, read.state ?? ""), {
 				vault,
 				reading: {
 					...read,
 					checkedAt: at,
-					findings: answer.findings.filter(
-						(finding) => finding.model === read.model && finding.state === read.state,
-					),
+					findings: answer.findings.filter(mine),
+					depth: (answer.depth ?? []).filter(mine),
+					// A skip that names no model holds for a whole checkout or language, so for every reading.
+					skipped: answer.skipped.filter((skip) => skip.model === undefined || mine(skip)),
 				},
 			});
+		}
 		for (const read of answer.states) {
 			readings.set(keyOf(vault, read.model, read.variant), {
 				vault,

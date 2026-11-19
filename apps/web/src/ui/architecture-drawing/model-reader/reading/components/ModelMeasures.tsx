@@ -10,7 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import { Button } from "@archboard/ui-kit/components";
+import { Button, cn } from "@archboard/ui-kit/components";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
 import {
 	MeasureHead,
@@ -21,17 +21,26 @@ import {
 	NOT_READ,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelMeasureRow.tsx";
 import { useRevealedRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-revealed-row.ts";
+import type { CodeReadingName } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
+import {
+	useModuleCode,
+	type ModuleCodeRead,
+} from "#ui/architecture-drawing/model-reader/reading/hooks/use-module-code.ts";
+import { notJudgedWords } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
+import { CheckedAt } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 import { historyDay } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
 import {
 	historySource,
 	historyState,
 	interfaceRows,
+	isCodeMeasure,
 	isHistoryMeasure,
 	measuresOf,
 	mostOf,
 	shownRows,
 	sortedBy,
 	sortedRows,
+	withCode,
 	withHistory,
 	type HistoryReading,
 	type HistoryState,
@@ -46,7 +55,10 @@ import { treeKey } from "#ui/shell/rules/tree-keys.ts";
 interface ModelMeasuresProps {
 	readonly vault: string;
 	/** The reading on show. */
-	readonly model: Parameters<typeof modelHistoryQuery>[1] & HistoryReading & Pick<Model, "policy">;
+	readonly model: Parameters<typeof modelHistoryQuery>[1] &
+		HistoryReading &
+		CodeReadingName &
+		Pick<Model, "policy">;
 	readonly projection: Parameters<typeof interfaceRows>[0];
 	/** What the table is about, as its caption says it. */
 	readonly label: string;
@@ -67,8 +79,9 @@ interface ModelMeasuresProps {
  * Where a design costs the most, with no need to know where to look: a table of every module of the
  * model with a column for each of its measures, as the site's Measures table. A column's head sorts
  * the rows by it, and a foot says what the counts cover. The interface counts need no server, and a
- * table of history counts reads the history when it opens. No count is combined with another, and a
- * row ranks nothing but its own order (ADR 0044).
+ * table of history counts reads the history when it opens. A table of code counts reads what the
+ * last code pass found on this version of the reading, and never starts a pass (ADR 0046). No
+ * count is combined with another, and a row ranks nothing but its own order (ADR 0044).
  * @param props The reading, the measures and what a row does.
  * @returns The table.
  */
@@ -80,8 +93,14 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
 	const query = useQuery({ ...modelHistoryQuery(vault, model), enabled: history && bound });
 	const state = historyState(source, query);
 	const answer = state === "read" ? query.data : undefined;
+	const code = keys.some(isCodeMeasure);
+	const codeRead = useModuleCode(vault, model, code);
+	const codeModules = codeRead.modules;
 	const modules = useMemo(() => interfaceRows(projection), [projection]);
-	const rows = useMemo(() => withHistory(modules, answer), [modules, answer]);
+	const rows = useMemo(
+		() => withCode(withHistory(modules, answer), codeModules),
+		[modules, answer, codeModules],
+	);
 	const measures = useMemo(() => {
 		const offered = measuresOf(modules);
 		return keys.flatMap((key) => offered.filter((one) => one.key === key));
@@ -112,6 +131,7 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
 				measure={measure}
 			/>
 			<MeasureFoot shown={shown.length} modules={rows.length} view={view} history={history}>
+				<CodeStatus {...codeRead} wanted={code} rows={rows.length} />
 				{history && (
 					<HistoryStatus
 						state={state}
@@ -203,7 +223,7 @@ function MeasureFoot(props: {
 			<p data-slot="model-measures-key" className="text-body text-muted-foreground">
 				{props.history
 					? "0 is none. A dash was not read, and says why on hover."
-					: "0 is none. A blank has no count: a module with no parts has no interface."}
+					: "0 is none. A blank has no count: a module with no parts has no interface, and the code check measures only bound modules. A dash was not judged, and says why on hover."}
 			</p>
 		</div>
 	);
@@ -256,11 +276,15 @@ function MeasureTable(props: MeasureTableProps): JSX.Element {
 		[stop, keyRows, onChoose, focusRow],
 	);
 	// The head stands over the rows, so the well keeps a row that it scrolls to clear of the head:
-	// the selected row it reveals, and the row the keys walk to.
+	// the selected row it reveals, and the row the keys walk to. A head that names its groups of
+	// columns is a row taller.
 	return (
 		<div
 			ref={list}
-			className="bg-tray-sink shadow-well rounded-panel min-h-0 flex-1 scroll-pt-10 overflow-y-auto"
+			className={cn(
+				"bg-tray-sink shadow-well rounded-panel min-h-0 flex-1 overflow-y-auto",
+				measures.some(({ group }) => group !== undefined) ? "scroll-pt-18" : "scroll-pt-10",
+			)}
 		>
 			<table className="w-full border-separate border-spacing-0">
 				<caption className="sr-only">{props.label}. A column's head sorts the rows by it.</caption>
@@ -283,6 +307,51 @@ function MeasureTable(props: MeasureTableProps): JSX.Element {
 					))}
 				</tbody>
 			</table>
+		</div>
+	);
+}
+
+/** Inputs for what the table says of its code counts. */
+type CodeStatusProps = ModuleCodeRead & {
+	/** Whether the table has code columns; a table without says nothing of the code. */
+	readonly wanted: boolean;
+	/** How many modules the table holds. */
+	readonly rows: number;
+};
+
+/** What the code line says while no remembered pass read the reading, by how the read stands. */
+const CODE_UNREAD: Readonly<Record<CodeStatusProps["read"], string>> = {
+	pending: "Reading the last code check…",
+	error: "The last code check could not be read from the Archboard server.",
+	success:
+		"No code check has read this version of the reading. Where the map and the code disagree runs one, and so does archboard check code.",
+	elsewhere: "The code check reads the vault, and this reading is not in it.",
+};
+
+/**
+ * What the table says of its code counts: which pass they come from and what it did not judge, or
+ * why no pass stands behind them. Opening the table never starts a pass.
+ * @param props The pass, and what it says of each module.
+ * @returns The line.
+ */
+function CodeStatus(props: CodeStatusProps): JSX.Element | null {
+	const { reading, modules, rows } = props;
+	if (!props.wanted) return null;
+	if (reading === null || modules === undefined)
+		return (
+			<p data-slot="model-measures-code" className="text-body text-muted-foreground">
+				{CODE_UNREAD[props.read]}
+			</p>
+		);
+	const judged = [...modules.values()].filter((one) => one.kind === "read").length;
+	return (
+		<div data-slot="model-measures-code" className="flex items-baseline justify-between gap-3">
+			<p className="text-body text-muted-foreground min-w-0">
+				{`The code check judged ${judged} of ${rows} modules. ${notJudgedWords(modules)}`.trim()}
+			</p>
+			<div className="shrink-0 whitespace-nowrap">
+				<CheckedAt checkedAt={reading.checkedAt} />
+			</div>
 		</div>
 	);
 }

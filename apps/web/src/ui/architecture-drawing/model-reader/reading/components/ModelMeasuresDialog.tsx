@@ -41,13 +41,13 @@ const TABS: readonly {
 		value: "code",
 		Icon: RiCodeSSlashLine,
 		label: "Where the map and the code disagree",
-		gloss: "Broken bindings, backwards lines, missing calls",
+		gloss: "Broken bindings, missing calls, shallow modules",
 	},
 	{
 		value: "interface",
 		Icon: RiStackLine,
 		label: "What a module exposes",
-		gloss: "Entry points, hidden parts and callers",
+		gloss: "Its interface in the model and in its code",
 	},
 	{
 		value: "changes",
@@ -70,6 +70,10 @@ const EXPOSES: readonly MeasureKey[] = [
 	"passThrough",
 	"callers",
 	"wholeModule",
+	"codeExports",
+	"codeValues",
+	"codeLogic",
+	"codeFindings",
 ];
 
 /** The columns of the table of what changes together, in their order. */

@@ -54,13 +54,17 @@ import {
 	nameFinding,
 	SHALLOW_CODES,
 } from "#runtime/module-depth/operations/name-findings.ts";
+import type { ModuleExport } from "#shared/protocol/code-check.ts";
 
 /**
  * What this part does with the names each adapter exposes: those of an adapter
  * that names the kind of each export it judges, and those of an
  * infrastructure adapter it only counts.
  */
-const GROUPS: ReadonlyMap<SyntaxFacts["adapter"], keyof Omit<CountedNames, "languages">> = new Map([
+const GROUPS: ReadonlyMap<
+	SyntaxFacts["adapter"],
+	keyof Omit<CountedNames, "languages" | "unjudged">
+> = new Map([
 	["typescript", "judged"],
 	["terraform", "infrastructure"],
 	["nix", "infrastructure"],
@@ -97,8 +101,12 @@ interface ExportCounts {
 interface Depth {
 	/** The languages whose exports were counted and judged. */
 	readonly languages: readonly string[];
+	/** The languages the module exposes names in whose exports no rule reads yet (TASK-646.07). */
+	readonly unjudged: readonly string[];
 	/** The exported names it judged, which no other rule judges again. */
 	readonly names: readonly string[];
+	/** Each export it counted, with its kind and where it is defined (TASK-646.07). */
+	readonly listed: readonly ModuleExport[];
 	readonly exports: ExportCounts;
 	readonly logic: number;
 	readonly findings: readonly DepthFinding[];
@@ -137,6 +145,8 @@ interface CountedNames {
 	/** The names of an infrastructure adapter. */
 	readonly infrastructure: readonly ExposedName[];
 	readonly languages: readonly SyntaxFacts["adapter"][];
+	/** The adapters whose names no rule reads yet. */
+	readonly unjudged: readonly SyntaxFacts["adapter"][];
 }
 
 /**
@@ -151,12 +161,16 @@ async function countedNames(reading: DepthReading): Promise<CountedNames> {
 		infrastructure: new Map<string, ExposedName>(),
 	};
 	const languages = new Set<SyntaxFacts["adapter"]>();
+	const unjudged = new Set<SyntaxFacts["adapter"]>();
 	for (const name of reading.exposure.exposed) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await reading.facts.read(reading.checkout, name.path);
 		if (read === undefined || read.adapter === "text") continue;
 		const group = GROUPS.get(read.adapter);
-		if (group === undefined) continue;
+		if (group === undefined) {
+			unjudged.add(read.adapter);
+			continue;
+		}
 		languages.add(read.adapter);
 		const names = groups[group];
 		if (!names.has(name.name)) names.set(name.name, name);
@@ -165,6 +179,7 @@ async function countedNames(reading: DepthReading): Promise<CountedNames> {
 		judged: [...groups.judged.values()],
 		infrastructure: [...groups.infrastructure.values()],
 		languages: [...languages],
+		unjudged: [...unjudged],
 	};
 }
 
@@ -202,11 +217,13 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
  * the public methods of their classes, and the names at the end of their
  * paths of its infrastructure.
  * @param names The counted names.
- * @returns The counts, and each judged export with its kind, in the order the module exports them.
+ * @returns The counts, each judged export with its kind, in the order the module exports them,
+ * and each counted export as the answer lists it.
  */
 function countExports(names: CountedNames): {
 	readonly counts: ExportCounts;
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
+	readonly listed: readonly ModuleExport[];
 } {
 	const top = names.judged
 		.filter((name) => topLevel(name, names.judged))
@@ -220,7 +237,11 @@ function countExports(names: CountedNames): {
 		if (topLevel(name, names.judged)) return [[name, kindOf(name.definition)]];
 		return methodOf(name, classes) ? [[name, "method"]] : [];
 	});
+	const listed = [...judged, ...counted.filter(([name]) => !names.judged.includes(name))].map(
+		([name, kind]) => exportOf(name, kind),
+	);
 	return {
+		listed,
 		counts: {
 			functions: ofKind(counted, "function").length,
 			classes: classes.length,
@@ -230,6 +251,16 @@ function countExports(names: CountedNames): {
 		},
 		judged,
 	};
+}
+
+/**
+ * One counted export, as the answer lists it.
+ * @param name The exposed name.
+ * @param kind Its kind.
+ * @returns The export.
+ */
+function exportOf(name: ExposedName, kind: NameKind): ModuleExport {
+	return { name: name.name, kind, path: name.path, line: name.definition.start };
 }
 
 /**
@@ -311,7 +342,7 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
  */
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
-	const { counts, judged } = countExports(names);
+	const { counts, judged, listed } = countExports(names);
 	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
 	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
 	const findings: DepthFinding[] = [];
@@ -326,7 +357,9 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const shallowFinding = shallow(reading, rollUp);
 	return {
 		languages: names.languages,
+		unjudged: names.unjudged,
 		names: judged.map(([name]) => name.name),
+		listed,
 		exports: counts,
 		logic: await logicOf(reading),
 		findings: shallowFinding === undefined ? findings : [...findings, shallowFinding],

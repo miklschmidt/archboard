@@ -166,10 +166,27 @@ const CodeFindingSchema = VaultDiagnosticSchema.omit({ board: true }).extend({
 });
 
 /**
+ * One export of a bound module (TASK-646.07): its name as a caller spells it,
+ * its kind, and where it is defined. A public method of an exported class is
+ * named `Class.method`.
+ */
+const ModuleExportSchema = z
+	.object({
+		name: z.string(),
+		kind: z.enum(["function", "class", "method", "value", "type"]),
+		path: z.string(),
+		line: z.int().positive(),
+	})
+	.strict();
+
+/**
  * One bound module measured from its code (TASK-646.04, ADR 0082): the part
  * that binds it, its directory, the languages whose exports were counted, its
  * exports by kind, each public method of an exported class counted as its own
  * export, and the pieces of logic behind them, as evidence and never a score.
+ * `unjudged` names the languages the module holds whose exports no rule reads
+ * yet, so a module read in part never looks clean, and `names` lists each
+ * export it counted (TASK-646.07).
  */
 const ModuleDepthSchema = z
 	.object({
@@ -180,6 +197,8 @@ const ModuleDepthSchema = z
 		repo: z.string(),
 		directory: z.string(),
 		languages: z.array(z.string()),
+		unjudged: z.array(z.string()),
+		names: z.array(ModuleExportSchema),
 		exports: z
 			.object({
 				functions: z.int().nonnegative(),
@@ -305,6 +324,10 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *
  * A reason that holds for a whole checkout names its `repo` and no subject,
  * which is how the check says a thing once.
+ *
+ * A skip that names a subject carries the canonical `model` and `state` of its
+ * reading, as a finding does (TASK-646.07). One that names no subject keeps
+ * the document's name in `model` and its `variant`.
  */
 const CodeCheckSkipSchema = z
 	.object({
@@ -502,6 +525,10 @@ const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 const RememberedModelSchema = CodeCheckModelSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
+	/** Each module the pass measured on this reading, those with no findings included (TASK-646.07). */
+	depth: z.array(ModuleDepthSchema).optional(),
+	/** What the pass skipped on this reading, and what it skipped in a whole checkout or language. */
+	skipped: z.array(CodeCheckSkipSchema).optional(),
 });
 const RememberedFindingsSchema = z.object({
 	readings: z.array(RememberedReadingSchema),
@@ -514,6 +541,7 @@ type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
 type ModuleDepth = z.infer<typeof ModuleDepthSchema>;
+type ModuleExport = z.infer<typeof ModuleExportSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
@@ -530,6 +558,7 @@ export {
 	type CodeEvidence,
 	type CodeFinding,
 	type ModuleDepth,
+	type ModuleExport,
 	CodeSourceLinesSchema,
 	RememberedFindingsSchema,
 	type RememberedFindings,
