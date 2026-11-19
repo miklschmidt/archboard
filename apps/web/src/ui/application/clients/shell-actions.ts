@@ -279,17 +279,18 @@ function vaultOf(catalog: Pick<ModelCatalog, "repositories">, repository: string
 }
 
 /**
- * The checkout a repository's code is read from, where its agent works.
+ * The checkout whose conversation speaks for a repository: the one that holds the vault its models
+ * are read from, at `<checkout>/.archboard/vault`, as the server names the checkout of a pane. An
+ * untracked vault lists no checkout, so the vault is what names it.
  * @param catalog The catalog.
  * @param repository The repository's name.
- * @returns Its chosen checkout's root, or null when it has none.
+ * @returns The checkout's root, or null when the repository has no vault to read.
  */
 function checkoutOf(
 	catalog: Pick<ModelCatalog, "repositories">,
 	repository: string,
 ): string | null {
-	const entry = catalog.repositories.find((each) => each.repository.name === repository);
-	return entry?.repository.checkouts.find((each) => each.chosen)?.root ?? null;
+	return vaultOf(catalog, repository)?.replace(/[/\\][^/\\]+[/\\][^/\\]+[/\\]?$/u, "") ?? null;
 }
 
 /** The pane actions. */
