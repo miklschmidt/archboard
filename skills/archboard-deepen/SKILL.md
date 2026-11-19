@@ -55,7 +55,7 @@ Classify each dependency of a candidate, because the class decides how its tests
 Two advisors answer every decision of steps 4 and 5. Run them like this:
 
 1. **Brief.** Spawn each advisor fresh, with no fork of your conversation. Give both the same brief: the question, the report and decision log paths, this skill's [vocabulary](#vocabulary), the facts you gathered with their sources, and the repository's agent instructions, domain glossary and ADRs to read. Leave your own preference out of it.
-2. **Families.** When the harness offers models of different families, give each advisor a different one. Otherwise run two agents of the same model, each without the other's context.
+2. **Models.** Read the two advisors from the repository's agent docs: `docs/agents/advisors.md`, or the advisors file where the repository keeps its agent docs. It names each advisor's provider and model family; pick the latest model of each family that the harness lists. Without that file, give each advisor a different model family that the harness offers, or run two agents of the same model when it offers one family. Write down which models you chose, and suggest the file in the [hand-off](#8-hand-off).
 3. **Round 1.** Both answer in parallel: an answer per point, each with its reason, citing files, findings and model facts.
 4. **Round 2.** Give each advisor the other's round 1 answer, verbatim. Each keeps, revises or rebuts its answer, point by point, with a reason.
 5. **Settle.** A point that both answer the same way after round 1 or round 2 is settled. You settle each point that is still open after round 2: take the answer whose reason the evidence supports, and write down why the other one lost.
@@ -151,11 +151,21 @@ Done: a round finds nothing, and the tests and the code check pass after its las
 
 ### 8. Hand off
 
-Tell the owner, in a few lines:
+Put the run's evidence in the pull request that carries its code, in the body or one comment, and never in the repository:
+
+- A table of the candidates: title, strength, friction and files.
+- The before and after pictures of each chosen candidate, uploaded as attachments.
+- Each advisor's independent ranking from step 4, and what they agreed on.
+- Each decision of step 5, with its reason and who settled it.
+
+The report directory stays outside the checkout. Attach `report.html` only where the host accepts the file.
+
+Then tell the owner, in a few lines:
 
 - The report and the decision log, by absolute path.
 - The integration branch and its head commit, and the adopted proposal.
 - The findings that started the run, and what the code check reports now.
 - Each question that waits for the owner, with the advisors' answers.
+- The advisor models you used, and, when the repository has no advisors file, a suggestion to add one.
 
-Done: the owner has that message, and nothing of the run is left uncommitted.
+Done: the pull request holds the evidence, the owner has that message, and nothing of the run is left uncommitted.

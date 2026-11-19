@@ -3,11 +3,11 @@ id: TASK-652
 title: >-
   archboard-deepen deepens shallow modules and wide interfaces without a human
   gate
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T14:03:00Z'
-updated_date: '2026-11-19T14:11:00Z'
+updated_date: '2026-11-19T14:12:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -48,8 +48,8 @@ The finding messages and the archboard skill state the principles (narrow interf
 - [x] #4 archboard init installs it with the other shipped skills, the release includes it, and tracked symlinks expose it in .claude/skills and .agents/skills
 - [x] #5 The archboard skill points agents to it where INTERFACE_WIDE and MODULE_SHALLOW are described, and the site install and pull-request pages name it
 - [x] #6 The skill-link and init tests cover it, and the skill follows writing-for-agents (one source of truth, leading words, no restated environment)
-- [ ] #7 Each round puts its evidence in the pull request it produces, in the body or a comment, never in the repository: the candidate table (friction, strength, files), the before and after Archboard pictures uploaded as attachments, each advisor's independent ranking and what they agreed on, and each grilling decision with its reason; the HTML report stays outside the checkout and is attached only where the host accepts the file
-- [ ] #8 The skill reads its two advisors (provider, model family, how to pick the latest model) from the consumer repository's agent docs: `docs/agents/advisors.md` by default, or the advisors file in the directory where that repository keeps its agent context docs. Without such a file it picks two different model families the harness offers, says which, and suggests the file; this repository's docs/agents/advisors.md names Astra and Fable
+- [x] #7 Each round puts its evidence in the pull request it produces, in the body or a comment, never in the repository: the candidate table (friction, strength, files), the before and after Archboard pictures uploaded as attachments, each advisor's independent ranking and what they agreed on, and each grilling decision with its reason; the HTML report stays outside the checkout and is attached only where the host accepts the file
+- [x] #8 The skill reads its two advisors (provider, model family, how to pick the latest model) from the consumer repository's agent docs: `docs/agents/advisors.md` by default, or the advisors file in the directory where that repository keeps its agent context docs. Without such a file it picks two different model families the harness offers, says which, and suggests the file; this repository's docs/agents/advisors.md names Astra and Fable
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -77,6 +77,8 @@ Evidence:
 - AC5: one pointer line at the end of Module depth in skills/archboard/references/design-lens.md; site install.mdx (install and uninstall), first-map.mdx and pull-requests.mdx name it; INSTALL.md too.
 - AC6: skill-links test BUNDLED_SKILLS and the init system test's skills call include archboard-deepen; test:repository 176 pass, test:system 227 pass. writing-for-agents: one source of truth (commands stay in the archboard skill, slices and gate in archboard-plan), leading words (advisors, frontier, seam, deletion test, candidate), no restated CLI help.
 Validation: vp run types, lint:all, format:check, test:modules (5307 pass), test:repository, test:system, site bun run build (after bun site/scripts/paint.ts in a fresh worktree) all pass.
+
+Orchestrator (2026-11-19): AC7 and AC8 came after the implementer started. Added to SKILL.md: Advisors step 2 reads docs/agents/advisors.md or the repository's agent-docs advisors file, with the fallback to two model families and a suggestion to add the file; step 8 puts the candidate table, uploaded pictures, rankings and decisions in the pull request body or a comment, never in the repository, attaching report.html only where the host accepts it. skill-links test: 5 pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
