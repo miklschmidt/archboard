@@ -246,25 +246,27 @@ function findingsOn(name: string) {
 		.map((each) => [each.export, each.code, each.severity]);
 }
 
-test("a Rust module's exports are counted by kind: a struct or an enum with a public method is a class with its methods and associated items, one with none is a type, a trait and a type alias are types, and a function pointer is a function", () => {
+test("a Rust module's exports are counted by kind: a struct or an enum with a public method is a class with its methods and associated items, one with none is a type, a trait and a type alias are types whose trait counts its methods, and a function pointer is a function", () => {
 	const ledger = depthOf("Ledger");
 	expect(ledger?.languages).toEqual(["rust"]);
 	expect(ledger?.unjudged).toEqual([]);
 	expect(ledger?.names.map(({ name, kind }) => [name, kind])).toEqual([
 		["Port", "type"],
+		// A trait's method counts once, for the trait.
+		["Port.send", "method"],
 		["Amount", "type"],
 		["Kind", "class"],
 		["HANDLER", "function"],
 		["Relay", "class"],
-		["Account", "class"],
+		// Its only methods implement traits: a type that holds data.
+		["Account", "type"],
 		["post", "function"],
 		["Kind.is_debit", "method"],
 		// Read through the type's name, an associated item is an export of its own.
 		["Relay.RETRIES", "value"],
 		["Relay.new", "function"],
 		["Relay.send", "method"],
-		// A trait's method on the type that implements it; `drop`, which the language calls, is no export.
-		["Account.send", "method"],
+		// `Account.send` implements `Port`, and the language calls `drop`: neither is an export of `Account`.
 	]);
 	// `Durations` has no method: a type that holds data.
 	expect(depthOf("Timing")?.exports).toEqual({

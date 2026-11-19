@@ -81,6 +81,8 @@ const UNSETTLED = "partial ";
 interface Holder {
 	readonly kind: TypeKind;
 	readonly exposed: boolean;
+	/** The last names of the types its base list names. */
+	readonly conforms: readonly string[];
 }
 
 /** Where the walk is: the qualified name of what holds the next declaration, and its type. */
@@ -155,7 +157,41 @@ function definitionAt(
 		visibility,
 		exposed: visibility === "public" && (scope.holder?.exposed ?? true),
 		...depthTraits(node, name),
+		...conformsOf(scope.holder),
 	};
+}
+
+/**
+ * What a member carries of the names its type's base list names.
+ * @param holder The type that holds it, if any.
+ * @returns The names, or nothing where the list names none.
+ */
+function conformsOf(holder: Holder | undefined): Pick<Definition, "conforms"> {
+	const conforms = holder?.conforms ?? [];
+	return conforms.length === 0 ? {} : { conforms };
+}
+
+/**
+ * The last name of each type a type's base list names: `ICanvas` of
+ * `Shop.ICanvas` and of `ICanvas<int>`.
+ * @param node The type's declaration.
+ * @returns The names.
+ */
+function baseNames(node: Node): string[] {
+	const list = node.namedChildren.find((child) => child.type === "base_list");
+	return (list?.namedChildren ?? []).flatMap(lastName);
+}
+
+/**
+ * The last name of a type as a base list writes it.
+ * @param type The type.
+ * @returns The name, or none for a type with no name of its own.
+ */
+function lastName(type: Node | null | undefined): string[] {
+	if (type === null || type === undefined) return [];
+	if (type.type === "identifier") return [type.text];
+	if (type.type === "qualified_name") return lastName(type.childForFieldName("name"));
+	return type.type === "generic_name" ? lastName(type.namedChildren[0]) : [];
 }
 
 /**
@@ -231,7 +267,7 @@ function typeDefinitions(node: Node, kind: TypeKind, scope: Scope): Definition[]
 	const name = node.childForFieldName("name");
 	if (name === null) return [];
 	const own = definitionAt(node, name.text, scope, accessibility(node, scope.holder));
-	const holder: Holder = { kind, exposed: own.exposed };
+	const holder: Holder = { kind, exposed: own.exposed, conforms: baseNames(node) };
 	const inside: Scope = { qualifier: [...scope.qualifier, name.text], holder };
 	return [
 		own,
