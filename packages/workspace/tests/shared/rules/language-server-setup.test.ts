@@ -45,3 +45,9 @@ test("a setup with no languages lets the agent find them, and names no server", 
 	expect(needs).toEqual([]);
 	expect(brief).toContain("Find the languages that the repository uses");
 });
+
+test("a setup leaves out a language whose server no agent configures", () => {
+	const { brief, needs } = languageServerSetup(["python", "cobol"]);
+	expect(needs.map(({ language }) => language)).toEqual(["python"]);
+	expect(brief).not.toContain("cobol");
+});

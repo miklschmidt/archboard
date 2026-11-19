@@ -56,17 +56,25 @@ interface LanguageServerSetup {
 }
 
 /**
+ * Whether an agent configures the server of a language.
+ * @param language The language, as the code check names it.
+ * @returns Whether the brief knows it.
+ */
+function isConfigurable(language: string): language is ConfigurableLanguage {
+	return Object.hasOwn(SERVERS, language);
+}
+
+/**
  * What setting up the language servers of a checkout takes: the server each missing language
  * needs, and the brief for the agent that sets them up.
- * @param missing The languages that lack a server. Without them, the agent finds them itself.
+ * @param missing The languages that lack a server, as the code check names them; a language
+ * whose server no agent configures is left out. Without any, the agent finds them itself.
  * @returns The servers they need, and the brief.
  */
-function languageServerSetup(missing?: readonly ConfigurableLanguage[]): LanguageServerSetup {
-	const needs = (missing ?? []).map((language) => ({
-		language,
-		server: SERVERS[language].server,
-	}));
-	return { needs, brief: briefOf(missing) };
+function languageServerSetup(missing?: readonly string[]): LanguageServerSetup {
+	const known = missing?.filter(isConfigurable);
+	const needs = (known ?? []).map((language) => ({ language, server: SERVERS[language].server }));
+	return { needs, brief: briefOf(known?.length === 0 ? undefined : known) };
 }
 
 /**

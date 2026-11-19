@@ -278,6 +278,20 @@ function vaultOf(catalog: Pick<ModelCatalog, "repositories">, repository: string
 	);
 }
 
+/**
+ * The checkout a repository's code is read from, where its agent works.
+ * @param catalog The catalog.
+ * @param repository The repository's name.
+ * @returns Its chosen checkout's root, or null when it has none.
+ */
+function checkoutOf(
+	catalog: Pick<ModelCatalog, "repositories">,
+	repository: string,
+): string | null {
+	const entry = catalog.repositories.find((each) => each.repository.name === repository);
+	return entry?.repository.checkouts.find((each) => each.chosen)?.root ?? null;
+}
+
 /** The pane actions. */
 type PaneActions = Pick<ShellActions, "selectPane" | "addPane" | "closePane" | "present">;
 
@@ -383,4 +397,4 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	};
 }
 
-export { createShellActions, vaultOf, type ShellActionDeps };
+export { checkoutOf, createShellActions, vaultOf, type ShellActionDeps };
