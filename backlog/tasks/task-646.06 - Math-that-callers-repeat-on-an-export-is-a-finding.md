@@ -1,11 +1,11 @@
 ---
 id: TASK-646.06
 title: Math that callers repeat on an export is a finding
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T02:21:00Z'
+updated_date: '2026-11-19T02:23:00Z'
 labels:
   - ready-for-agent
 dependencies:
