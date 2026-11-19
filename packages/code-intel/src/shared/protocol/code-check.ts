@@ -47,7 +47,9 @@
 // of a draft whose ref cannot be read. TASK-498 adds `DOCUMENT_PATH_MISSING`,
 // a warning on a document reference of a variant the check reads whose file is
 // not at the version it names, with no subject: its `path` names the reference
-// as `variants.<id>.documents.<index>` (ADR 0054).
+// as `variants.<id>.documents.<index>` (ADR 0054). TASK-646.01 holds the
+// interface of every part bound to a module, with or without parts, and reads
+// every language the module holds.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";

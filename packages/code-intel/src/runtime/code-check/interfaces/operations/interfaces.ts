@@ -7,7 +7,10 @@
 // module the container binds exposes: a bound directory, or the file that
 // stands for one, such as `index.ts`. Code facts say what a module exposes,
 // by the rule of its language. A container bound to another file or to a
-// symbol names no module, and is not judged.
+// symbol names no module, and is not judged. A part with no parts of its own
+// that binds a module is judged too, for what its module exposes, and a part
+// that binds the module of a part that holds it is judged with that part
+// (TASK-646.01).
 //
 // Each exposed name belongs to the part with the narrowest binding that holds
 // its definition, as all evidence does (evidence.ts). A child owns what it or
