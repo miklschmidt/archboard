@@ -1,9 +1,11 @@
 ---
 id: TASK-646.14.02
 title: Clear the other Rust crates' module-depth warnings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T06:02:00Z'
+updated_date: '2026-11-19T09:58:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -39,3 +41,14 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 - [ ] #3 Behavior is unchanged: the existing tests of the touched packages pass, and renderer output is identical where a crate draws
 - [ ] #4 Each removed or renamed symbol that a vault anchor names is reported with its replacement
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. List the batch's warnings with archboard check code (230 at the start: 220 EXPOSED_UNUSED, 3 EXPOSED_VALUE, 5 TEST_IMPORT_UNEXPOSED, 1 ANCHOR_MISMATCH).
+2. Block layout: make every submodule of crates/archboard-layout/src/blocks private except place; move the solve-option protocol (BLOCKS_*) behind place functions; delete the test-only pair_crossings.
+3. archboard-layout: remove the test-only InProcess solver; tests carry their own solver.
+4. archboard-paint, render, flows, text, svg, renderer-wasm, graphviz: narrow pub to what callers outside use; move test helpers that cross module files into the module or its entry.
+5. Prove the renderer output identical: cargo tests, render-corpus hashes before and after.
+6. Report the anchors and relationships that need a vault edit (ANCHOR_MISMATCH render -> Legend entries is a vault change).
+<!-- SECTION:PLAN:END -->
