@@ -52,14 +52,17 @@ const KINDS: Readonly<Record<string, Definition["kind"]>> = {
 
 /**
  * The declarations that declare a type and nothing a caller runs: a protocol,
- * an alias and an associated type. An enum with no method is one too
- * (typeDefinitions).
+ * an alias and an associated type. A struct and an enum hold data, and are
+ * types unless their module gives them a method (typeDefinitions).
  */
 const TYPES = new Set([
 	"protocol_declaration",
 	"typealias_declaration",
 	"associatedtype_declaration",
 ]);
+
+/** The declaration kinds of a type that holds data. */
+const DATA_KINDS = new Set(["struct", "enum"]);
 
 /**
  * The kind of a declaration or directly assigned closure.
@@ -236,11 +239,11 @@ function typeDefinitions(node: Node, holder: Holder): Definition[] {
 		exposed: own.exposed,
 	};
 	const held = members(node, inner, own.visibility);
-	// An enum whose body holds no method is a type, as a TypeScript enum is, so it keeps the compiler's exhaustive checks.
-	const enumOnly =
-		node.childForFieldName("declaration_kind")?.text === "enum" &&
-		!held.some((each) => each.kind === "function" && each.symbol.startsWith(`${own.symbol}.`));
-	return [enumOnly ? { ...own, type: true } : own, ...held];
+	// A struct or an enum holds data. With no method, wherever an extension
+	// declares one, it is a type, as a TypeScript enum is, so an enum keeps the
+	// compiler's exhaustive checks (Definition.data).
+	const data = DATA_KINDS.has(node.childForFieldName("declaration_kind")?.text ?? "");
+	return [data ? { ...own, data: true } : own, ...held];
 }
 
 /**

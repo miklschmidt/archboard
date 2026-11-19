@@ -14,9 +14,9 @@
 // type. A method of an unexported type can still be reached through an
 // interface, but no other package can name it.
 //
-// For module depth (TASK-646.11), a struct, and a named type whose file
-// declares a method on it, is a class; an interface, an alias and any other
-// named type declares a type alone. A function or a method that only passes
+// For module depth (TASK-646.11), an interface and an alias declare a type
+// alone. A struct and any other named type hold data: a type unless a file of
+// its package declares a method on it (`Definition.data`, TASK-651). A function or a method that only passes
 // its call on names its callee's root, and `Error`, `String`, `GoString` and
 // `Format`, which Go and `fmt` call themselves, are marked so (go-depth.ts).
 
@@ -141,26 +141,11 @@ function membersIn(type: Node): Member[] {
 }
 
 /**
- * Whether a named type declares a type alone, which a caller neither runs
- * nor reads (TASK-646.11): an interface, or a named type that is no struct
- * and whose file declares no method on it. A struct, or a named type with
- * methods of its own, is a class. An alias always declares a type alone.
- * @param type The type it names, if any.
- * @param methods Whether its file declares a method on it.
- * @returns True when it does.
- */
-function typeAlone(type: Node | null, methods: boolean): boolean {
-	const kind = type === null ? "" : type.type;
-	return kind === "interface_type" || (kind !== "struct_type" && !methods);
-}
-
-/**
  * The definitions of one type declaration: each type it declares, and their members.
  * @param declaration The declaration.
- * @param receivers The types the file's methods are declared on.
  * @returns Them.
  */
-function typesOf(declaration: Node, receivers: ReadonlySet<string>): Definition[] {
+function typesOf(declaration: Node): Definition[] {
 	return declaration.namedChildren.flatMap((spec) => {
 		const name = spec.childForFieldName("name")?.text;
 		if (name === undefined) return [];
@@ -173,27 +158,22 @@ function typesOf(declaration: Node, receivers: ReadonlySet<string>): Definition[
 				exportedName(name) && exportedName(member.name),
 			),
 		);
-		return [ownDefinition(spec, name, type, receivers), ...members];
+		return [ownDefinition(spec, name, type), ...members];
 	});
 }
 
 /**
- * The definition of one type a declaration declares.
+ * The definition of one type a declaration declares: an interface or an
+ * alias declares a type alone, and any other named type holds data.
  * @param spec Its declaration.
  * @param name Its name.
  * @param type The type it names, if any.
- * @param receivers The types the file's methods are declared on.
- * @returns The definition, marked as a type alone where it is one.
+ * @returns The definition.
  */
-function ownDefinition(
-	spec: Node,
-	name: string,
-	type: Node | null,
-	receivers: ReadonlySet<string>,
-): Definition {
+function ownDefinition(spec: Node, name: string, type: Node | null): Definition {
 	const own = definition(spec, name, "class", exportedName(name));
-	const alone = spec.type !== "type_spec" || typeAlone(type, receivers.has(name));
-	return alone ? { ...own, type: true } : own;
+	const alone = spec.type !== "type_spec" || type?.type === "interface_type";
+	return alone ? { ...own, type: true } : { ...own, data: true };
 }
 
 /**
@@ -265,10 +245,8 @@ function receiverType(method: Node): string | undefined {
 	return receiver === undefined ? undefined : typeName(receiver.childForFieldName("type"));
 }
 
-/** The definitions each declaration at file level gives, by its node, with the types the file's methods are declared on. */
-const DECLARATIONS: Readonly<
-	Record<string, (node: Node, receivers: ReadonlySet<string>) => Definition[]>
-> = {
+/** The definitions each declaration at file level gives, by its node. */
+const DECLARATIONS: Readonly<Record<string, (node: Node) => Definition[]>> = {
 	function_declaration: functionOf,
 	method_declaration: methodOf,
 	type_declaration: typesOf,
@@ -282,12 +260,7 @@ const DECLARATIONS: Readonly<
  * @returns Its definitions.
  */
 function definitionsOf(root: Node): Definition[] {
-	const receivers = new Set(
-		root.namedChildren.flatMap((node) =>
-			node.type === "method_declaration" ? (receiverType(node) ?? []) : [],
-		),
-	);
-	return root.namedChildren.flatMap((node) => DECLARATIONS[node.type]?.(node, receivers) ?? []);
+	return root.namedChildren.flatMap((node) => DECLARATIONS[node.type]?.(node) ?? []);
 }
 
 export { definitionsOf };

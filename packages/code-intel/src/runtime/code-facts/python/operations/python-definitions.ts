@@ -190,9 +190,36 @@ function typeAlias(declaration: Node): boolean {
 	return TYPE_ALIAS.test(annotation?.text ?? "");
 }
 
+/** A decorator that makes a class a dataclass: `@dataclass`, `@dataclasses.dataclass(frozen=True)`. */
+const DATACLASS = /^@\s*(?:dataclasses\.)?dataclass\b/u;
+
+/** A base class that makes a class an enum. */
+const ENUM_BASE = /^(?:enum\.)?(?:Enum|IntEnum|StrEnum|Flag|IntFlag)$/u;
+
+/**
+ * Whether a class holds data: a dataclass, or an enum. It is a type unless
+ * its module gives it a public method (`Definition.data`, TASK-651).
+ * @param declaration The declaration, or the decorated definition that holds it.
+ * @returns True when it does.
+ */
+function holdsData(declaration: Node): boolean {
+	const decorated = declaration.type === "decorated_definition";
+	const definition = decorated ? declaration.childForFieldName("definition") : declaration;
+	if (definition?.type !== "class_definition") return false;
+	const decorators = decorated
+		? declaration.namedChildren.filter((each) => each.type === "decorator")
+		: [];
+	const bases = definition.childForFieldName("superclasses")?.namedChildren ?? [];
+	return (
+		decorators.some((each) => DATACLASS.test(each.text)) ||
+		bases.some((each) => ENUM_BASE.test(each.text))
+	);
+}
+
 /**
  * What a declaration's syntax says beside its kind (TASK-646.11): that it
- * declares a type alias, the call it only passes on, and that Python calls it.
+ * declares a type alias or holds data, the call it only passes on, and that
+ * Python calls it.
  * @param name The declared name.
  * @param declaration The declaration.
  * @param classes The classes that hold it.
@@ -202,12 +229,13 @@ function traitsOf(
 	name: Node,
 	declaration: Node,
 	classes: readonly string[],
-): Pick<Definition, "type" | "passes" | "calledByLanguage"> {
+): Pick<Definition, "type" | "data" | "passes" | "calledByLanguage"> {
 	const passes = pythonPassesTo(declaration);
 	const special =
 		classes.length > 0 && SPECIAL.test(name.text) && kindOf(declaration) === "function";
 	return {
 		...(typeAlias(declaration) ? { type: true as const } : {}),
+		...(holdsData(declaration) ? { data: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...(special ? { calledByLanguage: true as const } : {}),
 	};

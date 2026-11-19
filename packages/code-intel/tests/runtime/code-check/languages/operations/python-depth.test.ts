@@ -6,7 +6,8 @@
 //
 // The checkout `shop` holds a canonical vault. The package `timing` exports
 // durations, a getter, a function and a method that pass their call on, a
-// class and two type aliases. `codex` and `relay` write the restart backoff on
+// class, two type aliases, a dataclass and an enum with no method, an enum
+// with one, and an exception. `codex` and `relay` write the restart backoff on
 // the durations, `relay` through a local variable and the module's own name.
 // `codex` and `worker` compute the same jitter on the getter. `worker`
 // compares `LIMIT`, which is no math.
@@ -54,6 +55,9 @@ beforeAll(async () => {
 	fixtureGit(scratch, shop, "remote", "add", "origin", `https://${SHOP}.git`);
 	write(shop, {
 		"src/timing/__init__.py": [
+			"import enum",
+			"from dataclasses import dataclass",
+			"from enum import IntEnum",
 			"from typing import TypeAlias",
 			"",
 			"RESTART_BASE = 1000",
@@ -90,6 +94,22 @@ beforeAll(async () => {
 			"    def _advance(self, step):",
 			"        for _ in range(step):",
 			"            self._start += 1",
+			"",
+			"@dataclass(frozen=True)",
+			"class Point:",
+			"    x: int",
+			"",
+			"class Color(enum.Enum):",
+			"    RED = 1",
+			"",
+			"class Level(IntEnum):",
+			"    LOW = 1",
+			"",
+			"    def label(self):",
+			'        return "low"',
+			"",
+			"class Failure(Exception):",
+			"    pass",
 			"",
 		].join("\n"),
 		"src/codex/__init__.py": [
@@ -176,12 +196,18 @@ test("a Python module's exports are counted by kind, without the members Python 
 		["Clock", "class"],
 		["Clock.now", "method"],
 		["Clock.tick", "method"],
+		// A dataclass or an enum with no method is a type that holds data; any other class is a class.
+		["Point", "type"],
+		["Color", "type"],
+		["Level", "class"],
+		["Level.label", "method"],
+		["Failure", "class"],
 	]);
 	expect(timing).toMatchObject({ languages: ["python"], unjudged: [] });
 	// The product, the call `send` passes on, the condition and `print`, the
 	// sum, the call `tick` passes on, the loop, `range` and the addition, and
-	// the hidden `_SCALE`.
-	expect(timing?.logic).toBe(10);
+	// the hidden `_SCALE`, and the call of the decorator `dataclass`.
+	expect(timing?.logic).toBe(11);
 });
 
 test("each Python export gets the verdict its uses and its body earn", () => {
@@ -200,5 +226,10 @@ test("each Python export gets the verdict its uses and its body earn", () => {
 		// A docstring is no statement of the body.
 		["send", "CODE_PASS_THROUGH"],
 		["Clock.tick", "CODE_PASS_THROUGH"],
+		// Nothing names the types and the classes after `Clock`.
+		["Point", "EXPOSED_UNUSED"],
+		["Color", "EXPOSED_UNUSED"],
+		["Level", "EXPOSED_UNUSED"],
+		["Failure", "EXPOSED_UNUSED"],
 	]);
 });

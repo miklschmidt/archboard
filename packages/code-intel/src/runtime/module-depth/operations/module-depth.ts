@@ -8,7 +8,9 @@
 // reads nothing twice.
 //
 // It counts the module's exports by kind: functions, classes, each public
-// method of an exported class, values and types. A member that belongs to an
+// method of an exported class, values and types. A type that holds data, such
+// as a Rust struct, counts as a type unless the module gives it a public
+// method, in whichever of its files (`Definition.data`, TASK-651). A member that belongs to an
 // exported class rather than to an instance, as a C# `static` member does, is
 // read through the class's name and counts as a function or a value of its
 // own (TASK-646.11). It counts the pieces of
@@ -324,6 +326,23 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
 }
 
 /**
+ * Whether an exported type that holds data has no public method in its
+ * module, wherever a method is defined, so callers learn it as a type.
+ * @param name The type.
+ * @param exposed Every name its module exposes.
+ * @returns True when it holds data alone.
+ */
+function dataOnly(name: ExposedName, exposed: readonly ExposedName[]): boolean {
+	if (name.definition.data !== true) return false;
+	return !exposed.some(
+		({ definition }) =>
+			definition.kind === "function" &&
+			definition.calledByLanguage !== true &&
+			ownName(definition.symbol, name.definition.symbol) !== undefined,
+	);
+}
+
+/**
  * The kind of a member of an exported class that belongs to the class, not
  * to an instance, as a C# `static` member does: callers read it through the
  * class's name, as they read a top-level name, so it counts as one.
@@ -354,15 +373,20 @@ async function countExports(
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
 	readonly listed: readonly ModuleExport[];
 }> {
-	const top: (readonly [ExposedName, ExportKind])[] = [];
+	const declared: (readonly [ExposedName, ExportKind])[] = [];
 	for (const name of names.judged.filter((each) => topLevel(each, names.judged))) {
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
-		top.push([name, await kindOf(reading, name)]);
+		declared.push([name, await kindOf(reading, name)]);
 	}
+	const holders = ofKind(declared, "class");
+	const top = declared.map(([name, kind]): readonly [ExposedName, ExportKind] => [
+		name,
+		kind === "class" && dataOnly(name, names.judged) ? "type" : kind,
+	]);
 	const classes = ofKind(top, "class");
 	const kinds = new Map(top);
 	for (const name of names.judged) {
-		const kind = kinds.has(name) ? undefined : staticKind(name, classes);
+		const kind = kinds.has(name) ? undefined : staticKind(name, holders);
 		if (kind !== undefined) kinds.set(name, kind);
 	}
 	const counted = [

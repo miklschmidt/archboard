@@ -105,7 +105,13 @@ so agents in an implementation loop added exported constants and nothing failed.
 - **The width of a module is what its callers must learn** (TASK-651): its
   exported functions, classes, public methods and values, getters included.
   Exported types count zero, so an exported union or enum keeps the
-  compiler's exhaustive checks. An enum counts as a type. This width differs
+  compiler's exhaustive checks. An enum counts as a type. So does a type that
+  holds data and has no public method in its module, wherever its methods
+  are defined (the owner, 2026-11-19): a Rust struct, enum or union, a Go
+  struct or other named type, a C# struct or record, a Swift struct or enum,
+  a Python dataclass or enum, and a C or C++ struct, union or class with no
+  member function. With a method it is a class, and each public method
+  counts. A TypeScript class stays a class. This width differs
   from the interface width of
   [ADR 0058](0058-an-interface-is-the-few-operations-its-callers-need.md),
   which counts types.

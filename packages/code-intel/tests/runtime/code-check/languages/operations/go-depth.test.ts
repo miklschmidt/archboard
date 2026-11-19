@@ -6,7 +6,8 @@
 //
 // The checkout `shop` holds a canonical vault. The package `timing` exports
 // durations, a getter, a function and a method that pass their call on, a
-// struct, a named type with a method of its own, and three types. `codex` and
+// struct with methods, one without, a named type with a method of its own in
+// another file, and three types. `codex` and
 // `relay` write the restart backoff on the durations, `relay` through a local
 // variable. `codex` and `worker` compute the same jitter on the getter.
 // `worker` compares `Limit`, which is no math.
@@ -73,7 +74,9 @@ beforeAll(async () => {
 			"",
 			"type Mode int",
 			"",
-			'func (m Mode) Label() string { return "mode" }',
+			"type Point struct {",
+			"\tX int",
+			"}",
 			"",
 			"type Handler = func()",
 			"",
@@ -110,6 +113,9 @@ beforeAll(async () => {
 			"}",
 			"",
 		].join("\n"),
+		"src/timing/mode.go": ["package timing", "", 'func (m Mode) Label() string { return "mode" }', ""].join(
+			"\n",
+		),
 		"src/codex/codex.go": [
 			"package codex",
 			"",
@@ -197,14 +203,17 @@ afterAll(() => {
 test("a Go package's exports are counted by kind, without the methods Go calls itself", () => {
 	const timing = answer.depth?.find((each) => each.subject.name === "Timing");
 	expect(timing?.names.map(({ name, kind }) => [name, kind])).toEqual([
+		// The method of `Mode` in `mode.go`, which comes first.
+		["Mode.Label", "method"],
 		["RestartBase", "value"],
 		["RestartMax", "value"],
 		["Limit", "value"],
 		["Duration", "type"],
 		["Window", "type"],
-		// A named type whose file declares a method on it is a class.
+		// A named type with a method, in any file of its package, is a class.
 		["Mode", "class"],
-		["Mode.Label", "method"],
+		// A struct with no method is a type that holds data.
+		["Point", "type"],
 		["Handler", "type"],
 		["JitterMs", "function"],
 		["Send", "function"],
@@ -232,6 +241,7 @@ test("each Go export gets the verdict its uses and its body earn", () => {
 		// Only a signature names Duration; nothing names the others.
 		["Window", "EXPOSED_UNUSED"],
 		["Mode", "EXPOSED_UNUSED"],
+		["Point", "EXPOSED_UNUSED"],
 		["Handler", "EXPOSED_UNUSED"],
 		["JitterMs", "EXPOSED_VALUE_COMPUTED"],
 		["Send", "CODE_PASS_THROUGH"],

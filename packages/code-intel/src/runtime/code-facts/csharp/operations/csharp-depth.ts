@@ -76,6 +76,9 @@ const CSHARP_MATH: MathSyntax = {
 /** The declarations of a type alone, which a caller neither runs nor reads. */
 const TYPES = new Set(["interface_declaration", "enum_declaration", "delegate_declaration"]);
 
+/** The declarations of a type that holds data: a type unless its module gives it a method (`Definition.data`). */
+const DATA = new Set(["struct_declaration", "record_declaration"]);
+
 /** The methods `object` declares that C# calls itself, where a type overrides them. */
 const OVERRIDDEN = new Set(["ToString", "Equals", "GetHashCode"]);
 
@@ -227,12 +230,13 @@ function passesParameters(call: Node, method: Node): boolean {
 function depthTraits(
 	node: Node,
 	name: string,
-): Pick<Definition, "type" | "static" | "passes" | "calledByLanguage"> {
+): Pick<Definition, "type" | "data" | "static" | "passes" | "calledByLanguage"> {
 	const modifiers = modifiersOf(node);
 	const passes = passesTo(node);
 	const shared = modifiers.has("static") || modifiers.has("const");
 	return {
 		...(TYPES.has(node.type) ? { type: true as const } : {}),
+		...(DATA.has(node.type) ? { data: true as const } : {}),
 		...(shared ? { static: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...(calledByCSharp(node, name, modifiers) ? { calledByLanguage: true as const } : {}),
