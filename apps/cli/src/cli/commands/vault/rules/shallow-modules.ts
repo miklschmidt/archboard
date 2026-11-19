@@ -135,7 +135,7 @@ function gateShallowModules(code: CodeCheckAnswer, flag: boolean): CodeCheckAnsw
 	const named = unread.map((name) => JSON.stringify(name)).join(", ");
 	throw Object.assign(
 		new Error(
-			`The check could not read whether the branch touched the shallow modules ${named}: the base does not resolve in their checkout. Name a base that does with --base.`,
+			`The check could not read whether the branch touched the shallow modules ${named}: no base was found, the base does not resolve in their checkout, or it shares no history with HEAD there, as in a shallow clone. Name a base that resolves there with --base, or fetch the history the base needs.`,
 		),
 		{ code: baseRefusal.code },
 	);
