@@ -32,10 +32,11 @@
 // as it was.
 //
 // `GET /api/vault/code-exports?model=<model>[&state=<state>]&revision=<digest>&module=<module>`
-// answers what the last pass over that exact reading found of one module, with the names of its
-// exports, from the same memory and in the shape of the findings answer (TASK-646.08). The findings
-// answer leaves the names out, because every canvas reads it and only the About page of one module
-// shows them. No remembered pass of that version that measured the module is a 404.
+// answers how the last pass over that exact reading measured one module, with the names of its
+// exports, as the `depth` of a code-check answer that holds that module alone, from the same memory
+// (TASK-646.08). The findings answer leaves the names out, because every canvas reads it and only
+// the About page of one module shows them. No remembered pass of that version that measured the
+// module is a 404.
 //
 // `GET /api/code/source-lines?repo=<repo>&path=<path>&line=<line>` answers the
 // source excerpt of one piece of evidence that the memory holds for the vault
@@ -189,7 +190,7 @@ const ExportsQuerySchema = z.object({
 });
 
 /**
- * Answer one request for what the remembered pass found of one module, with its exports.
+ * Answer one request for how the remembered pass measured one module, with its exports.
  * @param memory What the finished passes found.
  * @param request The request.
  * @param response Its response.
@@ -212,7 +213,7 @@ function answerExports(memory: CodeFindingsMemory, request: Request, response: R
 		});
 		return;
 	}
-	response.json({ success: true, ...exports });
+	response.json({ success: true, depth: [exports] });
 }
 
 /**

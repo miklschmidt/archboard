@@ -528,14 +528,11 @@ const RememberedModelSchema = CodeCheckModelSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
 	/**
-	 * Each module the pass measured on this reading, those with no findings included (TASK-646.07).
-	 * Every canvas reads the findings answer, so it leaves out the names of the exports.
-	 * `GET /api/vault/code-exports` answers this reading narrowed to one module, and only there do
-	 * they stand (TASK-646.08).
+	 * Each module the pass measured on this reading, those with no findings included (TASK-646.07),
+	 * without the names of its exports: every canvas reads this answer, and only the About page of
+	 * one module reads its names, from `GET /api/vault/code-exports` (TASK-646.08).
 	 */
-	depth: z
-		.array(ModuleDepthSchema.extend({ names: ModuleDepthSchema.shape.names.optional() }))
-		.optional(),
+	depth: z.array(ModuleDepthSchema.omit({ names: true })).optional(),
 	/** What the pass skipped on this reading, and what it skipped in a whole checkout or language. */
 	skipped: z.array(CodeCheckSkipSchema).optional(),
 });

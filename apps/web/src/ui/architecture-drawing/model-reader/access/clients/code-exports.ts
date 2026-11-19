@@ -1,15 +1,13 @@
 import { queryOptions } from "@tanstack/react-query";
-import {
-	RememberedFindingsSchema,
-	type RememberedFindings,
-} from "@archboard/code-intel/code-check";
+import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
 /** One module the pass measured, with the names of its exports. */
-type MeasuredModule = NonNullable<
-	NonNullable<RememberedFindings["models"]>[number]["depth"]
->[number];
+type MeasuredModule = NonNullable<CodeCheckAnswer["depth"]>[number];
+
+/** The answer of the route: the part of a code-check answer that measures modules, for one module. */
+const MeasuredSchema = CodeCheckAnswerSchema.pick({ depth: true });
 
 /** The pass whose exports of one module are asked for, by the reading it read and when it ran. */
 interface ExportsOfPass {
@@ -19,16 +17,6 @@ interface ExportsOfPass {
 	readonly revision: string;
 	readonly checkedAt: string;
 	readonly module: string;
-}
-
-/**
- * The one module of an answer narrowed to it.
- * @param body The answer.
- * @returns The module, or null when the answer holds none.
- */
-function measuredModule(body: unknown): MeasuredModule | null {
-	const narrowed = RememberedFindingsSchema.parse(body);
-	return narrowed.models?.[0]?.depth?.[0] ?? null;
 }
 
 /**
@@ -66,7 +54,7 @@ function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 			});
 			if (response.status === 404) return null;
 			if (!response.ok) throw new Error(`The code exports could not be read (${response.status}).`);
-			return measuredModule(await response.json());
+			return MeasuredSchema.parse(await response.json()).depth?.[0] ?? null;
 		},
 		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,

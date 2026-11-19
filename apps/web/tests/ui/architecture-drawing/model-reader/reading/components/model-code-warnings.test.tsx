@@ -4,6 +4,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -86,7 +87,7 @@ const VAULT = "/work/shop/.archboard/vault";
 const GATEWAY = { kind: "node", id: "Shop#Gateway", name: "Gateway" } as const;
 
 /** What the last pass counted of the gateway: a function, a class with a method, a value, a type. */
-const NAMES: NonNullable<NonNullable<Reading["depth"]>[number]["names"]> = [
+const NAMES: NonNullable<CodeCheckAnswer["depth"]>[number]["names"] = [
 	{ name: "open", kind: "function", path: "src/gateway/index.ts", line: 3 },
 	{ name: "Gate", kind: "class", path: "src/gateway/gate.ts", line: 1 },
 	{ name: "Gate.pass", kind: "method", path: "src/gateway/gate.ts", line: 4 },
@@ -149,9 +150,8 @@ function measured(): Reading {
  */
 function answerTo(url: string): Response {
 	if (url.includes("/api/vault/code-exports")) {
-		const narrowed = measured();
-		const depth = (narrowed.depth ?? []).map((module) => ({ ...module, names: NAMES }));
-		return Response.json({ success: true, readings: [], models: [{ ...narrowed, depth }] });
+		const depth = (measured().depth ?? []).map((module) => ({ ...module, names: NAMES }));
+		return Response.json({ success: true, depth });
 	}
 	if (url.includes("/api/code-targets/open"))
 		return Response.json({
