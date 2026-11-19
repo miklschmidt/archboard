@@ -250,3 +250,32 @@ test("public methods of a private type do not become a module interface", async 
 		checkout.remove();
 	}
 });
+
+test("a Rust path prefix leads to the module beside a function of the same name", async () => {
+	const checkout = fixtureCheckout({
+		"Cargo.toml": '[package]\nname = "paint"\nversion = "0.1.0"\n',
+		"src/lib.rs": "pub mod colour;\nmod caller;\npub fn colour() {}\n",
+		"src/colour.rs": "pub struct Swatch { pub tone: u8 }\npub fn css() {}\n",
+		"src/caller.rs": [
+			"use crate::colour::Swatch;",
+			"use crate::colour::*;",
+			"fn paint() {",
+			"    crate::colour::css();",
+			"    let _ = crate::colour::Swatch { tone: 1 };",
+			"    let _ = Swatch { tone: 2 };",
+			"    css();",
+			"}",
+		].join("\n"),
+	});
+	try {
+		expect(await targets("src/caller.rs", checkout)).toMatchObject({
+			"crate.colour call": "src/colour.rs#*",
+			"crate.colour.css call": "src/colour.rs#css",
+			"crate.colour.Swatch call": "src/colour.rs#Swatch",
+			"Swatch call": "src/colour.rs#Swatch",
+			"css call": "src/colour.rs#css",
+		});
+	} finally {
+		checkout.remove();
+	}
+});

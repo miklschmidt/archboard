@@ -5,13 +5,18 @@ import type { Import, ParsedFacts, Reference } from "#runtime/code-facts/operati
 import { opens } from "#runtime/code-facts/rust/operations/rust-definitions.ts";
 import { importsOf, nestingOf } from "#runtime/code-facts/rust/operations/rust-imports.ts";
 
+/** A reference to a leading name within a longer Rust path. */
+interface PathPrefix {
+	readonly pathPrefix?: true;
+}
 /** A use while the syntax tree is still alive. */
-type WrittenUse = Reference & { readonly node: Node };
+type WrittenUse = Reference & PathPrefix & { readonly node: Node };
 /** A use with the imports visible there, or a local binding that hides them. */
-type RustUse = ParsedFacts["references"][number] & {
-	readonly local?: true;
-	readonly globs: readonly number[];
-};
+type RustUse = ParsedFacts["references"][number] &
+	PathPrefix & {
+		readonly local?: true;
+		readonly globs: readonly number[];
+	};
 /** One import and the scope that owns it. */
 interface ScopedImport {
 	readonly found: Import;
