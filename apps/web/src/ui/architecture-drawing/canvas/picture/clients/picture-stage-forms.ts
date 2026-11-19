@@ -209,6 +209,7 @@ export {
 	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type StagePresentation,
 	type StageShift,
 	type PainterFailure,
 	type StartedPainter,

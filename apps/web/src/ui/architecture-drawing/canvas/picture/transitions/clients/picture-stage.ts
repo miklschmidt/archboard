@@ -26,6 +26,7 @@ import {
 	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type StagePresentation,
 	type PainterFailure,
 	type PictureHand,
 	type StageShift,
@@ -51,9 +52,6 @@ function pageIsDark(): boolean {
 
 /** The painter's own interface. */
 type Painter = StartedPainter["painter"];
-
-/** What moves after a frame, as the painter says. */
-type FrameMotion = ReturnType<Painter["frame"]>;
 
 /** The stage of one canvas: all that a client tells it, handed to the painter at work. */
 class PictureStage {
@@ -217,9 +215,7 @@ class PictureStage {
 	 */
 	setTrafficShown(shown: boolean): void {
 		this.#held.trafficShown = shown;
-		this.#tell((painter) => {
-			present(painter, { trafficShown: shown });
-		});
+		this.#present({ trafficShown: shown });
 	}
 
 	/**
@@ -228,9 +224,7 @@ class PictureStage {
 	 */
 	setHeads(heads: Readonly<Record<string, number>>): void {
 		this.#held.heads = heads;
-		this.#tell((painter) => {
-			present(painter, { heads });
-		});
+		this.#present({ heads });
 	}
 
 	/**
@@ -239,9 +233,7 @@ class PictureStage {
 	 */
 	setWarnings(warned: ReadonlySet<string>): void {
 		this.#held.warned = warned;
-		this.#tell((painter) => {
-			present(painter, { warnings: [...warned] });
-		});
+		this.#present({ warnings: [...warned] });
 	}
 
 	/**
@@ -251,10 +243,8 @@ class PictureStage {
 	 * @param longest The longest a sweep takes, in milliseconds.
 	 */
 	sweep(delays: Readonly<Record<string, number>>, shortest: number, longest: number): void {
-		this.#tell((painter) => {
-			const at = frameClock().now();
-			present(painter, { sweep: { delays, shortestMs: shortest, longestMs: longest, at } });
-		});
+		const at = frameClock().now();
+		this.#present({ sweep: { delays, shortestMs: shortest, longestMs: longest, at } });
 	}
 
 	/** Take the sweep away. */
@@ -295,9 +285,7 @@ class PictureStage {
 	 */
 	setAwaited(awaited: boolean, ms: number): void {
 		this.#held.awaited = awaited;
-		this.#tell((painter) => {
-			present(painter, { awaited: { to: awaited, ms, at: frameClock().now() } });
-		});
+		this.#present({ awaited: { to: awaited, ms, at: frameClock().now() } });
 	}
 
 	/**
@@ -308,9 +296,7 @@ class PictureStage {
 	setFarLine(scale: number, ms: number): void {
 		this.#held.farLine = { scale: scale * (window.devicePixelRatio || 1), ms };
 		const line = this.#held.farLine;
-		this.#tell((painter) => {
-			present(painter, { farLine: line });
-		});
+		this.#present({ farLine: line });
 	}
 
 	/**
@@ -319,9 +305,7 @@ class PictureStage {
 	 */
 	setMarks(marks: StageMarks): void {
 		this.#held.marks = marks;
-		this.#tell((painter) => {
-			present(painter, { marks: marksOf(marks) });
-		});
+		this.#present({ marks: marksOf(marks) });
 	}
 
 	/**
@@ -330,9 +314,7 @@ class PictureStage {
 	 */
 	setLight(light: StageLight): void {
 		this.#held.light = light;
-		this.#tell((painter) => {
-			present(painter, { light: { ...light, at: frameClock().now() } });
-		});
+		this.#present({ light: { ...light, at: frameClock().now() } });
 	}
 
 	/**
@@ -393,6 +375,16 @@ class PictureStage {
 	}
 
 	/**
+	 * Tell the painter at work how the picture is seen, and draw what it changed.
+	 * @param said What changed.
+	 */
+	#present(said: StagePresentation): void {
+		this.#tell((painter) => {
+			present(painter, said);
+		});
+	}
+
+	/**
 	 * Hold a picture, start the painter for it, and hand it over.
 	 * @param painting The picture's painting, or nothing when it has none.
 	 * @param hand How the painter takes it, once one is at work.
@@ -424,9 +416,7 @@ class PictureStage {
 
 	/** Give the painter the page's theme. */
 	readonly #themeChanged = (): void => {
-		this.#tell((painter) => {
-			present(painter, { theme: pageIsDark() ? "dark" : "light" });
-		});
+		this.#present({ theme: pageIsDark() ? "dark" : "light" });
 	};
 
 	/**
@@ -498,7 +488,7 @@ class PictureStage {
 	 * @param motion What moves after the last frame.
 	 * @param cost How long the last frame took.
 	 */
-	#nextFrame(motion: FrameMotion, cost: number): void {
+	#nextFrame(motion: ReturnType<Painter["frame"]>, cost: number): void {
 		const strips = this.#started !== null && this.#started.kind !== "gpu";
 		if (strips && cost > 0 && motion === "trafficAlone") {
 			if (this.#rest !== null) frameClock().cancelAfter(this.#rest);
@@ -544,9 +534,7 @@ class PictureStage {
 	#lightControl(subject: string | null): void {
 		if (subject === this.#hoveredControl) return;
 		this.#hoveredControl = subject;
-		this.#tell((painter) => {
-			present(painter, { hovered: { toggle: subject } });
-		});
+		this.#present({ hovered: { toggle: subject } });
 	}
 
 	/**

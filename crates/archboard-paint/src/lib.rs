@@ -29,7 +29,6 @@ mod warnings;
 
 pub use canvas::{Canvas, Ink, Layer, Lens, PartKey};
 pub use cpu::CpuCanvas;
-pub use flight::DiveWay;
 pub use palette::Theme;
-pub use presentation::{Camera, Light, Marks, Presentation, Timed};
+pub use presentation::{Camera, Presentation, Timed};
 pub use stage::{Arrival, Departure, Motion, Pace, Stage, Surface};

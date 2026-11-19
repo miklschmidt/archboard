@@ -8,17 +8,27 @@ import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clo
 const taken: string[] = [];
 
 /**
+ * The kind an arrival or a departure says it is.
+ * @param said The arrival or the departure, as JSON.
+ * @returns The kind.
+ */
+function kindOf(said: string): string {
+	const parsed: unknown = JSON.parse(said);
+	return typeof parsed === "object" && parsed !== null && "kind" in parsed
+		? String(parsed.kind)
+		: "unknown";
+}
+
+/**
  * A call as the tests name it: an arrival or a departure says its kind, as in "arrive cut".
  * @param call The method name.
- * @param args What the call was given.
+ * @param args What the call was given; an arrival or a departure is the last.
  * @returns The name.
  */
 function named(call: string, args: readonly unknown[]): string {
-	const [first, second] = args;
-	const said = call === "arrive" ? second : call === "depart" ? first : undefined;
-	if (typeof said !== "string") return call;
-	const { kind } = JSON.parse(said) as { readonly kind: string };
-	return `${call} ${kind}`;
+	const said = args.at(-1);
+	const states = call === "arrive" || call === "depart";
+	return states && typeof said === "string" ? `${call} ${kindOf(said)}` : call;
 }
 
 /** How a painter's start ends. */
