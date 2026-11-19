@@ -39,6 +39,9 @@
 //   the client declared `window.workDoneProgress`, and ends it 200 ms later;
 //   until then it knows no definition.
 // - `synchronizes`: builds its index during workspace/synchronize before answering.
+// - `tokens`: types the names of a range of lines, with the legend `variable`,
+//   `function`, and answers each range with the numbers under `tokens:<file>`.
+// - `whole-file-tokens`: types the names of whole files only, as clangd does.
 // - `wrapped`: only runs the stand-in as its child, in the other modes, and
 //   waits for it, as nixpkgs' `clangd` script runs `clangd-unwrapped`.
 
@@ -181,6 +184,16 @@ function answerDefinition(message: Message): void {
 }
 
 /**
+ * The semantic tokens the mode says the server gives, as `initialize` answers them.
+ * @returns The capability, or none.
+ */
+function tokens(): object {
+	const legend = { tokenTypes: ["variable", "function"], tokenModifiers: [] };
+	if (modes.has("tokens")) return { semanticTokensProvider: { legend, range: true } };
+	return modes.has("whole-file-tokens") ? { semanticTokensProvider: { legend, full: true } } : {};
+}
+
+/**
  * Answer one message as the mode says.
  * @param message The message.
  */
@@ -192,7 +205,7 @@ function receive(message: Message): void {
 		fs.appendFileSync(path.join(stateDir, "starts"), `${JSON.stringify(start)}\n`);
 		if (modes.has("hang-initialize")) return;
 		const answer = () =>
-			send({ id: message.id, result: { capabilities: { definitionProvider: true } } });
+			send({ id: message.id, result: { capabilities: { definitionProvider: true, ...tokens() } } });
 		if (modes.has("delayed-initialize")) setTimeout(answer, 120);
 		else answer();
 		const items = [{ section: "python" }, { section: "csharp" }];
@@ -210,6 +223,10 @@ function receive(message: Message): void {
 		send({ id: message.id, result: outline });
 	} else if (message.method === "textDocument/definition") {
 		answerDefinition(message);
+	} else if (message.method === "textDocument/semanticTokens/range" && modes.has("tokens")) {
+		const file = fileURLToPath(message.params?.textDocument?.uri ?? "");
+		const data = answers[`tokens:${path.relative(process.cwd(), file)}`] ?? [];
+		send({ id: message.id, result: { data } });
 	} else if (message.method === "workspace/synchronize" && modes.has("synchronizes")) {
 		if (message.params?.index === true) {
 			setTimeout(() => {

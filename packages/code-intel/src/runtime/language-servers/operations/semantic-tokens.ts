@@ -78,15 +78,16 @@ const SemanticTokensSchema = z
 	.pipe(z.array(z.tuple([Count, Count, Count, Count, Count])));
 
 /**
- * The token types a server answers with, by index, from its `initialize` answer.
+ * The token types a server answers a range with, by index, from its
+ * `initialize` answer. A server that types only whole files is asked nothing.
  * @param result The answer.
- * @returns The types, none when the server gives no semantic tokens.
+ * @returns The types, none when the server gives no semantic tokens of a range.
  */
 function legendOf(result: unknown): readonly string[] {
-	const parsed = InitializeResultSchema.safeParse(result);
-	return parsed.success
-		? (parsed.data.capabilities.semanticTokensProvider?.legend.tokenTypes ?? [])
-		: [];
+	const provider =
+		InitializeResultSchema.safeParse(result).data?.capabilities.semanticTokensProvider;
+	const range = provider?.range !== undefined && provider.range !== false;
+	return range ? provider.legend.tokenTypes : [];
 }
 
 /**
