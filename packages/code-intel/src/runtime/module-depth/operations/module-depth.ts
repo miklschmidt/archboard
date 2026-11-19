@@ -39,7 +39,7 @@
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
-// the kind of each export: TypeScript, Python, Go and C#.
+// the kind of each export: TypeScript, Python, Go, C# and Rust.
 //
 // It counts the exports of a Terraform module, a Nix flake and a Helm chart
 // by kind too, and judges none of them (TASK-646.13): a caller sets a
@@ -56,6 +56,7 @@ import type { ExposedName } from "#runtime/code-facts/modules/operations/module-
 import { CSHARP_FILE } from "#runtime/code-facts/csharp/operations/csharp-project.ts";
 import { GO_FILE } from "#runtime/code-facts/go/operations/go-resolution.ts";
 import { PYTHON_FILE } from "#runtime/code-facts/python/operations/python-exposure.ts";
+import { RUST_FILE } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	type DepthFinding,
@@ -83,6 +84,7 @@ const GROUPS: ReadonlyMap<
 	["python", "judged"],
 	["go", "judged"],
 	["csharp", "judged"],
+	["rust", "judged"],
 	["terraform", "infrastructure"],
 	["nix", "infrastructure"],
 	["helm", "infrastructure"],
@@ -97,6 +99,7 @@ const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["python", PYTHON_FILE],
 	["go", GO_FILE],
 	["csharp", CSHARP_FILE],
+	["rust", RUST_FILE],
 ]);
 
 /** A module's exports, by kind. */

@@ -32,9 +32,13 @@
 // dependencies. Out-of-line module declarations record whether their files
 // are test code too, including declarations inside inline modules. Code that
 // did not parse holds no facts; its names are kept.
+//
+// For module depth (TASK-646.10), the file counts its pieces of logic outside
+// its tests, and names the math around each path it uses at run time that no
+// local binding hides (math-shapes.ts, through Rust's table in rust-depth.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import type { ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
+import type { Computation, ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { definitionsOf, typeName } from "#runtime/code-facts/rust/operations/rust-definitions.ts";
 import {
@@ -44,9 +48,12 @@ import {
 } from "#runtime/code-facts/rust/operations/rust-imports.ts";
 import {
 	bindReferences,
+	outsideUses,
 	type WrittenUse,
 } from "#runtime/code-facts/rust/operations/rust-scopes.ts";
 import { tokenUses } from "#runtime/code-facts/rust/operations/rust-tokens.ts";
+import { RUST_MATH } from "#runtime/code-facts/rust/operations/rust-depth.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
@@ -64,6 +71,7 @@ interface Captured {
 	readonly type: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -79,6 +87,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	type: "type",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** The nodes that join the names of a path. */
@@ -127,6 +136,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		type: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
@@ -429,6 +439,32 @@ function modulesOf(
 }
 
 /**
+ * The math a file writes on the paths it uses at run time that no local
+ * binding hides, each read at its whole path and spelled as its references
+ * spell it in full, as `timing.PROCESS` for `timing::PROCESS`.
+ * @param written The uses of the file's paths, one for each leading part.
+ * @param bound The local bindings.
+ * @returns The computations.
+ */
+function mathOf(written: readonly WrittenUse[], bound: readonly Node[]): Computation[] {
+	const spellings = new Map<number, { readonly node: Node; readonly symbol: string }>();
+	for (const each of outsideUses(written, bound)) {
+		const known = spellings.get(each.node.id)?.symbol.length ?? 0;
+		if (!each.typeOnly && each.symbol.length > known) spellings.set(each.node.id, each);
+	}
+	const paths = [...spellings.values()].map((each) => each.node);
+	return computationsOf(paths, {
+		...RUST_MATH,
+		/**
+		 * How the file's references spell a path in full.
+		 * @param node The path.
+		 * @returns The spelling.
+		 */
+		spelling: (node) => spellings.get(node.id)?.symbol ?? node.text,
+	});
+}
+
+/**
  * The code facts of one parsed Rust file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -465,8 +501,9 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 					},
 				],
 	);
+	const paths = captured.reference.flatMap((node) => pathReferences(node, context, seen));
 	const written = [
-		...captured.reference.flatMap((node) => pathReferences(node, context, seen)),
+		...paths,
 		...captured.member.flatMap((node) => memberReference(node, context) ?? []),
 		...captured.tokens.flatMap((node) => tokenReferences(node, context)),
 		...environment,
@@ -479,6 +516,10 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 			.flatMap(importsOf),
 		unparsed: unparsedOf(captured.unparsed),
 		rustModules: modulesOf(captured.import, testSpans, unparsed),
+		logic: captured.logic.filter(
+			(node) => !unparsed.holds(node.startIndex) && !testSpans.holds(node.startIndex),
+		).length,
+		computations: mathOf(paths, binding),
 	};
 }
 

@@ -20,6 +20,10 @@
 // calls, chains of names, numbers, text and local variables. Its adapter
 // gives the uses: the names at run time that start a chain and that another
 // file may define.
+//
+// A table can also name math functions called as methods of a number (Rust's
+// `a.min(b)` is `min(a, b)`), a number's type suffix (`2u64` is `2`), and how
+// a use's references spell it (`timing::PROCESS` is `timing.PROCESS`).
 
 import type { Node } from "web-tree-sitter";
 import type { Computation } from "#runtime/code-facts/operations/facts.ts";
@@ -41,8 +45,14 @@ interface MathSyntax {
 	readonly argument?: string;
 	/** A member read through `.`: its node type and the fields of its object and its name. */
 	readonly member: { readonly type: string; readonly object: string; readonly property: string };
-	/** The callees, without white space, that are math functions. */
+	/** The callees, without white space, that are math functions; a group `name` names one. */
 	readonly math: RegExp;
+	/** The math functions called as a method of a number, which is their first operand. */
+	readonly methods?: ReadonlySet<string>;
+	/** The type suffix a number may end with, which its value drops. */
+	readonly suffix?: RegExp;
+	/** How a use's references spell it, where that is not its text. */
+	readonly spelling?: (use: Node) => string;
 	/** The math functions whose arguments can change places. */
 	readonly sorted: ReadonlySet<string>;
 	/** Number literals, and how to read one: its value, or undefined to keep its text. */
@@ -118,6 +128,7 @@ function holds(node: Node, name: string, child: Node): boolean {
 class MathReader {
 	readonly #syntax: MathSyntax;
 	readonly #binding: ReadonlyMap<string, number>;
+	readonly #spelling: (use: Node) => string;
 
 	/**
 	 * A reader for one language.
@@ -126,6 +137,7 @@ class MathReader {
 	constructor(syntax: MathSyntax) {
 		this.#syntax = syntax;
 		this.#binding = new Map([...BINDING, ...(syntax.operators ?? [])]);
+		this.#spelling = syntax.spelling ?? ((use) => use.text);
 	}
 
 	/**
@@ -146,8 +158,44 @@ class MathReader {
 	mathFunction(call: Node): string | undefined {
 		const { call: syntax, math } = this.#syntax;
 		const callee = call.type === syntax.type ? field(call, syntax.callee) : undefined;
-		const name = callee?.text.replaceAll(/\s/gu, "") ?? "";
-		return math.test(name) ? name : undefined;
+		if (callee === undefined) return undefined;
+		const found = math.exec(callee.text.replaceAll(/\s/gu, ""));
+		return found === null ? this.methodOf(callee) : (found.groups?.["name"] ?? found[0]);
+	}
+
+	/**
+	 * The math function a callee calls as a method of a number.
+	 * @param callee The callee.
+	 * @returns Its name, such as `min` for `a.min`, or undefined.
+	 */
+	methodOf(callee: Node): string | undefined {
+		const { member, methods } = this.#syntax;
+		const name = callee.type === member.type ? field(callee, member.property)?.text : undefined;
+		return name !== undefined && methods?.has(name) === true ? name : undefined;
+	}
+
+	/**
+	 * The call of a math function that a member read names: its method.
+	 * @param read The member read.
+	 * @returns The call, or undefined.
+	 */
+	methodCall(read: Node): Node | undefined {
+		const call = read.parent;
+		const { call: syntax } = this.#syntax;
+		const calls = call?.type === syntax.type && holds(call, syntax.callee, read);
+		return calls && this.methodOf(read) !== undefined ? call : undefined;
+	}
+
+	/**
+	 * The operands of a call of a math function: its receiver, for a method, and its arguments.
+	 * @param call The call.
+	 * @returns The operands.
+	 */
+	operandsOf(call: Node): Node[] {
+		const callee = field(call, this.#syntax.call.callee);
+		const method = callee !== undefined && this.methodOf(callee) !== undefined;
+		const receiver = method ? field(callee, this.#syntax.member.object) : undefined;
+		return [...(receiver === undefined ? [] : [receiver]), ...this.argumentsOf(call)];
 	}
 
 	/**
@@ -238,7 +286,20 @@ class MathReader {
 	mathParent(node: Node): Node | undefined {
 		const parent = node.parent;
 		if (parent === null) return undefined;
-		return this.operation(parent) ? parent : this.mathCallOf(parent);
+		if (this.operation(parent)) return parent;
+		return this.mathCallOf(parent) ?? this.receiverOf(parent, node);
+	}
+
+	/**
+	 * The call of a math method whose receiver an expression is.
+	 * @param parent What holds the expression.
+	 * @param node The expression.
+	 * @returns The call, or undefined.
+	 */
+	receiverOf(parent: Node, node: Node): Node | undefined {
+		const { member } = this.#syntax;
+		const read = parent.type === member.type && holds(parent, member.object, node);
+		return read ? this.methodCall(parent) : undefined;
 	}
 
 	/**
@@ -308,7 +369,7 @@ class MathReader {
 		}
 		const math = this.mathFunction(node);
 		if (math === undefined) return undefined;
-		const shapes = this.argumentsOf(node).map((each) => this.shapeOf(each, focus).text);
+		const shapes = this.operandsOf(node).map((each) => this.shapeOf(each, focus).text);
 		const ordered = this.#syntax.sorted.has(math) ? shapes.toSorted() : shapes;
 		return { text: `${math}(${ordered.join(", ")})`, binding: OPERAND };
 	}
@@ -321,7 +382,9 @@ class MathReader {
 	 */
 	operandShape(node: Node): Shape {
 		if (!this.#syntax.numbers.has(node.type)) return { text: OTHER, binding: OPERAND };
-		const value = Number(node.text.replaceAll("_", ""));
+		const digits = node.text.replaceAll("_", "");
+		const { suffix } = this.#syntax;
+		const value = Number(suffix === undefined ? digits : digits.replace(suffix, ""));
 		return { text: Number.isNaN(value) ? node.text : String(value), binding: OPERAND };
 	}
 
@@ -339,17 +402,26 @@ class MathReader {
 	}
 
 	/**
-	 * The chain of names a use starts, through `.`.
+	 * The chain of names a use starts, through `.`, up to a math method.
 	 * @param name The name.
 	 * @returns The chain's expression.
 	 */
 	chainOf(name: Node): Node {
-		const { member } = this.#syntax;
 		let chain = name;
-		while (chain.parent?.type === member.type && holds(chain.parent, member.object, chain)) {
-			chain = chain.parent;
-		}
+		while (chain.parent !== null && this.readsMember(chain.parent, chain)) chain = chain.parent;
 		return chain;
+	}
+
+	/**
+	 * Whether an expression reads a member of what it holds that is no math method.
+	 * @param parent The expression.
+	 * @param operand What it holds.
+	 * @returns True when it does.
+	 */
+	readsMember(parent: Node, operand: Node): boolean {
+		const { member } = this.#syntax;
+		const read = parent.type === member.type && holds(parent, member.object, operand);
+		return read && this.methodCall(parent) === undefined;
 	}
 
 	/**
@@ -362,7 +434,7 @@ class MathReader {
 		const object = chain.type === member.type ? field(chain, member.object) : undefined;
 		const property = chain.type === member.type ? field(chain, member.property) : undefined;
 		return object === undefined || property === undefined
-			? chain.text
+			? this.#spelling(chain)
 			: `${this.spelled(object)}.${property.text}`;
 	}
 
@@ -375,7 +447,7 @@ class MathReader {
 	 */
 	readsOn(parent: Node, operand: Node): boolean {
 		const { member, call } = this.#syntax;
-		if (parent.type === member.type) return holds(parent, member.object, operand);
+		if (parent.type === member.type) return this.readsMember(parent, operand);
 		const calls = parent.type === call.type && holds(parent, call.callee, operand);
 		return calls && this.argumentsOf(parent).length === 0;
 	}

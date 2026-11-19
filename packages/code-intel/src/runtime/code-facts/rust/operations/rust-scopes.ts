@@ -120,6 +120,18 @@ function isLocal(use: WrittenUse, bindings: readonly Binding[]): boolean {
 }
 
 /**
+ * The uses whose first name no local binding hides: uses of what the file's
+ * items, its imports and its paths name.
+ * @param written The uses.
+ * @param bound The local bindings.
+ * @returns Those uses.
+ */
+function outsideUses(written: readonly WrittenUse[], bound: readonly Node[]): WrittenUse[] {
+	const bindings = bound.flatMap((node) => bindingOf(node) ?? []);
+	return written.filter((use) => !isLocal(use, bindings));
+}
+
+/**
  * The imports visible at a use, nearest scope first.
  * @param node The use's syntax node.
  * @param imports The imports.
@@ -234,4 +246,4 @@ function bindReferences(
 	return { imports: imports.map((each) => each.found), references: [...seen.values()] };
 }
 
-export { bindReferences, type RustUse, type WrittenUse };
+export { bindReferences, outsideUses, type RustUse, type WrittenUse };
