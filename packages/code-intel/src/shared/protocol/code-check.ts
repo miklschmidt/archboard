@@ -64,8 +64,10 @@
 // `EXPOSED_UNUSED`, a warning only after a complete read when the model draws
 // no caller of it whose code the check does not read; `REEXPORT_PASS_THROUGH`,
 // a warning for two doors to one name and information for one;
-// `EXPOSED_VALUE`; or `CODE_PASS_THROUGH`, information. The names of other
-// languages keep the one `EXPOSED_UNUSED` on the container. TASK-646.06 makes
+// `EXPOSED_VALUE`; or `CODE_PASS_THROUGH`, information. TASK-646.10 to
+// TASK-646.12 judge the names of Rust, Python, Go, C#, Swift and the C family
+// the same way; a Terraform, Nix or Helm module's names are counted and not
+// judged, and keep the one `EXPOSED_UNUSED` on the container (TASK-646.13). TASK-646.06 makes
 // it `EXPOSED_VALUE_COMPUTED`, a warning, on an exported value or getter on
 // which two or more modules write the same math, with each line as evidence.
 
