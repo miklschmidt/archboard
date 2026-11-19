@@ -34,7 +34,8 @@
 // did not parse holds no facts; its names are kept.
 //
 // For module depth (TASK-646.10), the file counts its pieces of logic outside
-// its tests.
+// its tests, and names the math around each path it uses at run time that no
+// local binding hides (rust-math.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { ParsedFacts } from "#runtime/code-facts/operations/facts.ts";
@@ -45,8 +46,10 @@ import {
 	importsOf,
 	nestingOf,
 } from "#runtime/code-facts/rust/operations/rust-imports.ts";
+import { computationsOf, type PathUse } from "#runtime/code-facts/rust/operations/rust-math.ts";
 import {
 	bindReferences,
+	outsideUses,
 	type WrittenUse,
 } from "#runtime/code-facts/rust/operations/rust-scopes.ts";
 import { tokenUses } from "#runtime/code-facts/rust/operations/rust-tokens.ts";
@@ -435,6 +438,23 @@ function modulesOf(
 }
 
 /**
+ * The paths a file uses at run time that no local binding hides, each at its
+ * whole path and spelled in full, as `timing.PROCESS` for `timing::PROCESS`.
+ * @param written The uses of the file's paths, one for each leading part.
+ * @param bound The local bindings.
+ * @returns Each path once.
+ */
+function pathUses(written: readonly WrittenUse[], bound: readonly Node[]): PathUse[] {
+	const paths = new Map<number, PathUse>();
+	for (const use of outsideUses(written, bound)) {
+		const known = paths.get(use.node.id);
+		if (use.typeOnly || (known !== undefined && known.symbol.length >= use.symbol.length)) continue;
+		paths.set(use.node.id, { node: use.node, symbol: use.symbol });
+	}
+	return [...paths.values()];
+}
+
+/**
  * The code facts of one parsed Rust file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -471,8 +491,9 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 					},
 				],
 	);
+	const paths = captured.reference.flatMap((node) => pathReferences(node, context, seen));
 	const written = [
-		...captured.reference.flatMap((node) => pathReferences(node, context, seen)),
+		...paths,
 		...captured.member.flatMap((node) => memberReference(node, context) ?? []),
 		...captured.tokens.flatMap((node) => tokenReferences(node, context)),
 		...environment,
@@ -488,6 +509,7 @@ function rustFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		logic: captured.logic.filter(
 			(node) => !unparsed.holds(node.startIndex) && !testSpans.holds(node.startIndex),
 		).length,
+		computations: computationsOf(pathUses(paths, binding)),
 	};
 }
 
