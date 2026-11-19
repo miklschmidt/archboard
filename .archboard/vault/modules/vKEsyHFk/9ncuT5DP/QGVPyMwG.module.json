@@ -74,12 +74,12 @@
     {
       "order": 66000,
       "kind": "dependency",
-      "label": "approval, realtime and session durations",
+      "label": "when an approval expires",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
-        "symbol": "CODEX_APPROVAL_MS"
+        "symbol": "codexApprovalExpiresAt"
       },
       "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"

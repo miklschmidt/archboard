@@ -20,10 +20,23 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-app-server/src/runtime/services/executable.ts",
-        "symbol": "CODEX_SESSION_MS"
+        "symbol": "codexSessionMs"
       },
       "id": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "order": 65000,
+      "kind": "call",
+      "label": "the Codex version the protocol is built for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
+        "symbol": "codexProtocolVersion"
+      },
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+      "id": "vKEsyHFk#bobdaYcV"
     }
   ]
 }

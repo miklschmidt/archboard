@@ -2,7 +2,7 @@
   "order": 10000,
   "name": "Pane socket",
   "kind": "module",
-  "responsibility": "One socket per page, named for its vault, or put in a readable one when that vault is gone: registers it, tells it its vault and repository, notes its tab, and passes agent messages to the workbench",
+  "responsibility": "One socket per page, named for its vault or put in a readable one: tells it its vault and repository, has the workbench register it, and passes agent messages on",
   "description": "A socket that names a canonical reading starts with no legacy board. It preserves explicit model and preview addresses without reading or upgrading an unrelated legacy document.",
   "groups": [
     "panes"
@@ -35,7 +35,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "handleBrowserMessage"
+        "symbol": "handleCodexBrowserMessage"
       },
       "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
       "to": "vKEsyHFk#OY4JPr8G"
@@ -56,28 +56,15 @@
     {
       "order": 15000,
       "kind": "call",
-      "label": "register the page's socket",
+      "label": "register the page's socket; admit it once it knows its place",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "clients"
+        "symbol": "registerSocket"
       },
       "id": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 19000,
-      "kind": "call",
-      "label": "note the pane's tab, and forget it on close",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "noteTabSession"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+      "to": "vKEsyHFk#Zse70SS2"
     },
     {
       "order": 21000,
@@ -121,12 +108,12 @@
     {
       "order": 53000,
       "kind": "call",
-      "label": "place the pane, and name the repository it starts in",
+      "label": "name the repository the pane starts in",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-        "symbol": "placeOfVault"
+        "symbol": "repositoryOfVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
       "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
@@ -168,6 +155,19 @@
       },
       "id": "vKEsyHFk#ImhHUqRg",
       "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    },
+    {
+      "order": 1009000,
+      "kind": "call",
+      "label": "a returning pane's vault; a new pane's model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "paneVaultOf"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "id": "vKEsyHFk#yO0Gg6Lz"
     }
   ]
 }

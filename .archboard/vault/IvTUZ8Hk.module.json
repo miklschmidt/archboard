@@ -1,0 +1,28 @@
+{
+  "order": 26500,
+  "name": "Vault Git checkout",
+  "kind": "module",
+  "responsibility": "Asks Git synchronously which checkout holds a vault, in at most three bounded calls, so that a Git that does not answer leaves the vault in no checkout",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/clients/git-sync.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#IvTUZ8Hk",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "dependency",
+      "label": "how long a Git call may run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/clients/git-sync.ts",
+        "symbol": "gitMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#jY19Jvh2"
+    }
+  ]
+}

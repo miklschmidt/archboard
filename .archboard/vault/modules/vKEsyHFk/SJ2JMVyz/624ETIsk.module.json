@@ -30,7 +30,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
-        "symbol": "ADDITIONAL_CONTEXT_POLICY"
+        "symbol": "additionalContextPolicy"
       },
       "id": "vKEsyHFk/SJ2JMVyz#9ymbrMYT",
       "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
@@ -69,7 +69,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
-        "symbol": "SemanticSubjectKindSchema"
+        "symbol": "semanticSubjectKindSchema"
       },
       "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",
       "to": "vKEsyHFk#qOrTIIKT"

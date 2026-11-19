@@ -46,7 +46,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "scripts/release/build.ts",
-        "symbol": "CODEX_PROTOCOL_VERSION"
+        "symbol": "codexProtocolVersion"
       },
       "id": "vKEsyHFk#uOcot5Gw",
       "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"

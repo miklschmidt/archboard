@@ -19,7 +19,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/contract/protocol/shared-options.ts",
-        "symbol": "DEFAULT_ARCHBOARD_URL"
+        "symbol": "defaultArchboardUrl"
       },
       "id": "vKEsyHFk/XppR9owz#NAzwezpK",
       "to": "vKEsyHFk/XppR9owz#NG7OXLv9"

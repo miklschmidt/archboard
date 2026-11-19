@@ -10,6 +10,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Render driver",
     "View dispatcher",
@@ -120,19 +121,6 @@
       "to": "vKEsyHFk/gbyqW4H3#0idmUHd2"
     },
     {
-      "order": 60400,
-      "kind": "call",
-      "label": "what the picture's key lists",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-render/src/lib.rs",
-        "symbol": "appearances"
-      },
-      "id": "vKEsyHFk#fR8ub6zC",
-      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
-    },
-    {
       "order": 61000,
       "kind": "dependency",
       "label": "the icon a card falls back to",
@@ -145,6 +133,5 @@
       "id": "vKEsyHFk#gJg0IMG5",
       "to": "vKEsyHFk#w44DwfpV"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

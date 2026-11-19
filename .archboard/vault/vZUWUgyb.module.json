@@ -10,6 +10,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#vZUWUgyb",
   "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "formerNames": [
+    "Board document schema"
+  ],
   "outgoing": [
     {
       "order": 26000,
@@ -19,13 +22,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model/src/shared/schemas/content.ts",
-        "symbol": "CodeBindingSchema"
+        "symbol": "codeBindingSchema"
       },
       "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
       "to": "vKEsyHFk#NVlMWCWO"
     }
-  ],
-  "formerNames": [
-    "Board document schema"
   ]
 }

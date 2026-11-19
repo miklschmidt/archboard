@@ -75,7 +75,7 @@
     {
       "order": 47000,
       "kind": "call",
-      "label": "move each pane out of an unchosen checkout; tell every tab",
+      "label": "move each pane out of an unchosen checkout",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -83,7 +83,7 @@
         "symbol": "movePaneVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#YawQAO0P",
-      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J"
+      "to": "vKEsyHFk#CgXCbunb"
     },
     {
       "order": 48000,
@@ -97,19 +97,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#ic9G2qN4",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 50000,
-      "kind": "call",
-      "label": "the moved pane arrives on its model",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-        "symbol": "arrivedOnModel"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#rnMTaURu",
-      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
     },
     {
       "order": 61000,
@@ -135,6 +122,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
       "to": "vKEsyHFk#9VahN2IU"
+    },
+    {
+      "order": 84000,
+      "kind": "call",
+      "label": "tell every tab repositories_changed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "broadcastEverywhere"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+      "id": "vKEsyHFk#TPbJlF5o"
     }
   ]
 }

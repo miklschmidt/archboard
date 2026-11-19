@@ -89,10 +89,34 @@
                   }
                 },
                 {
+                  "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
+                  "from": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                  "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                  "label": "when that vault is gone: its repository's chosen checkout",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/server/request/services/vault.ts",
+                    "symbol": "placeOfVault"
+                  }
+                },
+                {
+                  "id": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
+                  "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                  "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                  "label": "a vault to put it in, or none",
+                  "kind": "return",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "packages/workbench/src/server/request/services/vault.ts",
+                    "symbol": "placeInstead"
+                  }
+                },
+                {
                   "id": "vKEsyHFk/Oi6SBIAM#rNJVEA2C",
                   "from": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
                   "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
-                  "label": "the canonical vault, or why not",
+                  "label": "the vault it names or is put in, or why not",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -143,30 +167,6 @@
                       "label": "its vault is gone",
                       "steps": [
                         {
-                          "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
-                          "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
-                          "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                          "label": "its repository's chosen checkout",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                            "symbol": "placeOfVault"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
-                          "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                          "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
-                          "label": "a vault to put it in, or none",
-                          "kind": "return",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                            "symbol": "placeInstead"
-                          }
-                        },
-                        {
                           "id": "vKEsyHFk/Oi6SBIAM#lbMwIQ2e",
                           "kind": "decision",
                           "question": "Is there a readable vault to put it in?",
@@ -200,7 +200,7 @@
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
                                     "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                                    "symbol": "placeInstead"
+                                    "symbol": "sendStartingPlace"
                                   }
                                 }
                               ]
@@ -224,9 +224,9 @@
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-        "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+        "vKEsyHFk#CgXCbunb",
+        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
         "vKEsyHFk/yejBBUFY#xsn0RvSi"
       ],
       "steps": [
@@ -312,7 +312,7 @@
                             {
                               "id": "vKEsyHFk/Oi6SBIAM#D9yzkvrZ",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                              "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                              "to": "vKEsyHFk#CgXCbunb",
                               "label": "move it into the chosen checkout's vault",
                               "kind": "sync",
                               "anchor": {
@@ -336,7 +336,7 @@
                             {
                               "id": "vKEsyHFk/Oi6SBIAM#Z5pzIome",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                              "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+                              "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                               "label": "the pane arrived on its model",
                               "kind": "sync",
                               "anchor": {
