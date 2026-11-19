@@ -12,7 +12,7 @@ use archboard_scene::scene::traffic::{
 };
 use archboard_scene::scene::{Motion, PulseLook, TrafficMark};
 
-use crate::colour::css;
+use crate::css::css;
 use crate::legs::{Leg, leg_path, legs_of};
 use crate::xml::{Attributes, close, coord, empty, open};
 

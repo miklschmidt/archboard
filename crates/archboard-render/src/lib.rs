@@ -17,7 +17,7 @@ mod architecture;
 mod entries;
 mod flows;
 mod memo;
-pub mod request;
+mod request;
 mod steps;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -31,9 +31,9 @@ use archboard_svg::{AppliedAppearance, PictureLegend};
 use serde::Serialize;
 use ts_rs::TS;
 
-pub use appearance::drill_direction;
 use memo::Layouts;
-use request::{Grammar, RenderRequest};
+use request::Grammar;
+pub use request::RenderRequest;
 
 /// What a render asks of the place it runs in: the layout's solves, and the
 /// path data of the icons a picture draws.
@@ -136,8 +136,7 @@ fn icons_of<H: Host>(host: &H, named: &[&str]) -> Result<BTreeMap<String, Vec<St
 /// A document the SVG painter refuses (`archboard_svg::document`).
 fn drawn(request: &PaintRequest) -> Result<Drawn, String> {
     let scene = paint(request);
-    let svg = archboard_svg::document(&scene, &request.document, &request.icons)
-        .map_err(|error| error.0)?;
+    let svg = archboard_svg::document(&scene, &request.document, &request.icons)?;
     let (appearances, legend) = archboard_svg::appearances(&scene.body, &request.icons);
     let width = scene.width;
     let height = scene.height;

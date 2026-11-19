@@ -589,13 +589,13 @@ fn is_graphviz_escape_char(b: u8) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use graphviz_pure_core::charset;
+    use graphviz_pure_core::charset::{decode, encode};
 
     // Issue #151: `_agstrcanon` counts C's bytes when it breaks a long string: a Latin-1
     // byte is one byte (C 16.1.0 breaks this label after 43 of its 60 groups).
     #[test]
     fn long_strings_break_after_128_bytes_of_c() {
-        let s = charset::decode(b" \xe9y".repeat(60));
+        let s = decode(b" \xe9y".repeat(60));
         let expected = [
             &b"\""[..],
             &b" \xe9y".repeat(43),
@@ -604,6 +604,6 @@ mod tests {
             b"\"",
         ]
         .concat();
-        assert_eq!(&*charset::encode(&canon_str(&s)), &expected[..]);
+        assert_eq!(&*encode(&canon_str(&s)), &expected[..]);
     }
 }

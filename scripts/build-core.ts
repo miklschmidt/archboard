@@ -207,12 +207,32 @@ if (currentBuild(hash)) {
 		{ ARCHBOARD_CORE_SOURCE_HASH: hash },
 	);
 	const types = run(
-		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-render"],
+		[
+			"cargo",
+			"run",
+			"--quiet",
+			"--release",
+			"--locked",
+			"--package",
+			"archboard-render",
+			"--bin",
+			"export-types",
+		],
 		{},
 		"pipe",
 	);
 	const marks = run(
-		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-svg"],
+		[
+			"cargo",
+			"run",
+			"--quiet",
+			"--release",
+			"--locked",
+			"--package",
+			"archboard-render",
+			"--bin",
+			"export-marks",
+		],
 		{},
 		"pipe",
 	);

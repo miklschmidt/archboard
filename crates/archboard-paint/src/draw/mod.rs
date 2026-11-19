@@ -27,12 +27,12 @@ const BOX_TOLERANCE: f64 = 0.1;
 mod kept;
 mod masked;
 #[cfg(test)]
-pub(crate) mod tests;
+mod tests;
 mod viewer;
 
 /// A scene with its definitions found.
 #[derive(Clone, Debug)]
-pub struct Picture {
+pub(crate) struct Picture {
     /// What is drawn.
     pub scene: Scene,
     pub(crate) definitions: Definitions,
@@ -42,7 +42,7 @@ pub struct Picture {
 
 impl Picture {
     /// A scene, ready to draw.
-    pub fn new(scene: Scene) -> Picture {
+    pub(crate) fn new(scene: Scene) -> Picture {
         let definitions = Definitions::of(&scene);
         let traffic = holds_traffic(&scene.body);
         Picture {

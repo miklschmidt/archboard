@@ -5,7 +5,7 @@
 use archboard_scene::names::word;
 use archboard_scene::scene::{Geometry, MarkerId, Purpose, Shape};
 
-use crate::colour::paint;
+use crate::css::paint;
 use crate::definitions::{Names, marker_id};
 use crate::path::{Spelling, path_data};
 use crate::xml::{Attributes, empty};
