@@ -20,14 +20,13 @@ import {
 	sendToPane,
 } from "#server/panes/services/registry.ts";
 import { messageOf } from "#server/request/services/request-fields.ts";
-import { vaultOfRequest } from "@archboard/server-requests/server";
 import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
 import { noBrowserBody } from "#server/panes/routes/pane-routes.ts";
 import { followRegistry } from "#server/panes/services/registry-follow.ts";
 import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 
-/** What a show needs of the server: the status it answers a refused read with. */
-type ShowHooks = Pick<WorkbenchHooks, "refusalStatus">;
+/** What a show needs of the server: the vault a request names, how it refuses a read, its URL. */
+type ShowHooks = Pick<WorkbenchHooks, "refusalStatus" | "vaultOfRequest" | "address">;
 const RequestSchema = z.strictObject({
 	vault: z.string().optional(),
 	pane: z.string().optional(),
@@ -227,7 +226,9 @@ function answerUnread(
 	res: Response,
 	hooks: ShowHooks,
 ): void {
-	const pane = opensUnread(model, body) ? showablePane(vault, body.pane, res) : undefined;
+	const pane = opensUnread(model, body)
+		? showablePane(vault, body.pane, res, hooks.address.httpUrl)
+		: undefined;
 	if (pane === undefined)
 		res.set("Cache-Control", "no-store").status(hooks.refusalStatus(model)).json(model);
 	else if (pane !== null) moveUnread(vault, pane, res);
@@ -247,7 +248,7 @@ async function showPane(req: Request, res: Response, hooks: ShowHooks): Promise<
 		return;
 	}
 	const body = parsed.data,
-		vault = vaultOfRequest(req);
+		vault = hooks.vaultOfRequest(req);
 	const {
 		module,
 		flow,
@@ -270,7 +271,7 @@ async function showPane(req: Request, res: Response, hooks: ShowHooks): Promise<
 		res.status(422).json({ success: false, ...refused });
 		return;
 	}
-	const pane = showablePane(vault, body.pane, res);
+	const pane = showablePane(vault, body.pane, res, hooks.address.httpUrl);
 	if (pane !== null) showResolvedPane(body, vault, model, pane, res);
 }
 
@@ -318,9 +319,15 @@ function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefi
  * @param vault The vault the model is in: an unnamed pane must be one of that vault's.
  * @param spec The pane spec the caller stated, if any.
  * @param res The response.
+ * @param httpUrl Where this server is reached, which a refusal for want of a browser names.
  * @returns The pane, or null.
  */
-function showablePane(vault: string, spec: unknown, res: Response): PaneRegistration | null {
+function showablePane(
+	vault: string,
+	spec: unknown,
+	res: Response,
+	httpUrl: string,
+): PaneRegistration | null {
 	let pane: PaneRegistration | null;
 	try {
 		pane = paneFromRequest(vault, spec);
@@ -329,7 +336,7 @@ function showablePane(vault: string, spec: unknown, res: Response): PaneRegistra
 		return null;
 	}
 	if (pane === null) {
-		res.status(503).json(noBrowserBody("Showing a model"));
+		res.status(503).json(noBrowserBody("Showing a model", httpUrl));
 	}
 	return pane;
 }

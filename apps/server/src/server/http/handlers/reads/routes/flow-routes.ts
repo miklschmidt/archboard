@@ -5,7 +5,7 @@ import { projectModel, projectFlow, type Model } from "@archboard/model-rules";
 import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
 import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 
 type Reading = ModelRequest<"render">;

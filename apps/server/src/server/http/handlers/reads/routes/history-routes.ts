@@ -3,7 +3,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { architectureHistoryRequestSchema } from "@archboard/code-intel/history";
 import { readArchitectureHistory } from "@archboard/code-intel/history-lens";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 
 /** Each history analysis, which a route of its own name answers. */

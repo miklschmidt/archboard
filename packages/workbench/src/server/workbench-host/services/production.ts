@@ -9,7 +9,7 @@ import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { installation } from "@archboard/workspace/installation";
 import { stateDir } from "@archboard/workspace/state-dir";
-import { listenAddress } from "@archboard/server-lifecycle/server-process";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 import type { ArchboardWorkbenchServer } from "#server/generation/protocol/archboard-host.ts";
 
 /**
@@ -46,11 +46,12 @@ function prepareCoordinatorDirectory(directory: string): void {
  * the server's, under its port (TASK-313). The ledger is read, changed and
  * written by one process, and a second server's child would make this one's
  * stale. The directory the coordinators work in is the server's too.
+ * @param port The port this server listens on.
  * @returns The private installation root and process owner directory.
  */
-function createWorkbenchStorage(): VoiceAgentOptions["storage"] {
+function createWorkbenchStorage(port: number): VoiceAgentOptions["storage"] {
 	const root = path.join(stateDir(), "codex-workbench");
-	const ownerDirectory = path.join(root, "canvases", String(listenAddress().port));
+	const ownerDirectory = path.join(root, "canvases", String(port));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const coordinatorDirectory = path.join(ownerDirectory, "coordinator");
 	prepareCoordinatorDirectory(coordinatorDirectory);
@@ -65,14 +66,19 @@ function createWorkbenchStorage(): VoiceAgentOptions["storage"] {
  * server application: the proven executable, the storage under it, Archboard's
  * identity, instructions and tools, and the extensions each generation uses.
  * @param server What the server provides the workbench.
+ * @param address Where the server listens: its state is kept under the port, and the child's
+ *   commands reach it at the URL.
  * @returns The voice agent options.
  */
-export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer): VoiceAgentOptions {
+export function createServerVoiceAgentOptions(
+	server: ArchboardWorkbenchServer,
+	address: WorkbenchHooks["address"],
+): VoiceAgentOptions {
 	// Prove the mandatory runtime before creating any workbench storage. The
 	// process owner proves it again at each spawn so a later replacement cannot
 	// inherit a stale verification.
 	const executablePath = resolveCodexExecutable(installation().codexLocation);
-	const storage = createWorkbenchStorage();
+	const storage = createWorkbenchStorage(address.port);
 
 	return {
 		storage,
@@ -98,7 +104,7 @@ export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer):
 		codex: {
 			executablePath,
 			hostEnvironment: {
-				ARCHBOARD_URL: listenAddress().httpUrl,
+				ARCHBOARD_URL: address.httpUrl,
 				ARCHBOARD_NO_AUTOSTART: "1",
 				...workbenchTelemetryEnvironment(),
 			},

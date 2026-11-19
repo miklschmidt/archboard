@@ -9,18 +9,23 @@ import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { installation } from "@archboard/workspace/installation";
-import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
 import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "#tests/server/support/generation/production-state.ts";
 import { createServerVoiceAgentOptions } from "#server/workbench-host/services/production.ts";
+
+/** The port the server under test listens on. */
+const PORT = 4123;
 
 function productionStorage() {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-storage-"));
 	return withProductionState(root, () => ({
 		root,
-		value: createServerVoiceAgentOptions({
-			host: { resolveCheckout: (named: string) => named },
-		} as never),
+		value: createServerVoiceAgentOptions(
+			{
+				host: { resolveCheckout: (named: string) => named },
+			} as never,
+			{ port: PORT, httpUrl: `http://127.0.0.1:${PORT}` },
+		),
 	}));
 }
 
@@ -34,11 +39,7 @@ describe("production Codex storage", () => {
 					: process.platform === "win32"
 						? join(root, "Archboard", "codex-workbench")
 						: join(root, "archboard", "codex-workbench");
-			const owner = join(
-				workbench,
-				"canvases",
-				process.env["PORT"] || new URL(defaultArchboardUrl()).port,
-			);
+			const owner = join(workbench, "canvases", String(PORT));
 			expect({
 				rootDirectory: value.storage.directory,
 				ownerDirectory: value.storage.ownerDirectory,

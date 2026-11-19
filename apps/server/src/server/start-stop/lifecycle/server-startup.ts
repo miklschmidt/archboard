@@ -1,12 +1,11 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
+import { releaseServerPid, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
 import {
 	listenAddress,
 	logHttpServerError,
 	loopbackRefusal,
-	releaseServerPid,
-	reportStartupEnd,
-} from "@archboard/server-lifecycle/server-process";
+} from "#server/http/listener/services/listener-address.ts";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { durationMs } from "@archboard/timing";
 import {
@@ -235,7 +234,12 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 			},
 			{
 				name: "workbench",
-				start: prepareWorkbench,
+				/**
+				 * Prepare the workbench at the address this server listens on.
+				 * @param signal Cancels the preparation.
+				 * @returns Resolves once it is ready.
+				 */
+				start: (signal) => prepareWorkbench(signal, listenAddress()),
 				stop: stopWorkbench,
 				forceStop: stopWorkbench,
 			},

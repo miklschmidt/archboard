@@ -8,7 +8,10 @@ import {
 	type ReplyOperation,
 	type ReplyDelivery,
 } from "@archboard/model-contract";
-import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
+import { inVault, strictReply } from "@archboard/server-requests";
+
+/** The schema a reply of type T is read through, as `strictReply` takes it. */
+type ReplySchema<T> = Parameters<typeof strictReply<T, unknown>>[2];
 
 type StateSelection = {
 	readonly [Field in "ref" | "state" | "against" | "preview" | "bookmark" | "legacyAddress"]?:

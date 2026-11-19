@@ -3,7 +3,6 @@
 
 import type { Express } from "express";
 import { z } from "zod";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
 import { explanationActionRequestSchema } from "#shared/schemas/architecture-explanation.ts";
 import { explainArchitecture } from "#server/explanations/services/dispatch.ts";
 import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
@@ -21,12 +20,16 @@ const ActionIdSchema = RequestSchema.options[2].shape.actionId;
 /**
  * Translate explicit explanation requests through the existing local workbench.
  * @param app The server application.
- * @param hooks How the server runs a write under the request's mutation lease.
+ * @param hooks How the server reads the vault a request names and runs a write under the
+ *   request's mutation lease.
  */
-function mountExplanationRoutes(app: Express, hooks: Pick<WorkbenchHooks, "runMutation">): void {
+function mountExplanationRoutes(
+	app: Express,
+	hooks: Pick<WorkbenchHooks, "runMutation" | "requireVault" | "vaultOfRequest">,
+): void {
 	app.post(
 		"/api/architecture/explanations",
-		requireVault,
+		hooks.requireVault,
 		hooks.runMutation(async (req, res) => {
 			const parsed = InvokeBodySchema.safeParse(req.body);
 			if (!parsed.success) {
@@ -38,7 +41,10 @@ function mountExplanationRoutes(app: Express, hooks: Pick<WorkbenchHooks, "runMu
 				return;
 			}
 			const { vault: _vault, ...input } = parsed.data;
-			const result = await explainArchitecture(vaultOfRequest(req), { ...input, type: "invoke" });
+			const result = await explainArchitecture(hooks.vaultOfRequest(req), {
+				...input,
+				type: "invoke",
+			});
 			res
 				.status(result.success ? 200 : result.code === "AGENT_UNAVAILABLE" ? 503 : 409)
 				.json(result);
@@ -46,7 +52,7 @@ function mountExplanationRoutes(app: Express, hooks: Pick<WorkbenchHooks, "runMu
 	);
 	app.get(
 		["/api/architecture/explanations", "/api/architecture/explanations/:actionId"],
-		requireVault,
+		hooks.requireVault,
 		async (req, res) => {
 			const parsed = ReadQuerySchema.safeParse(req.query);
 			const actionId = ActionIdSchema.optional().safeParse(req.params["actionId"]);
@@ -59,7 +65,7 @@ function mountExplanationRoutes(app: Express, hooks: Pick<WorkbenchHooks, "runMu
 				return;
 			}
 			const { vault: _vault, ...input } = parsed.data;
-			const result = await explainArchitecture(vaultOfRequest(req), {
+			const result = await explainArchitecture(hooks.vaultOfRequest(req), {
 				...input,
 				...(actionId.data === undefined
 					? { type: "latest" }
@@ -71,7 +77,7 @@ function mountExplanationRoutes(app: Express, hooks: Pick<WorkbenchHooks, "runMu
 	for (const type of ["retry", "cancel"] as const)
 		app.post(
 			`/api/architecture/explanations/:actionId/${type}`,
-			requireVault,
+			hooks.requireVault,
 			hooks.runMutation(async (req, res) => {
 				const parsed = ActionBodySchema.safeParse(req.body);
 				const actionId = ActionIdSchema.safeParse(req.params["actionId"]);
@@ -84,7 +90,7 @@ function mountExplanationRoutes(app: Express, hooks: Pick<WorkbenchHooks, "runMu
 					return;
 				}
 				const { vault: _vault, ...input } = parsed.data;
-				const result = await explainArchitecture(vaultOfRequest(req), {
+				const result = await explainArchitecture(hooks.vaultOfRequest(req), {
 					...input,
 					type,
 					actionId: actionId.data,

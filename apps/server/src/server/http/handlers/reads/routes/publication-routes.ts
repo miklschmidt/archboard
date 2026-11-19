@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { changeArchitecturePublication, readArchitecturePublication } from "@archboard/model-store";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 

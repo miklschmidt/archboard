@@ -13,7 +13,7 @@ import {
 } from "@archboard/model-store";
 import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/http/handlers/architecture-writes/routes/model-edit-routes.ts";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
 const QuerySchema = z

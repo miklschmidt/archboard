@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { listenAddress, staleFrontend } from "@archboard/server-lifecycle/server-process";
+import { staleFrontend } from "@archboard/server-lifecycle/server-process";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 
@@ -18,20 +18,20 @@ import { shownConversationRoute } from "#server/panes/services/shown-conversatio
 import { showPaneRoute } from "#server/panes/routes/pane-show-route.ts";
 import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { requireVault, statedVault, vaultOfRequest } from "@archboard/server-requests/server";
 
 /**
  * No pane means no browser, which is a different thing from a bad request.
  * @param what The operation that needed a pane.
+ * @param httpUrl Where this server is reached, which the page is opened from.
  * @returns The refusal body.
  */
-function noBrowserBody(what: string): Record<string, unknown> {
+function noBrowserBody(what: string, httpUrl: string): Record<string, unknown> {
 	return {
 		success: false,
 		code: "BROWSER_REQUIRED",
 		error:
 			`${what} needs a canvas open in a browser. A pane exists only while a tab is rendering it, ` +
-			`so there is nothing on screen to split or close. Open ${browserUrl(listenAddress().httpUrl)} and retry.`,
+			`so there is nothing on screen to split or close. Open ${browserUrl(httpUrl)} and retry.`,
 	};
 }
 
@@ -110,17 +110,16 @@ function registrationOf(reported: z.infer<typeof PaneSchema>, vault: string): Pa
  * on it ten seconds later.
  * @param req The request.
  * @param res Its response.
+ * @param vault The vault the request named.
  */
-function postPaneRoute(req: Request, res: Response): void {
+function postPaneRoute(req: Request, res: Response, vault: string): void {
 	const parsed = PaneSchema.safeParse(req.body);
 	if (!parsed.success) {
 		res.status(400).json({ success: false, error: paneTelemetryRefusal(parsed.error) });
 		return;
 	}
 	const stale = staleFrontend(parsed.data.build);
-	const { registered, code, paneCount } = registerPane(
-		registrationOf(parsed.data, vaultOfRequest(req)),
-	);
+	const { registered, code, paneCount } = registerPane(registrationOf(parsed.data, vault));
 	res.json({
 		success: true,
 		registered,
@@ -134,11 +133,12 @@ function postPaneRoute(req: Request, res: Response): void {
  * Report every pane on screen. A call may name the vault its command found, and each pane then
  * says whether it shows that vault. The report is about the screen, so a call that names none, or
  * one the server cannot read, is answered the same, with no pane its own.
- * @param req The request.
  * @param res Its response.
+ * @param caller The vault the request names, or null when it names none the server can read.
+ * @param httpUrl Where this server is reached, which a report with no pane names.
  */
-function getPanesRoute(req: Request, res: Response): void {
-	res.json({ success: true, ...panesReport(statedVault(req)) });
+function getPanesRoute(res: Response, caller: string | null, httpUrl: string): void {
+	res.json({ success: true, ...panesReport(caller, httpUrl) });
 }
 
 /** The status each refused layout change answers with. */
@@ -155,26 +155,27 @@ const LAYOUT_REFUSAL_STATUS: Record<LayoutRefusal["refusal"], number> = {
  * @param res The response.
  * @param refused Why it was refused.
  * @param what The operation, as a refusal for want of a browser names it.
+ * @param httpUrl Where this server is reached, which a refusal for want of a browser names.
  */
-function refuseLayout(res: Response, refused: LayoutRefusal, what: string): void {
+function refuseLayout(res: Response, refused: LayoutRefusal, what: string, httpUrl: string): void {
 	res
 		.status(LAYOUT_REFUSAL_STATUS[refused.refusal])
 		.json(
 			refused.refusal === "no-browser"
-				? noBrowserBody(what)
+				? noBrowserBody(what, httpUrl)
 				: { success: false, error: refused.error },
 		);
 }
 
 /**
  * Split the canvas: one more pane, side by side with what is already there.
- * @param _req The request.
  * @param res Its response.
+ * @param httpUrl Where this server is reached.
  */
-async function openPaneRoute(_req: Request, res: Response): Promise<void> {
+async function openPaneRoute(res: Response, httpUrl: string): Promise<void> {
 	const opened = await openPane();
 	if (!opened.ok) {
-		refuseLayout(res, opened, "Opening a pane");
+		refuseLayout(res, opened, "Opening a pane", httpUrl);
 		return;
 	}
 	const { pane, paneCount, onScreen } = opened;
@@ -185,12 +186,13 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
  * Close one pane, named the way every other pane is named.
  * @param req The request.
  * @param res Its response.
+ * @param httpUrl Where this server is reached.
  */
-async function closePaneRoute(req: Request, res: Response): Promise<void> {
+async function closePaneRoute(req: Request, res: Response, httpUrl: string): Promise<void> {
 	const paneSpec = bodyOf(req)["pane"];
 	const closed = await closePane(typeof paneSpec === "string" ? paneSpec.trim() : "");
 	if (!closed.ok) {
-		refuseLayout(res, closed, "Closing a pane");
+		refuseLayout(res, closed, "Closing a pane", httpUrl);
 		return;
 	}
 	const { closed: pane, paneCount, onScreen } = closed;
@@ -203,19 +205,33 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
  * @param hooks What the server lends them.
  */
 function mountPaneRoutes(app: Express, hooks: WorkbenchHooks): void {
-	app.post("/api/panes", requireVault, postPaneRoute);
-	app.get("/api/panes", getPanesRoute);
+	const { requireVault, vaultOfRequest, statedVault } = hooks;
+	const { httpUrl } = hooks.address;
+	app.post("/api/panes", requireVault, (req, res) => {
+		postPaneRoute(req, res, vaultOfRequest(req));
+	});
+	app.get("/api/panes", (req, res) => {
+		getPanesRoute(res, statedVault(req), httpUrl);
+	});
 	app.post(["/api/panes/show", "/api/browser/show"], requireVault, showPaneRoute(hooks));
 	// The person's own act in the page, so only the page reaches it (ADR 0050).
 	app.post(
 		shownConversationPath(),
 		createBrowserOriginGuard("mutation"),
 		requireVault,
-		shownConversationRoute,
+		(req, res) => {
+			shownConversationRoute(req, res, vaultOfRequest(req));
+		},
 	);
-	app.post("/api/panes/open", hooks.runMutation(openPaneRoute));
-	app.post("/api/panes/close", hooks.runMutation(closePaneRoute));
-	mountSemanticPaneContextRoutes(app);
+	app.post(
+		"/api/panes/open",
+		hooks.runMutation((_req, res) => openPaneRoute(res, httpUrl)),
+	);
+	app.post(
+		"/api/panes/close",
+		hooks.runMutation((req, res) => closePaneRoute(req, res, httpUrl)),
+	);
+	mountSemanticPaneContextRoutes(app, hooks);
 }
 
 export { mountPaneRoutes, noBrowserBody };

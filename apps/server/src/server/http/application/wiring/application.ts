@@ -11,7 +11,12 @@ import {
 import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "#server/http/listener/wiring/server-app.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
+import {
+	requireVault,
+	statedVault,
+	vaultOfRequest,
+} from "#server/http/middleware/request-vault.ts";
+import { listenAddress } from "#server/http/listener/services/listener-address.ts";
 import { checkoutWork } from "#server/wiring/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { mountCodeFilesRoute } from "#server/http/handlers/code-files/routes/code-files-route.ts";
@@ -104,7 +109,14 @@ app.use(
 
 // Before the model and history routes: its first middleware holds every route under
 // /api/architecture to a vault and observes each write there.
-mountWorkbenchRoutes(app, { runMutation: asyncEndpoint, refusalStatus });
+mountWorkbenchRoutes(app, {
+	runMutation: asyncEndpoint,
+	refusalStatus,
+	requireVault,
+	vaultOfRequest,
+	statedVault,
+	address: listenAddress(),
+});
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
 mountArchitectureModelRoutes(app);

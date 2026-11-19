@@ -32,13 +32,20 @@ interface ListenAddress {
 	readonly wsUrl: string;
 }
 
+/** Where this server listens, resolved once: the process reads its environment at start. */
+const ADDRESS: ListenAddress = Object.freeze({
+	host: HOST,
+	port: PORT,
+	httpUrl: `http://${formatHostForUrl(HOST)}:${PORT}`,
+	wsUrl: `ws://${formatHostForUrl(HOST)}:${PORT}`,
+});
+
 /**
  * Where this server listens.
  * @returns The host and the port it binds, and the URLs they make.
  */
 function listenAddress(): ListenAddress {
-	const base = `${formatHostForUrl(HOST)}:${PORT}`;
-	return { host: HOST, port: PORT, httpUrl: `http://${base}`, wsUrl: `ws://${base}` };
+	return ADDRESS;
 }
 
 /**

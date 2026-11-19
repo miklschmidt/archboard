@@ -27,6 +27,7 @@ import {
 	resetCodexWorkbenchWiring,
 } from "#server/workbench-host/services/wiring-hooks.ts";
 import { agentActivity } from "#server/panes/services/agent-activity.ts";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 import { forgetPanePresentations } from "#server/panes/services/presentation.ts";
 import { unwatchRegistry, watchRegistry } from "#server/panes/services/registry-follow.ts";
 import { semanticChangeFeed } from "#server/panes/services/change-feed.ts";
@@ -524,14 +525,19 @@ function stopWorkbench(): Promise<void> {
  * Prepare the Codex workbench application, shutting it down if startup is canceled, then follow
  * the checkout registry. The watch starts last, so a preparation that fails watches nothing.
  * @param signal Cancels the preparation.
+ * @param address Where the server listens: its Codex state is kept under the port, and its agents
+ *   reach it at the URL.
  */
-async function prepareWorkbench(signal: AbortSignal): Promise<void> {
+async function prepareWorkbench(
+	signal: AbortSignal,
+	address: WorkbenchHooks["address"],
+): Promise<void> {
 	const productionModule = await import("#server/workbench-host/services/production.ts");
 	if (signal.aborted) {
 		throw new Error("Codex startup was canceled before installation.");
 	}
 	const application = createVoiceAgent(
-		productionModule.createServerVoiceAgentOptions(createArchboardWorkbenchServer()),
+		productionModule.createServerVoiceAgentOptions(createArchboardWorkbenchServer(), address),
 	);
 	codexApplication = application;
 	generationStop = null;

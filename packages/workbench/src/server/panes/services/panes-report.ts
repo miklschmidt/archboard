@@ -12,7 +12,6 @@ import { buildPanesReport } from "#server/panes/rules/pane-report.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
 import { paneKeyOf, paneOf, paneRegistrations } from "#server/panes/services/registry.ts";
 import { tabSessionOf } from "#server/panes/services/tab-sessions.ts";
-import { listenAddress } from "@archboard/server-lifecycle/server-process";
 
 type SemanticPaneContext = ModelDocument<"paneContext">;
 
@@ -75,9 +74,10 @@ function readingOf(clientId: string) {
  * vault and the browser tab it belongs to. A recording page's pane is left out.
  * @param caller The vault the caller's command found, so each pane says whether it shows that
  *   vault; null for a call that named none, or one the server cannot read.
+ * @param httpUrl Where this server is reached, which a report with no pane names.
  * @returns The report.
  */
-function panesReport(caller: string | null): PanesOnScreen {
+function panesReport(caller: string | null, httpUrl: string): PanesOnScreen {
 	const report = buildPanesReport(paneRegistrations(), {
 		caller,
 		whereabouts: placeOfVault,
@@ -89,7 +89,7 @@ function panesReport(caller: string | null): PanesOnScreen {
 		 * @returns The reading, or null when the pane has reported none.
 		 */
 		architecture: (clientId) => semanticPaneContextFor(clientId)?.architecture ?? null,
-		serverUrl: browserUrl(listenAddress().httpUrl),
+		serverUrl: browserUrl(httpUrl),
 	});
 	return {
 		...report,

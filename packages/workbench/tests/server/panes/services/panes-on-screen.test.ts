@@ -113,7 +113,7 @@ describe("a recording page's pane (TASK-304)", () => {
 		// One pane on screen, so there is none a close may take, the recording's least of all.
 		expect(await closePane("record")).toMatchObject({ ok: false, refusal: "only-pane" });
 
-		const report = panesReport(null);
+		const report = panesReport(null, "http://127.0.0.1:4123");
 		expect(report.paneCount).toBe(1);
 		expect(report.panes.map((one) => one.clientId)).toEqual(["user"]);
 	});
@@ -151,7 +151,7 @@ describe("a pane's line in the report", () => {
 			at: new Date().toISOString(),
 			sequence: 1,
 		});
-		return panesReport(null);
+		return panesReport(null, "http://127.0.0.1:4123");
 	}
 
 	test("names the model and the states it reported, and carries them in the pane entry", async () => {

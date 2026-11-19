@@ -1,10 +1,9 @@
 import { logger } from "@archboard/diagnostics/logger";
+import { recordServerPid, releaseServerPid } from "@archboard/server-lifecycle/server-process";
 import {
 	listenAddress,
 	logHttpServerError,
-	recordServerPid,
-	releaseServerPid,
-} from "@archboard/server-lifecycle/server-process";
+} from "#server/http/listener/services/listener-address.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
 
 /** The HTTP listener's own phase, distinct from the lifetime's. */

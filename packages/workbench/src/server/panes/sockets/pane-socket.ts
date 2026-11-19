@@ -21,7 +21,7 @@ import {
 } from "#server/panes/services/pane-sockets.ts";
 import { paneKeyForNewPane, paneVaultOf } from "#server/panes/services/registry.ts";
 import { isRecord } from "#server/request/services/request-fields.ts";
-import { namedVault } from "@archboard/server-requests/server";
+import { resolveVault } from "@archboard/server-requests/server";
 import { handleCodexBrowserMessage } from "#server/workbench-host/services/wiring-hooks.ts";
 
 /**
@@ -190,7 +190,7 @@ function vaultOfReturningPane(req: IncomingMessage, named: string): string {
 	if (held === undefined || held === named) {
 		return named;
 	}
-	const readable = namedVault(held);
+	const readable = resolveVault(held);
 	return readable.ok ? readable.vault : named;
 }
 

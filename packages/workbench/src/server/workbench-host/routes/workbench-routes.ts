@@ -1,10 +1,10 @@
 // Every route the workbench answers, mounted together: the panes, what they read, the model they
 // show, the conversation a tab shows, and the explanations. The server lends what it owns: the
-// mutation lease, and the status it gives a refused read.
+// mutation lease, the status it gives a refused read, how it reads the vault a request names, and
+// where it listens.
 
 import type { ArchitectureModelRead } from "@archboard/model-contract";
 import type { Express, NextFunction, Request, RequestHandler, Response } from "express";
-import { requireVault, vaultOfRequest } from "@archboard/server-requests/server";
 
 import { mountExplanationRoutes } from "#server/explanations/routes/explanation-routes.ts";
 import { mountPaneRoutes } from "#server/panes/routes/pane-routes.ts";
@@ -24,18 +24,27 @@ interface WorkbenchHooks {
 	 * @returns The HTTP status.
 	 */
 	refusalStatus(refusal: Extract<ArchitectureModelRead, { success: false }>): number;
+	/** Refuses a request that names no usable vault, and remembers the vault it names. */
+	readonly requireVault: RequestHandler;
+	/** The vault a request named, once `requireVault` has run on it. */
+	readonly vaultOfRequest: (req: Request) => string;
+	/** The vault a request names, or null when it names none the server can read. */
+	readonly statedVault: (req: Request) => string | null;
+	/** Where the server listens: the port its Codex state is kept under, and its URL. */
+	readonly address: { readonly port: number; readonly httpUrl: string };
 }
 
 /**
  * Show off-screen work: a write under `/api/architecture` names a vault that no pane or registry
  * may name, and the agent activity follows it.
- * @param req The request, whose vault the requirement before this has read.
- * @param _res Its response.
- * @param next Continues to the route.
+ * @param vaultOfRequest How the server reads the vault the requirement before this remembered.
+ * @returns The middleware.
  */
-function observeWrite(req: Request, _res: Response, next: NextFunction): void {
-	if (req.method !== "GET") agentActivity.addressed(vaultOfRequest(req));
-	next();
+function observeWrite(vaultOfRequest: WorkbenchHooks["vaultOfRequest"]): RequestHandler {
+	return (req: Request, _res: Response, next: NextFunction) => {
+		if (req.method !== "GET") agentActivity.addressed(vaultOfRequest(req));
+		next();
+	};
 }
 
 /**
@@ -46,7 +55,7 @@ function observeWrite(req: Request, _res: Response, next: NextFunction): void {
  * @param hooks What the server lends the routes.
  */
 function mountWorkbenchRoutes(app: Express, hooks: WorkbenchHooks): void {
-	app.use("/api/architecture", requireVault, observeWrite);
+	app.use("/api/architecture", hooks.requireVault, observeWrite(hooks.vaultOfRequest));
 	mountPaneRoutes(app, hooks);
 	mountExplanationRoutes(app, hooks);
 }

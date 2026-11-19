@@ -10,6 +10,7 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
+import { resolveVault } from "@archboard/server-requests/server";
 
 const watched = new Set<string>();
 const store = await import("@archboard/model-store");
@@ -61,11 +62,53 @@ const {
 	stopWorkbench,
 } = await import("#server/api/server.ts");
 
+/** Where the server under test says it listens. */
+const ADDRESS = { port: 4123, httpUrl: "http://127.0.0.1:4123" };
 const scratch = mkdtempSync(join(tmpdir(), "archboard-workbench-server-"));
 const registry = process.env["ARCHBOARD_REPOS"];
 let http: Server;
 let sockets: WebSocketServer;
 let base = "";
+
+/** The vault each request named, as the server's own requirement remembers it. */
+const requestVaults = new WeakMap<Request, string>();
+
+/**
+ * The vault a request names in its query, as the server reads it.
+ * @param req The request.
+ * @returns The canonical vault, or the refusal.
+ */
+function vaultNamedBy(req: Request): ReturnType<typeof resolveVault> {
+	const stated = req.query["vault"];
+	return resolveVault(typeof stated === "string" ? stated : null);
+}
+
+/**
+ * The server's requirement of a vault, which it lends the workbench's routes.
+ * @param req The request.
+ * @param res Its response.
+ * @param next Continues to the route.
+ */
+function requireVault(req: Request, res: Response, next: NextFunction): void {
+	const named = vaultNamedBy(req);
+	if (!named.ok) {
+		res.status(named.refusal.status).json({ success: false, ...named.refusal });
+		return;
+	}
+	requestVaults.set(req, named.vault);
+	next();
+}
+
+/**
+ * The vault a request named, once the requirement has run on it.
+ * @param req The request.
+ * @returns The vault.
+ */
+function vaultOfRequest(req: Request): string {
+	const vault = requestVaults.get(req);
+	if (vault === undefined) throw new Error(`${req.path} was mounted without requireVault.`);
+	return vault;
+}
 
 /**
  * A vault in the layout the server serves, made once.
@@ -87,13 +130,21 @@ beforeAll(async () => {
 			route(req, res).catch(next);
 		},
 		refusalStatus: () => 409,
+		requireVault,
+		vaultOfRequest,
+		statedVault: (req) => {
+			const named = vaultNamedBy(req);
+			return named.ok ? named.vault : null;
+		},
+		address: ADDRESS,
 	});
-	// The server's own model and history routes, which it mounts after the workbench's.
-	app.post("/api/architecture/module", (_req, res) => {
-		res.json({ success: true });
+	// The server's own model and history routes, which it mounts after the workbench's and which
+	// read the vault its requirement remembered.
+	app.post("/api/architecture/module", (req, res) => {
+		res.json({ success: true, vault: vaultOfRequest(req) });
 	});
-	app.get(["/api/architecture/model", "/api/architecture/history"], (_req, res) => {
-		res.json({ success: true });
+	app.get(["/api/architecture/model", "/api/architecture/history"], (req, res) => {
+		res.json({ success: true, vault: vaultOfRequest(req) });
 	});
 	http = createServer(app);
 	sockets = new WebSocketServer({ server: http });
@@ -157,7 +208,7 @@ test("the model, history and explanation routes count the same writes as before"
 });
 
 test("overlapping stops share one failing shutdown, and each generation stops once", async () => {
-	await prepareWorkbench(new AbortController().signal);
+	await prepareWorkbench(new AbortController().signal, ADDRESS);
 	const stops = await Promise.allSettled([stopWorkbench(), stopWorkbench()]);
 	expect(stops).toEqual([
 		{ status: "rejected", reason: shutdownFailure },
@@ -169,7 +220,7 @@ test("overlapping stops share one failing shutdown, and each generation stops on
 	// The activity was disposed before the shutdown, so the pane's vault is followed no more.
 	expect(watched.size).toBe(0);
 
-	await prepareWorkbench(new AbortController().signal);
+	await prepareWorkbench(new AbortController().signal, ADDRESS);
 	await expect(stopWorkbench()).rejects.toBe(shutdownFailure);
 	expect(shutdowns).toBe(2);
 });
