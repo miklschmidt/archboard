@@ -174,6 +174,11 @@ test("the pieces of logic of a C module are its conditions, operators and calls,
 	expect(depthByModule(answer).get("Timing")?.logic).toBe(6);
 });
 
+test("the pieces of logic of a C++ module are those of its bodies, and a private field is no hidden value", () => {
+	// `==`, the two calls, `*`, `for`, `<` and `++`.
+	expect(depthByModule(answer).get("Store")?.logic).toBe(7);
+});
+
 test("a C++ class counts its public methods, but no constructor, destructor or operator", () => {
 	const store = depthByModule(answer).get("Store");
 	expect(store?.languages).toEqual(["cpp"]);

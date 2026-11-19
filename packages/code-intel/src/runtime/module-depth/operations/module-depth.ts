@@ -372,6 +372,19 @@ function ofKind(
 }
 
 /**
+ * Whether a symbol names a member of another definition of its file, as
+ * `Ledger.total`, `shop::Store::items_` and an Objective-C instance variable
+ * do: a member is no value its module keeps hidden at module level.
+ * @param symbol The symbol.
+ * @param symbols Every symbol its file defines.
+ * @returns True when it does.
+ */
+function heldBy(symbol: string, symbols: ReadonlySet<string>): boolean {
+	const at = Math.max(symbol.lastIndexOf("."), symbol.lastIndexOf("::"));
+	return at > 0 && symbols.has(symbol.slice(0, at));
+}
+
+/**
  * The pieces of logic in the module's files of a judged language: what each
  * file's adapter counts, and each value it keeps hidden at module level.
  * @param reading The module.
@@ -385,9 +398,13 @@ async function logicOf(reading: DepthReading): Promise<number> {
 		if (read === undefined || read.adapter === "text" || GROUPS.get(read.adapter) !== "judged") {
 			continue;
 		}
+		const symbols = new Set(read.definitions.map((each) => each.symbol));
 		const hidden = read.definitions.filter(
 			(each) =>
-				!each.exposed && each.kind === "value" && each.type !== true && !each.symbol.includes("."),
+				!each.exposed &&
+				each.kind === "value" &&
+				each.type !== true &&
+				!heldBy(each.symbol, symbols),
 		);
 		logic += (read.logic ?? 0) + hidden.length;
 	}
