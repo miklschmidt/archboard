@@ -40,10 +40,16 @@ function isForbiddenAreaImport(importer: string, imported: string): boolean {
 	return AREA_IMPORT_DENIALS[importer]?.has(imported) === true;
 }
 
+/**
+ * The refusal of an import against the area directions, which states the directions of
+ * `AREA_IMPORT_DENIALS` so that whoever meets it knows where the code may go.
+ */
+const AREA_DIRECTION_MESSAGE =
+	"This import goes against the area directions. An area is the first folder below src/ or tests/ of a package or an app, and the directions hold within and between them: shared imports no other area, runtime and server import shared and each other, cli imports shared and runtime, and ui imports shared only. Move the code into an area that may import it, or the part both need into shared.";
+
 const importBoundaries = createRule(
 	{
-		noForbiddenAreaImport:
-			"This import crosses a forbidden Archboard area dependency. Use the documented direction in docs/agents/boundaries.md.",
+		noForbiddenAreaImport: AREA_DIRECTION_MESSAGE,
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
@@ -292,6 +298,7 @@ const absoluteImports = createRule(
 );
 
 export {
+	AREA_DIRECTION_MESSAGE,
 	absoluteImports,
 	importBoundaries,
 	moduleEntrypoints,

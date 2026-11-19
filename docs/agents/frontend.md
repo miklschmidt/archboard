@@ -1,9 +1,7 @@
 # Frontend code structure
 
 If you change browser UI, apply these rules. They adapt the structure and React
-ownership patterns of Platform.Frontend to Archboard. [boundaries.md](boundaries.md)
-remains the authority for module interfaces, imports and test ownership.
-These rules give a predictable place to find a workflow. You can then change
+ownership patterns of Platform.Frontend to Archboard. These rules give a predictable place to find a workflow. You can then change
 that workflow and keep its state out of the application root.
 
 ## Placement
@@ -294,7 +292,7 @@ same source, tests included. Nothing authored reaches React through its
 namespace, in a value or a type position. The documented generated/vendor files
 keep the exemption that they already have in `.oxlintrc.jsonc`.
 
-Keep tests under the owners in [boundaries.md](boundaries.md), with names that
+Keep each test under the package or app whose code it tests, with names that
 truthfully identify the contract that they test. For runtime validation, follow
 [test-suite.md](test-suite.md). To choose the cheapest credible owner, follow
 the repository test policy. Fix React warnings in touched workflows. For

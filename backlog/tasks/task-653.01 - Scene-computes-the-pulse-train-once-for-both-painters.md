@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T16:20:00Z'
-updated_date: '2026-11-19T16:23:00Z'
+updated_date: '2026-11-19T16:25:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -52,3 +52,9 @@ Candidate 2 of the archboard-deepen run. crates/archboard-scene/src/scene is wid
 8. Width gate: archboard check code --fail-shallow-modules shows no finding on Scene.
 9. Records: Pulse train in CONTEXT.md, ADR (painter owns the clock, scene maps a moment to a position), test-suite.md ownership line.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Proposal: sL6y1FLr
+<!-- SECTION:NOTES:END -->

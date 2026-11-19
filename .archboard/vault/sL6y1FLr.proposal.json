@@ -1,0 +1,111 @@
+{
+  "id": "sL6y1FLr",
+  "name": "Deepen the wide and shallow modules",
+  "summary": "The modules that INTERFACE_WIDE and MODULE_SHALLOW name get narrow interfaces over deep implementations (archboard-deepen, TASK-653)",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-19T16:23:53.876Z",
+  "predecessor": "LzXvT7U7",
+  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
+  "baseline": "8716a9f9487cb058ac4ed7907eb21565c74fe66f",
+  "changes": [
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#94vxmg9V",
+      "kind": "module",
+      "value": {
+        "order": 10,
+        "name": "Pulse train",
+        "kind": "function",
+        "responsibility": "Computes a traffic mark's pulse train once for every painter: its legs, glow layers, gradient stops and each leg's motion",
+        "description": "pulse_train(&TrafficMark) answers the train as plain data with public fields: the core, span, repeats, cycle, stops, four glow layers and the legs, each with its bar and its motion, steady or turning. It follows the SVG painter's math operation for operation, so SVG bytes stay identical. pulse_slide(&LegMotion, seconds) maps a moment to a leg's position: the painter owns the clock and the scene answers where a pulse is at that moment (ADR 0071). pulse_breadth(line_width) and turn_distance(lengths) answer the two pulse numbers Painting needs. The constants, the leg cutting and the former traffic functions stay private.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/scene/traffic.rs",
+          "symbol": "pulse_train"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#94vxmg9V"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#94vxmg9V",
+      "placement": {
+        "holder": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#U4Q7nid1",
+      "field": "description",
+      "value": "The scene contract: typed data that every painter and the TypeScript bindings read. It computes a traffic mark's pulse train once, so the SVG and GPU painters share one set of numbers and keep only their clocks and their drawing. Its six submodules are private, and each name is reachable through one path. Of the builders it keeps Group::new, Transform::translate and Text::set; the setters and the producer-only constructors belong to Painting."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+      "field": "description",
+      "value": "Owns the producer builders: the setters and the producer-only constructors of shapes, strokes, text and colours, private to Painting, so the scene's other callers never learn them. It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WUJMjQhq",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "a mark's pulse breadth and an exchange's turn distance",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#WUJMjQhq",
+        "to": "vKEsyHFk#94vxmg9V"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WUJMjQhq",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6OgjwUVz",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "each traffic mark's pulse train, spelled as SVG",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#6OgjwUVz",
+        "to": "vKEsyHFk#94vxmg9V"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6OgjwUVz",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#EEuLPVrA",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "each mark's pulse train and a leg's slide at the frame",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#EEuLPVrA",
+        "to": "vKEsyHFk#94vxmg9V"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#EEuLPVrA",
+      "placement": {
+        "holder": "vKEsyHFk#NFwqWgrm"
+      }
+    }
+  ]
+}
