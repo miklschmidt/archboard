@@ -50,6 +50,7 @@
 import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { GO_FILE } from "#runtime/code-facts/go/operations/go-resolution.ts";
 import { PYTHON_FILE } from "#runtime/code-facts/python/operations/python-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
@@ -76,6 +77,7 @@ const GROUPS: ReadonlyMap<
 > = new Map([
 	["typescript", "judged"],
 	["python", "judged"],
+	["go", "judged"],
 	["terraform", "infrastructure"],
 	["nix", "infrastructure"],
 	["helm", "infrastructure"],
@@ -88,6 +90,7 @@ const GROUPS: ReadonlyMap<
 const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["typescript", TYPESCRIPT_FILE],
 	["python", PYTHON_FILE],
+	["go", GO_FILE],
 ]);
 
 /** A module's exports, by kind. */
