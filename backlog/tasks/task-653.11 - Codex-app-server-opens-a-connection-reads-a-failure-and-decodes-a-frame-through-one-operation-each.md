@@ -3,10 +3,10 @@ id: TASK-653.11
 title: >-
   Codex app-server opens a connection, reads a failure and decodes a frame
   through one operation each
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T17:33:00Z'
+updated_date: '2026-11-19T22:46:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,4 +46,7 @@ Candidate 8 of the archboard-deepen run. packages/codex-app-server is wide (25 n
 
 <!-- SECTION:NOTES:BEGIN -->
 Proposal: sL6y1FLr
+
+Branch deepen/653-11-codex-app-server. Commit e4195f1f39 (protocol): decodeFrame/decodeFrameBody/encodeFrame; the protocol folder is used outside through exactly the eight settled names; precedence test in transport-malformed-routing.test.ts. Commit 9d7a2a2b94 (connection, checkpoint): openCodexConnection/openCodexSession, voice kernel is the CodexConnection, replaceIdentity and the ?? fallbacks gone (owner update), createCodexProcess absorbs createProcessOwner; test:modules 5372 pass, types clean.
+BLOCKED on D10: 16 ui-area test files (voice tests/ui 8, workbench tests/ui 7, workbench-example tests/ui 1) minted identities through createIdentityAuthorities on the shared ./identity entry. The connection is a runtime entry, and the import-boundaries lint (ui imports shared only) refuses it from tests/ui. Options: (A) keep createIdentityAuthorities() on ./identity for ui tests: width 17 and a test-only export; (B) ui tests stop minting through an authority: voice ui tests use the browser's own wire identity context (src/ui/wire/clients/wire-identity.ts, the production browser seam), workbench and example ui tests brand fixture strings; (C) another design. Awaiting the advisors. Commit 3 (failures) not started.
 <!-- SECTION:NOTES:END -->
