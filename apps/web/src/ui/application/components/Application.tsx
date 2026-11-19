@@ -17,10 +17,14 @@ import {
 
 import { LiveBinding } from "#ui/application/state/live-binding.ts";
 import { livePanesOver } from "#ui/application/rules/live-panes.ts";
-import { codeTargetShellNotice, presentationNotice } from "#ui/application/rules/notices.ts";
+import {
+	codeTargetShellNotice,
+	presentationNotice,
+	unreachableCheckoutNotice,
+} from "#ui/application/rules/notices.ts";
 import { paneEvents } from "#ui/application/rules/pane-events.ts";
 import { recordFor, type PaneRecords } from "#ui/application/rules/pane-records.ts";
-import { createShellActions, vaultOf } from "#ui/application/clients/shell-actions.ts";
+import { checkoutOf, createShellActions, vaultOf } from "#ui/application/clients/shell-actions.ts";
 import {
 	addressingOver,
 	announcingViews,
@@ -78,6 +82,8 @@ import { Shell } from "#ui/shell/components/Shell.tsx";
 import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
 import type { OpenStart } from "#ui/panes/reading-routing/rules/start.ts";
 import { ModelDraftContext } from "#ui/architecture-drawing/model-reader/state/draft.ts";
+import { LanguageServerFixContext } from "#ui/architecture-drawing/model-reader/state/language-server-fix.ts";
+import { languageServerSetup } from "@archboard/workspace/language-server-setup";
 import { useRouter } from "@tanstack/react-router";
 import {
 	type SettingsSurface,
@@ -457,18 +463,28 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	// The bell speaks for the repository in front of the person.
 	const diagnosed = activeVault ?? start.first;
 	const { ask, draft, panel } = agent;
-	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
-	// The server tells the workbench socket of the switch before it answers, but that answer can
-	// arrive first. A read on the socket comes after the news, so the repair is composed for the
-	// conversation shown now, not refused because the workbench moved under it.
-	const askAboutDiagnosed = useCallback(
-		(text: string): void => {
-			void activate(livePanes.active.status.paneId)
-				.then(() => transport?.refresh())
-				.catch(() => undefined)
-				.then(() => ask(text));
+	// A fix goes to the workhorse of the checkout it is about, so that checkout is shown first: the
+	// pane's own, or one named. The server tells the workbench socket of the switch before it
+	// answers, but that answer can arrive first. A read on the socket comes after the news, so the
+	// fix is composed for the conversation shown now, not refused because the workbench moved under
+	// it. A named checkout the tab cannot show gets no message, which would go to another one.
+	const askIn = useCallback(
+		async (text: string, checkout?: string): Promise<boolean> => {
+			const { paneId } = livePanes.active.status;
+			const shown = await activate(paneId, checkout === undefined ? {} : { checkout });
+			if (!shown && checkout !== undefined) return false;
+			await transport?.refresh().catch(() => undefined);
+			ask(text);
+			return true;
 		},
 		[activate, livePanes, ask, transport],
+	);
+	// A repair goes to the workhorse of the repository diagnosed.
+	const askAboutDiagnosed = useCallback(
+		(text: string): void => {
+			void askIn(text);
+		},
+		[askIn],
 	);
 	const diagnostics = useMemo(
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
@@ -485,6 +501,32 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		},
 		[activate, livePanes, panel, draft],
 	);
+	// A missing language server is set up by the agent of the checkout that misses it, with the brief
+	// that `archboard init` gives too (TASK-646.09).
+	const serverFix = useMemo<ContextType<typeof LanguageServerFixContext>>(
+		() => ({
+			/**
+			 * The server a language needs, as the brief names it.
+			 * @param language The language.
+			 * @returns The server, if the brief knows the language.
+			 */
+			server: (language) => languageServerSetup([language]).needs[0]?.server,
+			/**
+			 * Ask the agent of the repository's checkout to set up these servers, or say why not.
+			 * @param repo The repository.
+			 * @param languages Its languages without a server.
+			 */
+			fix: (repo, languages): void => {
+				const checkout = checkoutOf(catalogNow.read(), repo);
+				const { brief } = languageServerSetup(languages);
+				void (checkout === null ? Promise.resolve(false) : askIn(brief, checkout)).then((asked) => {
+					if (!asked) raise(unreachableCheckoutNotice(repo));
+					return undefined;
+				});
+			},
+		}),
+		[catalogNow, askIn, raise],
+	);
 	useLastReading();
 
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
@@ -498,27 +540,29 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	return (
 		<ModelArrivalContext value={addressing.modelArriving}>
 			<ModelDraftContext value={fillDraft}>
-				<OrbStageProvider>
-					{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
-					<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-						<AnswerFilesContext value={openAnswerFile}>
-							<Tooltip.Provider>
-								<Shell
-									view={view}
-									actions={actions}
-									diagnostics={diagnostics}
-									voiceControls={slots.voiceControls}
-									agentDock={slots.dock}
-									agentPanel={slots.panel}
-									agentPanelOpen={agent.panel.open}
-									onAgentPanelClose={agent.panel.closePanel}
-									attachStage={fullscreen.attachStage}
-								/>
-								<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
-							</Tooltip.Provider>
-						</AnswerFilesContext>
-					</VoiceSurfaceProvider>
-				</OrbStageProvider>
+				<LanguageServerFixContext value={serverFix}>
+					<OrbStageProvider>
+						{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+						<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+							<AnswerFilesContext value={openAnswerFile}>
+								<Tooltip.Provider>
+									<Shell
+										view={view}
+										actions={actions}
+										diagnostics={diagnostics}
+										voiceControls={slots.voiceControls}
+										agentDock={slots.dock}
+										agentPanel={slots.panel}
+										agentPanelOpen={agent.panel.open}
+										onAgentPanelClose={agent.panel.closePanel}
+										attachStage={fullscreen.attachStage}
+									/>
+									<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
+								</Tooltip.Provider>
+							</AnswerFilesContext>
+						</VoiceSurfaceProvider>
+					</OrbStageProvider>
+				</LanguageServerFixContext>
 			</ModelDraftContext>
 		</ModelArrivalContext>
 	);

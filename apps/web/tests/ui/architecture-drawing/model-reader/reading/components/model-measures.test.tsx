@@ -465,7 +465,6 @@ function measured(
 		languages: languages.judged,
 		unjudged: languages.unjudged,
 		exports,
-		names: [],
 		logic: exports.functions * 3,
 	};
 }

@@ -38,7 +38,7 @@ import { launchOpener, resolveOpenerCommand, type LaunchResult } from "#server/l
 import { resolveInVault } from "#server/projections/resolve-target.ts";
 import { parseActivationRequest } from "#server/projections/activation-request.ts";
 import { canonicalModelTarget } from "#server/projections/model-target.ts";
-import { namedPathBinding } from "#server/projections/named-path.ts";
+import { requestedPathBinding } from "#server/projections/named-path.ts";
 import { symbolLine } from "@archboard/code-intel/code-facts";
 import {
 	planOpenerCommand,
@@ -237,8 +237,8 @@ async function openBound(
 }
 
 /**
- * Opens a file an agent's answer names, at the line it names. The answer read the checkout's
- * working tree, so a failure offers no GitHub link in its place.
+ * Opens a file an agent's answer or a code export names, at the line that defines the export now,
+ * else at the line it names. Both read the working tree, so a failure offers no GitHub link.
  * @param request The file and its line.
  * @param vault The explicitly addressed vault, whose checkouts the file must be in.
  * @param signal The owning request cancellation signal.
@@ -253,14 +253,14 @@ async function openNamedPath(
 	response: Response,
 	dependencies: Pick<OpeningDependencies, "resolveTarget" | "launch">,
 ): Promise<void> {
-	const named = namedPathBinding(vault, request.path);
+	const named = requestedPathBinding(vault, request);
 	if (!named.ok) return sendFailure(response, named);
 	const target = await dependencies.resolveTarget(named.binding, signal, vault);
 	if (!target.ok) return sendFailure(response, target);
 	const current = readOpenerSelection();
 	if (!current.ok) return sendFailure(response, current);
 	const launched = await openInEditor(current.selection, target.target, {
-		line: request.line,
+		line: (await symbolLine(named.binding, target, signal)) ?? request.line,
 		launch: dependencies.launch,
 	});
 	if (!launched.ok) return sendFailure(response, launched);
