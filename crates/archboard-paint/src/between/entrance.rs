@@ -82,7 +82,7 @@ fn spread(keys: &[Option<f64>], first: f64, last: f64) -> Vec<f64> {
 
 /// A picture coming in part by part, prepared once and sampled every frame.
 #[derive(Clone, Debug)]
-pub struct Entrance {
+pub(crate) struct Entrance {
     plan: Plan,
     landed: Vec<Item>,
     /// Where the entrance ends, as a share of its time: past 1, while a spark runs.
@@ -339,7 +339,7 @@ fn movers(
 impl Entrance {
     /// Prepare the entrance of a scene, taking over from a last picture if there
     /// is one.
-    pub fn new(scene: &Scene, phases: &Phases, handover: Option<Handover<'_>>) -> Entrance {
+    pub(crate) fn new(scene: &Scene, phases: &Phases, handover: Option<Handover<'_>>) -> Entrance {
         let groups = found(scene);
         let middle = middle_of_scene(scene);
         let last = Last::of(handover);
@@ -429,7 +429,7 @@ impl Entrance {
 
     /// The picture at a progress from 0 to its length, as a scene body. At its
     /// length it is the scene's body.
-    pub fn at(&self, progress: f64) -> Vec<Item> {
+    pub(crate) fn at(&self, progress: f64) -> Vec<Item> {
         if progress >= self.length {
             self.landed.clone()
         } else {

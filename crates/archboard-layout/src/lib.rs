@@ -25,8 +25,8 @@ mod track;
 mod viz;
 
 pub use architecture::{
-    Content, Edge, Engine, Measured, Node, Solver, Standings, Unsolved, draw,
-    lay_out_across, shown_drawing,
+    Content, Edge, Engine, Measured, Node, Solver, Standings, Unsolved, draw, lay_out_across,
+    shown_drawing,
 };
 pub use blocks::place::lay_out_picture;
 pub use constants::fit_in;

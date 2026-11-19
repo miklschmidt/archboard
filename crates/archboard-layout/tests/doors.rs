@@ -16,9 +16,7 @@ impl Solver for Here {
     type Solve<'s> = Ready<Result<String, Unsolved>>;
 
     fn solve(&self, graph: String) -> Self::Solve<'_> {
-        ready(
-            lay_out_picture(&graph, &mut archboard_graphviz::InCore).map_err(Unsolved::Failed),
-        )
+        ready(lay_out_picture(&graph, &mut archboard_graphviz::InCore).map_err(Unsolved::Failed))
     }
 }
 

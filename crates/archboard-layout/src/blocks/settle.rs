@@ -22,12 +22,12 @@ use crate::track::channels::port_reach;
 use crate::track::scene::Map;
 
 use super::laid::{Laid, LaidMap, SAME, corners};
+use super::legacy::insets_of;
 use super::lone::card_in;
 use super::packing::{
     PACK_GAP, PackLayout, Packing, Span, TRUNK_CLEARANCE, nearest_free, open_stretch,
     separate_facing_ports, spread,
 };
-use super::legacy::insets_of;
 use super::tree::{Block, BlockId, BlockTree, Line, Nesting, header_of};
 
 /// A box's middle across.

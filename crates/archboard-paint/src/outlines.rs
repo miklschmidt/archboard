@@ -10,14 +10,14 @@ use kurbo::BezPath;
 
 /// The outlines a painter keeps from frame to frame.
 #[derive(Clone, Debug, Default)]
-pub struct Outlines {
+pub(crate) struct Outlines {
     glyphs: HashMap<(Face, u32), Rc<BezPath>>,
     icons: HashMap<String, Rc<[BezPath]>>,
 }
 
 impl Outlines {
     /// Add icons to what a painter knows, each as its SVG path data.
-    pub fn learn_icons(&mut self, icons: &BTreeMap<String, Vec<String>>) {
+    pub(crate) fn learn_icons(&mut self, icons: &BTreeMap<String, Vec<String>>) {
         for (name, data) in icons {
             let paths: Vec<BezPath> = data
                 .iter()
