@@ -7,7 +7,7 @@
 // the graph's clock are one count. An event is stamped with the graph's clock
 // when it happens, which is at most one render callback from the sound heard
 // then, well under one frame of video. What the voice says is the exception: the
-// browser holds the voice for `durationMs("recording.voiceBuffer")` before it plays it, and
+// browser holds the voice for `"recording.voiceBuffer"` before it plays it, and
 // the words are not held, so a line is stamped that much after it arrives, when
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.

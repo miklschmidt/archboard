@@ -4,7 +4,7 @@
 // The voice is a WebRTC track. Its packets come unevenly at the start of each sentence, and the
 // browser's conversational buffer then runs dry: it makes up sound or stretches what it has,
 // which a listener hears as a call with bad reception. Nobody talks back to a recording, so it
-// trades latency for an unbroken voice (`durationMs("recording.voiceBuffer")`).
+// trades latency for an unbroken voice (`"recording.voiceBuffer"`).
 
 import { durationMs } from "@archboard/timing";
 import type { Talk } from "@archboard/walkthrough/talk";

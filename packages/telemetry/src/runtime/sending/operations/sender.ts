@@ -152,7 +152,7 @@ async function runRound(post: PostEvent): Promise<void> {
 }
 
 /**
- * Start the sender: one round now, then one every `durationMs("telemetry.round")`. A round never throws and
+ * Start the sender: one round now, then one every `"telemetry.round"`. A round never throws and
  * never keeps the process alive.
  * @param post Posts one event. The server gives none, and the sender posts to PostHog.
  * @returns Stops the sender.

@@ -21,7 +21,7 @@ type PostResult = "sent" | "refused" | "failed";
 type PostEvent = (event: CaptureEvent) => Promise<PostResult>;
 
 /**
- * Post one event to PostHog, within `durationMs("telemetry.send")`.
+ * Post one event to PostHog, within `"telemetry.send"`.
  * @param event The event.
  * @returns `sent` for 2xx, `refused` for another 4xx, and `failed` for anything else.
  */
