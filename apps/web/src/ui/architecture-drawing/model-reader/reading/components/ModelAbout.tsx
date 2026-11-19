@@ -43,6 +43,7 @@ import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-rea
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import { useStateTimeline } from "#ui/architecture-drawing/model-reader/reading/hooks/use-state-timeline.ts";
 import { modulePlaces } from "#ui/architecture-drawing/model-reader/reading/rules/module-places.ts";
+import type { CodeRead } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 import type { StateTimeline } from "#ui/architecture-drawing/model-reader/reading/rules/state-timeline.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
@@ -53,6 +54,8 @@ interface ModelAboutProps extends Pick<
 > {
 	/** The code pass that read the reading on screen, or null when none did. */
 	readonly code: ModelCodeReading | null;
+	/** How the read of the remembered code passes stands. */
+	readonly codeRead: CodeRead;
 	/** What the reading's state says of itself, which the first surface leaves out. */
 	readonly overview: ReactNode;
 	/** Select a subject and show it on the diagram. */
@@ -204,6 +207,7 @@ function exportsSection(props: ScopePageProps): AboutPageSection | null {
 			vault={props.vault}
 			module={module}
 			reading={props.code}
+			read={props.codeRead}
 			onNotice={props.onCodeTargetNotice}
 		/>,
 	);

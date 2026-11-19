@@ -186,8 +186,12 @@ function serving(): { url: string; body: unknown }[] {
 /**
  * Show the code exports of the gateway.
  * @param reading The pass that read the reading on screen, or null.
+ * @param read How the read of the remembered passes stands.
  */
-function showExports(reading: Reading | null): void {
+function showExports(
+	reading: Reading | null,
+	read: ComponentProps<typeof CodeExports>["read"] = "success",
+): void {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	clients.push(client);
 	render(
@@ -198,6 +202,7 @@ function showExports(reading: Reading | null): void {
 				vault: VAULT,
 				module: GATEWAY.id,
 				reading,
+				read,
 				onNotice: selectNothing,
 			}),
 		),
@@ -287,6 +292,14 @@ test("a module no pass measured reads no exports, and says why", () => {
 	cleanup();
 	showExports(null);
 	expect(document.querySelectorAll("[data-slot='code-exports-unread']")).toHaveLength(1);
+	// While the remembered passes are read, after their read failed, and for a reading that is not
+	// the vault on disk, the words say so, and never that no pass read the reading.
+	for (const read of ["pending", "error", "elsewhere"] as const) {
+		cleanup();
+		showExports(null, read);
+		const words = document.querySelector("[data-slot='code-exports-unread']");
+		expect(words?.getAttribute("data-read")).toBe(read);
+	}
 	cleanup();
 	showExports({
 		...pass(),
@@ -314,6 +327,7 @@ function panelExports(
 			model,
 			module: { id: GATEWAY.id, binding: { repo: "example/shop", path: "src/gateway" } },
 			reading: measured(),
+			read: "success",
 			onNotice: selectNothing,
 		}),
 	);

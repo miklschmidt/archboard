@@ -33,7 +33,9 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/code-exports/rules/export-list.ts";
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import {
+	CODE_UNREAD,
 	codeByModule,
+	type CodeRead,
 	type ModuleCode,
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 
@@ -56,6 +58,8 @@ interface CodeExportsProps {
 	readonly module: string;
 	/** The pass that read the reading on screen, or null when none did. */
 	readonly reading: ModelCodeReading | null;
+	/** How the read of the remembered passes stands, which says why no pass stands behind the page. */
+	readonly read: CodeRead;
 	/** Where an open of code tells what went wrong. */
 	readonly onNotice: Notice;
 }
@@ -106,6 +110,7 @@ function ModuleCodeExports(
 				vault={props.vault}
 				module={module}
 				reading={props.reading}
+				read={props.read}
 				onNotice={props.onNotice}
 			/>
 		</ModelPanel.Section>
@@ -125,9 +130,13 @@ function CodeExports(props: CodeExportsProps): JSX.Element {
 	);
 	if (reading === null)
 		return (
-			<Words slot="code-exports-unread">
-				No code check read this version of the reading. The first view of Measures runs one.
-			</Words>
+			<p
+				data-slot="code-exports-unread"
+				data-read={props.read}
+				className="text-body text-muted-foreground max-w-[68ch]"
+			>
+				{CODE_UNREAD[props.read]}
+			</p>
 		);
 	if (code === undefined)
 		return (

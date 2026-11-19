@@ -6,7 +6,7 @@ import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { codeCheckQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import type { CodeCheckReading } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { CodeReadingName } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
-import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
+import type { CodeRead } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 
 /** How the code pass over the reading on screen stands, while no remembered pass read it. */
 type CodeCheckProgress =
@@ -22,16 +22,16 @@ type CodeCheckProgress =
  * @param vault The vault.
  * @param model The reading on screen.
  * @param remembered How the read of the remembered findings stands, and whether one matched.
- * @param remembered.read The status of that read.
+ * @param remembered.read The status of that read, or that the reading is not the vault on disk.
  * @param remembered.matched Whether a remembered pass read this version of the reading.
  * @returns How the pass stands.
  */
 function useCodeCheck(
 	vault: string,
 	model: CodeReadingName,
-	remembered: { readonly read: "pending" | "error" | "success"; readonly matched: boolean },
+	remembered: { readonly read: CodeRead; readonly matched: boolean },
 ): CodeCheckProgress {
-	const preview = !readsVaultOnDisk(model);
+	const elsewhere = remembered.read === "elsewhere";
 	const query = useQuery({
 		...codeCheckQuery(vault, checkedReading(model)),
 		/**
@@ -41,7 +41,6 @@ function useCodeCheck(
 		 * @returns Whether the view can start its first attempt.
 		 */
 		enabled: (pass) =>
-			!preview &&
 			remembered.read === "success" &&
 			!remembered.matched &&
 			pass.state.status === "pending",
@@ -50,7 +49,7 @@ function useCodeCheck(
 	const retry = useCallback((): void => {
 		void refetch();
 	}, [refetch]);
-	return preview ? { status: "unavailable" } : progressOf(query, remembered.read, retry);
+	return elsewhere ? { status: "unavailable" } : progressOf(query, remembered.read, retry);
 }
 
 /**
@@ -86,7 +85,7 @@ function messageOf(error: Error | null): string {
  */
 function progressOf(
 	query: Pick<UseQueryResult, "isFetching" | "isError" | "isSuccess" | "error">,
-	read: "pending" | "error" | "success",
+	read: Exclude<CodeRead, "elsewhere">,
 	retry: () => void,
 ): CodeCheckProgress {
 	if (query.isFetching) return { status: "checking" };

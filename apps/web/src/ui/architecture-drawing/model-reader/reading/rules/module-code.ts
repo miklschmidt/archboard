@@ -8,6 +8,21 @@ type Remembered = NonNullable<RememberedFindings["models"]>[number];
 type Depth = NonNullable<Remembered["depth"]>[number];
 type Skip = NonNullable<Remembered["skipped"]>[number];
 
+/**
+ * How the read of the remembered passes stands, or that the reading is not the vault on disk,
+ * which no pass reads.
+ */
+type CodeRead = "pending" | "error" | "success" | "elsewhere";
+
+/** What stands where no remembered pass read the reading, by how the read stands. */
+const CODE_UNREAD: Readonly<Record<CodeRead, string>> = {
+	pending: "Reading the last code check…",
+	error: "The last code check could not be read from the Archboard server.",
+	success:
+		"No code check has read this version of the reading. Where the map and the code disagree runs one, and so does archboard check code.",
+	elsewhere: "The code check reads the vault, and this reading is not in it.",
+};
+
 /** What the code pass says of one module. */
 type ModuleCode =
 	| {
@@ -212,10 +227,12 @@ function missingServers(reading: Remembered): readonly MissingServers[] {
 }
 
 export {
+	CODE_UNREAD,
 	codeByModule,
 	languageName,
 	missingServers,
 	notJudgedWords,
+	type CodeRead,
 	type MissingServers,
 	type ModuleCode,
 };
