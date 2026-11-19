@@ -10,10 +10,49 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/panes/services/pane-sockets.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Zse70SS2",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "forget every socket and pane when the server stops",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "forgetDisplay"
+      },
+      "id": "vKEsyHFk#WHDmDolo",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "accept and close the pane's Codex browser",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "acceptCodexBrowser"
+      },
+      "id": "vKEsyHFk#Tr8wcPNp",
+      "to": "vKEsyHFk#OY4JPr8G"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "release what waits on a closed pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "notePaneClosed"
+      },
+      "id": "vKEsyHFk#qwXl5RMO",
+      "to": "vKEsyHFk#r2iFMYJk"
+    },
     {
       "order": 19000,
       "kind": "call",
@@ -26,45 +65,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
-    },
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "keep each socket, its vault and its pane on the books",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
-        "symbol": "forgetDisplay"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#WHDmDolo"
-    },
-    {
-      "order": 200,
-      "kind": "call",
-      "label": "accept and close the pane's Codex browser",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
-        "symbol": "acceptCodexBrowser"
-      },
-      "to": "vKEsyHFk#OY4JPr8G",
-      "id": "vKEsyHFk#Tr8wcPNp"
-    },
-    {
-      "order": 300,
-      "kind": "call",
-      "label": "release what waits on a closed pane",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
-        "symbol": "notePaneClosed"
-      },
-      "to": "vKEsyHFk#r2iFMYJk",
-      "id": "vKEsyHFk#qwXl5RMO"
     }
   ]
 }

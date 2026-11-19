@@ -89,28 +89,44 @@
                   }
                 },
                 {
-                  "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
-                  "from": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-                  "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                  "label": "when that vault is gone: its repository's chosen checkout",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/server/request/services/vault.ts",
-                    "symbol": "placeOfVault"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
-                  "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                  "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-                  "label": "a vault to put it in, or none",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/server/request/services/vault.ts",
-                    "symbol": "placeInstead"
-                  }
+                  "id": "vKEsyHFk/Oi6SBIAM#lbMwIQ2e",
+                  "kind": "decision",
+                  "question": "Does it name an absolute vault the server cannot read?",
+                  "alternatives": [
+                    {
+                      "label": "no",
+                      "steps": []
+                    },
+                    {
+                      "label": "yes",
+                      "steps": [
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
+                          "from": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                          "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                          "label": "the vault of its repository's chosen checkout",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/server/request/services/vault.ts",
+                            "symbol": "placeOfVault"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
+                          "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+                          "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+                          "label": "a vault to put it in, or none",
+                          "kind": "return",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "packages/workbench/src/server/request/services/vault.ts",
+                            "symbol": "placeInstead"
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "vKEsyHFk/Oi6SBIAM#rNJVEA2C",
@@ -121,16 +137,16 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/workbench/src/server/request/services/vault.ts",
-                    "symbol": "namedVault"
+                    "symbol": "vaultOfUpgrade"
                   }
                 },
                 {
                   "id": "vKEsyHFk/Oi6SBIAM#maZONSSM",
                   "kind": "decision",
-                  "question": "Can the server read the vault the socket names?",
+                  "question": "Did the upgrade get a vault?",
                   "alternatives": [
                     {
-                      "label": "it names none, or no directory",
+                      "label": "none",
                       "steps": [
                         {
                           "id": "vKEsyHFk/Oi6SBIAM#UXFumNQO",
@@ -147,65 +163,19 @@
                       ]
                     },
                     {
-                      "label": "readable",
+                      "label": "a readable vault",
                       "steps": [
                         {
                           "id": "vKEsyHFk/Oi6SBIAM#hn2Q6jbD",
                           "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
                           "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
-                          "label": "accepted",
+                          "label": "accepted, and its first message names the vault it is in",
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
                             "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
                             "symbol": "acceptWebSocketConnection"
                           }
-                        }
-                      ]
-                    },
-                    {
-                      "label": "its vault is gone",
-                      "steps": [
-                        {
-                          "id": "vKEsyHFk/Oi6SBIAM#lbMwIQ2e",
-                          "kind": "decision",
-                          "question": "Is there a readable vault to put it in?",
-                          "alternatives": [
-                            {
-                              "label": "none",
-                              "steps": [
-                                {
-                                  "id": "vKEsyHFk/Oi6SBIAM#J5gyfFop",
-                                  "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
-                                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
-                                  "label": "refused: VAULT_UNREADABLE",
-                                  "kind": "return",
-                                  "anchor": {
-                                    "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                                    "symbol": "startWebSocketServer"
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "label": "one",
-                              "steps": [
-                                {
-                                  "id": "vKEsyHFk/Oi6SBIAM#h8QBd6aC",
-                                  "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
-                                  "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
-                                  "label": "accepted, and its first message names the vault it is in",
-                                  "kind": "return",
-                                  "anchor": {
-                                    "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                                    "symbol": "sendStartingPlace"
-                                  }
-                                }
-                              ]
-                            }
-                          ]
                         }
                       ]
                     }
