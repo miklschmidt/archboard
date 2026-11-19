@@ -76,7 +76,7 @@ Choose the target modules:
 - If the owner gave a direction, such as a module or a pain point, take it.
 - Otherwise, read `model locality` and take the hotspots and the coupled pairs. A module that changes often repays its deepening soonest.
 
-Start the decision log beside the report, outside the checkout (see [the report](references/report.md#where-it-lives)).
+Start the decision log beside the report, in the ignored artifacts directory (see [the report](references/report.md#where-it-lives)).
 
 Done: the log lists each target module with its evidence: the finding's code and message, the direction, or its locality count.
 
@@ -158,7 +158,7 @@ Put the run's evidence in the pull request that carries its code, in the body or
 - Each advisor's independent ranking from step 4, and what they agreed on.
 - Each decision of step 5, with its reason and who settled it.
 
-The report directory stays outside the checkout. Attach `report.html` only where the host accepts the file.
+The report directory stays in the ignored artifacts directory. Attach `report.html` only where the host accepts the file.
 
 Then tell the owner, in a few lines:
 

@@ -5,9 +5,9 @@ The pictures carry it. Prose stays short and uses the skill's vocabulary and the
 
 ## Where it lives
 
-Make one directory per run outside the checkout: `${TMPDIR:-/tmp}/archboard-deepen-<timestamp>/`.
+Make one directory per run in the repository's ignored artifacts directory: `artifacts/archboard-deepen/<timestamp>/` at the root of the checkout. If `artifacts/` is not ignored yet, add `/artifacts/` to the `.gitignore` first, and commit that line.
 It holds `report.html`, the decision log `decisions.md`, and the rendered pictures.
-Nothing of it lands in the repository.
+Git ignores it, so nothing of it is tracked.
 
 ## The page
 

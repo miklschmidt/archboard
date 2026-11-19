@@ -51,6 +51,7 @@ site before you finish. [The site's README](site/README.md#audit-the-site) gives
 Track authored inputs, including the canonical model in `.archboard/vault`.
 Keep cheaply reproducible output ignored unless it matches an exception below.
 Build output, caches, and generated bindings stay ignored.
+Put the run outputs of agents and tools, such as reports and their pictures, in `artifacts/`, which Git ignores.
 
 Keep these exceptions tracked:
 

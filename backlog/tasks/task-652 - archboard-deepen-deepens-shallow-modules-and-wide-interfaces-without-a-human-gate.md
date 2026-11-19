@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T14:03:00Z'
-updated_date: '2026-11-19T14:12:00Z'
+updated_date: '2026-11-19T14:17:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -79,6 +79,8 @@ Evidence:
 Validation: vp run types, lint:all, format:check, test:modules (5307 pass), test:repository, test:system, site bun run build (after bun site/scripts/paint.ts in a fresh worktree) all pass.
 
 Orchestrator (2026-11-19): AC7 and AC8 came after the implementer started. Added to SKILL.md: Advisors step 2 reads docs/agents/advisors.md or the repository's agent-docs advisors file, with the fallback to two model families and a suggestion to add the file; step 8 puts the candidate table, uploaded pictures, rankings and decisions in the pull request body or a comment, never in the repository, attaching report.html only where the host accepts it. skill-links test: 5 pass.
+
+Owner (2026-11-19): run outputs go in a repository-local, Git-ignored artifacts/ directory. The skill writes each run to artifacts/archboard-deepen/<timestamp>/ and adds /artifacts/ to .gitignore when it is missing; this repository ignores /artifacts/ and AGENTS.md says so.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
