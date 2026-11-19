@@ -30,6 +30,15 @@
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
 // the kind of each export: TypeScript.
+//
+// It counts the exports of a Terraform module, a Nix flake and a Helm chart
+// by kind too, and judges none of them (TASK-646.13): a caller sets a
+// variable and reads an output or a value by design, and Terraform keeps its
+// own rules (terraform-modules.ts). Their adapters name each name's kind: a
+// flake output that is a function is a function, and every other output,
+// variable and value is a value. A flake output or a chart value is a path,
+// and only a name at its end is an export: `packages.x86_64-linux` and
+// `image` only group the names below them.
 
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
@@ -47,11 +56,22 @@ import {
 } from "#runtime/module-depth/operations/name-findings.ts";
 
 /**
- * The adapters that name the kind of each export, whose modules this part
- * judges, and the files each reads: only an unread file of a name's language
- * can hold a use of it.
+ * What this part does with the names each adapter exposes: those of an adapter
+ * that names the kind of each export it judges, and those of an
+ * infrastructure adapter it only counts.
  */
-const JUDGED: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
+const GROUPS: ReadonlyMap<SyntaxFacts["adapter"], keyof Omit<CountedNames, "languages">> = new Map([
+	["typescript", "judged"],
+	["terraform", "infrastructure"],
+	["nix", "infrastructure"],
+	["helm", "infrastructure"],
+]);
+
+/**
+ * The files each judged adapter reads: only an unread file of a name's
+ * language can hold a use of it.
+ */
+const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["typescript", TYPESCRIPT_FILE],
 ]);
 
@@ -110,24 +130,54 @@ function kindOf(definition: Definition): ExportKind {
 	return definition.type === true ? "type" : definition.kind;
 }
 
+/** The names a module exposes that this part counts, each once, and the adapters that read them. */
+interface CountedNames {
+	/** The names of a judged language. */
+	readonly judged: readonly ExposedName[];
+	/** The names of an infrastructure adapter. */
+	readonly infrastructure: readonly ExposedName[];
+	readonly languages: readonly SyntaxFacts["adapter"][];
+}
+
 /**
- * The names of a module that a judged language exposes, each once, and those languages.
+ * The names of a module that a judged or an infrastructure adapter exposes,
+ * each once, and those adapters.
  * @param reading The module.
  * @returns The names, and the adapters that read them.
  */
-async function judgedNames(
-	reading: DepthReading,
-): Promise<{ readonly names: ExposedName[]; readonly languages: SyntaxFacts["adapter"][] }> {
-	const names = new Map<string, ExposedName>();
+async function countedNames(reading: DepthReading): Promise<CountedNames> {
+	const groups = {
+		judged: new Map<string, ExposedName>(),
+		infrastructure: new Map<string, ExposedName>(),
+	};
 	const languages = new Set<SyntaxFacts["adapter"]>();
 	for (const name of reading.exposure.exposed) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await reading.facts.read(reading.checkout, name.path);
-		if (read === undefined || read.adapter === "text" || !JUDGED.has(read.adapter)) continue;
+		if (read === undefined || read.adapter === "text") continue;
+		const group = GROUPS.get(read.adapter);
+		if (group === undefined) continue;
 		languages.add(read.adapter);
+		const names = groups[group];
 		if (!names.has(name.name)) names.set(name.name, name);
 	}
-	return { names: [...names.values()], languages: [...languages] };
+	return {
+		judged: [...groups.judged.values()],
+		infrastructure: [...groups.infrastructure.values()],
+		languages: [...languages],
+	};
+}
+
+/**
+ * The infrastructure names at the end of their paths: those no other name extends.
+ * @param names The infrastructure names.
+ * @returns Those that are exports.
+ */
+function pathEnds(names: readonly ExposedName[]): ExposedName[] {
+	return names.filter(
+		(name) =>
+			!names.some((other) => other.path === name.path && other.name.startsWith(`${name.name}.`)),
+	);
 }
 
 /**
@@ -148,29 +198,35 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
 }
 
 /**
- * The module's exports by kind: its top-level names, and the public methods of its classes.
- * @param names The judged names.
- * @returns The counts, and each export with its kind, in the order the module exports them.
+ * The module's exports by kind: the top-level names of its judged languages,
+ * the public methods of their classes, and the names at the end of their
+ * paths of its infrastructure.
+ * @param names The counted names.
+ * @returns The counts, and each judged export with its kind, in the order the module exports them.
  */
-function countExports(names: readonly ExposedName[]): {
+function countExports(names: CountedNames): {
 	readonly counts: ExportCounts;
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
 } {
-	const top = names
-		.filter((name) => topLevel(name, names))
+	const top = names.judged
+		.filter((name) => topLevel(name, names.judged))
 		.map((name) => [name, kindOf(name.definition)] as const);
+	const counted = [
+		...top,
+		...pathEnds(names.infrastructure).map((name) => [name, kindOf(name.definition)] as const),
+	];
 	const classes = ofKind(top, "class");
-	const judged = names.flatMap((name): (readonly [ExposedName, NameKind])[] => {
-		if (topLevel(name, names)) return [[name, kindOf(name.definition)]];
+	const judged = names.judged.flatMap((name): (readonly [ExposedName, NameKind])[] => {
+		if (topLevel(name, names.judged)) return [[name, kindOf(name.definition)]];
 		return methodOf(name, classes) ? [[name, "method"]] : [];
 	});
 	return {
 		counts: {
-			functions: ofKind(top, "function").length,
+			functions: ofKind(counted, "function").length,
 			classes: classes.length,
 			methods: judged.filter(([, kind]) => kind === "method").length,
-			values: ofKind(top, "value").length,
-			types: ofKind(top, "type").length,
+			values: ofKind(counted, "value").length,
+			types: ofKind(counted, "type").length,
 		},
 		judged,
 	};
@@ -200,7 +256,9 @@ async function logicOf(reading: DepthReading): Promise<number> {
 	for (const file of reading.files) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await reading.facts.read(reading.checkout, file);
-		if (read === undefined || read.adapter === "text" || !JUDGED.has(read.adapter)) continue;
+		if (read === undefined || read.adapter === "text" || GROUPS.get(read.adapter) !== "judged") {
+			continue;
+		}
 		const hidden = read.definitions.filter(
 			(each) =>
 				!each.exposed && each.kind === "value" && each.type !== true && !each.symbol.includes("."),
@@ -252,9 +310,9 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
  * @returns The counts, the findings, and the names it judged.
  */
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
-	const { names, languages } = await judgedNames(reading);
+	const names = await countedNames(reading);
 	const { counts, judged } = countExports(names);
-	const files = languages.flatMap((language) => JUDGED.get(language) ?? []);
+	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
 	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
 	const findings: DepthFinding[] = [];
 	const rollUp = new Map<string, boolean>();
@@ -267,8 +325,8 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	}
 	const shallowFinding = shallow(reading, rollUp);
 	return {
-		languages,
-		names: names.map((name) => name.name),
+		languages: names.languages,
+		names: judged.map(([name]) => name.name),
 		exports: counts,
 		logic: await logicOf(reading),
 		findings: shallowFinding === undefined ? findings : [...findings, shallowFinding],
