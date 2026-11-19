@@ -657,7 +657,7 @@ It bundles the four MIT packages into ESM and bundled declarations for each publ
 `tsconfig.voice-package.json` names the sources the declarations come from.
 The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
 The release workflow packs that directory and publishes it to npm ([releasing](releasing.md)).
-`createVoiceAgent` finds the installed `@openai/codex` and proves its exact version with `resolveCodexExecutable` of `@archboard/codex-app-server/process`, unless the host gives `codex.executablePath`, so no host needs that function. Archboard passes `installation().codexLocation` as `codex`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release. Only the server's start check (`server-lifecycle`) and the README asset tools call `resolveCodexExecutable` themselves, through that one door.
+`createVoiceAgent` finds the installed `@openai/codex` and proves its exact version with `resolveCodexExecutable` of `@archboard/codex-app-server/process`, unless the host gives `codex.executablePath`, so a host can let the package find Codex. Archboard passes `installation().codexLocation` as `codex`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release. The example checks an explicit `--codex` path before creating the agent. The example, the server's start check (`server-lifecycle`), and the README asset tools call `resolveCodexExecutable` themselves, through that one door.
 `tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.

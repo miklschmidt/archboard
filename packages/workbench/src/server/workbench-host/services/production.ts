@@ -67,10 +67,14 @@ function createWorkbenchStorage(): VoiceAgentOptions["storage"] {
  * @returns The voice agent options.
  */
 export function createServerVoiceAgentOptions(server: ArchboardWorkbenchServer): VoiceAgentOptions {
-	const storage = createWorkbenchStorage();
-
 	return {
-		storage,
+		/**
+		 * Prepare storage after the voice agent has proved Codex.
+		 * @returns The production workbench storage paths.
+		 */
+		get storage() {
+			return createWorkbenchStorage();
+		},
 		checkouts: server.host.resolveCheckout,
 		identity: ARCHBOARD_AGENT.identity,
 		instructions: ARCHBOARD_AGENT.instructions,

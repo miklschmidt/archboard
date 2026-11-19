@@ -18,15 +18,15 @@ function productionStorage() {
 	const root = mkdtempSync(join(tmpdir(), "archboard-production-storage-"));
 	return withProductionState(root, () => ({
 		root,
-		value: createServerVoiceAgentOptions({
+		storage: createServerVoiceAgentOptions({
 			host: { resolveCheckout: (named: string) => named },
-		} as never),
+		} as never).storage,
 	}));
 }
 
 describe("production Codex storage", () => {
 	test("the servers on a machine share one Codex home, and each port owns its own state", async () => {
-		const { root, value } = productionStorage();
+		const { root, storage } = productionStorage();
 		try {
 			const workbench =
 				process.platform === "darwin"
@@ -40,8 +40,8 @@ describe("production Codex storage", () => {
 				process.env["PORT"] || new URL(defaultArchboardUrl()).port,
 			);
 			expect({
-				rootDirectory: value.storage.directory,
-				ownerDirectory: value.storage.ownerDirectory,
+				rootDirectory: storage.directory,
+				ownerDirectory: storage.ownerDirectory,
 			}).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
 			expect(statSync(owner).mode & 0o777).toBe(0o700);
 			// The coordinator works in a directory of its own, in no checkout, and reads the server's
