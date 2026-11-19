@@ -243,39 +243,4 @@ impl Group {
             items,
         }
     }
-
-    /// The group with words for a reader of the picture's file.
-    #[must_use]
-    pub fn titled(mut self, title: Option<String>) -> Self {
-        self.title = title;
-        self
-    }
-
-    /// The group drawing a subject.
-    #[must_use]
-    pub fn drawing(mut self, subject: Subject) -> Self {
-        self.subject = Some(subject);
-        self
-    }
-
-    /// The group moved and scaled.
-    #[must_use]
-    pub fn moved(mut self, transform: Transform) -> Self {
-        self.transform = Some(transform);
-        self
-    }
-
-    /// The group taking the pointer or not.
-    #[must_use]
-    pub fn pointer(mut self, pointer: Pointer) -> Self {
-        self.pointer = Some(pointer);
-        self
-    }
-
-    /// The group standing with some subjects.
-    #[must_use]
-    pub fn standing_with(mut self, members: Vec<String>) -> Self {
-        self.members = members;
-        self
-    }
 }

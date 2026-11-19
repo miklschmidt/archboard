@@ -18,7 +18,7 @@ use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::presentation::{Camera, Light, Marks, Recede, Shine};
 use crate::stage::Stage;
-use crate::testing::painting;
+use crate::testing::{boxed, filled, painting, shape, stroke, subject_group, traced};
 
 mod kept;
 
@@ -95,7 +95,7 @@ fn plate(x: f64) -> Item {
         width: 100.0 - x,
         height: 40.0,
     };
-    Item::Shape(Shape::rect(Purpose::Plate, rect, None).filled(Token::Border))
+    Item::Shape(filled(Purpose::Plate, rect, Token::Border))
 }
 
 /// A route along a line, with its halo before it.
@@ -111,13 +111,7 @@ fn route(x: f64) -> Vec<Item> {
             },
         },
     ];
-    let line = |purpose| {
-        Item::Shape(
-            Shape::path(purpose, steps.clone())
-                .unfilled()
-                .stroked(Stroke::new(Token::Border, 1.2)),
-        )
-    };
+    let line = |purpose| Item::Shape(traced(purpose, steps.clone(), stroke(Token::Border, 1.2)));
     vec![line(Purpose::Halo), line(Purpose::Line)]
 }
 
@@ -156,8 +150,9 @@ fn a_head_held_down_moves_shows_its_shade_and_draws_last() {
 /// A door with a control: a seat, the hidden light of the control, a glyph.
 fn door() -> Item {
     let light = Shape {
+        fill: Some(Token::Border.into()),
         fill_opacity: Some(0.0),
-        ..Shape::rect(
+        ..boxed(
             Purpose::Plate,
             Rect {
                 x: 2.0,
@@ -167,13 +162,16 @@ fn door() -> Item {
             },
             Some(2.0),
         )
-        .filled(Token::Border)
     };
     let control = Item::Group(Group::new(
         Role::Toggle(Toggle::Expand),
         vec![plate(1.0), Item::Break, Item::Shape(light), plate(3.0)],
     ));
-    Item::Group(Group::new(Role::Shape, vec![control]).drawing(subject(SubjectKind::Node, "a")))
+    Item::Group(subject_group(
+        Role::Shape,
+        vec![control],
+        subject(SubjectKind::Node, "a"),
+    ))
 }
 
 /// How solid the second shape of the door's control is.
@@ -200,9 +198,11 @@ fn the_light_stays_hidden_on_the_control_of_another_subject() {
 
 #[test]
 fn a_warned_part_wears_its_mark_in_its_top_right_corner_until_it_is_cleared() {
-    let part = Item::Group(
-        Group::new(Role::Shape, vec![plate(0.0)]).drawing(subject(SubjectKind::Node, "a")),
-    );
+    let part = Item::Group(subject_group(
+        Role::Shape,
+        vec![plate(0.0)],
+        subject(SubjectKind::Node, "a"),
+    ));
     let mut stage = stage_of(vec![part]);
     let (bare, _) = frame(&mut stage, 0.0);
     assert_eq!(bare.len(), 1);
@@ -236,7 +236,8 @@ fn dot(x: f64, members: &[&str]) -> Item {
     };
     Item::Shape(Shape {
         members: members.iter().map(|&id| id.to_owned()).collect(),
-        ..Shape::new(Purpose::Line, circle).filled(Token::Border)
+        fill: Some(Token::Border.into()),
+        ..shape(Purpose::Line, circle)
     })
 }
 
@@ -249,9 +250,7 @@ fn bar(x: f64, members: &[&str]) -> Item {
     ];
     Item::Shape(Shape {
         members: members.iter().map(|&id| id.to_owned()).collect(),
-        ..Shape::path(Purpose::Line, steps)
-            .unfilled()
-            .stroked(Stroke::new(Token::Border, 6.0))
+        ..traced(Purpose::Line, steps, stroke(Token::Border, 6.0))
     })
 }
 
@@ -291,12 +290,16 @@ fn a_join_recedes_with_its_lines_and_shows_as_much_as_the_brightest_of_them() {
 
 /// A relationship "e" and a part "n", drawn after it.
 fn line_and_part() -> Stage {
-    let edge = Item::Group(
-        Group::new(Role::Line(None), route(7.0)).drawing(subject(SubjectKind::Edge, "e")),
-    );
-    let part = Item::Group(
-        Group::new(Role::Shape, vec![plate(5.0)]).drawing(subject(SubjectKind::Node, "n")),
-    );
+    let edge = Item::Group(subject_group(
+        Role::Line(None),
+        route(7.0),
+        subject(SubjectKind::Edge, "e"),
+    ));
+    let part = Item::Group(subject_group(
+        Role::Shape,
+        vec![plate(5.0)],
+        subject(SubjectKind::Node, "n"),
+    ));
     let mut stage = stage_of(vec![edge, part]);
     stage.sweep(&HashMap::from([("e".to_owned(), 0.0)]), 100.0, 200.0, 10.0);
     stage
@@ -322,9 +325,11 @@ fn a_sweep_ends_and_the_stage_stops_asking_for_frames() {
 
 #[test]
 fn a_cleared_sweep_stops_asking_for_frames() {
-    let edge = Item::Group(
-        Group::new(Role::Line(None), route(7.0)).drawing(subject(SubjectKind::Edge, "e")),
-    );
+    let edge = Item::Group(subject_group(
+        Role::Line(None),
+        route(7.0),
+        subject(SubjectKind::Edge, "e"),
+    ));
     let mut stage = stage_of(vec![edge]);
     stage.sweep(&HashMap::from([("e".to_owned(), 0.0)]), 100.0, 200.0, 0.0);
     assert!(frame(&mut stage, 10.0).1);
@@ -463,7 +468,7 @@ fn masked_line() -> Painting {
         height: 400.0,
     };
     let cut = |cap| {
-        Shape::path(
+        traced(
             Purpose::Cutout,
             vec![
                 PathStep::Move {
@@ -473,12 +478,17 @@ fn masked_line() -> Painting {
                     to: Point { x: 9.0, y: 0.0 },
                 },
             ],
+            Stroke {
+                cap: Some(cap),
+                ..stroke(Token::Border, 7.0)
+            },
         )
-        .unfilled()
-        .stroked(Stroke::new(Token::Border, 7.0).capped(cap))
     };
-    let mut line =
-        Group::new(Role::Line(None), route(0.0)).drawing(subject(SubjectKind::Edge, "e"));
+    let mut line = subject_group(
+        Role::Line(None),
+        route(0.0),
+        subject(SubjectKind::Edge, "e"),
+    );
     line.mask = Some(MaskId {
         line: "e".to_owned(),
     });
@@ -527,10 +537,11 @@ fn drawn_line(id: &str, x: f64) -> Item {
         },
         kind: "call".to_owned(),
     };
-    Item::Group(
-        Group::new(Role::Line(Some(Box::new(facts))), route(x))
-            .drawing(subject(SubjectKind::Edge, id)),
-    )
+    Item::Group(subject_group(
+        Role::Line(Some(Box::new(facts))),
+        route(x),
+        subject(SubjectKind::Edge, id),
+    ))
 }
 
 #[test]

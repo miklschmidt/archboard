@@ -152,21 +152,9 @@ pub enum Colour {
     },
 }
 
-impl Colour {
-    /// One of the theme's tokens.
-    pub const fn token(token: Token) -> Colour {
-        Colour::Token { token }
-    }
-
-    /// One of the palette's named colours.
-    pub const fn palette(color: PaletteColor) -> Colour {
-        Colour::Palette { color }
-    }
-}
-
 impl From<Token> for Colour {
     fn from(token: Token) -> Self {
-        Colour::token(token)
+        Colour::Token { token }
     }
 }
 
@@ -204,7 +192,7 @@ impl From<&Colour> for Paint {
 
 impl From<Token> for Paint {
     fn from(token: Token) -> Self {
-        Paint::from(Colour::token(token))
+        Paint::from(Colour::Token { token })
     }
 }
 

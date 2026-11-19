@@ -113,6 +113,8 @@ mod tests {
     use archboard_scene::request::NodeAppearance;
     use archboard_scene::scene::{Group, Item, Role, Subject, SubjectKind};
 
+    use crate::testing::subject_group;
+
     fn subject(kind: SubjectKind, id: &str) -> Subject {
         Subject {
             kind,
@@ -134,7 +136,7 @@ mod tests {
     }
 
     fn named(role: Role, kind: SubjectKind, id: &str) -> Item {
-        Item::Group(Group::new(role, Vec::new()).drawing(subject(kind, id)))
+        Item::Group(subject_group(role, Vec::new(), subject(kind, id)))
     }
 
     fn card(id: &str) -> Item {

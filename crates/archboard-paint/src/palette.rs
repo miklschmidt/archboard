@@ -350,7 +350,7 @@ mod tests {
     fn the_dark_theme_keeps_a_token_it_does_not_declare_and_changes_the_ground() {
         let light = Palette::of(Theme::Light);
         let dark = Palette::of(Theme::Dark);
-        let ground = Colour::token(Token::Background);
+        let ground = Colour::from(Token::Background);
         assert_ne!(light.colour(&ground, 1.0), dark.colour(&ground, 1.0));
         assert!(dark.colour(&ground, 1.0).components[3] > 0.99);
     }
@@ -370,7 +370,7 @@ mod tests {
                 Token::DiagramSelection,
                 Token::Primary,
             ] {
-                let colour = palette.colour(&Colour::token(token), 1.0);
+                let colour = palette.colour(&Colour::from(token), 1.0);
                 assert!(colour.components[3] > 0.0, "{token:?} has no colour");
             }
         }

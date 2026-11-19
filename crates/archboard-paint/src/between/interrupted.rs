@@ -4,11 +4,12 @@ use archboard_scene::geometry::{Curve, Segment};
 use archboard_scene::paint::design::rail_gap;
 use archboard_scene::scene::{
     Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, PulseLook, Purpose, Role,
-    Shape, Stroke, Token, TrafficMark,
+    Token, TrafficMark,
 };
 
 use super::testing::{PHASES, card, drawing, line, plate, rect, scene};
 use super::{Between, Entrance, Scene};
+use crate::testing::{stroke, traced};
 
 fn double_line(y: f64) -> Scene {
     let route = vec![
@@ -22,11 +23,11 @@ fn double_line(y: f64) -> Scene {
     let mask = Mask {
         id: MaskId { line: "e".into() },
         bounds: rect(-18.0, y - 18.0, 136.0, 36.0),
-        shapes: vec![
-            Shape::path(Purpose::Cutout, route)
-                .unfilled()
-                .stroked(Stroke::new(Token::Border, rail_gap())),
-        ],
+        shapes: vec![traced(
+            Purpose::Cutout,
+            route,
+            stroke(Token::Border, rail_gap()),
+        )],
     };
     let mut edge = line("e", &[(0.0, y), (100.0, y)]);
     let Item::Group(group) = &mut edge else {
@@ -122,7 +123,10 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
     };
     let next = scene(
         vec![
-            Item::Group(shadow.standing_with(vec!["a".into()])),
+            Item::Group(Group {
+                members: vec!["a".into()],
+                ..shadow
+            }),
             line("e", &[(110.0, 35.0), (200.0, 35.0)]),
             Item::Group(Group::new(
                 Role::Traffic("e".into()),
