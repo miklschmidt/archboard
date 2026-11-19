@@ -22,7 +22,7 @@ import {
  * Every state the neutral realtime server contract declares, spelled out so the test
  * asserts nothing into the union.
  */
-const DECLARED_STATES: readonly RealtimeState[] = [
+const DECLARED_STATES = [
 	{ phase: "idle", reason: "created" },
 	{ phase: "idle", reason: "recovered" },
 	{ phase: "requesting_permission", reason: "start_requested" },
@@ -125,7 +125,7 @@ const DECLARED_STATES: readonly RealtimeState[] = [
 	{ phase: "terminal_error", reason: "fatal_error", message: "terminal_error for fatal_error" },
 	{ phase: "closed", reason: "stopped" },
 	{ phase: "closed", reason: "disposed" },
-];
+] as const satisfies readonly RealtimeState[];
 
 /**
  * A projection input over the default sources.
@@ -186,12 +186,20 @@ function byPair(left: [string, string], right: [string, string]): number {
 	return byName(left[0], right[0]);
 }
 
-const REACHABLE = DECLARED_STATES;
+type StateKey<State extends RealtimeState> = State extends RealtimeState
+	? `${State["phase"]}:${State["reason"]}`
+	: never;
+
+const missingStates: Record<
+	Exclude<StateKey<RealtimeState>, StateKey<(typeof DECLARED_STATES)[number]>>,
+	never
+> = {};
 
 describe("voice session status mapping", () => {
 	test("maps every declared realtime state to a defined status and sentence", () => {
+		expect(missingStates).toEqual({});
 		const seen = new Set<VoiceSessionStatus>();
-		for (const state of REACHABLE) {
+		for (const state of DECLARED_STATES) {
 			const view = project(state);
 			const where = `${state.phase}/${state.reason}`;
 			expect(VOICE_SESSION_STATUSES, where).toContain(view.status);
@@ -214,7 +222,7 @@ describe("voice session status mapping", () => {
 
 	test("gives every realtime error reason its own presentation failure code", () => {
 		const codes = new Map<string, string>();
-		for (const state of REACHABLE.filter(isError)) {
+		for (const state of DECLARED_STATES.filter(isError)) {
 			const view = project(state);
 			const failure = view.failure;
 			expect(view.status, state.reason).toBe("failed");
@@ -352,7 +360,7 @@ describe("voice session status mapping", () => {
 
 	test("never offers a retry control the projection has disabled", () => {
 		const cases: VoiceSessionProjectionInput[] = [
-			...REACHABLE.map((state) => input({ media: mediaSnapshot(state) })),
+			...DECLARED_STATES.map((state) => input({ media: mediaSnapshot(state) })),
 			input({ transportState: reconnectingState() }),
 			input({ mediaState: { state: "attaching" } }),
 			input({ replaced: true, binding: null }),
