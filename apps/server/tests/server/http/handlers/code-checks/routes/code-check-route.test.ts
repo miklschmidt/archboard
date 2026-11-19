@@ -17,7 +17,7 @@ import { join } from "node:path";
 import express from "express";
 import type * as ServerModule from "#server/http/application/wiring/application.ts";
 import type * as RouteModule from "#server/http/handlers/code-checks/routes/code-check-route.ts";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { codeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import {
@@ -180,7 +180,7 @@ test("the polled semantic check stays separate from canonical code inspection", 
 	);
 	expect(Object.keys(polled)).not.toContain("behind");
 	expect(polled.diagnostics.map((one) => one.code)).not.toContain("BINDING_SYMBOL_MISSING");
-	const answer = CodeCheckAnswerSchema.parse(
+	const answer = codeCheckAnswerSchema().parse(
 		await (await fetch(`${base}/api/vault/code-check?vault=${encodeURIComponent(vault)}`)).json(),
 	);
 	expect(answer.timings.map((timing) => timing.check)).toContain("code-facts");
@@ -193,7 +193,7 @@ test("the polled semantic check stays separate from canonical code inspection", 
 
 test("every-draft inspects independent canonical proposal identities", async () => {
 	const base = await listen(server.app);
-	const answer = CodeCheckAnswerSchema.parse(
+	const answer = codeCheckAnswerSchema().parse(
 		await (
 			await fetch(
 				`${base}/api/vault/code-check?${new URLSearchParams({ vault, "every-draft": "true" })}`,
@@ -225,7 +225,7 @@ test("a plan outside every registered checkout is refused before the pass", asyn
 
 test("a caller asks for the modules the branch touched, from the default base or a named one", async () => {
 	const base = await listen(server.app);
-	const asked = CodeCheckAnswerSchema.parse(
+	const asked = codeCheckAnswerSchema().parse(
 		await (
 			await fetch(`${base}/api/vault/code-check?${new URLSearchParams({ vault, touched: "true" })}`)
 		).json(),
@@ -233,7 +233,7 @@ test("a caller asks for the modules the branch touched, from the default base or
 	expect(asked.touched).toEqual([
 		{ model: "Shop", state: "Current", base: "main", modules: [], unread: [] },
 	]);
-	const named = CodeCheckAnswerSchema.parse(
+	const named = codeCheckAnswerSchema().parse(
 		await (
 			await fetch(`${base}/api/vault/code-check?${new URLSearchParams({ vault, base: "HEAD~1" })}`)
 		).json(),

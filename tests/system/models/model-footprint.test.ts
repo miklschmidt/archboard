@@ -1,4 +1,4 @@
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
@@ -108,8 +108,8 @@ test("canonical locality and branch footprint retain source analysis without a l
 	const unread = cli(["model", "footprint", "--base", "no-such-base"]);
 	expect(unread.status).toBe(2);
 	expect(unread.stderr).toContain("no-such-base");
-	const local = ArchitectureHistoryResultSchema.parse(answer(locality.stdout));
-	const branch = ArchitectureHistoryResultSchema.parse(answer(footprint.stdout));
+	const local = architectureHistoryResultSchema().parse(answer(locality.stdout));
+	const branch = architectureHistoryResultSchema().parse(answer(footprint.stdout));
 	if (!local.success || local.analysis !== "locality" || !branch.success || !("changed" in branch))
 		throw new Error(JSON.stringify({ local, branch }));
 	expect(local.hotspots.map((part) => part.subject.id)).toContain("Shop#Gateway");
@@ -136,7 +136,7 @@ test("canonical locality and branch footprint retain source analysis without a l
 	for (const command of [["locality"], ["footprint", "--base", "HEAD~1"]]) {
 		const exact = cli(["model", ...command, "--against", retained.checkpoint.id]);
 		expect(exact.status, exact.stdout + exact.stderr).toBe(0);
-		expect(ArchitectureHistoryResultSchema.parse(answer(exact.stdout))).toMatchObject({
+		expect(architectureHistoryResultSchema().parse(answer(exact.stdout))).toMatchObject({
 			success: true,
 			model: "Shop",
 		});

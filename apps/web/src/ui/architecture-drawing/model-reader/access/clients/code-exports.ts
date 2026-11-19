@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { codeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
@@ -8,7 +8,7 @@ import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/acc
 type MeasuredModule = NonNullable<CodeCheckAnswer["depth"]>[number];
 
 /** The answer of the route: the part of a code-check answer that measures modules, for one module. */
-const MeasuredSchema = CodeCheckAnswerSchema.pick({ depth: true });
+const MeasuredSchema = codeCheckAnswerSchema().pick({ depth: true });
 
 /** A refusal, by its code. */
 const RefusalSchema = z.object({ code: z.string().optional(), error: z.string().optional() });

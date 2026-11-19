@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { VaultCheckSchema } from "@archboard/model/policy";
-import { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { SemanticRenderReplySchema } from "@archboard/model/render-reply";
 import { readRetainedFrom } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
 import { takePicturesFrom } from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts";
@@ -255,7 +255,7 @@ function supplyCapture(): void {
 		 * Read the fixture findings without a code pass.
 		 * @returns The findings supplied by this UI fixture.
 		 */
-		codeFindings: async () => RememberedFindingsSchema.parse(await captured(FINDINGS_ROUTE)),
+		codeFindings: async () => rememberedFindingsSchema().parse(await captured(FINDINGS_ROUTE)),
 	});
 	takePicturesFrom({ draw: capturedDrawing });
 }

@@ -70,3 +70,19 @@ export {
 	ArchitectureHistoryRequestSchema,
 	ArchitectureHistoryResultSchema,
 };
+
+/**
+ * The schema `ArchitectureHistoryRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureHistoryRequestSchema(): typeof ArchitectureHistoryRequestSchema {
+	return ArchitectureHistoryRequestSchema;
+}
+
+/**
+ * The schema `ArchitectureHistoryResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureHistoryResultSchema(): typeof ArchitectureHistoryResultSchema {
+	return ArchitectureHistoryResultSchema;
+}

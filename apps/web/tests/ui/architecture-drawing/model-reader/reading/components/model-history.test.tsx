@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, beforeEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps, type JSX } from "react";
-import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import type { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import type { z } from "zod";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
@@ -13,7 +13,7 @@ const { ModelHistory } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelHistory.tsx");
 
 type HistoryAnswer = Extract<
-	z.infer<typeof ArchitectureHistoryResultSchema>,
+	z.infer<ReturnType<typeof architectureHistoryResultSchema>>,
 	{ success: true; analysis: "locality" }
 >;
 type Reading = ComponentProps<typeof ModelHistory>["model"];

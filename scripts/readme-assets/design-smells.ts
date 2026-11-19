@@ -18,7 +18,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
 
-import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 
 import {
 	Browser,
@@ -308,7 +308,7 @@ async function requireNoHomePath(pages: readonly Page[]): Promise<void> {
  * @returns The locality answer.
  */
 async function readLocality(server: TakeServer) {
-	return ArchitectureHistoryResultSchema.options[0].parse(
+	return architectureHistoryResultSchema().options[0].parse(
 		modelResult(await server.cli(["model", "locality"])),
 	);
 }

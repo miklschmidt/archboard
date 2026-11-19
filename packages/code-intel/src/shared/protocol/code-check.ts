@@ -561,3 +561,19 @@ export {
 	type RememberedFindings,
 	type ServerTypescript,
 };
+
+/**
+ * The schema `CodeCheckAnswerSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function codeCheckAnswerSchema(): typeof CodeCheckAnswerSchema {
+	return CodeCheckAnswerSchema;
+}
+
+/**
+ * The schema `RememberedFindingsSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function rememberedFindingsSchema(): typeof RememberedFindingsSchema {
+	return RememberedFindingsSchema;
+}

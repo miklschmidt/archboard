@@ -6,16 +6,16 @@
 
 import { queryOptions } from "@tanstack/react-query";
 import type { z } from "zod";
-import { CodeFileSchema, CodeFilesSchema } from "@archboard/code-intel/code-check";
+import { codeFileSchema, codeFilesSchema } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
 /** The files of a checkout. */
-type CodeFiles = z.infer<typeof CodeFilesSchema>;
+type CodeFiles = z.infer<ReturnType<typeof codeFilesSchema>>;
 
 /** One file, with the owners that a read naming a reading always has. */
-type CodeFile = z.infer<typeof CodeFileSchema> & {
-	readonly owners: NonNullable<z.infer<typeof CodeFileSchema>["owners"]>;
+type CodeFile = z.infer<ReturnType<typeof codeFileSchema>> & {
+	readonly owners: NonNullable<z.infer<ReturnType<typeof codeFileSchema>>["owners"]>;
 };
 
 /** The reading a file's owners come from. */
@@ -72,7 +72,7 @@ function codeFilesQuery(vault: string, repo: string | undefined) {
 				signal: context.signal,
 			});
 			if (!response.ok) throw await refusalOf(response, "The files");
-			return CodeFilesSchema.parse(await response.json());
+			return codeFilesSchema().parse(await response.json());
 		},
 		refetchOnWindowFocus: true,
 	});
@@ -114,7 +114,7 @@ function codeFileQuery(vault: string, place: FilePlace, reading: OwnerReading) {
 				signal: context.signal,
 			});
 			if (!response.ok) throw await refusalOf(response, path);
-			const file = CodeFileSchema.parse(await response.json());
+			const file = codeFileSchema().parse(await response.json());
 			if (file.owners === undefined) throw new Error(`The server named no owners of ${path}.`);
 			return { ...file, owners: file.owners };
 		},

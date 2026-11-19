@@ -5,7 +5,7 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CodeCheckAnswerSchema } from "@archboard/code-intel/code-check";
+import { codeCheckAnswerSchema } from "@archboard/code-intel/code-check";
 import { annotationsFor } from "../../../actions/check/annotations.ts";
 import { cachedFileReader } from "../../../actions/shared/checkouts.ts";
 import { collectFindings } from "../../../actions/check/findings.ts";
@@ -47,7 +47,7 @@ const locations = (repository = join(workspace, "app")) => ({
 
 describe("the fixture is an answer of the CLI", () => {
 	test("its code part parses with the code check's own schema", () => {
-		expect(() => CodeCheckAnswerSchema.parse(answer.code)).not.toThrow();
+		expect(() => codeCheckAnswerSchema().parse(answer.code)).not.toThrow();
 	});
 });
 

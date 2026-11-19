@@ -9,13 +9,13 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { z } from "zod";
-import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+import type { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
 import { pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
-type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
+type RememberedFindings = z.infer<ReturnType<typeof rememberedFindingsSchema>>;
 
 const ROW = (id: string): string => `[data-measure-row="${id}"]`;
 const DIALOG = '[data-slot="model-measures-dialog"]';
