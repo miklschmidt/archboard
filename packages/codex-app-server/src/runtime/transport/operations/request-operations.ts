@@ -9,7 +9,7 @@ import {
 	type ResponseMethod,
 } from "#runtime/protocol/protocol-methods.ts";
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
-import { codexSessionMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type {
 	IdentityAuthority,
 	JsonRpcRequestId,
@@ -256,7 +256,7 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 			if (pending.job) options.removeQueuedJob(pending.job);
 			options.settleFailure(pending, "timeout");
 		};
-		pending.timer = setTimeout(timeout, codexSessionMs("requestSettlement"));
+		pending.timer = setTimeout(timeout, durationMs("codexSession.requestSettlement"));
 		const job: RequestJob = { kind: "request", frame: input.frame, pending };
 		try {
 			options.enqueue(job, pending);

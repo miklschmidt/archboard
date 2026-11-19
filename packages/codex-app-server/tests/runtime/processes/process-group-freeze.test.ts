@@ -1,7 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { codexProcessMs } from "@archboard/timing";
-
 import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
 	fixture,
@@ -59,11 +57,7 @@ describe("Codex process group KILL", () => {
 			const stopped = await driveManual(owner.stop(), lifecycle.clock);
 			expect(stopped.state).toBe("stopped");
 			expect(lifecycle.signals.at(-1)).toBe("SIGKILL");
-			expect(lifecycle.clock.now()).toBeLessThanOrEqual(
-				codexProcessMs("stdinEofGrace") +
-					codexProcessMs("termGrace") +
-					codexProcessMs("groupFreeze"),
-			);
+			expect(lifecycle.clock.now()).toBeLessThanOrEqual(1000 + 5000 + 500);
 		} finally {
 			if (owner) {
 				await owner.stop().catch(() => undefined);

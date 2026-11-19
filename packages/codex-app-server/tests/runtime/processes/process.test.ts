@@ -7,7 +7,7 @@ import {
 	CodexProcessError,
 } from "#runtime/processes/process-contract.ts";
 import { createProcessOwner } from "#runtime/processes/process-owner.ts";
-import { codexProcessMs, codexRestartDelayMs } from "@archboard/timing";
+import { codexRestartDelayMs } from "@archboard/timing";
 import {
 	fixture,
 	processOptions,
@@ -46,10 +46,7 @@ describe("Codex process owner", () => {
 		const root = temporaryRoot();
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
 		try {
-			const executable = fixture(
-				root,
-				`process.stdin.resume(); setInterval(() => {}, ${codexProcessMs("termGrace")});`,
-			);
+			const executable = fixture(root, `process.stdin.resume(); setInterval(() => {}, ${5000});`);
 			owner = createProcessOwner(processOptions(root, executable));
 			await startReady(owner);
 			const currentChild = owner.currentChild();
