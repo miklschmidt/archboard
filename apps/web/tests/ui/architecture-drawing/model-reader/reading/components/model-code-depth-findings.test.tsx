@@ -87,7 +87,9 @@ function mount(): void {
  * @param slot The part each finding is drawn as.
  * @returns Each finding's code and export.
  */
-function shown(slot: "code-finding" | "code-finding-row"): (readonly [string?, string?])[] {
+function shown(
+	slot: "code-finding" | "code-finding-row",
+): (readonly [string | undefined, string | undefined])[] {
 	return [...document.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]`)].map((one) => [
 		one.dataset["findingCode"],
 		one.querySelector('[data-slot="code-finding-export"]')?.textContent?.replace("exports ", ""),

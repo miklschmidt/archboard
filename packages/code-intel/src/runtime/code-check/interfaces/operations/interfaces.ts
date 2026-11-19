@@ -32,31 +32,40 @@
 //   where the document draws a caller of the container at all: a document that
 //   draws none says nothing about the interface (ADR 0044).
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
-//   outside it uses, as code or as a type.
+//   outside it uses, as code or as a type, in a language Module depth does
+//   not judge yet. Module depth judges the names of the others one by one.
 //
-// - Module depth (module-depth.ts, TASK-646.04): each judged module's exports
-//   counted by kind, the logic behind them, `EXPOSED_VALUE` and
-//   `MODULE_SHALLOW`, from what this check already read of the module.
+// - Module depth (module-depth.ts, TASK-646.04, TASK-646.05): each judged
+//   module's exports counted by kind, the logic behind them, one finding per
+//   exported name and `MODULE_SHALLOW`, from what this check already read of
+//   the module: its uses with the part that reads each and the module that
+//   defines what each reaches, the files it could not read whole, and the
+//   callers the document draws whose code the pass does not read.
 //
 // What a module exposes and how the files outside it use it is read once a
 // pass (module-reading.ts). A Terraform module is reached only through its
 // outputs, so no entry point of it is judged unexposed, and its container
 // also gets the findings about the module's shape (terraform-modules.ts).
 
-import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 import type { Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import {
 	ownersAtLine,
 	ownersOf,
 	ownersOfSite,
-	type Owners,
 } from "#runtime/code-check/evidence/operations/ownership.ts";
 import {
 	moduleReading,
-	type ModuleReading,
 	type ModuleReadings,
 } from "#runtime/code-check/interfaces/operations/module-reading.ts";
-import type { PartCode, ReadPart, RepoCheckout } from "#runtime/code-check/operations/part-code.ts";
+import {
+	type DepthRecord,
+	type InterfaceOutcome,
+	type InterfaceReading,
+	type Judged,
+	measureDepth,
+	sideOf,
+} from "#runtime/code-check/interfaces/operations/judged-module.ts";
+import type { ReadPart } from "#runtime/code-check/operations/part-code.ts";
 import { siteOf } from "#runtime/code-check/evidence/operations/relationships.ts";
 import { terraformFindings } from "#runtime/code-check/interfaces/operations/terraform-modules.ts";
 import {
@@ -64,65 +73,17 @@ import {
 	within,
 	type ExposedName,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
-import { isTestPath } from "#runtime/code-check/operations/part-code.ts";
-import { moduleDepth, reaches, topLevel } from "#runtime/module-depth/operations/module-depth.ts";
+import { topLevel } from "#runtime/module-depth/operations/module-depth.ts";
+import { reaches, usesOf } from "#runtime/module-depth/operations/depth-reading.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
 import { nodeSubject } from "@archboard/model/vault-policy";
-import type {
-	CodeCheckSkip,
-	CodeEvidence,
-	CodeFinding,
-	ModuleDepth,
-} from "#shared/protocol/code-check.ts";
+import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import { inspectContainer } from "@archboard/model/container-interface";
 import type { SemanticNode } from "@archboard/model/content";
 import { describeSubject } from "@archboard/model/policy";
 import type { interfaceMeasures } from "@archboard/model/container-interface";
 
 type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
-
-/** What judging the containers of one document needs. */
-interface InterfaceReading {
-	readonly read: StateToCheck;
-	readonly codes: ReadonlyMap<string, PartCode>;
-	/** Each part and the parts that hold it, the part first. */
-	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
-	/** The evidence between the document's bound parts. */
-	readonly pieces: readonly Piece[];
-	readonly facts: FactsPass;
-	readonly modules: ModuleReadings;
-}
-
-/** One judged module measured from its code, at its document and variant. */
-type DepthRecord = Omit<ModuleDepth, "state">;
-
-/** What the containers of one document give. */
-interface InterfaceOutcome {
-	readonly findings: CodeFinding[];
-	readonly skipped: CodeCheckSkip[];
-	readonly depth: DepthRecord[];
-}
-
-/** One part bound to a module, and what judging it reads. */
-interface Judged {
-	readonly reading: InterfaceReading;
-	readonly container: SemanticNode;
-	readonly module: ModuleReading;
-	readonly checkout: RepoCheckout;
-	readonly owners: Owners;
-}
-
-/**
- * Each part and every part inside it.
- * @param reading The document.
- * @param id The part.
- * @returns The ids.
- */
-function sideOf(reading: InterfaceReading, id: string): Set<string> {
-	return new Set(
-		[...reading.lineages].flatMap(([inside, chain]) => (chain.has(id) ? [inside] : [])),
-	);
-}
 
 /**
  * The exposed names a child of the container owns: names whose definition
@@ -179,16 +140,22 @@ async function parsedAny(facts: FactsPass, code: ReadPart): Promise<boolean> {
 }
 
 /**
- * The finding on a container whose exposed names nothing outside it uses.
+ * The finding on a container whose exposed names nothing outside it uses,
+ * among the names Module depth does not judge.
  * @param judged The container.
+ * @param depthNames The names Module depth judged.
  * @returns The finding, or undefined when every name has a use.
  */
-function unusedFinding(judged: Judged): CodeFinding | undefined {
+function unusedFinding(judged: Judged, depthNames: ReadonlySet<string>): CodeFinding | undefined {
 	const { exposure, uses } = judged.module;
-	const declared = exposure.exposed.filter((name) => topLevel(name, exposure.exposed));
+	const declared = exposure.exposed.filter(
+		(name) => topLevel(name, exposure.exposed) && !depthNames.has(name.name),
+	);
 	// A name declared in several places, a C# partial type or an overload, is used where any is.
 	const used = new Set(
-		declared.filter((name) => uses.some((use) => reaches(name, use))).map((name) => name.name),
+		declared
+			.filter((name) => usesOf(exposure.directory, name, uses).length > 0)
+			.map((name) => name.name),
 	);
 	const names = [...new Set(declared.map((name) => name.name))].filter((name) => !used.has(name));
 	if (names.length === 0) return undefined;
@@ -377,53 +344,12 @@ async function judgeContainer(
 	const judged = await containerToJudge(reading, container, outcome.skipped);
 	if (judged === undefined) return;
 	outcome.findings.push(...testImportFindings(judged));
-	const unused = unusedFinding(judged);
+	const depthNames = await measureDepth(judged, outcome);
+	const unused = unusedFinding(judged, depthNames);
 	if (unused !== undefined) outcome.findings.push(unused);
-	await measureDepth(judged, outcome);
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
 	const inspection = inspectContainer(reading.read.variant.content, container);
 	if (inspection.holdsParts) await judgeChildren(judged, inspection, outcome.findings);
-}
-
-/**
- * Measure a judged module from its code, and judge its exports, with what the
- * pass already read of it: its exposure, the uses outside it with the part that
- * owns each, and its own files.
- * @param judged The part and its module.
- * @param outcome What the document gives, which gains the module's depth and findings.
- */
-async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<void> {
-	const { container, module, checkout, owners, reading } = judged;
-	const { directory } = module.exposure;
-	const subject = nodeSubject(container);
-	const site = siteOf(reading.read, `nodes.${container.id}`, subject);
-	const uses = module.uses.map((use) => {
-		const owner = ownersAtLine(owners, use.file, use.line)[0]?.node;
-		return { ...use, reader: owner === undefined ? { name: use.file } : owner };
-	});
-	const files = [...checkout.files].filter((file) => within(directory, file) && !isTestPath(file));
-	const depth = await moduleDepth({
-		facts: reading.facts,
-		checkout,
-		exposure: module.exposure,
-		uses,
-		files,
-		label: describeSubject(subject),
-	});
-	outcome.findings.push(...depth.findings.map((finding) => ({ ...site, ...finding })));
-	const { exports, logic } = depth;
-	outcome.depth.push({
-		model: reading.read.document.name,
-		variant: reading.read.variant.id,
-		subject,
-		repo: checkout.repo,
-		directory,
-		languages: [...depth.languages],
-		unjudged: [...depth.unjudged],
-		names: [...depth.names],
-		exports,
-		logic,
-	});
 }
 
 /**

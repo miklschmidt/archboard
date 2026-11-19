@@ -54,6 +54,13 @@ interface Definition {
 	 */
 	readonly type?: true;
 	/**
+	 * It only passes its call on: its body is one call that hands every
+	 * argument straight from its parameters, and this names the callee's root,
+	 * such as `save` for `save(item)` or `this` for `this.target.send(id)`.
+	 * TypeScript names it; module depth judges it (TASK-646.05).
+	 */
+	readonly passes?: string;
+	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a
 	 * compose service, or, where that context is the compose file's own

@@ -788,7 +788,7 @@ Its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
 
 **Module depth**:
-What the code check measures of one bound module from its code: its exports by kind, the pieces of logic behind them, and the findings on its exported names (ADR 0082).
+What the code check measures of one bound module from its code: its exports by kind, the pieces of logic behind them, and the findings on its exported names, at most one for each name (ADR 0082).
 The counts are evidence and never a score; only the findings are verdicts.
 _Avoid_: depth score, depth ratio, interface measures (those are what the model claims)
 
@@ -806,8 +806,21 @@ An exported value that code outside its module reads at run time, a value that a
 A function that returns the value, a getter, is an interface and is no exposed value. A test is no reader.
 _Avoid_: exported constant, leaked config, global
 
+**Code pass-through**:
+An exported function or public method whose body is one call that hands on its own parameters, so it decides nothing for its callers: `CODE_PASS_THROUGH`, information.
+A call into a value that the module keeps hidden is a decision, not a pass-through.
+_Avoid_: wrapper, delegate, pass-through entry point (that is about the model)
+
+**Two doors to one name**:
+A name that one module passes on from another, while files outside both also import the defining module directly: `REEXPORT_PASS_THROUGH`, a warning. With one door, it is information.
+_Avoid_: duplicate export, barrel leak
+
+**Unused export**:
+An exported name that no file outside its module uses, as code or as a type: `EXPOSED_UNUSED`. It is a warning only after a complete read, when the model draws no caller of it whose code the check does not read; otherwise information. A test is no user.
+_Avoid_: dead code (no export reaches hidden code), unreferenced symbol
+
 **Shallow module**:
-A module whose every export that is not a type carries a finding of its own: `MODULE_SHALLOW`, information in the answer.
+A module whose every export that is not a type carries an exposed-value or pass-through finding: `MODULE_SHALLOW`, information in the answer.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)
 
 **Shallow-module gate**:
