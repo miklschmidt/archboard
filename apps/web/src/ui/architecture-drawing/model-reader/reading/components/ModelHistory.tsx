@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { PartHistory } from "#ui/architecture-drawing/canvas/presentation/components/PartHistory.tsx";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
@@ -33,7 +34,12 @@ interface HistoryProps {
 function ModelHistory(props: HistoryProps): JSX.Element | null {
 	if (props.module.binding === undefined || !readsVaultOnDisk(props.model)) return null;
 	return (
-		<ModelPanel.Section title="Code history" slot="module-history" list={false}>
+		<ModelPanel.Section
+			icon={SECTION_ICONS.codeHistory}
+			title="Code history"
+			slot="module-history"
+			list={false}
+		>
 			<HistoryReading key={props.module.id} {...props} />
 		</ModelPanel.Section>
 	);

@@ -29,8 +29,10 @@ const shop = drawings.webShop;
 			</div>
 			<div class="pane-head">
 				<span class="crumb">Shop</span>
-				<span class="field reading">Current</span>
-				<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
+				<span class="reading">
+					<span class="field state">Current</span>
+					<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
+				</span>
 			</div>
 			<div class="panel-head">
 				<span class="views"><span class="is-on">Diagram</span><span>About</span></span>
@@ -138,6 +140,11 @@ const shop = drawings.webShop;
 		margin-left: auto;
 		color: var(--ink);
 	}
+	/* The header parts where the picture meets the panel. Over the picture, the crumbs stand at
+	   its start and what the reader reads at its end. */
+	.pane-head {
+		padding-right: 16px;
+	}
 	.panel-head {
 		justify-content: flex-end;
 		gap: 16px;
@@ -161,11 +168,29 @@ const shop = drawings.webShop;
 		background: var(--well);
 		box-shadow: var(--shadow-well);
 	}
+	/* The state chip and the comparison are one control of two keys, because they say one
+	   thing: what this reading is, against what. */
 	.reading {
+		display: inline-flex;
+		margin-left: auto;
+	}
+	.reading .field {
+		font-weight: 500;
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	.reading .field + .field {
+		margin-left: -1px;
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	.state {
 		justify-content: center;
 		width: 128px;
-		background: var(--raised);
-		box-shadow: var(--shadow-raised);
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
 	}
 	.views {
 		margin-right: auto;
@@ -315,6 +340,8 @@ const shop = drawings.webShop;
 		min-height: 0;
 		overflow: hidden;
 		justify-content: flex-end;
+		/* Fade the oldest lines where they leave the top of the card. */
+		mask-image: linear-gradient(to bottom, transparent, #000 28px);
 	}
 	.replay {
 		position: absolute;
@@ -354,8 +381,10 @@ const shop = drawings.webShop;
 		}
 		.window {
 			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr);
 		}
 		.column-head,
+		.pane-head,
 		.panel-head,
 		.left,
 		.window > :global([data-inspector]) {

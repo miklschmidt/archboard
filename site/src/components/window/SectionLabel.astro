@@ -1,0 +1,42 @@
+---
+// The label of a section in either side column of the mock shell, set as the shell's SectionLabel
+// sets it: an icon of 16px in muted ink, the name in semibold and full ink, and the count beside
+// it in mono and muted ink. The icon of each section is the shell's (section-icons.ts).
+import Icon from "../Icon.astro";
+import type { IconName } from "../../lib/icons";
+
+interface Props {
+	icon: IconName;
+	title: string;
+	count?: number;
+}
+
+const { icon, title, count } = Astro.props;
+---
+
+<span class="section-label">
+	<Icon name={icon} size={16} class="section-icon" />
+	<span>{title}</span>
+	{count !== undefined && <span class="section-count">{count}</span>}
+</span>
+
+<style>
+	.section-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.section-label :global(.section-icon) {
+		flex-shrink: 0;
+		color: var(--ink-muted);
+	}
+	.section-count {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		font-weight: 400;
+		color: var(--ink-muted);
+	}
+</style>

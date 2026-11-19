@@ -3,20 +3,26 @@
 // and one list with a section for modules, flows and walkthroughs. The rows and counts are the
 // example shop's, as the shell lists them at its root with Checkout API selected.
 import Icon from "../Icon.astro";
+import SectionLabel from "./SectionLabel.astro";
+import type { IconName } from "../../lib/icons";
 
 interface Row {
 	name: string;
 	/** The row holds parts, so the shell gives it a chevron. */
 	branch?: boolean;
-	/** The line names the collection of the rows under it: it is no row. */
+	/** The row is an open collection of flows: a chevron, the icon of collections and its name. */
 	owner?: boolean;
-	/** The row stands one step deeper, under the line of its collection. */
+	/** The row stands one step deeper, under the rail that hangs from its collection's chevron. */
 	child?: boolean;
+	/** A count of the row's own: the steps of a walkthrough. */
 	count?: number;
+	/** How many flows a collection holds, in muted mono at the row's end. */
+	total?: number;
 }
-const sections: { title: string; count: number; rows: Row[] }[] = [
+const sections: { title: string; icon: IconName; count: number; rows: Row[] }[] = [
 	{
 		title: "Modules",
+		icon: "box",
 		count: 18,
 		rows: [
 			{ name: "Storefront" },
@@ -31,16 +37,18 @@ const sections: { title: string; count: number; rows: Row[] }[] = [
 	},
 	{
 		title: "Flows",
+		icon: "route",
 		count: 2,
 		rows: [
-			{ name: "Inventory service", owner: true },
+			{ name: "Inventory service", owner: true, total: 1 },
 			{ name: "Reserve an order's items", child: true },
-			{ name: "Web shop", owner: true },
+			{ name: "Web shop", owner: true, total: 1 },
 			{ name: "Place an order", child: true },
 		],
 	},
 	{
 		title: "Walkthroughs",
+		icon: "playCircle",
 		count: 2,
 		rows: [
 			{ name: "How stock is reserved", count: 6 },
@@ -66,16 +74,20 @@ const selected = "Checkout API";
 			sections.map((section) => (
 				<section class="section">
 					<p class="head">
-						<span class="title">{section.title}</span>
-						<span class="mono total">{section.count}</span>
+						<SectionLabel icon={section.icon} title={section.title} count={section.count} />
 						<span class="end"><Icon name="chevronDown" size={15} /></span>
 					</p>
 					<ul class="rows">
 						{section.rows.map((row) => (
 							<li class:list={["row", { "is-on": row.name === selected, owner: row.owner, child: row.child }]}>
-								<span class="fold">{row.branch && <Icon name="chevronRight" size={15} />}</span>
+								<span class="fold">
+									{row.branch && <Icon name="chevronRight" size={15} />}
+									{row.owner && <Icon name="chevronDown" size={15} />}
+								</span>
+								{row.owner && <Icon name="stack" size={14} class="kind" />}
 								<span class="name">{row.name}</span>
 								{row.count !== undefined && <span class="count">{row.count}</span>}
+								{row.total !== undefined && <span class="total">{row.total}</span>}
 							</li>
 						))}
 					</ul>
@@ -143,15 +155,25 @@ const selected = "Checkout API";
 		background: var(--raised);
 		box-shadow: var(--shadow-raised);
 	}
+	/* The list lies on the chrome, as the right panel's lists do, and scrolls under the agent's
+	   card, as the shell's list does, with each section's head held at its top. */
 	.well {
 		flex: 1;
 		min-height: 0;
-		overflow: hidden;
-		/* The list lies on the chrome, as the right panel's lists do. */
-		padding: 2px 4px;
+		overflow-y: auto;
+		padding: 0 4px 2px;
 	}
+	/* A section after the first opens with a rule across the column's inset, as a section of the
+	   right panel does. */
 	.section + .section {
-		margin-top: 8px;
+		margin-top: 4px;
+		padding-top: 4px;
+		border-top: 1px solid var(--rule);
+		margin-inline: 8px;
+	}
+	.section + .section .head,
+	.section + .section .rows {
+		margin-inline: -8px;
 	}
 	.head,
 	.row {
@@ -164,15 +186,16 @@ const selected = "Checkout API";
 	/* A section's label stands at the column's inset in full ink, with its count beside it, and
 	   the chevron that folds it at the end of the head, where the rows' facts end. */
 	.head {
-		gap: 6px;
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		padding-right: 12px;
 		font-size: 12.5px;
-		font-weight: 600;
-		color: var(--ink);
+		background: var(--chrome);
 	}
 	.total {
+		font-family: var(--font-mono);
 		font-size: 11px;
-		font-weight: 400;
 		color: var(--ink-muted);
 	}
 	.end {
@@ -198,24 +221,47 @@ const selected = "Checkout API";
 		border-radius: 3px;
 		color: var(--ink-body);
 	}
-	/* The name of a collection is no row: it stands in full ink where a row's name stands, and
-	   its flows stand one step deeper under a rail. */
-	.row.owner {
+	/* A collection is a row of the tree like an open module: its chevron, the icon of
+	   collections and its name in full ink at weight 500. Its flows stand one step deeper under
+	   the rail that hangs from its chevron, so the rail starts at a row and runs unbroken. */
+	.row.owner .name {
 		color: var(--ink);
 		font-weight: 500;
 	}
+	.row :global(.kind) {
+		flex-shrink: 0;
+		color: var(--ink-muted);
+	}
+	/* A flow never holds rows, so it keeps no chevron slot: its words start where the ink of its
+	   collection's icon starts, as the shell's tree sets a leaf. */
 	.row.child {
 		position: relative;
-		padding-left: 24px;
+		padding-left: 30px;
 	}
-	.row.child::before {
+	.row.child .fold {
+		display: none;
+	}
+	/* Each flow draws its stretch of the rail and a tick into itself, and the last flow draws the
+	   rail only down to its tick, so the rail ends in a tick, as the shell's tree does. */
+	.row.child::before,
+	.row.child::after {
 		content: "";
 		position: absolute;
 		left: 15px;
+		background: var(--rule);
+	}
+	.row.child::before {
 		top: 0;
 		bottom: 0;
 		width: 1px;
-		background: var(--rule);
+	}
+	.row.child:not(:has(+ .child))::before {
+		bottom: 14px;
+	}
+	.row.child::after {
+		top: 14px;
+		width: 8px;
+		height: 1px;
 	}
 	.row.is-on {
 		background: var(--raised);

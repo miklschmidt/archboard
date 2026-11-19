@@ -1,10 +1,13 @@
 import { useCallback, useContext } from "react";
 import { useRouter } from "@tanstack/react-router";
-import { ModelPaneContext } from "#ui/architecture-drawing/model-reader/state/presentation.ts";
+import {
+	ModelPaneContext,
+	ModelWalkthroughContext,
+} from "#ui/architecture-drawing/model-reader/state/presentation.ts";
 import type { JSX, ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { RiRefreshLine } from "@remixicon/react";
-import { Button } from "@archboard/ui-kit/components";
+import { Button, cn } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
 import {
 	PaneHeaderRow,
@@ -97,13 +100,19 @@ interface ModelHeaderProps {
 }
 
 /**
- * The model uses the same header frame and pane controls as a legacy board.
+ * The model uses the same header frame and pane controls as a legacy board. The row parts where
+ * the picture meets the right panel: what stands over the picture says where the reader is and
+ * what they read, and what stands over the panel, as wide as the panel, holds the way to read it
+ * and the pane's own controls. The panel is `min(360px, 46%)` of the reading, which is as wide as
+ * this row. Container queries measure its content box, which excludes the row's 1.5rem padding.
+ * Only a mounted panel reserves space, and a narrow panel reserves it only during selection.
  * @param props The model name and explicit read action.
  * @returns The pane header.
  */
 function ModelHeader(props: ModelHeaderProps): JSX.Element {
 	const { controls } = usePaneChrome();
 	const pane = useContext(ModelPaneContext);
+	const presenting = useContext(ModelWalkthroughContext)?.active === true;
 	return (
 		<PaneHeaderRow>
 			<PaneHeaderStart>
@@ -118,22 +127,36 @@ function ModelHeader(props: ModelHeaderProps): JSX.Element {
 				/>
 				{props.children}
 			</PaneHeaderStart>
-			<PaneHeaderEnd>
-				{props.refresh !== undefined && (
-					<Button
-						variant="ghost"
-						size="sm"
-						data-slot="model-refresh"
-						onClick={props.refresh}
-						disabled={props.refreshing}
-						aria-busy={props.refreshing}
-					>
-						<RiRefreshLine aria-hidden="true" className="size-4" />
-						Refresh
-					</Button>
+			<div
+				data-slot="model-head-side"
+				className={cn(
+					"flex h-full shrink-0 items-center gap-2",
+					!presenting && [
+						"[[data-slot=architecture-model-stage]:has([data-slot=model-panel][data-selected])_&]:w-[calc(min(360px,46cqw+0.69rem)-0.5rem)]",
+						"[[data-slot=architecture-model-stage]:has([data-slot=model-panel][data-selected])_&]:pl-4",
+						"@min-[calc(900px-1.5rem)]/pane-header:[[data-slot=architecture-model-stage]:has([data-slot=model-panel])_&]:w-[calc(360px-0.5rem)]",
+						"@min-[calc(900px-1.5rem)]/pane-header:[[data-slot=architecture-model-stage]:has([data-slot=model-panel])_&]:pl-4",
+					],
 				)}
-				{controls}
-			</PaneHeaderEnd>
+			>
+				<div ref={pane?.attachSide} data-slot="model-side" className="flex min-w-0 items-center" />
+				<PaneHeaderEnd>
+					{props.refresh !== undefined && (
+						<Button
+							variant="ghost"
+							size="sm"
+							data-slot="model-refresh"
+							onClick={props.refresh}
+							disabled={props.refreshing}
+							aria-busy={props.refreshing}
+						>
+							<RiRefreshLine aria-hidden="true" className="size-4" />
+							Refresh
+						</Button>
+					)}
+					{controls}
+				</PaneHeaderEnd>
+			</div>
 		</PaneHeaderRow>
 	);
 }

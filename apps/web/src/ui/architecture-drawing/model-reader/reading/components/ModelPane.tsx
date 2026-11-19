@@ -29,9 +29,10 @@ function ModelPane(props: {
 	}
 	const [handover] = useState(cameraHandover);
 	const [head, attachHead] = useState<HTMLElement | null>(null);
+	const [side, attachSide] = useState<HTMLElement | null>(null);
 	const value = useMemo(
-		() => ({ selection, handover, head, attachHead }),
-		[selection, handover, head],
+		() => ({ selection, handover, head, attachHead, side, attachSide }),
+		[selection, handover, head, side],
 	);
 	return <ModelPaneContext value={value}>{props.children}</ModelPaneContext>;
 }

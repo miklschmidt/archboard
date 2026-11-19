@@ -1,4 +1,4 @@
-import { RiEyeLine, RiEyeOffLine } from "@remixicon/react";
+import { RiEyeLine, RiEyeOffLine, type RemixiconComponentType } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
@@ -13,6 +13,7 @@ import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients
 import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import {
 	groupRows,
@@ -86,6 +87,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 /**
  * One part of the legend, under its own label in the panel's label style.
  * @param props The list.
+ * @param props.icon What kind of thing it lists.
  * @param props.label What it lists.
  * @param props.slot Where a test finds it.
  * @param props.className How its entries stand.
@@ -93,13 +95,14 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
  * @returns The list, as a section of the panel.
  */
 function LegendList(props: {
+	readonly icon: RemixiconComponentType;
 	readonly label: string;
 	readonly slot: string;
 	readonly className: string;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<ModelPanel.Section title={props.label} slot={`${props.slot}-section`}>
+		<ModelPanel.Section icon={props.icon} title={props.label} slot={`${props.slot}-section`}>
 			<li>
 				<ul data-slot={props.slot} className={props.className}>
 					{props.children}
@@ -126,7 +129,12 @@ function Kinds(props: {
 	const { model, look, rows } = props;
 	if (rows.length === 0) return null;
 	return (
-		<LegendList label="Legend" slot="model-legend-kinds" className={CELLS}>
+		<LegendList
+			icon={SECTION_ICONS.legend}
+			label="Legend"
+			slot="model-legend-kinds"
+			className={CELLS}
+		>
 			{rows.map(({ item, dimmed }) => (
 				<Cell key={item.typeKind}>
 					<Mark name={item.typeName} dimmed={dimmed}>
@@ -204,7 +212,12 @@ function Lines(props: LinesProps): JSX.Element | null {
 	const types = lines.filter((line) => line.hideable);
 	const mixed = lines.filter((line) => !line.hideable);
 	return (
-		<ModelPanel.Section title="Relationships" slot="model-legend-lines-section" action={action}>
+		<ModelPanel.Section
+			icon={SECTION_ICONS.relationships}
+			title="Relationships"
+			slot="model-legend-lines-section"
+			action={action}
+		>
 			{types.length > 0 && (
 				<li>
 					<ul data-slot="model-legend-lines" className="flex flex-col">
@@ -347,6 +360,7 @@ function Groups(props: {
 	if (groups.length === 0) return null;
 	return (
 		<LegendList
+			icon={SECTION_ICONS.groups}
 			label="Groups"
 			slot="model-legend-groups"
 			className="flex flex-wrap gap-x-2 gap-y-2.5"

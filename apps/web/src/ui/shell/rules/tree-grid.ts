@@ -1,8 +1,10 @@
 // The navigator's one grid. Every row, whatever it names, is the same four
 // columns placed by its depth alone: the disclosure, the marker, the name and
-// the facts. A deeper row moves right by one step, which is the width of the
-// disclosure column, so a row's disclosure sits under its parent's marker and
-// the guide of each open row runs through the middle of its disclosure. The
+// the facts. A deeper row moves right by one step, the width of the disclosure
+// column, so a row's disclosure sits under its parent's marker, and a leaf,
+// which never holds rows, keeps no disclosure, so its marker and words stand
+// under its parent's. The guide of each open row runs through the middle of its
+// disclosure. The
 // filter and Working now put their icon and text on the columns of depth zero.
 // Pure: every horizontal length the navigator lays out comes from here, in
 // pixels, and every x is measured from the navigator's left edge.
@@ -24,7 +26,10 @@ function stuckTop(below: number): string {
 /** The disclosure column: a chevron, or the space one would take. */
 const DISCLOSURE_WIDTH = 16;
 
-/** How far each depth moves a row right: one disclosure column. */
+/**
+ * How far each depth moves a row right: one disclosure column, so a row's chevron stands under the
+ * marker of the row that holds it, and a leaf, which keeps no chevron, puts its marker there.
+ */
 const TREE_STEP = DISCLOSURE_WIDTH;
 
 /** From the navigator's left edge to the disclosure column of depth zero. */
@@ -38,6 +43,13 @@ const MARKER_WIDTH = 16;
 
 /** Between the marker column and the name. */
 const NAME_GAP = 6;
+
+/**
+ * Where a marker's ink starts in its column: a 14px icon centred in the 16px column, less the
+ * margin the icon set draws inside its own box. A name that stands in the marker column starts
+ * here, so its words start where the ink of the marker above them does.
+ */
+const MARKER_INK = 2;
 
 /** Between the name and the facts. */
 const FACTS_GAP = 8;
@@ -89,6 +101,7 @@ export {
 	FACTS_GAP,
 	FACTS_INSET,
 	FLAT_INSET,
+	MARKER_INK,
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,

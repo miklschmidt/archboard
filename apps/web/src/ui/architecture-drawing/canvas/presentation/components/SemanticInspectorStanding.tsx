@@ -12,6 +12,7 @@
 // subject is, and this stays about how it is standing. Both read the same
 // comparison and the same reconciliation the picture is drawn from.
 
+import type { RemixiconComponentType } from "@remixicon/react";
 import { type ChangeObject, diffWords } from "diff";
 import type { JSX } from "react";
 
@@ -25,6 +26,8 @@ import {
 	SidebarRegion,
 	SidebarSection,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSidebarParts.tsx";
+import { StandingSample } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
+import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import type { ReconciliationIssueSchema } from "@archboard/model/reconciliation";
 import type { z } from "zod";
 
@@ -64,32 +67,55 @@ interface WordRun {
 	moved: boolean;
 }
 
+/** How each side of a moved field is drawn: its gutter mark, the word that names it, and its tints. */
+const SIDES = {
+	was: {
+		mark: "−",
+		line: "bg-standing-removed/6",
+		run: "bg-standing-removed/20",
+		ink: "text-standing-removed",
+	},
+	now: {
+		mark: "+",
+		line: "bg-standing-added/6",
+		run: "bg-standing-added/20",
+		ink: "text-standing-added",
+	},
+} as const;
+
 /**
- * One value of a field that moved, after the word that says which it is: what
- * it said first and quieter, what it says under that, the whole of each wrapped.
- * The words that moved carry a tint: in red where they were taken out, in green
- * where they were put in.
+ * One value of a field that moved, as a line of a diff: a gutter mark, − for what it said and +
+ * for what it says, on a faint tint of its side, the whole value wrapped. The words that moved
+ * carry a stronger tint: in red where they were taken out, in green where they were put in. The
+ * mark names its side, `was` or `now`, to assistive technology.
  * @param props The value.
  * @returns The value.
  */
 function MovedValue(props: MovedValueProps): JSX.Element {
 	const Mark = props.when === "was" ? "del" : "ins";
+	const side = SIDES[props.when];
 	return (
-		<dd className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-1.5">
-			<span className="text-muted-foreground text-body">{props.when}</span>
+		<dd
+			data-side={props.when}
+			className={cn("grid grid-cols-[1rem_minmax(0,1fr)] py-1 pr-3", side.line)}
+		>
+			<span aria-hidden="true" className={cn("text-body text-center font-mono", side.ink)}>
+				{side.mark}
+			</span>
 			<span
 				className={cn(
 					"text-body [overflow-wrap:anywhere]",
-					props.when === "was" && "text-muted-foreground",
+					props.when === "was" ? "text-muted-foreground" : "text-body-foreground",
 				)}
 			>
+				<span className="sr-only">{props.when} </span>
 				{props.runs.map((run) =>
 					run.moved ? (
 						<Mark
 							key={run.at}
 							className={cn(
-								"text-foreground rounded-[2px] [box-decoration-break:clone] no-underline",
-								props.when === "was" ? "bg-standing-removed/20" : "bg-standing-added/20",
+								"text-foreground rounded-chip [box-decoration-break:clone] no-underline",
+								side.run,
 							)}
 						>
 							{run.text}
@@ -161,9 +187,9 @@ function runsOf(parts: readonly ChangeObject<string>[]): WordRun[] {
 }
 
 /**
- * One field that moved, its name over what it said and what it says: the whole
- * of both, with the words that moved marked, because which part of a long
- * description or a binding moved is exactly what a reader is asking.
+ * One field that moved, its name over what it said and what it says: the whole of both, with the
+ * words that moved marked, because which part of a long description or a binding moved is exactly
+ * what a reader is asking.
  * @param props The field.
  * @returns The field.
  */
@@ -171,10 +197,12 @@ function Moved(props: MovedProps): JSX.Element {
 	const { change } = props;
 	const runs = wordRuns(valueText(change.before), valueText(change.after));
 	return (
-		<div data-field={change.field} className="flex flex-col gap-1">
-			<dt className="text-muted-foreground text-body">{change.field}</dt>
+		<div data-field={change.field} className="flex flex-col py-2">
+			<dt className="text-body text-foreground px-3 pb-1.5 font-medium">
+				{fieldName(change.field)}
+			</dt>
 			{change.field === "traffic" ? (
-				<dd className="text-body">Illustrated traffic changed</dd>
+				<dd className="text-body px-3">Illustrated traffic changed</dd>
 			) : (
 				<>
 					<MovedValue runs={runs.was} when="was" />
@@ -185,23 +213,23 @@ function Moved(props: MovedProps): JSX.Element {
 	);
 }
 
+/**
+ * A field's name as a reader reads it: its first word capitalized, and the humps of a compound
+ * name parted into words.
+ * @param field The field, as the comparison names it.
+ * @returns The name.
+ */
+function fieldName(field: string): string {
+	const words = field.replace(/[A-Z]/gu, (hump) => ` ${hump.toLowerCase()}`);
+	return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
 /** Inputs for the standing block. */
 interface StandingBlockProps {
 	/** How the subject stands, or null when the variant is read against nothing. */
 	against: StandingProps | null;
-}
-
-/**
- * What to say in a sentence of how the subject stands: nothing for one that
- * stands unchanged, and nothing for a changed one whose fields say it already.
- * @param against How it stands.
- * @returns The sentence, or undefined.
- */
-function sentenceOf(against: StandingProps): string | undefined {
-	if (against.standing === "changed" && against.moved.length > 0) {
-		return undefined;
-	}
-	return standingSentence(against.standing);
+	/** The icon of the section, where its column draws section icons. */
+	icon?: RemixiconComponentType | undefined;
 }
 
 /**
@@ -211,7 +239,42 @@ function sentenceOf(against: StandingProps): string | undefined {
  * @returns Whether it does.
  */
 function differs(against: StandingProps | null): against is StandingProps {
-	return against !== null && (against.moved.length > 0 || sentenceOf(against) !== undefined);
+	return (
+		against !== null && (against.moved.length > 0 || standingWord(against.standing) !== undefined)
+	);
+}
+
+/** The tint of each standing's chip. */
+const CHIP_TINTS = {
+	added: "border-standing-added/40 bg-standing-added/12",
+	changed: "border-standing-changed/40 bg-standing-changed/12",
+	removed: "border-standing-removed/40 bg-standing-removed/12",
+} as const;
+
+/**
+ * How the subject stands, as a chip at the end of the section's head: the mark that the picture
+ * and the change list put on it, and its word.
+ * @param props The standing.
+ * @param props.standing How the subject stands.
+ * @returns The chip, or nothing for a subject that stands unchanged.
+ */
+function StandingChip(props: { readonly standing: ChangeKind }): JSX.Element | null {
+	const { standing } = props;
+	const word = standingWord(standing);
+	if (word === undefined || standing === "unchanged") return null;
+	return (
+		<span
+			data-slot="semantic-inspector-standing"
+			data-standing={standing}
+			className={cn(
+				"text-body text-foreground rounded-chip inline-flex h-5 shrink-0 items-center gap-1 border px-1.5",
+				CHIP_TINTS[standing],
+			)}
+		>
+			<StandingSample standing={standing} />
+			{word}
+		</span>
+	);
 }
 
 /**
@@ -220,8 +283,10 @@ function differs(against: StandingProps | null): against is StandingProps {
  * The picture already says which is which without words. This answers what the
  * picture cannot: a card drawn as changed does not say *what* changed, and a
  * standing without a before and an after is a badge rather than information.
- * Nothing at all for a subject that stands unchanged — most of a variant does,
- * and saying so on every panel would bury the few that moved.
+ * So the head names the state it is read against and how the subject stands
+ * there, and a card under it sets each moved field out as a diff. Nothing at all
+ * for a subject that stands unchanged — most of a variant does, and saying so on
+ * every panel would bury the few that moved.
  * @param props How it stands, what it is compared against, and what moved.
  * @returns The block, or nothing.
  */
@@ -230,30 +295,30 @@ function StandingBlock(props: StandingBlockProps): JSX.Element | null {
 	if (!differs(against)) {
 		return null;
 	}
-	const sentence = sentenceOf(against);
+	const title = `Against ${against.against}`;
 	return (
-		<SidebarSection
-			title={`Against ${against.against}`}
-			slot="semantic-inspector-against"
-			level={3}
+		<section
+			data-slot="semantic-inspector-against"
+			aria-label={title}
+			className="border-border flex flex-col gap-1.5 border-t pt-4"
 		>
-			{sentence !== undefined && (
-				<p
-					className="text-body"
-					data-slot="semantic-inspector-standing"
-					data-standing={against.standing}
-				>
-					{sentence}
-				</p>
-			)}
+			<div className="flex min-h-6 items-center justify-between gap-2">
+				<h3 className="m-0 min-w-0">
+					<SectionLabel icon={props.icon} title={title} />
+				</h3>
+				<StandingChip standing={against.standing} />
+			</div>
 			{against.moved.length > 0 && (
-				<dl data-slot="semantic-inspector-moved" className="mt-1 flex flex-col gap-2">
+				<dl
+					data-slot="semantic-inspector-moved"
+					className="plate divide-border m-0 flex flex-col divide-y overflow-hidden"
+				>
 					{against.moved.map((change) => (
 						<Moved key={change.field} change={change} />
 					))}
 				</dl>
 			)}
-		</SidebarSection>
+		</section>
 	);
 }
 
@@ -349,7 +414,7 @@ interface StandingRegionProps extends WaitingProps, StandingBlockProps {
  * @returns The region, or nothing when there is nothing to say.
  */
 function Standing(props: StandingRegionProps): JSX.Element | null {
-	const { open, against, code, flush } = props;
+	const { open, against, code, flush, icon } = props;
 	if (open.length === 0 && !differs(against) && code === null) {
 		return null;
 	}
@@ -357,7 +422,7 @@ function Standing(props: StandingRegionProps): JSX.Element | null {
 		<>
 			<WaitingBlock open={open} />
 			<CodeBlock code={code} />
-			<StandingBlock against={against} />
+			<StandingBlock against={against} icon={icon} />
 		</>
 	);
 	return flush === true ? (
@@ -405,22 +470,22 @@ function valueText(value: unknown): string {
 }
 
 /**
- * What a subject's standing says, in a sentence.
+ * What a subject's standing says, in a word.
  *
  * The picture says which is which in shape, lightness and texture; this says it
- * in words, and names the state being compared against so that "changed" is
- * never changed-from-nowhere. The words hold whichever way the two variants lie
- * in time: a historical variant is read against the current one as much as a
- * proposal is. Nothing is said about a subject that stands unchanged: most of a
- * variant does, and a line on every card saying so would bury the handful that
- * did move.
+ * in words, beside the name of the state being compared against, so that
+ * "changed" is never changed-from-nowhere. The words hold whichever way the two
+ * variants lie in time: a historical variant is read against the current one as
+ * much as a proposal is. Nothing is said about a subject that stands unchanged:
+ * most of a variant does, and a word on every card saying so would bury the
+ * handful that did move.
  * @param standing How the subject stands.
- * @returns The sentence, or undefined when there is nothing to say.
+ * @returns The word, or undefined when there is nothing to say.
  */
-function standingSentence(standing: ChangeKind): string | undefined {
-	if (standing === "added") return "Added.";
-	if (standing === "removed") return "Removed.";
-	return standing === "changed" ? "Changed." : undefined;
+function standingWord(standing: ChangeKind): string | undefined {
+	if (standing === "added") return "Added";
+	if (standing === "removed") return "Removed";
+	return standing === "changed" ? "Changed" : undefined;
 }
 
 export { Standing, ReconciliationIssues, type StandingProps };

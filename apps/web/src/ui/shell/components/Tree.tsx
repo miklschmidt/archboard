@@ -20,7 +20,7 @@ import {
 } from "react";
 
 import { Button, cn } from "@archboard/ui-kit/components";
-import { GROUP_LINE, rowTone } from "#ui/shell/rules/row-tone.ts";
+import { rowTone } from "#ui/shell/rules/row-tone.ts";
 import { treeKey, type TreeKeyAction, type TreeKeyRow } from "#ui/shell/rules/tree-keys.ts";
 import {
 	DISCLOSURE_WIDTH,
@@ -29,6 +29,7 @@ import {
 	FACTS_INSET,
 	FLAT_INSET,
 	guideX,
+	MARKER_INK,
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,
@@ -52,6 +53,7 @@ const TREE_STYLE: CSSProperties = { paddingInline: ROW_GUTTER };
 const DISCLOSURE_STYLE = { width: DISCLOSURE_WIDTH } as const;
 const MARKER_STYLE = { width: MARKER_WIDTH } as const;
 const NAME_STYLE = { marginLeft: NAME_GAP } as const;
+const IN_MARKER_STYLE = { marginLeft: MARKER_INK } as const;
 const FACTS_STYLE = { marginLeft: FACTS_GAP } as const;
 
 /** Keys that command rather than type: Space opens, `/` finds, and the rest move the reading. */
@@ -124,7 +126,9 @@ function TreeRoot<Row extends TreeKeyRow>(props: TreeRootProps<Row>): JSX.Elemen
 	);
 	const focusRow = useCallback((id: string): void => {
 		setFocusedId(id);
-		tree.current?.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"]`)?.focus();
+		const row = tree.current?.querySelector<HTMLElement>(`[data-row-id="${CSS.escape(id)}"]`);
+		row?.focus({ preventScroll: true });
+		row?.scrollIntoView({ block: "nearest" });
 	}, []);
 	const perform = useCallback(
 		(action: TreeKeyAction<Row>): void => {
@@ -182,19 +186,28 @@ interface TreeRowProps {
 	readonly dataset?: Readonly<Record<string, string>> | undefined;
 	/** A row of a table: it has no depth, so it keeps no room for a disclosure. */
 	readonly flat?: boolean | undefined;
+	/**
+	 * A row that never holds rows, among siblings that never do either: it keeps no room for a
+	 * disclosure, so its marker and words stand under those of the row that holds it.
+	 */
+	readonly leaf?: boolean | undefined;
 	readonly onOpen: (beside: boolean) => void;
 	readonly onToggle?: (() => void) | undefined;
 	readonly children: ReactNode;
 }
 
 /**
- * The rails of the rows that hold a row of a depth, drawn into the floor of that row: a stuck row
- * covers what scrolls beneath it, so it draws the rails that it covers, and they run unbroken.
+ * The rails of the rows above the row that holds a row of a depth, drawn into the floor of that
+ * row: a stuck row covers what scrolls beneath it, so it draws the rails that it covers, and they
+ * run unbroken. The rail of the row that holds it is the row's own stretch (`RowRail`).
  * @param depth The row's depth.
  * @returns The style of its floor.
  */
 function railsUnder(depth: number): CSSProperties {
-	const rails = Array.from({ length: depth }, (_, above) => guideX(above) - ROW_GUTTER);
+	const rails = Array.from(
+		{ length: Math.max(depth - 1, 0) },
+		(_, above) => guideX(above) - ROW_GUTTER,
+	);
 	return {
 		backgroundImage: rails.map(() => "linear-gradient(var(--border), var(--border))").join(", "),
 		backgroundPosition: rails.map((x) => `${x}px 0`).join(", "),
@@ -212,9 +225,14 @@ function railsUnder(depth: number): CSSProperties {
 function rowPlace(props: TreeRowProps): CSSProperties {
 	const { depth, expanded, flat } = props;
 	const left = (flat === true ? FLAT_INSET : disclosureX(depth)) - ROW_GUTTER;
-	const place: CSSProperties = { paddingLeft: left, paddingRight: FACTS_INSET - ROW_GUTTER };
+	const clearance = stuckTop(depth * ROW_HEIGHT);
+	const place: CSSProperties = {
+		paddingLeft: left,
+		paddingRight: FACTS_INSET - ROW_GUTTER,
+		scrollMarginTop: clearance,
+	};
 	if (expanded !== true) return place;
-	const stuck = { ...place, top: stuckTop(depth * ROW_HEIGHT) };
+	const stuck = { ...place, top: clearance };
 	return props.selected ? stuck : { ...stuck, ...railsUnder(depth) };
 }
 
@@ -270,6 +288,67 @@ function Disclosure(props: {
 	);
 }
 
+/** Where a tick ends, from the start of the row's disclosure column, just short of what it meets. */
+const TICK_END = { chevron: 3, slot: DISCLOSURE_WIDTH - 4, marker: -4 } as const;
+
+/**
+ * A row's stretch of the rail that hangs from the row that holds it, and the tick from the rail to
+ * the row. The stretch runs the row's height, and down to the tick on the last row of its group,
+ * so the rail ends where its last tick leaves it. The tick ends just short of the row's chevron, or of
+ * where its marker or name starts.
+ * @param props The row's depth and whether it holds rows.
+ * @param props.depth The row's depth, 1 or more.
+ * @param props.end What the tick runs up to: the row's chevron, its empty chevron slot, or, on a
+ * leaf, its marker.
+ * @returns The stretch and the tick.
+ */
+function RowRail(props: {
+	readonly depth: number;
+	readonly end: "chevron" | "slot" | "marker";
+}): JSX.Element {
+	const { depth, end: to } = props;
+	const place = useMemo((): CSSProperties => {
+		const rail = guideX(depth - 1) - ROW_GUTTER;
+		const end = disclosureX(depth) - ROW_GUTTER + TICK_END[to];
+		// The tick meets the middle of the row's first line, which a row of several lines keeps.
+		return {
+			"--rail-x": `${rail}px`,
+			"--tick-width": `${end - rail}px`,
+			"--tick-top": `${ROW_HEIGHT / 2}px`,
+		};
+	}, [depth, to]);
+	return (
+		<span aria-hidden="true" style={place} className="pointer-events-none absolute inset-0">
+			<span
+				className={cn(
+					"bg-border absolute top-0 left-(--rail-x) h-full w-px",
+					"in-[[role=treeitem]:last-child]:h-(--tick-top)",
+					"in-[[role=treeitem]:has(+[role=group]:last-child)]:h-(--tick-top)",
+				)}
+			/>
+			<span className="bg-border absolute top-(--tick-top) left-(--rail-x) h-px w-(--tick-width)" />
+		</span>
+	);
+}
+
+/**
+ * What stands before a row's own parts: its stretch of the rail and its chevron. A row of a table
+ * has neither.
+ * @param props The row.
+ * @returns The rail and the chevron, or nothing.
+ */
+function RowLead(props: TreeRowProps): JSX.Element | null {
+	const { depth, expanded, onToggle, leaf } = props;
+	if (props.flat === true) return null;
+	const end = leaf === true ? "marker" : expanded === undefined ? "slot" : "chevron";
+	return (
+		<>
+			{depth > 0 && <RowRail depth={depth} end={end} />}
+			{leaf !== true && <Disclosure expanded={expanded} onToggle={onToggle} />}
+		</>
+	);
+}
+
 /**
  * One row. A click on the row opens its destination, and a click on its chevron folds it.
  * @param props The row.
@@ -305,82 +384,49 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			style={rowPlace(props)}
 			className={rowClass(props)}
 		>
-			{props.flat !== true && <Disclosure expanded={props.expanded} onToggle={props.onToggle} />}
+			<RowLead {...props} />
 			{props.children}
 		</div>
 	);
 }
 
 /**
- * The name of a section stands where the name of a row of depth zero starts, and sticks under the
- * head of a column section.
- */
-const SECTION_STYLE: CSSProperties = {
-	paddingLeft: disclosureX(0) + DISCLOSURE_WIDTH + NAME_GAP,
-	paddingRight: FACTS_INSET,
-	top: stuckTop(0),
-};
-
-/** The guide of a section runs down from its name, as the guide of an open row of depth zero. */
-const SECTION_GUIDE_STYLE: CSSProperties = { left: guideX(0) - ROW_GUTTER };
-
-/**
- * What a row holds, under the guide that runs down from it.
+ * What a row holds. Each row in it draws its own stretch of the rail that hangs from the row that
+ * holds them (`RowRail`), so the rail ends at the middle of the last row. While rows follow the
+ * group, the row that holds it is not the last of its own rows, so the group carries that row's
+ * rail on through itself.
  * @param props The row's depth and the rows it holds.
  * @param props.depth The depth of the row that holds them.
+ * @param props.label The name of the row that holds them, which names the group.
  * @param props.children The rows.
  * @returns The group.
  */
-function TreeGroup(props: { readonly depth: number; readonly children: ReactNode }): JSX.Element {
-	const guide = useMemo(() => ({ left: guideX(props.depth) - ROW_GUTTER }), [props.depth]);
+function TreeGroup(props: {
+	readonly depth: number;
+	readonly label?: string | undefined;
+	readonly children: ReactNode;
+}): JSX.Element {
+	const { depth } = props;
+	const through = useMemo(
+		(): CSSProperties | undefined =>
+			depth === 0 ? undefined : { "--rail-x": `${guideX(depth - 1) - ROW_GUTTER}px` },
+		[depth],
+	);
 	return (
 		// The pattern of a tree: the rows of a branch sit in a group inside the tree.
-		// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA tree pattern's group
-		<div role="group" className="relative">
-			<span aria-hidden="true" style={guide} className="bg-border absolute inset-y-0 w-px" />
-			{props.children}
-		</div>
-	);
-}
-
-/**
- * Rows that belong together without one row that holds them, such as the flows of a collection.
- * Its name stands in full ink where the name of a row of depth zero stands, and its rows stand one
- * step deeper under a guide, as the parts of an open module do, so the name reads as their parent.
- * The name is not a row, so it adds no stop to the keys of the tree, and it stays above its rows
- * while the column scrolls, under the head of the column's section.
- * @param props The section's name and its rows, each of depth one.
- * @param props.label The name.
- * @param props.children The rows.
- * @returns The section.
- */
-function TreeSection(props: { readonly label: string; readonly children: ReactNode }): JSX.Element {
-	return (
 		<div
 			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA tree pattern's group
 			role="group"
 			aria-label={props.label}
 			data-tree-section={props.label}
-			className="group/section"
+			style={through}
+			className={cn(
+				"relative",
+				depth > 0 &&
+					"not-last:before:bg-border not-last:before:absolute not-last:before:inset-y-0 not-last:before:left-(--rail-x) not-last:before:w-px",
+			)}
 		>
-			<div
-				aria-hidden="true"
-				style={SECTION_STYLE}
-				className={cn(
-					GROUP_LINE,
-					"bg-sidebar sticky z-10 -mx-1 flex h-7 items-center group-first/section:-mt-1",
-				)}
-			>
-				<span className="truncate">{props.label}</span>
-			</div>
-			<div className="relative">
-				<span
-					aria-hidden="true"
-					style={SECTION_GUIDE_STYLE}
-					className="bg-border absolute inset-y-0 w-px"
-				/>
-				{props.children}
-			</div>
+			{props.children}
 		</div>
 	);
 }
@@ -404,7 +450,7 @@ function TreeMarker(props: {
 		<span
 			title={props.title}
 			style={MARKER_STYLE}
-			className="relative mr-1.5 flex h-5 shrink-0 items-center justify-center"
+			className="relative flex h-5 shrink-0 items-center justify-center"
 		>
 			{Icon !== undefined && <Icon className="text-muted-foreground size-3.5" aria-hidden="true" />}
 			{props.children}
@@ -419,6 +465,8 @@ function TreeMarker(props: {
  * @param props.match Where the filter matched it, or null.
  * @param props.title The whole name, on hover, where it differs from the name shown.
  * @param props.className Classes for its type.
+ * @param props.inMarker Whether the name stands in the marker column, on a leaf with no marker, so
+ * its words start where the ink of its parent's marker starts.
  * @returns The name.
  */
 function TreeName(props: {
@@ -426,11 +474,12 @@ function TreeName(props: {
 	readonly match?: TextRange | null | undefined;
 	readonly title?: string | undefined;
 	readonly className?: string | undefined;
+	readonly inMarker?: boolean | undefined;
 }): JSX.Element {
 	const { text, match } = props;
 	return (
 		<span
-			style={NAME_STYLE}
+			style={props.inMarker === true ? IN_MARKER_STYLE : NAME_STYLE}
 			title={props.title ?? text}
 			className={cn("text-control min-w-0 flex-1 truncate font-normal", props.className)}
 		>
@@ -518,7 +567,6 @@ function keepOwnKeys(event: KeyboardEvent<HTMLElement>): void {
 const Tree = Object.assign(TreeRoot, {
 	Row: TreeRow,
 	Group: TreeGroup,
-	Section: TreeSection,
 	Marker: TreeMarker,
 	Name: TreeName,
 	Facts: TreeFacts,

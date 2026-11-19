@@ -4,6 +4,7 @@ import { Badge, cn } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/model/content";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import { usePeekRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-peek-row.ts";
@@ -55,6 +56,7 @@ function ModelChangesWith(props: ModelChangesWithProps): JSX.Element | null {
 	if (partners.length === 0) return null;
 	return (
 		<ModelPanel.Section
+			icon={SECTION_ICONS.changesWith}
 			title="Changes with"
 			count={partners.length}
 			slot="model-panel-changes-with"

@@ -12,8 +12,8 @@ import {
 import { ModelFind } from "#ui/architecture-drawing/model-reader/reading/components/ModelFind.tsx";
 import { ModelFlows } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlows.tsx";
 import {
-	ModelCodePath,
 	ModelHeading,
+	ModelReadingControls,
 	ModelStateChip,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelHeading.tsx";
 import { ModelHistoryDialog } from "#ui/architecture-drawing/model-reader/reading/components/ModelHistoryDialog.tsx";
@@ -21,6 +21,8 @@ import { ModelMeasuresDialog } from "#ui/architecture-drawing/model-reader/readi
 import { ModelReadingSurface } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingSurface.tsx";
 import { ModelTree } from "#ui/architecture-drawing/model-reader/reading/components/ModelTree.tsx";
 import { ModelWalkthroughs } from "#ui/architecture-drawing/model-reader/reading/components/ModelWalkthroughs.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
+import { useFolds } from "#ui/architecture-drawing/model-reader/reading/hooks/use-folds.ts";
 import { useChangeKeys } from "#ui/architecture-drawing/model-reader/reading/hooks/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
 import { flowCollections } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
@@ -89,9 +91,6 @@ function endingOf(reader: Reader): string | undefined {
 	return nameIn(structure.depicted.flows, flow);
 }
 
-/** Every section of the column stands open until the reader folds it. */
-const NONE_FOLDED: ReadonlySet<ColumnSection> = new Set();
-
 /** How a section of the column folds. */
 interface SectionFolds {
 	readonly folded: ReadonlySet<ColumnSection>;
@@ -121,12 +120,20 @@ function ReadingChanges(props: {
 		},
 		[onDiagram, showHere],
 	);
+	const summary = useMemo(() => <ModelChanges.Summary list={walk.list} />, [walk.list]);
+	const strip = useMemo(
+		() => (walk.reviewing ? <ModelChanges.Walker walk={walk} /> : undefined),
+		[walk],
+	);
 	if (walk.list === null) return null;
 	return (
 		<ModelColumn.Section
 			section="changes"
+			icon={SECTION_ICONS.changes}
 			label="Changes"
 			count={walk.count}
+			summary={summary}
+			strip={strip}
 			folded={folds.folded.has("changes")}
 			onFold={folds.onFold}
 		>
@@ -166,6 +173,7 @@ function ReadingSections(props: {
 			<ReadingChanges reader={reader} folds={folds} />
 			<ModelColumn.Section
 				section="modules"
+				icon={SECTION_ICONS.modules}
 				label="Modules"
 				count={tree.owner.size}
 				folded={folded.has("modules")}
@@ -185,6 +193,7 @@ function ReadingSections(props: {
 			{flows.length > 0 && (
 				<ModelColumn.Section
 					section="flows"
+					icon={SECTION_ICONS.flows}
 					label="Flows"
 					count={flows.length}
 					folded={folded.has("flows")}
@@ -203,6 +212,7 @@ function ReadingSections(props: {
 			{model.walkthroughs.length > 0 && (
 				<ModelColumn.Section
 					section="walkthroughs"
+					icon={SECTION_ICONS.walkthroughs}
 					label="Walkthroughs"
 					count={model.walkthroughs.length}
 					folded={folded.has("walkthroughs")}
@@ -228,7 +238,6 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const [finding, setFinding] = useState(false);
 	const [query, setQuery] = useState("");
 	const [measuring, setMeasuring] = useState(false);
-	const [folded, setFolded] = useState(NONE_FOLDED);
 	const { reviewing, step } = walk;
 	const typeAhead = useCallback(
 		(text: string): void => {
@@ -242,13 +251,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 		},
 		[reviewing, step],
 	);
-	const onFold = useCallback((section: ColumnSection): void => {
-		setFolded((now) => {
-			const next = new Set(now);
-			if (!next.delete(section)) next.add(section);
-			return next;
-		});
-	}, []);
+	const { folded, fold: onFold } = useFolds<ColumnSection>();
 	const folds = useMemo(() => ({ folded, onFold }), [folded, onFold]);
 	const openMeasures = useCallback((): void => setMeasuring(true), []);
 	const records = keepsRecord(model);
@@ -307,30 +310,28 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 }
 
 /**
- * What walks or narrows a reading: the changes of a proposal, and the way out of a focus.
+ * The way out of a focus, which narrows the reading.
  * @param props The reader.
  * @param props.reader The reader.
- * @returns The controls.
+ * @returns The control, or nothing while nothing is focused.
  */
-function ReadingWalk(props: { readonly reader: Reader }): JSX.Element {
-	const { walk, location } = props.reader;
-	const { focus, grammar, setFocus } = location;
+function ReadingFocus(props: { readonly reader: Reader }): JSX.Element | null {
+	const { focus, grammar, setFocus } = props.reader.location;
 	const clear = useCallback((): void => setFocus(null), [setFocus]);
+	if (grammar !== "architecture" || focus === null) return null;
 	return (
-		<>
-			{walk.reviewing && <ModelChanges.Walker walk={walk} />}
-			{grammar === "architecture" && focus !== null && (
-				<Button data-slot="model-clear-focus" variant="ghost" size="sm" onClick={clear}>
-					Clear focus ({focus.length})
-				</Button>
-			)}
-		</>
+		<Button data-slot="model-clear-focus" variant="ghost" size="sm" onClick={clear}>
+			Clear focus ({focus.length})
+		</Button>
 	);
 }
 
 /**
- * The header of a reading: the crumbs, the open module's code path, the state chip, what it is
- * compared with, the walk of a proposal's changes, a standing focus and `Diagram | About`. A code path says where a module is, so a flow shows none.
+ * The header of a reading. Where the reader is comes first: the crumbs, with all the room they need,
+ * because the open module's tab on the picture and the right panel already show its code path.
+ * What the reader reads stands apart at the end: a standing focus, then the state and what it is
+ * compared with, as one control. The walk of a proposal's changes stands with its list, in the
+ * left column.
  * @param props The reader.
  * @param props.reader The reader.
  * @param props.comparison What the reading is compared with, while the picture is on screen.
@@ -341,11 +342,27 @@ function ReadingHeading(props: {
 	readonly comparison: ReactNode;
 }): JSX.Element {
 	const { reader } = props;
-	const { model, location, structure, tree, accepted, onOpen } = reader;
+	const { model, location, structure, accepted, onOpen } = reader;
 	const { opened, trail } = structure;
 	const ending = endingOf(reader);
+	const reading = (
+		<>
+			<ReadingFocus reader={reader} />
+			<ModelReadingControls>
+				{keepsRecord(model) && (
+					<ModelStateChip
+						model={model}
+						state={location.state}
+						checkpoint={location.checkpoint}
+						onOpen={reader.openHistory}
+					/>
+				)}
+				{props.comparison}
+			</ModelReadingControls>
+		</>
+	);
 	return (
-		<ModelHeading page={reader.page} onPage={reader.onPage}>
+		<ModelHeading page={reader.page} onPage={reader.onPage} reading={reading}>
 			<ModelBreadcrumbs
 				name={model.manifest.name}
 				scope={opened}
@@ -354,17 +371,6 @@ function ReadingHeading(props: {
 				pending={accepted.pending}
 				onOpen={onOpen}
 			/>
-			<ModelCodePath path={ending === undefined ? tree.owner.get(opened ?? "")?.path : undefined} />
-			{keepsRecord(model) && (
-				<ModelStateChip
-					model={model}
-					state={location.state}
-					checkpoint={location.checkpoint}
-					onOpen={reader.openHistory}
-				/>
-			)}
-			{props.comparison}
-			<ReadingWalk reader={reader} />
 		</ModelHeading>
 	);
 }
