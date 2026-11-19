@@ -310,7 +310,11 @@ function pathReferences(node: Node, context: UseContext, seen: Set<number>): Wri
 	const bound = context.bound.has(node.id) && whole.id === node.id;
 	if (bound || hidden(whole, context)) return [];
 	const typeOnly = context.types.holds(whole.startIndex);
-	return pathSymbols(whole, node).map((symbol) => use(symbol, whole, typeOnly));
+	const symbols = pathSymbols(whole, node);
+	return symbols.map((symbol, index) => ({
+		...use(symbol, whole, typeOnly),
+		...(index < symbols.length - 1 ? { pathPrefix: true as const } : {}),
+	}));
 }
 
 /**
@@ -382,7 +386,7 @@ function tokenReferences(tree: Node, context: UseContext): WrittenUse[] {
 		const symbols = found.member ? [`.${last}`] : prefixes(readPath(found.path, found.node));
 		const line = found.node.startPosition.row + 1;
 		const way = found.called ? {} : { asValue: true as const };
-		return symbols.map((symbol) => ({
+		return symbols.map((symbol, index) => ({
 			symbol,
 			node: found.node,
 			line,
@@ -390,6 +394,7 @@ function tokenReferences(tree: Node, context: UseContext): WrittenUse[] {
 			kind: "call",
 			typeOnly: false,
 			...way,
+			...(index < symbols.length - 1 ? { pathPrefix: true as const } : {}),
 		}));
 	});
 }

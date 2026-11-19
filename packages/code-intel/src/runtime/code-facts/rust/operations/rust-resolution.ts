@@ -153,6 +153,15 @@ function ownName(first: string, lookup: FileLookup): boolean {
 }
 
 /**
+ * Whether the use can name a value beside a module.
+ * @param use The written reference.
+ * @returns True for the final name of a path used at run time.
+ */
+function canNameValue(use: Reference & Pick<RustUse, "pathPrefix">): boolean {
+	return !use.typeOnly && !use.pathPrefix;
+}
+
+/**
  * The `use` leaf a use is written through where the use can only be a value:
  * written alone, at run time, through a leaf that names no glob.
  * @param use The use, through an import.
@@ -160,11 +169,11 @@ function ownName(first: string, lookup: FileLookup): boolean {
  * @returns The leaf's import, or undefined.
  */
 function valueLeaf(
-	use: Reference & { readonly through: ReferenceThroughImport },
+	use: Reference & Pick<RustUse, "pathPrefix"> & { readonly through: ReferenceThroughImport },
 	imports: readonly Import[],
 ): Import | undefined {
 	const found = imports[use.through.import];
-	const alone = use.symbol === use.through.local && !use.typeOnly;
+	const alone = use.symbol === use.through.local && canNameValue(use);
 	return alone && found?.names[0]?.imported !== "*" ? found : undefined;
 }
 
@@ -350,7 +359,10 @@ function createRustResolver(
 	 * @param lookup The file and what its globs open.
 	 * @returns The target, or undefined.
 	 */
-	const useTarget = async (use: Reference, lookup: FileLookup): Promise<Target | undefined> => {
+	const useTarget = async (
+		use: Reference & Pick<RustUse, "pathPrefix">,
+		lookup: FileLookup,
+	): Promise<Target | undefined> => {
 		const [first = ""] = use.symbol.split(".");
 		if (ownName(first, lookup)) return { path: lookup.from, symbol: use.symbol };
 		const target = crates().resolvePath(lookup.from, use.symbol.split("."));
@@ -369,8 +381,14 @@ function createRustResolver(
 	 * @param module The module's file.
 	 * @returns The target.
 	 */
-	const wholeTarget = async (use: Reference, from: string, module: string): Promise<Target> => {
-		const value = use.typeOnly ? undefined : await valueBesideModule(from, use.symbol.split("."));
+	const wholeTarget = async (
+		use: Reference & Pick<RustUse, "pathPrefix">,
+		from: string,
+		module: string,
+	): Promise<Target> => {
+		const value = canNameValue(use)
+			? await valueBesideModule(from, use.symbol.split("."))
+			: undefined;
 		return value ?? { path: module, symbol: "*" };
 	};
 
@@ -452,7 +470,7 @@ function createRustResolver(
 	 */
 	const valueTarget = async (
 		from: string,
-		use: Reference & { readonly through: ReferenceThroughImport },
+		use: Reference & Pick<RustUse, "pathPrefix"> & { readonly through: ReferenceThroughImport },
 		imports: readonly Import[],
 	): Promise<Target | undefined> => {
 		const found = valueLeaf(use, imports);
