@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T06:02:00Z'
-updated_date: '2026-11-19T06:03:00Z'
+updated_date: '2026-11-19T09:55:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -41,3 +41,14 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 - [ ] #3 Behavior is unchanged: the existing tests of the touched packages pass, and renderer output is identical where a crate draws
 - [ ] #4 Each removed or renamed symbol that a vault anchor names is reported with its replacement
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. timing: each group stays inside behind a keyed getter (paneMs("report")); the repeated math (deadlines, freshness, slide settling, reach hops, page-ready seconds, painter phases, locality start) becomes timing functions; codemod every caller.
+2. walkthrough, renderer, server-lifecycle, code-opener, process: exported values become getters or the behavior callers repeat; names only tests used stop being exported.
+3. apps/cli and apps/web: shared refusals and options behind getters, single-reader schemas move to their reader, repo routes come from the repo module, query keys hide behind invalidate/key functions.
+4. actions/check, scripts/release: drop unused exports; summary limits behind a function.
+5. Keep interface-width ceilings; lower the ones that shrink.
+6. Verify: types, lint, format, test lanes, archboard check code.
+<!-- SECTION:PLAN:END -->

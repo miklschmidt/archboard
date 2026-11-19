@@ -99,6 +99,9 @@ const CodeCheckRequestSchema = CodeCheckInputSchema.extend(FixInputSchema.shape)
 	"--every-draft reads every draft, and --state one name: use one of them",
 );
 
+/** The server is unreachable, as every command that needs it refuses. */
+const serverRefusal = refusal("server");
+
 const stateNotFoundRefusal = {
 	code: "STATE_NOT_FOUND",
 	exit: 2,
@@ -437,13 +440,7 @@ const checkAllContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [
-		refusal("server"),
-		stateNotFoundRefusal,
-		stateAmbiguousRefusal,
-		planRefusal,
-		baseRefusal,
-	],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
 	relationships: [semanticsRoute, codeRoute, ...embedsRelationships],
 	/**
 	 * Run every check.
@@ -476,7 +473,7 @@ const checkEmbedsContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read", "local-write"],
-	refusals: [refusal("server")],
+	refusals: [serverRefusal],
 	relationships: embedsRelationships,
 	/**
 	 * Run the embeds check.
@@ -504,7 +501,7 @@ const checkSemanticsContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [refusal("server")],
+	refusals: [serverRefusal],
 	relationships: [semanticsRoute],
 	/**
 	 * Run the semantics check.
@@ -538,13 +535,7 @@ const checkCodeContract = defineCommand({
 	),
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [
-		refusal("server"),
-		stateNotFoundRefusal,
-		stateAmbiguousRefusal,
-		planRefusal,
-		baseRefusal,
-	],
+	refusals: [serverRefusal, stateNotFoundRefusal, stateAmbiguousRefusal, planRefusal, baseRefusal],
 	relationships: [codeRoute],
 	/**
 	 * Run the code check.
@@ -578,7 +569,7 @@ const semanticConfigContract = defineCommand({
 	output,
 	prerequisites: [],
 	effects: ["read"],
-	refusals: [refusal("server")],
+	refusals: [serverRefusal],
 	relationships: [
 		{
 			method: "GET",

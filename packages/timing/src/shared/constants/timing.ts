@@ -21,7 +21,8 @@
 // ── The server and its processes ─────────────────────────────────────────
 export { modelLockMs, claimMs } from "#shared/constants/model-locks.ts";
 export { serverLifecycleMs } from "#shared/constants/server-lifecycle.ts";
-export { gitGroupCleanupDeadline, gitMs, processGroupPollMs } from "#shared/constants/git.ts";
+export { gitGroupCleanupDeadline, gitMs } from "#shared/constants/git.ts";
+export { processGroupPollMs } from "#shared/constants/process-groups.ts";
 export {
 	codexApprovalExpiresAt,
 	codexApprovalMs,
