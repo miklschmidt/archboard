@@ -11,11 +11,6 @@ node_modules
 # (ADR 0014). A dist/ left over from before that holds compiled JS nothing reads.
 dist/
 
-# On-demand CLI contract views. They render from the live command registry
-# with `bun run generate:cli-contract`.
-docs/design/generated/command-contract-proof.json
-docs/design/generated/command-contract-proof.md
-
 # Exact-version Codex app-server bindings are reproducible derived output.
 packages/codex-app-server/src/shared/protocol/generated/
 
@@ -63,7 +58,7 @@ site/src/generated/
 /.impeccable/review/
 
 # Impeccable's surface briefs: one person's working notes on one surface. What
-# a build decided lives in DESIGN.md and docs/design, so the briefs stay local.
+# a build decided lives in DESIGN.md, so the briefs stay local.
 /.impeccable/surfaces/
 
 # TASK-150 local reference snapshot; never stage or import it.

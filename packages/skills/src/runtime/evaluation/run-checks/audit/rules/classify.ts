@@ -399,10 +399,15 @@ function exposureOf(
 ): ExposureKind | null {
 	const roots = context.exposure;
 	if (roots === undefined) return null;
+	// The frozen baseline package lives under the evaluation inputs; naming it is skill-package exposure.
+	const outsidePackages = roots.skillPackages.reduce(
+		(text, packageRoot) => text.replaceAll(packageRoot, ""),
+		script,
+	);
 	const reached: readonly [ExposureKind, boolean][] = [
 		[
 			"evaluation-inputs",
-			script.includes(roots.evaluationInputs) || EVALUATION_INPUT_RE.test(script),
+			outsidePackages.includes(roots.evaluationInputs) || EVALUATION_INPUT_RE.test(outsidePackages),
 		],
 		["harness-source", touchesHarness(script, roots)],
 		["skill-package", reachesSkillPackage(script, roots)],

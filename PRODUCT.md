@@ -80,7 +80,7 @@ A source merge or approval never adopts a proposal.
   Every server request names its vault explicitly.
   The server starts without one and can serve multiple repositories.
   The first command in an unknown checkout registers it and reports that registration.
-  [INSTALL.md](INSTALL.md) defines setup and discovery.
+  [INSTALL.md](INSTALL.md) defines setup, and [the install guide](https://usearchboard.dev/docs/install/#find-the-vault-from-another-directory) defines discovery.
 - New vaults start as canonical planning models without implemented current architecture.
   Unmigrated vaults receive `LEGACY_AUTHORITY` and an explicit migration route.
   Mapping, preview, and owner-authorized installation preserve exact originals before cutover.
