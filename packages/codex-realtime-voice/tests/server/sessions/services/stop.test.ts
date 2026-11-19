@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import type { Clock } from "@archboard/timing";
 import { createIdentityAuthorities, type TurnId } from "@archboard/codex-app-server/identity";
 import {
 	guardWorkhorse,
@@ -7,7 +8,6 @@ import {
 	stopReport,
 	stopWorkTree,
 	WorkhorseStopRefusal,
-	type WorkTreeStopClock,
 } from "#server/sessions/services/stop.ts";
 import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 import {
@@ -116,13 +116,15 @@ function codexTree(threads: Record<string, FakeThread>) {
 			return {} as never;
 		},
 	};
-	const clock: WorkTreeStopClock = {
+	const clock: Clock = {
 		now: () => now,
-		wait: async (ms) => {
+		after: (ms, run) => {
 			now += ms;
 			for (const id of ending) threads[id]!.turn = null;
 			ending.clear();
 			onWait.shift()?.();
+			run();
+			return () => {};
 		},
 	};
 	/**

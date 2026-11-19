@@ -1,6 +1,7 @@
 // What the tab sessions of one Codex child generation are, and what building one is handed
 // The store that keeps them is `services/sessions/sessions.ts`.
 
+import type { Clock } from "@archboard/timing";
 import type { CoordinatorCallbacks } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
 import type { CoordinatorToolDispatcher } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import type { CodexCoordinator } from "#runtime/voice/coordinator/protocol/contract.ts";
@@ -34,7 +35,6 @@ import type {
 	WorkhorseStop,
 } from "#server/sessions/services/workhorses.ts";
 import type { SessionVoiceStartTrace } from "#server/voice/services/start-trace.ts";
-import type { WorkTreeStopClock } from "#server/sessions/services/stop.ts";
 import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 
 /** The runtime owners a tab session's coordinator and voice run on. */
@@ -156,7 +156,7 @@ interface CreateCodexWorkbenchSessionsOptions {
 	/** What reads a thread's status, unsubscribes it once it is idle, and interrupts its turn. */
 	readonly session: Pick<CodexSession, "threadUnsubscribe"> & WorkTreeStopSession;
 	/** How a work tree stop tells time and waits between its passes; the system clock if omitted. */
-	readonly stopClock?: WorkTreeStopClock;
+	readonly stopClock?: Clock;
 	/** Where a session's links are cleared when the session ends. */
 	readonly threadLink: TabSessionEnding["threadLink"];
 	/** Settle every approval an ended session was still to answer. */
