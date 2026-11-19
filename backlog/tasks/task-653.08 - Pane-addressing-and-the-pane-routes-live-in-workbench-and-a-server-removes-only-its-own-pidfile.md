@@ -3,10 +3,10 @@ id: TASK-653.08
 title: >-
   Pane addressing and the pane routes live in workbench, and a server removes
   only its own pidfile
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T17:33:00Z'
+updated_date: '2026-11-19T20:25:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -33,17 +33,35 @@ Candidate 4 of the archboard-deepen run. packages/server-lifecycle is wide (23 n
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 server-lifecycle has width 16, and ./server-process exports exactly recordServerPid, releaseServerPid, reportStartupOwnership, reportStartupEnd (a first-call-wins latch in the writer), one health read returning source state and frontend build, and staleFrontend; INTERFACE_WIDE clears on server-lifecycle
-- [ ] #2 The pane rules and the pane keys (parsePaneKey, paneAddressKey, interim in server-lifecycle from candidate 11) live in workbench's pane registry, and WebSocketMessage and AgentActivityMessage move to @archboard/workbench/browser-contract in the first commit with the pane rules
-- [ ] #3 workbench exports mountPaneRoutes(app, hooks), semantic-context routes included, and acceptPaneSocket(ws, req, vault); apps/server keeps the listener, the upgrade checks and the architecture feed; open and close are whole private operations (refusal checks, waiter installed before sending, send, cancel on a failed send, settle); registerPane absorbs liveness, the vault check, the shared-id warning and the focus publish; ./panes is about 16 and workbench about 60 from 75, and exports whose last outside caller moved in are deleted
-- [ ] #4 The pidfile fix, the run's one behavior change: releaseServerPid removes the pidfile only when it still holds the bytes this process wrote, launcher cleanup makes the same ownership check, and tests at the pidfile seam show that a release keeps a file another process recorded and removes this process's own; the pull request and the hand-off report it as the one behavior change
-- [ ] #5 A second end report in one process writes nothing, tested with a real pipe descriptor
-- [ ] #6 Every other wire byte is unchanged: route paths, status codes, refusal words, socket messages and health fields; recording-pane-addressing and pane-report-reading tests are rewritten through the registry operations and the old files deleted, and the server-state system tests pass unchanged
-- [ ] #7 The server-lifecycle and workbench package descriptions state the new ownership and the pidfile rule; no ADR unless an advisor's reason would be reopened by a later run
+- [x] #1 server-lifecycle has width 16, and ./server-process exports exactly recordServerPid, releaseServerPid, reportStartupOwnership, reportStartupEnd (a first-call-wins latch in the writer), one health read returning source state and frontend build, and staleFrontend; INTERFACE_WIDE clears on server-lifecycle
+- [x] #2 The pane rules and the pane keys (parsePaneKey, paneAddressKey, interim in server-lifecycle from candidate 11) live in workbench's pane registry, and WebSocketMessage and AgentActivityMessage move to @archboard/workbench/browser-contract in the first commit with the pane rules
+- [x] #3 workbench exports mountPaneRoutes(app, hooks), semantic-context routes included, and acceptPaneSocket(ws, req, vault); apps/server keeps the listener, the upgrade checks and the architecture feed; open and close are whole private operations (refusal checks, waiter installed before sending, send, cancel on a failed send, settle); registerPane absorbs liveness, the vault check, the shared-id warning and the focus publish; ./panes is about 16 and workbench about 60 from 75, and exports whose last outside caller moved in are deleted
+- [x] #4 The pidfile fix, the run's one behavior change: releaseServerPid removes the pidfile only when it still holds the bytes this process wrote, launcher cleanup makes the same ownership check, and tests at the pidfile seam show that a release keeps a file another process recorded and removes this process's own; the pull request and the hand-off report it as the one behavior change
+- [x] #5 A second end report in one process writes nothing, tested with a real pipe descriptor
+- [x] #6 Every other wire byte is unchanged: route paths, status codes, refusal words, socket messages and health fields; recording-pane-addressing and pane-report-reading tests are rewritten through the registry operations and the old files deleted, and the server-state system tests pass unchanged
+- [x] #7 The server-lifecycle and workbench package descriptions state the new ownership and the pidfile rule; no ADR unless an advisor's reason would be reopened by a later run
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Proposal: sL6y1FLr
+
+Branch deepen/653-08-server-lifecycle, based on deepen/module-depth 145a8428b6 (still its head). Six commits: pane move into workbench; ./server-host -> ./server-process with serverCodeState(); pidfile fix; terminal-record latch in the writer; descriptions and ceilings.
+
+Widths. server-lifecycle 23 -> 16 code-check names (./server 5, ./server-client 3, ./config 2, ./server-process 6: recordServerPid, releaseServerPid, reportStartupOwnership, reportStartupEnd, serverCodeState, staleFrontend); ceiling 26 -> 16; no INTERFACE_WIDE. workbench 75 -> 52 code-check names (still INTERFACE_WIDE until candidate 10); ceiling 98 -> 77. ./panes 31 values -> 15 (mountPaneRoutes, acceptPaneSocket, trackAcceptedSocket, closeBrowserOwners, admittedClientCount, sendToEveryClient, forgetPanePresentations, forgetSemanticPaneContexts and repository-routes' seven) plus the PanesReport type. Exports whose last outside caller moved in were deleted: ./server publishPaneContext, tabSessionOf, handleCodexBrowserMessage, showConversation; ./host bodyOf, isRecord, statedVault.
+
+Pane keys: per candidate 11's second amendment they stay in @archboard/model-contract for good; the moved pane rules and the pane socket import parsePaneKey/paneAddressKey from there. AC #2's key clause is read through that amendment.
+
+Hooks: mountPaneRoutes(app, { runMutation, refuseRead, followRegistry, agentActivity }). acceptPaneSocket keeps its three arguments, so the agent activity it follows is named by mountPaneRoutes (one module slot, as codexWiring already is) and acceptPaneSocket refuses with a named error if the routes were never mounted.
+
+Pidfile fix (the one behavior change): releaseServerPid removes the file only while it holds the bytes recordServerPid wrote; the launcher's removals after a failed start and after a stop check the pid they know (stop's was unconditional). Tested at the pidfile seam (pidfile.test.ts isolated child). Terminal-record latch: tested with a real pipe on fd 3 of a child (server-startup-terminal.test.ts).
+
+Validation: build, types, lint:all, format:check, test:modules (5348 pass, 1 skip), test:repository (181), test:system (227), test:solo (15), server-state lane after each ownership change, whole browser lane (50 owners, 73 pass). check code --fail-shallow-modules: no finding on server-lifecycle (exit 1 from pre-existing warnings, plus anchor warnings on Pane rules because the vault still binds the old paths). Footprint gate fails until the proposal names the moved modules; the vault was left unchanged as instructed.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Pane addressing, layout, report, routes and socket handler now live in workbench (mountPaneRoutes(app, hooks), acceptPaneSocket(ws, req, vault)); the socket message types are in @archboard/workbench/browser-contract; server-lifecycle is 16 names with ./server-process as six functions. One behavior change: a server removes only the pidfile that still holds the record it wrote, and the launcher removes one only for the pid it knows. The startup writer keeps one terminal record per process. Every wire byte is otherwise unchanged; all lanes and the full browser lane pass. Follow-up for the orchestrator: the vault and proposal sL6y1FLr still bind the old paths, so the footprint gate and the Pane rules anchors wait for the architecture slice.
+<!-- SECTION:FINAL_SUMMARY:END -->
