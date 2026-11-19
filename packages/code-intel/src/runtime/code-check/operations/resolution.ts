@@ -29,7 +29,7 @@
 // nothing of the name the use stays as code facts read it.
 //
 // The pass also asks what type a server gives a name a file declares, from
-// the file's semantic tokens, so Module depth can tell an exported value that
+// its semantic tokens, so Module depth can tell an exported value that
 // can be called from one that cannot (TASK-646.15).
 //
 // One pass opens one resolution. Its servers start on their first question,
@@ -76,7 +76,7 @@ type Resolve = (
 
 /**
  * The type a pass's servers give the name that a file of a checkout writes on
- * a line, such as `function`, `class` or `variable`, from the file's semantic
+ * a line, such as `function`, `class` or `variable`, from its semantic
  * tokens; none where no server answered.
  */
 type TokenType = (
