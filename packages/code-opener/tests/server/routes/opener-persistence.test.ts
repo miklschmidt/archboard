@@ -3,13 +3,11 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
-import type { z } from "zod";
-import type { OpenerSelectionReplySchema } from "@archboard/code-opener/opening";
-import { TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS } from "../support/timing.ts";
-import type { OpenerFixture } from "./support/opener-fixture.ts";
+import type { OpenerSelection } from "#shared/schemas/opener-settings.ts";
+import type { OpenerFixture } from "#tests/server/support/opener-fixture.ts";
 
-/** An opener selection, as the settings routes answer it. */
-type OpenerSelection = z.infer<typeof OpenerSelectionReplySchema>["selection"];
+/** Aggregate Bun case, not an operation cap/SLA: 20s avoids the hosted 5s cancellation path while keeping a finite bound. */
+const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
 
 type LaunchCommand = { executable: string; argv: string[] };
 type ActivationTimelineEntry =
@@ -43,7 +41,7 @@ describe("machine-wide opener persistence", () => {
 				await using resources = new AsyncDisposableStack();
 				const vault = mkdtempSync(join(tmpdir(), "archboard-opener-vault-"));
 				resources.defer(() => rmSync(vault, { recursive: true }));
-				const { createOpenerFixture } = await import("./support/opener-fixture.ts");
+				const { createOpenerFixture } = await import("#tests/server/support/opener-fixture.ts");
 				const timeline: ActivationTimelineEntry[] = [];
 				const fixture = await createOpenerFixture({
 					vault,
@@ -61,7 +59,7 @@ describe("machine-wide opener persistence", () => {
 				resources.defer(() => fixture.dispose());
 				// One model with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
-				const { boundFixture } = await import("./support/bound-model.ts");
+				const { boundFixture } = await import("#tests/server/support/bound-model.ts");
 				const bound = await boundFixture(vault, fixture.repository, "src/index.ts");
 				boundNode = bound.node;
 				boundModel = bound.key;

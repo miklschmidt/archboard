@@ -198,12 +198,6 @@ const TEST_BROWSER_CONDITION_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 1500;
  */
 const TEST_BROWSER_STEP_WAIT = { timeoutMs: TEST_PATIENCE_FACTOR * 10_000 } as const;
 
-/** Polls fake-opener lifecycle evidence within its 2s operation bound. */
-const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
-
-/** Aggregate Bun case, not an operation cap/SLA: 20s avoids the hosted 5s cancellation path while keeping a finite bound. */
-const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
-
 export {
 	TEST_RECORDING_CASE_MS,
 	TEST_RECORDING_CLI_MS,
@@ -230,6 +224,4 @@ export {
 	TEST_BROWSER_CONDITION_TIMEOUT_MS,
 	TEST_BROWSER_STEP_WAIT,
 	TEST_BROWSER_POLL_MS,
-	TEST_OPENER_LIFECYCLE,
-	TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
 };

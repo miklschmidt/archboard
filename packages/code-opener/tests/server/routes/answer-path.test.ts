@@ -8,8 +8,12 @@ import { expect, test } from "bun:test";
 import { readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { CodeTargetOpenReplySchema } from "@archboard/code-opener/opening";
-import { createOpenerFixture, jsonBody, type OpenerFixture } from "./support/opener-fixture.ts";
+import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
+import {
+	createOpenerFixture,
+	jsonBody,
+	type OpenerFixture,
+} from "#tests/server/support/opener-fixture.ts";
 
 /**
  * Open a file as an answer names it.

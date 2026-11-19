@@ -7,12 +7,12 @@ import { expect, test } from "bun:test";
 import { realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { boundFixture } from "./support/bound-model.ts";
+import { boundFixture } from "#tests/server/support/bound-model.ts";
 import {
 	createOpenerFixture,
 	jsonBody,
 	type OpenerFixtureOptions,
-} from "./support/opener-fixture.ts";
+} from "#tests/server/support/opener-fixture.ts";
 
 test("opens the file of the worktree whose vault holds the model, though the main checkout is the chosen one", async () => {
 	await using resources = new AsyncDisposableStack();

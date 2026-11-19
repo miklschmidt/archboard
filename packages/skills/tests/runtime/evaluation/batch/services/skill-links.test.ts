@@ -7,11 +7,11 @@ import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { installation } from "@archboard/workspace/installation";
 
-import { anchorsOf } from "@archboard/skills/citations";
+import { anchorsOf } from "#runtime/evaluation/batch/services/citations.ts";
 
-const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const repository = installation().root;
 
 /**
  * The skills that `archboard init` installs, as BUNDLED_SKILLS in

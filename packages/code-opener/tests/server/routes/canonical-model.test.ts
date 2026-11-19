@@ -13,7 +13,7 @@ import {
 	createOpenerFixture,
 	jsonBody,
 	type OpenerFixtureOptions,
-} from "./support/opener-fixture.ts";
+} from "#tests/server/support/opener-fixture.ts";
 
 test("canonical modules use the existing opener and refuse a mismatched model identity", async () => {
 	await using resources = new AsyncDisposableStack();

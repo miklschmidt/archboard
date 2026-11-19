@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 
+import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
 import {
-	CodeTargetOpenReplySchema,
 	OpenerSelectionReplySchema,
 	OpenerSettingsReplySchema,
-} from "@archboard/code-opener/opening";
-import { createOpenerFixture, jsonBody } from "./support/opener-fixture.ts";
+} from "#shared/schemas/opener-settings.ts";
+import { createOpenerFixture, jsonBody } from "#tests/server/support/opener-fixture.ts";
 
 describe("public opener settings contract", () => {
 	test("reads the platform default without creating machine state", async () => {

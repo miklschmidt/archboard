@@ -1,7 +1,7 @@
 {
 	"code-binding": 18,
 	"code-intel": 11,
-	"code-opener": 13,
+	"code-opener": 9,
 	"codex-app-server": 108,
 	"codex-realtime-voice": 62,
 	"diagnostics": 10,
@@ -10,11 +10,11 @@
 	"renderer": 56,
 	"server-lifecycle": 26,
 	"server-requests": 4,
-	"skills": 2,
+	"skills": 1,
 	"telemetry": 7,
 	"timing": 37,
 	"ui-kit": 35,
-	"walkthrough": 21,
+	"walkthrough": 20,
 	"workbench": 98,
 	"workspace": 40
 }

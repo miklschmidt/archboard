@@ -6,7 +6,7 @@ import { join, resolve } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { editArchitectureModule, claimArchitectureSubjects } from "@archboard/model/store-write";
 import { TalkSchema, talkFrom } from "#shared/protocol/talk.ts";
-import { recordingPageUrl } from "@archboard/walkthrough/recorder";
+import { recordingPageUrl } from "#runtime/recorder/operations/record-walkthrough.ts";
 import { readTalk, writeTalk, askedTalkPlace } from "#runtime/recorder/store/talk-files.ts";
 import { fixtureTalk, fixtureVoice } from "#tests/runtime/support/talk-fixture.ts";
 

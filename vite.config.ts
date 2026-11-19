@@ -205,6 +205,12 @@ const soloTests = [
 	"packages/code-intel/tests/runtime/language-servers/processes/rust-server.test.ts",
 ];
 
+// This owner reads which files Git tracks, so it runs in the repository lane, whose cache follows
+// every tracked entry, rather than in the module lane.
+const repositoryTests = [
+	"packages/skills/tests/runtime/evaluation/batch/services/skill-links.test.ts",
+];
+
 // These prove the test harness, not the product, so the normal gate leaves them out.
 const harnessTests = [
 	"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
@@ -408,7 +414,7 @@ export default defineConfig({
 			"test:modules": {
 				command: [
 					"bun test --parallel",
-					...[...capacityTests, ...benchmarkTests, ...soloTests].map(
+					...[...capacityTests, ...benchmarkTests, ...soloTests, ...repositoryTests].map(
 						(file) => `--path-ignore-patterns ${file}`,
 					),
 					"packages apps",
@@ -426,7 +432,6 @@ export default defineConfig({
 					"tests/system/cli",
 					"tests/system/server-state",
 					"tests/system/process-contracts",
-					"tests/system/code-targets",
 					"tests/system/models",
 					"tests/system/actions",
 				].join(" "),
@@ -436,7 +441,8 @@ export default defineConfig({
 				command:
 					"ARCHBOARD_TEST_TRACKED_INPUTS=" +
 					trackedInputsFingerprint +
-					" bun test --parallel tests/system/repository-policy",
+					" bun test --parallel tests/system/repository-policy " +
+					repositoryTests.join(" "),
 				cache: { ...testCache, env: [...testCache.env, "GIT_INDEX_FILE"] },
 			},
 			"test:serial-browser": {

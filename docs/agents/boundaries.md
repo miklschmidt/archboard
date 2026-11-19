@@ -513,17 +513,17 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
-adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
+adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 9 names, where code outside
 imported 5 module paths. It imports `model`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
 The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
 - `./opening` is the wire contract of the open, as a reader outside sees it. It holds the notice a person reads,
-  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the schema that
-  the GitHub link of a notice must pass, and the reply schemas that the system tests parse. The whole
+  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the check
+  that the GitHub link of a notice must pass. The whole
   contract is in `shared/schemas/`, and the rule for an opener executable is in `shared/rules/`.
-- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, and
-  `openInEditor`, which plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes. The
+  router's `openInEditor` plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
   Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
   route, and the other routes of the server take the guard from the same file.
 - `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run and
@@ -541,11 +541,12 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
   command rules in `rules/`. Tailwind finds the dialog's class names through the `@source` of every package's `ui`
   area.
 - The tests are in `tests/`: `shared/schemas/` tests the contract, `server/middleware/`, `server/projections/` and
-  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay
-  in `tests/system/code-targets` and `tests/system/browser/opener-settings.test.ts`.
+  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. `server/routes/` mounts the
+  routes behind the browser-origin guard with a fake opener, and holds each reply to the schemas of `shared/schemas/`.
+  The browser owner stays in `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records an exact retained canonical walkthrough to a video
-(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
+(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 20 names, one
 operation or fact for each job a caller has. It imports `model`, `timing`, `workspace` and `renderer`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
 files of `runtime/api/` run only in Bun.
@@ -563,8 +564,7 @@ files of `runtime/api/` run only in Bun.
   recording keeps its talk (the directory asked for, or a new one in the state directory, which keeps the newest ten)
   and proves it free before anything starts. `keepTalk` makes a talk of its parts and writes it into a named directory,
   so the talk's format and file names stay private. `recordingContainerOf` reads the container a file name asks for.
-  `recordingPageUrl` is the address a recording opens, which the browser's contract test reads back. It is
-  `runtime/recorder/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page
+  It is `runtime/recorder/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page
   client of `runtime/recorder/clients/`, the talk files and the silent WAV of `runtime/recorder/store/`, and the
   container, encoder and browser of `runtime/recorder/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
 - `./ffmpeg` finds the ffmpeg that encodes a recording. The encoder is `runtime/video-encoding/processes/video-encoder.ts`,
@@ -572,12 +572,12 @@ files of `runtime/api/` run only in Bun.
   `nixpkgs#ffmpeg-headless` through Nix. No file of the package reads an asset by a path, so nothing depends on where the
   package sits.
 - The tests are in `tests/`: `shared/protocol/` holds the talk's contract, `runtime/recorder/store/` the talk on
-  disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and
+  disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and the address a recording opens, and
   `runtime/video-encoding/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It evaluates the archboard skill. It adopts the `api/`
-role for `runtime/` and exposes 2 subpaths with 2 names. It imports `model`, `timing`, `renderer`, `process` and
-`walkthrough`. Every file is Node-bound and runs only in Bun. The 2 files of `runtime/api/` are the
+role for `runtime/` and exposes 1 subpath with 1 name. It imports `model`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The file of `runtime/api/` is the
 interface.
 
 - The skill ships as its tracked files and nothing else, so a copy that the skills CLI makes from GitHub is complete.
@@ -588,9 +588,6 @@ interface.
   (`runtime/evaluation/operations/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
   on real Flask checkouts, one blinded grader and a comparison report.
-- `./citations` is `anchorsOf`, the anchors of a markdown document. The grader's citations and
-  `tests/system/repository-policy/skill-links.test.ts` read them. That test stays in the repository lane, whose cache
-  follows every tracked file, so a changed skill always runs it.
 - `runtime/evaluation/` holds the evaluation by behavior. `batch/` holds a batch and its inputs, `run-world/` one
   author run's world: its vault, its installed skill, the Archboard server and the Flask checkout. `run-checks/` holds
   the captures and the re-audit, `audit/` that classifies what an author ran and what it reached for, and
@@ -603,7 +600,9 @@ interface.
   the move. No file of the package finds a path from where it sits. A test finds the checkout with
   `installation().root` of `@archboard/workspace/installation`.
 - The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
-  executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
+  executables and the fixtures. `skill-links.test.ts`, beside the citations' test, holds the links of the shipped
+  skills and of the repository's navigation to tracked files and headings. It runs in the repository lane, whose cache
+  follows every tracked file, so a changed skill always runs it. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
 The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`).
 It starts, finds, restarts, and stops the Archboard server and owns the identity-gated CLI request.
