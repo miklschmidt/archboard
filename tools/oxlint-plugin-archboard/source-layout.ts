@@ -1,6 +1,6 @@
 // Facts about where a file sits in the repository: its package or app, its area,
 // its test owner and whether it sits in a legacy root. Every rule that reasons
-// about layout (docs/agents/boundaries.md) reads them from here.
+// about layout reads them from here.
 import path from "node:path";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no # imports; sibling imports stay relative
 import type { RuleContext } from "./rule-api.ts";
@@ -26,7 +26,7 @@ const LEGACY_ROOTS = /^(?:src|frontend)\//;
 const AREAS = new Set(["cli", "runtime", "server", "shared", "ui"]);
 
 /**
- * The role folders of an area (docs/agents/boundaries.md, ADR 0075). A role folder is the last
+ * The role folders of an area (ADR 0075). A role folder is the last
  * folder of a path.
  */
 const ROLE_FOLDERS = new Set([
