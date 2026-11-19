@@ -576,8 +576,8 @@ files of `runtime/api/` run only in Bun.
   `runtime/video-encoding/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It evaluates the archboard skill. It adopts the `api/`
-role for `runtime/` and exposes 2 subpaths with 2 names. It imports `model`, `timing`, `renderer`, `process` and
-`walkthrough`. Every file is Node-bound and runs only in Bun. The 2 files of `runtime/api/` are the
+role for `runtime/` and exposes 1 subpath with 1 name. It imports `model`, `timing`, `renderer`, `process` and
+`walkthrough`. Every file is Node-bound and runs only in Bun. The file of `runtime/api/` is the
 interface.
 
 - The skill ships as its tracked files and nothing else, so a copy that the skills CLI makes from GitHub is complete.
@@ -588,9 +588,6 @@ interface.
   (`runtime/evaluation/operations/command.ts`): `check`, `run`, `grade`, `pin` and `report`. `scripts/evaluate-skill.ts`
   passes it the arguments and the checkout. The evaluation is human-run and never part of the gate: real Codex authors
   on real Flask checkouts, one blinded grader and a comparison report.
-- `./citations` is `anchorsOf`, the anchors of a markdown document. The grader's citations and
-  `tests/system/repository-policy/skill-links.test.ts` read them. That test stays in the repository lane, whose cache
-  follows every tracked file, so a changed skill always runs it.
 - `runtime/evaluation/` holds the evaluation by behavior. `batch/` holds a batch and its inputs, `run-world/` one
   author run's world: its vault, its installed skill, the Archboard server and the Flask checkout. `run-checks/` holds
   the captures and the re-audit, `audit/` that classifies what an author ran and what it reached for, and
@@ -603,7 +600,9 @@ interface.
   the move. No file of the package finds a path from where it sits. A test finds the checkout with
   `installation().root` of `@archboard/workspace/installation`.
 - The tests are in `tests/`, in the folder of the file they test. `runtime/support/` holds the fake `claude` and `codex`
-  executables and the fixtures. Their end-to-end owner is `bun run eval:skill`, which a person runs.
+  executables and the fixtures. `skill-links.test.ts`, beside the citations' test, holds the links of the shipped
+  skills and of the repository's navigation to tracked files and headings. It runs in the repository lane, whose cache
+  follows every tracked file, so a changed skill always runs it. Their end-to-end owner is `bun run eval:skill`, which a person runs.
 
 The fifteenth is `server-lifecycle` (`@archboard/server-lifecycle`).
 It starts, finds, restarts, and stops the Archboard server and owns the identity-gated CLI request.

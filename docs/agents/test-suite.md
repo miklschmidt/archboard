@@ -54,7 +54,8 @@ The six normal native lanes are:
   The list is `soloTests` in `vite.config.ts`;
 - `test:repository`: the source-boundary lint fixtures, the owner that resolves
   links in the shipped skills, repository navigation, and development skill
-  (`tests/system/repository-policy/skill-links.test.ts`),
+  (`packages/skills/tests/runtime/evaluation/batch/services/skill-links.test.ts`, which `repositoryTests` in
+  `vite.config.ts` moves out of the module lane),
   the owner that parses YAML discovery metadata for every tracked skill
   (`tests/system/repository-policy/skill-frontmatter.test.ts`),
   the README asset manifest and staleness owner
