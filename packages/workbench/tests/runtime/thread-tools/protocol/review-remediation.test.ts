@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 
-import { ARCHBOARD_APP_TOOL_NAMES } from "#runtime/thread-tools/protocol/manifest.ts";
+import { GeneralThreadToolNameSchema } from "#runtime/thread-tools/protocol/manifest-load.ts";
+import { parseToolResultEnvelope } from "#runtime/thread-tools/protocol/results.ts";
 import {
 	DynamicToolCallResponseSchema,
 	parseDynamicToolCallResponse,
-	parseToolResultEnvelope,
-} from "#runtime/thread-tools/protocol/results.ts";
+} from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import {
 	dynamicResponse,
 	okEnvelope,
@@ -35,7 +35,7 @@ function resultText(value: unknown): string {
 }
 
 test("rejects reordered keys at every result envelope and nested value depth", () => {
-	for (const name of ARCHBOARD_APP_TOOL_NAMES) {
+	for (const name of GeneralThreadToolNameSchema.options) {
 		const reordered = JSON.stringify(reverseJsonObjects(JSON.parse(okEnvelope(name))));
 		expectRejected(() => parseToolResultEnvelope(name, reordered));
 	}

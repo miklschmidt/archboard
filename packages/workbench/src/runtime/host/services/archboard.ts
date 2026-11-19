@@ -12,7 +12,7 @@ import {
 	encodeCanonicalContext,
 	type ArchboardContext,
 } from "#runtime/instructions/rules/context.ts";
-import { ARCHBOARD_APP_DYNAMIC_TOOLS } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppDynamicTools } from "#runtime/thread-tools/protocol/manifest.ts";
 import type {
 	VoiceAgentExtensions,
 	VoiceAgentOptions,
@@ -106,7 +106,7 @@ const ARCHBOARD_AGENT = Object.freeze({
 		coordinator: COORDINATOR_DOMAIN_INSTRUCTIONS,
 		workhorse: WORKHORSE_DOMAIN_INSTRUCTIONS,
 	}),
-	tools: Object.freeze({ workhorse: [...ARCHBOARD_APP_DYNAMIC_TOOLS] }),
+	tools: Object.freeze({ workhorse: archboardAppDynamicTools() }),
 }) satisfies Pick<VoiceAgentOptions, "identity" | "instructions"> & {
 	readonly tools: VoiceAgentExtensions["tools"];
 };

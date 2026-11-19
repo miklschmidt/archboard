@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	createSemanticContextPublisher,
-	type SemanticContextInput,
-	type SettledChangeSourceEvent,
-	type SettledSemanticChangeEvent,
-} from "#runtime/api/semantic-context.ts";
+import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
+import type {
+	SemanticContextInput,
+	SettledChangeSourceEvent,
+	SettledSemanticChangeEvent,
+} from "#runtime/schemas/semantic-context-types.ts";
 import { encodeCanonicalContext } from "#runtime/instructions/rules/context.ts";
 import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/host/services/archboard.ts";
 import { canonicalContextFromBrief } from "#server/semantic-context/projections/semantic-input.ts";

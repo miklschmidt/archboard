@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import { decodeDynamicCursor } from "#runtime/dynamic-tools/rules/cursors.ts";
-import { parseDynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
+import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	CALLER_WIRE_ID,
