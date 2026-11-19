@@ -5,7 +5,7 @@ import {
 	ReadingSelectionSchema,
 } from "#shared/schemas/model-explanation.ts";
 import { z } from "zod";
-import { CodeBindingSchema } from "@archboard/code-binding/bindings";
+import { codeBindingSchema } from "@archboard/code-binding/bindings";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import {
 	GitObjectIdSchema,
@@ -196,7 +196,7 @@ const ArchitectureModelSchema = z
 		// A branch reading: the vault as the vault's repository holds it at this commit.
 		sourceRef: z.strictObject({ ref: z.string().min(1), commit: GitObjectIdSchema }).optional(),
 		location: ModelReferenceAddressSchema.optional(),
-		codeBinding: CodeBindingSchema.optional(),
+		codeBinding: codeBindingSchema().optional(),
 		resolvedReferences: z
 			.array(
 				z.strictObject({

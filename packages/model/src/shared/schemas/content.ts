@@ -62,7 +62,7 @@ function effectiveTraffic(
 				volume: traffic.volume ?? DEFAULT_TRAFFIC_VOLUME,
 			};
 }
-import { CodeAnchorSchema, CodeBindingSchema } from "@archboard/code-binding/bindings";
+import { codeAnchorSchema, codeBindingSchema } from "@archboard/code-binding/bindings";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
@@ -94,7 +94,7 @@ const DrillDownVariantSchema = z.discriminatedUnion("kind", [
  * names, never a path. A note is committed and read on other machines, so no
  * file archboard writes can hold a path of the machine that wrote it (ADR 0049).
  */
-const DrillDownRepoSchema = CodeBindingSchema.shape.repo.refine(
+const DrillDownRepoSchema = codeBindingSchema().shape.repo.refine(
 	(repo) => !/^(?:[/~\\]|\.{1,2}(?:[/\\]|$)|[A-Za-z]:[/\\])|\\/u.test(repo),
 	{
 		message:
@@ -160,7 +160,7 @@ const SemanticNodeSchema = z
 		description: DescriptionSchema.optional(),
 		parent: SemanticIdSchema.optional(),
 		groups: GroupMembershipsSchema.optional(),
-		binding: CodeBindingSchema.optional(),
+		binding: codeBindingSchema().optional(),
 		drillDown: DrillDownSchema.optional(),
 	})
 	.strict();
@@ -188,7 +188,7 @@ const SemanticEdgeSchema = z
 		description: DescriptionSchema.optional(),
 		emphasis: EdgeEmphasisSchema.default("normal"),
 		traffic: EdgeTrafficSchema.optional(),
-		anchor: CodeAnchorSchema.optional(),
+		anchor: codeAnchorSchema().optional(),
 	})
 	.strict();
 type SemanticEdge = z.infer<typeof SemanticEdgeSchema>;
