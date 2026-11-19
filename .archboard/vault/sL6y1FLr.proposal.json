@@ -11,6 +11,14 @@
   "changes": [
     {
       "type": "remove",
+      "subject": "vKEsyHFk#w44DwfpV"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#N9jW1gq2"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/Oi6SBIAM#hDNka8yA"
     },
     {
@@ -51,6 +59,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk#PLVZZKxC"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/vKEsyHFk#fDI8NrtW"
     },
     {
@@ -60,6 +72,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#WaYJBOUv"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#gJg0IMG5"
     },
     {
       "type": "remove",
@@ -280,7 +296,7 @@
       "type": "assign",
       "subject": "vKEsyHFk#U4Q7nid1",
       "field": "description",
-      "value": "The scene contract: typed data that every painter and the TypeScript bindings read. It computes a traffic mark's pulse train once, so the SVG and GPU painters share one set of numbers and keep only their clocks and their drawing. Its six submodules are private, and each name is reachable through one path. Of the builders it keeps Group::new, Transform::translate and Text::set; the setters and the producer-only constructors belong to Painting."
+      "value": "The scene contract: typed data that every painter and the TypeScript bindings read. It computes a traffic mark's pulse train once, so the SVG and GPU painters share one set of numbers and keep only their clocks and their drawing. Its six submodules are private, and each name is reachable through one path. Of the builders it keeps Group::new, Transform::translate and Text::set; the setters and the producer-only constructors belong to Painting. Purpose::Core names the core a double line's mask cuts between its rails, which the SVG painter spells exactly as a cutout and the move recognises by purpose alone."
     },
     {
       "type": "assign",
@@ -500,6 +516,12 @@
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "description",
       "value": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider. picture-stage-forms.ts holds the forms that the painter reads, the presentation, the arrival and the departure, and the held presentation that a painter starting late takes: briefPainter states it in one presentation, then the picture's arrival, or a cleared departure when there is no picture. The pace is no longer theirs to hand on: the painter choice gives it to every painter. drill-direction.ts holds drillDirection, which only drill-way.ts reads; it left the model with the split (ADR 0086)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#290spzv7",
+      "field": "description",
+      "value": "It does what the SVG's stylesheet did: the colours of a theme, the recede of a lit set, the far view and the order in which a selected part is raised. A glyph is drawn from the outlines of the core's own faces. A line's far-view growth is Painting's far_line_scale, asked by the stroke's width. Vello on WebGPU and Vello GPU on WebGL2 implement the same Canvas trait in the browser crate."
     },
     {
       "type": "assign",
@@ -1140,6 +1162,59 @@
       "value": "The session performs the handshake and owns request identity serialization, response adoption, reverse requests, and failure classification. Coordinator and workhorse callers share this same implementation boundary. TASK-653.11: callers open it with openCodexSession on a Codex connection and get { session, control }; createCodexSession and codexSessionControl leave the interface, and a mutation failure is read as kind mutation through readCodexFailure."
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#wLF1X11D",
+      "field": "description",
+      "value": "Keeps where a sequence's parts go and how far apart: column widths and gaps, rows, lifelines and frames. Each part's own size, a head card's, a message's or a note's plate, an arrow's ends, an activation bar, a self loop, a fragment's head and bounds and the flow's tab, comes from Flow part measures (ADR 0088); its own sheet (design.rs) holds only placement spacing. A fragment's head is measured once where the frame is placed and carried in its rows."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#oCH6TGpi",
+      "field": "label",
+      "value": "each head card's, plate's, arrow end's and fragment's size"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#oCH6TGpi",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/sequence/layout.rs",
+        "symbol": "measure_columns"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#oCH6TGpi",
+      "field": "to",
+      "value": "vKEsyHFk#RYix4PQl"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QNnZB3nx",
+      "kind": "relationship",
+      "value": {
+        "order": 26500,
+        "kind": "dependency",
+        "label": "a participant's words, in the card form the measurer reads",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/sequence/layout.rs",
+          "symbol": "CardWords"
+        },
+        "id": "vKEsyHFk#QNnZB3nx",
+        "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QNnZB3nx",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#wLF1X11D"
+      }
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#cxOsPb1d",
       "kind": "module",
@@ -1202,6 +1277,124 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
         "symbol": "serverCodeState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "field": "responsibility",
+      "value": "Measures every card, note and label in the faces the core carries; its line breakers serve only the crate's own measures"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "field": "description",
+      "value": "The core shapes every run with archboard-text and breaks it at a width, so a width is never estimated and never asked of the place that draws (ADR 0059, TASK-520.07). Every layout and every painter read the same numbers here. Sixteen names: message_lines, note_lines and width are crate-private, so a flow layout reaches the line breakers only through Flow part measures, which also owns title fitting (ADR 0088)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#RYix4PQl",
+      "kind": "module",
+      "value": {
+        "order": 7100,
+        "name": "Flow part measures",
+        "kind": "function",
+        "responsibility": "Answers the size of each part a sequence or a flowchart places, measured from the sizes the painter draws it with, so a flow layout never reads the painter's sizes",
+        "description": "Ten operations, re-exported from lib.rs over a private folder module (ADR 0088): sequence_cards(cards, ColumnLimits) -> HeadCards { width, lifeline_drop, cards } fits each participant's title (the title steps and ICON_MIN_CARD_WIDTH live here, fitted_size is private) under the column policy the layout passes; message_plate(label, room) and note_plate(note, wrap) wrap and size a message's and a step note's plate; message_ends(kind, from_x, to_x, busy) takes the column centres and answers where an arrow starts and stops, standoff and head included; activation_span(centre) is a getter with an argument (the layout reads a bar's half width from it); self_loop(start) -> Rect; fragment_head(operator, words, guards) -> FragmentHead is measured once where a frame is placed and carried in its rows; fragment_bounds(ink, columns, head) -> Span applies the side padding and the head's least width, so side padding never leaves the measure; flow_tab(frame_width, has_summary) answers the tab and the heading; shape_words(name, width) wraps a flowchart shape's words. The sizes come from the crate-private sheet (sizes.rs) that the painter draws by. TASK-653.20.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/flow_parts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#RYix4PQl",
+        "documents": [
+          {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+          }
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RYix4PQl",
+      "placement": {
+        "holder": "vKEsyHFk#9gGvxWHp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#miWGCiDX",
+      "kind": "relationship",
+      "value": {
+        "order": 100,
+        "kind": "call",
+        "label": "wrap and set a part's words",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/flow_parts/messages.rs",
+          "symbol": "message_plate"
+        },
+        "id": "vKEsyHFk#miWGCiDX",
+        "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#miWGCiDX",
+      "placement": {
+        "holder": "vKEsyHFk#RYix4PQl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#TTMTr7uY",
+      "kind": "relationship",
+      "value": {
+        "order": 200,
+        "kind": "call",
+        "label": "a frame's tab width",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/flow_parts/tab.rs",
+          "symbol": "flow_tab"
+        },
+        "id": "vKEsyHFk#TTMTr7uY",
+        "to": "vKEsyHFk#n2J80LO7"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#TTMTr7uY",
+      "placement": {
+        "holder": "vKEsyHFk#RYix4PQl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#4qLy4yQD",
+      "kind": "relationship",
+      "value": {
+        "order": 300,
+        "kind": "call",
+        "label": "round and compare as JavaScript does",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/flow_parts/cards.rs",
+          "symbol": "largest"
+        },
+        "id": "vKEsyHFk#4qLy4yQD",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4qLy4yQD",
+      "placement": {
+        "holder": "vKEsyHFk#RYix4PQl"
       }
     },
     {
@@ -1778,6 +1971,31 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
         "symbol": "deadline"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fJHzqH3q",
+      "kind": "relationship",
+      "value": {
+        "order": 73000,
+        "kind": "call",
+        "label": "an activation bar's span",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/paint/sequence.rs",
+          "symbol": "activation_boxes"
+        },
+        "id": "vKEsyHFk#fJHzqH3q",
+        "to": "vKEsyHFk#RYix4PQl"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fJHzqH3q",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#CtoOMxca"
       }
     },
     {
@@ -2670,8 +2888,25 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+      "field": "responsibility",
+      "value": "Paints a settled drawing into a scene: architecture and sequence marks, card surfaces and ports, the theme's colours and the atlas; other crates get only the few sizes and looks they place by"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
       "field": "description",
-      "value": "Owns the producer builders: the setters and the producer-only constructors of shapes, strokes, text and colours, private to Painting, so the scene's other callers never learn them. It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance."
+      "value": "Owns the producer builders: the setters and the producer-only constructors of shapes, strokes, text and colours, private to Painting, so the scene's other callers never learn them. It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance. Its public size sheet (paint/design.rs) is gone (ADR 0088): the sizes it draws by sit in the crate-private sheet sizes.rs, shared only with the measurer, and a flow layout learns a part's size from Flow part measures. Seventeen names remain: its own six, the page margin and the header and tab widths, card_radius, the far view's line scale by stroke width (far_line_scale(width, far), far_line_widths) and three icon answers (kind_icon, flow_look, own_icons)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+      "field": "documents",
+      "value": [
+        {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+        }
+      ]
     },
     {
       "type": "add",
@@ -2755,6 +2990,31 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
         "symbol": "waitUntil"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#uGqkHqkP",
+      "kind": "relationship",
+      "value": {
+        "order": 61000,
+        "kind": "call",
+        "label": "a shape's wrapped words and their size",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/flowchart/mod.rs",
+          "symbol": "shape_size"
+        },
+        "id": "vKEsyHFk#uGqkHqkP",
+        "to": "vKEsyHFk#RYix4PQl"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uGqkHqkP",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#0idmUHd2"
       }
     },
     {
@@ -2950,6 +3210,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#n2J80LO7",
+      "field": "description",
+      "value": "The tab's left side is the side of the frame. The frame's responsibility stays out of the picture and goes with the tab's group as the title of the picture's file. It answers the widths drawn from its private sizes: tab_width(frame_width) for Flow part measures, and header_words_width and header_width_for for a container's header in the architecture layout."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
       "field": "name",
       "value": "Vault resolution"
@@ -3142,6 +3408,23 @@
       "subject": "vKEsyHFk/HBlhIeSD#ofrMAblk",
       "field": "to",
       "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9gGvxWHp",
+      "field": "description",
+      "value": "Its size sheet (sizes.rs) is private to the crate: the measurer and the painter read it, and other crates learn a part's size from Flow part measures (ADR 0088). sequence_picture.rs spells a fragment's guard once for the measure and the painter."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9gGvxWHp",
+      "field": "documents",
+      "value": [
+        {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+        }
+      ]
     },
     {
       "type": "add",
@@ -6250,6 +6533,64 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#APiBh4ih",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/OjRLKb74#nmyK8UOO",
+        "vKEsyHFk/gbyqW4H3#wLF1X11D",
+        "vKEsyHFk#RYix4PQl",
+        "vKEsyHFk/gbyqW4H3#CtoOMxca",
+        "vKEsyHFk/gbyqW4H3#L51bfquE",
+        "vKEsyHFk/gbyqW4H3#y8vuJJKu",
+        "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#S53p7nFg",
+      "field": "to",
+      "value": "vKEsyHFk#RYix4PQl"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#S53p7nFg",
+      "field": "label",
+      "value": "measure each participant's head card"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#S53p7nFg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/sequence/layout.rs",
+        "symbol": "measure_columns"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#U7wIQMH6",
+      "field": "from",
+      "value": "vKEsyHFk#RYix4PQl"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#U7wIQMH6",
+      "field": "label",
+      "value": "each card's size, fitted title and wrapped notes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#U7wIQMH6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/flow_parts/cards.rs",
+        "symbol": "sequence_cards"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
       "field": "summary",
       "value": "Makes one known checkout with a vault the repository's chosen one: workspace chooses it, or says why not, for the 404 and 422 refusals. The workbench then follows the registry: panes left in an unchosen checkout move with their model, and every tab hears repositories_changed."
@@ -6768,6 +7109,10 @@
     "vKEsyHFk/vKEsyHFk#oK9fPKdv",
     "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
     "vKEsyHFk/vKEsyHFk#fDI8NrtW",
-    "vKEsyHFk/HBlhIeSD#nGUygMX9"
+    "vKEsyHFk/HBlhIeSD#nGUygMX9",
+    "vKEsyHFk#N9jW1gq2",
+    "vKEsyHFk#PLVZZKxC",
+    "vKEsyHFk#gJg0IMG5",
+    "vKEsyHFk#w44DwfpV"
   ]
 }
