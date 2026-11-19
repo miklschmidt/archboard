@@ -152,7 +152,7 @@ function shownConversationRoute(req: Request, res: Response): void {
 	}
 	const changed = showConversation(pane.tabSessionId, shown);
 	if (changed) {
-		logger.info(`Tab ${pane.tabSessionId} shows the conversation of ${shown}`);
+		logger().info(`Tab ${pane.tabSessionId} shows the conversation of ${shown}`);
 	}
 	res.json({ success: true, shown, changed } satisfies ShownConversationReply);
 }

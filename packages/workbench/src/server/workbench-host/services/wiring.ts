@@ -221,7 +221,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 * @param error Why.
 		 */
 		onError: (error) => {
-			logger.error("Cannot announce an Archboard context change:", error);
+			logger().error("Cannot announce an Archboard context change:", error);
 		},
 	});
 	/**
@@ -443,7 +443,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					if (kind === "selection") semanticPublisher.publishPaneSelection(input);
 					else semanticPublisher.publishPaneFocus(input);
 				} catch (error) {
-					logger.error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
+					logger().error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
 			};
 			/**
@@ -473,7 +473,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 * @param error The fault.
 		 */
 		onFatal: (error) => {
-			logger.error("Fatal Codex workbench fault:", error);
+			logger().error("Fatal Codex workbench fault:", error);
 		},
 	};
 	return integration;

@@ -7,7 +7,7 @@ import { logger } from "@archboard/diagnostics/logger";
 import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
-const originalWarn = logger.warn;
+const originalWarn = logger().warn;
 const models = new Set<string>();
 const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
@@ -172,7 +172,7 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		}
 		lock.forgetLockAnnouncements();
 		jest.useRealTimers();
-		logger.warn = originalWarn;
+		logger().warn = originalWarn;
 		rmSync(vault, { recursive: true, force: true });
 	}
 }, 45_000);

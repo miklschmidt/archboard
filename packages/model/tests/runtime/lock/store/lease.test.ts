@@ -7,7 +7,7 @@ import { logger } from "@archboard/diagnostics/logger";
 import { MODEL_LOCK_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
-const originalWarn = logger.warn;
+const originalWarn = logger().warn;
 const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
 const models = new Set<string>();
@@ -35,7 +35,7 @@ async function cleanup(): Promise<void> {
 	}
 	lock.forgetLockAnnouncements();
 	jest.useRealTimers();
-	logger.warn = originalWarn;
+	logger().warn = originalWarn;
 	rmSync(vault, { recursive: true, force: true });
 }
 

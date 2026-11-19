@@ -18,7 +18,7 @@ function frontendRoute(_req: Request, res: Response): void {
 	const htmlFile = path.join(FRONTEND_DIRECTORY, "index.html");
 	res.sendFile(htmlFile, (err) => {
 		if (err) {
-			logger.error("Error serving frontend:", err);
+			logger().error("Error serving frontend:", err);
 			res.status(404).send('Frontend not found. Please run "bun run build" first.');
 		}
 	});
@@ -87,7 +87,7 @@ function syncStatusRoute(_req: Request, res: Response): void {
  * @param _next Unused; Express needs the arity to treat this as error middleware.
  */
 function unhandledErrorRoute(err: Error, req: Request, res: Response, _next: NextFunction): void {
-	logger.error("Unhandled error:", err);
+	logger().error("Unhandled error:", err);
 	// The route's pattern names the operation. Its path can hold a value that a person gave.
 	const pattern: unknown = req.route?.path;
 	recordError(err, {

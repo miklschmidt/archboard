@@ -32,7 +32,7 @@ function notifyArchitecture(vault: string, completion?: Completion): void {
 		try {
 			listener(completion);
 		} catch (error) {
-			logger.warn("Architecture observer failed after durable completion.", { error });
+			logger().warn("Architecture observer failed after durable completion.", { error });
 		}
 	}
 }

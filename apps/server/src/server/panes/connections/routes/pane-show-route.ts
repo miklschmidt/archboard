@@ -291,7 +291,7 @@ function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefi
 	if (chosen?.changed !== true) {
 		return undefined;
 	}
-	logger.info(`${act} made ${shown.root} the chosen checkout of ${shown.name}`);
+	logger().info(`${act} made ${shown.root} the chosen checkout of ${shown.name}`);
 	return { repository: shown.name, checkout: shown.root, replaced: chosen.replaced };
 }
 

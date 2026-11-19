@@ -67,7 +67,7 @@ function chooseCheckoutRoute(req: Request, res: Response): void {
 		refuseUnknownCheckout(res, repository, root);
 		return;
 	}
-	logger.info(`The chosen checkout of ${repository} is ${root}`);
+	logger().info(`The chosen checkout of ${repository} is ${root}`);
 	// Followed even when the checkout was chosen already: a person who chooses
 	// it again from the menu is asking for what it reads, and a pane that a
 	// change the server never heard of left in another checkout follows too.
@@ -289,14 +289,14 @@ function watchRegistry(): void {
 			if ((name !== null && name !== path.basename(file)) || registryText() === followedRegistry) {
 				return;
 			}
-			logger.info(`The checkout registry ${file} changed, and the panes follow it`);
+			logger().info(`The checkout registry ${file} changed, and the panes follow it`);
 			followRegistry();
 		});
 		registryWatcher.on("error", (error) => {
-			logger.warn(`Stopped watching the checkout registry ${file}`, { error });
+			logger().warn(`Stopped watching the checkout registry ${file}`, { error });
 		});
 	} catch (error) {
-		logger.warn(
+		logger().warn(
 			`Cannot watch the checkout registry ${file}, so the panes follow only the changes this server makes`,
 			{ error },
 		);

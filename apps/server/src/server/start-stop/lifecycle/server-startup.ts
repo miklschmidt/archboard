@@ -66,7 +66,7 @@ function isRecoverableServerStopError(error: unknown): boolean {
 function reportServerStopError(error: unknown): void {
 	const message = `Archboard server shutdown refused or failed: ${messageOf(error)}`;
 	if (isRecoverableServerStopError(error)) {
-		logger.error(message);
+		logger().error(message);
 	} else {
 		process.stderr.write(message + "\n");
 		process.exitCode = 1;
@@ -90,7 +90,7 @@ async function loopbackRefusal(): Promise<string | null> {
 		`Refusing to start Archboard server on ${formatHostForUrl(HOST)}:${PORT}: ` +
 		`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
 		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
-	logger.error(message);
+	logger().error(message);
 	return message;
 }
 
@@ -177,7 +177,7 @@ function processHandlers(
 	 * @param signal The signal.
 	 */
 	const shutdown = (signal: NodeJS.Signals): void => {
-		logger.info(`Received ${signal}, shutting down Archboard server`);
+		logger().info(`Received ${signal}, shutting down Archboard server`);
 		void stopServerAfterSignal(signal);
 	};
 	return {
@@ -229,7 +229,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 		 * @param error What startup threw.
 		 */
 		onStartupFailure: (error) => {
-			logger.error(serverStartupFailureMessage(error));
+			logger().error(serverStartupFailureMessage(error));
 		},
 		/** Stop admitting work and drain what is running. */
 		quiesce: async () => {
@@ -253,9 +253,9 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				return;
 			}
 			if (action === "force") {
-				logger.warn(`Archboard server lifetime forcing stop: ${resource}`);
+				logger().warn(`Archboard server lifetime forcing stop: ${resource}`);
 			} else {
-				logger.debug(`Archboard server lifetime ${action}: ${resource}`);
+				logger().debug(`Archboard server lifetime ${action}: ${resource}`);
 			}
 		},
 		resources: [
@@ -349,7 +349,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Accept panes. */
 				start: () => {
 					startWebSocketServer();
-					logger.info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
+					logger().info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
 				},
 				stop: closeWebSocketServer,
 			},

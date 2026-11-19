@@ -88,15 +88,15 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 	if (error.code === "EADDRINUSE") {
 		const bound: unknown = Reflect.get(error, "address");
 		const address = typeof bound === "string" ? bound : HOST;
-		logger.error(
+		logger().error(
 			`Archboard server port ${PORT} is already in use on ${formatHostForUrl(address)}.`,
 		);
 	} else if (error.code === "EACCES") {
-		logger.error(
+		logger().error(
 			`Archboard server cannot bind ${formatHostForUrl(HOST)}:${PORT}: permission denied.`,
 		);
 	} else {
-		logger.error("Archboard HTTP server failed:", error);
+		logger().error("Archboard HTTP server failed:", error);
 	}
 }
 
