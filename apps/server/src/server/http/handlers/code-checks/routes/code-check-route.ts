@@ -49,7 +49,10 @@ import {
 import { callerGone } from "#server/http/middleware/caller-gone.ts";
 import { checkoutWork, codeCheck } from "#server/wiring/server-owners.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
-import type { CodeCheckAnswer, CodeCheckResult } from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
+
+/** One module a pass measured, without the names of its exports. */
+type Measured = Omit<NonNullable<CodeCheckAnswer["depth"]>[number], "names">;
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface CodeCheckRouteDependencies {
@@ -106,7 +109,9 @@ function plansOf(request: Request): string[] {
  * @param answer The pass's answer.
  * @returns The answer without the names.
  */
-function withoutNames(answer: CodeCheckAnswer): CodeCheckResult {
+function withoutNames(
+	answer: CodeCheckAnswer,
+): Omit<CodeCheckAnswer, "depth"> & { readonly depth?: Measured[] } {
 	const { depth, ...rest } = answer;
 	return depth === undefined
 		? rest

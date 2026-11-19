@@ -498,16 +498,6 @@ const CodeCheckAnswerSchema = z.object({
 });
 
 /**
- * The answer of `GET /api/vault/code-check`, which `archboard check` prints on
- * every run: the pass's answer with each measured module without the names of
- * its exports. The server remembers the names, and only the About page of one
- * module reads them, from `GET /api/vault/code-exports` (TASK-646.08).
- */
-const CodeCheckResultSchema = CodeCheckAnswerSchema.extend({
-	depth: z.array(ModuleDepthSchema.omit({ names: true })).optional(),
-});
-
-/**
  * What the last pass that read one document at one variant found there, as the
  * Archboard server remembers it for a pane (TASK-367.24, ADR 0046): the
  * version of the document the pass read, when the pass ran, and its findings on
@@ -534,7 +524,7 @@ const RememberedModelSchema = CodeCheckModelSchema.extend({
 	 * without the names of its exports: every canvas reads this answer, and only the About page of
 	 * one module reads its names, from `GET /api/vault/code-exports` (TASK-646.08).
 	 */
-	depth: CodeCheckResultSchema.shape.depth,
+	depth: z.array(ModuleDepthSchema.omit({ names: true })).optional(),
 	/** What the pass skipped on this reading, and what it skipped in a whole checkout or language. */
 	skipped: z.array(CodeCheckSkipSchema).optional(),
 });
@@ -544,7 +534,6 @@ const RememberedFindingsSchema = z.object({
 });
 
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
-type CodeCheckResult = z.infer<typeof CodeCheckResultSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
@@ -563,8 +552,6 @@ export {
 	type BehindSkip,
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
-	CodeCheckResultSchema,
-	type CodeCheckResult,
 	type CodeCheckSkip,
 	type CodeEvidence,
 	type CodeFinding,

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { CodeCheckResult } from "@archboard/code-intel/code-check";
+import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type {
@@ -233,7 +233,7 @@ test("canonical code controls follow current draft and exact readings while miss
 		),
 	).toBe(true);
 	await selectState(browser, created.body.target.state);
-	const checked = await request<CodeCheckResult>(
+	const checked = await request<CodeCheckAnswer>(
 		`/api/vault/code-check?state=${created.body.target.state}`,
 	);
 	const warnings = checked.body.findings.filter((finding) => finding.severity === "warning");
@@ -334,7 +334,7 @@ test("a code export on the About page opens its own source, at the line that def
 	});
 	if (!configured.ok) throw new Error(await configured.text());
 	const request = createJsonRequester(server);
-	const checked = await request<CodeCheckResult>("/api/vault/code-check");
+	const checked = await request<CodeCheckAnswer>("/api/vault/code-check");
 	const gateway = checked.body.depth?.find((module) => module.subject.id === "Shop#Gateway");
 	expect(gateway?.exports.functions).toBeGreaterThan(0);
 

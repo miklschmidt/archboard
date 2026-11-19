@@ -3,7 +3,7 @@
 // check skipped, one line for each reason with a count, and how far each document
 // is behind its code, per document and per part (ADR 0045, ADR 0046).
 
-import type { CodeCheckResult } from "@archboard/code-intel/code-check";
+import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
 import { diagnosticLine } from "@archboard/model/policy";
 
 /** How far one document is behind its code. */

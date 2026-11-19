@@ -16,7 +16,10 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
-import { CodeCheckResultSchema, type CodeCheckResult } from "@archboard/code-intel/code-check";
+import {
+	CodeCheckResultSchema,
+	type CodeCheckResult,
+} from "#cli/commands/vault/protocol/code-check-result.ts";
 import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
 import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";

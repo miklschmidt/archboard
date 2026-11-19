@@ -27,7 +27,10 @@ import {
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
-import { CodeCheckResultSchema, type CodeCheckResult } from "@archboard/code-intel/code-check";
+import {
+	CodeCheckResultSchema,
+	type CodeCheckResult,
+} from "#cli/commands/vault/protocol/code-check-result.ts";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
 import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";

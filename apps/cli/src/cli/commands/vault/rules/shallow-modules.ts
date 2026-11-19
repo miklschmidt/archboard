@@ -9,7 +9,7 @@
 // shallow module whose range the check could not read is a refusal, never a
 // pass.
 
-import type { CodeCheckResult } from "@archboard/code-intel/code-check";
+import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
 
 /** One finding of the code check. */
 type CodeFinding = CodeCheckResult["findings"][number];
