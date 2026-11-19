@@ -16,14 +16,8 @@ pub(super) const FRAME_GUARD_HEIGHT: f64 = design::frame_guard_height();
 pub(super) const FRAME_HEAD_HEIGHT: f64 = design::frame_head_height();
 pub(super) const FRAME_PAD: f64 = design::frame_pad();
 pub(super) const FRAME_TAB_PADDING: f64 = design::frame_tab_padding();
-pub(super) const NOTE_SIZE: f64 = design::note_size();
 pub(super) const PILL_TEXT_SIZE: f64 = design::pill_text_size();
-pub(super) const STEP_NOTE_PADDING_X: f64 = design::step_note_padding_x();
-pub(super) const STEP_NOTE_PADDING_Y: f64 = design::step_note_padding_y();
 pub(super) const TAB_PADDING: f64 = design::tab_padding();
-
-/// The height of a line of a sequence note, as a multiple of its text size.
-pub(super) const TEXT_LINE_HEIGHT: f64 = 1.35;
 
 /// How far a container's well holds what it holds in from its walls.
 pub(super) const NEST_INSET: f64 = 18.0;

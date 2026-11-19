@@ -11,7 +11,8 @@ mod messages;
 
 pub use cards::{ColumnLimits, HeadCard, HeadCards, sequence_cards};
 pub use messages::{
-    ArrowEnds, MessagePlate, activation_span, message_ends, message_plate, self_loop,
+    ArrowEnds, MessagePlate, NotePlate, activation_span, message_ends, message_plate, note_plate,
+    self_loop,
 };
 
 /// A stretch across the page.

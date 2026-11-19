@@ -7,9 +7,8 @@ use crate::drawing::DiagramFont;
 use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE,
     FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
-    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, LINE_WIDTH, NOTE_SIZE, PILL_FONT,
-    PILL_TEXT_SIZE, RAIL_GAP, RAILS, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, STEP_NOTE_PADDING_X,
-    STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER,
+    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, LINE_WIDTH, PILL_FONT, PILL_TEXT_SIZE, RAIL_GAP,
+    RAILS, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, TAB_PADDING, TAB_SHOULDER,
 };
 
 /// The line widths a far view draws wider: a line of normal weight, of hero
@@ -83,11 +82,6 @@ pub fn is_flow_kind(kind: &str) -> bool {
     kind == FLOW_KIND
 }
 
-/// The size of a note: a sequence card's responsibility and a step's note.
-pub const fn note_size() -> f64 {
-    NOTE_SIZE
-}
-
 /// The size of the words on a label plate.
 pub const fn pill_text_size() -> f64 {
     PILL_TEXT_SIZE
@@ -101,16 +95,6 @@ pub const fn shape_text_size() -> f64 {
 /// The room one line of a flowchart shape's words takes.
 pub const fn shape_text_line() -> f64 {
     SHAPE_TEXT_LINE
-}
-
-/// How far a step's note holds its words in from its plate's sides.
-pub const fn step_note_padding_x() -> f64 {
-    STEP_NOTE_PADDING_X
-}
-
-/// How far a step's note holds its words in from the top of its plate.
-pub const fn step_note_padding_y() -> f64 {
-    STEP_NOTE_PADDING_Y
 }
 
 /// The row a decision's or loop's operator tab and words stand on.

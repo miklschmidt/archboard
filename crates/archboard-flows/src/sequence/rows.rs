@@ -5,13 +5,12 @@
 
 use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::{MessagePlate, activation_span, js, message_plate, self_loop};
+use archboard_scene::{MessagePlate, activation_span, js, message_plate, note_plate, self_loop};
 
 use crate::content::{Flow, Message, MessageKind, messages_of};
 use crate::sequence::design::{
-    COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_PITCH, NOTE_SIZE, SELF_LABEL_GAP, SELF_MESSAGE_PITCH,
-    STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH, STEP_NOTE_PADDING_X,
-    STEP_NOTE_PADDING_Y, TEXT_LINE_HEIGHT,
+    COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_PITCH, SELF_LABEL_GAP, SELF_MESSAGE_PITCH,
+    STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH,
 };
 
 /// How far a busy column's bar reaches either side of its lifeline: the room
@@ -68,18 +67,9 @@ fn minimum_note_width(note: Option<&str>) -> f64 {
     let Some(note) = note.filter(|note| has_words(Some(note))) else {
         return 0.0;
     };
-    let lines = archboard_scene::note_lines(
-        note,
-        STEP_NOTE_MIN_WIDTH - STEP_NOTE_PADDING_X * 2.0,
-        NOTE_SIZE,
-        NOTE_SIZE * TEXT_LINE_HEIGHT,
-    );
-    let painted = lines
-        .iter()
-        .fold(0.0, |painted, line| js::js_max(painted, line.width));
     js::js_max(
         STEP_NOTE_MIN_WIDTH,
-        painted.ceil() + STEP_NOTE_PADDING_X * 2.0,
+        note_plate(note, STEP_NOTE_MIN_WIDTH).width,
     )
 }
 
@@ -129,19 +119,7 @@ pub(super) fn place_note(
         js::js_max(STEP_NOTE_MIN_WIDTH, (ends.to_x - ends.from_x).abs()),
         corridor_width,
     ]);
-    let line_height = NOTE_SIZE * TEXT_LINE_HEIGHT;
-    let lines = archboard_scene::note_lines(
-        note,
-        wrap_width - STEP_NOTE_PADDING_X * 2.0,
-        NOTE_SIZE,
-        line_height,
-    );
-    // The painted width wins over the wrap width, as on a card: whole-line
-    // kerning can run a hair past the measure, and no word is cut to fit.
-    let widest = lines
-        .iter()
-        .fold(0.0, |widest, run| js::js_max(widest, run.width));
-    let width = widest.ceil() + STEP_NOTE_PADDING_X * 2.0;
+    let plate = note_plate(note, wrap_width);
     let drop = if myself {
         self_loop(Point {
             x: ends.from_x,
@@ -155,13 +133,13 @@ pub(super) fn place_note(
         bounds: Rect {
             x: js::js_max(
                 bounds.left,
-                js::js_min(note_anchor(step, ends, bounds), bounds.right - width),
+                js::js_min(note_anchor(step, ends, bounds), bounds.right - plate.width),
             ),
             y: ends.y + drop + STEP_NOTE_GAP,
-            width,
-            height: lines.len() as f64 * line_height + STEP_NOTE_PADDING_Y * 2.0,
+            width: plate.width,
+            height: plate.height,
         },
-        lines,
+        lines: plate.lines,
     })
 }
 

@@ -5,8 +5,8 @@
 use archboard_scene::geometry::Point;
 use archboard_scene::request::MessageKind;
 use archboard_scene::{
-    CardWords, ColumnLimits, HeadCards, activation_span, message_ends, message_plate, self_loop,
-    sequence_cards,
+    CardWords, ColumnLimits, HeadCards, activation_span, message_ends, message_plate, note_plate,
+    self_loop, sequence_cards,
 };
 
 /// A sequence card's words.
@@ -164,4 +164,21 @@ fn a_self_message_loops_out_and_back_below_its_row() {
         (reach.x, reach.y, reach.width, reach.height),
         (40.0, 70.0, 60.0, 24.0)
     );
+}
+
+#[test]
+fn a_note_wraps_whole_on_a_plate_that_holds_its_lines() {
+    let note = "retries twice with a fresh token before it gives the order up as lost";
+    let plate = note_plate(note, 180.0);
+    let joined: Vec<&str> = plate.lines.iter().map(|line| line.text.as_str()).collect();
+    assert_eq!(joined.join(" "), note);
+    let widest = plate
+        .lines
+        .iter()
+        .map(|line| line.width)
+        .fold(0.0, f64::max);
+    // The plate keeps 4 either side and 2 above and below; a line is 9.5 at a 1.35 line height.
+    assert_eq!(plate.width, widest.ceil() + 8.0);
+    let height = plate.lines.len() as f64 * 12.825 + 4.0;
+    assert!(plate.lines.len() > 1 && (plate.height - height).abs() < 1e-9);
 }

@@ -1,13 +1,15 @@
 //! A message's parts: its label's plate, where its arrow starts and stops, the
 //! bar a busy column stands as, and a message to itself's loop.
 
+use crate::drawing::TextRun;
 use crate::geometry::{Point, Rect};
 use crate::js;
-use crate::measure::message_lines;
+use crate::measure::{message_lines, note_lines};
 use crate::request::{MessageKind, WordLine};
 use crate::sizes::{
-    ACTIVATION_HALF_WIDTH, MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_TEXT_SIZE, SELF_LOOP_CORNER,
-    SELF_LOOP_DROP, SELF_LOOP_REACH, arrow_standoff,
+    ACTIVATION_HALF_WIDTH, MESSAGE_LINE_STEP, NOTE_SIZE, PILL_HEIGHT, PILL_TEXT_SIZE,
+    SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
+    TEXT_LINE_HEIGHT, arrow_standoff,
 };
 
 use super::Span;
@@ -28,6 +30,17 @@ pub struct MessagePlate {
     pub height: f64,
     /// How much taller the plate stands than a plate of one line.
     pub taller_by: f64,
+}
+
+/// A step's note on its plate.
+#[derive(Clone, Debug)]
+pub struct NotePlate {
+    /// Every line, whole, its baseline measured from the plate's inner top.
+    pub lines: Vec<TextRun>,
+    /// How wide the plate is.
+    pub width: f64,
+    /// How tall the plate is.
+    pub height: f64,
 }
 
 /// Where a message's arrow runs.
@@ -61,6 +74,27 @@ pub fn message_plate(label: &str, room: f64) -> MessagePlate {
         width: widest + PILL_PADDING_X * 2.0,
         height: PILL_HEIGHT + taller_by,
         taller_by,
+    }
+}
+
+/// A step's note wrapped to a width, whole, on a plate that holds it: the
+/// painted width wins over the wrap width, as on a card, because whole-line
+/// kerning can run a hair past the measure, and no word is cut to fit.
+pub fn note_plate(note: &str, wrap: f64) -> NotePlate {
+    let line_height = NOTE_SIZE * TEXT_LINE_HEIGHT;
+    let lines = note_lines(
+        note,
+        wrap - STEP_NOTE_PADDING_X * 2.0,
+        NOTE_SIZE,
+        line_height,
+    );
+    let widest = lines
+        .iter()
+        .fold(0.0, |widest, run| js::js_max(widest, run.width));
+    NotePlate {
+        width: widest.ceil() + STEP_NOTE_PADDING_X * 2.0,
+        height: lines.len() as f64 * line_height + STEP_NOTE_PADDING_Y * 2.0,
+        lines,
     }
 }
 
