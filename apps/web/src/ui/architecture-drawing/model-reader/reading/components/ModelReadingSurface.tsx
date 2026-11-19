@@ -3,7 +3,10 @@ import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
-import { AboutOutlineContext } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutOutline.tsx";
+import {
+	AboutOutlineContext,
+	scrollToSection,
+} from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutOutline.tsx";
 import { ModelReadingCanvas } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingCanvas.tsx";
 import { ModelReadingPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingPanel.tsx";
 import { ModelComparisonNotice } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
@@ -156,13 +159,24 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	useReaderKeys(reader.onMove);
 	const about = aboutKey(reader);
 	const place = useAboutPlace(about);
-	const { openAbout } = reader;
+	const { area, openAbout } = reader;
+	const { opened } = reader.structure;
+	const { reducedMotion } = props;
 	const onInterface = useCallback(
 		(module: string): void => {
+			if (opened === module && shown.projection.opened === module) {
+				const aboutPage = area.current?.querySelector<HTMLElement>(
+					'[data-slot="model-about-page"]',
+				);
+				if (aboutPage) {
+					scrollToSection(aboutPage, "interface", reducedMotion);
+					return;
+				}
+			}
 			place.ask("interface");
 			openAbout(module);
 		},
-		[place, openAbout],
+		[area, openAbout, opened, place, reducedMotion, shown.projection.opened],
 	);
 	const [outlineSlot, setOutlineSlot] = useState<HTMLElement | null>(null);
 	const aboutPage = useMemo(

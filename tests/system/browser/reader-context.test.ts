@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { pressSettings } from "./support/shell-dom.ts";
-import { openDiagram, pick, settledOn } from "./support/canonical-page.ts";
+import { openAbout, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const DOOR = `[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]`;
@@ -240,6 +240,21 @@ test("the right column follows what a reader looks at, and the left column holds
 	});
 	expect(await followMeasures(browser)).toEqual(["Shop#Queue"]);
 	await settledOn(browser, "Shop#Worker");
+
+	// An inbound line can select the open module while the reader is already on About.
+	await openAbout(browser);
+	await browser.run([
+		"click",
+		'[data-slot="model-about"] [data-connection-id][data-to="Shop#Worker"]',
+	]);
+	await browser.run(["click", '[data-end-id="Shop#Worker"]']);
+	await browser.run(["click", '[data-slot="model-interface-about"]']);
+	expect(
+		await browser.eval<string | null>(
+			`document.activeElement?.closest('[data-about-section]')?.getAttribute('data-about-section') ?? null`,
+		),
+	).toBe("interface");
+	await openDiagram(browser);
 
 	// The open module decides them while nothing is selected. A long list shows a few rows.
 	await browser.run(["click", '[data-module-row="Shop#Gateway"]']);
