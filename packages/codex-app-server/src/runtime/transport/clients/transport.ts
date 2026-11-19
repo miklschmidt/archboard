@@ -1,4 +1,5 @@
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
+import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 import { durationMs } from "@archboard/timing";
 import {
 	attachChildListeners,
@@ -41,10 +42,9 @@ import type {
 	ReverseRecord,
 	WriteJob,
 } from "#runtime/transport/clients/transport-internals.ts";
-import { protocolErrorFrame, wireKey, type WireId } from "#runtime/protocol/wire.ts";
+import { encodeFrame, type JsonRpcErrorKind, type WireId } from "#runtime/protocol/frames.ts";
 
 const PROTOCOL_ERROR_MESSAGE = "Codex transport is shutting down.";
-const INTERNAL_ERROR_CODE = -32603;
 
 type TransportState = "open" | "closing" | "closed";
 type CloseReason = Extract<
@@ -178,14 +178,19 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	 * @param message The error message.
 	 * @returns True when the error was queued and the id retained as answered.
 	 */
-	const enqueueProtocolError = (wireId: WireId, code: number, message: string): boolean => {
+	const enqueueProtocolError = (
+		wireId: WireId,
+		code: JsonRpcErrorKind,
+		message: string,
+	): boolean => {
 		if (isClosed() || inputEndStarted) {
 			return false;
 		}
-		let frame: Buffer;
-		try {
-			frame = protocolErrorFrame(wireId, code, message);
-		} catch {
+		const encoded = encodeFrame(
+			{ kind: "error", id: wireId, code, message },
+			CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
+		);
+		if (!encoded.ok) {
 			emitIssue({
 				kind: "write-error",
 				direction: "write",
@@ -193,9 +198,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			});
 			return false;
 		}
-		const key = wireKey(wireId);
+		const key = encoded.key;
 		try {
-			enqueue({ kind: "protocol-error", frame, key }, undefined, "response");
+			enqueue({ kind: "protocol-error", frame: encoded.line, key }, undefined, "response");
 		} catch {
 			emitIssue({
 				kind: "write-error",
@@ -365,7 +370,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	 * @param record The reverse record.
 	 */
 	const refuseForShutdown = (record: ReverseRecord): void => {
-		enqueueProtocolError(record.wireId, INTERNAL_ERROR_CODE, PROTOCOL_ERROR_MESSAGE);
+		enqueueProtocolError(record.wireId, "internalError", PROTOCOL_ERROR_MESSAGE);
 	};
 
 	/** Gives up on a shutdown whose stdin did not drain within the composed bound. */

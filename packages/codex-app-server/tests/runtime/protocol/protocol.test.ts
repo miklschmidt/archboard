@@ -9,12 +9,14 @@ import {
 import {
 	ProtocolDecodeError,
 	decodeClientRequestParams,
-	decodeJsonRpcError,
 	decodeResponse,
-	decodeResponseEnvelope,
-	decodeServerNotification,
-	decodeServerRequest,
 } from "#runtime/protocol/protocol-decoder.ts";
+import {
+	decodeNotificationValue,
+	decodeRequestValue,
+	decodeResponseValue,
+	frameOf,
+} from "#tests/runtime/support/frame-decoding.ts";
 import {
 	responseFixtures,
 	SERVER_REQUEST_METHODS,
@@ -56,10 +58,10 @@ describe("public response boundary", () => {
 	}
 
 	test("retains JSON-RPC result identity and decodes the result payload", () => {
-		expect(
-			decodeResponseEnvelope("turn/steer", { id: 7, result: responseFixtures["turn/steer"] }),
-		).toEqual({
-			id: 7,
+		const envelope = { id: 7, result: responseFixtures["turn/steer"] };
+		expect(frameOf(envelope)).toMatchObject({ kind: "response", id: 7, outcome: "result" });
+		expect(decodeResponseValue("turn/steer", envelope)).toEqual({
+			outcome: "result",
 			result: { turnId: "turn-1" },
 		});
 	});
@@ -69,7 +71,7 @@ describe("public notification boundary", () => {
 	for (const method of SERVER_NOTIFICATION_METHODS) {
 		test(`decodes ${method}`, () => {
 			const input = { method, params: notificationFixture(method), emittedAtMs: 42 };
-			expect(decodeServerNotification(input) as unknown).toEqual(input);
+			expect(decodeNotificationValue(input) as unknown).toEqual(input);
 		});
 	}
 
@@ -79,7 +81,7 @@ describe("public notification boundary", () => {
 			const malformed = Object.keys(fixture as object).length
 				? Object.fromEntries(Object.entries(fixture as Record<string, unknown>).slice(1))
 				: { unexpected: true };
-			expect(() => decodeServerNotification({ method, params: malformed })).toThrow(
+			expect(() => decodeNotificationValue({ method, params: malformed })).toThrow(
 				ProtocolDecodeError,
 			);
 		});
@@ -87,7 +89,7 @@ describe("public notification boundary", () => {
 
 	test("accepts notifications from older servers without emittedAtMs", () => {
 		expect(
-			decodeServerNotification({
+			decodeNotificationValue({
 				method: "thread/realtime/closed",
 				params: { threadId: "thread-1", reason: null },
 			}),
@@ -103,7 +105,7 @@ describe("reverse request boundary", () => {
 	)) {
 		test(`decodes ${method}`, () => {
 			const input = { id: 1, method, params: serverRequestFixtures[method] };
-			expect(decodeServerRequest(input) as unknown).toEqual({ ...input });
+			expect(decodeRequestValue(input) as unknown).toEqual({ ...input });
 		});
 	}
 
@@ -112,12 +114,16 @@ describe("reverse request boundary", () => {
 			id: 3,
 			error: { code: -32602, message: "invalid params", data: { field: "threadId" } },
 		};
-		expect(decodeJsonRpcError(error, "thread/start")).toEqual(error);
+		expect(frameOf(error)).toMatchObject({ kind: "response", id: 3, outcome: "error" });
+		expect(decodeResponseValue("thread/start", error)).toEqual({
+			outcome: "error",
+			error: error.error,
+		});
 	});
 
 	test("rejects a JSON-RPC object that contains both result and error", () => {
 		expect(() =>
-			decodeJsonRpcError({
+			decodeResponseValue("thread/start", {
 				id: 3,
 				result: {},
 				error: { code: -32602, message: "invalid params" },
@@ -149,7 +155,7 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects a response envelope that contains both result and error", () => {
 		expect(() =>
-			decodeResponseEnvelope("turn/steer", {
+			decodeResponseValue("turn/steer", {
 				id: 7,
 				result: { turnId: "turn-1" },
 				error: { code: -32602, message: "invalid params" },
@@ -159,14 +165,14 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects extra fields on every public envelope boundary", () => {
 		expect(() =>
-			decodeServerNotification({
+			decodeNotificationValue({
 				method: "thread/realtime/closed",
 				params: notificationFixture("thread/realtime/closed"),
 				extra: true,
 			}),
 		).toThrow(ProtocolDecodeError);
 		expect(() =>
-			decodeServerRequest({
+			decodeRequestValue({
 				id: 1,
 				method: "currentTime/read",
 				params: serverRequestFixtures["currentTime/read"],
@@ -174,21 +180,21 @@ describe("fail-closed diagnostics", () => {
 			}),
 		).toThrow(ProtocolDecodeError);
 		expect(() =>
-			decodeResponseEnvelope("turn/steer", {
+			decodeResponseValue("turn/steer", {
 				id: 7,
 				result: responseFixtures["turn/steer"],
 				extra: true,
 			}),
 		).toThrow(ProtocolDecodeError);
 		expect(() =>
-			decodeJsonRpcError({
+			decodeResponseValue("thread/start", {
 				id: 3,
 				error: { code: -32602, message: "invalid params" },
 				extra: true,
 			}),
 		).toThrow(ProtocolDecodeError);
 		expect(() =>
-			decodeJsonRpcError({
+			decodeResponseValue("thread/start", {
 				id: 3,
 				error: { code: -32602, message: "invalid params", extra: true },
 			}),
@@ -197,7 +203,7 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects unknown members of security-sensitive request unions", () => {
 		expect(() =>
-			decodeServerRequest({
+			decodeRequestValue({
 				id: 1,
 				method: "item/commandExecution/requestApproval",
 				params: {
@@ -210,7 +216,7 @@ describe("fail-closed diagnostics", () => {
 			}),
 		).toThrow(ProtocolDecodeError);
 		expect(() =>
-			decodeServerRequest({
+			decodeRequestValue({
 				id: 1,
 				method: "item/permissions/requestApproval",
 				params: {
@@ -268,7 +274,7 @@ describe("fail-closed diagnostics", () => {
 			],
 		};
 		const input = { id: 1, method: "item/commandExecution/requestApproval", params } as const;
-		expect(decodeServerRequest(input) as unknown).toEqual(input);
+		expect(decodeRequestValue(input) as unknown).toEqual(input);
 	});
 
 	test("rejects unknown config security enums on the response graph", () => {
@@ -287,7 +293,7 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects unknown network policy values", () => {
 		expect(() =>
-			decodeServerRequest({
+			decodeRequestValue({
 				id: 1,
 				method: "item/commandExecution/requestApproval",
 				params: {
@@ -304,7 +310,7 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects unknown notification union variants", () => {
 		expect(() =>
-			decodeServerNotification({
+			decodeNotificationValue({
 				method: "item/autoApprovalReview/started",
 				params: {
 					...(notificationFixture("item/autoApprovalReview/started") as Record<string, unknown>),
@@ -316,7 +322,7 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects unknown discriminated thread status members", () => {
 		expect(() =>
-			decodeServerNotification({
+			decodeNotificationValue({
 				method: "thread/status/changed",
 				params: { threadId: "thread-1", status: { type: "futureStatus" } },
 			}),
@@ -325,7 +331,7 @@ describe("fail-closed diagnostics", () => {
 
 	test("rejects unknown realtime item members without reducing the item", () => {
 		expect(() =>
-			decodeServerNotification({
+			decodeNotificationValue({
 				method: "thread/realtime/item/started",
 				params: {
 					threadId: "thread-1",
@@ -356,18 +362,20 @@ describe("fail-closed diagnostics", () => {
 	});
 
 	for (const method of ["attestation/generate", "account/chatgptAuthTokens/refresh"] as const) {
-		test(`refuses unsupported server capability ${method}`, () => {
-			expect(() =>
-				decodeServerRequest({ id: 1, method, params: serverRequestFixtures[method] }),
-			).toThrow(ProtocolDecodeError);
+		test(`keeps the disabled capability ${method} decodable by its params, so its owner can refuse it`, () => {
+			const input = { id: 1, method, params: serverRequestFixtures[method] };
+			expect(decodeRequestValue(input) as unknown).toEqual(input);
+			expect(() => decodeRequestValue({ ...input, params: { unexpected: true } })).toThrow(
+				ProtocolDecodeError,
+			);
 		});
 	}
 
 	test("rejects unknown methods in every envelope direction", () => {
-		expect(() => decodeServerNotification({ method: "future/notification", params: {} })).toThrow(
+		expect(() => decodeNotificationValue({ method: "future/notification", params: {} })).toThrow(
 			ProtocolDecodeError,
 		);
-		expect(() => decodeServerRequest({ id: 1, method: "future/request", params: {} })).toThrow(
+		expect(() => decodeRequestValue({ id: 1, method: "future/request", params: {} })).toThrow(
 			ProtocolDecodeError,
 		);
 	});

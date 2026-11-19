@@ -1,7 +1,5 @@
 import type { ChildProcessEventMap, ChildProcessWithoutNullStreams } from "node:child_process";
 
-import { isInList } from "#runtime/protocol/wire.ts";
-
 import type {
 	ClientNotificationMethod,
 	ClientRequestMethodWithoutParams,
@@ -79,6 +77,16 @@ const SESSION_SERVER_REQUEST_METHODS = Object.freeze([
 ] as const);
 
 type SessionServerRequestMethod = (typeof SESSION_SERVER_REQUEST_METHODS)[number];
+
+/**
+ * Whether a string is one of the listed literals, narrowing it to the list's type.
+ * @param list The accepted literals.
+ * @param value The string to test.
+ * @returns True when the string appears in the list.
+ */
+function isInList<T extends string>(list: readonly T[], value: string): value is T {
+	return (list as readonly string[]).includes(value);
+}
 
 /**
  * Checks that an owner may register a dynamic dispatcher, where a registration enters.

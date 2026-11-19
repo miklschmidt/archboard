@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { decodeServerNotification } from "#runtime/protocol/protocol-decoder.ts";
+import { decodeNotificationValue } from "#tests/runtime/support/frame-decoding.ts";
 
 describe("raw realtime preservation", () => {
 	test("does not invent phase or transcript state", () => {
@@ -9,7 +9,7 @@ describe("raw realtime preservation", () => {
 			params: { threadId: "thread-1", role: "assistant", delta: "raw delta" },
 			emittedAtMs: 99,
 		};
-		const decoded = decodeServerNotification(input);
+		const decoded = decodeNotificationValue(input);
 		expect(decoded as unknown).toEqual(input);
 		expect(decoded).not.toHaveProperty("phase");
 		expect(decoded.params).not.toHaveProperty("transcript");
@@ -30,6 +30,6 @@ describe("raw realtime preservation", () => {
 				},
 			},
 		};
-		expect(decodeServerNotification(input) as unknown).toEqual(input);
+		expect(decodeNotificationValue(input) as unknown).toEqual(input);
 	});
 });

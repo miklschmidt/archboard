@@ -14,7 +14,8 @@ import type {
 	ReverseResponse,
 	TransportServerRequest,
 } from "#runtime/transport/clients/transport-types.ts";
-import { hasOwn, isRecord, jsonLine } from "#runtime/protocol/wire.ts";
+import { encodeFrame } from "#runtime/protocol/frames.ts";
+import { encodingError } from "#runtime/transport/operations/frame-lines.ts";
 import { cloneAndFreeze } from "#runtime/transport/operations/public-values.ts";
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 
@@ -53,13 +54,22 @@ function isAnswerable(
 }
 
 /**
+ * Whether a value is a JSON object rather than null, an array or a scalar.
+ * @param value The value to inspect.
+ * @returns True when the value can be read as a string-keyed record.
+ */
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
  * Requires the response to carry exactly one of result and error and nothing else.
  * @param response The caller's response object.
  * @returns Which outcome it carries.
  */
 function outcomeOf(response: Record<string, unknown>): "result" | "error" {
-	const hasResult = hasOwn(response, "result");
-	const hasError = hasOwn(response, "error");
+	const hasResult = Object.hasOwn(response, "result");
+	const hasError = Object.hasOwn(response, "error");
 	const onlyOutcomeKeys = Reflect.ownKeys(response).every(
 		(key) => key === "result" || key === "error",
 	);
@@ -80,7 +90,7 @@ function canonicalResponse(
 	method: ServerRequestMethod,
 	response: ReverseResponse,
 ): Record<string, unknown> {
-	if (!isRecord(response)) {
+	if (!isJsonObject(response)) {
 		throw new CodexTransportUsageError("reverse response must be an object");
 	}
 	try {
@@ -110,16 +120,19 @@ function canonicalResponse(
  * @returns The frame bytes.
  */
 function responseFrame(record: ReverseRecord, canonical: Record<string, unknown>): Buffer {
-	return jsonLine(
+	const maximumBytes = CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes;
+	const encoded = encodeFrame(
 		{
+			kind: "reply",
 			id: record.wireId,
-			...(hasOwn(canonical, "result")
+			outcome: Object.hasOwn(canonical, "result")
 				? { result: canonical["result"] }
-				: { error: canonical["error"] }),
+				: { error: canonical["error"] },
 		},
-		"reverse response",
-		CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
+		maximumBytes,
 	);
+	if (encoded.ok) return encoded.line;
+	throw encodingError(encoded.reason, "reverse response", maximumBytes);
 }
 
 /**

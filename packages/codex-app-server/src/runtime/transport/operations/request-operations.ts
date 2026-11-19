@@ -1,12 +1,8 @@
-import {
-	isSupportedClientNotificationMethod,
-	isSupportedResponseMethod,
-} from "#runtime/protocol/protocol-decoder.ts";
-import {
-	isClientRequestMethodWithoutParams,
-	type ClientNotificationMethod,
-	type ClientRequestMethodWithoutParams,
-	type ResponseMethod,
+import { encodeFrame, type EncodingRefusal, type FrameRefusal } from "#runtime/protocol/frames.ts";
+import type {
+	ClientNotificationMethod,
+	ClientRequestMethodWithoutParams,
+	ResponseMethod,
 } from "#runtime/protocol/protocol-methods.ts";
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 import { durationMs } from "@archboard/timing";
@@ -34,7 +30,7 @@ import type {
 	RequestJob,
 	WriteJob,
 } from "#runtime/transport/clients/transport-internals.ts";
-import { isRecord, jsonLine, wireKey } from "#runtime/protocol/wire.ts";
+import { encodingError } from "#runtime/transport/operations/frame-lines.ts";
 
 interface OutboundOperationsOptions {
 	readonly identity: () => IdentityAuthority;
@@ -58,6 +54,7 @@ interface OutboundOperations {
 interface TrackedRequestInput<Method extends ResponseMethod> {
 	readonly method: Method;
 	readonly wireId: JsonRpcRequestId;
+	readonly key: string;
 	readonly correlation: WireRequestCorrelation;
 	readonly frame: Buffer;
 	readonly requestOptions: CodexTransportRequestOptions;
@@ -66,39 +63,29 @@ interface TrackedRequestInput<Method extends ResponseMethod> {
 }
 
 /**
- * The usage error for params that do not fit the method, if any.
- * @param method The request method.
- * @param params The caller's params.
- * @returns The refusal, or undefined when the params are acceptable.
+ * Whether the encoder refused a frame for having no JSON line within its bound.
+ * @param refusal Why the encoder refused the frame.
+ * @returns True for an encoding refusal, false for a refused method or params.
  */
-function paramsRefusal(
-	method: ResponseMethod,
-	params: unknown,
-): CodexTransportUsageError | undefined {
-	if (isClientRequestMethodWithoutParams(method)) {
-		return params === undefined
-			? undefined
-			: new CodexTransportUsageError(`Codex request ${method} must omit params`);
-	}
-	return isRecord(params)
-		? undefined
-		: new CodexTransportUsageError("Codex request params must be a JSON object");
+function isEncodingRefusal(refusal: FrameRefusal): refusal is EncodingRefusal {
+	return refusal === "unencodable" || refusal === "too-large";
 }
 
 /**
- * Encodes a request frame, omitting params for methods that take none.
+ * The usage error for a request whose method or params the protocol refuses.
  * @param method The request method.
- * @param rawId The serialised JSON-RPC id.
- * @param params The caller's params.
- * @returns The frame bytes.
+ * @param refusal Why the encoder refused the frame.
+ * @returns The usage error.
  */
-function requestFrame(method: ResponseMethod, rawId: string | number, params: unknown): Buffer {
-	return jsonLine(
-		isClientRequestMethodWithoutParams(method)
-			? { id: rawId, method }
-			: { id: rawId, method, params },
-		`request ${method}`,
-	);
+function usageRefusal(
+	method: string,
+	refusal: Exclude<FrameRefusal, EncodingRefusal>,
+): CodexTransportUsageError {
+	if (refusal === "unsupported-method")
+		return new CodexTransportUsageError(`unsupported response method ${method}`);
+	if (refusal === "params-present")
+		return new CodexTransportUsageError(`Codex request ${method} must omit params`);
+	return new CodexTransportUsageError("Codex request params must be a JSON object");
 }
 
 /**
@@ -160,16 +147,21 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 	 */
 	const sendNotification = (method: ClientNotificationMethod): Promise<void> => {
 		if (options.state() !== "open") return Promise.reject(closedError());
-		if (!isSupportedClientNotificationMethod(method))
+		const encoded = encodeFrame(
+			{ kind: "notification", method },
+			CODEX_APP_SERVER_CAPACITY.frameBytes,
+		);
+		if (!encoded.ok)
 			return Promise.reject(
-				new CodexTransportUsageError(`unsupported client notification ${String(method)}`),
+				encoded.reason === "unsupported-method"
+					? new CodexTransportUsageError(`unsupported client notification ${method}`)
+					: encodingError(
+							encoded.reason,
+							"client notification",
+							CODEX_APP_SERVER_CAPACITY.frameBytes,
+						),
 			);
-		let frame: Buffer;
-		try {
-			frame = jsonLine({ method }, "client notification");
-		} catch (cause) {
-			return Promise.reject(cause);
-		}
+		const frame = encoded.line;
 		return new Promise<void>((resolve, reject) => {
 			const job: NotificationJob = { kind: "notification", frame, resolve, reject, settled: false };
 			try {
@@ -182,24 +174,16 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 	};
 
 	/**
-	 * Why a request cannot be sent right now, if anything.
-	 * @param method The request method.
-	 * @param params The caller's params.
-	 * @returns The refusal, or undefined when the request may proceed.
+	 * Whether another request would exceed the pending-request bound.
+	 * @returns The backpressure refusal, or undefined when the request may be queued.
 	 */
-	const requestRefusal = (method: ResponseMethod, params: unknown): Error | undefined => {
-		if (options.state() !== "open") return closedError();
-		if (!isSupportedResponseMethod(method))
-			return new CodexTransportUsageError(`unsupported response method ${String(method)}`);
-		const refusal = paramsRefusal(method, params);
-		if (refusal) return refusal;
-		if (options.pendingRequests.size >= CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests)
-			return new CodexTransportWriteError(
-				"backpressure",
-				`pending Codex requests are limited to ${CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests}`,
-			);
-		return undefined;
-	};
+	const capacityRefusal = (): CodexTransportWriteError | undefined =>
+		options.pendingRequests.size >= CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests
+			? new CodexTransportWriteError(
+					"backpressure",
+					`pending Codex requests are limited to ${CODEX_APP_SERVER_CAPACITY.outbound.pendingRequests}`,
+				)
+			: undefined;
 
 	/**
 	 * Cancels a pending request through its abort signal, now or when it fires.
@@ -235,7 +219,7 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 			input.resolve(value as CodexTransportResponse<Method>);
 		};
 		const pending: PendingRequest = {
-			key: wireKey(options.identity().decoder.serializeJsonRpcRequestId(input.wireId)),
+			key: input.key,
 			wireId: input.wireId,
 			method: input.method,
 			correlation: input.correlation,
@@ -278,21 +262,36 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 		params: Method extends ClientRequestMethodWithoutParams ? undefined : unknown,
 		requestOptions: CodexTransportRequestOptions = {},
 	) => {
-		const refusal = requestRefusal(method, params);
-		if (refusal) return Promise.reject(refusal);
+		if (options.state() !== "open") return Promise.reject(closedError());
+		const backpressure = capacityRefusal();
+		if (backpressure) return Promise.reject(backpressure);
 		const identity = options.identity();
 		const wireId = identity.issuer.mintJsonRpcRequestId();
+		const encoded = encodeFrame(
+			{
+				kind: "request",
+				id: identity.decoder.serializeJsonRpcRequestId(wireId),
+				method,
+				params,
+			},
+			CODEX_APP_SERVER_CAPACITY.frameBytes,
+		);
 		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
 			requestId: wireId,
 		});
-		let frame: Buffer;
-		try {
-			frame = requestFrame(method, identity.decoder.serializeJsonRpcRequestId(wireId), params);
-		} catch (cause) {
+		if (!encoded.ok) {
+			const reason = encoded.reason;
+			if (!isEncodingRefusal(reason)) return Promise.reject(usageRefusal(method, reason));
+			const cause = encodingError(
+				reason,
+				`request ${method}`,
+				CODEX_APP_SERVER_CAPACITY.frameBytes,
+			);
 			return Promise.reject(undeliverableRequest(method, correlation, cause));
 		}
+		const { line: frame, key } = encoded;
 		return new Promise<CodexTransportResponse<Method>>((resolve, reject) => {
-			trackRequest({ method, wireId, correlation, frame, requestOptions, resolve, reject });
+			trackRequest({ method, wireId, key, correlation, frame, requestOptions, resolve, reject });
 		});
 	};
 

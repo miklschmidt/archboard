@@ -52,3 +52,29 @@ describe("Codex app-server malformed routing contract", () => {
 		}
 	});
 });
+
+describe("Codex app-server reverse-request rule precedence", () => {
+	test("answers a frame that breaks several rules by the first rule it breaks", async () => {
+		const { child, transport, close } = createHarness();
+		try {
+			sendJson(child, { id: "r1", method: "future/request", extra: true });
+			sendJson(child, { id: "r2", method: 3, extra: true });
+			sendJson(child, { id: "r1", method: 3 });
+			await flushStreams();
+
+			expect(
+				transport.inspectIssues().map((issue) => [issue.kind, issue.detail, issue.requestId]),
+			).toEqual([
+				["malformed-frame", "A reverse request has invalid envelope fields", "r1"],
+				["malformed-frame", "A reverse request method is missing or invalid", "r2"],
+				["duplicate-server-request", "A reverse request id was already used", "r1"],
+			]);
+			expect(frames(child)).toEqual([
+				{ id: "r1", error: { code: -32_600, message: "Invalid reverse request." } },
+				{ id: "r2", error: { code: -32_600, message: "Invalid reverse request." } },
+			]);
+		} finally {
+			await close();
+		}
+	});
+});

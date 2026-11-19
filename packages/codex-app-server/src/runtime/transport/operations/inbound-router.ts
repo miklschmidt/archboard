@@ -1,9 +1,15 @@
 import {
-	decodeJsonRpcError,
-	decodeResponseEnvelope,
-	decodeServerNotification,
-} from "#runtime/protocol/protocol-decoder.ts";
-import { jsonRpcErrorCode } from "#runtime/protocol/request-schemas.ts";
+	decodeFrame,
+	decodeFrameBody,
+	type BareIdFrame,
+	type DuplicateKeyFrame,
+	type InboundFrame,
+	type JsonRpcErrorKind,
+	type NotificationFrame,
+	type ResponseFrame,
+	type WireId,
+} from "#runtime/protocol/frames.ts";
+import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
 import {
 	CodexTransportUsageError,
@@ -30,23 +36,18 @@ import type {
 	ReverseRecord,
 	WriteJob,
 } from "#runtime/transport/clients/transport-internals.ts";
-import {
-	JsonFrameDecodeError,
-	boundedText,
-	hasOwn,
-	isRecord,
-	isWireId,
-	parseJsonText,
-	responseKind,
-	wireKey,
-	type WireId,
-} from "#runtime/protocol/wire.ts";
 import { isDynamicDispatcherOwner } from "#runtime/transport/clients/transport-types.ts";
 import { cloneAndFreeze } from "#runtime/transport/operations/public-values.ts";
 
 const SHUTTING_DOWN_MESSAGE = "Codex transport is shutting down.";
 
 type OpenState = "open" | "closing";
+
+/** A frame that is one JSON object with a known envelope class. */
+type RoutableFrame = Exclude<
+	InboundFrame,
+	{ readonly kind: "empty" | "malformed" | "duplicate-key" | "not-object" }
+>;
 
 interface InboundRouterOptions {
 	readonly identity: () => IdentityAuthority;
@@ -64,13 +65,14 @@ interface InboundRouterOptions {
 	readonly settleFailure: (pending: PendingRequest, reason: CodexRequestFailureReason) => void;
 	readonly settleDelivered: (pending: PendingRequest, result: unknown) => void;
 	readonly settleRemoteError: (pending: PendingRequest, rpcError: CodexRemoteError) => void;
-	readonly retainLateResponse: (
-		tombstone: RequestTombstone,
-		value: Record<string, unknown>,
-	) => void;
+	readonly retainLateResponse: (tombstone: RequestTombstone, frame: ResponseFrame) => void;
 	readonly retainCompletedReverseId: (key: string) => void;
 	readonly enqueue: (job: WriteJob, lane?: "regular" | "response") => void;
-	readonly enqueueProtocolError: (wireId: WireId, code: number, message: string) => boolean;
+	readonly enqueueProtocolError: (
+		wireId: WireId,
+		code: JsonRpcErrorKind,
+		message: string,
+	) => boolean;
 }
 
 interface InboundRouter {
@@ -84,31 +86,38 @@ interface InboundRouter {
 }
 
 /**
- * Whether a frame carries a result or an error member, however many.
- * @param value The decoded frame.
- * @returns True when either member is present.
+ * Refuses a caller-supplied label that is empty, padded, oversized or contains NUL.
+ * @param value The candidate label.
+ * @param field What the label names, for the refusal message.
  */
-function carriesOutcome(value: Record<string, unknown>): boolean {
-	return hasOwn(value, "result") || hasOwn(value, "error");
+function boundedText(value: unknown, field: string): asserts value is string {
+	if (
+		typeof value !== "string" ||
+		value.length === 0 ||
+		value.length > CODEX_APP_SERVER_CAPACITY.text.maxChars ||
+		value.trim() !== value ||
+		value.includes("\0")
+	)
+		throw new CodexTransportUsageError(`${field} must be a non-empty bounded string`);
 }
 
 /**
  * Describes a duplicate-key frame by the direction its top-level keys suggest.
- * @param error The decode failure.
+ * @param frame The duplicate-key frame.
  * @param pending The pending request it answered, if any.
  * @returns The issue.
  */
 function duplicateKeyIssue(
-	error: JsonFrameDecodeError,
+	frame: DuplicateKeyFrame,
 	pending: PendingRequest | undefined,
 ): TransportIssue {
-	const reverseDuplicate = error.methodPresent && error.wireId !== undefined;
+	const reverseDuplicate = frame.methodPresent && frame.id !== undefined;
 	return {
 		kind: "duplicate-key",
 		direction: pending ? "response" : reverseDuplicate ? "server-request" : "stdout",
 		detail: "A JSON object contains a duplicate key",
 		...(pending === undefined ? {} : { method: pending.method }),
-		...(error.wireId === undefined ? {} : { requestId: error.wireId }),
+		...(frame.id === undefined ? {} : { requestId: frame.id }),
 	};
 }
 
@@ -140,7 +149,7 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	 * @param code The error code.
 	 * @param message The error message.
 	 */
-	const protocolError = (rawId: WireId, code: number, message: string): void => {
+	const protocolError = (rawId: WireId, code: JsonRpcErrorKind, message: string): void => {
 		options.enqueueProtocolError(rawId, code, message);
 	};
 
@@ -152,13 +161,9 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	 */
 	const refuseForState = (rawId: WireId, state: OpenState): void => {
 		if (state === "closing") {
-			protocolError(rawId, jsonRpcErrorCode("internalError"), SHUTTING_DOWN_MESSAGE);
+			protocolError(rawId, "internalError", SHUTTING_DOWN_MESSAGE);
 		} else {
-			protocolError(
-				rawId,
-				jsonRpcErrorCode("invalidRequest"),
-				REVERSE_ERROR_MESSAGES.invalidRequest,
-			);
+			protocolError(rawId, "invalidRequest", REVERSE_ERROR_MESSAGES.invalidRequest);
 		}
 	};
 
@@ -166,16 +171,12 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	 * Retains a response for a settled request, or reports one nothing owns.
 	 * @param key The wire key.
 	 * @param rawId The frame's wire id.
-	 * @param value The response frame.
+	 * @param frame The response frame.
 	 */
-	const retainOrReportLateResponse = (
-		key: string,
-		rawId: WireId,
-		value: Record<string, unknown>,
-	): void => {
+	const retainOrReportLateResponse = (key: string, rawId: WireId, frame: ResponseFrame): void => {
 		const tombstone = options.tombstones.get(key);
 		if (tombstone) {
-			options.retainLateResponse(tombstone, value);
+			options.retainLateResponse(tombstone, frame);
 			return;
 		}
 		options.emitIssue({
@@ -187,18 +188,35 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	};
 
 	/**
+	 * Settles a request from its decoded response, unless settling it throws.
+	 * @param pending The pending request.
+	 * @param frame The response frame, already known to carry one outcome.
+	 * @returns False when the response did not decode or could not settle the request.
+	 */
+	const settleDecoded = (pending: PendingRequest, frame: ResponseFrame): boolean => {
+		const body = decodeFrameBody(frame, pending.method);
+		if (!body.ok) return false;
+		try {
+			if (body.value.outcome === "result") options.settleDelivered(pending, body.value.result);
+			else options.settleRemoteError(pending, body.value.error);
+			return true;
+		} catch {
+			return false;
+		}
+	};
+
+	/**
 	 * Settles a pending request from its response frame.
 	 * @param pending The pending request.
 	 * @param rawId The frame's wire id.
-	 * @param value The response frame.
+	 * @param frame The response frame, or a bare id that names the request and carries no outcome.
 	 */
 	const settleResponse = (
 		pending: PendingRequest,
 		rawId: WireId,
-		value: Record<string, unknown>,
+		frame: ResponseFrame | BareIdFrame,
 	): void => {
-		const kind = responseKind(value);
-		if (kind === "malformed") {
+		if (frame.kind === "bare-id" || frame.outcome === "malformed") {
 			options.emitIssue({
 				kind: "malformed-frame",
 				direction: "response",
@@ -209,31 +227,23 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 			options.settleFailure(pending, "malformed-response");
 			return;
 		}
-		try {
-			if (kind === "result") {
-				options.settleDelivered(pending, decodeResponseEnvelope(pending.method, value).result);
-			} else {
-				options.settleRemoteError(pending, decodeJsonRpcError(value, pending.method).error);
-			}
-		} catch {
-			options.emitIssue({
-				kind: "malformed-frame",
-				direction: "response",
-				method: pending.method,
-				requestId: rawId,
-				detail: "The response failed the generated Codex decoder",
-			});
-			options.settleFailure(pending, "malformed-response");
-		}
+		if (settleDecoded(pending, frame)) return;
+		options.emitIssue({
+			kind: "malformed-frame",
+			direction: "response",
+			method: pending.method,
+			requestId: rawId,
+			detail: "The response failed the generated Codex decoder",
+		});
+		options.settleFailure(pending, "malformed-response");
 	};
 
 	/**
 	 * Routes a response frame to its pending request or the late-response log.
-	 * @param value The decoded frame.
+	 * @param frame The response frame.
 	 */
-	const handleResponse = (value: Record<string, unknown>): void => {
-		const rawId = value["id"];
-		if (!isWireId(rawId)) {
+	const handleResponse = (frame: ResponseFrame): void => {
+		if (frame.id === undefined) {
 			options.emitIssue({
 				kind: "malformed-frame",
 				direction: "response",
@@ -241,121 +251,119 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 			});
 			return;
 		}
-		const key = wireKey(rawId);
-		const pending = options.pendingRequests.get(key);
+		const pending = options.pendingRequests.get(frame.key);
 		if (!pending) {
-			retainOrReportLateResponse(key, rawId, value);
+			retainOrReportLateResponse(frame.key, frame.id, frame);
 			return;
 		}
-		settleResponse(pending, rawId, value);
+		settleResponse(pending, frame.id, frame);
 	};
 
 	/**
-	 * Publishes a server notification with the child epoch's correlation.
-	 * @param value The decoded frame.
+	 * Publishes a decoded server notification with the child epoch's correlation.
+	 * @param frame The notification frame.
+	 * @returns False when the notification did not decode or could not be published.
 	 */
-	const handleNotification = (value: unknown): void => {
+	const publishNotification = (frame: NotificationFrame): boolean => {
+		const body = decodeFrameBody(frame);
+		if (!body.ok) return false;
 		try {
-			const notification = cloneAndFreeze(decodeServerNotification(value));
+			const notification = cloneAndFreeze(body.value);
 			const correlation = Object.freeze({
 				child: options.identity().validator.childId,
 				epoch: options.identity().validator.epoch,
 				requestId: null,
 			});
 			options.emitServerNotification(Object.freeze({ correlation, notification }));
+			return true;
 		} catch {
-			options.emitIssue({
-				kind: "malformed-frame",
-				direction: "notification",
-				detail: "The server notification failed the generated Codex decoder",
-			});
+			return false;
 		}
 	};
 
 	/**
-	 * The pending request a duplicate-key response frame was addressed to, if any.
-	 * @param error The decode failure.
-	 * @returns The pending request, or undefined for reverse frames and unknown ids.
+	 * Publishes a server notification, or reports one that does not decode.
+	 * @param frame The notification frame.
 	 */
-	const pendingForDuplicateKey = (error: JsonFrameDecodeError): PendingRequest | undefined => {
-		if (error.wireId === undefined || error.methodPresent) {
-			return undefined;
-		}
-		return options.pendingRequests.get(wireKey(error.wireId));
+	const handleNotification = (frame: NotificationFrame): void => {
+		if (publishNotification(frame)) return;
+		options.emitIssue({
+			kind: "malformed-frame",
+			direction: "notification",
+			detail: "The server notification failed the generated Codex decoder",
+		});
 	};
 
 	/**
 	 * Reports a duplicate-key frame: a response fails its request, a reverse request is answered.
-	 * @param error The decode failure.
+	 * @param frame The duplicate-key frame.
 	 * @param state Whether the transport is open or closing.
 	 */
-	const reportDuplicateKey = (error: JsonFrameDecodeError, state: OpenState): void => {
-		const pending = pendingForDuplicateKey(error);
-		options.emitIssue(duplicateKeyIssue(error, pending));
+	const reportDuplicateKey = (frame: DuplicateKeyFrame, state: OpenState): void => {
+		const pending =
+			frame.key === undefined || frame.methodPresent
+				? undefined
+				: options.pendingRequests.get(frame.key);
+		options.emitIssue(duplicateKeyIssue(frame, pending));
 		if (pending) {
 			options.settleFailure(pending, "malformed-response");
 			return;
 		}
-		if (error.methodPresent && error.wireId !== undefined) {
-			refuseForState(error.wireId, state);
+		if (frame.methodPresent && frame.id !== undefined) {
+			refuseForState(frame.id, state);
 		}
 	};
 
 	/**
-	 * Reports a line that did not decode as strict JSON.
-	 * @param error What decoding threw.
+	 * Reports a line that is not one JSON object.
+	 * @param frame The frame.
 	 * @param state Whether the transport is open or closing.
+	 * @returns True when the frame was reported, false when it is an object to route.
 	 */
-	const reportDecodeFailure = (error: unknown, state: OpenState): void => {
-		if (error instanceof JsonFrameDecodeError && error.kind === "duplicate-key") {
-			reportDuplicateKey(error, state);
-			return;
+	const reportUnusable = (
+		frame: InboundFrame,
+		state: OpenState,
+	): frame is Exclude<InboundFrame, RoutableFrame> => {
+		switch (frame.kind) {
+			case "empty":
+				options.emitIssue({
+					kind: "malformed-frame",
+					direction: "stdout",
+					detail: "An empty stdout line is not JSON",
+				});
+				return true;
+			case "malformed":
+				options.emitIssue({
+					kind: "malformed-frame",
+					direction: "stdout",
+					detail: "A complete stdout line is not valid UTF-8 JSON",
+				});
+				return true;
+			case "duplicate-key":
+				reportDuplicateKey(frame, state);
+				return true;
+			case "not-object":
+				options.emitIssue({
+					kind: "unknown-frame",
+					direction: "stdout",
+					detail: "A JSON frame must be an object",
+				});
+				return true;
+			default:
+				return false;
 		}
-		options.emitIssue({
-			kind: "malformed-frame",
-			direction: "stdout",
-			detail: "A complete stdout line is not valid UTF-8 JSON",
-		});
-	};
-
-	/**
-	 * Decodes a stdout line as one JSON object.
-	 * @param line The line bytes.
-	 * @param state Whether the transport is open or closing.
-	 * @returns The object, or undefined after reporting why the line was unusable.
-	 */
-	const decodeFrame = (line: Buffer, state: OpenState): Record<string, unknown> | undefined => {
-		let decoded: unknown;
-		try {
-			decoded = parseJsonText(
-				new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(line),
-			);
-		} catch (error) {
-			reportDecodeFailure(error, state);
-			return undefined;
-		}
-		if (isRecord(decoded)) {
-			return decoded;
-		}
-		options.emitIssue({
-			kind: "unknown-frame",
-			direction: "stdout",
-			detail: "A JSON frame must be an object",
-		});
-		return undefined;
 	};
 
 	/**
 	 * Answers a reverse frame received while closing; responses and notifications are ignored.
-	 * @param decoded The decoded frame.
+	 * @param frame The frame.
 	 */
-	const refuseWhileClosing = (decoded: Record<string, unknown>): void => {
-		if (!hasOwn(decoded, "method") || !hasOwn(decoded, "id")) {
+	const refuseWhileClosing = (frame: RoutableFrame): void => {
+		if (frame.kind !== "request") {
 			return;
 		}
-		const rawId = decoded["id"];
-		if (isWireId(rawId)) {
-			protocolError(rawId, jsonRpcErrorCode("internalError"), SHUTTING_DOWN_MESSAGE);
+		if (frame.id !== undefined) {
+			protocolError(frame.id, "internalError", SHUTTING_DOWN_MESSAGE);
 			return;
 		}
 		options.emitIssue({
@@ -379,59 +387,47 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 
 	/**
 	 * Routes a frame that has an id but neither a method nor an outcome, by what owns the id.
-	 * @param decoded The decoded frame.
-	 * @param rawId The frame's wire id.
+	 * @param frame The bare-id frame.
 	 */
-	const routeBareId = (decoded: Record<string, unknown>, rawId: WireId): void => {
-		const key = wireKey(rawId);
-		if (options.pendingRequests.has(key)) {
-			handleResponse(decoded);
+	const routeBareId = (frame: BareIdFrame): void => {
+		const pending = options.pendingRequests.get(frame.key);
+		if (pending) {
+			settleResponse(pending, frame.id, frame);
 			return;
 		}
-		if (options.reverseRequests.has(key) || options.completedReverseIds.has(key)) {
-			issueReverse("duplicate-server-request", "A reverse request id was already used", rawId);
+		if (options.reverseRequests.has(frame.key) || options.completedReverseIds.has(frame.key)) {
+			issueReverse("duplicate-server-request", "A reverse request id was already used", frame.id);
 			return;
 		}
-		protocolError(rawId, jsonRpcErrorCode("invalidRequest"), REVERSE_ERROR_MESSAGES.invalidRequest);
+		protocolError(frame.id, "invalidRequest", REVERSE_ERROR_MESSAGES.invalidRequest);
 	};
 
 	/**
-	 * Routes a frame with a method: a reverse request when it has an id, else a notification.
-	 * @param decoded The decoded frame.
+	 * Routes an open-state frame by its envelope class.
+	 * @param frame The frame.
 	 * @param frameBytes The frame's size.
 	 */
-	const routeMethodFrame = (decoded: Record<string, unknown>, frameBytes: number): void => {
-		if (hasOwn(decoded, "id")) {
-			reverseRouter.handleServerRequest(decoded, frameBytes);
-		} else {
-			handleNotification(decoded);
+	const routeFrame = (frame: RoutableFrame, frameBytes: number): void => {
+		switch (frame.kind) {
+			case "request":
+				reverseRouter.handleServerRequest(frame, frameBytes);
+				return;
+			case "notification":
+				handleNotification(frame);
+				return;
+			case "response":
+				handleResponse(frame);
+				return;
+			case "bare-id":
+				routeBareId(frame);
+				return;
+			case "unknown":
+				options.emitIssue({
+					kind: "unknown-frame",
+					direction: "stdout",
+					detail: "The JSON frame has no known direction",
+				});
 		}
-	};
-
-	/**
-	 * Routes an open-state frame by its envelope shape.
-	 * @param decoded The decoded frame.
-	 * @param frameBytes The frame's size.
-	 */
-	const routeFrame = (decoded: Record<string, unknown>, frameBytes: number): void => {
-		if (hasOwn(decoded, "method")) {
-			routeMethodFrame(decoded, frameBytes);
-			return;
-		}
-		const rawId = hasOwn(decoded, "id") ? decoded["id"] : undefined;
-		if (rawId !== undefined && carriesOutcome(decoded)) {
-			handleResponse(decoded);
-			return;
-		}
-		if (isWireId(rawId)) {
-			routeBareId(decoded, rawId);
-			return;
-		}
-		options.emitIssue({
-			kind: "unknown-frame",
-			direction: "stdout",
-			detail: "The JSON frame has no known direction",
-		});
 	};
 
 	/**
@@ -443,23 +439,15 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 		if (state === "closed") {
 			return;
 		}
-		if (line.byteLength === 0) {
-			options.emitIssue({
-				kind: "malformed-frame",
-				direction: "stdout",
-				detail: "An empty stdout line is not JSON",
-			});
-			return;
-		}
-		const decoded = decodeFrame(line, state);
-		if (decoded === undefined) {
+		const frame = decodeFrame(line);
+		if (reportUnusable(frame, state)) {
 			return;
 		}
 		if (state === "closing") {
-			refuseWhileClosing(decoded);
+			refuseWhileClosing(frame);
 			return;
 		}
-		routeFrame(decoded, line.byteLength);
+		routeFrame(frame, line.byteLength);
 	};
 
 	/**

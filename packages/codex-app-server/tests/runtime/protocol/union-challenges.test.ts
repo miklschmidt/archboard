@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	ProtocolDecodeError,
-	decodeServerNotification,
-} from "#runtime/protocol/protocol-decoder.ts";
+import { ProtocolDecodeError } from "#runtime/protocol/protocol-decoder.ts";
+import { decodeNotificationValue } from "#tests/runtime/support/frame-decoding.ts";
 import {
 	notificationFixture,
 	SERVER_NOTIFICATION_METHODS,
@@ -32,7 +30,7 @@ describe("closed-union challenges", () => {
 		for (const challenge of SERVER_NOTIFICATION_UNION_CHALLENGES[method]) {
 			test(`rejects ${method} ${challenge.name} future member`, () => {
 				const prepared = challenge.prepare(notificationFixture(method));
-				expect(decodeServerNotification({ method, params: prepared }) as unknown).toEqual({
+				expect(decodeNotificationValue({ method, params: prepared }) as unknown).toEqual({
 					method,
 					params: prepared,
 				});
@@ -41,7 +39,7 @@ describe("closed-union challenges", () => {
 					pathKey(mutation.targetPath),
 				]);
 				try {
-					decodeServerNotification({ method, params: mutation.params });
+					decodeNotificationValue({ method, params: mutation.params });
 					throw new Error("expected generated union challenge to fail");
 				} catch (error) {
 					expect(error).toBeInstanceOf(ProtocolDecodeError);
@@ -61,13 +59,13 @@ describe("closed-union challenges", () => {
 				audited += 1;
 				try {
 					const prepared = challenge.prepare(notificationFixture(method));
-					decodeServerNotification({ method, params: prepared });
+					decodeNotificationValue({ method, params: prepared });
 					const mutation = challenge.mutate(prepared);
 					expect(changedPaths(prepared, mutation.params).map(pathKey)).toEqual([
 						pathKey(mutation.targetPath),
 					]);
 					try {
-						decodeServerNotification({ method, params: mutation.params });
+						decodeNotificationValue({ method, params: mutation.params });
 						failures.push(`${method}:${challenge.name}: mutated branch decoded`);
 					} catch (error) {
 						if (!(error instanceof ProtocolDecodeError)) {
@@ -108,7 +106,7 @@ describe("closed-union challenges", () => {
 				durationMs: 1,
 			},
 		};
-		expect(decodeServerNotification({ method: "item/started", params }) as unknown).toEqual({
+		expect(decodeNotificationValue({ method: "item/started", params }) as unknown).toEqual({
 			method: "item/started",
 			params,
 		});

@@ -1,5 +1,3 @@
-import { encodeJsonText } from "#runtime/protocol/wire.ts";
-
 /**
  * Deep-copies JSON-shaped data into frozen objects so one public listener cannot poison
  * another through a shared reference. Repeated references are copied once and cycles survive.
@@ -60,13 +58,16 @@ function cloneAndFreeze<T>(value: T): T {
 	return copy(value) as T;
 }
 
+/** JSON.stringify, typed with the undefined it returns for a value that has no JSON form. */
+const stringifyJson: (value: unknown) => string | undefined = JSON.stringify;
+
 /**
  * The byte length of a value's JSON encoding, which the retention bounds are measured in.
  * @param value The value to measure.
  * @returns The UTF-8 byte count, or zero when the value has no JSON form.
  */
 function jsonByteLength(value: unknown): number {
-	const encoded = encodeJsonText(value);
+	const encoded = stringifyJson(value);
 	return encoded === undefined ? 0 : Buffer.byteLength(encoded, "utf8");
 }
 

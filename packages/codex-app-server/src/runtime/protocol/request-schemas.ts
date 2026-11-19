@@ -160,10 +160,12 @@ const JSON_RPC_ERROR_CODES = Object.freeze({
 	methodNotFound: -32601,
 	invalidParams: -32602,
 	internalError: -32603,
+	/** Not a standard code: the server-defined error that asks the server to retry later. */
+	overloaded: -32001,
 });
 
 /** A standard JSON-RPC error, by what went wrong. */
-type JsonRpcErrorKind = keyof typeof JSON_RPC_ERROR_CODES;
+export type JsonRpcErrorKind = keyof typeof JSON_RPC_ERROR_CODES;
 
 /**
  * The JSON-RPC error code that answers one kind of failure.
