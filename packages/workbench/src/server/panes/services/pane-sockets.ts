@@ -80,7 +80,7 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	const closingCodexInstance = codexSocketInstances.get(ws);
 	codexSocketInstances.delete(ws);
 	if (closingId === undefined) {
-		logger.info("WebSocket connection closed");
+		logger().info("WebSocket connection closed");
 		return;
 	}
 	if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken) {
@@ -88,15 +88,15 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	}
 	if (closingCodexInstance !== undefined) {
 		void closeCodexBrowser(closingCodexInstance, closingId).catch((error) =>
-			logger.error("Codex browser cleanup failed:", error),
+			logger().error("Codex browser cleanup failed:", error),
 		);
 	}
 	if (currentSocketsByClient.get(closingId) !== ws) {
-		logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
+		logger().info(`Replaced WebSocket connection closed (client ${closingId})`);
 		return;
 	}
 	retirePaneOwner(closingId);
-	logger.info("WebSocket connection closed");
+	logger().info("WebSocket connection closed");
 }
 
 /**
@@ -207,7 +207,7 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
 	try {
 		acceptCodexBrowser(socket.codexInstance, clientId);
 	} catch (error) {
-		logger.error("Codex browser acceptance failed:", error);
+		logger().error("Codex browser acceptance failed:", error);
 	}
 	return true;
 }
