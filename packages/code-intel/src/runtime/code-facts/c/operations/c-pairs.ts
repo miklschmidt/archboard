@@ -19,6 +19,8 @@ import path from "node:path";
 const SOURCES: readonly string[] = [".c", ".cc", ".cpp", ".cxx", ".m"];
 /** The extensions of a C, C++ or Objective-C header. */
 const HEADERS: readonly string[] = [".h", ".hh", ".hpp", ".hxx"];
+/** A file of the C family, an Objective-C++ file too, which a use of a C, C++ or Objective-C name can be in. */
+const C_FAMILY_FILE = /\.(?:c|cc|cpp|cxx|m|mm|h|hh|hpp|hxx)$/u;
 
 /** Each checkout's files by name without extension, for the files of the other role. */
 const STEMS = new WeakMap<ReadonlySet<string>, Map<string, string[]>>();
@@ -78,4 +80,4 @@ function pairOf(file: string, files: ReadonlySet<string>): string[] {
 	return elsewhere.length === 1 ? elsewhere : [];
 }
 
-export { HEADERS, SOURCES, pairOf };
+export { C_FAMILY_FILE, HEADERS, SOURCES, pairOf };

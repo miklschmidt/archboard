@@ -39,7 +39,8 @@
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
-// the kind of each export: TypeScript, Python, Go, C# and Rust.
+// the kind of each export: TypeScript, Python, Go, C#, Rust, Swift, C, C++ and
+// Objective-C (TASK-646.11, TASK-646.12).
 //
 // It counts the exports of a Terraform module, a Nix flake and a Helm chart
 // by kind too, and judges none of them (TASK-646.13): a caller sets a
@@ -53,6 +54,8 @@
 import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { C_FAMILY_FILE } from "#runtime/code-facts/c/operations/c-pairs.ts";
+import { SWIFT_FILE } from "#runtime/code-facts/swift/operations/swift-exposure.ts";
 import { CSHARP_FILE } from "#runtime/code-facts/csharp/operations/csharp-project.ts";
 import { GO_FILE } from "#runtime/code-facts/go/operations/go-resolution.ts";
 import { PYTHON_FILE } from "#runtime/code-facts/python/operations/python-exposure.ts";
@@ -85,6 +88,10 @@ const GROUPS: ReadonlyMap<
 	["go", "judged"],
 	["csharp", "judged"],
 	["rust", "judged"],
+	["swift", "judged"],
+	["c", "judged"],
+	["cpp", "judged"],
+	["objc", "judged"],
 	["terraform", "infrastructure"],
 	["nix", "infrastructure"],
 	["helm", "infrastructure"],
@@ -100,6 +107,10 @@ const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["go", GO_FILE],
 	["csharp", CSHARP_FILE],
 	["rust", RUST_FILE],
+	["swift", SWIFT_FILE],
+	["c", C_FAMILY_FILE],
+	["cpp", C_FAMILY_FILE],
+	["objc", C_FAMILY_FILE],
 ]);
 
 /** A module's exports, by kind. */
@@ -259,15 +270,30 @@ function pathEnds(names: readonly ExposedName[]): ExposedName[] {
 }
 
 /**
- * Whether a member belongs to an exported class of its own file.
+ * A member's own name within a holder: `post` of `Ledger.post`, and in the C
+ * family, whose names `::` qualifies, `save` of `shop::Store::save` and the
+ * selector `post:by:` of `Ledger::post:by:`.
+ * @param symbol The member's symbol.
+ * @param holder The holder's symbol.
+ * @returns The own name, or undefined when the symbol is no member of the holder's own.
+ */
+function ownName(symbol: string, holder: string): string | undefined {
+	if (!symbol.startsWith(holder)) return undefined;
+	const own = /^(?:\.|::)(.+)$/u.exec(symbol.slice(holder.length))?.[1];
+	return own === undefined || /\.|::./u.test(own) ? undefined : own;
+}
+
+/**
+ * Whether a member belongs to an exported class. It may be in another file
+ * than its class: a C++ or Objective-C method in the pair of its class's
+ * header, a Swift method in an extension.
  * @param member The member.
  * @param classes The module's exported classes.
  * @returns True when it does.
  */
 function heldBy(member: ExposedName, classes: readonly ExposedName[]): boolean {
 	const { symbol } = member.definition;
-	const holder = symbol.slice(0, Math.max(symbol.lastIndexOf("."), 0));
-	return classes.some((each) => each.path === member.path && each.definition.symbol === holder);
+	return classes.some((each) => ownName(symbol, each.definition.symbol) !== undefined);
 }
 
 /**
@@ -378,6 +404,19 @@ function ofKind(
 }
 
 /**
+ * Whether a symbol names a member of another definition of its file, as
+ * `Ledger.total`, `shop::Store::items_` and an Objective-C instance variable
+ * do: a member is no value its module keeps hidden at module level.
+ * @param symbol The symbol.
+ * @param symbols Every symbol its file defines.
+ * @returns True when it does.
+ */
+function memberOfFile(symbol: string, symbols: ReadonlySet<string>): boolean {
+	const at = Math.max(symbol.lastIndexOf("."), symbol.lastIndexOf("::"));
+	return at > 0 && symbols.has(symbol.slice(0, at));
+}
+
+/**
  * The pieces of logic in the module's files of a judged language: what each
  * file's adapter counts, and each value it keeps hidden at module level.
  * @param reading The module.
@@ -391,12 +430,13 @@ async function logicOf(reading: DepthReading): Promise<number> {
 		if (read === undefined || read.adapter === "text" || GROUPS.get(read.adapter) !== "judged") {
 			continue;
 		}
+		const symbols = new Set(read.definitions.map((each) => each.symbol));
 		const hidden = read.definitions.filter(
 			(each) =>
 				!each.exposed &&
 				each.kind === "value" &&
 				each.type !== true &&
-				(each.static === true || !each.symbol.includes(".")),
+				(each.static === true || !memberOfFile(each.symbol, symbols)),
 		);
 		logic += (read.logic ?? 0) + hidden.length;
 	}

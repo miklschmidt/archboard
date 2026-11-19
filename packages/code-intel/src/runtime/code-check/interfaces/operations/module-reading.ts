@@ -302,6 +302,20 @@ function hidesUse(read: SyntaxFacts, exposure: ModuleExposure): boolean {
 const NAMED_ONLY: ReadonlySet<SyntaxFacts["adapter"]> = new Set(["rust"]);
 
 /**
+ * The languages whose import of a whole module brings its names in under
+ * their own names, as C's `#include` and Swift's `import` do, and those of
+ * `NAMED_ONLY`: each use spells the name it reaches, and the resolver finds it
+ * (TASK-646.12).
+ */
+const NAMES_EACH_USE: ReadonlySet<SyntaxFacts["adapter"]> = new Set([
+	...NAMED_ONLY,
+	"c",
+	"cpp",
+	"objc",
+	"swift",
+]);
+
+/**
  * Whether an import leaves the uses of a module unknown: a relative import of
  * code that resolves to no file, or an import of the module that takes it
  * whole, as `import * as ns` or a bare `import()` does, in a language whose
@@ -318,14 +332,14 @@ function opaque(
 ): boolean {
 	if (found.resolved === undefined)
 		return RELATIVE.test(found.specifier) && CODE_EXTENSION.test(found.specifier);
-	if (found.reexport || NAMED_ONLY.has(adapter)) return false;
-	return within(directory, found.resolved) && takesWhole(found);
+	if (found.reexport || !within(directory, found.resolved)) return false;
+	return !NAMES_EACH_USE.has(adapter) && takesWhole(found);
 }
 
 /**
- * Whether an import takes a module whole.
+ * Whether an import takes a module whole, as `import * as ns` or a bare `import()` does.
  * @param found The import.
- * @returns True for `import * as ns`, a bare `import()` and the like.
+ * @returns True when it does.
  */
 function takesWhole(found: SyntaxFacts["imports"][number]): boolean {
 	return found.names.length === 0 || found.names.some((name) => name.imported === "*");

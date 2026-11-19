@@ -48,16 +48,19 @@ interface Definition {
 	readonly declaration?: true;
 	/**
 	 * It declares a type and nothing a caller runs or reads: a TypeScript
-	 * interface, type alias or enum. The code check counts it as an exported
-	 * type and never judges it, so an exported union or enum keeps the
-	 * compiler's exhaustive checks (TASK-646.04).
+	 * interface, type alias or enum; a C or C++ struct, union or enum with no
+	 * function among its members, a typedef or an alias; a Swift protocol,
+	 * alias or enum with no method; an Objective-C protocol. The code check
+	 * counts it as an exported type and never judges it, so an exported union
+	 * or enum keeps the compiler's exhaustive checks (TASK-646.04, TASK-646.12).
 	 */
 	readonly type?: true;
 	/**
 	 * It only passes its call on: its body is one call that hands every
 	 * argument straight from its parameters, and this names the callee's root,
 	 * such as `save` for `save(item)` or `this` for `this.target.send(id)`.
-	 * TypeScript names it; module depth judges it (TASK-646.05).
+	 * Each grammar module depth judges names it; module depth judges it
+	 * (TASK-646.05, TASK-646.12).
 	 */
 	readonly passes?: string;
 	/**
@@ -70,9 +73,10 @@ interface Definition {
 	readonly aliases?: string;
 	/**
 	 * The language calls it itself, and no caller names it: a constructor, a
-	 * `toString`, a Python special method such as `__repr__`, a Go `String`.
-	 * Each adapter names its own (TASK-646.11); module depth neither counts
-	 * nor judges it.
+	 * `toString`, a Python special method such as `__repr__`, a Go `String`,
+	 * a C++ destructor or operator, Swift's `hash(into:)`, Objective-C's
+	 * `dealloc`. Each adapter names its own (TASK-646.11, TASK-646.12); module
+	 * depth neither counts nor judges it.
 	 */
 	readonly calledByLanguage?: true;
 	/**
@@ -178,8 +182,8 @@ interface Import {
 /**
  * Math a file writes on a name another file defines (TASK-646.06): the
  * largest arithmetic expression around one use of the name at run time.
- * TypeScript names it; module depth compares it across the modules that read
- * one export.
+ * Each grammar module depth judges names it (TASK-646.12); module depth
+ * compares it across the modules that read one export.
  */
 interface Computation {
 	/**

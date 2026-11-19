@@ -127,6 +127,8 @@ It also counts the exports of a bound Terraform module, Nix flake and Helm chart
 `depth` lists each module's exports by kind (`functions`, `classes`, `methods`, `values`, `types`) and `logic`, the calls, operators, conditions, loops and hidden values behind them.
 A C# `static` member, or a Rust associated function or constant, is read through its type's name, so it counts as a function or a value of its own, and is never judged unused.
 The counts are evidence. Never turn them into a score.
+A type is what declares nothing a caller runs: a TypeScript interface, alias or enum; a Python type alias; a Go interface or named type without methods in its file; a C# interface, enum or delegate; a C or C++ struct, union or enum with no methods, a typedef or an alias; a Swift protocol, alias or enum with no methods; an Objective-C protocol.
+A C function macro is a function, and a Swift struct is a class.
 
 `archboard check code --fail-shallow-modules` judges the modules that the branch touched since its base, uncommitted changes included.
 `--base <ref>` names the base. Without it, the default base decides.
@@ -176,7 +178,7 @@ Clear each finding at its seam. Never silence one.
   Stop exporting it. If files of the module use it, keep it out of the module's root files.
   It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import. A Rust `use crate::timing;` or `mod timing;` names each use it makes, so it leaves the read complete. A Rust use that leads into the module but reaches no name the check can find, such as a function a macro defines, leaves it incomplete.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
-  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor, `toString`, a Python `__repr__`, a Go `String` or what a Rust `impl Drop` or `impl Display` defines, are never judged. A Rust item that `#[wasm_bindgen]` exports to JavaScript is never judged unused.
+  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a Python `__repr__`, a Go `String`, what a Rust `impl Drop` or `impl Display` defines, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`. A Rust item that `#[wasm_bindgen]` exports to JavaScript is never judged unused.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
 
