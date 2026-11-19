@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-19T14:03:00Z'
+updated_date: '2026-11-19T14:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,4 +47,11 @@ The finding messages and the archboard skill state the principles (narrow interf
 - [ ] #4 archboard init installs it with the other shipped skills, the release includes it, and tracked symlinks expose it in .claude/skills and .agents/skills
 - [ ] #5 The archboard skill points agents to it where INTERFACE_WIDE and MODULE_SHALLOW are described, and the site install and pull-request pages name it
 - [ ] #6 The skill-link and init tests cover it, and the skill follows writing-for-agents (one source of truth, leading words, no restated environment)
+- [ ] #7 Each round posts its evidence to the pull request it produces, as one comment: the candidate table (friction, strength, files), the before and after Archboard pictures attached as images, each advisor's independent ranking and what they agreed on, and each grilling decision with its reason; the full HTML report is attached where the host allows it, else saved and linked from the comment
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner (2026-11-19): the report and the advisors' picks go in the PR for each round.
+<!-- SECTION:NOTES:END -->
