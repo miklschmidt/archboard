@@ -1,11 +1,11 @@
 ---
 id: TASK-646.11
 title: Python, Go and C# modules get every module-depth rule
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:03:00Z'
-updated_date: '2026-11-19T02:49:00Z'
+updated_date: '2026-11-19T02:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
