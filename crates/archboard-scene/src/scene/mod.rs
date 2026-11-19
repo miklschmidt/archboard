@@ -20,7 +20,6 @@ use crate::drawing::ReadingDirection;
 mod colour;
 mod definition;
 mod group;
-mod pulse;
 mod shape;
 mod text;
 mod traffic;
@@ -33,12 +32,13 @@ pub use definition::{
 pub use group::{
     EntryKind, Group, LineFacts, Role, ShadowOf, Slot, Subject, SubjectKind, Transform,
 };
-pub(crate) use pulse::turn_distance;
-pub use pulse::{GlowLayer, LegMotion, PulseLeg, PulseTrain, pulse_slide, pulse_train};
 pub use shape::{Cap, Geometry, Join, PathStep, Pointer, Purpose, Shape, Stroke};
 pub use text::{GlyphPlace, Icon, Text, Viewport};
-pub(crate) use traffic::pulse_breadth;
-pub use traffic::{Motion, PulseLook, TrafficMark};
+pub use traffic::{
+    GlowLayer, LegMotion, Motion, PulseLeg, PulseLook, PulseTrain, TrafficMark, pulse_slide,
+    pulse_train,
+};
+pub(crate) use traffic::{pulse_breadth, turn_distance};
 
 /// One thing in a scene's order.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
