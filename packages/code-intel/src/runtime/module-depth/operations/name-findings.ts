@@ -3,7 +3,9 @@
 //
 // - `EXPOSED_UNUSED`: no file outside the module uses the name, as code or as
 //   a type, through any door for a name the module defines and through its
-//   own root files for one it passes on. A test is no user. A warning when the
+//   own root files for one it passes on, and, in a module that declares no
+//   interface, no other file of the module imports it (sibling-uses.ts). A
+//   test is no user. A warning when the
 //   read is complete: the pass read every file outside the module whole, and
 //   the model draws no caller of the name whose code the pass did not read, as
 //   a consumer of a published package is. Information otherwise. Its remedy,
@@ -37,6 +39,13 @@ import {
 	readersOf,
 	usesOf,
 } from "#runtime/module-depth/operations/depth-reading.ts";
+import {
+	type SiblingUse,
+	usedBySibling,
+} from "#runtime/module-depth/operations/sibling-uses.ts";
+
+/** A module as the per-name rules judge it: with the uses of its names by its own files. */
+type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
 
 /** The kind of one export: a public method of an exported class is a `method`. */
 type NameKind = "function" | "class" | "value" | "type" | "method";
@@ -65,11 +74,13 @@ function unreadWhy(unread: readonly string[]): string[] {
  * @param name The name.
  * @returns The finding, or undefined when a file uses it.
  */
-function unused(reading: DepthReading, name: ExposedName): DepthFinding | undefined {
+function unused(reading: JudgedReading, name: ExposedName): DepthFinding | undefined {
 	// A name can have parts in several files, as a C# partial class does: a use of any part is a use.
 	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
 	const { directory } = reading.exposure;
-	if (parts.some((part) => usesOf(directory, part, reading.uses).length > 0)) return undefined;
+	const used = (part: ExposedName): boolean =>
+		usesOf(directory, part, reading.uses).length > 0 || usedBySibling(part, reading.siblings);
+	if (parts.some(used)) return undefined;
 	const unseen = reading.unseen(name);
 	const why = [
 		...unreadWhy(reading.unread),
@@ -189,7 +200,7 @@ async function passThrough(
  * @returns Its finding, or undefined when it has none.
  */
 async function nameFinding(
-	reading: DepthReading,
+	reading: JudgedReading,
 	name: ExposedName,
 	kind: NameKind,
 ): Promise<DepthFinding | undefined> {

@@ -25,7 +25,9 @@
 // It judges each exported name, each public method of an exported class
 // among them, and gives each at most one finding (name-findings.ts):
 // `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE`,
-// `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
+// `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. In a
+// module that declares no interface, another of its files that imports a name
+// keeps it used (sibling-uses.ts). Members the language calls itself, a constructor or a
 // `toString`, are no export a caller names: each adapter marks them
 // (`Definition.calledByLanguage`), and they are neither counted nor judged. A method's uses run through values, which a syntax read cannot
 // follow, so no method is judged unused, and an implementation used through
@@ -69,6 +71,7 @@ import {
 	nameFinding,
 	SHALLOW_CODES,
 } from "#runtime/module-depth/operations/name-findings.ts";
+import { siblingUses } from "#runtime/module-depth/operations/sibling-uses.ts";
 import type { ModuleExport } from "#shared/protocol/code-check.ts";
 
 /**
@@ -449,11 +452,12 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const { counts, judged, listed } = await countExports(reading, names);
 	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
 	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
+	const siblings = await siblingUses(reading);
 	const findings: DepthFinding[] = [];
 	const rollUp = new Map<string, boolean>();
 	for (const [name, kind] of judged) {
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time keeps the findings in export order
-		const finding = await nameFinding({ ...reading, unread }, name, kind);
+		const finding = await nameFinding({ ...reading, unread, siblings }, name, kind);
 		if (finding !== undefined) findings.push(finding);
 		if (rolledUp(reading, name, kind))
 			rollUp.set(name.name, finding !== undefined && SHALLOW_CODES.has(finding.code));

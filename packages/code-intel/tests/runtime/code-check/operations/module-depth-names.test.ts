@@ -11,6 +11,13 @@
 // implements it; outside code calls the method only through the interface.
 // `sdk` exports a function no file uses, but the model draws a consumer
 // of it whose code the check does not read.
+//
+// `ledger` is a folder module with no declared interface: no index file, no
+// `package.json` exports, so every file directly in it is a root file.
+// `manifest.ts` exports `freeze`, which `epoch.ts` beside it imports, `orphan`,
+// which no file uses, and `probe`, which only a test inside the module uses.
+// `vendor` declares its interface in `package.json` exports, and `gate` in
+// an index file: a name only another of their files uses stays unused.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -149,10 +156,36 @@ beforeAll(async () => {
 			"void main();",
 			"",
 		].join("\n"),
+		"src/ledger/manifest.ts": [
+			"export function freeze(value: number): number {",
+			"\treturn value + 4;",
+			"}",
+			"export function orphan(value: number): number {",
+			"\treturn value + 5;",
+			"}",
+			"export function probe(value: number): number {",
+			"\treturn value + 6;",
+			"}",
+			"",
+		].join("\n"),
+		"src/ledger/epoch.ts":
+			'import { freeze } from "./manifest.ts";\nexport function seal(value: number): number {\n\treturn freeze(value) * 2;\n}\n',
+		"src/ledger/manifest.test.ts": 'import { probe } from "./manifest.ts";\nconsole.log(probe(1));\n',
+		"src/vendor/package.json": JSON.stringify({ exports: { ".": "./main.ts", "./raw": "./raw.ts" } }),
+		"src/vendor/raw.ts": "export function bytes(value: number): number {\n\treturn value + 7;\n}\n",
+		"src/vendor/main.ts":
+			'import { bytes } from "./raw.ts";\nexport function decode(value: number): number {\n\treturn bytes(value) * 3;\n}\n',
+		"src/gate/index.ts":
+			'import { open } from "./door.ts";\nexport function enter(value: number): number {\n\treturn open(value) * 4;\n}\n',
+		"src/gate/door.ts": "export function open(value: number): number {\n\treturn value + 8;\n}\n",
 		"src/worker/main.ts": [
 			'import { save } from "../store";',
+			'import { seal } from "../ledger/epoch.ts";',
+			'import { decode } from "../vendor/main.ts";',
+			'import { enter } from "../gate";',
 			"async function work(): Promise<void> {",
 			'\tawait save("c");',
+			"\tconsole.log(seal(1), decode(2), enter(3));",
 			"}",
 			"void work();",
 			"",
@@ -176,6 +209,9 @@ beforeAll(async () => {
 	module("Util", 70, "src/util");
 	module("Port", 80, "src/port");
 	module("Sdk", 90, "src/sdk");
+	module("Ledger", 91, "src/ledger");
+	module("Vendor", 92, "src/vendor");
+	module("Gate", 93, "src/gate");
 	// A consumer outside the checkout, as the users of a published package are.
 	module("Consumer", 100, undefined, ["Sdk"]);
 	git("add", "-A");
@@ -255,6 +291,13 @@ test("an export no file outside uses is a warning after a complete read, and a u
 		["Util", "Unused", "warning"],
 		// The model draws a consumer whose code the check does not read.
 		["Sdk", "publish", "information"],
+		// A folder module with no declared interface: `freeze` is used by
+		// `epoch.ts` beside it, and a test inside the module is no user either.
+		["Ledger", "orphan", "warning"],
+		["Ledger", "probe", "warning"],
+		// A declared interface keeps the rule: only another file of the module uses these.
+		["Vendor", "bytes", "warning"],
+		["Gate", "open", "warning"],
 	]);
 	// `format` and `save` are used through `kit`'s door, and `HttpPort.send` through `Port.send`.
 });
@@ -293,6 +336,10 @@ test("code outside that did not parse and names an export makes the module's unu
 			["testOnly", "information"],
 			["Unused", "information"],
 			["publish", "information"],
+			["orphan", "warning"],
+			["probe", "warning"],
+			["bytes", "warning"],
+			["open", "warning"],
 		]);
 	} finally {
 		rmSync(join(shop, "src/broken.ts"));
