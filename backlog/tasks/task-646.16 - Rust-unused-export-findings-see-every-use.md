@@ -4,6 +4,7 @@ title: Rust unused-export findings see every use
 status: To Do
 assignee: []
 created_date: '2026-11-19T03:12:00Z'
+updated_date: '2026-11-19T04:15:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -59,3 +60,9 @@ Follow the same section of TASK-646.05.
 - [ ] #5 Code-check tests reproduce each failing case of the audit
 - [ ] #6 On this repository, a fresh sample of 25 Rust `EXPOSED_UNUSED` warnings has no name that a file outside its module uses, tests aside
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Cached fact reader (reader.ts lets a module reading's target win for a use that an import names, so the Rust resolver reaches the function and not the module) and code-intel (tests). No architecture change; exception recorded in the proposal history (operation task-646-16-exceptions). Rust EXPOSED_UNUSED warnings went from 1373 to 1343; a fresh 25-name sample has no false match. Most of the rest sit on vendored external crates (graphviz-pure-*, vello_encoding).
+<!-- SECTION:NOTES:END -->
