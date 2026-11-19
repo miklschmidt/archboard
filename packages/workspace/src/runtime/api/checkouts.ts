@@ -8,7 +8,6 @@ export {
 	setServer,
 } from "#runtime/store/language-servers.ts";
 export { registryPath, RepoRegistryError } from "#runtime/store/registry-file.ts";
-export type { RegisteredRepo } from "#runtime/store/registry-file.ts";
 export {
 	chooseKnownCheckout,
 	chosenCheckouts,

@@ -1,8 +1,7 @@
 // What `archboard init` offers and runs (TASK-601): the package runners that install the skills
-// through the skills CLI, the agents that can set up the language servers of a repository, and
-// the prompt that such an agent gets. Choosing and installing a language server depends on the
-// languages of the repository and on how it installs its tools, so an agent does it, with the
-// user's consent.
+// through the skills CLI, and the agents that can set up the language servers of a repository.
+// Choosing and installing a language server depends on the languages of the repository and on how
+// it installs its tools, so an agent does it, with the user's consent.
 
 /** The skills that an installation ships, each a directory of its skills directory. */
 const BUNDLED_SKILLS = ["archboard", "archboard-pr", "archboard-plan"] as const;
@@ -28,22 +27,6 @@ const AGENTS = [
 
 /** An agent harness. */
 type Agent = (typeof AGENTS)[number];
-
-/** What the agent that sets up the language servers of a repository is told. */
-const LANGUAGE_SERVER_PROMPT = [
-	"Finish the Archboard setup of this repository: set up its language servers, so that `archboard check code` resolves names to their definitions.",
-	"Archboard cannot do this by itself, because the right server and the way to install it depend on the repository.",
-	"",
-	"Use the archboard skill, and follow its setup reference (references/setup.md).",
-	"1. Find the languages that the repository uses, and the servers that `.archboard/language-servers.json` names already.",
-	"2. For each language without a server, choose one. Prefer the way that the repository installs its tools already, such as a Nix flake, devenv, devbox or its package manager, so that every machine and CI run gets the same server. Where the server must run through that tool, plan a wrapper script in the repository.",
-	"3. Before you install anything or write any file, show the user the plan: each language, its server, how it gets installed, and each `archboard repo language-server` command. Wait until the user confirms or changes the plan.",
-	"4. Carry out the plan. Then run `archboard check code`, and make sure that it reports no `language-server-missing` for those languages.",
-	"5. Tell the user to commit `.archboard/language-servers.json` and any wrapper script.",
-].join("\n");
-
-/** What an agent that ran `init` itself reads last. */
-const UNFINISHED_SETUP = `The setup of this repository is not finished. You must finish it yourself:\n\n${LANGUAGE_SERVER_PROMPT}`;
 
 /**
  * The runners that a lookup finds, in the order of preference.
@@ -118,9 +101,7 @@ export {
 	type Runner,
 	AGENTS,
 	BUNDLED_SKILLS,
-	LANGUAGE_SERVER_PROMPT,
 	RUNNERS,
-	UNFINISHED_SETUP,
 	agentsOn,
 	runnersOn,
 	skillAgents,
