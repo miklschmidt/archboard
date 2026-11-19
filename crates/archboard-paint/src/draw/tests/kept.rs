@@ -3,7 +3,7 @@
 use std::collections::{HashMap, HashSet};
 
 use archboard_scene::geometry::Point;
-use archboard_scene::paint::design::CARD_TITLE_FONT;
+use archboard_scene::paint::design::card_title_font;
 use archboard_scene::scene::{Colour, Group, Item, Role, Slot, SubjectKind, Text, Transform};
 use kurbo::{Affine, BezPath};
 
@@ -61,7 +61,7 @@ impl Canvas for Keeping {
 fn card_with_words() -> Vec<Item> {
     let words = |x| {
         let at = Point { x, y: 5.0 };
-        let text = Text::set(at, CARD_TITLE_FONT, 12.0, Colour::Black, "Same words");
+        let text = Text::set(at, card_title_font(), 12.0, Colour::Black, "Same words");
         Item::Text(text)
     };
     let card = Group::new(Role::NearView, vec![plate(1.0), words(10.0), words(200.0)]);

@@ -1,7 +1,7 @@
 //! A new flight starts with the geometry and cuts of the frame it interrupts.
 
 use archboard_scene::geometry::{Curve, Segment};
-use archboard_scene::paint::design::RAIL_GAP;
+use archboard_scene::paint::design::rail_gap;
 use archboard_scene::scene::{
     Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, PulseLook, Purpose, Role,
     Shape, Stroke, Token, TrafficMark,
@@ -25,7 +25,7 @@ fn double_line(y: f64) -> Scene {
         shapes: vec![
             Shape::path(Purpose::Cutout, route)
                 .unfilled()
-                .stroked(Stroke::new(Token::Border, RAIL_GAP)),
+                .stroked(Stroke::new(Token::Border, rail_gap())),
         ],
     };
     let mut edge = line("e", &[(0.0, y), (100.0, y)]);

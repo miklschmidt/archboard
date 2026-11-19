@@ -3,6 +3,8 @@
 //! the TypeScript painter wrote (ADR 0059), so a number is rounded and spelt
 //! here exactly as JavaScript rounds and spells it.
 
+use crate::ecma::{fixed, is_space, powi};
+
 /// `Math.round`, as JavaScriptCore computes it: the nearest integer, a half
 /// rounded up, and the sign of a zero kept.
 pub fn round(value: f64) -> f64 {
@@ -89,11 +91,6 @@ fn rounded_up(longer: &str) -> String {
         }
     }
     String::from_utf8(digits).unwrap_or_default()
-}
-
-/// `Number(value.toFixed(places))`: a number rounded to some places.
-pub fn fixed(value: f64, places: usize) -> f64 {
-    to_fixed(value, places).parse::<f64>().unwrap_or(f64::NAN)
 }
 
 /// `String(Number(value.toFixed(places)))`: a number rounded to some places and
@@ -245,21 +242,6 @@ pub fn sign(value: f64) -> f64 {
     }
 }
 
-/// `x ** n` for a small whole exponent, as JavaScriptCore multiplies it out.
-pub fn powi(base: f64, exponent: u32) -> f64 {
-    let mut result = 1.0;
-    let mut x = base;
-    let mut n = exponent;
-    while n != 0 {
-        if n & 1 == 1 {
-            result *= x;
-        }
-        x *= x;
-        n >>= 1;
-    }
-    result
-}
-
 /// `Math.pow` and `**`.
 pub fn pow(base: f64, exponent: f64) -> f64 {
     if exponent.fract() == 0.0 && (0.0..=1000.0).contains(&exponent) {
@@ -273,58 +255,9 @@ pub fn pow(base: f64, exponent: f64) -> f64 {
     libm::pow(base, exponent)
 }
 
-/// Whether a character is white space to ECMAScript: `\s` and `trim`.
-pub fn is_space(character: char) -> bool {
-    matches!(
-        character,
-        '\u{0009}'
-            | '\u{000A}'
-            | '\u{000B}'
-            | '\u{000C}'
-            | '\u{000D}'
-            | '\u{0020}'
-            | '\u{00A0}'
-            | '\u{1680}'
-            | '\u{2000}'
-            ..='\u{200A}'
-                | '\u{2028}'
-                | '\u{2029}'
-                | '\u{202F}'
-                | '\u{205F}'
-                | '\u{3000}'
-                | '\u{FEFF}'
-    )
-}
-
 /// `text.trim()`.
 pub fn trim(text: &str) -> &str {
     text.trim_matches(is_space)
-}
-
-/// `text.trimEnd()`.
-pub fn trim_end(text: &str) -> &str {
-    text.trim_end_matches(is_space)
-}
-
-/// `text.split(/\s+/u)`: the pieces between runs of white space, an empty one
-/// at either end where the text starts or ends with white space.
-pub fn split_spaces(text: &str) -> Vec<&str> {
-    let mut pieces = Vec::new();
-    let mut start = 0;
-    let mut in_space = false;
-    for (at, character) in text.char_indices() {
-        if is_space(character) {
-            if !in_space {
-                pieces.push(&text[start..at]);
-                in_space = true;
-            }
-        } else if in_space {
-            start = at;
-            in_space = false;
-        }
-    }
-    pieces.push(if in_space { "" } else { &text[start..] });
-    pieces
 }
 
 /// A 32-bit number spelt in some base, lowercase, as `toString(radix)` spells it.
@@ -447,12 +380,5 @@ mod tests {
         for (step, want) in expected.iter().enumerate() {
             assert_eq!(number(pow(step as f64 / 9.0, 2.3)), *want);
         }
-    }
-
-    #[test]
-    fn splits_on_white_space() {
-        assert_eq!(split_spaces(" a  b "), vec!["", "a", "b", ""]);
-        assert_eq!(split_spaces("a"), vec!["a"]);
-        assert_eq!(split_spaces(""), vec![""]);
     }
 }

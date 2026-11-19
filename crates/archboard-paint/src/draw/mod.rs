@@ -1,7 +1,7 @@
 //! The draw walk: one scene under one presentation, onto one canvas. It reads
 //! the scene as the SVG writer does, and does what the SVG's stylesheet did.
 
-use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
+use archboard_scene::paint::design::{far_line_scale, widens_far};
 use archboard_scene::scene::{
     Colour, Geometry, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
     Transform, Viewport,
@@ -465,11 +465,9 @@ impl<C: Canvas> Walk<'_, C> {
     fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
         let grows = inside.line
             && matches!(geometry, Geometry::Path { .. })
-            && stroke
-                .width
-                .is_some_and(|width| [LINE_WIDTH, HERO_LINE_WIDTH, RAILS].contains(&width));
+            && stroke.width.is_some_and(widens_far);
         if grows {
-            1.0 + (FAR_SCALE - 1.0) * self.presentation.far
+            far_line_scale(self.presentation.far)
         } else {
             1.0
         }

@@ -1,9 +1,11 @@
 ---
 id: TASK-646.14.01
 title: Clear archboard-scene's module-depth warnings
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T06:02:00Z'
+updated_date: '2026-11-19T06:13:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -39,3 +41,13 @@ Clear each finding with the seam the archboard skill names for it (skills/archbo
 - [ ] #3 Behavior is unchanged: the existing tests of the touched packages pass, and renderer output is identical where a crate draws
 - [ ] #4 Each removed or renamed symbol that a vault anchor names is reported with its replacement
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Baseline: archboard check code (262 warnings: EXPOSED_VALUE 133, EXPOSED_UNUSED 114, EXPOSED_VALUE_COMPUTED 15) and render-corpus hashes before any change.
+2. EXPOSED_UNUSED: stop exporting names no outside code uses; the Rust reader counts every pub(...) in a pub mod chain as exposed, so in-crate-only names move out of pub modules' root files or become private.
+3. paint::design: constants only the measurer reads move into measure; constants only one other crate reads (shell geometry, sequence-only sizes) move to that reader; the rest stay private to the painter and the outside reads them through const getters or through functions that own the repeated math (tab shoulder, header padding, far scale, card padding).
+4. EXPOSED_VALUE_COMPUTED: give geometry (BEND_RADIUS), scene::traffic (PULSE_*) and design functions for the math callers repeat; callers call them.
+5. Prove identity: cargo test --workspace, render-corpus compare (all hashes equal), the brief's vp lanes; rerun the check to show 0 warnings in the batch.
+<!-- SECTION:PLAN:END -->

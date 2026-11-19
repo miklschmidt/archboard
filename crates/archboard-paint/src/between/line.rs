@@ -12,7 +12,7 @@
 //! morphs with the stroke, fading in or out.
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::design::RAIL_GAP;
+use archboard_scene::paint::design::rail_gap;
 use archboard_scene::scene::{
     Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };
@@ -225,7 +225,7 @@ struct Ghost {
 /// Whether a shape of a mask is the core of a double line.
 fn is_core(shape: &Shape) -> bool {
     shape.purpose == Purpose::Cutout
-        && shape.stroke.as_ref().and_then(|stroke| stroke.width) == Some(RAIL_GAP)
+        && shape.stroke.as_ref().and_then(|stroke| stroke.width) == Some(rail_gap())
 }
 
 /// A cut this much of the way in.

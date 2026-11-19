@@ -5,17 +5,17 @@
 
 use std::collections::HashMap;
 
-use crate::drawing::{Edge, Node};
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::js;
 use crate::paint::build::{Items, grouped, lines, point, shape};
-use crate::paint::design::{CARD_THICKNESS, SLAB_RADIUS};
 use crate::paint::palette::Palette;
 use crate::paint::styles::stroke_width;
+use crate::paint::{Edge, Node};
 use crate::scene::{
     Cap, Clip, ClipId, Definition, Geometry, Gradient, GradientForm, GradientId, Group, PathStep,
     Pointer, Purpose, Role, Shape, Stop, Stroke,
 };
+use crate::sizes::{CARD_THICKNESS, SLAB_RADIUS};
 
 const SOCKET: f64 = 2.1;
 const LID: f64 = 0.6;
@@ -254,7 +254,7 @@ fn outlined(steps: Vec<PathStep>, fill: impl Into<crate::scene::Paint>) -> Items
 
 /// A share of a card's box, spelt finely enough.
 fn share(value: f64) -> f64 {
-    js::fixed(value, 6)
+    crate::ecma::fixed(value, 6)
 }
 
 /// A port's hole in its card's clip, in shares of the card's box: the slot, and

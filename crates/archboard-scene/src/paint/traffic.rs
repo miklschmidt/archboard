@@ -4,9 +4,10 @@
 
 use std::collections::HashMap;
 
-use crate::drawing::{Edge, Traffic};
+use crate::drawing::Traffic;
 use crate::geometry::{Curve, Point, Rect};
 use crate::js;
+use crate::paint::Edge;
 use crate::paint::build::{Items, grouped};
 use crate::paint::colour::{Share, tinted};
 use crate::paint::palette::Palette;

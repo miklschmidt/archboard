@@ -23,7 +23,7 @@ mod steps;
 use std::collections::{BTreeMap, BTreeSet};
 
 use archboard_layout::Solver;
-use archboard_scene::paint::design::OWN_ICONS;
+use archboard_scene::paint::design::own_icons;
 use archboard_scene::paint::paint;
 use archboard_scene::request::{DocumentRequest, PageRequest, PaintRequest};
 use archboard_scene::scene::{PaintedDocument, Painting};
@@ -122,7 +122,10 @@ fn page_request(request: &RenderRequest) -> PageRequest {
 
 /// The icons a picture can draw: those named, and the renderer's own.
 fn icons_of<H: Host>(host: &H, named: &[&str]) -> Result<BTreeMap<String, Vec<String>>, String> {
-    let names: BTreeSet<&str> = OWN_ICONS.into_iter().chain(named.iter().copied()).collect();
+    let names: BTreeSet<&str> = own_icons()
+        .into_iter()
+        .chain(named.iter().copied())
+        .collect();
     host.icons(&names.into_iter().collect::<Vec<_>>())
 }
 

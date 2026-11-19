@@ -26,7 +26,7 @@
 use std::collections::HashMap;
 
 use archboard_scene::drawing::MeasuredLabel;
-use archboard_scene::geometry::{BEND_RADIUS, Point, Rect};
+use archboard_scene::geometry::{Point, Rect, bend_radius};
 use archboard_scene::request::JumpEnd;
 
 use super::graph::Block;
@@ -46,7 +46,7 @@ const STACK_GAP: f64 = 4.0;
 const COLUMN_GAP: f64 = 48.0;
 /// How far a line runs straight before and after a bend that turns it once:
 /// a bend and as long a straight again.
-const RUN: f64 = 2.0 * BEND_RADIUS;
+const RUN: f64 = 2.0 * bend_radius();
 /// How wide and tall a jump in is: a disc.
 const JUMP_IN: f64 = 30.0;
 /// How wide a jump out is across its line, and how long along it, its point

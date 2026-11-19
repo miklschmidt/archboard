@@ -6,13 +6,11 @@ use crate::geometry::{Point, Rect, round_coord};
 use crate::measure::width;
 use crate::paint::build::{Items, concat, lines, shape, text};
 use crate::paint::colour::translucent;
-use crate::paint::design::{
-    FAR_TAG, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_PADDING, TAG_RADIUS, TAG_SIZE,
-};
 use crate::paint::finish::finish_of;
 use crate::paint::slab::{Rim, boxed, rim_band};
 use crate::request::GroupTag;
 use crate::scene::{Colour, GradientId, Paint, Pointer, Purpose, Shape, Stroke, Text};
+use crate::sizes::{FAR_TAG, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_PADDING, TAG_RADIUS, TAG_SIZE};
 
 /// How heavy a tag's rim is, near.
 const RIM: f64 = 1.0;

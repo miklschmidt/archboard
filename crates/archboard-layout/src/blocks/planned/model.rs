@@ -2,9 +2,9 @@
 
 use std::collections::BTreeMap;
 
-use crate::constants::TAB_SHOULDER;
 use crate::geometry::{Rect, Side};
 use crate::graph::{DOOR, Edge, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
+use archboard_scene::paint::design::tab_width;
 
 /// A local handle, never a semantic subject id.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -215,7 +215,11 @@ impl<'a> Model<'a> {
         let bounds = Rect {
             x: 0.0,
             y: 0.0,
-            width: node.w() - if header { TAB_SHOULDER } else { 0.0 },
+            width: if header {
+                tab_width(node.w())
+            } else {
+                node.w()
+            },
             height: if header {
                 node.option("archboard.header.size")
                     .and_then(|n| n.parse().ok())

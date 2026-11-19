@@ -6,7 +6,7 @@
 
 use archboard_scene::js;
 use archboard_scene::names::word;
-use archboard_scene::paint::design::OWN_ICONS;
+use archboard_scene::paint::design::own_icons;
 use archboard_scene::paint::viewer_marks;
 use archboard_scene::request::PaletteColor;
 use archboard_scene::scene::Colour;
@@ -102,7 +102,7 @@ fn main() {
         (
             "Every icon a picture can draw whatever the policy says.",
             "OWN_ICONS",
-            format!("[{}] as const", OWN_ICONS.map(quoted).join(", ")),
+            format!("[{}] as const", own_icons().map(quoted).join(", ")),
         ),
     ];
     println!(

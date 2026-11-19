@@ -25,7 +25,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
-use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
+use archboard_scene::paint::design::far_line_widths;
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
 use colour::css;
@@ -64,11 +64,11 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         format!("opacity:0;visibility:hidden;transition:{fade},visibility 0s linear {ms}ms");
     let movement = format!("transition:transform {ms}ms {SWAP_EASE}");
     let far = format!(".{FAR_VIEW_CLASS}");
-    let mut rules: Vec<String> = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS]
+    let mut rules: Vec<String> = far_line_widths()
         .iter()
-        .map(|width| {
-            let near = archboard_scene::js::number(*width);
-            let wide = archboard_scene::js::number(width * FAR_SCALE);
+        .map(|&(near, wide)| {
+            let near = archboard_scene::js::number(near);
+            let wide = archboard_scene::js::number(wide);
             format!("{far} {LINE_GROUP}>path[stroke-width=\"{near}\"]{{stroke-width:{wide}px}}")
         })
         .collect();

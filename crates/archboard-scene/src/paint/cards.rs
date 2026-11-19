@@ -6,10 +6,6 @@ use crate::measure;
 use crate::paint::Ctx;
 use crate::paint::appearance::card_look;
 use crate::paint::build::{Items, grouped, lines, point, shape, text};
-use crate::paint::design::{
-    ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_PADDING_X, CARD_TITLE_FONT, ICON_CHIP_GAP,
-    ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
-};
 use crate::paint::far_card::{NearCard, Part, Words, paint_card_views};
 use crate::paint::far_view::Place;
 use crate::paint::palette::Palette;
@@ -20,6 +16,10 @@ use crate::paint::standing::{
 use crate::paint::styles::Styles;
 use crate::request::{NodeAppearance, SequenceCard, Standing};
 use crate::scene::{Group, Purpose, Role, Shape, SubjectKind};
+use crate::sizes::{
+    ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_PADDING_X, CARD_TITLE_FONT, ICON_CHIP_GAP,
+    ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
+};
 
 /// How far outside its subject a selection ring sits.
 pub(super) const HALO_INSET: f64 = 3.0;
