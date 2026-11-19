@@ -1,15 +1,11 @@
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
 
-import {
-	openCodexConnection,
-	type CodexConnection,
-	type CodexConnectionOptions,
-} from "@archboard/codex-app-server/connection";
+import { openCodexConnection, type CodexConnection } from "@archboard/codex-app-server/connection";
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 
 /** The app-server child a connection is opened over. */
-type CodexChild = CodexConnectionOptions["child"];
+type CodexChild = Parameters<typeof openCodexConnection>[0]["child"];
 
 /** An app-server child that has already exited: its connection mints identities and sends nothing. */
 class ExitedChild extends EventEmitter implements CodexChild {

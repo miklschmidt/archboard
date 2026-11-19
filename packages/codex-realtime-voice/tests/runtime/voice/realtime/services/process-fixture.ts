@@ -16,11 +16,7 @@ import {
 } from "#runtime/voice/realtime/services/contract.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
-import {
-	openCodexConnection,
-	openCodexSession,
-	type CodexConnectionOptions,
-} from "@archboard/codex-app-server/connection";
+import { openCodexConnection, openCodexSession } from "@archboard/codex-app-server/connection";
 import {
 	type ChildEpoch,
 	type ChildId,
@@ -28,7 +24,7 @@ import {
 } from "@archboard/codex-app-server/identity";
 import type { RealtimeSemanticEvent } from "#shared/protocol/realtime-contract.ts";
 
-type CodexTransportChild = CodexConnectionOptions["child"];
+type CodexTransportChild = Parameters<typeof openCodexConnection>[0]["child"];
 
 const repoRoot = resolve(import.meta.dir, "../../../../../../..");
 /**

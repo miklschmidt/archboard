@@ -1,15 +1,15 @@
-import {
-	decodeFrame,
-	decodeFrameBody,
-	type FrameBody,
-	type InboundFrame,
-	type ResponseBody,
-} from "#runtime/protocol/frames.ts";
+import { decodeFrame, decodeFrameBody, type InboundFrame } from "#runtime/protocol/frames.ts";
 import type {
 	DecodedServerNotification,
 	DecodedServerRequest,
 } from "#runtime/protocol/protocol-decoder.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
+
+/** What a response frame decodes to for the method that was asked. */
+type DecodedResponse<Method extends ResponseMethod> = Extract<
+	ReturnType<typeof decodeFrameBody<Method>>,
+	{ readonly ok: true }
+>["value"];
 
 /**
  * The stdout line a JSON value arrives as.
@@ -34,7 +34,11 @@ export function frameOf(value: unknown): InboundFrame {
  * @param body The body.
  * @returns The value.
  */
-function valueOrThrow<Value>(body: FrameBody<Value>): Value {
+function valueOrThrow<Value>(
+	body:
+		| { readonly ok: true; readonly value: Value }
+		| { readonly ok: false; readonly error: unknown },
+): Value {
 	if (!body.ok) throw body.error;
 	return body.value;
 }
@@ -70,7 +74,7 @@ export function decodeRequestValue(value: unknown): DecodedServerRequest {
 export function decodeResponseValue<Method extends ResponseMethod>(
 	method: Method,
 	value: unknown,
-): ResponseBody<Method> {
+): DecodedResponse<Method> {
 	const frame = frameOf(value);
 	if (frame.kind !== "response") throw new Error(`expected a response, got ${frame.kind}`);
 	return valueOrThrow(decodeFrameBody(frame, method));

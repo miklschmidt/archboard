@@ -46,7 +46,7 @@ export type RequestEnvelopeProblem =
  * A frame's id and the key that tables hold it by, present only when the id is a non-empty
  * string or a safe integer.
  */
-export type FrameIdentity =
+type FrameIdentity =
 	| { readonly id: WireId; readonly key: string }
 	| { readonly id?: undefined; readonly key?: undefined };
 
@@ -97,17 +97,17 @@ export type InboundFrame =
 	| { readonly kind: "unknown" };
 
 /** A decoded frame body, or why it did not decode. */
-export type FrameBody<Value> =
+type FrameBody<Value> =
 	| { readonly ok: true; readonly value: Value }
 	| { readonly ok: false; readonly error: unknown };
 
 /** What a response frame decodes to for the method that was asked. */
-export type ResponseBody<Method extends ResponseMethod> =
+type ResponseBody<Method extends ResponseMethod> =
 	| { readonly outcome: "result"; readonly result: ResponsePayloads[Method] }
 	| { readonly outcome: "error"; readonly error: DecodedJsonRpcError["error"] };
 
 /** A request the client sends. */
-export interface OutboundRequest {
+interface OutboundRequest {
 	readonly kind: "request";
 	/**
 	 * Allocates the request's serialised JSON-RPC id, once its method and params are accepted.
@@ -119,13 +119,13 @@ export interface OutboundRequest {
 }
 
 /** A notification the client sends. */
-export interface OutboundNotification {
+interface OutboundNotification {
 	readonly kind: "notification";
 	readonly method: string;
 }
 
 /** The client's answer to a server request, or the JSON-RPC error that refuses a frame. */
-export type OutboundAnswer =
+type OutboundAnswer =
 	| {
 			readonly kind: "reply";
 			readonly id: WireId;
@@ -139,7 +139,7 @@ export type OutboundAnswer =
 	  };
 
 /** A frame the client writes. */
-export type OutboundFrame = OutboundRequest | OutboundNotification | OutboundAnswer;
+type OutboundFrame = OutboundRequest | OutboundNotification | OutboundAnswer;
 
 /** Why a frame has no JSON line within its bound. */
 export type EncodingRefusal = "unencodable" | "too-large";

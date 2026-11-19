@@ -2,7 +2,6 @@
 export { openCodexConnection, openCodexSession } from "#runtime/connection/services/connection.ts";
 export type {
 	CodexConnection,
-	CodexConnectionOptions,
 	CodexConnectionSessionOptions,
 } from "#runtime/connection/services/connection.ts";
 export type {

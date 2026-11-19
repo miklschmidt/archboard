@@ -24,7 +24,6 @@ export type {
 export { codexSessionThreadSource } from "#runtime/session/services/session-api.ts";
 export type {
 	CodexSession,
-	CodexSessionOptions,
 	SessionLoginParams,
 	SessionNotificationHandler,
 	SessionParams,

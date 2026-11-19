@@ -3,7 +3,7 @@ import type {
 	CodexProcessChild,
 	CodexProcessSnapshot,
 } from "@archboard/codex-app-server/process";
-import type { CodexProcessFailureCode } from "@archboard/codex-app-server/failure";
+import type { CodexFailure } from "@archboard/codex-app-server/failure";
 import type { CodexConnection } from "@archboard/codex-app-server/connection";
 import { testConnection } from "#tests/runtime/support/codex-connection.ts";
 import type { CodexWorkbenchGateway } from "#server/chat-conversations/gateway/protocol/contract.ts";
@@ -17,6 +17,8 @@ import type {
 	CodexWorkbenchOwnerOptions,
 } from "#server/owner/services/owner-state.ts";
 import { installCodexWorkbenchOwner } from "#server/generation/services/workbench.ts";
+
+type CodexProcessFailureCode = Extract<CodexFailure, { readonly kind: "process" }>["code"];
 
 function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
