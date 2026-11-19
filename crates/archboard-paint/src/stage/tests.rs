@@ -1,10 +1,10 @@
 //! What a stage does over time, read from the frames it draws.
 
 use super::{Arrival, Departure, Motion, Pace, Stage};
-use crate::between::{Heading, PHASES};
+use crate::between::PHASES;
 use crate::flight::DiveWay;
 use crate::palette::Theme;
-use crate::passage::Side;
+use crate::passage::{Heading, Side};
 use crate::presentation::{Camera, Light, Presentation, Shine};
 use crate::testing::{
     Op, Record, boxed, camera, far_line, frame, painting, showing, stage, subject_group,

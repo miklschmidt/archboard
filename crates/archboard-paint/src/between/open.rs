@@ -14,9 +14,9 @@ use archboard_scene::scene::{
     Geometry, Group, Item, Paint, Purpose, Role, Shape, Stroke, Token, Transform, Viewport,
 };
 
-use super::ease::{carried, ease_out, phase};
+use super::ease::{carried, ease_out};
 use super::found::Found;
-use crate::timing::Curve;
+use crate::timing::{Curve, phase};
 
 /// The curve of the front: it leaves the wave of cards behind early and settles
 /// slowly, so that nothing is seen to stop.
@@ -311,7 +311,7 @@ mod tests {
     use super::super::ease::carried;
     use super::super::found::found;
     use super::super::testing::{PHASES, card, drawing, rect, region, scene};
-    use super::super::{Between, Entrance, Handover};
+    use super::super::{Between, Handover};
     use super::{Opening, ways, worn_edge};
 
     const MIDDLE: Point = Point { x: 200.0, y: 100.0 };
@@ -415,31 +415,42 @@ mod tests {
         assert!(area.y <= 90.0 && area.y + area.height >= 110.0);
     }
 
-    /// An entrance of the picture after a picture of one tall container.
-    fn after_a_tall_tray(wide: &Scene) -> Entrance {
+    /// An entrance of the picture after a picture of one tall container, and
+    /// what is left of that picture once what flies over has gone.
+    fn after_a_tall_tray(wide: &Scene) -> (Between, Option<Vec<Item>>) {
         let tall = scene(vec![region("near", TALL)], &[]);
         let handover = Handover {
             last: &tall,
-            shown: 1.0,
+            gone: 0.0,
         };
-        Entrance::new(wide, &PHASES, Some(handover))
+        Between::enter(wide, &PHASES, Some(handover))
     }
 
     #[test]
     fn a_container_the_last_picture_drew_flies_over_and_lands_as_it_was_drawn() {
         let wide = picture();
-        let entrance = after_a_tall_tray(&wide);
-        assert!(entrance.flown().contains("near"));
-        assert!(!entrance.flown().contains("far"), "that one opens");
-        assert_eq!(entrance.at(entrance.length()), wide.body);
+        let (entrance, left) = after_a_tall_tray(&wide);
+        let left = left.expect("a container flies over");
+        assert!(
+            drawing(&left, "near").is_empty(),
+            "it leaves the last picture"
+        );
+        let opens = (1..10).any(|step| {
+            let body = entrance
+                .at(PHASES.entry.region_span * f64::from(step) / 10.0)
+                .0;
+            shown_box(drawing(&body, "far")[0]).is_some()
+        });
+        assert!(opens, "that one opens");
+        assert_eq!(entrance.at(entrance.length()).0, wide.body);
     }
 
     #[test]
     fn a_container_the_last_picture_drew_starts_at_its_old_size() {
         let wide = picture();
-        let entrance = after_a_tall_tray(&wide);
+        let (entrance, _) = after_a_tall_tray(&wide);
         let start = entrance.at(0.0);
-        let held = shown_box(drawing(&start, "near")[0]).expect("a box shows it");
+        let held = shown_box(drawing(&start.0, "near")[0]).expect("a box shows it");
         assert!((held.width - (TALL.width + 6.0)).abs() < 1e-6);
         assert!((held.height - (TALL.height + 6.0)).abs() < 1e-6);
         assert_eq!(
@@ -453,19 +464,19 @@ mod tests {
     fn a_second_change_takes_the_tray_from_where_the_first_had_it() {
         let tall = scene(vec![region("near", TALL)], &[]);
         let wide = picture();
-        let first = after_a_tall_tray(&wide);
+        let (first, _) = after_a_tall_tray(&wide);
         let mid = first.holder_at(0.2).expect("the tray stays on");
         let cut_short = Scene {
-            body: first.at(0.2),
+            body: first.at(0.2).0,
             ..wide
         };
         let handover = Handover {
             last: &cut_short,
-            shown: 1.0,
+            gone: 0.0,
         };
-        let second = Entrance::new(&tall, &PHASES, Some(handover));
+        let second = Between::enter(&tall, &PHASES, Some(handover)).0;
         let start = second.at(0.0);
-        let held = shown_box(drawing(&start, "near")[0]).expect("a box shows it");
+        let held = shown_box(drawing(&start.0, "near")[0]).expect("a box shows it");
         assert!((held.width - mid.width).abs() < 1e-6);
     }
 
@@ -480,10 +491,10 @@ mod tests {
         );
         let handover = Handover {
             last: &last,
-            shown: 1.0,
+            gone: 0.0,
         };
-        let entrance = Entrance::new(&picture(), &PHASES, Some(handover));
-        assert!(entrance.keeps_tray());
+        let entrance = Between::enter(&picture(), &PHASES, Some(handover)).0;
+        assert_eq!(entrance.focus(0.0), None, "the tray stays in focus");
         assert_eq!(entrance.holder_at(0.0), None);
     }
 
@@ -504,12 +515,12 @@ mod tests {
     /// cut it short.
     fn cut_short() -> (Scene, Between) {
         let picture = picture();
-        let entrance = Entrance::new(&picture, &PHASES, None);
+        let entrance = Between::enter(&picture, &PHASES, None).0;
         let seen = Scene {
-            body: entrance.at(PHASES.entry.region_span * 0.25),
+            body: entrance.at(PHASES.entry.region_span * 0.25).0,
             ..picture
         };
-        let move_ = Between::new(&seen, &with_a_door_open(), (0.0, 0.0), &PHASES);
+        let move_ = Between::carry(&seen, &with_a_door_open(), (0.0, 0.0), &PHASES);
         (seen, move_)
     }
 
@@ -524,10 +535,10 @@ mod tests {
         let (seen, move_) = cut_short();
         let stood = held_box(drawing(&seen.body, "near")[0]);
         let start = move_.at(0.0);
-        assert_eq!(held_box(drawing(&start, "near")[0]), stood);
+        assert_eq!(held_box(drawing(&start.0, "near")[0]), stood);
         let later = move_.at(0.4);
-        assert!(held_box(drawing(&later, "near")[0]).width > stood.width);
-        assert_eq!(move_.at(move_.length()), with_a_door_open().body);
+        assert!(held_box(drawing(&later.0, "near")[0]).width > stood.width);
+        assert_eq!(move_.at(move_.length()).0, with_a_door_open().body);
     }
 
     #[test]
@@ -536,7 +547,7 @@ mod tests {
         let (stood, solid) = worn_edge(drawing(&seen.body, "near")[0]).expect("it wears its edge");
         let edge_at = |progress: f64| {
             let body = move_.at(progress);
-            worn_edge(drawing(&body, "near")[0]).expect("it wears its edge")
+            worn_edge(drawing(&body.0, "near")[0]).expect("it wears its edge")
         };
         let (start, solid_at_start) = edge_at(0.0);
         assert_eq!((start, solid_at_start), (stood, solid), "no step in it");
@@ -548,20 +559,20 @@ mod tests {
     #[test]
     fn an_entrance_opens_its_containers_and_ends_on_the_scene_itself() {
         let picture = picture();
-        let entrance = Entrance::new(&picture, &PHASES, None);
+        let entrance = Between::enter(&picture, &PHASES, None).0;
         let early = entrance.at(0.1);
-        assert!(shown_box(drawing(&early, "near")[0]).is_some());
-        assert_eq!(entrance.at(entrance.length()), picture.body);
+        assert!(shown_box(drawing(&early.0, "near")[0]).is_some());
+        assert_eq!(entrance.at(entrance.length()).0, picture.body);
     }
 
     #[test]
     fn a_container_only_the_next_picture_has_opens_in_a_move() {
         let last = scene(vec![card("c", rect(180.0, 90.0, 40.0, 20.0), &["C"])], &[]);
         let next = picture();
-        let move_ = Between::new(&last, &next, (0.0, 0.0), &PHASES);
+        let move_ = Between::carry(&last, &next, (0.0, 0.0), &PHASES);
         let t = PHASES.transition;
         let middle = move_.at(t.enter_start + (1.0 - t.enter_start) * 0.3);
-        assert!(shown_box(drawing(&middle, "near")[0]).is_some());
-        assert_eq!(move_.at(1.0), next.body);
+        assert!(shown_box(drawing(&middle.0, "near")[0]).is_some());
+        assert_eq!(move_.at(1.0).0, next.body);
     }
 }

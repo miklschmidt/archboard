@@ -4,21 +4,13 @@
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Transform;
 
-use crate::timing::EMPHASISED;
+use crate::timing::{EMPHASISED, phase};
 
 /// Where a line that travels is as far back as it goes.
 const RECEDES_BY: f64 = 0.2;
 /// Where a line that travels starts to return, and where it is back.
 const RETURNS_FROM: f64 = 0.58;
 const RETURNS_BY: f64 = 0.92;
-
-/// How far through one phase a moment is: 0 before it, 1 after it.
-pub(crate) fn phase(progress: f64, start: f64, end: f64) -> f64 {
-    if end <= start {
-        return if progress >= end { 1.0 } else { 0.0 };
-    }
-    ((progress - start) / (end - start)).clamp(0.0, 1.0)
-}
 
 /// The curve of a move. It is exact at both ends.
 pub(super) fn emphasised(t: f64) -> f64 {
@@ -105,16 +97,9 @@ pub(super) fn then(outer: Transform, inner: Option<Transform>) -> Transform {
 
 #[cfg(test)]
 mod tests {
-    use super::{emphasised, phase, scale_about, then};
+    use super::{emphasised, scale_about, then};
     use archboard_scene::geometry::Rect;
     use archboard_scene::scene::Transform;
-
-    #[test]
-    fn a_phase_holds_before_and_after_it() {
-        assert_eq!(phase(0.1, 0.2, 0.6), 0.0);
-        assert_eq!(phase(0.9, 0.2, 0.6), 1.0);
-        assert!((phase(0.4, 0.2, 0.6) - 0.5).abs() < 1e-12);
-    }
 
     #[test]
     fn the_move_curve_is_exact_at_its_ends_and_runs_ahead_between() {

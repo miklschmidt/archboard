@@ -16,6 +16,14 @@ pub(crate) const SWAP: Curve = Curve(0.4, 0.0, 0.2, 1.0);
 /// host's camera glides on the same curve (`glideEase`).
 pub(crate) const EMPHASISED: Curve = Curve(0.45, 0.0, 0.15, 1.0);
 
+/// How far through one phase a moment is: 0 before it, 1 after it.
+pub(crate) fn phase(progress: f64, start: f64, end: f64) -> f64 {
+    if end <= start {
+        return if progress >= end { 1.0 } else { 0.0 };
+    }
+    ((progress - start) / (end - start)).clamp(0.0, 1.0)
+}
+
 /// One axis of a curve at a point along it.
 fn along(one: f64, other: f64, point: f64) -> f64 {
     let rest = 1.0 - point;
@@ -110,7 +118,14 @@ impl Fade {
 
 #[cfg(test)]
 mod tests {
-    use super::{EASE_OUT, Fade, SWAP};
+    use super::{EASE_OUT, Fade, SWAP, phase};
+
+    #[test]
+    fn a_phase_holds_before_and_after_it() {
+        assert_eq!(phase(0.1, 0.2, 0.6), 0.0);
+        assert_eq!(phase(0.9, 0.2, 0.6), 1.0);
+        assert!((phase(0.4, 0.2, 0.6) - 0.5).abs() < 1e-12);
+    }
 
     #[test]
     fn a_curve_holds_both_ends_and_rises_between() {

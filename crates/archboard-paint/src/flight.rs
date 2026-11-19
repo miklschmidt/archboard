@@ -1,20 +1,16 @@
-//! What moves a whole picture: a flight from the last picture, a part-by-part
-//! entrance, a picture leaving, the ghost of one that left, and the picture inside
-//! a card that the camera flies into. Each holds what it needs from its start
-//! and answers for a moment of the host's clock.
-
-use std::collections::HashSet;
+//! What moves a whole picture: a picture arriving, carried from the last one or
+//! part by part, a picture leaving, the ghost of one that left, and the picture
+//! inside a card that the camera flies into. Each holds what it needs from its
+//! start and answers for a moment of the host's clock.
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Item, Scene, Transform, Viewport};
 use serde::Deserialize;
 
-use crate::between::{
-    Between, Entrance, Handover, Heading, Phases, departure, visible_at, without,
-};
+use crate::between::{Between, Focus, departing};
 use crate::definitions::Definitions;
 use crate::draw::Picture;
-use crate::passage::{Axis, Plane, first_step, place_at};
+use crate::passage::{Axis, Heading, Plane, first_step, place_at};
 use crate::presentation::{Camera, Seen};
 use crate::timing::{EASE_IN_OUT, EASE_OUT, EMPHASISED};
 
@@ -57,185 +53,92 @@ impl Stretch {
     }
 }
 
-/// A picture on its way in.
+/// A picture on its way in: a move into it, and the time the move takes.
 #[derive(Debug)]
-pub(crate) enum Flight {
-    /// The last picture carried into this one.
-    Carry {
-        between: Box<Between>,
-        definitions: Definitions,
-        time: Stretch,
-    },
-    /// A picture coming in part by part.
-    Enter {
-        entrance: Box<Entrance>,
-        time: Stretch,
-    },
+pub(crate) struct Arriving {
+    between: Between,
+    /// The definitions a carry draws with, the moving masks put in each frame.
+    definitions: Option<Definitions>,
+    time: Stretch,
 }
 
-impl Flight {
-    /// A flight from one scene into another.
-    pub(crate) fn carry(
-        from: &Scene,
-        to: &Scene,
-        shift: (f64, f64),
-        phases: &Phases,
-        ms: f64,
-    ) -> Flight {
-        let between = Box::new(Between::new(from, to, shift, phases));
-        Flight::Carry {
-            definitions: Definitions::listed(&between.definitions()),
+impl Arriving {
+    /// A move into a picture that takes some milliseconds for each share of it.
+    pub(crate) fn new(between: Between, ms: f64) -> Arriving {
+        Arriving {
+            definitions: between.definitions().map(Definitions::listed),
             time: Stretch::of(ms * between.length()),
             between,
         }
     }
 
-    /// An entrance, taking over from what is left of the last picture.
-    pub(crate) fn enter(
-        scene: &Scene,
-        phases: &Phases,
-        ms: f64,
-        handover: Option<Handover<'_>>,
-    ) -> Flight {
-        let entrance = Box::new(Entrance::new(scene, phases, handover));
-        Flight::Enter {
-            time: Stretch::of(ms * entrance.length()),
-            entrance,
-        }
-    }
-
     /// An entrance that went on inside a card and has landed, so that its sparks
     /// run on over the picture that took over.
-    pub(crate) fn landed_from(entrance: Entrance, ms: f64, now: f64) -> Option<Flight> {
-        let length = entrance.length();
-        (length > 1.0).then(|| Flight::Enter {
-            entrance: Box::new(entrance),
+    pub(crate) fn landed_from(bloom: Between, ms: f64, now: f64) -> Option<Arriving> {
+        let length = bloom.length();
+        (length > 1.0).then_some(Arriving {
+            definitions: None,
             time: Stretch {
                 start: Some(now - ms),
                 ms: ms * length,
             },
+            between: bloom,
         })
-    }
-
-    /// The subjects that fly over from the last picture, when the flight is an
-    /// entrance.
-    pub(crate) fn flown(&self) -> Option<&HashSet<String>> {
-        match self {
-            Flight::Enter { entrance, .. } => Some(entrance.flown()),
-            Flight::Carry { .. } => None,
-        }
-    }
-
-    /// Whether a container of the last picture stays on as a tray of this one.
-    pub(crate) fn keeps_tray(&self) -> bool {
-        matches!(self, Flight::Enter { entrance, .. } if entrance.keeps_tray())
     }
 
     /// The box of the tray the last picture leaves inside, when it has one.
     pub(crate) fn holder_at(&self, now: f64) -> Option<Rect> {
-        match self {
-            Flight::Enter { entrance, .. } => entrance.holder_at(self.progress(now)),
-            Flight::Carry { .. } => None,
-        }
+        self.between.holder_at(self.progress(now))
     }
 
-    /// Tell an entrance how the ghost's picture maps onto the one that comes in.
+    /// Tell the move how the ghost's picture maps onto the one that comes in.
     pub(crate) fn rebase(&mut self, ghost: Camera, camera: Camera) {
-        if let Flight::Enter { entrance, .. } = self {
-            entrance.rebase(Transform {
-                x: (ghost.x - camera.x) / camera.scale,
-                y: (ghost.y - camera.y) / camera.scale,
-                scale: Some(ghost.scale / camera.scale),
-            });
-        }
-    }
-
-    /// The flight's time.
-    fn time(&self) -> Stretch {
-        match self {
-            Flight::Carry { time, .. } | Flight::Enter { time, .. } => *time,
-        }
+        self.between.rebase(Transform {
+            x: (ghost.x - camera.x) / camera.scale,
+            y: (ghost.y - camera.y) / camera.scale,
+            scale: Some(ghost.scale / camera.scale),
+        });
     }
 
     /// Start at the moment of the first frame.
     pub(crate) fn begin(&mut self, now: f64) {
-        match self {
-            Flight::Carry { time, .. } | Flight::Enter { time, .. } => time.begin(now),
-        }
+        self.time.begin(now);
     }
 
-    /// How far through the flight a moment is, as a share of the time of its
+    /// How far through the move a moment is, as a share of the time of its
     /// move: past 1 while a spark runs on.
     fn progress(&self, now: f64) -> f64 {
-        let length = match self {
-            Flight::Carry { between, .. } => between.length(),
-            Flight::Enter { entrance, .. } => entrance.length(),
-        };
-        self.time().share(now) * length
+        self.time.share(now) * self.between.length()
     }
 
-    /// Whether the flight has landed by a moment.
+    /// Whether the picture has landed by a moment.
     pub(crate) fn landed(&self, now: f64) -> bool {
-        self.time().share(now) >= 1.0
+        self.time.share(now) >= 1.0
     }
 
-    /// What the flight shows at a moment.
+    /// What the move shows at a moment.
     pub(crate) fn items(&mut self, now: f64) -> Vec<Item> {
-        let progress = self.progress(now);
-        match self {
-            Flight::Carry {
-                between,
-                definitions,
-                ..
-            } => {
-                definitions.replace_masks(between.masks_at(progress));
-                between.at(progress)
-            }
-            Flight::Enter { entrance, .. } => entrance.at(progress),
+        let (items, masks) = self.between.at(self.progress(now));
+        if let Some(definitions) = &mut self.definitions {
+            definitions.replace_masks(masks);
         }
+        items
     }
 
-    /// What the flight shows at a moment as a scene, and how far back of its
-    /// place it stands. `landed` is the picture the flight lands on.
+    /// What the move shows at a moment as a scene, and how far back of its
+    /// place it stands. `landed` is the picture the move lands on.
     pub(crate) fn seen_at(&self, now: f64, landed: &Scene) -> (Scene, (f64, f64)) {
-        let progress = self.progress(now);
-        match self {
-            Flight::Carry { between, .. } => between.seen_at(progress, landed),
-            Flight::Enter { entrance, .. } => {
-                let body = entrance.at(progress);
-                let scene = Scene {
-                    body,
-                    ..landed.clone()
-                };
-                (scene, (0.0, 0.0))
-            }
-        }
+        self.between.seen_at(self.progress(now), landed)
     }
 
-    /// The box of the door that opens at a moment, and how far through the move
-    /// that moment is, when a door opens.
-    pub(crate) fn opening(&self, now: f64) -> Option<(Rect, f64)> {
-        let progress = self.progress(now).min(1.0);
-        match self {
-            Flight::Carry { between, .. } => Some((between.opening_at(progress)?, progress)),
-            Flight::Enter { .. } => None,
-        }
+    /// What the move is about at a moment.
+    pub(crate) fn focus(&self, now: f64) -> Option<Focus> {
+        self.between.focus(self.progress(now))
     }
 
-    /// How far through an entrance a moment is, when the flight is one.
-    pub(crate) fn entering(&self, now: f64) -> Option<f64> {
-        match self {
-            Flight::Enter { .. } => Some(self.progress(now).min(1.0)),
-            Flight::Carry { .. } => None,
-        }
-    }
-
-    /// The definitions that what the flight shows refers to, when they are its own.
+    /// The definitions that what the move shows refers to, when they are its own.
     pub(crate) fn definitions(&self) -> Option<&Definitions> {
-        match self {
-            Flight::Carry { definitions, .. } => Some(definitions),
-            Flight::Enter { .. } => None,
-        }
+        self.definitions.as_ref()
     }
 }
 
@@ -250,18 +153,6 @@ pub(crate) struct Leaving {
 }
 
 impl Ghost {
-    /// Take away what flies over to the next picture.
-    pub(crate) fn hand_over(&mut self, flown: &HashSet<String>) {
-        if !flown.is_empty() {
-            self.picture.scene.body = without(&self.picture.scene.body, flown);
-        }
-    }
-
-    /// How much of the ghost shows at its start.
-    pub(crate) fn shown(&self) -> f64 {
-        visible_at(self.from)
-    }
-
     /// Where the reader is on the passage at a moment, when the ghost is the
     /// picture left on one.
     pub(crate) fn passage(&self, now: f64) -> Option<(Axis, f64)> {
@@ -330,7 +221,8 @@ impl Ghost {
         }
         let rest = EASE_OUT.at(self.time.share(now));
         let progress = self.from + (1.0 - self.from) * rest;
-        departure(&self.picture.scene, progress)
+        let scene = &self.picture.scene;
+        departing(scene.body.clone(), (scene.width, scene.height), progress)
     }
 
     /// What the ghost shows at a moment, kept inside a box of a picture that a
@@ -405,7 +297,7 @@ fn along_flight(way: DiveWay, progress: f64) -> f64 {
 pub(crate) struct Dive {
     pub(crate) inset: Picture,
     /// The picture's parts on their way out of its middle.
-    pub(crate) bloom: Option<Entrance>,
+    pub(crate) bloom: Option<Between>,
     pub(crate) frame: Rect,
     /// The card's own box, when the picture says where it is.
     pub(crate) card_box: Option<Rect>,
@@ -445,8 +337,8 @@ impl Dive {
         self.bloom.as_ref().map_or_else(
             || self.inset.scene.body.clone(),
             |bloom| match self.way {
-                DiveWay::In => bloom.at(bloomed),
-                DiveWay::Out => bloom.at(bloomed * bloom.length()),
+                DiveWay::In => bloom.at(bloomed).0,
+                DiveWay::Out => bloom.at(bloomed * bloom.length()).0,
             },
         )
     }

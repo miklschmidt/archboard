@@ -17,7 +17,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Group, Item, Role, Scene, Transform};
+use archboard_scene::scene::{Group, Item, Role, Scene};
 
 use super::arrive::{Grow, SHOWN_BY};
 use super::circuit::{Span, Spans, label_span, length_of, line_spans};
@@ -80,17 +80,15 @@ fn spread(keys: &[Option<f64>], first: f64, last: f64) -> Vec<f64> {
         .collect()
 }
 
-/// A picture coming in part by part, prepared once and sampled every frame.
-#[derive(Clone, Debug)]
-pub(crate) struct Entrance {
-    plan: Plan,
-    landed: Vec<Item>,
+/// What an entrance prepares once.
+pub(super) struct Entered {
+    pub(super) plan: Plan,
     /// Where the entrance ends, as a share of its time: past 1, while a spark runs.
-    length: f64,
+    pub(super) length: f64,
     /// The subjects that fly over from the last picture.
-    flown: HashSet<String>,
+    pub(super) flown: HashSet<String>,
     /// Whether a container of the last picture stays on as a tray of this one.
-    keeps_tray: bool,
+    pub(super) keeps_tray: bool,
 }
 
 /// The card of each subject. A lifeline stands under the card at its head, which is
@@ -336,104 +334,61 @@ fn movers(
     (all, of_subject)
 }
 
-impl Entrance {
-    /// Prepare the entrance of a scene, taking over from a last picture if there
-    /// is one.
-    pub(crate) fn new(scene: &Scene, phases: &Phases, handover: Option<Handover<'_>>) -> Entrance {
-        let groups = found(scene);
-        let middle = middle_of_scene(scene);
-        let last = Last::of(handover);
-        let cards: HashMap<&str, (usize, f64, f64)> = card_times(&groups, &phases.entry, middle)
-            .into_iter()
-            .map(|(at, begin, end)| (groups[at].id, (at, begin, end)))
-            .collect();
-        let there = |id: &str| {
-            cards.get(id).map_or(0.0, |&(at, begin, end)| {
-                stands_by(&groups[at], (begin, end), &last)
+/// Prepare the entrance of a scene, taking over from a last picture if there
+/// is one.
+pub(super) fn planned(scene: &Scene, phases: &Phases, handover: Option<Handover<'_>>) -> Entered {
+    let groups = found(scene);
+    let middle = middle_of_scene(scene);
+    let last = Last::of(handover);
+    let cards: HashMap<&str, (usize, f64, f64)> = card_times(&groups, &phases.entry, middle)
+        .into_iter()
+        .map(|(at, begin, end)| (groups[at].id, (at, begin, end)))
+        .collect();
+    let there = |id: &str| {
+        cards.get(id).map_or(0.0, |&(at, begin, end)| {
+            stands_by(&groups[at], (begin, end), &last)
+        })
+    };
+    let times = line_times(&groups, scene, &phases.entry, &there);
+    let length = length_of(times.iter().map(|&(_, span)| span));
+    let (all, of_subject) = movers(&groups, &times, phases, middle, &last);
+    let flown = groups
+        .iter()
+        .filter(|group| last.keeps(group) || (group.is_card() && last.stood_for(group).is_some()))
+        .map(|group| group.id.to_owned())
+        .collect();
+    let keeps_tray = groups.iter().any(|group| last.keeps(group));
+    let spans: Spans<'_> = times
+        .iter()
+        .map(|&(at, span)| (groups[at].id, span))
+        .collect();
+    let regions: HashSet<&str> = groups
+        .iter()
+        .filter(|group| group.is_region())
+        .map(|group| group.id)
+        .collect();
+    let furniture = |item: &Item, top: bool| {
+        let alone = matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_) | Role::Junctions | Role::Traffic(_)));
+        let page = top
+            && !matches!(item, Item::Definitions { .. } | Item::Break)
+            && !holds_subject(item, &|_| true);
+        (alone || page).then(|| {
+            riding(item, &cards, &groups, middle, &last).unwrap_or_else(|| {
+                let (start, end) = furniture_times(item, &spans, &regions, &phases.entry, length);
+                Mover::Frame(item.clone(), start, end)
             })
-        };
-        let times = line_times(&groups, scene, &phases.entry, &there);
-        let length = length_of(times.iter().map(|&(_, span)| span));
-        let (all, of_subject) = movers(&groups, &times, phases, middle, &last);
-        let flown = groups
-            .iter()
-            .filter(|group| {
-                last.keeps(group) || (group.is_card() && last.stood_for(group).is_some())
-            })
-            .map(|group| group.id.to_owned())
-            .collect();
-        let keeps_tray = groups.iter().any(|group| last.keeps(group));
-        let spans: Spans<'_> = times
-            .iter()
-            .map(|&(at, span)| (groups[at].id, span))
-            .collect();
-        let regions: HashSet<&str> = groups
-            .iter()
-            .filter(|group| group.is_region())
-            .map(|group| group.id)
-            .collect();
-        let furniture = |item: &Item, top: bool| {
-            let alone = matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_) | Role::Junctions | Role::Traffic(_)));
-            let page = top
-                && !matches!(item, Item::Definitions { .. } | Item::Break)
-                && !holds_subject(item, &|_| true);
-            (alone || page).then(|| {
-                riding(item, &cards, &groups, middle, &last).unwrap_or_else(|| {
-                    let (start, end) =
-                        furniture_times(item, &spans, &regions, &phases.entry, length);
-                    Mover::Frame(item.clone(), start, end)
-                })
-            })
-        };
-        let wiring = Wiring {
-            of_subject: &of_subject,
-            furniture: &furniture,
-        };
-        let mut plan = Plan::new(&scene.body, all, &wiring);
-        plan.cover(rims(&groups, &times));
-        let length = plan.length();
-        Entrance {
-            plan,
-            landed: scene.body.clone(),
-            length,
-            flown,
-            keeps_tray,
-        }
-    }
-
-    /// Say how the last picture's units map onto this picture's: the two can stand
-    /// under different cameras.
-    pub(crate) fn rebase(&mut self, carry: Transform) {
-        self.plan.rebase(carry);
-    }
-
-    /// Where the entrance ends, as a share of its time.
-    pub(crate) fn length(&self) -> f64 {
-        self.length
-    }
-
-    /// The subjects that fly over from the last picture.
-    pub(crate) fn flown(&self) -> &HashSet<String> {
-        &self.flown
-    }
-
-    /// Whether a container of the last picture stays on as a tray of this one.
-    pub(crate) fn keeps_tray(&self) -> bool {
-        self.keeps_tray
-    }
-
-    /// The box of the tray the last picture leaves inside, when it has one.
-    pub(crate) fn holder_at(&self, progress: f64) -> Option<Rect> {
-        self.plan.holder_at(progress)
-    }
-
-    /// The picture at a progress from 0 to its length, as a scene body. At its
-    /// length it is the scene's body.
-    pub(crate) fn at(&self, progress: f64) -> Vec<Item> {
-        if progress >= self.length {
-            self.landed.clone()
-        } else {
-            self.plan.at(progress.max(0.0))
-        }
+        })
+    };
+    let wiring = Wiring {
+        of_subject: &of_subject,
+        furniture: &furniture,
+    };
+    let mut plan = Plan::new(&scene.body, all, &wiring);
+    plan.cover(rims(&groups, &times));
+    Entered {
+        length: plan.length(),
+        plan,
+        flown,
+        keeps_tray,
     }
 }

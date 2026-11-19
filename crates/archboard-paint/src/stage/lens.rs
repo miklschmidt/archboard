@@ -9,13 +9,13 @@ use archboard_scene::scene::Scene;
 use peniko::Color;
 
 use super::Stage;
-use crate::between::phase;
+use crate::between;
 use crate::canvas::{Focus, Lens};
 use crate::flight::Dive;
 use crate::passage::Axis;
 use crate::path::rect_of;
 use crate::presentation::Camera;
-use crate::timing::{Curve, EMPHASISED};
+use crate::timing::{Curve, EMPHASISED, phase};
 
 /// The most a picture goes out of focus, as a share of the canvas's height.
 const MOST_BLUR: f64 = 0.02;
@@ -260,30 +260,33 @@ impl Stage {
         let camera = self.seen.camera;
         let height = self.size.1;
         let flying = self.dive.as_ref().filter(|dive| !dive.ended(now));
-        // A tray that stays on stays in focus: it is what the eye holds on to.
-        let entrance = (self.flight.as_ref())
-            .filter(|flight| !flight.keeps_tray())
-            .and_then(|flight| flight.entering(now));
-        let door = self.flight.as_ref().and_then(|flight| flight.opening(now));
+        let focus = self
+            .arriving
+            .as_ref()
+            .and_then(|arriving| arriving.focus(now));
         let page = page_of(scene);
         let lens = if let Some(dive) = flying {
             flight_lens(dive, now, camera, height)
         } else if let Some(lens) = self.passage_lens_at(now) {
             lens
-        } else if let Some(share) = entrance {
-            let before = self.ghost.as_ref().map(|ghost| Before {
-                racked: RACK.at(ghost.from),
-                left: 1.0 - ghost.gone_by(now),
-            });
-            entrance_lens(through(camera, page), share, before, self.size)
-        } else if let Some((box_at, share)) = door {
-            door_lens(through(camera, box_at), share, height)
         } else {
-            Lens {
-                focus: None,
-                blur: height * MOST_BLUR * RACK.at(self.leaving.as_ref()?.progress(now)),
-                sink: 0.0,
-                smear: 0.0,
+            match focus {
+                Some(between::Focus::Entrance(share)) => {
+                    let before = self.ghost.as_ref().map(|ghost| Before {
+                        racked: RACK.at(ghost.from),
+                        left: 1.0 - ghost.gone_by(now),
+                    });
+                    entrance_lens(through(camera, page), share, before, self.size)
+                }
+                Some(between::Focus::Door(box_at, share)) => {
+                    door_lens(through(camera, box_at), share, height)
+                }
+                None => Lens {
+                    focus: None,
+                    blur: height * MOST_BLUR * RACK.at(self.leaving.as_ref()?.progress(now)),
+                    sink: 0.0,
+                    smear: 0.0,
+                },
             }
         };
         (lens.blur > 0.0 || lens.sink > 0.0 || lens.smear > 0.0)
