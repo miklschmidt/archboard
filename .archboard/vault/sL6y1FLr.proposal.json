@@ -49,6 +49,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#ttPYQNXo",
+      "field": "responsibility",
+      "value": "Holds one canvas's picture, how it is seen and everything that moves on it, takes the page's decisions whole, and draws a frame at a moment of its own clock"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ttPYQNXo",
+      "field": "description",
+      "value": "Seven names (ADR 0085): Stage::new(theme, size, Pace), present(Presentation), arrive(Painting, Arrival), depart(Departure), draw(Surface, now) -> Motion and pick. The pace, a move's phases and the longest step of the clock, comes at birth. A presentation states only what changed: each value it states replaces the last, and a value it leaves out stays. An arrival is a cut, a carry, an entrance or a flight into a card; a departure is a leaving, a stay, a clear or the end of a flight into a card, so the page states each decision once and in no required order within a turn. The stage owns its clock. Each timed value carries its own moment (the camera, the awaited step, the light, a sweep, an entrance, a flight into a card and a leaving), and the stage reads the clock once for each such moment and once for each frame, so a stepped clock records it frame by frame. A cut, a carry, a stay, a clear and a sweep with no lines name no moment and read nothing. Each draw says whether to keep a strip canvas's parts: Surface::Strips wraps the canvas in the stage's part store and culls to the stage's size, and Surface::Direct draws whole, as the GPU canvas, a recording canvas and a counting canvas need. A frame answers its Motion: still, traffic alone or moving."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#zAZwER1T",
       "field": "anchor",
       "value": {
@@ -56,6 +68,12 @@
         "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
         "symbol": "durationMs"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+      "field": "description",
+      "value": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider. picture-stage-forms.ts holds the forms that the painter reads, the presentation, the arrival and the departure, and the held presentation that a painter starting late takes: briefPainter states it in one presentation, then the picture's arrival, or a cleared departure when there is no picture. The pace is no longer theirs to hand on: the painter choice gives it to every painter."
     },
     {
       "type": "assign",
@@ -116,6 +134,38 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#hKrzJUPf",
+      "field": "description",
+      "value": "A software WebGPU adapter, or none, sends the canvas to WebGL2. WebGL2 refuses a context with a major performance caveat and a renderer whose name says it draws in software, and the rule reads no frame back. A WebGPU painter that fails at work gets one more try, and a second failure soon after sends the canvas to WebGL2. A WebGL2 painter that fails or loses its context gives way to the CPU painter. Each new painter takes a fresh canvas, because a canvas that held a GPU context never takes a 2D one. Every painter it starts takes the page's pace at birth: the phases of a move and the longest step of its clock, read from timing (ADR 0085). The caller shows which painter draws, and why WebGPU and WebGL2 do not."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#gLtaCAfd",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "dependency",
+        "label": "the pace it hands every painter",
+        "description": "A move's phases and the longest step of the painter's clock, which every painter takes at birth.",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/ui/clients/painter.ts",
+          "symbol": "pace"
+        },
+        "id": "vKEsyHFk#gLtaCAfd",
+        "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gLtaCAfd",
+      "placement": {
+        "holder": "vKEsyHFk#hKrzJUPf"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
       "field": "anchor",
       "value": {
@@ -151,6 +201,18 @@
         "path": "packages/workspace/src/runtime/clients/git-sync.ts",
         "symbol": "durationMs"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9FxduWoO",
+      "field": "description",
+      "value": "It states each change to the painter whole: how the picture is seen as a presentation that names only what changed, a picture's arrival (a cut, a carry, an entrance or a flight into a card) and a departure (a leaving, a stay, a clear or out of a card), each timed one with the frame clock's moment. A frame says what moves after it, so the stage asks for another only while something moves, and on a strip canvas that moves traffic alone it rests as long as the last frame took. Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct picture. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas, briefed with the held presentation and then the picture. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why WebGPU and WebGL2 do not in data-painter-reason."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#kIIEgwrt",
+      "field": "label",
+      "value": "how the picture is seen, what arrives and departs, frames"
     },
     {
       "type": "assign",
@@ -282,6 +344,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk#NFwqWgrm",
+      "field": "description",
+      "value": "One Canvas trait of nine operations serves Vello on WebGPU, Vello GPU on WebGL2 and Vello on the CPU, so all three run the same walk over the scene (ADR 0071, ADR 0074). push(Layer) starts a layer laid over the one under it, a cut or a keep, and pop ends it. The WebGPU canvas keeps a settled part as an encoded scene; for both strip canvases the stage keeps the parts in its own store when a draw asks for strips, and a frame draws only the kept shapes it can see. The in-between of two scenes is a pure function of the scenes and a progress value, so Rust tests own it. A host states how the picture is seen, which picture arrives and which departs, and asks the stage for frames at moments of the stage's own clock (ADR 0085). Its tests read frames from a recording canvas; the counting canvas that a measurement draws on belongs to the WebAssembly painter."
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#EEuLPVrA",
       "kind": "relationship",
@@ -305,6 +373,18 @@
       "placement": {
         "holder": "vKEsyHFk#NFwqWgrm"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#UpjzNLKH",
+      "field": "description",
+      "value": "It mirrors the stage (ADR 0085). A page states how the picture is seen, a picture's arrival and a departure as JSON through present, arrive and depart, and one numeric setCamera stays so that a glide parses no JSON on each frame. It picks under a point, resizes the canvas, and draws the frame of a moment of the page's clock, which answers whether it is still, moves traffic alone or moves. Each start function, gpu, webgl and cpu, takes the page's pace as JSON. The stage keeps its own clock and the parts of its strip canvases, so the crate holds no clock and no keeper beside the stage; the counting canvas that count_frame draws whole on lives here. This crate is a browser's: a native build of the workspace compiles it empty. It carries the hash of the sources it was built from, and the page refuses a build of other sources."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#RaRMc6Gn",
+      "field": "label",
+      "value": "one stage: what the page states, and each frame"
     },
     {
       "type": "assign",
