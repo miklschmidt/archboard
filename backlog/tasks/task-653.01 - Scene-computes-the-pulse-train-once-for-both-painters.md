@@ -4,6 +4,7 @@ title: Scene computes the pulse train once for both painters
 status: To Do
 assignee: []
 created_date: '2026-11-19T16:20:00Z'
+updated_date: '2026-11-19T16:25:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -36,3 +37,9 @@ Candidate 2 of the archboard-deepen run. crates/archboard-scene/src/scene is wid
 - [ ] #5 About five Rust tests cover a bent route, a piece under LEAST_PIECE, a crowded and an uncrowded train, the turn window clamping, and a slide on and off a leg
 - [ ] #6 CONTEXT.md defines Pulse train, and an ADR states that the painter owns the clock and the scene maps a moment to a position
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Proposal: sL6y1FLr
+<!-- SECTION:NOTES:END -->
