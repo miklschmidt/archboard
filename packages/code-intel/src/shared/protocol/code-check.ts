@@ -525,8 +525,12 @@ const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 const RememberedModelSchema = CodeCheckModelSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
-	/** Each module the pass measured on this reading, those with no findings included (TASK-646.07). */
-	depth: z.array(ModuleDepthSchema).optional(),
+	/**
+	 * Each module the pass measured on this reading, those with no findings included (TASK-646.07),
+	 * without the names of its exports: every canvas reads this answer, and only the About page of
+	 * one module reads its names, from `GET /api/vault/code-exports` (TASK-646.08).
+	 */
+	depth: z.array(ModuleDepthSchema.omit({ names: true })).optional(),
 	/** What the pass skipped on this reading, and what it skipped in a whole checkout or language. */
 	skipped: z.array(CodeCheckSkipSchema).optional(),
 });
@@ -535,8 +539,20 @@ const RememberedFindingsSchema = z.object({
 	models: z.array(RememberedModelSchema).optional(),
 });
 
+/**
+ * The answer of `GET /api/vault/code-exports` (TASK-646.08): the exports of one module that the
+ * last pass over one exact reading counted, with the repository their paths are in and when the
+ * pass ran. The route answers it beside `success: true`.
+ */
+const RememberedExportsSchema = z.object({
+	checkedAt: z.iso.datetime(),
+	repo: z.string(),
+	names: z.array(ModuleExportSchema),
+});
+
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
+type RememberedExports = z.infer<typeof RememberedExportsSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
@@ -560,6 +576,8 @@ export {
 	type ModuleDepth,
 	type ModuleExport,
 	CodeSourceLinesSchema,
+	RememberedExportsSchema,
+	type RememberedExports,
 	RememberedFindingsSchema,
 	type RememberedFindings,
 	type ServerTypescript,

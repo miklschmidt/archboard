@@ -31,6 +31,12 @@
 // read it on a timer never cost a reading of code. A pass the caller cancelled, or a refusal, leaves the memory
 // as it was.
 //
+// `GET /api/vault/code-exports?model=<model>[&state=<state>]&revision=<digest>&module=<module>`
+// answers the exports of one module that the last pass over that exact reading counted, from the
+// same memory (TASK-646.08). The findings answer leaves them out, because every canvas reads it and
+// only the About page of one module shows them. No remembered pass of that version that measured
+// the module is a 404.
+//
 // `GET /api/code/source-lines?repo=<repo>&path=<path>&line=<line>` answers the
 // source excerpt of one piece of evidence that the memory holds for the vault
 // (TASK-590.06): the evidence line with up to 3 lines on each side. It is the
@@ -174,6 +180,41 @@ const SourcePlaceQuerySchema = z.object({
 		.transform(Number),
 });
 
+/** The exact reading and module whose exports are asked for. A reading with no state names none. */
+const ExportsQuerySchema = z.object({
+	model: z.string().min(1),
+	state: z.string().min(1).optional(),
+	revision: z.string().min(1),
+	module: z.string().min(1),
+});
+
+/**
+ * Answer one request for the remembered exports of one module.
+ * @param memory What the finished passes found.
+ * @param request The request.
+ * @param response Its response.
+ */
+function answerExports(memory: CodeFindingsMemory, request: Request, response: Response): void {
+	const asked = ExportsQuerySchema.safeParse(request.query);
+	if (!asked.success) {
+		response
+			.status(400)
+			.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(asked.error) });
+		return;
+	}
+	const { state, ...rest } = asked.data;
+	const exports = memory.exportsOf(vaultOfRequest(request), { ...rest, state: state ?? null });
+	if (exports === null) {
+		response.status(404).json({
+			success: false,
+			code: "CODE_EXPORTS_UNREAD",
+			error: "No remembered code check measured this module on this version of the reading.",
+		});
+		return;
+	}
+	response.json({ success: true, ...exports });
+}
+
 /**
  * Answer one request for the source excerpt of a remembered piece of evidence.
  * @param dependencies How checkout work runs, and what the passes found.
@@ -218,7 +259,8 @@ async function answerSourceLines(
 
 /**
  * Mount `GET /api/vault/code-check`, `GET /api/vault/code-findings`, which
- * answers what the finished passes found from memory and never starts one, and
+ * answers what the finished passes found from memory and never starts one,
+ * `GET /api/vault/code-exports`, which answers one module's exports from the same memory, and
  * `GET /api/code/source-lines`, which quotes the source of one remembered piece
  * of evidence.
  * @param app The application.
@@ -253,6 +295,9 @@ function mountCodeCheckRoute(
 	});
 	app.get("/api/vault/code-findings", requireVault, (request, response) => {
 		response.json({ success: true, ...dependencies.memory.recall(vaultOfRequest(request)) });
+	});
+	app.get("/api/vault/code-exports", requireVault, (request, response) => {
+		answerExports(dependencies.memory, request, response);
 	});
 	app.get(
 		"/api/code/source-lines",

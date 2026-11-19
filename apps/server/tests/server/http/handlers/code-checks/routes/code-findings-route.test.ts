@@ -16,7 +16,11 @@ import { join } from "node:path";
 import express from "express";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { createCodeFindingsMemory } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
-import { RememberedFindingsSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import {
+	RememberedExportsSchema,
+	RememberedFindingsSchema,
+	type CodeCheckAnswer,
+} from "@archboard/code-intel/code-check";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-code-findings-route-"));
 const ownVault = vaultIn(scratch);
@@ -302,10 +306,62 @@ test("a canonical reading keeps each module's depth and what the pass skipped, a
 	const { models } = RememberedFindingsSchema.parse(await reply.json());
 	const now = models?.find((reading) => reading.state === "Now");
 	expect(now?.depth?.map((each) => each.subject.id)).toEqual(["clean"]);
-	expect(now?.depth?.[0]?.names).toHaveLength(1);
+	expect(now?.depth?.[0]?.exports.functions).toBe(1);
 	expect(now?.skipped?.map((skip) => skip.reason)).toEqual([
 		"exposure-unknown",
 		"language-server-missing",
 	]);
 	expect(now?.skipped?.[0]?.subject?.id).toBe("docs");
+});
+
+test("every canvas reads no export names, and the exports of one module are read alone, for the exact reading", async () => {
+	const revision = { digest: "d".repeat(64), files: [] };
+	const node = (id: string) => ({ kind: "node", id, name: id }) as const;
+	const depthOf = (id: string, count: number) => ({
+		model: "Shop",
+		state: "Now",
+		subject: node(id),
+		repo: "example/shop",
+		directory: `src/${id}`,
+		languages: ["typescript"],
+		unjudged: [],
+		exports: { functions: count, classes: 0, methods: 0, values: 0, types: 0 },
+		names: Array.from({ length: count }, (_, index) => ({
+			name: `run${index}`,
+			kind: "function" as const,
+			path: `src/${id}/index.ts`,
+			line: index + 1,
+		})),
+		logic: count,
+	});
+	const answer: CodeCheckAnswer = {
+		timings: [],
+		states: [],
+		models: [{ model: "Shop", state: "Now", revision }],
+		findings: [],
+		skipped: [],
+		behind: [],
+		depth: [depthOf("gateway", 2), depthOf("ledger", 400)],
+	};
+	const { base, passes } = await serverWith([answer]);
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+
+	const all = await fetch(`${base}/api/vault/code-findings?${named()}`);
+	expect(JSON.stringify(await all.json())).not.toContain("run0");
+
+	const exportsOf = (module: string, digest = revision.digest) =>
+		fetch(
+			`${base}/api/vault/code-exports?${named()}&${new URLSearchParams({ model: "Shop", state: "Now", revision: digest, module })}`,
+		);
+	const gateway = await exportsOf("gateway");
+	expect(gateway.status).toBe(200);
+	const read = RememberedExportsSchema.parse(await gateway.json());
+	expect(read.repo).toBe("example/shop");
+	expect(read.names.map(({ name, line }) => ({ name, line }))).toEqual([
+		{ name: "run0", line: 1 },
+		{ name: "run1", line: 2 },
+	]);
+	expect((await exportsOf("gateway", "e".repeat(64))).status).toBe(404);
+	expect((await exportsOf("unmeasured")).status).toBe(404);
+	expect(passes()).toBe(1);
 });

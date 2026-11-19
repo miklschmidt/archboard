@@ -1,10 +1,11 @@
 ---
 id: TASK-646.08
 title: The About page lists a module's code exports
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:52:00Z'
+updated_date: '2026-11-19T02:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -56,3 +57,13 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 The model code warnings component test covers the list
 - [ ] #4 A canvas that opens no About page does not download every module export: the code-findings answer that every canvas reads stays about the size it was before TASK-646.07, and the About page reads the exports of the selected module only
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Code findings answer: the remembered depth leaves out export names (RememberedModelSchema depth omits names); the memory keeps them and answers one module's names through GET /api/vault/code-exports?model&state&revision&module, 404 CODE_EXPORTS_UNREAD when no remembered pass of that exact version measured the module. Never starts a pass. (code-intel protocol, Archboard server: outside the slice.)
+2. Open code at an export: the code-opener request gains {repo, path, symbol?, line?}: a file of a repository that the vault reads a checkout of, opened at the line that defines the symbol now, else the remembered line. The binding resolver refuses a path that leaves the checkout. (code-opener: outside the slice.)
+3. Code exports (apps/web/.../model-reader/reading/code-exports): a rule groups a module's names by kind (methods under their class) and joins each with its findings (finding.subject = module, finding.export = name); a component lists them on the module's About page as a section, each with Open code; states for no pass, skipped, partial, loading and failure. The query sits beside sourceLinesQuery in model-reader/access/clients. Names are read only when the slim depth counts exports.
+4. Tests: code-findings route test (no names in the canvas answer, one module's names alone), answer-path system test (repo form, refusals), model-code-warnings component test (the list), canonical-model-code browser test (Open code on an export opens its exact source).
+5. Measure the answer size; screenshots in both themes; site audit; DESIGN.md if the About page section needs it.
+<!-- SECTION:PLAN:END -->

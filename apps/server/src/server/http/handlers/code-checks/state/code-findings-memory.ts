@@ -13,7 +13,9 @@
 //
 // A canonical reading also keeps each module the pass measured, those with no
 // findings included, and what the pass skipped, so a pane tells a clean module
-// from one the pass did not read (TASK-646.07).
+// from one the pass did not read (TASK-646.07). It keeps the names of each module's exports too,
+// but every canvas reads `recall`, and a module's names are for its About page alone, so `recall`
+// leaves them out and `exportsOf` answers them for one module (TASK-646.08).
 //
 // It lives in memory and nowhere else. Nothing writes a finding into a document,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
@@ -22,12 +24,30 @@
 // It is no copy of a document either: it answers what the code said, never what is
 // on a document, and a pane shows it only over the version it was found on.
 
-import type { CodeCheckAnswer, RememberedFindings } from "@archboard/code-intel/code-check";
+import type {
+	CodeCheckAnswer,
+	RememberedExports,
+	RememberedFindings,
+} from "@archboard/code-intel/code-check";
+
+type RememberedModel = NonNullable<RememberedFindings["models"]>[number];
+
+/** What the last pass found on one canonical reading, with the names of each module's exports. */
+type KeptModel = Omit<RememberedModel, "depth"> & {
+	readonly depth: NonNullable<CodeCheckAnswer["depth"]>;
+};
 
 /** What the last pass found on one document at one variant. */
-type RememberedReading =
-	| RememberedFindings["readings"][number]
-	| NonNullable<RememberedFindings["models"]>[number];
+type RememberedReading = RememberedFindings["readings"][number] | KeptModel;
+
+/** The exact reading and the module whose exports are asked for. */
+interface ExportsAsked {
+	readonly model: string;
+	readonly state: string | null;
+	/** The digest of the version of the reading. */
+	readonly revision: string;
+	readonly module: string;
+}
 
 /** What the server remembers of its code passes. */
 interface CodeFindingsMemory {
@@ -45,6 +65,13 @@ interface CodeFindingsMemory {
 	 * @returns One reading for each document and variant a pass has read there.
 	 */
 	recall(vault: string): RememberedFindings;
+	/**
+	 * The exports of one module that the last pass over one exact reading counted.
+	 * @param vault The vault.
+	 * @param asked The reading, by its model, state and the digest of its version, and the module.
+	 * @returns The exports, or null when no remembered pass measured the module on that version.
+	 */
+	exportsOf(vault: string, asked: ExportsAsked): RememberedExports | null;
 }
 
 /**
@@ -78,6 +105,11 @@ function ofReading(read: { readonly model: string; readonly state: string | null
  */
 function createCodeFindingsMemory(): CodeFindingsMemory {
 	const readings = new Map<string, { vault: string; reading: RememberedReading }>();
+	const models = (vault: string): KeptModel[] =>
+		[...readings.values()]
+			.filter((kept) => kept.vault === vault)
+			.map((kept) => kept.reading)
+			.filter((reading) => "state" in reading);
 	/**
 	 * Keep what one finished pass found on each document it read.
 	 * @param vault The vault the pass read.
@@ -124,13 +156,30 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 				.filter((kept) => kept.vault === vault)
 				.map((kept) => kept.reading)
 				.filter((reading) => "variant" in reading),
-			models: [...readings.values()]
-				.filter((kept) => kept.vault === vault)
-				.map((kept) => kept.reading)
-				.filter((reading) => "state" in reading),
+			models: models(vault).map((reading) => ({
+				...reading,
+				depth: reading.depth.map(({ names: _names, ...counts }) => counts),
+			})),
 		};
 	}
-	return { remember, recall };
+	/**
+	 * The exports of one module that the last pass over one exact reading counted.
+	 * @param vault The vault.
+	 * @param asked The reading and the module.
+	 * @returns The exports, or null when no remembered pass measured the module on that version.
+	 */
+	function exportsOf(vault: string, asked: ExportsAsked): RememberedExports | null {
+		const reading = models(vault).find(
+			(kept) =>
+				kept.model === asked.model &&
+				kept.state === asked.state &&
+				kept.revision.digest === asked.revision,
+		);
+		const depth = reading?.depth.find((module) => module.subject.id === asked.module);
+		if (reading === undefined || depth === undefined) return null;
+		return { checkedAt: reading.checkedAt, repo: depth.repo, names: depth.names };
+	}
+	return { remember, recall, exportsOf };
 }
 
 export { type CodeFindingsMemory, createCodeFindingsMemory };

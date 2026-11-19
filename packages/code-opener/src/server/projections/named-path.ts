@@ -2,7 +2,8 @@
 // holds the file among those the vault reads, and the file's path in it. The
 // binding resolver then holds the file to what a binding of the vault can open
 // (ADR 0018), so a path in no such checkout opens nothing, and neither does a
-// path that a link leads out of its checkout.
+// path that a link leads out of its checkout. A file a code export names is in a repository
+// already, and the vault must read a checkout of it too.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -68,4 +69,22 @@ function namedPathBinding(vault: string, named: string): NamedPathBinding {
 	return { ok: true, binding: { repo: holder.repo, path: path.relative(holder.root, target) } };
 }
 
-export { namedPathBinding };
+/**
+ * The binding of a file a code export names by its path in its repository.
+ * @param vault The vault, which must read a checkout of the repository.
+ * @param repo The repository.
+ * @param named The file's path in it; the binding resolver refuses one that leaves the checkout.
+ * @returns The binding, or why the file has none.
+ */
+function repositoryPathBinding(vault: string, repo: string, named: string): NamedPathBinding {
+	if (!checkoutsReadFrom(vault).some((entry) => entry.repo === repo)) {
+		return {
+			ok: false,
+			code: "TARGET_OUTSIDE_CHECKOUT",
+			error: `This vault reads no checkout of ${repo}. Choose one with archboard repo use <dir>.`,
+		};
+	}
+	return { ok: true, binding: { repo, path: named } };
+}
+
+export { namedPathBinding, repositoryPathBinding };
