@@ -12,7 +12,7 @@ const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query
 const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { ModelCodeWarnings } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
-const { CodeExports } =
+const { CodeExports, ModuleCodeExports } =
 	await import("#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx");
 
 type Reading = NonNullable<ComponentProps<typeof ModelCodeWarnings>["reading"]>;
@@ -280,4 +280,41 @@ test("a module no pass measured reads no exports, and says why", () => {
 	});
 	expect(document.querySelectorAll("[data-slot='code-exports-skipped']")).toHaveLength(1);
 	expect(asked).toHaveLength(0);
+});
+
+/**
+ * The gateway's code exports as a section of the right panel, in a reading.
+ * @param client The query client.
+ * @param model Where the reading comes from.
+ * @returns The panel's section.
+ */
+function panelExports(
+	client: InstanceType<typeof QueryClient>,
+	model: ComponentProps<typeof ModuleCodeExports>["model"],
+) {
+	return createElement(
+		QueryClientProvider,
+		{ client },
+		createElement(ModuleCodeExports, {
+			vault: VAULT,
+			model,
+			module: { id: GATEWAY.id, binding: { repo: "example/shop", path: "src/gateway" } },
+			reading: measured(),
+			onNotice: selectNothing,
+		}),
+	);
+}
+
+test("the right panel lists a selected module's code exports, and a branch reading lists none", async () => {
+	serving();
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	clients.push(client);
+	const { rerender } = render(panelExports(client, {}));
+	await waitFor(() =>
+		expect(
+			document.querySelectorAll("[data-slot='module-code-exports'] [data-slot='code-export']"),
+		).toHaveLength(5),
+	);
+	rerender(panelExports(client, { sourceRef: "feature" }));
+	expect(document.querySelector("[data-slot='module-code-exports']")).toBeNull();
 });
