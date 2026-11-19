@@ -394,7 +394,7 @@ async function awaitServerReadiness(
 	const ready = await waitUntil(
 		"serverLifecycle.startupReadiness",
 		() => readinessOf(spawned, deferred),
-		timeoutMs === undefined ? {} : { boundMs: timeoutMs },
+		{ boundMs: timeoutMs },
 	);
 	if (ready.ok) return ready.value;
 	return cleanupFailedStart(
