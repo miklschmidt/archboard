@@ -4,6 +4,7 @@ title: Python, Go and C# modules get every module-depth rule
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:03:00Z'
+updated_date: '2026-11-19T02:49:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +56,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 Members that each language calls are not judged
 - [ ] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Commands (check help text) and code-intel (tests), with their holders. No architecture change; exception recorded in the proposal history (operation task-646-11-exceptions). Module depth and Fact analysis changed inside the plan.
+<!-- SECTION:NOTES:END -->
