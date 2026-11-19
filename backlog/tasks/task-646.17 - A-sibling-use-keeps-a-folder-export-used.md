@@ -4,6 +4,7 @@ title: A sibling use keeps a folder export used
 status: To Do
 assignee: []
 created_date: '2026-11-19T04:13:00Z'
+updated_date: '2026-11-19T04:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -52,3 +53,9 @@ Follow the same section of TASK-646.05.
 - [ ] #4 The rule applies in every language that Module depth judges, and the archboard skill and ADR 0082 say so
 - [ ] #5 Code-check tests cover each case
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on code-intel only, through its tests. Exception recorded in the proposal history (operation task-646-17-exceptions). EXPOSED_UNUSED warnings on this repository went from 2156 to 1480.
+<!-- SECTION:NOTES:END -->
