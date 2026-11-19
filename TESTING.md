@@ -3,7 +3,6 @@
 This file is for a developer or an agent who works in this checkout. It shows
 how to run a server of your own, write and read a model, see it in a browser,
 and test a change. [INSTALL.md](INSTALL.md) covers installation on a machine.
-[docs/agents/test-suite.md](docs/agents/test-suite.md) covers the test lanes.
 `./bin/archboard --help` and the `--help` of each command describe the flags.
 
 ## 1. Prepare the checkout
@@ -186,8 +185,7 @@ a narration can be silent. The [README FAQ](README.md#faq) explains why.
 
 ## 7. Test a change
 
-`bun run check` is the complete gate. [docs/agents/test-suite.md](docs/agents/test-suite.md)
-describes its lanes, what each lane needs, and which test owns which behavior.
+`bun run check` is the complete gate.
 On macOS, use Chrome for Testing. Before every local lane or gate, set
 `AGENT_BROWSER_EXECUTABLE_PATH` and `ARCHBOARD_RENDERER_CHROMIUM` to its absolute
 executable path in the command environment. Keep these values out of `.env` files.

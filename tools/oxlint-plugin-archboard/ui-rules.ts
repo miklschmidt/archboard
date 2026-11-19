@@ -1,7 +1,7 @@
-// The frontend concern placement and naming rules of docs/agents/frontend.md,
-// for authored source under packages/<name>/src/ui and apps/<name>/src/ui. The
-// concern of a file is the one role folder of its path. Behavior first (ADR 0075),
-// it is the folder that holds the file. The web app's browser entry, main.tsx,
+// The frontend concern placement and naming rules, for authored source under
+// packages/<name>/src/ui and apps/<name>/src/ui. The concern of a file is the one
+// role folder of its path. Behavior first (ADR 0075), it is the folder that holds
+// the file. The web app's browser entry, main.tsx,
 // sits above ui/ and counts as browser code for the React import rule only.
 // Components are PascalCase, hooks are use-prefixed kebab-case, and everything
 // else is scoped kebab-case. React lives in components and hooks. A package or an

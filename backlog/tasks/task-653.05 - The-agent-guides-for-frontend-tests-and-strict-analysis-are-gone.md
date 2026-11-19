@@ -1,9 +1,10 @@
 ---
 id: TASK-653.05
 title: The agent guides for frontend, tests and strict analysis are gone
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-19T16:46:00Z'
+updated_date: '2026-11-19T16:47:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -24,3 +25,13 @@ The owner asked to delete docs/agents/frontend.md, docs/agents/test-suite.md, do
 - [ ] #3 AGENTS.md and TESTING.md no longer point at the deleted guides, and keep only what their readers need to run and verify the product
 - [ ] #4 No lint, type, clippy or test rule is weakened, and bun run check passes
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Delete the five guides.
+2. Rewrite each citation (Cargo.toml, clippy.toml, ADR 0060, rust-crates test, oxlint ui-rules, scripts/move-source.ts) to state its rule or reason itself.
+3. Drop the pointers in AGENTS.md and TESTING.md.
+4. Leave docs/agents/boundaries.md to TASK-653.03.
+5. Run bun run check.
+<!-- SECTION:PLAN:END -->
