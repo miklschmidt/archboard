@@ -506,11 +506,11 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const serverFix = useMemo<ContextType<typeof LanguageServerFixContext>>(
 		() => ({
 			/**
-			 * The server each language needs, as the brief names it.
-			 * @param languages The languages.
-			 * @returns Each with its server.
+			 * The server a language needs, as the brief names it.
+			 * @param language The language.
+			 * @returns The server, if the brief knows the language.
 			 */
-			needs: (languages) => languageServerSetup(languages).needs,
+			server: (language) => languageServerSetup([language]).needs[0]?.server,
 			/**
 			 * Ask the agent of the repository's checkout to set up these servers, or say why not.
 			 * @param repo The repository.

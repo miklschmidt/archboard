@@ -33,7 +33,6 @@ function ModelMeasureServers(props: { readonly missing: readonly MissingServers[
 function MissingServer(props: { readonly missing: MissingServers }): JSX.Element {
 	const { repo, languages } = props.missing;
 	const setup = useContext(LanguageServerFixContext);
-	const needs = new Map(setup?.needs(languages).map(({ language, server }) => [language, server]));
 	const fix = useCallback(() => setup?.fix(repo, languages), [setup, repo, languages]);
 	return (
 		<div
@@ -45,7 +44,7 @@ function MissingServer(props: { readonly missing: MissingServers }): JSX.Element
 				{languages.map((language) => (
 					<li key={language}>
 						{`No ${languageName(language)} language server in ${repo}, so its code is not counted.`}
-						<ServerNeeded server={needs.get(language)} />
+						<ServerNeeded server={setup?.server(language)} />
 					</li>
 				))}
 			</ul>

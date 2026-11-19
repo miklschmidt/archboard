@@ -7,13 +7,11 @@ import { createContext } from "react";
 /** The setup of missing language servers, as the application offers it. */
 interface LanguageServerFix {
 	/**
-	 * The server that each language needs, in Markdown; a language the brief does not know is left out.
-	 * @param languages The languages, as the code check names them.
-	 * @returns Each known language with its server.
+	 * The server that a language needs, in Markdown.
+	 * @param language The language, as the code check names it.
+	 * @returns The server, or nothing for a language whose server no agent configures.
 	 */
-	readonly needs: (
-		languages: readonly string[],
-	) => readonly { readonly language: string; readonly server: string }[];
+	readonly server: (language: string) => string | undefined;
 	/**
 	 * Start the setup in the conversation of the repository's checkout.
 	 * @param repo The repository, as the code check names it.

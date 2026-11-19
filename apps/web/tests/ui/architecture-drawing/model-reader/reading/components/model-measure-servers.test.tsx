@@ -78,12 +78,12 @@ const REMEMBERED: RememberedFindings = {
 };
 
 /**
- * Each language's server, as a setup brief would name it.
- * @param languages The languages.
- * @returns Each with its server.
+ * A language's server, as a setup brief would name it.
+ * @param language The language.
+ * @returns The server.
  */
-function needs(languages: readonly string[]) {
-	return languages.map((language) => ({ language, server: `\`${language}-server\`` }));
+function server(language: string): string {
+	return `\`${language}-server\``;
 }
 
 /** A table chooses nothing here. */
@@ -159,7 +159,7 @@ function line(repo: string): Promise<HTMLElement> {
 test("a language without its server names the server it needs, and Fix with Codex asks for it in that checkout", async () => {
 	const asked: (readonly [string, readonly string[]])[] = [];
 	mount({
-		needs,
+		server,
 		/**
 		 * Keep what the person asked for.
 		 * @param repo The checkout's repository.
