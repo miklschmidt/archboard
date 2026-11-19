@@ -4,7 +4,6 @@ import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
 import { AboutOutlineContext } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutOutline.tsx";
-import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelReadingCanvas } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingCanvas.tsx";
 import { ModelReadingPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingPanel.tsx";
 import { ModelComparisonNotice } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
@@ -166,16 +165,9 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	const aboutPage = useMemo(
 		() =>
 			page === "about" && (
-				<ReadingAbout
-					key={about}
-					surface={props}
-					code={code}
-					place={place}
-					outlineSlot={outlineSlot}
-					onReveal={revealSelection}
-				/>
+				<ReadingAbout key={about} surface={props} place={place} outlineSlot={outlineSlot} />
 			),
-		[page, about, props, code, place, outlineSlot, revealSelection],
+		[page, about, props, place, outlineSlot],
 	);
 	return (
 		<PeekProvider selection={soleSelected(selection.ids)}>
@@ -211,14 +203,12 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 }
 
 /**
- * What About describes, as a key: the page starts again, with its own place, for each.
+ * What About describes, as a key: the page starts again, with its own place, for each open scope.
  * @param reader The reader.
  * @returns The key.
  */
 function aboutKey(reader: Reader): string {
-	const { aboutSubject, accepted, selection } = reader;
-	const chosen = aboutSubject === "scope" ? "" : [...selection.ids].join();
-	return `${aboutSubject}:${accepted.shown.projection.opened}:${chosen}`;
+	return `about:${reader.accepted.shown.projection.opened}`;
 }
 
 /**
@@ -226,22 +216,18 @@ function aboutKey(reader: Reader): string {
  * can be done stays at the foot of the right panel beside it.
  * @param props The surface, and what the page offers.
  * @param props.surface The surface's inputs.
- * @param props.code The code findings of the reading.
  * @param props.place Where the page was scrolled to, which it comes back to.
  * @param props.outlineSlot The slot at the top of the right panel, which the outline stands in.
- * @param props.onReveal Bring a hidden selection into the reading.
  * @returns The page.
  */
 function ReadingAbout(props: {
 	readonly surface: ModelReadingSurfaceProps;
-	readonly code: ReturnType<typeof useModelCodeFindings>;
 	readonly place: AboutPlace;
 	readonly outlineSlot: HTMLElement | null;
-	readonly onReveal: () => void;
 }): JSX.Element {
-	const { surface, code } = props;
+	const { surface } = props;
 	const { reader } = surface;
-	const { accepted, selection, aboutSubject } = reader;
+	const { accepted, selection } = reader;
 	const { shown, scene } = accepted;
 	const walkthroughs = useMemo(
 		() => walkthroughsAbout(shown.model, scopeSubjects(shown.projection.opened)),
@@ -249,16 +235,6 @@ function ReadingAbout(props: {
 	);
 	const onShow = useShowSubject(reader);
 	const appearances = useSceneAppearances(scene);
-	const evidence = useMemo(
-		() => (
-			<ModelCodeDetails
-				reading={code.reading}
-				selected={selection.ids}
-				scope={shown.projection.opened}
-			/>
-		),
-		[code.reading, selection.ids, shown.projection.opened],
-	);
 	const hidesNarrow = selection.ids.size === 0;
 	const outline = useMemo(
 		() => ({ panel: props.outlineSlot, hidesNarrow }),
@@ -267,8 +243,6 @@ function ReadingAbout(props: {
 	return (
 		<AboutOutlineContext value={outline}>
 			<ModelAbout
-				subject={aboutSubject}
-				onSubject={reader.onAbout}
 				overview={surface.overview?.(shown.model) ?? null}
 				onShow={onShow}
 				appearances={appearances}
@@ -276,17 +250,12 @@ function ReadingAbout(props: {
 				tree={reader.tree}
 				place={props.place}
 				reducedMotion={surface.reducedMotion}
-				evidence={evidence}
 				vault={reader.vault}
 				paneId={surface.paneId}
-				onCodeTargetNotice={surface.onCodeTargetNotice}
 				model={shown.model}
 				scope={shown.projection.opened}
 				projection={shown.projection}
 				selection={selection}
-				onOpen={reader.onOpen}
-				onReveal={props.onReveal}
-				onRevealFlow={reader.openFlow}
 			/>
 		</AboutOutlineContext>
 	);

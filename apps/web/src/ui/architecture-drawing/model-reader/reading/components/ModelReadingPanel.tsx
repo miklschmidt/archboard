@@ -113,8 +113,8 @@ interface ReadingPanelProps {
  * The column beside the picture: what is selected, or else what is open, and what touches it, then
  * the legend, which ends the scroll under every subject, so a reader finds it in one place and a new
  * subject neither redraws it nor takes a group's tag from under the pointer. The foot under them
- * holds what can be done. While About lies over the picture, the outline of About stands in place of
- * the subject, and the page names its subject itself.
+ * holds what can be done. While About lies over the picture, the outline of About stands over them,
+ * and the panel says what is selected, since the page says what is open.
  * @param props The reader and what the panel explains.
  * @returns The panel.
  */
@@ -183,16 +183,11 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 		line,
 		look,
 	};
-	const { outlineSlot } = props;
 	const about = reader.page === "about";
+	const top = useOutlineTop(about, props.outlineSlot);
 	return (
-		<ModelPanel selecting={selecting} onClose={about ? undefined : selection.clear}>
-			<PanelScroll
-				outlineSlot={about ? outlineSlot : undefined}
-				subject={key}
-				claims={claims}
-				under={legend}
-			>
+		<ModelPanel selecting={selecting} onClose={selection.clear} top={top}>
+			<PanelScroll hidden={about && !selecting} subject={key} claims={claims} under={legend}>
 				{selecting ? (
 					<ModelPanelSubject {...subject} />
 				) : (
@@ -236,10 +231,31 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 }
 
 /**
- * What scrolls in the panel, over what stands under every subject: the subject, or while About is
- * open the slot that About puts its outline in.
- * @param props The subject, or the slot.
- * @param props.outlineSlot Hold the slot of the outline, while About is open.
+ * The slot over the panel that About puts its outline in, while About is open. A Rule parts it from
+ * what the panel says under it.
+ * @param about Whether About is open.
+ * @param slot Hold the slot.
+ * @returns The slot, or nothing while About is closed.
+ */
+function useOutlineTop(about: boolean, slot: (element: HTMLElement | null) => void): ReactNode {
+	return useMemo(
+		() =>
+			about ? (
+				<div
+					ref={slot}
+					data-slot="model-panel-outline"
+					className="border-border shrink-0 border-b px-4 pt-4 pb-3 empty:hidden"
+				/>
+			) : null,
+		[about, slot],
+	);
+}
+
+/**
+ * What scrolls in the panel, over what stands under every subject: the subject, or nothing while
+ * About says what is open.
+ * @param props The subject.
+ * @param props.hidden Whether the panel leaves the subject to About.
  * @param props.subject What names the subject.
  * @param props.claims The purposes of the claims that hold the subject.
  * @param props.under What stands under every subject.
@@ -247,19 +263,14 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
  * @returns The region that scrolls.
  */
 function PanelScroll(props: {
-	readonly outlineSlot: ((slot: HTMLElement | null) => void) | undefined;
+	readonly hidden: boolean;
 	readonly subject: string;
 	readonly claims: readonly string[];
 	readonly under: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
-	const { outlineSlot, subject } = props;
-	if (outlineSlot !== undefined)
-		return (
-			<ModelPanel.Scroll subject="about" under={props.under}>
-				<div ref={outlineSlot} data-slot="model-panel-outline" className="empty:hidden" />
-			</ModelPanel.Scroll>
-		);
+	const { subject } = props;
+	if (props.hidden) return <ModelPanel.Scroll subject="about" under={props.under} />;
 	return (
 		<ModelPanel.Scroll subject={subject} under={props.under}>
 			<ModelPanel.Subject key={subject} claims={props.claims}>

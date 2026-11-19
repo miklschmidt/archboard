@@ -1,9 +1,9 @@
 // Which section of a scrolling page is being read, from where the page is
 // scrolled to: the last section whose top has reached a line a little below
-// the top of the page's room, or the first while none has. The page's last
-// section is as tall as the page's room (`ABOUT_SHEET`), so every section can
-// reach the line and be marked. The scroll position is the browser's, so this
-// is read from the page as an outside store rather than kept as state.
+// the top of the page's room, or the first while none has. A page scrolled to
+// its end is reading its last section, which may be too short to reach the
+// line. The scroll position is the browser's, so this is read from the page as
+// an outside store rather than kept as state.
 
 import { useCallback, useSyncExternalStore } from "react";
 
@@ -42,19 +42,38 @@ function useSectionSpy(page: HTMLElement | null, sections: readonly string[]): s
 }
 
 /**
- * The last section whose top has reached the read line, or the first.
+ * The last section whose top has reached the read line, or the first. At the end of the page, the
+ * last section.
  * @param page The page that scrolls.
  * @param sections Each section's key, in order.
  * @returns The key, or null when there are no sections.
  */
 function sectionAt(page: HTMLElement, sections: readonly string[]): string | null {
+	if (atEnd(page)) return sections.at(-1) ?? null;
 	const line = page.getBoundingClientRect().top + READ_LINE;
-	let found = sections[0] ?? null;
-	for (const key of sections) {
-		const section = page.querySelector(`[data-about-section="${key}"]`);
-		if (section !== null && section.getBoundingClientRect().top <= line) found = key;
-	}
-	return found;
+	return sections.findLast((key) => reaches(page, key, line)) ?? sections[0] ?? null;
+}
+
+/**
+ * Whether a section's top has reached a line.
+ * @param page The page that holds it.
+ * @param key The section.
+ * @param line The line, in the page's coordinates.
+ * @returns Whether it has.
+ */
+function reaches(page: HTMLElement, key: string, line: number): boolean {
+	const section = page.querySelector(`[data-about-section="${key}"]`);
+	return section !== null && section.getBoundingClientRect().top <= line;
+}
+
+/**
+ * Whether a page that scrolls is scrolled to its end.
+ * @param page The page.
+ * @returns Whether it is.
+ */
+function atEnd(page: HTMLElement): boolean {
+	const { scrollTop, scrollHeight, clientHeight } = page;
+	return scrollHeight > clientHeight && scrollTop + clientHeight >= scrollHeight - 1;
 }
 
 export { useSectionSpy };

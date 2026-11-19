@@ -1,13 +1,11 @@
-// The anatomy of About, for the open scope and for a selection alike: the name in the display
-// face, a line of facts, what the subject is responsible for in reading size, then the sections.
-// The outline of the sections stands at the top of the right panel. The end of the title holds
-// what the page is about.
+// The anatomy of About: the name of the open scope in the display face, a line of facts, what it is
+// responsible for in reading size, then the sections. The outline of the sections stands at the top
+// of the right panel, or in a bar over the page where the panel hides.
 
 import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useContext, useMemo, useState, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { Model } from "@archboard/model/content";
-import { ModelSwitch } from "#ui/architecture-drawing/model-reader/reading/components/ModelSwitch.tsx";
 import { ModelStateFact } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
 import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
@@ -61,8 +59,6 @@ interface ModelAboutFrameProps {
 	readonly look: KindLook;
 	/** The reading's state on the timeline, or undefined for a reading with none. */
 	readonly state: TimelineEntry | undefined;
-	/** What the page is about, and what can be done with the subject itself. */
-	readonly tools: ReactNode;
 	/** How the subject stands: its warnings, and how it differs from what it is read against. */
 	readonly children?: ReactNode;
 	readonly sections: readonly AboutPageSection[];
@@ -171,10 +167,10 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 					<AboutOutline sections={sections} current={current} onGo={goTo} place="panel" />,
 					outline.panel,
 				)}
+			{outlined && outline.hidesNarrow && (
+				<AboutOutline sections={sections} current={current} onGo={goTo} place="bar" />
+			)}
 			<div className={ABOUT_COLUMNS}>
-				{outlined && outline.hidesNarrow && (
-					<AboutOutline sections={sections} current={current} onGo={goTo} place="bar" />
-				)}
 				<AboutTitle {...props} />
 				<div className={ABOUT_SHEET}>
 					{sections.map((entry) => (
@@ -189,8 +185,7 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 }
 
 /**
- * What the subject is: its name, the page's tools at the end of that line, its facts, what it is
- * responsible for, and how it stands.
+ * What the subject is: its name, its facts, what it is responsible for, and how it stands.
  * @param props The subject.
  * @returns The title.
  */
@@ -198,10 +193,7 @@ function AboutTitle(props: ModelAboutFrameProps): JSX.Element {
 	const { head } = props;
 	return (
 		<header data-slot="model-about-title" className={ABOUT_TITLE}>
-			<div className="flex min-w-0 items-start justify-between gap-6">
-				<h2 className="title-figure min-w-0 [overflow-wrap:anywhere] uppercase">{head.name}</h2>
-				<div className="flex shrink-0 items-center gap-2 pt-2">{props.tools}</div>
-			</div>
+			<h2 className="title-figure min-w-0 [overflow-wrap:anywhere] uppercase">{head.name}</h2>
 			<AboutFacts {...head} look={props.look} state={props.state} />
 			{Boolean(head.lead) && (
 				<p className="text-reading text-foreground/90 max-w-[68ch] text-pretty">{head.lead}</p>
@@ -213,42 +205,6 @@ function AboutTitle(props: ModelAboutFrameProps): JSX.Element {
 			)}
 			{props.children}
 		</header>
-	);
-}
-
-/** The two subjects of the page. */
-const SUBJECTS = [
-	{ value: "scope", label: "Open scope" },
-	{ value: "selection", label: "Selected subject" },
-] as const;
-
-/**
- * Which subject the page describes, with the way to the other one while there is one.
- * @param props The subject and the way to change it.
- * @param props.subject The subject of the page.
- * @param props.onSubject Describe the other one.
- * @param props.selecting Whether anything is selected.
- * @returns The switch, or the name of the one subject.
- */
-function AboutSubject(props: {
-	readonly subject: Reader["aboutSubject"];
-	readonly onSubject: Reader["onAbout"];
-	readonly selecting: boolean;
-}): JSX.Element {
-	if (!props.selecting)
-		return (
-			<p data-slot="model-about-subject" className="text-control text-muted-foreground">
-				{SUBJECTS[0].label}
-			</p>
-		);
-	return (
-		<ModelSwitch
-			label="About describes"
-			slot="model-about-subject"
-			choices={SUBJECTS}
-			value={props.subject}
-			onChange={props.onSubject}
-		/>
 	);
 }
 
@@ -299,7 +255,6 @@ function AboutFacts(
 }
 
 export {
-	AboutSubject,
 	aboutSection,
 	moduleHead,
 	ModelAboutFrame,

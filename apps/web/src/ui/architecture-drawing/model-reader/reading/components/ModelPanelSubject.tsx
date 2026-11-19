@@ -11,6 +11,7 @@ import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
 import { ModelFlowDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowDetails.tsx";
 import { ModelHiddenSelection } from "#ui/architecture-drawing/model-reader/reading/components/ModelHiddenSelection.tsx";
+import { ModelHistory } from "#ui/architecture-drawing/model-reader/reading/components/ModelHistory.tsx";
 import { ModelInterfaceLine } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceLine.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import {
@@ -20,6 +21,10 @@ import {
 	type ModelSelectionDetailsProps,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
+import {
+	ModuleDefinition,
+	ModuleEvidence,
+} from "#ui/architecture-drawing/model-reader/reading/components/ModuleDetails.tsx";
 import {
 	ModuleOpenCode,
 	ModuleOpenReferences,
@@ -232,7 +237,8 @@ function OtherSubject(
 }
 
 /**
- * What the panel says of one module: what it is, how it stands, its lines, and what touches it.
+ * What the panel says of one module: what it is, how it stands, its lines, what touches it, and where
+ * its explanation comes from.
  * @param props The module and its reading.
  * @returns The body.
  */
@@ -263,7 +269,33 @@ function ModuleSubject(
 			/>
 			<ModuleLines {...props} model={source} id={module.id} />
 			{props.context}
+			<ModelPanel.Section title="Code and evidence" slot="module-evidence" list={false}>
+				<div className="flex flex-col gap-3">
+					<ModuleEvidence module={module} model={source} />
+					<ModuleDefinition module={module} />
+				</div>
+			</ModelPanel.Section>
+			<ModuleHistory
+				vault={props.vault}
+				model={source}
+				module={module}
+				onSelect={selection.select}
+			/>
 		</ModelPanel.Body>
+	);
+}
+
+/**
+ * The history of a module's code, for a module that is bound to code.
+ * @param props The module, the model that defines it, and the way to select a part of its history.
+ * @returns The section, or nothing for a module with no code.
+ */
+function ModuleHistory(props: ComponentProps<typeof ModelHistory>): JSX.Element | null {
+	if (props.module.binding === undefined) return null;
+	return (
+		<ModelPanel.Section title="Code history" slot="module-history" list={false}>
+			<ModelHistory {...props} />
+		</ModelPanel.Section>
 	);
 }
 

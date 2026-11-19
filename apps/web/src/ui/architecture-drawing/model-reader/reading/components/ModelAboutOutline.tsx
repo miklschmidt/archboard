@@ -66,12 +66,12 @@ function scrollToSection(page: HTMLElement, key: string, reducedMotion: boolean)
 const OUTLINE_LOOK = {
 	// A column of rows whose words stand on the panel's 16px edges, as its other rows' do.
 	panel: { nav: "-mx-2", list: "flex flex-col" },
-	// A bar that stays over the sections. A bar too narrow for every entry scrolls sideways rather
-	// than grow taller, so a jump still lands clear of it. It shows only in a reading too narrow for
-	// the panel.
+	// The first row of the page, which stays at its top while the page scrolls, with its entries'
+	// words on the column's edge. A bar too narrow for every entry scrolls sideways rather than grow
+	// taller, so a jump still lands clear of it. It shows only in a reading too narrow for the panel.
 	bar: {
-		nav: "bg-background border-border sticky top-0 z-10 -mx-6 mb-8 border-b @min-[900px]/reading:hidden",
-		list: "flex gap-1 overflow-x-auto px-5 py-1.5",
+		nav: "bg-background border-border sticky top-0 z-10 border-b @min-[900px]/reading:hidden",
+		list: "mx-auto flex max-w-[1096px] gap-1 overflow-x-auto px-4 py-1.5",
 	},
 } as const;
 
@@ -156,8 +156,7 @@ function OutlineEntry<Key extends string>(props: {
 
 /**
  * One section: its heading, which a jump from the outline gives focus to, and
- * what it lists. The last section is as tall as the page's room, so a jump
- * brings any section to the top.
+ * what it lists.
  * @param props The section and what it lists.
  * @param props.section The section.
  * @param props.children What it lists.
@@ -172,7 +171,7 @@ function AboutSectionFrame(props: {
 		<section
 			aria-labelledby={heading}
 			data-about-section={props.section.key}
-			className="flex min-w-0 scroll-mt-16 flex-col gap-4 last:min-h-[calc(100cqh-6rem)] @min-[900px]/reading:scroll-mt-8"
+			className="flex min-w-0 scroll-mt-16 flex-col gap-4 @min-[900px]/reading:scroll-mt-8"
 		>
 			<h3 id={heading} tabIndex={-1} className="text-section outline-none">
 				{props.section.label}

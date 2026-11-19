@@ -1,7 +1,8 @@
 // The right panel of a reading: a column that stands beside the picture and beside About, so a
-// selection never moves the picture. It says what is selected, or what is open while nothing is, or
-// on About the outline of the page, and ends with the legend, over a foot that holds what can be
-// done. Long lists and evidence live on About. Its sections and rows speak as the left column's do.
+// selection never moves the picture. It says what is selected, or what is open while nothing is,
+// and ends with the legend, over a foot that holds what can be done. On About the outline of the
+// page stands over it. The long lists of the open scope live on About. Its sections and rows speak
+// as the left column's do.
 
 import { RiCloseLine } from "@remixicon/react";
 import {
@@ -70,8 +71,10 @@ const ROW = "-mx-2 flex min-w-0 flex-1 gap-x-2 px-2 py-1.25 text-left transition
 interface ModelPanelProps {
 	/** Whether a selection stands. The panel then stays in a reading too narrow for it otherwise. */
 	readonly selecting: boolean;
-	/** Let go of the selection, where the panel names it. The panel offers it while a selection stands. */
-	readonly onClose: (() => void) | undefined;
+	/** Let go of the selection, which the panel offers while a selection stands. */
+	readonly onClose: () => void;
+	/** What stands over everything else and never scrolls, such as the outline of About. */
+	readonly top?: ReactNode;
 	/** Its `ModelPanel.Scroll`, then any `ModelPanel.Foot`. */
 	readonly children: ReactNode;
 }
@@ -124,19 +127,22 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 				!selecting && "@max-[900px]/reading:hidden",
 			)}
 		>
-			{selecting && onClose !== undefined && (
-				// Its ink, not its box, ends on the 16px edge that the panel's rows and cells end on, and
-				// it centres on the first line of the name.
-				<IconButton
-					label="Clear selection"
-					slot="semantic-selection-clear"
-					className="absolute top-3.25 right-1.5 z-10"
-					onClick={onClose}
-				>
-					<RiCloseLine />
-				</IconButton>
-			)}
-			{props.children}
+			{props.top}
+			<div className="relative flex min-h-0 flex-1 flex-col">
+				{selecting && (
+					// Its ink, not its box, ends on the 16px edge that the panel's rows and cells end on,
+					// and it centres on the first line of the name.
+					<IconButton
+						label="Clear selection"
+						slot="semantic-selection-clear"
+						className="absolute top-3.25 right-1.5 z-10"
+						onClick={onClose}
+					>
+						<RiCloseLine />
+					</IconButton>
+				)}
+				{props.children}
+			</div>
 		</aside>
 	);
 }
@@ -159,7 +165,7 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 function Scroll(props: {
 	readonly subject: string;
 	readonly under: ReactNode;
-	readonly children: ReactNode;
+	readonly children?: ReactNode;
 }): JSX.Element {
 	const box = useRef<HTMLDivElement>(null);
 	const under = useRef<HTMLDivElement>(null);
@@ -276,12 +282,13 @@ function Head(props: {
 }
 
 /**
- * One list of the panel, under its count.
+ * One list of the panel, under its count, or a section of facts that is no list.
  * @param props The list.
  * @param props.title What it lists.
  * @param props.count How many it lists.
  * @param props.slot Where a test finds it.
  * @param props.action What acts on the list, at the end of its heading.
+ * @param props.list Whether it holds rows, which is the default, or other content.
  * @param props.children Its rows.
  * @returns The section.
  */
@@ -290,6 +297,7 @@ function Section(props: {
 	readonly count?: number | undefined;
 	readonly slot: string;
 	readonly action?: ReactNode;
+	readonly list?: boolean;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
@@ -300,7 +308,11 @@ function Section(props: {
 				</h4>
 				{props.action}
 			</div>
-			<ul className="flex flex-col">{props.children}</ul>
+			{props.list === false ? (
+				<div className="pt-1">{props.children}</div>
+			) : (
+				<ul className="flex flex-col">{props.children}</ul>
+			)}
 		</section>
 	);
 }
