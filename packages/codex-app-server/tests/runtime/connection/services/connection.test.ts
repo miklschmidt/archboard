@@ -3,8 +3,8 @@ import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { openCodexConnection, openCodexSession } from "#runtime/connection/connection.ts";
-import type { CodexConnection } from "#runtime/connection/connection.ts";
+import { openCodexConnection, openCodexSession } from "#runtime/connection/services/connection.ts";
+import type { CodexConnection } from "#runtime/connection/services/connection.ts";
 import { FakeChild, flushStreams } from "#tests/runtime/support/transport-fake-child.ts";
 
 /**

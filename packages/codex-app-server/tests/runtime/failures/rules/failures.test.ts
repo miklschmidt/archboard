@@ -4,7 +4,7 @@ import {
 	createCodexFailure,
 	readCodexFailure,
 	type CodexFailureSpec,
-} from "#runtime/failures/failures.ts";
+} from "#runtime/failures/rules/failures.ts";
 import { CodexProcessError } from "#runtime/processes/process-contract.ts";
 import { CodexExecutableError } from "#runtime/services/executable.ts";
 import { CodexSessionMutationError } from "#runtime/session/services/session-api.ts";

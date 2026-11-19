@@ -6,7 +6,7 @@ title: >-
 status: In Progress
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T22:46:00Z'
+updated_date: '2026-11-19T22:59:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -38,7 +38,7 @@ Candidate 8 of the archboard-deepen run. packages/codex-app-server is wide (25 n
 - [ ] #3 readCodexFailure(error) reads only the supplied value and walks no cause (startup keeps its own walk); createCodexFailure(spec) builds the mutation, process, refused-write and remote kinds with the message in the spec; a round-trip test holds; the seven exported classes are gone and their name and message strings are unchanged
 - [ ] #4 Workbench keeps its own duck-typed outcome fallback, defaulting to not_delivered, and voice defaults to outcome_unknown
 - [ ] #5 decodeFrameBody returns a result and runs after the router's capacity check, encodeFrame returns a result with its refusal reason, the router keeps its state and every issue text, and one transport test sends a frame that breaks several rules and asserts which wins
-- [ ] #6 The packed voice declarations are unchanged (the normalized pack diff is empty after each commit), there is no npm release, and replaceIdentity stays on the CodexTransport type while its dead call and ?? fallbacks go
+- [ ] #6 The packed codex-realtime-voice declaration diff is recorded per entry as removed, added and changed public names for the release notes (owner decision 22), not required empty; replaceIdentity is removed from CodexTransport with its dead call and the ?? fallbacks; there is no npm release in this ticket
 - [ ] #7 A short ADR records that failures are read, not class-tested, that the reader walks no causes and that the process stays apart from the connection; CONTEXT.md defines Codex connection
 <!-- AC:END -->
 
