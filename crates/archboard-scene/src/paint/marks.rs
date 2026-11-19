@@ -11,7 +11,7 @@ use crate::paint::standing::{PIN_INSET, standing_pin_at, warning_glyph};
 use crate::paint::styles::{HEAD_LENGTH, WEIGHTS, drawn_ink, quietened, stroke_width};
 use crate::paint::traffic::pulse_look;
 use crate::request::{PaletteColor, Standing};
-use crate::scene::traffic::pulse_breadth;
+use crate::scene::pulse_breadth;
 use crate::scene::{Colour, Item};
 
 /// Every colour a relationship kind can be drawn in: none, for the neutral line, then the palette's.

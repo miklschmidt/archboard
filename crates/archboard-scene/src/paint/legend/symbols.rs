@@ -13,7 +13,7 @@ use crate::paint::standing::standing_pin_at;
 use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, dash_array, drawn_ink, head_of, stroke_width};
 use crate::paint::traffic::pulse_look;
 use crate::request::{Arrowhead, Dash};
-use crate::scene::traffic::pulse_breadth;
+use crate::scene::pulse_breadth;
 use crate::scene::{
     Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
     Purpose, Role, Shape, Stop, Stroke, Transform, Viewport,

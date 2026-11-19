@@ -13,7 +13,7 @@ use crate::paint::junctions::mark_radius;
 use crate::paint::shared_ink::shared_ink;
 use crate::paint::slab::boxed;
 use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, stroke_width};
-use crate::scene::traffic::pulse_breadth;
+use crate::scene::pulse_breadth;
 use crate::scene::{Cap, Colour, Definition, Mask, MaskId, Purpose, Shape, Stroke};
 use crate::sizes::{PILL_RADIUS, RAILS};
 
