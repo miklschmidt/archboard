@@ -4,6 +4,7 @@ title: One language-server setup brief, used by archboard init
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T00:24:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -53,3 +54,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 `archboard init` builds its language-server handoff from the brief, and the handoff text stays the same
 - [ ] #3 The workspace package exposes the brief as an entry point
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on workspace, Commands and code-binding (and their holders Packages and Agent CLI). workspace: the package export and the private rules file behind the bound brief api file. Commands: the init handoff files sit beside init.ts, which Init alone binds. code-binding: one type-only export removed to keep workspace under its interface-width ceiling, derived from chosenCheckouts instead. None changes architecture beyond the planned brief and Init relationship, so the exception is recorded in the proposal history (operation task-646-03-exceptions).
+<!-- SECTION:NOTES:END -->
