@@ -6,9 +6,11 @@
 //! positioned list of what the picture is made of, as typed values. Each
 //! frontend paints the scene; the SVG painter is the `archboard-svg` crate.
 //!
-//! Words are shaped and broken by the core's own text ([`width`], [`measure_label`], over the
+//! Words are shaped and broken by the core's own text ([`measure_label`], over the
 //! `archboard-text` crate), and a run of words carries its glyphs, so every
-//! painter draws the same glyphs at the same places.
+//! painter draws the same glyphs at the same places. A flow layout learns each
+//! part's size from Flow part measures ([`sequence_cards`] and its siblings), never
+//! from the painter's sizes, which stay the crate's own (ADR 0088).
 
 pub mod drawing;
 mod ecma;
@@ -29,6 +31,4 @@ pub use flow_parts::{
     activation_span, flow_tab, fragment_bounds, fragment_head, message_ends, message_plate,
     note_plate, self_loop, sequence_cards, shape_words,
 };
-pub use measure::{
-    CardWords, measure_flow_frame, measure_label, measure_node, narrow_label, width,
-};
+pub use measure::{CardWords, measure_flow_frame, measure_label, measure_node, narrow_label};

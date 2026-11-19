@@ -2,13 +2,12 @@
 //! painter draws it from, so the layout and the painter agree without sharing a
 //! size. Each test states the agreement its measure exists for.
 
-use archboard_scene::drawing::{DiagramFont, FontFamily};
 use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
     CardWords, ColumnLimits, HeadCard, Span, activation_span, flow_tab, fragment_bounds,
     fragment_head, measure_flow_frame, message_ends, message_plate, note_plate, self_loop,
-    sequence_cards, shape_words, width,
+    sequence_cards, shape_words,
 };
 
 /// A sequence card's words.
@@ -182,13 +181,10 @@ fn a_note_wraps_whole_on_a_plate_that_holds_its_lines() {
     assert!(plate.lines.len() > 1 && (plate.height - height).abs() < 1e-9);
 }
 
-/// How wide words on a fragment's head or guard row are set: the label face at 9.
+/// How wide words on a fragment's head or guard row are set: in the label
+/// face at 9, as a message's plate sets them.
 fn row_words(words: &str) -> f64 {
-    let face = DiagramFont {
-        family: FontFamily::Sans,
-        weight: 500,
-    };
-    width(words, face, 9.0)
+    message_plate(words, f64::INFINITY).lines[0].width
 }
 
 #[test]

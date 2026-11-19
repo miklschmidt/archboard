@@ -38,7 +38,7 @@ pub(crate) fn face(font: DiagramFont) -> Face {
 }
 
 /// How wide one line of words is set, to a hundredth of a unit.
-pub fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
+pub(crate) fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
     js::round(set_width(text, font, size) * 100.0) / 100.0
 }
 
