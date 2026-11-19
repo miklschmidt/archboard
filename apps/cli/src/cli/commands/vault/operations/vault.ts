@@ -271,16 +271,19 @@ const CheckNamespaceInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 
+/** The draft both the semantics check and the code check read. */
+const stateParameter = {
+	kind: "option",
+	key: "state",
+	spellings: ["--state"],
+	value: "required",
+	placeholder: "draft",
+	description: "Read the canonical state identified by this ID or unique name",
+} as const;
+
 /** The options of the code check, which `check`, `check all` and `check code` read. */
 const codeCheckParameters = [
-	{
-		kind: "option",
-		key: "state",
-		spellings: ["--state"],
-		value: "required",
-		placeholder: "draft",
-		description: "Read the canonical state identified by this ID or unique name",
-	},
+	stateParameter,
 	{
 		kind: "option",
 		key: "everyDraft",
@@ -467,9 +470,9 @@ const checkSemanticsContract = defineCommand({
 	shared: ["url", "directory"],
 	summary: "Check the canonical model, active proposals, and vocabulary",
 	description: CHECK_SEMANTICS_HELP,
-	examples: ["archboard check semantics"],
-	parameters: [],
-	input: { ingress: z.object({}) },
+	examples: ["archboard check semantics", "archboard check semantics --state TASK-123"],
+	parameters: [stateParameter],
+	input: { ingress: CodeCheckInputSchema.pick({ state: true }) },
 	result: CheckAnswerSchema,
 	...checkResult(
 		"One part, `semantics`: the vault policy, its `diagnostics` and the `timings`",
@@ -481,12 +484,12 @@ const checkSemanticsContract = defineCommand({
 	relationships: [semanticsRoute],
 	/**
 	 * Run the semantics check.
-	 * @param _input Nothing: the semantics check takes no option.
+	 * @param input The draft it reads, when `--state` names one.
 	 * @param context Runtime prerequisites.
 	 * @returns The semantics part, and a failure exit when issues remain.
 	 */
-	async handler(_input, context) {
-		return runChecks(["semantics"], {}, context);
+	async handler(input, context) {
+		return runChecks(["semantics"], input, context);
 	},
 });
 
