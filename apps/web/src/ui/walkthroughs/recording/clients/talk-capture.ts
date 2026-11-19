@@ -12,7 +12,8 @@
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { durationMs, recordingMs } from "@archboard/timing";
+import { durationMs, waitUntil } from "@archboard/timing";
+import { PAGE_CLOCK } from "#ui/walkthroughs/replay/clients/page-clock.ts";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { talkClock, talkMsSamples } from "@archboard/walkthrough/talk";
 
@@ -126,16 +127,6 @@ function wavOf(samples: Int16Array): Blob {
 		body.setInt16(index * 2, samples[index] ?? 0, true);
 	}
 	return new Blob([header.buffer, body.buffer], { type: "audio/wav" });
-}
-
-/**
- * One turn of the browser's event loop.
- * @returns Once it has turned.
- */
-async function turn(): Promise<void> {
-	await new Promise<void>((resolve) => {
-		setTimeout(resolve, 0);
-	});
 }
 
 /** A talk being kept, from the voice's first word to the end of its last step. */
@@ -319,13 +310,14 @@ class TalkCapture {
 	 * @returns Once it has, or once waiting longer would not help.
 	 */
 	async #drained(until: number): Promise<void> {
-		const deadline = performance.now() + recordingMs("tapDrain");
-		while (performance.now() < deadline) {
-			const last = this.#blocks.at(-1);
-			if (last !== undefined && last.frame + last.pcm.length >= until) return;
-			// oxlint-disable-next-line no-await-in-loop -- the tap's messages arrive between turns
-			await turn();
-		}
+		await waitUntil(
+			"recording.tapDrain",
+			() => {
+				const last = this.#blocks.at(-1);
+				return last !== undefined && last.frame + last.pcm.length >= until ? true : undefined;
+			},
+			{ clock: PAGE_CLOCK },
+		);
 	}
 
 	/**
