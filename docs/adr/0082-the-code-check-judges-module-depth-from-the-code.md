@@ -4,11 +4,13 @@ status: accepted
 
 # The code check judges module depth from the code
 
-The owner decided this on 2026-11-18 (TASK-646). It supersedes the parts of
+The owner decided this on 2026-11-18 (TASK-646). It supersedes the claim of
 [ADR 0044](0044-a-containers-interface-is-what-relationships-from-outside-reach.md)
-that give the interface no verdict, and the part of
+that depth has no measure: a board holds no behaviour, but the code does. The
+interface measures of a board still give no verdict. It also supersedes the
+rule of
 [ADR 0046](0046-boards-carry-anchors-and-the-code-check-reads-them-on-request.md)
-that lets only a contradiction of the board be a warning.
+that only a contradiction of the board makes a warning.
 
 ## Context
 
@@ -55,13 +57,14 @@ so agents in an implementation loop added exported constants and nothing failed.
   getter, `EXPOSED_VALUE_COMPUTED` is a warning on that export, in place of
   `EXPOSED_VALUE`, with every line that writes the math as evidence. Two
   pieces of math are the same when their shapes are: the callers' own names
-  count for nothing, the operands of `+`, `*`, `Math.min` and `Math.max` are
-  sorted, and one local variable that holds the export is followed. Equality,
-  comparison, bitwise and logical operators are no math, so comparisons do not
-  flood the findings. Two pieces of math that only share a shape, such as a
+  count for nothing, the operands of `+`, `*`, `Math.min`, `Math.max` and
+  `Math.hypot` are sorted, and one local variable that holds the export is
+  followed. Equality, comparison, bitwise and logical operators are no math,
+  so comparisons do not flood the findings. Two pieces of math that only share a shape, such as a
   deadline and a jitter, match too; one function on the exporter clears both.
 - **An unused export is a warning only after a complete read**: every file
-  outside the module in its language parsed, every relative import resolved,
+  outside the module in its language parsed where it names the module's names,
+  every relative import resolved,
   no import of the whole module, and no caller drawn in the model whose code
   the check does not read. Otherwise it is information. Drawing the consumer
   of a published entry is how a package says that callers outside the checkout
@@ -91,7 +94,7 @@ so agents in an implementation loop added exported constants and nothing failed.
   information in the answer. The server remembers every finished pass for the
   panes, so a flag that changed the answer would make Measures show whatever the
   last caller asked for.
-- **The CLI owns the gate.** `archboard check --fail-shallow-modules`, or a model
+- **The CLI owns the gate.** `archboard check --fail-shallow-modules`, or a vault
   policy that sets `codeCheck.failShallowModules`, makes `MODULE_SHALLOW` a
   warning on the modules that the branch touched, so the existing exit rule
   fails. The branch is read from its base up to the working tree, uncommitted
@@ -99,15 +102,19 @@ so agents in an implementation loop added exported constants and nothing failed.
   lookup decides without it. A base that does not resolve is a refusal, never a
   pass, and so is a gated module whose range the check could not read.
 - **A rule judges a language only where its adapter names the kind of each
-  export.** TypeScript first, then the other languages. Terraform keeps its own
+  export.** TypeScript, Python, Go, C#, Rust, Swift, C, C++ and Objective-C
+  have such adapters. Terraform, Nix flakes and Helm charts get counts and no
+  verdict. Terraform keeps its own
   `VARIABLE_PASSED_THROUGH` and `MODULE_SHALLOW`.
 
 ## Considered and rejected
 
 - A depth score, or a ratio of logic to interface. A small narrow module is a
   good module, and a ratio rewards padding the implementation.
-- Judging every module on every run. Old debt would block every change, so the
-  gate judges only the modules that the branch touched.
+- Failing on every shallow module on every run. Old debt would block every
+  change, so the gate fails only on the modules that the branch touched. The
+  per-name warnings still fail the check on every module, as every warning
+  does.
 - A flag that changes the answer. The panes read the remembered answer, and two
   callers would see two answers to one pass.
 - Exempting constants that a language forces, such as case labels. Each has a

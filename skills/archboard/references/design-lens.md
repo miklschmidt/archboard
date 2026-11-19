@@ -130,7 +130,8 @@ The counts are evidence. Never turn them into a score.
 A type is what declares nothing a caller runs: a TypeScript interface, alias or enum; a Python type alias; a Go interface or named type without methods in its file; a C# interface, enum or delegate; a C or C++ struct, union or enum with no methods, a typedef or an alias; a Swift protocol, alias or enum with no methods; an Objective-C protocol.
 A C function macro is a function, and a Swift struct is a class.
 
-`archboard check code --fail-shallow-modules` judges the modules that the branch touched since its base, uncommitted changes included.
+`archboard check code --fail-shallow-modules` makes `MODULE_SHALLOW` a warning on the modules that the branch touched since its base, uncommitted changes included.
+The per-name warnings below fail the check on every module, as every warning does.
 `--base <ref>` names the base. Without it, the default base decides.
 A vault policy with `codeCheck: { failShallowModules: true }` turns the gate on for plain `archboard check`.
 `BASE_UNRESOLVED` means the check could not read the branch. Name a base that resolves; never treat it as a pass.
@@ -165,19 +166,19 @@ Clear each finding at its seam. Never silence one.
   }
   ```
 
-  The match ignores the callers' own names and operand order, and follows one local variable. Equality, comparison and bitwise operators are no math.
+  The match ignores the callers' own names and operand order, and follows one local variable. Equality, comparison, bitwise and logical operators are no math.
   Two pieces of math that only share a shape, such as a deadline and a jitter, also match. One function on the exporter clears both.
 
 - `CODE_PASS_THROUGH` (information): a function or public method only passes its call on with its own parameters.
   Give it a decision of its own, such as a default, a check or a translation, or let callers call the code it passes to.
-  A function that calls a value its own file keeps hidden, such as `parse(input)` over a hidden schema, is the module deciding and has no finding.
+  A function that calls a value its own file defines at module level, such as `parse(input)` over a hidden schema, is the module deciding and has no finding.
 - `REEXPORT_PASS_THROUGH`: the module passes on a name that another module defines.
   Through one door it is information. It is a warning when files outside both modules also import the defining module directly: two doors to one name.
   Keep one door. Stop passing the name on, or make every caller import it through this module.
 - `EXPOSED_UNUSED`: no file outside the module uses an exported name, as code or as a type. A test is no user.
   Stop exporting it. If files of the module use it, keep it out of the module's root files.
   In a folder module that declares no interface (no file that stands for it, such as `index.ts`, and no `package.json` `exports`), a name that another of its files imports counts as used. A Go or Swift file sees its package's or target's names without an import, so there an exported name only the module uses stays a finding: stop exporting it.
-  It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import. A Rust `use crate::timing;` or `mod timing;` names each use it makes, so it leaves the read complete. A Rust use that leads into the module but reaches no name the check can find, such as a function a macro defines, leaves it incomplete.
+  It is a warning only after a complete read of the files outside the module in its language: each file parsed where it names the module's names, every relative import resolved, no whole-module import. A Rust `use crate::timing;` or `mod timing;` names each use it makes, so it leaves the read complete. A Rust use that leads into the module but reaches no name the check can find, such as a function a macro defines, leaves it incomplete.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
   Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a Python `__repr__`, a Go `String`, what a Rust `impl Drop` or `impl Display` defines, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`. A Rust item that `#[wasm_bindgen]` exports to JavaScript is never judged unused.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
@@ -187,7 +188,8 @@ Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, becau
 
 A language can force a constant. No exemption exists, so use the seam that replaces it:
 
-- A `switch` case label or an array size: export a predicate or a method that answers the question.
+- A `switch` case label: export a predicate or a method that answers the question.
+- An array size: export a type that owns the array.
 - An `as const` object with types derived from it: export the type, with `isKind` and `allKinds`.
 - An attribute argument or a decorator value: let the module ship the attribute.
 - A compile-time condition such as `#if`: move the condition into the module.

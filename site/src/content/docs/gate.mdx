@@ -62,6 +62,30 @@ There are two fixes, and the finding says both. If the call is intended, the age
 	A pipeline exits with the status of its last command, so `archboard check | tee check.log` hides a failing check. Redirect the streams instead: `archboard check > check.json 2> check.log`.
 </Aside>
 
+## Fail on a shallow module
+
+The code check also judges how deep each bound module is. An exported value that code outside the module reads is [`EXPOSED_VALUE`](../reference/findings/#exposed-value), a warning on any module. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) names a module whose every export that is not a type has a finding like it, or passes its call on. It is information, so an old shallow module never blocks your change. To fail on a shallow module that your branch touched, uncommitted changes included, add the flag:
+
+```bash
+archboard check --fail-shallow-modules --base main
+```
+
+Without `--base`, the default base decides: where `origin/HEAD` points, else `main`. A base that does not resolve exits <Exit refusal="BASE_UNRESOLVED" />, never `0`. To run the gate on every plain `archboard check`, in a hook and in CI too, turn it on in the vault's configuration:
+
+```yaml title=".archboard/vault/.archboard/config.yaml"
+codeCheck:
+  failShallowModules: true
+```
+
+A CI checkout may have no `main` branch and no `origin/HEAD`. There, give `actions/checkout` the history with `fetch-depth: 0`, and name the base in the Action's [`args`](../reference/actions/#check-args):
+
+```yaml
+- uses: miklschmidt/archboard/actions/check@{{sha}} # {{ref}}
+  with:
+    version: "{{version}}"
+    args: --base origin/main
+```
+
 ## In a Git hook
 
 A `pre-push` hook keeps a failing map off the remote. Save this as `.githooks/pre-push` and make it executable:
