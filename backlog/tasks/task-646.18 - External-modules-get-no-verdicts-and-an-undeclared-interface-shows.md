@@ -1,11 +1,11 @@
 ---
 id: TASK-646.18
 title: External modules get no verdicts, and an undeclared interface shows
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T04:22:00Z'
-updated_date: '2026-11-19T05:06:00Z'
+updated_date: '2026-11-19T05:09:00Z'
 labels:
   - ready-for-agent
 dependencies:
