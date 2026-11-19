@@ -24,7 +24,21 @@ const WORKHORSE_TOOL_NAMESPACE = NAMED.workhorse.namespace;
 const VOICE_TOOL_NAMESPACE = NAMED.voice.namespace;
 const VOICE_TOOLS_MANIFEST_JSON = NAMED.voice.text;
 
+/**
+ * Verify that a host cannot mutate a reviewed toolset after its digest is computed.
+ * @param value The aggregate or one of its entries.
+ */
+function expectDeepFrozen(value: unknown): void {
+	if (typeof value !== "object" || value === null) return;
+	expect(Object.isFrozen(value)).toBe(true);
+	for (const child of Object.values(value)) expectDeepFrozen(child);
+}
+
 describe("coordinator namespace manifests", () => {
+	test("freezes the host toolset including its nested input schemas", () => {
+		expectDeepFrozen(NAMED);
+	});
+
 	test("fills each role's reviewed template with the host's names, byte for byte", () => {
 		expect(WORKHORSE_TOOL_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(VOICE_TOOL_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
