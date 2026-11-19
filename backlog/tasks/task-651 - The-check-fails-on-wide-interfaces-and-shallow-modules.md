@@ -1,11 +1,11 @@
 ---
 id: TASK-651
 title: The check fails on wide interfaces and shallow modules
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T13:59:00Z'
-updated_date: '2026-11-19T14:18:00Z'
+updated_date: '2026-11-19T14:19:00Z'
 labels:
   - ready-for-agent
 dependencies:
