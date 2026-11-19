@@ -123,6 +123,7 @@ Source refs stay local. The command retains no source history.
 ## Module depth
 
 The code check measures each bound TypeScript module from its code. Unlike the reads above, it gives verdicts, as findings.
+It also counts the exports of a bound Terraform module, Nix flake and Helm chart by kind, and judges none of them: a variable, an output or a value is there for callers. Terraform keeps its own `VARIABLE_PASSED_THROUGH` and `MODULE_SHALLOW`.
 `depth` lists each module's exports by kind (`functions`, `classes`, `methods`, `values`, `types`) and `logic`, the calls, operators, conditions, loops and hidden values behind them.
 The counts are evidence. Never turn them into a score.
 
