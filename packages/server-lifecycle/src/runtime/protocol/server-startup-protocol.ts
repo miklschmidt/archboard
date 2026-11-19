@@ -11,7 +11,7 @@ import type {
 } from "#runtime/protocol/server-startup-terminal.ts";
 import { parseServerStartupProtocolRecord } from "#runtime/protocol/server-startup-terminal.ts";
 import type { Readable } from "node:stream";
-import { codexProcessMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { asError } from "@archboard/diagnostics/thrown-error";
 
 interface FailedServerCleanupTiming {
@@ -26,8 +26,8 @@ interface FailedServerCleanupTiming {
  */
 function failedServerCleanupTiming(): FailedServerCleanupTiming {
 	return Object.freeze({
-		shutdownDeadlineMs: codexProcessMs("composedShutdown"),
-		applicationGraceMs: codexProcessMs("termGrace"),
+		shutdownDeadlineMs: durationMs("codexProcess.composedShutdown"),
+		applicationGraceMs: durationMs("codexProcess.termGrace"),
 		pollMs: 25,
 	});
 }
