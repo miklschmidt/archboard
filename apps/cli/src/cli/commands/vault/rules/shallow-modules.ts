@@ -4,11 +4,13 @@
 // The answer's severities never depend on the caller, because the server
 // remembers every finished pass for the panes. So the CLI owns the gate:
 // `--fail-shallow-modules`, or a model policy that sets
-// `codeCheck.failShallowModules`, makes `MODULE_SHALLOW` on a module that the
-// branch touched a warning, and the existing exit rule fails on it. A gated
-// shallow module whose range the check could not read is a refusal, never a
-// pass. `failShallowModules` is the only promotion, so a vault rule that lowers
-// `MODULE_SHALLOW` beside the flag is a refusal that names both (TASK-650).
+// `codeCheck.failShallowModules`, makes an information `MODULE_SHALLOW` or
+// `INTERFACE_WIDE` on a module that the branch touched a warning, and the
+// existing exit rule fails on it. Both are warnings unless a vault rule lowers
+// them, so the gate is debt mode: old modules stay information, and touched
+// ones fail (TASK-651). A gated module whose range the check could not read is
+// a refusal, never a pass. A vault rule that turns either code off beside the
+// flag is a refusal that names both (TASK-650).
 
 import type { CodeCheckResult } from "#cli/commands/vault/protocol/code-check-result.ts";
 
@@ -32,7 +34,7 @@ const gateParameters = [
 		spellings: ["--fail-shallow-modules"],
 		value: "none",
 		description:
-			"Fail on MODULE_SHALLOW in a module that the branch touched since its base, uncommitted changes included",
+			"Fail on MODULE_SHALLOW and INTERFACE_WIDE that a vault rule set to information, in a module that the branch touched since its base, uncommitted changes included",
 	},
 	{
 		kind: "option",
@@ -70,15 +72,19 @@ function sameReading(
 	return entry.model === finding.model && entry.state === (finding.state ?? null);
 }
 
+/** The codes the gate fails on, where a vault rule set them to information. */
+const GATED_CODES: ReadonlySet<string> = new Set(["MODULE_SHALLOW", "INTERFACE_WIDE"]);
+
 /**
- * Whether the gate judges a finding: a shallow module of a model that the flag or its policy gates.
+ * Whether the gate judges a finding: an information shallow module or wide interface of a model
+ * that the flag or its policy gates.
  * @param code The code check's answer.
  * @param finding The finding.
  * @param flag Whether `--fail-shallow-modules` was given.
  * @returns True when it does.
  */
 function gated(code: CodeCheckResult, finding: CodeFinding, flag: boolean): boolean {
-	if (finding.code !== "MODULE_SHALLOW") return false;
+	if (!GATED_CODES.has(finding.code) || finding.severity !== "information") return false;
 	return (
 		flag ||
 		code.models?.some((each) => sameReading(each, finding) && each.failShallowModules === true) ===
@@ -111,23 +117,27 @@ function gatedFinding(code: CodeCheckResult, finding: CodeFinding): CodeFinding 
 }
 
 /**
- * Refuse the flag where a vault rule lowers `MODULE_SHALLOW`, which the flag fails on.
+ * Refuse the flag where a vault rule turns off a code that the flag fails on.
  * @param code The code check's answer.
  */
 function refuseRuledGate(code: CodeCheckResult): void {
-	const ruled = code.models?.find((each) => each.rules?.MODULE_SHALLOW !== undefined);
-	if (ruled === undefined) return;
-	throw Object.assign(
-		new Error(
-			`--fail-shallow-modules fails the check on MODULE_SHALLOW, and the vault policy of ${JSON.stringify(ruled.model)} sets codeCheck.rules.MODULE_SHALLOW to ${ruled.rules?.MODULE_SHALLOW ?? ""}. Leave out the flag, or remove the rule.`,
-		),
-		{ code: "SHALLOW_RULE_CONFLICT" },
-	);
+	for (const model of code.models ?? []) {
+		const off = Object.entries(model.rules ?? {}).find(
+			([rule, level]) => GATED_CODES.has(rule) && level === "off",
+		);
+		if (off === undefined) continue;
+		throw Object.assign(
+			new Error(
+				`--fail-shallow-modules fails the check on ${off[0]} in a touched module, and the vault policy of ${JSON.stringify(model.model)} sets codeCheck.rules.${off[0]} to off. Leave out the flag, or set the rule to information.`,
+			),
+			{ code: "SHALLOW_RULE_CONFLICT" },
+		);
+	}
 }
 
 /**
- * Apply the shallow-module gate: `MODULE_SHALLOW` on a module that the branch touched becomes a
- * warning, so the existing exit rule fails on it.
+ * Apply the shallow-module gate: an information `MODULE_SHALLOW` or `INTERFACE_WIDE` on a module
+ * that the branch touched becomes a warning, so the existing exit rule fails on it.
  * @param code The code check's answer.
  * @param flag Whether `--fail-shallow-modules` was given.
  * @returns The answer with the gate applied.
@@ -144,7 +154,7 @@ function gateShallowModules(code: CodeCheckResult, flag: boolean): CodeCheckResu
 	const named = unread.map((name) => JSON.stringify(name)).join(", ");
 	throw Object.assign(
 		new Error(
-			`The check could not read whether the branch touched the shallow modules ${named}: no base was found, the base does not resolve in their checkout, or it shares no history with HEAD there, as in a shallow clone. Name a base that resolves there with --base, or fetch the history the base needs.`,
+			`The check could not read whether the branch touched the gated modules ${named}: no base was found, the base does not resolve in their checkout, or it shares no history with HEAD there, as in a shallow clone. Name a base that resolves there with --base, or fetch the history the base needs.`,
 		),
 		{ code: "BASE_UNRESOLVED" },
 	);
