@@ -1,4 +1,4 @@
-// Module depth (TASK-646.04, TASK-646.05): what a bound module's code offers its callers,
+// Module depth (TASK-646.04, TASK-646.05, TASK-646.15): what a bound module's code offers its callers,
 // and the verdicts on it, as named findings and never a score.
 //
 // A deep module has a small interface that hides much logic. A shallow one
@@ -12,17 +12,24 @@
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
 //
+// An export that can be called is a function, even when a call makes it
+// (TASK-646.15). A value that holds another name, as `const Dialog =
+// Object.assign(DialogRoot, {...})` holds `DialogRoot`, is what that name is,
+// wherever that name is defined. Any other value is what its language server
+// types it as, where a server answers: the helper that `cva(...)` returns is
+// a function, and a zod schema, which cannot be called, is a value.
+//
 // It judges each exported name, each public method of an exported class
 // among them, and gives each at most one finding (name-findings.ts):
-// `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE` or
-// `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
+// `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE`,
+// `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
 // `toString`, are no export a caller names: they are neither counted nor
 // judged. A method's uses run through values, which a syntax read cannot
 // follow, so no method is judged unused, and an implementation used through
 // its interface counts as used.
 //
 // `MODULE_SHALLOW`, information, rolls them up: every export that is not a
-// type carries `EXPOSED_VALUE` or a pass-through. A class stands for its
+// type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its
 // public methods. Types are no verdict's concern, so an exported union or enum
 // keeps the compiler's exhaustive checks. The answer never makes it a
 // warning: the CLI does, for the modules a branch touched (ADR 0082).
@@ -40,6 +47,7 @@
 // and only a name at its end is an export: `packages.x86_64-linux` and
 // `image` only group the names below them.
 
+import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
@@ -129,13 +137,62 @@ function topLevel(name: ExposedName, exposed: readonly ExposedName[]): boolean {
 	return !name.definition.symbol.includes(".") && !member;
 }
 
+/** How many names an alias may lead through before the search gives up. */
+const ALIAS_DEPTH = 8;
+
 /**
- * The kind of an export.
+ * The kind of the name a value holds, wherever that name is defined: a
+ * compound component made by `Object.assign` onto a function is a function.
+ * @param reading The module.
+ * @param path The file that defines the value.
+ * @param definition The value.
+ * @param depth How many names the search has led through.
+ * @returns The kind, or undefined when the value holds no name that is a
+ * function or a class.
+ */
+async function aliasedKind(
+	reading: DepthReading,
+	path: string,
+	definition: Definition,
+	depth: number,
+): Promise<"function" | "class" | undefined> {
+	if (definition.aliases === undefined || depth >= ALIAS_DEPTH) return undefined;
+	const site = await definitionSite(reading.facts, reading.checkout, path, definition.aliases);
+	if (site === undefined) return undefined;
+	const kind = declaredKind(site.definition);
+	if (kind === "value") return aliasedKind(reading, site.path, site.definition, depth + 1);
+	return kind === "type" ? undefined : kind;
+}
+
+/**
+ * The kind of an export as its definition declares it.
  * @param definition Its definition.
  * @returns Its kind.
  */
-function kindOf(definition: Definition): ExportKind {
+function declaredKind(definition: Definition): ExportKind {
 	return definition.type === true ? "type" : definition.kind;
+}
+
+/** The kinds of the semantic token types that can be called or constructed. */
+const CALLABLE_TOKENS: ReadonlyMap<string, "function" | "class"> = new Map([
+	["function", "function"],
+	["method", "function"],
+	["class", "class"],
+]);
+
+/**
+ * The kind of an export: a value counts as what the name it holds is, else
+ * as what its language server types it as, so a value that can be called is
+ * a function.
+ * @param reading The module.
+ * @param name The export.
+ * @returns Its kind.
+ */
+async function kindOf(reading: DepthReading, name: ExposedName): Promise<ExportKind> {
+	const kind = declaredKind(name.definition);
+	if (kind !== "value") return kind;
+	const aliased = await aliasedKind(reading, name.path, name.definition, 0);
+	return aliased ?? CALLABLE_TOKENS.get((await reading.tokenType(name)) ?? "") ?? kind;
 }
 
 /** The names a module exposes that this part counts, each once, and the adapters that read them. */
@@ -216,25 +273,33 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
  * The module's exports by kind: the top-level names of its judged languages,
  * the public methods of their classes, and the names at the end of their
  * paths of its infrastructure.
+ * @param reading The module.
  * @param names The counted names.
  * @returns The counts, each judged export with its kind, in the order the module exports them,
  * and each counted export as the answer lists it.
  */
-function countExports(names: CountedNames): {
+async function countExports(
+	reading: DepthReading,
+	names: CountedNames,
+): Promise<{
 	readonly counts: ExportCounts;
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
 	readonly listed: readonly ModuleExport[];
-} {
-	const top = names.judged
-		.filter((name) => topLevel(name, names.judged))
-		.map((name) => [name, kindOf(name.definition)] as const);
+}> {
+	const top: (readonly [ExposedName, ExportKind])[] = [];
+	for (const name of names.judged.filter((each) => topLevel(each, names.judged))) {
+		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
+		top.push([name, await kindOf(reading, name)]);
+	}
 	const counted = [
 		...top,
-		...pathEnds(names.infrastructure).map((name) => [name, kindOf(name.definition)] as const),
+		...pathEnds(names.infrastructure).map((name) => [name, declaredKind(name.definition)] as const),
 	];
 	const classes = ofKind(top, "class");
+	const kinds = new Map(top);
 	const judged = names.judged.flatMap((name): (readonly [ExposedName, NameKind])[] => {
-		if (topLevel(name, names.judged)) return [[name, kindOf(name.definition)]];
+		const kind = kinds.get(name);
+		if (kind !== undefined) return [[name, kind]];
 		return methodOf(name, classes) ? [[name, "method"]] : [];
 	});
 	const listed = [...judged, ...counted.filter(([name]) => !names.judged.includes(name))].map(
@@ -342,7 +407,7 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
  */
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
-	const { counts, judged, listed } = countExports(names);
+	const { counts, judged, listed } = await countExports(reading, names);
 	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
 	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
 	const findings: DepthFinding[] = [];

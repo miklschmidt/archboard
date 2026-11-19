@@ -65,7 +65,9 @@
 // no caller of it whose code the check does not read; `REEXPORT_PASS_THROUGH`,
 // a warning for two doors to one name and information for one;
 // `EXPOSED_VALUE`; or `CODE_PASS_THROUGH`, information. The names of other
-// languages keep the one `EXPOSED_UNUSED` on the container.
+// languages keep the one `EXPOSED_UNUSED` on the container. TASK-646.06 makes
+// it `EXPOSED_VALUE_COMPUTED`, a warning, on an exported value or getter on
+// which two or more modules write the same math, with each line as evidence.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";

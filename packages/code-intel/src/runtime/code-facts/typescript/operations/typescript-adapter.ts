@@ -31,6 +31,7 @@ import {
 	staticImport,
 	takenNames,
 } from "#runtime/code-facts/typescript/operations/typescript-imports.ts";
+import { computationsOf } from "#runtime/code-facts/typescript/operations/typescript-math.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
 /** The captures of one file, by what the query calls them. */
@@ -333,6 +334,26 @@ function declaredNames(captured: Captured): Set<number> {
 }
 
 /**
+ * The uses at run time of the names a file imports, at the name each starts with.
+ * @param captured The captures.
+ * @param context The file's declared names and spans.
+ * @param imports The file's imports.
+ * @returns The names.
+ */
+function importedUses(captured: Captured, context: UseContext, imports: readonly Import[]): Node[] {
+	const imported = new Set(
+		imports.flatMap((found) => (found.reexport ? [] : found.names.map((name) => name.local))),
+	);
+	return captured.reference.filter(
+		(node) =>
+			node.type === "identifier" &&
+			imported.has(node.text) &&
+			!notAUse(node, context) &&
+			!context.types.holds(node.startIndex),
+	);
+}
+
+/**
  * The code facts of one parsed file, before its imports are resolved.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -366,6 +387,7 @@ function typeScriptFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		imports: [...imports, ...exportedImports(passed, imports)],
 		unparsed: unparsedOf(captured.unparsed),
 		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
+		computations: computationsOf(importedUses(captured, context, imports)),
 	};
 }
 

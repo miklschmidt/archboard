@@ -40,7 +40,6 @@ import {
 } from "#runtime/code-check/operations/checkouts.ts";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 import type { AnchorClaim, Claim } from "#runtime/code-check/claims/operations/claims.ts";
-import type { Resolve } from "#runtime/code-check/operations/resolution.ts";
 import { createSourceFacts, type FactsPass } from "#runtime/code-facts/services/reader.ts";
 import {
 	resolveLocalCodeTarget,
@@ -90,7 +89,8 @@ interface RefRead {
 /** The skip of a use no language server was asked about, said once for each repository and ref. */
 const NO_SERVER_DETAIL =
 	"Language servers read the files on disk, and this ref is read from Git, so a use that no " +
-	"import resolves stays as code facts read it.";
+	"import resolves, and the kind of an export that its syntax does not show, stay as code " +
+	"facts read them.";
 
 /**
  * What a ref is keyed by.
@@ -422,19 +422,26 @@ function whereIn(checkout: ReadCheckout, refs: RefCodes): string {
 }
 
 /**
- * A resolution that asks no language server about a tree of a ref, and notes
- * the repository and ref it was not asked about.
- * @param resolve The pass's resolution of the files on disk.
+ * A question to the language servers that is asked of no tree of a ref, since
+ * a server reads the files on disk, and that notes the repository and ref it
+ * was not asked of.
+ * @param ask The question about the files on disk.
+ * @param none The answer where it is not asked.
  * @param refs The refs read from Git.
- * @param asked The refs a use was not resolved in, which this adds to.
- * @returns The resolution.
+ * @param asked The refs a question was not asked of, which this adds to.
+ * @returns The question.
  */
-function resolveOnDisk(resolve: Resolve, refs: RefCodes, asked: Set<RefCode>): Resolve {
-	return (checkout, file, use) => {
+function onDisk<Rest extends unknown[], Answer>(
+	ask: (checkout: ReadCheckout, ...rest: Rest) => Promise<Answer>,
+	none: Answer,
+	refs: RefCodes,
+	asked: Set<RefCode>,
+): (checkout: ReadCheckout, ...rest: Rest) => Promise<Answer> {
+	return (checkout, ...rest) => {
 		const code = refAt(refs, checkout);
-		if (code === undefined) return resolve(checkout, file, use);
+		if (code === undefined) return ask(checkout, ...rest);
 		asked.add(code);
-		return Promise.resolve({ status: "unknown" });
+		return Promise.resolve(none);
 	};
 }
 
@@ -463,7 +470,7 @@ export {
 	readRefCodes,
 	readsSameCode,
 	refReadsOf,
-	resolveOnDisk,
+	onDisk,
 	routedFacts,
 	targetIn,
 	whereIn,

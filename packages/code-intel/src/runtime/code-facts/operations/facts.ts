@@ -61,6 +61,14 @@ interface Definition {
 	 */
 	readonly passes?: string;
 	/**
+	 * It holds the value of another name, as the file spells it: `DialogRoot`
+	 * for `const Dialog = Object.assign(DialogRoot, { Title })`, which is
+	 * `DialogRoot` with more members on it, or `Store` for `const Made =
+	 * Store`. It is what that name is, wherever that name is defined.
+	 * TypeScript names it; module depth follows it (TASK-646.15).
+	 */
+	readonly aliases?: string;
+	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a
 	 * compose service, or, where that context is the compose file's own
@@ -154,6 +162,31 @@ interface Import {
 	readonly reexport: boolean;
 }
 
+/**
+ * Math a file writes on a name another file defines (TASK-646.06): the
+ * largest arithmetic expression around one use of the name at run time.
+ * TypeScript names it; module depth compares it across the modules that read
+ * one export.
+ */
+interface Computation {
+	/**
+	 * The chain of names the math reads, as the code spells it through `.`
+	 * from an imported name: `PROCESS_MS.restartBase`. Through a local
+	 * variable that holds the use, the chain the variable's value spells.
+	 */
+	readonly symbol: string;
+	/** The line that writes the math. */
+	readonly line: number;
+	/**
+	 * The math, with `@` for `symbol`, followed by what the code adds to it,
+	 * such as the `()` of a getter's call or a member a local variable takes:
+	 * `@ * 2 ** …`. A number is its value and every other operand, the
+	 * caller's own names among them, is `…`. The operands of `+`, `*`,
+	 * `Math.min` and `Math.max` are sorted.
+	 */
+	readonly shape: string;
+}
+
 /** A part of the file that did not parse: its lines, and the names written there. */
 interface Unparsed {
 	readonly start: number;
@@ -203,7 +236,8 @@ interface ParsedFacts {
 	 * The pieces of logic the file holds, where its adapter counts them: calls,
 	 * operators, conditions and loops (TASK-646.04).
 	 */
-	readonly logic?: number;
+	readonly logic?: number /** The math the file writes on the names it imports, where its adapter reads it (TASK-646.06). */;
+	readonly computations?: readonly Computation[];
 }
 
 /**
@@ -306,7 +340,8 @@ interface SyntaxFacts {
 	readonly testImports?: readonly ResolvedImport[];
 	readonly unparsed: readonly Unparsed[];
 	/** The pieces of logic the file holds, where its adapter counts them (`ParsedFacts.logic`). */
-	readonly logic?: number;
+	readonly logic?: number /** The math the file writes on the names it imports (`ParsedFacts.computations`). */;
+	readonly computations?: readonly Computation[];
 }
 
 /** A file no adapter reads: its text, which the text reading tests (ADR 0046). */
@@ -320,6 +355,7 @@ type FileFacts = SyntaxFacts | TextFacts;
 
 export type {
 	AdapterName,
+	Computation,
 	Definition,
 	FileFacts,
 	Import,

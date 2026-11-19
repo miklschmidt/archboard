@@ -37,12 +37,29 @@ so agents in an implementation loop added exported constants and nothing failed.
   function that returns the value, a getter, is an interface and clears it.
   Later rules join it: pass-throughs, unused exports, and math that callers
   repeat on one export.
+- **An export that can be called is a function, even when a call makes it**
+  (TASK-646.15). A compound component made by `Object.assign(Root, {...})` is
+  what `Root` is, wherever `Root` is defined, and an export that the language
+  server types as callable, such as the helper that `cva(...)` returns, is a
+  function. A value that a call makes and that cannot be called stays a value:
+  an exported zod schema is one. A contract module keeps its schemas inside
+  and exports a parse function and the types derived from them.
 - **Each exported name gets at most one finding** (TASK-646.05).
   `EXPOSED_UNUSED` comes first, because its remedy removes the name. A
   function or method that only passes its call on is `CODE_PASS_THROUGH`,
   information. A name passed on from another module is
   `REEXPORT_PASS_THROUGH`: information through one door, a warning when files
   outside both modules also import the defining module, two doors to one name.
+- **Math that callers repeat on an export is the exporter's** (TASK-646.06).
+  When two or more modules write the same math on one exported value or
+  getter, `EXPOSED_VALUE_COMPUTED` is a warning on that export, in place of
+  `EXPOSED_VALUE`, with every line that writes the math as evidence. Two
+  pieces of math are the same when their shapes are: the callers' own names
+  count for nothing, the operands of `+`, `*`, `Math.min` and `Math.max` are
+  sorted, and one local variable that holds the export is followed. Equality,
+  comparison, bitwise and logical operators are no math, so comparisons do not
+  flood the findings. Two pieces of math that only share a shape, such as a
+  deadline and a jitter, match too; one function on the exporter clears both.
 - **An unused export is a warning only after a complete read**: every file
   outside the module in its language parsed, every relative import resolved,
   no import of the whole module, and no caller drawn in the model whose code
@@ -52,7 +69,8 @@ so agents in an implementation loop added exported constants and nothing failed.
   through values, which a syntax read cannot follow, so no method is judged
   unused, and members the language calls are never judged.
 - **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
-  is not a type carries `EXPOSED_VALUE` or a pass-through finding. A class
+  is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
+  pass-through finding. A class
   stands for its public methods. Types count for no verdict, so an
   exported union or enum keeps the compiler's exhaustive checks. An enum counts
   as a type.

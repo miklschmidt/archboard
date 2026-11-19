@@ -795,6 +795,7 @@ _Avoid_: depth score, depth ratio, interface measures (those are what the model 
 **Export kind**:
 What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
 A type counts for no verdict, and a TypeScript enum is a type.
+A value that can be called is a function, even when a call makes it, as a compound component made by `Object.assign` or the helper that `cva(...)` returns is. A schema cannot be called, so it is a value.
 _Avoid_: export type (a type is one kind), symbol kind
 
 **Piece of logic**:
@@ -805,6 +806,11 @@ _Avoid_: line count, complexity, implementation size
 An exported value that code outside its module reads at run time, a value that a call makes included: `EXPOSED_VALUE`, a warning.
 A function that returns the value, a getter, is an interface and is no exposed value. A test is no reader.
 _Avoid_: exported constant, leaked config, global
+
+**Repeated math**:
+The same math that two or more modules write on one exported value or getter: `EXPOSED_VALUE_COMPUTED`, a warning on that export, with every line that writes it as evidence.
+The match ignores the callers' own names, sorts the operands of `+`, `*`, `Math.min` and `Math.max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
+_Avoid_: duplicated logic, copy-paste, computed constant
 
 **Code pass-through**:
 An exported function or public method whose body is one call that hands on its own parameters, so it decides nothing for its callers: `CODE_PASS_THROUGH`, information.
@@ -820,7 +826,7 @@ An exported name that no file outside its module uses, as code or as a type: `EX
 _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 
 **Shallow module**:
-A module whose every export that is not a type carries an exposed-value or pass-through finding: `MODULE_SHALLOW`, information in the answer.
+A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding: `MODULE_SHALLOW`, information in the answer.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)
 
 **Shallow-module gate**:
