@@ -17,14 +17,10 @@ import {
 
 import { LiveBinding } from "#ui/application/state/live-binding.ts";
 import { livePanesOver } from "#ui/application/rules/live-panes.ts";
-import {
-	codeTargetShellNotice,
-	presentationNotice,
-	unreachableCheckoutNotice,
-} from "#ui/application/rules/notices.ts";
+import { codeTargetShellNotice, presentationNotice } from "#ui/application/rules/notices.ts";
 import { paneEvents } from "#ui/application/rules/pane-events.ts";
 import { recordFor, type PaneRecords } from "#ui/application/rules/pane-records.ts";
-import { checkoutOf, createShellActions, vaultOf } from "#ui/application/clients/shell-actions.ts";
+import { createShellActions, vaultOf } from "#ui/application/clients/shell-actions.ts";
 import {
 	addressingOver,
 	announcingViews,
@@ -41,6 +37,7 @@ import {
 	type Fullscreen,
 } from "#ui/application/hooks/use-fullscreen.ts";
 import { useNotices, type NoticeStack } from "#ui/application/hooks/use-notices.ts";
+import { useLanguageServerFix } from "#ui/application/hooks/use-language-server-fix.ts";
 import { useListingNotice } from "#ui/application/hooks/use-listing-notice.ts";
 import { usePanes, type Panes } from "#ui/application/hooks/use-panes.ts";
 import { useAgentActivity, type AgentActivity } from "#ui/application/hooks/use-agent-activity.ts";
@@ -86,7 +83,6 @@ import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
 import type { OpenStart } from "#ui/panes/reading-routing/rules/start.ts";
 import { ModelDraftContext } from "#ui/architecture-drawing/model-reader/state/draft.ts";
 import { LanguageServerFixContext } from "#ui/architecture-drawing/model-reader/state/language-server-fix.ts";
-import { languageServerSetup } from "@archboard/workspace/language-server-setup";
 import { useRouter } from "@tanstack/react-router";
 import {
 	type SettingsSurface,
@@ -512,32 +508,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		},
 		[activate, livePanes, panel, draft],
 	);
-	// A missing language server is set up by the agent of the checkout that misses it, with the brief
-	// that `archboard init` gives too (TASK-646.09).
-	const serverFix = useMemo<ContextType<typeof LanguageServerFixContext>>(
-		() => ({
-			/**
-			 * The server a language needs, as the brief names it.
-			 * @param language The language.
-			 * @returns The server, if the brief knows the language.
-			 */
-			server: (language) => languageServerSetup([language]).needs[0]?.server,
-			/**
-			 * Ask the agent of the repository's checkout to set up these servers, or say why not.
-			 * @param repo The repository.
-			 * @param languages Its languages without a server.
-			 */
-			fix: (repo, languages): void => {
-				const checkout = checkoutOf(catalogNow.read(), repo);
-				const { brief } = languageServerSetup(languages);
-				void (checkout === null ? Promise.resolve(false) : askIn(brief, checkout)).then((asked) => {
-					if (!asked) raise(unreachableCheckoutNotice(repo));
-					return undefined;
-				});
-			},
-		}),
-		[catalogNow, askIn, raise],
-	);
+	const serverFix = useLanguageServerFix(catalogNow, askIn, raise);
 	useLastReading();
 
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
