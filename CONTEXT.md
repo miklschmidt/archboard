@@ -260,7 +260,7 @@ _Avoid_: score, audit, lint
 
 **Vault policy**:
 The vault configuration that holds the vault vocabulary and how each word looks: its name, icon, color, dash and arrowhead.
-It changes how a model looks and never what it means.
+It changes how a model looks and never what it means. It also holds whether plain `archboard check` runs the shallow-module gate.
 _Avoid_: visual policy, model content, style override
 
 **Color palette**:
@@ -796,7 +796,7 @@ _Avoid_: depth score, depth ratio, interface measures (those are what the model 
 
 **Export kind**:
 What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
-A type counts for no verdict, and a TypeScript enum is a type. So are a Python type alias, a Go interface or a Go named type without methods in its file, a C# interface, enum or delegate, a Swift enum without methods or protocol, an Objective-C protocol, and a C struct, union or enum with no methods.
+A type counts for no verdict, and a TypeScript enum is a type. So are a Python type alias, a Go interface or a Go named type without methods in its file, a C# interface, enum or delegate, a Swift protocol, alias or enum without methods, an Objective-C protocol, and a C struct, union or enum with no methods.
 A C# `static` member of an exported class is read through the class's name, so it is a function or a value of its own.
 In Rust, a trait or a type alias is a type, and a struct, an enum or a union is a class with its public methods. An associated function or constant is read through its type's name, as a C# `static` member is, and a `const` of a function pointer's type is a function.
 A value that can be called is a function, even when a call makes it, as a compound component made by `Object.assign` or the helper that `cva(...)` returns is. A schema cannot be called, so it is a value.
@@ -813,12 +813,12 @@ _Avoid_: exported constant, leaked config, global
 
 **Repeated math**:
 The same math that two or more modules write on one exported value or getter: `EXPOSED_VALUE_COMPUTED`, a warning on that export, with every line that writes it as evidence.
-The match ignores the callers' own names, sorts the operands of `+`, `*` and of each language's `min` and `max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
+The match ignores the callers' own names, sorts the operands of `+`, `*` and each language's commutative math functions, such as `min` and `max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
 _Avoid_: duplicated logic, copy-paste, computed constant
 
 **Code pass-through**:
 An exported function or public method whose body is one call that hands on its own parameters, so it decides nothing for its callers: `CODE_PASS_THROUGH`, information.
-A call into a value that the module keeps hidden is a decision, not a pass-through.
+A call into a value that its own file defines at module level, such as a hidden schema, is a decision, not a pass-through.
 _Avoid_: wrapper, delegate, pass-through entry point (that is about the model)
 
 **Two doors to one name**:
