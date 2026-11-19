@@ -263,3 +263,49 @@ test("canonical findings keep the exact model revision and replace only the sele
 	expect(await models(vaultIn(join(scratch, "other")))).toEqual([]);
 	expect(passes()).toBe(3);
 });
+
+test("a canonical reading keeps each module's depth and what the pass skipped, a module with no findings included", async () => {
+	const revision = { digest: "c".repeat(64), files: [] };
+	const node = (id: string) => ({ kind: "node", id, name: id }) as const;
+	const depthOf = (id: string, state: string) => ({
+		model: "Shop",
+		state,
+		subject: node(id),
+		repo: "example/shop",
+		directory: `src/${id}`,
+		languages: ["typescript"],
+		unjudged: [],
+		exports: { functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
+		names: [{ name: "run", kind: "function", path: `src/${id}/index.ts`, line: 1 }],
+		logic: 2,
+	});
+	const answer: CodeCheckAnswer = {
+		timings: [],
+		states: [],
+		models: [
+			{ model: "Shop", state: "Now", revision },
+			{ model: "Shop", state: "Draft", revision },
+		],
+		findings: [],
+		skipped: [
+			{ reason: "exposure-unknown", model: "Shop", state: "Now", subject: node("docs") },
+			{ reason: "exposure-unknown", model: "Shop", state: "Draft", subject: node("other") },
+			{ reason: "language-server-missing", repo: "example/shop", detail: "python" },
+		],
+		behind: [],
+		depth: [depthOf("clean", "Now"), depthOf("drafted", "Draft")],
+	};
+	const { base } = await serverWith([answer]);
+	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+
+	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
+	const { models } = RememberedFindingsSchema.parse(await reply.json());
+	const now = models?.find((reading) => reading.state === "Now");
+	expect(now?.depth?.map((each) => each.subject.id)).toEqual(["clean"]);
+	expect(now?.depth?.[0]?.names).toHaveLength(1);
+	expect(now?.skipped?.map((skip) => skip.reason)).toEqual([
+		"exposure-unknown",
+		"language-server-missing",
+	]);
+	expect(now?.skipped?.[0]?.subject?.id).toBe("docs");
+});

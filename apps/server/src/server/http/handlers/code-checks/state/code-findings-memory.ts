@@ -11,6 +11,10 @@
 // the last pass found on the current variants. A reading belongs to the vault
 // the pass read (ADR 0049): a document of one name in two vaults has two.
 //
+// A canonical reading also keeps each module the pass measured, those with no
+// findings included, and what the pass skipped, so a pane tells a clean module
+// from one the pass did not read (TASK-646.07).
+//
 // It lives in memory and nowhere else. Nothing writes a finding into a document,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
 // restarted server knows nothing until somebody runs the code check, with
@@ -68,17 +72,21 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	 */
 	function remember(vault: string, answer: CodeCheckAnswer, checkedAt: Date): void {
 		const at = checkedAt.toISOString();
-		for (const read of answer.models ?? [])
+		for (const read of answer.models ?? []) {
+			const mine = (entry: { readonly model?: string; readonly state?: string | null }) =>
+				entry.model === read.model && entry.state === read.state;
 			readings.set(keyOf(vault, read.model, read.state ?? ""), {
 				vault,
 				reading: {
 					...read,
 					checkedAt: at,
-					findings: answer.findings.filter(
-						(finding) => finding.model === read.model && finding.state === read.state,
-					),
+					findings: answer.findings.filter(mine),
+					depth: (answer.depth ?? []).filter(mine),
+					// A skip that names no model holds for a whole checkout or language, so for every reading.
+					skipped: answer.skipped.filter((skip) => skip.model === undefined || mine(skip)),
 				},
 			});
+		}
 		for (const read of answer.states) {
 			readings.set(keyOf(vault, read.model, read.variant), {
 				vault,

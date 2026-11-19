@@ -1,9 +1,11 @@
 ---
 id: TASK-646.07
 title: A person reads module depth in Measures
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:23:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -57,3 +59,13 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #5 Opening a pane never starts a code pass
 - [ ] #6 The model code evidence and model measures component tests cover the columns and the findings
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Code check answer: Module depth also lists each counted export (name, kind, path, line) as names, and names the languages it exposes names in that no rule judges yet (unjudged). A skip that names a subject carries the canonical model and state, as findings do. (code-intel: Module depth and Code check, outside the slice; TASK-646.08 needs the names and its slice changes no data.)
+2. Code findings memory: each canonical reading keeps depth (every measured module, those with no findings included) and skipped (its subject skips and the checkout- or language-wide ones).
+3. Measures, What a module exposes: grouped Model and Code column heads; Code columns Exports (by-kind breakdown on hover), Values, Logic, Findings, each sortable, w-24. Rows read the remembered findings of this exact model, state and revision; the view never starts a pass. Findings cell: count of code findings on the module, Clean when complete and none, Partial when a language was not judged or a language server was missing; a module the pass skipped takes a dash with the reason. The foot says what the code counts cover and how to get a pass.
+4. Findings list: EXPOSED_VALUE named, a depth finding shows its export; the code view's gloss names shallow modules.
+5. Tests: memory route, module-depth (names, unjudged, canonical skips), model-measures and model-code-evidence component tests. DESIGN.md Measures section. Screenshots both themes, site audit.
+<!-- SECTION:PLAN:END -->
