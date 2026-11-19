@@ -38,12 +38,26 @@ import {
 import { flowCollections } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
 import { claimsOn } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
 import { selectedSubject } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
+import { emptyWithFilters } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
+import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 /** What a flow reading filters: nothing, because it keeps its whole exchange. */
 const NO_FILTERS = {};
 
+/** A filter can leave no card to draw, and the legend keeps its switches to bring the lines back. */
+const NO_SAMPLES: PictureLegend = { kinds: [], relationships: [] };
+
 /** No agent claims what the panel explains. */
 const NO_CLAIMS: readonly string[] = [];
+
+/**
+ * What the legend samples of the scene on screen.
+ * @param scene The scene, if one stands.
+ * @returns The picture's samples, none for a filtered reading that draws nothing, or null.
+ */
+function legendOf(scene: Reader["accepted"]["scene"]): PictureLegend | null {
+	return scene?.picture.legend ?? (emptyWithFilters(scene) ? NO_SAMPLES : null);
+}
 
 /**
  * What the marks of the picture on screen mean.
@@ -55,7 +69,7 @@ const NO_CLAIMS: readonly string[] = [];
 function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook }): JSX.Element {
 	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
-	const picture = scene?.picture.legend ?? null;
+	const picture = legendOf(scene);
 	return (
 		<ModelLegend
 			model={shown.model}
@@ -193,7 +207,12 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 	};
 	const top = useOutlineTop(about, props.outlineSlot);
 	return (
-		<ModelPanel selecting={selecting} onClose={selection.clear} top={top}>
+		<ModelPanel
+			selecting={selecting}
+			onClose={selection.clear}
+			top={top}
+			keepOnNarrow={emptyWithFilters(accepted.scene)}
+		>
 			<PanelScroll hidden={about && !selecting} subject={key} claims={claims} under={legend}>
 				{selecting ? (
 					<ModelPanelSubject {...subject} />

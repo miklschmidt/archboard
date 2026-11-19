@@ -1,7 +1,21 @@
 import { useCallback, type JSX, type PointerEvent } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelState } from "#ui/architecture-drawing/model-reader/reading/components/ModelState.tsx";
-import type { AcceptedScene } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
+import {
+	emptyWithFilters,
+	type AcceptedScene,
+} from "#ui/architecture-drawing/model-reader/rules/scene.ts";
+import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+
+/** What an empty reading says, and what its key does. */
+interface EmptyWords {
+	readonly title: string;
+	readonly line: string;
+	readonly action: string;
+}
+
+/** Joins the names of hidden kinds as a sentence does: "HTTP and Data". */
+const AND = new Intl.ListFormat("en", { type: "conjunction" });
 
 /**
  * An empty coherent reading is a finished picture too. An unavailable one says why itself.
@@ -10,40 +24,95 @@ import type { AcceptedScene } from "#ui/architecture-drawing/model-reader/rules/
  * @param props.pending Whether another reading is on its way.
  * @param props.onWholeScope Lift what narrows the reading, when something does.
  * @param props.onOpenState Read another state of the model.
- * @returns The statement that nothing is visible, or nothing.
+ * @returns The diagram's live status and its empty state when nothing is visible.
  */
 function ModelEmptyReading(props: {
 	scene: AcceptedScene;
 	pending: boolean;
 	onWholeScope: (() => void) | undefined;
 	onOpenState: ((state: string) => void) | undefined;
-}): JSX.Element | null {
+}): JSX.Element {
 	const { scene, pending, onWholeScope, onOpenState } = props;
-	if (scene.picture.svg !== "" || scene.grammar === null || pending) return null;
-	if (isPlanned(scene)) return <ModelPlanned model={scene.model} onOpenState={onOpenState} />;
+	let message = "";
+	let content: JSX.Element | null = null;
+	if (scene.picture.svg === "" && scene.grammar !== null && !pending) {
+		if (isPlanned(scene)) {
+			content = <ModelPlanned model={scene.model} onOpenState={onOpenState} />;
+		} else {
+			const words = emptyWords(scene);
+			message = `${words.title}. ${words.line}`;
+			content = <ModelEmptyState words={words} onWholeScope={onWholeScope} />;
+		}
+	}
 	return (
-		<output
-			data-slot="model-empty-diagram"
-			className="text-body text-muted-foreground absolute inset-0 space-y-3 p-8"
-		>
-			{onWholeScope === undefined ? (
-				<p>No modules are visible in this reading.</p>
-			) : (
-				<>
-					<p>The focus and filters of this reading leave no module to show.</p>
-					<Button
-						variant="outline"
-						size="sm"
-						data-slot="model-whole-scope"
-						onPointerDown={stopPropagation}
-						onClick={onWholeScope}
-					>
-						Show whole scope
-					</Button>
-				</>
-			)}
-		</output>
+		<>
+			{/* Keep the live region mounted while the diagram still has content. */}
+			<output className="sr-only" aria-live="polite">
+				{message}
+			</output>
+			{content}
+		</>
 	);
+}
+
+/**
+ * The explanation on the diagram and its action, when the reading can be widened.
+ * @param props The message and the way back to the whole scope.
+ * @param props.words The title, line and action label.
+ * @param props.onWholeScope Widen the reading when an action is available.
+ * @returns The pane's empty state.
+ */
+function ModelEmptyState(props: {
+	readonly words: EmptyWords;
+	readonly onWholeScope: (() => void) | undefined;
+}): JSX.Element {
+	const { words, onWholeScope } = props;
+	return (
+		<ModelState slot="model-empty-diagram" cover>
+			<ModelState.Title>{words.title}</ModelState.Title>
+			<ModelState.Line>{words.line}</ModelState.Line>
+			{onWholeScope !== undefined && (
+				<Button
+					size="sm"
+					data-slot="model-whole-scope"
+					onPointerDown={stopPropagation}
+					onClick={onWholeScope}
+				>
+					{words.action}
+				</Button>
+			)}
+		</ModelState>
+	);
+}
+
+/**
+ * Why a reading draws nothing, in words that name what the reader chose.
+ * @param scene The empty scene.
+ * @returns Its title, its line and the words of the key that lifts what narrows it.
+ */
+function emptyWords(scene: AcceptedScene): EmptyWords {
+	const focused = scene.projection.focused !== null;
+	if (!focused && !emptyWithFilters(scene))
+		return {
+			title: "Nothing to draw",
+			line: "No module is visible in this reading.",
+			action: "Show whole scope",
+		};
+	const { hideKinds } = scene.reading.filters;
+	const look = kindLookOf(scene.model.policy, new Map());
+	const hidden = AND.format(hideKinds.map((kind) => look.relationship(kind).name));
+	if (focused) {
+		const line =
+			hideKinds.length === 0
+				? "The focus names no module in this reading."
+				: `The focus names no module in this reading, and ${hidden} lines are hidden.`;
+		return { title: "Nothing to draw", line, action: "Show whole scope" };
+	}
+	return {
+		title: "Every module is hidden",
+		line: `Each module here draws only ${hidden} lines, and you hid them.`,
+		action: hideKinds.length > 2 ? "Show every relationship" : `Show ${hidden}`,
+	};
 }
 
 /**

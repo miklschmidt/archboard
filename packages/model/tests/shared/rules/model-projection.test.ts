@@ -76,6 +76,35 @@ describe("lines", () => {
 	});
 });
 
+describe("a hidden kind", () => {
+	const model = modelOf(
+		[
+			{ id: "system" },
+			{ id: "a", parent: "system" },
+			{ id: "b", parent: "system" },
+			{ id: "c", parent: "system" },
+			{ id: "alone", parent: "system" },
+		],
+		[
+			{ id: "ask", from: "a", to: "b", kind: "http" },
+			{ id: "tell", from: "b", to: "c", kind: "event" },
+		],
+	);
+	const cards = (reading: ReturnType<typeof projectModel>) =>
+		reading.content.nodes.map((node) => node.id);
+
+	test("takes off the cards that drew only its lines, and keeps a card that never drew one", () => {
+		const reading = projectModel(model, "system", null, { hideKinds: ["event"] });
+		expect(cards(reading)).toEqual(["system", "a", "b", "alone"]);
+		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "alone"]);
+	});
+
+	test("leaves the subjects of a focus, which the reader named", () => {
+		const reading = projectModel(model, "system", ["a", "b", "c"], { hideKinds: ["event"] });
+		expect(cards(reading)).toEqual(["a", "b", "c"]);
+	});
+});
+
 describe("a relationship between a module and a part that it holds", () => {
 	const modules = [
 		{ id: "root" },
