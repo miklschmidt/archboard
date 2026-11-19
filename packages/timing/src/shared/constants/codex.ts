@@ -177,10 +177,14 @@ function codexApprovalMs(key: keyof typeof CODEX_APPROVAL_MS): number {
 /**
  * When an approval asked for now expires unanswered.
  * @param nowMs The current time, in milliseconds since the epoch.
+ * @param kind Whether this is an approval or a browser command lease.
  * @returns The expiry, in milliseconds since the epoch.
  */
-function codexApprovalExpiresAt(nowMs: number): number {
-	return nowMs + CODEX_APPROVAL_MS.expiry;
+function codexApprovalExpiresAt(
+	nowMs: number,
+	kind: "expiry" | "browserCommandLease" = "expiry",
+): number {
+	return nowMs + CODEX_APPROVAL_MS[kind];
 }
 
 /**
