@@ -4,6 +4,7 @@ title: The branch footprint reads the working tree as its head
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T00:19:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -53,3 +54,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 A branch footprint with a committed head gives the same answer as before
 - [ ] #3 A History lens test covers the working-tree head
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on code-intel only, because code-intel alone binds the History lens test under packages/code-intel/tests and the shared footprint protocol that gains the workingTree field. Neither has architectural meaning beyond the planned History lens change, so the exception is recorded in the proposal history (operation task-646-02-code-intel-exception). Unbound files: this task file and ADR 0045, which no module binds.
+<!-- SECTION:NOTES:END -->
