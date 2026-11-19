@@ -12,6 +12,9 @@
 //   defines. One door is information. Two doors to one name are a warning:
 //   files outside both modules import the defining module directly, at run
 //   time, where a bound part owns the definition. Types pass no verdict.
+// - `EXPOSED_VALUE_COMPUTED`, a warning: two or more modules write the same
+//   math on an exported value or getter (computed-math.ts). It is the sharper
+//   `EXPOSED_VALUE`: it names the math that belongs to the module.
 // - `EXPOSED_VALUE`, a warning: code outside reads an exported value at run time.
 // - `CODE_PASS_THROUGH`, information: a function or a public method only
 //   passes its call on, as its code facts say, unless the callee is a value
@@ -22,9 +25,11 @@ import {
 	type ExposedName,
 	within,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { computedValue } from "#runtime/module-depth/operations/computed-math.ts";
 import {
 	type DepthFinding,
 	type DepthReading,
+	type DepthUse,
 	evidenceOf,
 	passedOn,
 	quoted,
@@ -121,12 +126,14 @@ function reexported(reading: DepthReading, name: ExposedName): DepthFinding {
  * The finding on an exported value that outside code reads.
  * @param reading The module.
  * @param name The value.
+ * @param reads Its uses at run time by files outside the module.
  * @returns The finding, or undefined when no code outside reads it at run time.
  */
-function exposedValue(reading: DepthReading, name: ExposedName): DepthFinding | undefined {
-	const reads = usesOf(reading.exposure.directory, name, reading.uses).filter(
-		(use) => !use.typeOnly,
-	);
+function exposedValue(
+	reading: DepthReading,
+	name: ExposedName,
+	reads: readonly DepthUse[],
+): DepthFinding | undefined {
 	if (reads.length === 0) return undefined;
 	const readers = readersOf(reads);
 	const value = `${reading.label} exports the value ${name.name}`;
@@ -195,20 +202,28 @@ async function nameFinding(
  * @param reading The module.
  * @param name The export.
  * @param kind Its kind.
- * @returns `EXPOSED_VALUE` for a value, `CODE_PASS_THROUGH` for a function or a method, or none.
+ * @returns `EXPOSED_VALUE_COMPUTED` for a value or a getter on which two
+ * modules write the same math, else `EXPOSED_VALUE` for a value and
+ * `CODE_PASS_THROUGH` for a function or a method, or none.
  */
-function ownFinding(
+async function ownFinding(
 	reading: DepthReading,
 	name: ExposedName,
 	kind: NameKind,
-): Promise<DepthFinding | undefined> | DepthFinding | undefined {
-	if (kind === "value") return exposedValue(reading, name);
-	return kind === "class" ? undefined : passThrough(reading, name);
+): Promise<DepthFinding | undefined> {
+	if (kind === "class") return undefined;
+	const reads = usesOf(reading.exposure.directory, name, reading.uses).filter(
+		(use) => !use.typeOnly,
+	);
+	const computed = kind === "method" ? undefined : await computedValue(reading, name, reads);
+	if (computed !== undefined) return computed;
+	return kind === "value" ? exposedValue(reading, name, reads) : passThrough(reading, name);
 }
 
 /** The codes that say a name hands its insides to its callers, which `MODULE_SHALLOW` rolls up. */
 const SHALLOW_CODES: ReadonlySet<string> = new Set([
 	"EXPOSED_VALUE",
+	"EXPOSED_VALUE_COMPUTED",
 	"CODE_PASS_THROUGH",
 	"REEXPORT_PASS_THROUGH",
 ]);
