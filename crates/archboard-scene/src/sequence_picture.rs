@@ -169,6 +169,12 @@ pub struct FrameGuard {
     pub divider: Option<f64>,
 }
 
+/// How an alternative's label is spelled on its guard row: in brackets, as a
+/// guard reads in UML. The fragment's measure and its painter both spell it here.
+pub(crate) fn guard_words(label: &str) -> String {
+    format!("[{label}]")
+}
+
 /// What a frame's tab says.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]

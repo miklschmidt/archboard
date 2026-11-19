@@ -12,13 +12,14 @@ use crate::paint::build::{Items, grouped, lines, shape};
 use crate::paint::colour::{Share, light_dark, tinted, translucent};
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, intersection, polygon_path, translated};
-use crate::paint::shadow::{SHADOW_REACH, shadow_definitions, smooth_shadow};
+use crate::paint::shadow::{shadow_definitions, smooth_shadow};
 use crate::paint::standing::{OUTLINE_WIDTH, ink_of, outline_dash};
 use crate::request::Standing;
 use crate::scene::{
     ClipId, Colour, Definition, Gradient, GradientForm, GradientId, Group, Paint, PathStep,
     Pointer, Purpose, Role, ShadowOf, Shape, Stop, Stroke,
 };
+use crate::sizes::SHADOW_REACH;
 
 /// How a block looks: its two tones, how thick it is and how round its corners are.
 #[derive(Clone, Debug, PartialEq)]

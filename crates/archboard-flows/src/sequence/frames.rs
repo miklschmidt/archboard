@@ -14,48 +14,18 @@
 use std::collections::HashMap;
 
 use archboard_scene::geometry::{Rect, covering, union};
-use archboard_scene::js;
-use archboard_scene::request::FrameOperator;
+use archboard_scene::{Span, activation_span, fragment_bounds, js};
 
-use crate::sequence::design::PILL_FONT;
-use crate::sequence::design::{
-    ACTIVATION_HALF_WIDTH, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, NEST_INSET,
-    PILL_TEXT_SIZE,
-};
-use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, PlacedStep};
+use crate::sequence::design::NEST_INSET;
+use crate::sequence::layout::{ActiveAt, FrameRows, PlacedFrame, PlacedStep};
 use crate::sequence::messages::drawn;
-
-/// How wide some words of a frame are drawn.
-fn words_width(words: &str) -> f64 {
-    archboard_scene::width(words, PILL_FONT, PILL_TEXT_SIZE)
-}
-
-/// What one frame's tab and head row say: its operator, and the words beside it.
-fn head_of(step: FrameStep<'_>) -> (FrameOperator, String) {
-    match step {
-        FrameStep::Decision(decision) => (FrameOperator::Alt, decision.question.clone()),
-        FrameStep::Loop(repeat) => (FrameOperator::Loop, format!("[{}]", repeat.condition)),
-    }
-}
-
-/// The narrowest a frame may be and still hold its own words: the tab and the
-/// words beside it, and each alternative's label.
-fn own_width(rows: &FrameRows<'_>, tab_width: f64, words: &str) -> f64 {
-    let mut widest = tab_width + FRAME_TAB_PADDING + words_width(words) + FRAME_PAD;
-    for guard in &rows.guards {
-        widest = js::js_max(
-            widest,
-            words_width(&format!("[{}]", guard.label)) + FRAME_PAD * 2.0,
-        );
-    }
-    widest.ceil()
-}
 
 /// What one message claims across a frame: its ink, and the lifelines it runs
 /// between with the bars on them, so a frame's side never lies on a bar.
 fn ink_of(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> Rect {
-    let left = js::js_min(placed.from_x, placed.to_x) - ACTIVATION_HALF_WIDTH;
-    let width = (placed.to_x - placed.from_x).abs() + ACTIVATION_HALF_WIDTH * 2.0;
+    let bar = activation_span(js::js_min(placed.from_x, placed.to_x));
+    let left = bar.x;
+    let width = (placed.to_x - placed.from_x).abs() + bar.width;
     covering(
         drawn(placed, active).bounds,
         Rect {
@@ -106,35 +76,29 @@ fn sided<'a>(
     columns_x: f64,
     columns_width: f64,
 ) -> PlacedFrame<'a> {
-    let (left, right) = match union(held.iter().copied()) {
-        None => (columns_x, columns_x + columns_width),
-        Some(ink) => (
-            (ink.x - FRAME_PAD).floor(),
-            (ink.x + ink.width + FRAME_PAD).ceil(),
-        ),
+    let ink = union(held.iter().copied()).map(|ink| Span {
+        x: ink.x,
+        width: ink.width,
+    });
+    let columns = Span {
+        x: columns_x,
+        width: columns_width,
     };
-    let (operator, words) = head_of(rows.step);
-    let word = match operator {
-        FrameOperator::Alt => "alt",
-        FrameOperator::Loop => "loop",
-    };
-    let tab_width = (words_width(word) + FRAME_TAB_PADDING * 2.0).ceil();
-    let width = js::js_max(right - left, own_width(&rows, tab_width, &words));
+    let span = fragment_bounds(ink, columns, &rows.head);
+    let tab = rows.head.tab;
     PlacedFrame {
         bounds: Rect {
-            x: left,
+            x: span.x,
             y: rows.top,
-            width,
+            width: span.width,
             height: rows.bottom - rows.top,
         },
         tab: Rect {
-            x: left,
+            x: span.x,
             y: rows.top,
-            width: tab_width,
-            height: FRAME_HEAD_HEIGHT,
+            width: tab.width,
+            height: tab.height,
         },
-        operator,
-        words,
         rows,
     }
 }

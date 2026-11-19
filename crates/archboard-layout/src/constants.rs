@@ -2,7 +2,7 @@
 //! Shared sizes come from the scene that the layout places.
 
 use archboard_scene::geometry::{bend_radius, route_tolerance};
-use archboard_scene::paint::design::card_radius;
+use archboard_scene::paint::card_radius;
 
 /// The radius of every bend a route takes.
 pub(crate) const BEND_RADIUS: f64 = bend_radius();

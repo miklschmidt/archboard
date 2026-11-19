@@ -29,8 +29,7 @@ pub(super) fn stroke_width(weight: Emphasis) -> f64 {
 
 pub(super) use crate::sizes::RAIL_GAP;
 
-/// How long an arrowhead of each weight is, from its base to its tip.
-pub(super) const HEAD_LENGTH: f64 = 11.0;
+pub(super) use crate::sizes::{HEAD_LENGTH, head_ref_x};
 
 /// How big an arrowhead of a weight is drawn, in widths of its line.
 pub(super) fn head_widths(weight: Emphasis) -> f64 {
@@ -44,19 +43,6 @@ pub(super) fn head_of(arrowhead: Arrowhead) -> Option<Head> {
         Arrowhead::Open => Some(Head::Open),
         Arrowhead::None => None,
     }
-}
-
-/// Where on its ten-unit drawing each head sits on the end of its line.
-pub(super) fn head_ref_x(head: Head) -> f64 {
-    match head {
-        Head::Filled => 8.0,
-        Head::Open => 10.0,
-    }
-}
-
-/// How far an arrowhead's tip lies past the end of its line.
-pub(super) fn head_reach(head: Head) -> f64 {
-    ((10.0 - head_ref_x(head)) / 10.0) * HEAD_LENGTH
 }
 
 /// How far back from the end of its line an arrowhead's base lies.

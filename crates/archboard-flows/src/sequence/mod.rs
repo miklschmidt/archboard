@@ -8,7 +8,6 @@
 //! comparison.
 
 mod activations;
-mod card;
 mod design;
 mod frames;
 mod layout;
@@ -27,7 +26,6 @@ use archboard_scene::request::{
 use serde::Deserialize;
 
 use crate::content::{Flow, Node, every_step};
-use card::title_room;
 use layout::{ActiveAt, Column, DataFlowLayout, FlowLayout, PlacedStep};
 use messages::drawn;
 use rows::pitch_of;
@@ -107,7 +105,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                     bounds: column.card.bounds,
                     title_size: column.card.title_size,
                     notes: column.card.notes.clone(),
-                    title_room: title_room(&column.card.node, column.card.bounds.width),
+                    title_room: column.card.title_room,
                 },
                 centre_x: column.centre_x,
                 lifeline_top: column.lifeline_top,
@@ -127,7 +125,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                         to: placed.step.to.clone(),
                     },
                     words: archboard_scene::request::MessageWords {
-                        lines: placed.words.lines.clone(),
+                        lines: placed.words.plate.lines.clone(),
                     },
                     y: placed.y,
                     slot: placed.slot,
@@ -153,8 +151,8 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                 },
                 bounds: frame.bounds,
                 tab: frame.tab,
-                operator: frame.operator,
-                words: frame.words.clone(),
+                operator: frame.rows.operator,
+                words: frame.rows.words.clone(),
                 guards: frame.rows.guards.clone(),
             })
             .collect(),

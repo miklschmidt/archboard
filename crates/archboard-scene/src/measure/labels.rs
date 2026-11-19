@@ -88,7 +88,7 @@ fn plate(text: &str, max_width: f64) -> MeasuredLabel {
 /// A note's words wrapped to a width in the note face, as a card's
 /// responsibility wraps, each line whole with its painted width, its baseline
 /// measured from the block's top.
-pub fn note_lines(text: &str, width: f64, size: f64, line_height: f64) -> Vec<TextRun> {
+pub(crate) fn note_lines(text: &str, width: f64, size: f64, line_height: f64) -> Vec<TextRun> {
     let style = Style {
         size,
         line: line_height,
@@ -100,7 +100,7 @@ pub fn note_lines(text: &str, width: f64, size: f64, line_height: f64) -> Vec<Te
 /// A message's words wrapped, balanced, in the label face, so no line runs
 /// wider than the room between the lifelines it is drawn between: each line
 /// whole, with its painted width.
-pub fn message_lines(text: &str, width: f64, size: f64, line_height: f64) -> Vec<WordLine> {
+pub(crate) fn message_lines(text: &str, width: f64, size: f64, line_height: f64) -> Vec<WordLine> {
     let style = Style {
         size,
         line: line_height,

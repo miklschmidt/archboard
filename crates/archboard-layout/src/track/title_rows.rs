@@ -9,7 +9,7 @@
 use crate::ecma::{max, min};
 use crate::track::chains::{ChainId, Kind, LANE, Track};
 use crate::track::scene::{ItemId, Placement, Set, TitleStep};
-use archboard_scene::paint::design::header_words_width;
+use archboard_scene::paint::header_words_width;
 
 /// How far a title row's words may reach in from its left edge.
 fn room_for(scene: &Placement, id: &str, lanes: &[(usize, f64)]) -> f64 {

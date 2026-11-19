@@ -12,14 +12,13 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::js;
-use archboard_scene::request::{FrameGuard, Slot};
+use archboard_scene::fragment_head;
+use archboard_scene::geometry::Point;
+use archboard_scene::request::{FrameGuard, FrameOperator, Slot};
+use archboard_scene::{js, self_loop};
 
 use crate::content::{Decision, Message, MessageKind, Step};
-use crate::sequence::design::{
-    FRAME_GAP, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, MAX_PULSES_PER_STEP, MESSAGE_LINE_STEP,
-    MESSAGE_PITCH, SELF_LOOP_EXTENT, STEP_NOTE_GAP,
-};
+use crate::sequence::design::{FRAME_GAP, MAX_PULSES_PER_STEP, MESSAGE_PITCH, STEP_NOTE_GAP};
 use crate::sequence::layout::{Branch, FrameRows, FrameStep, PlacedStep};
 use crate::sequence::rows::{ColumnBounds, MessageEnds, pitch_of, place_note, words_for};
 
@@ -37,6 +36,14 @@ struct Placing<'a, 'b> {
     y: f64,
     /// The next turn of the drawing's clock.
     turn: u32,
+}
+
+/// What one frame's tab and head row say: its operator, and the words beside it.
+fn head_of(step: FrameStep<'_>) -> (FrameOperator, String) {
+    match step {
+        FrameStep::Decision(decision) => (FrameOperator::Alt, decision.question.clone()),
+        FrameStep::Loop(repeat) => (FrameOperator::Loop, format!("[{}]", repeat.condition)),
+    }
 }
 
 /// The top of the row a message running at a height stands in.
@@ -66,7 +73,7 @@ impl<'a> Placing<'a, '_> {
             self.bounds,
         );
         // A label stands above its arrow, so every line past the first lowers the row.
-        let y = self.y + (words.lines.len() as f64 - 1.0) * MESSAGE_LINE_STEP;
+        let y = self.y + words.plate.taller_by;
         let note = place_note(step, MessageEnds { from_x, to_x, y }, self.bounds);
         // The row grows by the note it holds, so the next message's words sit
         // where they would have without it, only lower.
@@ -104,12 +111,24 @@ impl<'a> Placing<'a, '_> {
     /// Place one decision or loop: its head row, what it holds, and its foot,
     /// and close its frame.
     fn place_frame(&mut self, step: FrameStep<'a>, branch: &Branch) {
+        let (operator, words) = head_of(step);
+        let labels: Vec<&str> = match step {
+            FrameStep::Decision(decision) => decision
+                .alternatives
+                .iter()
+                .map(|alternative| alternative.label.as_str())
+                .collect(),
+            FrameStep::Loop(_) => Vec::new(),
+        };
+        let head = fragment_head(operator, &words, &labels);
         let top = row_top(self.y) + FRAME_GAP;
         let held_messages = self.steps.len();
         let held_frames = self.frames.len();
-        self.y = top + FRAME_HEAD_HEIGHT + FRAME_GAP / 2.0 + MESSAGE_PITCH / 2.0;
+        self.y = top + head.tab.height + FRAME_GAP / 2.0 + MESSAGE_PITCH / 2.0;
         let guards = match step {
-            FrameStep::Decision(decision) => self.place_alternatives(decision, branch),
+            FrameStep::Decision(decision) => {
+                self.place_alternatives(decision, branch, head.guard_height)
+            }
             FrameStep::Loop(repeat) => {
                 self.place_all(&repeat.steps, branch);
                 Vec::new()
@@ -134,6 +153,9 @@ impl<'a> Placing<'a, '_> {
             .collect();
         self.frames.push(FrameRows {
             step,
+            operator,
+            words,
+            head,
             top,
             bottom,
             guards,
@@ -144,7 +166,12 @@ impl<'a> Placing<'a, '_> {
 
     /// Place each alternative of a decision under its labelled row, parted from
     /// the one before by a dashed line.
-    fn place_alternatives(&mut self, step: &'a Decision, branch: &Branch) -> Vec<FrameGuard> {
+    fn place_alternatives(
+        &mut self,
+        step: &'a Decision,
+        branch: &Branch,
+        guard_height: f64,
+    ) -> Vec<FrameGuard> {
         let mut guards = Vec::new();
         for (index, alternative) in step.alternatives.iter().enumerate() {
             let divider = (index > 0).then(|| row_top(self.y) + FRAME_GAP);
@@ -155,7 +182,7 @@ impl<'a> Placing<'a, '_> {
                 top: guard_top,
                 divider,
             });
-            self.y = guard_top + FRAME_GUARD_HEIGHT + FRAME_GAP / 2.0 + MESSAGE_PITCH / 2.0;
+            self.y = guard_top + guard_height + FRAME_GAP / 2.0 + MESSAGE_PITCH / 2.0;
             let mut within = branch.clone();
             within.set(&step.id, &alternative.label);
             self.place_all(&alternative.steps, &within);
@@ -191,7 +218,11 @@ pub(super) fn lowest_drawn(steps: &[PlacedStep<'_>], frames: &[FrameRows<'_>], f
     let mut lowest = floor;
     for placed in steps {
         let reach = if placed.step.kind == MessageKind::Myself {
-            SELF_LOOP_EXTENT
+            self_loop(Point {
+                x: placed.from_x,
+                y: placed.y,
+            })
+            .height
         } else {
             0.0
         };

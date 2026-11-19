@@ -13,7 +13,7 @@ use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, polygon_path};
-use crate::paint::shadow::{SHADOW_REACH, polygon_shadow};
+use crate::paint::shadow::polygon_shadow;
 use crate::paint::slab::{SlabLook, shadow_group, solid_ghost, solid_seat, solid_slab};
 use crate::paint::standing::{OUTLINE_WIDTH, standing_pin_at, subject, warning_on_line};
 use crate::paint::styles::Styles;
@@ -22,6 +22,7 @@ use crate::scene::{
     Colour, Definition, Gradient, GradientForm, GradientId, Paint, Purpose, Role, Shape, Stop,
     SubjectKind, Text, Token,
 };
+use crate::sizes::SHADOW_REACH;
 use crate::sizes::{
     CARD_THICKNESS, JUMP_FONT, JUMP_TEXT_SIZE, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
 };
