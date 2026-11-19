@@ -477,13 +477,16 @@ test("flake outputs and chart values receive interface findings, and chart templ
 	]);
 });
 
-test("containers bound to compose files and plain manifests still have unknown exposure", () => {
-	for (const documentName of ["Compose", "Manifest"]) {
+test("a part bound to a YAML file that is no chart file names no module, so it is not judged", () => {
+	for (const documentName of ["Compose", "Manifest", "Chart"]) {
 		expect(
-			outcome.skipped
-				.filter((each) => each.model === documentName && each.reason === "exposure-unknown")
-				.map((each) => each.subject?.id),
-		).toEqual(["Module"]);
+			outcome.skipped.filter(
+				(each) => each.model === documentName && each.reason === "exposure-unknown",
+			),
+		).toEqual([]);
+	}
+	for (const documentName of ["Compose", "Manifest"]) {
 		expect(findings("EXPOSED_UNUSED", documentName)).toEqual([]);
 	}
+	expect(outcome.findings.filter((each) => each.subject?.id === "Routes")).toEqual([]);
 });
