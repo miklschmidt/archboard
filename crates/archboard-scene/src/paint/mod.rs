@@ -51,6 +51,7 @@ mod toggle;
 mod traffic;
 mod tray;
 
+pub use far_view::{far_line_scale, far_line_widths};
 pub use junctions::junction_boxes;
 pub use legend::{Applied, Drawn, picture_legend};
 pub use marks::viewer_marks;

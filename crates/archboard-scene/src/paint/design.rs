@@ -4,13 +4,8 @@
 //! function, so the sheet itself stays the crate's own.
 
 use crate::sizes::{
-    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE, FLOW_KIND,
-    HERO_LINE_WIDTH, LINE_WIDTH, RAIL_GAP, RAILS, TAB_SHOULDER,
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FLOW_KIND, RAIL_GAP, TAB_SHOULDER,
 };
-
-/// The line widths a far view draws wider: a line of normal weight, of hero
-/// weight, and a double line's rails.
-const FAR_WIDENED: [f64; 3] = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS];
 
 /// The space around the final drawing.
 pub const fn diagram_margin() -> f64 {
@@ -57,22 +52,6 @@ pub fn is_flow_kind(kind: &str) -> bool {
 /// The gap a double line's rails leave down its middle.
 pub const fn rail_gap() -> f64 {
     RAIL_GAP
-}
-
-/// Whether a far view draws a line of this stroke width wider.
-pub fn widens_far(width: f64) -> bool {
-    FAR_WIDENED.contains(&width)
-}
-
-/// How much wider a far view draws a line it widens, `far` of the way from
-/// the near view (0) to the far view (1).
-pub fn far_line_scale(far: f64) -> f64 {
-    1.0 + (FAR_SCALE - 1.0) * far
-}
-
-/// Each line width a far view widens, with the width it draws it at there.
-pub fn far_line_widths() -> [(f64, f64); 3] {
-    FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
 }
 
 /// The icon a part without a known icon is drawn with.
