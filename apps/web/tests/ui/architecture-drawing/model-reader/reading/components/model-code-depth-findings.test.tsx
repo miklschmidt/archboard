@@ -61,6 +61,11 @@ const READING: Reading = {
 	],
 };
 
+/** Nothing happens: no finding is chosen here. */
+function nothing(): void {
+	// No finding is chosen.
+}
+
 /**
  * Mount the findings of the pass.
  */
@@ -76,7 +81,7 @@ function mount(): void {
 				reading: READING,
 				check: { status: "checking" },
 				ends: { nodes: [TIMING], edges: [] },
-				onShow: () => undefined,
+				onShow: nothing,
 			}),
 		),
 	);
@@ -92,7 +97,7 @@ function shown(
 ): (readonly [string | undefined, string | undefined])[] {
 	return [...document.querySelectorAll<HTMLElement>(`[data-slot="${slot}"]`)].map((one) => [
 		one.dataset["findingCode"],
-		one.querySelector('[data-slot="code-finding-export"]')?.textContent?.replace("exports ", ""),
+		one.querySelector('[data-slot="code-finding-export"]')?.textContent.replace("exports ", ""),
 	]);
 }
 
