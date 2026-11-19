@@ -1,9 +1,11 @@
 ---
 id: TASK-646.01
 title: The code check reads every bound module in every language
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T00:11:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -53,3 +55,13 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 A bound module that holds two languages reports the exports of both languages
 - [ ] #3 A code-check fixture test covers a bound leaf module that holds two languages
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Fact analysis: moduleExposure reads every language rule whose root files the module has, and merges their root files, exposed names (each rule's member rule applied to its own names) and outside files.
+2. Module reading: Terraform uses read only the Terraform part of a merged exposure; code uses read the other outside files, so a module with Terraform and another language reads both.
+3. Code check: judge every node bound to a module, with or without parts. Children are judged only for a node that holds parts. A node whose nearest ancestor binding the same checkout already names the same module is not judged again.
+4. Tests first in interfaces.test.ts: a leaf module (no parts) gets EXPOSED_UNUSED; a leaf that holds TypeScript and Python reports unused exports of both and counts uses from both languages.
+5. Run code-intel tests, lint, type-check, archboard check; compare findings with the base branch.
+<!-- SECTION:PLAN:END -->

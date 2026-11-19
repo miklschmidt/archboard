@@ -169,6 +169,8 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			"BINDING_SYMBOL_MISSING pGone warning",
 			// The library exposes `audit`, `Entry` and three names of `money` that the shop does not use.
 			"EXPOSED_UNUSED pLed information",
+			// The money module has no parts, and its interface is read all the same.
+			"EXPOSED_UNUSED pMoney information",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			// The cart's relationship to the entry stands for these two calls into the ledger.
 			"RELATIONSHIP_UNDRAWN pLed information",

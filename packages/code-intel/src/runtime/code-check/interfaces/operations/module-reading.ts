@@ -251,7 +251,22 @@ function withoutTests(exposure: ModuleExposure | undefined): ModuleExposure | un
 }
 
 /**
- * What a module exposes and how the files outside it use it.
+ * The Terraform or OpenTofu part of what a module exposes.
+ * @param exposure What the module exposes in every language it holds.
+ * @returns That part, or undefined when the module has no configuration file at its root.
+ */
+function terraformPart(exposure: ModuleExposure): ModuleExposure | undefined {
+	const rootFiles = exposure.rootFiles.filter(isTerraformFile);
+	if (rootFiles.length === 0) return undefined;
+	const exposed = exposure.exposed.filter((name) => isTerraformFile(name.path));
+	const outside = exposure.outside.filter(isTerraformFile);
+	return { directory: exposure.directory, rootFiles, exposed, outside };
+}
+
+/**
+ * What a module exposes and how the files outside it use it: the
+ * configuration outside it through its module calls, and every other file
+ * through the names it imports.
  * @param facts The pass.
  * @param checkout The module's checkout.
  * @param exposure What the module exposes.
@@ -263,22 +278,21 @@ async function readModule(
 	exposure: ModuleExposure,
 ): Promise<ModuleReading> {
 	const testImports = await privateTestImports(facts, checkout, exposure);
-	if (exposure.rootFiles.every(isTerraformFile)) {
-		const uses = await terraformUses(facts, checkout, exposure);
-		return {
-			exposure,
-			uses,
-			testImports,
-			terraform: await terraformShape(facts, checkout, exposure),
-		};
-	}
 	const uses: OutsideUse[] = [];
 	for (const file of exposure.outside) {
-		if (isTestPath(file)) continue;
+		if (isTestPath(file) || isTerraformFile(file)) continue;
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
 		uses.push(...(await usesIn(facts, checkout, exposure.directory, file)));
 	}
-	return { exposure, uses, testImports };
+	const terraform = terraformPart(exposure);
+	if (terraform === undefined) return { exposure, uses, testImports };
+	uses.push(...(await terraformUses(facts, checkout, terraform)));
+	return {
+		exposure,
+		uses,
+		testImports,
+		terraform: await terraformShape(facts, checkout, terraform),
+	};
 }
 
 /**

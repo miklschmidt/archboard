@@ -20,6 +20,9 @@
 // (TASK-436.08). A language with no rule here
 // exposes nothing the check can read, and the check says so.
 //
+// A module that holds several languages exposes what each of them does, and
+// its callers can be in any of them.
+//
 // What a root file exposes reads the same in every language, from its code
 // facts: each definition it exposes (an export, a name `__all__` lists or a
 // public one, and the public members of one), and each name it passes on
@@ -48,6 +51,7 @@ import {
 	rustRootFiles,
 } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
 import { GO } from "#runtime/code-facts/go/operations/go-exposure.ts";
+import { PYTHON } from "#runtime/code-facts/python/operations/python-exposure.ts";
 import { SWIFT_FILE, swiftRootFiles } from "#runtime/code-facts/swift/operations/swift-exposure.ts";
 import { isTerraformFile } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
 import {
@@ -118,41 +122,6 @@ const TYPESCRIPT: ExposureRule = {
 	 */
 	entry: (name) => ENTRY_FILE.test(name),
 	rootFiles: typeScriptRootFiles,
-};
-
-/** A Python file or stub. */
-const PYTHON_FILE = /\.pyi?$/u;
-/** The file of a Python package, which stands for its directory. */
-const PACKAGE_FILE = /^__init__\.pyi?$/u;
-
-/** Python's rule: a package, whose `__init__.py` says what it exposes. */
-const PYTHON: ExposureRule = {
-	/**
-	 * Whether a file is Python or a Python stub.
-	 * @param file The file.
-	 * @returns True when it is.
-	 */
-	writes: (file) => PYTHON_FILE.test(file),
-	/**
-	 * Whether a file is a package's `__init__.py`.
-	 * @param name The file's name.
-	 * @returns True when it is.
-	 */
-	entry: (name) => PACKAGE_FILE.test(name),
-	/**
-	 * The package's `__init__.py`, else its stub; an import of the package
-	 * reads the first of the two, as the resolver does.
-	 * @param _pass The pass.
-	 * @param checkout The checkout.
-	 * @param directory The package's directory.
-	 * @returns The file, or none for a directory that is no package.
-	 */
-	rootFiles: (_pass, checkout, directory) => {
-		const files = ["__init__.py", "__init__.pyi"].map((name) =>
-			directory === "" ? name : `${directory}/${name}`,
-		);
-		return Promise.resolve(files.filter((file) => checkout.files.has(file)).slice(0, 1));
-	},
 };
 
 /** Swift's rule: a target of a package, whose files expose its `open`, `public` and `package` declarations. */
@@ -548,8 +517,42 @@ function moduleOf(bound: string, kind: "file" | "directory"): string | undefined
 }
 
 /**
- * What a module exposes, by the rule of the first language whose root files
- * it has.
+ * What a module exposes by the rule of one language.
+ * @param pass The pass.
+ * @param checkout The checkout and the files the pass may read.
+ * @param directory The module's directory, relative to the checkout.
+ * @param rule The language's rule.
+ * @returns What it exposes, or undefined when the module has no root file of the language.
+ */
+async function exposureBy(
+	pass: FactsPass,
+	checkout: CheckoutFiles,
+	directory: string,
+	rule: ExposureRule,
+): Promise<ModuleExposure | undefined> {
+	const rootFiles = await rule.rootFiles(pass, checkout, directory);
+	if (rootFiles.length === 0) return undefined;
+	const search: Search = { pass, checkout, chain: [], read: new Map() };
+	const exposed: ExposedName[] = [];
+	for (const file of rootFiles) {
+		// oxlint-disable-next-line no-await-in-loop -- one root file at a time keeps the names in the root files' order
+		exposed.push(...(await exposedBy(search, file)));
+	}
+	const { member, holds = within } = rule;
+	const outside = [...checkout.files].filter(
+		(file) => rule.writes(file) && !holds(directory, file),
+	);
+	const named =
+		member === undefined
+			? exposed
+			: exposed.map((name) => ({ ...name, member: member(name, exposed) }));
+	return { directory, rootFiles, exposed: named, outside };
+}
+
+/**
+ * What a module exposes in every language whose root files it has: their
+ * root files and names in the order of the rules, and every file outside the
+ * module written in one of them.
  * @param pass The pass.
  * @param checkout The checkout and the files the pass may read.
  * @param directory The module's directory, relative to the checkout.
@@ -560,27 +563,16 @@ async function moduleExposure(
 	checkout: CheckoutFiles,
 	directory: string,
 ): Promise<ModuleExposure | undefined> {
-	for (const rule of RULES) {
-		// oxlint-disable-next-line no-await-in-loop -- the first language whose root files the module has decides, so later rules are never read
-		const rootFiles = await rule.rootFiles(pass, checkout, directory);
-		if (rootFiles.length === 0) continue;
-		const search: Search = { pass, checkout, chain: [], read: new Map() };
-		const exposed: ExposedName[] = [];
-		for (const file of rootFiles) {
-			// oxlint-disable-next-line no-await-in-loop -- one root file at a time keeps the names in the root files' order
-			exposed.push(...(await exposedBy(search, file)));
-		}
-		const { member, holds = within } = rule;
-		const outside = [...checkout.files]
-			.filter((file) => rule.writes(file) && !holds(directory, file))
-			.toSorted();
-		const named =
-			member === undefined
-				? exposed
-				: exposed.map((name) => ({ ...name, member: member(name, exposed) }));
-		return { directory, rootFiles, exposed: named, outside };
-	}
-	return undefined;
+	const found = (
+		await Promise.all(RULES.map((rule) => exposureBy(pass, checkout, directory, rule)))
+	).filter((each) => each !== undefined);
+	if (found.length === 0) return undefined;
+	return {
+		directory,
+		rootFiles: found.flatMap((each) => each.rootFiles),
+		exposed: found.flatMap((each) => each.exposed),
+		outside: [...new Set(found.flatMap((each) => each.outside))].toSorted(),
+	};
 }
 
 export {
