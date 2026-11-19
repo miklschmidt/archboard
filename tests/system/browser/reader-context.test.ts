@@ -403,3 +403,29 @@ test("the right column follows what a reader looks at, and the left column holds
 	await browser.run(["press", "Escape"]);
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);
+
+test("Open in About follows a selected module's folded scope to its interface", async () => {
+	await using resources = new AsyncDisposableStack();
+	const browser = await openReader(resources, "folded-about", (vault) => {
+		const parts = [
+			{ id: "Shop#Wrapper", name: "Wrapper", parent: undefined },
+			{ id: "Shop#Inner", name: "Inner", parent: "Shop#Wrapper" },
+			{ id: "Shop#Leaf", name: "Leaf", parent: "Shop#Inner" },
+		];
+		for (const [index, part] of parts.entries()) {
+			writeFileSync(
+				join(vault, `folded-about-${index}.module.json`),
+				JSON.stringify({
+					...part,
+					schemaVersion: 1,
+					kind: "module",
+					order: 50 + index,
+					outgoing: [],
+				}),
+			);
+		}
+	});
+
+	await pick(browser, "Shop#Wrapper");
+	expect(await followMeasures(browser)).toEqual(["Shop#Leaf"]);
+}, 30_000);

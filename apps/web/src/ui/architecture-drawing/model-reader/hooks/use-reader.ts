@@ -40,16 +40,17 @@ type AboutScope = string | null | undefined;
  * How the open module is read. The page is kept with the module it was chosen on, so another
  * module opens as a diagram. About describes the open scope, and the right panel the selection.
  * @param opened The open module.
+ * @param shown The scope the pane is ready to show.
  * @returns The page, and how to change it.
  */
-function useReaderPage(opened: string | null) {
+function useReaderPage(opened: string | null, shown: string | null) {
 	const [about, setAbout] = useState<AboutScope>(undefined);
 	const onPage = useCallback(
 		(next: Page): void => setAbout(next === "about" ? opened : undefined),
 		[opened],
 	);
 	const onDiagram = useCallback((): void => setAbout(undefined), []);
-	const page: Page = about === opened ? "about" : "diagram";
+	const page: Page = about === opened && about === shown ? "about" : "diagram";
 	return { page, onPage, onDiagram, setAbout };
 }
 
@@ -132,14 +133,15 @@ function useReader(inputs: ReaderInputs) {
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const { setAbout, ...places } = useReaderPage(opened);
+	const { setAbout, ...places } = useReaderPage(opened, shown.projection.opened);
 	// About of any module: the module opens, and its About shows once it is the open scope.
 	const openAbout = useCallback(
 		(scope: string): void => {
-			if (scope !== opened) onOpen(scope);
-			setAbout(scope);
+			const destination = tree.owner.get(scope)?.end ?? scope;
+			if (destination !== opened) onOpen(scope);
+			setAbout(destination);
 		},
-		[opened, onOpen, setAbout],
+		[opened, onOpen, setAbout, tree],
 	);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
