@@ -52,6 +52,12 @@ interface DepthReading {
 	 * pass did not read, as a consumer of a published package is.
 	 */
 	readonly unseen: (name: ExposedName) => readonly string[];
+	/**
+	 * The type the language server of a name's file gives it where it is
+	 * declared, such as `function` for a value that can be called; none where
+	 * no server answered.
+	 */
+	readonly tokenType: (name: ExposedName) => Promise<string | undefined>;
 	/** The module as a sentence names it, such as `module "Timing"`. */
 	readonly label: string;
 }

@@ -2,8 +2,9 @@
 //
 // It starts in the root of a project, a checkout or a package in one, and is
 // told that root is its one workspace, so it finds the project there itself.
-// The client asks it only for definitions and for the outline of a file, and
-// never asks it to build or to run a command. It starts with the options its
+// The client asks it only for definitions, for the outline of a file and for
+// the semantic tokens of a file, and never asks it to build or to run a
+// command. It starts with the options its
 // language's row names, is told the project's settings, such as the Python
 // environment, when it asks for its configuration, and before the first
 // question it is asked once to load what it reads, where the row names such
@@ -36,6 +37,12 @@ import {
 	type Language,
 } from "#runtime/language-servers/operations/languages.ts";
 import { outlineOf, type OutlineSymbol } from "#runtime/language-servers/operations/outline.ts";
+import {
+	legendOf,
+	TOKEN_TYPES,
+	tokensOf,
+	type SemanticToken,
+} from "#runtime/language-servers/operations/semantic-tokens.ts";
 
 /** A place in a file, as the protocol counts: from 0, in UTF-16 code units. */
 interface Position {
@@ -56,6 +63,11 @@ interface Server {
 	readonly definition: (file: string, position: Position) => Promise<DefinitionLocation[]>;
 	/** The outline of a file: what it declares, and where; rejects when the server fails. */
 	readonly outline: (file: string) => Promise<OutlineSymbol[]>;
+	/**
+	 * The semantic tokens of a file: the type it gives each name, none from a
+	 * server that gives no tokens; rejects when the server fails.
+	 */
+	readonly tokens: (file: string) => Promise<SemanticToken[]>;
 	/** Stop it, and return once its process has ended. */
 	readonly stop: (graceful: boolean) => Promise<void>;
 	/** Wall time spent starting, answering and stopping, excluding idle time. */
@@ -125,7 +137,7 @@ function exitReason(code: number, signal: string | null): string {
 
 /**
  * The `initialize` request: the project as the one workspace, a client that
- * asks for definitions and outlines and nothing else.
+ * asks for definitions, outlines and semantic tokens and nothing else.
  * @param start The server: its project, its language and its options.
  * @returns Its params.
  */
@@ -141,7 +153,15 @@ function initializeParams(start: ServerStart): object {
 		capabilities: {
 			general: { positionEncodings: ["utf-16"] },
 			workspace: { configuration: true },
-			textDocument: { documentSymbol: { hierarchicalDocumentSymbolSupport: true } },
+			textDocument: {
+				documentSymbol: { hierarchicalDocumentSymbolSupport: true },
+				semanticTokens: {
+					requests: { full: true },
+					tokenTypes: TOKEN_TYPES,
+					tokenModifiers: [],
+					formats: ["relative"],
+				},
+			},
 			...(indexProgress === undefined ? {} : { window: { workDoneProgress: true } }),
 		},
 		...(initializationOptions === undefined ? {} : { initializationOptions }),
@@ -301,9 +321,10 @@ async function startServer(start: ServerStart): Promise<Server> {
 		return stopping;
 	};
 	const bounds = { signal: start.signal };
+	let legend: readonly string[] = [];
 	try {
 		await clock.measure(async () => {
-			await connection.request("initialize", initializeParams(start), bounds);
+			legend = legendOf(await connection.request("initialize", initializeParams(start), bounds));
 			connection.notify("initialized", {});
 			await settle(connection, start.language, bounds);
 		});
@@ -335,6 +356,19 @@ async function startServer(start: ServerStart): Promise<Server> {
 				await open(file);
 				const params = { textDocument: { uri: pathToFileURL(file).href } };
 				return outlineOf(await connection.request("textDocument/documentSymbol", params, bounds));
+			}),
+		/**
+		 * The semantic tokens of a file.
+		 * @param file The file, absolute.
+		 * @returns Its tokens.
+		 */
+		tokens: (file) =>
+			clock.measure(async () => {
+				if (legend.length === 0) return [];
+				await open(file);
+				const params = { textDocument: { uri: pathToFileURL(file).href } };
+				const answer = await connection.request("textDocument/semanticTokens/full", params, bounds);
+				return tokensOf(answer, legend);
 			}),
 		stop,
 		elapsedMs: clock.elapsedMs,

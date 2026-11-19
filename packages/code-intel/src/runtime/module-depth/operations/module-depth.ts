@@ -139,13 +139,14 @@ async function aliasedKind(
 	reading: DepthReading,
 	path: string,
 	definition: Definition,
-	depth = 0,
+	depth: number,
 ): Promise<"function" | "class" | undefined> {
 	if (definition.aliases === undefined || depth >= ALIAS_DEPTH) return undefined;
 	const site = await definitionSite(reading.facts, reading.checkout, path, definition.aliases);
-	if (site === undefined || site.definition.type === true) return undefined;
-	const { kind } = site.definition;
-	return kind === "value" ? aliasedKind(reading, site.path, site.definition, depth + 1) : kind;
+	if (site === undefined) return undefined;
+	const kind = declaredKind(site.definition);
+	if (kind === "value") return aliasedKind(reading, site.path, site.definition, depth + 1);
+	return kind === "type" ? undefined : kind;
 }
 
 /**
@@ -157,8 +158,17 @@ function declaredKind(definition: Definition): ExportKind {
 	return definition.type === true ? "type" : definition.kind;
 }
 
+/** The kinds of the semantic token types that can be called or constructed. */
+const CALLABLE_TOKENS: ReadonlyMap<string, "function" | "class"> = new Map([
+	["function", "function"],
+	["method", "function"],
+	["class", "class"],
+]);
+
 /**
- * The kind of an export: a value counts as what the name it holds is.
+ * The kind of an export: a value counts as what the name it holds is, else
+ * as what its language server types it as, so a value that can be called is
+ * a function.
  * @param reading The module.
  * @param name The export.
  * @returns Its kind.
@@ -166,7 +176,8 @@ function declaredKind(definition: Definition): ExportKind {
 async function kindOf(reading: DepthReading, name: ExposedName): Promise<ExportKind> {
 	const kind = declaredKind(name.definition);
 	if (kind !== "value") return kind;
-	return (await aliasedKind(reading, name.path, name.definition)) ?? kind;
+	const aliased = await aliasedKind(reading, name.path, name.definition, 0);
+	return aliased ?? CALLABLE_TOKENS.get((await reading.tokenType(name)) ?? "") ?? kind;
 }
 
 /** The names a module exposes that this part counts, each once, and the adapters that read them. */

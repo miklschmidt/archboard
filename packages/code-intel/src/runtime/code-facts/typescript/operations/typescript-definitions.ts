@@ -334,6 +334,22 @@ function visibilityOf(
 }
 
 /**
+ * What a declaration's syntax says beside its kind: that it declares a type,
+ * the call it only passes on, and the name whose value it holds.
+ * @param declaration The declaration.
+ * @returns Those that hold.
+ */
+function traitsOf(declaration: Node): Pick<Definition, "type" | "passes" | "aliases"> {
+	const passes = passesTo(declaration);
+	const aliases = aliasOf(declaration);
+	return {
+		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
+		...(aliases === undefined ? {} : { aliases }),
+	};
+}
+
+/**
  * The definition one captured name declares, where it is at module level.
  * @param name The captured name.
  * @param context The file's unparsed code and exported names.
@@ -350,8 +366,6 @@ function definitionOf(
 	const { visibility, own } = visibilityOf(name, declaration, context.exported);
 	const exposed = own && holderExposed(declaration, exposure);
 	exposure.set(declaration.id, exposed);
-	const passes = passesTo(declaration);
-	const aliases = aliasOf(declaration);
 	return {
 		symbol: qualifiedSymbol(name, declaration),
 		kind: kindOf(declaration),
@@ -360,9 +374,7 @@ function definitionOf(
 		source: sourceRange(sourceOf(declaration)),
 		visibility,
 		exposed,
-		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
-		...(passes === undefined ? {} : { passes }),
-		...(aliases === undefined ? {} : { aliases }),
+		...traitsOf(declaration),
 	};
 }
 

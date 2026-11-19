@@ -6,6 +6,7 @@
 // pass reads each of them once; Module depth reads nothing twice.
 
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
+import type { TokenType } from "#runtime/code-check/operations/resolution.ts";
 import type { Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import {
 	ownersAtLine,
@@ -43,6 +44,8 @@ interface InterfaceReading {
 	/** The evidence between the document's bound parts. */
 	readonly pieces: readonly Piece[];
 	readonly facts: FactsPass;
+	/** The type the pass's language servers give a name a file declares. */
+	readonly tokenType: TokenType;
 	readonly modules: ModuleReadings;
 }
 
@@ -170,6 +173,16 @@ async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<
 		 * @returns Their names.
 		 */
 		unseen: (name) => unseenCallers(judged, name),
+		/**
+		 * The type the language servers give an exported name where it is declared.
+		 * @param name The name.
+		 * @returns The type, or undefined.
+		 */
+		tokenType: (name) =>
+			reading.tokenType(checkout, name.path, {
+				line: name.definition.start,
+				symbol: name.definition.symbol,
+			}),
 		label: describeSubject(subject),
 	});
 	outcome.findings.push(...depth.findings.map((finding) => ({ ...site, ...finding })));
