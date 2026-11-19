@@ -1,12 +1,12 @@
 // The address `semantic record` opens its page at, as the browser reads it
 // (TASK-472.06, ADR 0050). The recorder writes the address and the browser's
-// workspace address reads it, so this owner holds the two sides together: the
-// page shows the recorded model in pane A, in the repository of the vault the
-// command found, and with no repository named it opens where a page opens.
+// workspace address reads it. The recorder's side is held to these same
+// addresses by packages/walkthrough/tests/runtime/recorder/operations/recording-page-address.test.ts,
+// so a change to either side changes both owners: the page shows the recorded
+// model in pane A, in the repository of the vault the command found, and with
+// no repository named it opens where a page opens.
 
 import { expect, test } from "bun:test";
-import { recordingPageUrl } from "@archboard/walkthrough/recorder";
-import { recordingAskedOf } from "@archboard/walkthrough/recording";
 import {
 	addressFromSearch,
 	parseWorkspaceSearchString,
@@ -14,58 +14,18 @@ import {
 
 /**
  * The panes the browser opens for a recording page's address.
- * @param repository The repository the command found its vault in, or null.
- * @param variant The variant asked for, or null for the current one.
+ * @param search The search string the recorder writes.
  * @returns The panes, as the browser reads them.
  */
-function panesOpenedFor(repository: string | null, variant: string | null) {
-	const url = new URL(
-		recordingPageUrl({
-			serverUrl: "http://127.0.0.1:3000",
-			document: { name: "Checkout" },
-			variant,
-			repository,
-			walkthrough: { id: "w1" },
-			language: "en",
-			against: null,
-		}),
-	);
-	return addressFromSearch(parseWorkspaceSearchString(url.search)).panes;
+function panesOpenedFor(search: string) {
+	return addressFromSearch(parseWorkspaceSearchString(search)).panes;
 }
 
 test("the recording page shows the model in pane A, in the repository of the vault the command found", () => {
-	expect(panesOpenedFor("github.com/acme/shop", null)).toMatchObject([
-		{ paneId: "A", paneKey: "Checkout", repository: "github.com/acme/shop" },
-	]);
-	expect(panesOpenedFor(null, "v2")).toMatchObject([
+	expect(
+		panesOpenedFor("?paneA=Checkout&repoA=github.com%2Facme%2Fshop&record=w1&language=en"),
+	).toMatchObject([{ paneId: "A", paneKey: "Checkout", repository: "github.com/acme/shop" }]);
+	expect(panesOpenedFor("?paneA=Checkout%40v2&record=w1&language=en")).toMatchObject([
 		{ paneId: "A", paneKey: "Checkout@v2", repository: null },
 	]);
-});
-
-/**
- * The search string of the recording page's address.
- * @param against The variant the recording is read against, or null.
- * @returns The search string.
- */
-function addressSearch(against: string | null): string {
-	return new URL(
-		recordingPageUrl({
-			serverUrl: "http://127.0.0.1:3000",
-			document: { name: "Checkout" },
-			variant: "v3",
-			repository: null,
-			walkthrough: { id: "w1" },
-			language: "da",
-			against,
-		}),
-	).search;
-}
-
-test("the recording page is asked for the variant the recording is read against, when there is one", () => {
-	expect(recordingAskedOf(addressSearch("v2"))).toEqual({
-		walkthrough: "w1",
-		language: "da",
-		against: "v2",
-	});
-	expect(recordingAskedOf(addressSearch(null))?.against).toBeNull();
 });

@@ -546,7 +546,7 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
   The browser owner stays in `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records an exact retained canonical walkthrough to a video
-(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one
+(ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 20 names, one
 operation or fact for each job a caller has. It imports `model`, `timing`, `workspace` and `renderer`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the recording page and the replay page import them. The 2
 files of `runtime/api/` run only in Bun.
@@ -564,8 +564,7 @@ files of `runtime/api/` run only in Bun.
   recording keeps its talk (the directory asked for, or a new one in the state directory, which keeps the newest ten)
   and proves it free before anything starts. `keepTalk` makes a talk of its parts and writes it into a named directory,
   so the talk's format and file names stay private. `recordingContainerOf` reads the container a file name asks for.
-  `recordingPageUrl` is the address a recording opens, which the browser's contract test reads back. It is
-  `runtime/recorder/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page
+  It is `runtime/recorder/operations/` (`record-walkthrough.ts`, `render-talk.ts`, the frame order and the error), the page
   client of `runtime/recorder/clients/`, the talk files and the silent WAV of `runtime/recorder/store/`, and the
   container, encoder and browser of `runtime/recorder/services/recording-tools.ts`. The browser is the private Chromium of `@archboard/renderer/headless-chromium`.
 - `./ffmpeg` finds the ffmpeg that encodes a recording. The encoder is `runtime/video-encoding/processes/video-encoder.ts`,
@@ -573,7 +572,7 @@ files of `runtime/api/` run only in Bun.
   `nixpkgs#ffmpeg-headless` through Nix. No file of the package reads an asset by a path, so nothing depends on where the
   package sits.
 - The tests are in `tests/`: `shared/protocol/` holds the talk's contract, `runtime/recorder/store/` the talk on
-  disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and
+  disk, `runtime/recorder/clients/` the page client, `runtime/recorder/operations/` the browser flags of the render and the address a recording opens, and
   `runtime/video-encoding/` the encoder. The end-to-end owners stay in `tests/system/server-state/walkthrough-*.test.ts`.
 
 The fourteenth is `skills` (`@archboard/skills`). It evaluates the archboard skill. It adopts the `api/`
