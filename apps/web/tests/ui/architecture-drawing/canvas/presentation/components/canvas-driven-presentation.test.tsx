@@ -10,7 +10,6 @@ import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import { createElement } from "react";
 
-import { presentationMs } from "@archboard/timing";
 import { takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import {
@@ -153,7 +152,7 @@ test("a step still gliding is reported as on its way, and as arrived once the gl
 		const reported = driven(1, false);
 		await settle();
 		expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: false, answering: "request-1" });
-		frames.run(presentationMs("step") + 100);
+		frames.run(900 + 100);
 		await settle();
 		expect(reported.at(-1)).toMatchObject({ beat: 1, arrived: true, answering: "request-1" });
 	} finally {

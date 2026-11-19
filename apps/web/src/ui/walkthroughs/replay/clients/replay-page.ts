@@ -18,7 +18,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { replayMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	talkSamplesMs,
 	talkClock,
@@ -52,7 +52,7 @@ type ReplayRenderer = Parameters<typeof publishReplayPage>[0];
 const FRAME_MS = talkSamplesMs(talkClock("samplesPerFrame"));
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
-const PREROLL_FRAMES = Math.ceil(replayMs("preroll") / FRAME_MS);
+const PREROLL_FRAMES = Math.ceil(durationMs("replay.preroll") / FRAME_MS);
 
 /** A talk on the page, and where its rendering has got to. */
 interface Rendering {

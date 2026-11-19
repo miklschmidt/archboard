@@ -19,7 +19,7 @@
 import { RiMicLine, RiPhoneFill } from "@remixicon/react";
 import { useCallback, type CSSProperties, type JSX, type MouseEvent } from "react";
 
-import { voiceMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot, useNarrateKey } from "@archboard/workbench/voice";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
@@ -43,7 +43,7 @@ const DISC = "primary-finish absolute inset-0 grid place-items-center rounded-fu
 const HANG_UP_DISC = "absolute inset-0 grid place-items-center rounded-full";
 
 /** How fast the gold disc goes once the orb leaves it (app.css, `narrate-seat`). */
-const SEAT_STYLE: CSSProperties = { "--voice-seat-out-ms": `${voiceMs("seatOut")}ms` };
+const SEAT_STYLE: CSSProperties = { "--voice-seat-out-ms": `${durationMs("voice.seatOut")}ms` };
 
 /** How the circle answers the pointer on a key that can narrate. */
 const LIFT = cn(

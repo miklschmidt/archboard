@@ -1,4 +1,3 @@
-import { pictureMs } from "@archboard/timing";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { afterAll, expect, test } from "bun:test";
 import {
@@ -185,7 +184,7 @@ async function outwaitTheStore(to: number): Promise<void> {
 test("a store that never answers does not hold a picture back", async () => {
 	const storage: PictureStorage = { get: silent, set: silent, del: silent, keys: silent };
 	const drawn = cachedModelDrawing(storage, "first-scene", async () => DRAWING);
-	await outwaitTheStore(pictureMs("storeWait"));
-	await outwaitTheStore(2 * pictureMs("storeWait"));
+	await outwaitTheStore(400);
+	await outwaitTheStore(2 * 400);
 	expect(await drawn).toBe(DRAWING);
 });

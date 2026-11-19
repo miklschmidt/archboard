@@ -1,7 +1,7 @@
 // How a picture stands in the light, as the painter reads it. The marks say
 // what is lit, and this says how strongly each part of the picture shows.
 
-import { exploringMs, presentationMs, reachHopDelayMs } from "@archboard/timing";
+import { durationMs, reachHopDelayMs } from "@archboard/timing";
 
 /** How strongly the picture lights a poked part's connections. */
 type ProbeMode = "pick" | "hover";
@@ -49,16 +49,16 @@ function shineOf(hops: number): { opacity: number; delay: number } {
  */
 function restOf(state: LightState): { rest: number; labels: number; duration: number } {
 	if (state.veiled && state.presenting) {
-		return { rest: PRESENTED_VEIL, labels: QUIET_VEIL, duration: presentationMs("step") };
+		return { rest: PRESENTED_VEIL, labels: QUIET_VEIL, duration: durationMs("presentation.step") };
 	}
 	if (state.veiled) return { rest: QUIET_VEIL, labels: QUIET_VEIL, duration: 0 };
 	if (state.probing === null) {
-		return { rest: 1, labels: 1, duration: exploringMs("lightingFade") };
+		return { rest: 1, labels: 1, duration: durationMs("exploring.lightingFade") };
 	}
 	return {
 		rest: RECEDE[state.probing],
 		labels: QUIET_VEIL,
-		duration: exploringMs("lightingFade"),
+		duration: durationMs("exploring.lightingFade"),
 	};
 }
 

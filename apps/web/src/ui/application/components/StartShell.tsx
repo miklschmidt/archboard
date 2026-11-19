@@ -8,7 +8,7 @@ import { useRouter } from "@tanstack/react-router";
 import { useCallback, useMemo, useState, type JSX } from "react";
 
 import { IconButton, shownRepository, Tooltip } from "@archboard/ui-kit/components";
-import { modelCacheMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { RiFileCopyLine } from "@remixicon/react";
 import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { ModelState } from "#ui/architecture-drawing/model-reader/reading/components/ModelState.tsx";
@@ -50,7 +50,7 @@ function StartShell(props: StartShellProps): JSX.Element {
 	const closeSettings = useCallback((): void => openSettings(null), []);
 	const client = useQueryClient();
 	const router = useRouter();
-	useQuery({ ...repositoriesQuery(), refetchInterval: modelCacheMs("startListing") });
+	useQuery({ ...repositoriesQuery(), refetchInterval: durationMs("modelCache.startListing") });
 	const actions = useMemo(
 		() => createStartActions({ router, client, catalog, notices, setTheme, openSettings }),
 		[router, client, catalog, notices, setTheme],

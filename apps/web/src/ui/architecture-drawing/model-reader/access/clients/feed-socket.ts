@@ -3,7 +3,7 @@ import {
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
-import { paneMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
 /** What one vault's feed hears from the socket. */
 interface FeedFollower {
@@ -67,7 +67,7 @@ function createFeedSocket() {
 		opening.addEventListener("close", () => {
 			socket = null;
 			for (const follower of followers.values()) follower.lost();
-			setTimeout(connect, paneMs("socketReconnect"));
+			setTimeout(connect, durationMs("pane.socketReconnect"));
 		});
 	}
 	return {

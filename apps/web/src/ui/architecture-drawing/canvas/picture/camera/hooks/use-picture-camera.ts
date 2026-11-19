@@ -22,7 +22,7 @@ import {
 	useSyncExternalStore,
 } from "react";
 
-import { columnMs, exploringMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { useCameraGlide } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts";
 import {
@@ -301,7 +301,7 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 	const restLater = useCallback((): void => {
 		const clock = frameClock();
 		if (resting.current !== null) clock.cancelAfter(resting.current);
-		resting.current = clock.after(exploringMs("cameraRest"), () => {
+		resting.current = clock.after(durationMs("exploring.cameraRest"), () => {
 			resting.current = null;
 			if (!motion.easing()) comeToRest(store);
 		});
@@ -342,7 +342,7 @@ function usePictureCamera(reducedMotion = false): PictureCamera {
 		};
 		const observer = new ResizeObserver(() => {
 			stopWaiting();
-			settling = frameClock().after(columnMs("pictureResizeSettle"), measure);
+			settling = frameClock().after(durationMs("column.pictureResizeSettle"), measure);
 		});
 		observer.observe(element);
 		return (): void => {

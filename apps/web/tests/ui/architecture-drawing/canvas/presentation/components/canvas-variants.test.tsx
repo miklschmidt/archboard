@@ -10,7 +10,6 @@
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
-import { pictureMs } from "@archboard/timing";
 import {
 	drawing,
 	surface,
@@ -254,13 +253,13 @@ test("switching variants animates the scale toward the selected view's fit", asy
 		);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
 		expect(cameraNow()).toEqual(before);
-		let now = performance.now() + pictureMs("transition") / 2;
+		let now = performance.now() + 640 / 2;
 		runFrames(frames, now);
 		const midway = cameraNow();
 		const destination = Math.min((800 - 48) / 900, (600 - 48) / 600);
 		expect(midway.scale).toBeLessThan(before.scale);
 		expect(midway.scale).not.toBe(destination);
-		now += pictureMs("transition") / 2 + 1;
+		now += 640 / 2 + 1;
 		runFrames(frames, now);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
 		expect(cameraNow().scale).toBeCloseTo(destination, 6);

@@ -24,7 +24,7 @@ import {
 } from "react";
 import { usePanelRef, type Layout, type LayoutChangedMeta } from "react-resizable-panels";
 
-import { columnMs, columnSlideSettledMs } from "@archboard/timing";
+import { columnSlideSettledMs, durationMs } from "@archboard/timing";
 import { cn, Resizable } from "@archboard/ui-kit/components";
 import { storedWidth, storeWidth, type ColumnWidths } from "#ui/shell/clients/column-width.ts";
 
@@ -32,7 +32,9 @@ import { storedWidth, storeWidth, type ColumnWidths } from "#ui/shell/clients/co
 const SIDE_COLUMN_HANDLE_WIDTH = 1;
 
 /** What the stylesheet slides the content with. */
-const GROUP_STYLE: CSSProperties = { "--panel-slide-ms": `${columnMs("agentPanelSlide")}ms` };
+const GROUP_STYLE: CSSProperties = {
+	"--panel-slide-ms": `${durationMs("column.agentPanelSlide")}ms`,
+};
 
 /**
  * The column clips what it holds and never scrolls: its content scrolls in its own viewport. The
@@ -131,7 +133,7 @@ function useSlide(open: boolean): Slide {
 		if (!slide.moving) return undefined;
 		const done = setTimeout(
 			() => setSlide({ open: slide.open, moving: false }),
-			columnSlideSettledMs(columnMs("agentPanelSlide")),
+			columnSlideSettledMs(durationMs("column.agentPanelSlide")),
 		);
 		return () => clearTimeout(done);
 	}, [slide]);

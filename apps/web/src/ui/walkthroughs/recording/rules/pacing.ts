@@ -12,7 +12,7 @@
 //
 // Pure: each tick the page observes the voice and the pane and asks what to do.
 
-import { recordingMs } from "@archboard/timing";
+import { deadline, durationMs, type DurationName } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
@@ -127,11 +127,11 @@ function paceStart(
 	if (observed.voice.kind === "live") {
 		return { state: { kind: "lead", since: observed.now }, action: { kind: "begin" } };
 	}
-	if (observed.now - state.since <= recordingMs("voiceStart")) {
+	if (observed.now <= deadline("recording.voiceStart", state.since)) {
 		return { state, action: NOTHING };
 	}
 	return failed(
-		`Voice did not go live within ${recordingMs("voiceStart") / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
+		`Voice did not go live within ${durationMs("recording.voiceStart") / 1000} seconds. Check that voice starts on this Archboard server, then record again.`,
 	);
 }
 
@@ -160,7 +160,10 @@ function spokenSince(
 
 /** What one tick knows about the step on screen. */
 interface StepReading {
-	readonly waited: number;
+	/** The time now. */
+	readonly now: number;
+	/** When the step was asked for. */
+	readonly since: number;
 	/** At rest on the step now. */
 	readonly arrived: boolean;
 	/** At rest on the step now, or at some tick since it was asked for. */
@@ -176,20 +179,20 @@ interface StepReading {
  */
 function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	const step = beat + 1;
-	const { waited } = reading;
-	if (!reading.landed && waited > recordingMs("speechStart")) {
+	const { now, since } = reading;
+	if (!reading.landed && now > deadline("recording.speechStart", since)) {
 		return failed(
 			`Step ${step} never finished arriving on screen. Check that the model still states the walkthrough and that step, then record again.`,
 		);
 	}
-	if (reading.spoken.length === 0 && waited > recordingMs("speechStart")) {
+	if (reading.spoken.length === 0 && now > deadline("recording.speechStart", since)) {
 		return failed(
-			`The voice said nothing about step ${step} within ${recordingMs("speechStart") / 1000} seconds. Record again; if it keeps happening, check voice on this Archboard server.`,
+			`The voice said nothing about step ${step} within ${durationMs("recording.speechStart") / 1000} seconds. Record again; if it keeps happening, check voice on this Archboard server.`,
 		);
 	}
-	return waited > recordingMs("stepMax")
+	return now > deadline("recording.stepMax", since)
 		? failed(
-				`The voice was still explaining step ${step} after ${recordingMs("stepMax") / 60_000} minutes. Shorten that step, then record again.`,
+				`The voice was still explaining step ${step} after ${durationMs("recording.stepMax") / 60_000} minutes. Shorten that step, then record again.`,
 			)
 		: null;
 }
@@ -238,7 +241,8 @@ function paceStep(
 	const { place } = observed;
 	const arrived = arrivedAt(place, state.beat);
 	const reading: StepReading = {
-		waited: observed.now - state.since,
+		now: observed.now,
+		since: state.since,
 		arrived,
 		landed: state.landed || arrived,
 		spoken: spokenSince(observed.transcript, state.heard),
@@ -246,7 +250,7 @@ function paceStep(
 	const late = overdue(state.beat, reading);
 	if (late !== null) return late;
 	const quiet = quietSince(state, reading, observed);
-	if (place === null || quiet === null || observed.now - quiet < recordingMs("quiet")) {
+	if (place === null || quiet === null || observed.now < deadline("recording.quiet", quiet)) {
 		return { state: { ...state, landed: reading.landed, quietSince: quiet }, action: NOTHING };
 	}
 	return after(state.beat, place.of, observed);
@@ -263,10 +267,10 @@ function paceStep(
 function held(
 	state: Extract<PaceState, { since: number }>,
 	observed: PaceObservation,
-	hold: number,
+	hold: Extract<DurationName, `recording.${string}`>,
 	next: () => PaceTurn,
 ): PaceTurn {
-	return observed.now - state.since < hold ? { state, action: NOTHING } : next();
+	return observed.now < deadline(hold, state.since) ? { state, action: NOTHING } : next();
 }
 
 /**
@@ -281,8 +285,8 @@ function paceLive(
 ): PaceTurn {
 	if (state.kind === "step") return paceStep(state, observed);
 	if (state.kind === "lead")
-		return held(state, observed, recordingMs("lead"), () => showing(0, observed));
-	return held(state, observed, recordingMs("tail"), () => ({
+		return held(state, observed, "recording.lead", () => showing(0, observed));
+	return held(state, observed, "recording.tail", () => ({
 		state: { kind: "done" },
 		action: { kind: "finish" },
 	}));

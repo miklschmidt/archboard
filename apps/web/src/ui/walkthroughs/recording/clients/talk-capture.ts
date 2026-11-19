@@ -7,12 +7,12 @@
 // the graph's clock are one count. An event is stamped with the graph's clock
 // when it happens, which is at most one render callback from the sound heard
 // then, well under one frame of video. What the voice says is the exception: the
-// browser holds the voice for `recordingMs("voiceBuffer")` before it plays it, and
+// browser holds the voice for `durationMs("recording.voiceBuffer")` before it plays it, and
 // the words are not held, so a line is stamped that much after it arrives, when
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { recordingMs } from "@archboard/timing";
+import { durationMs, recordingMs } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { talkClock, talkMsSamples } from "@archboard/walkthrough/talk";
 
@@ -29,7 +29,7 @@ declare function registerProcessor(name: string, processor: typeof AudioWorkletP
 declare const currentFrame: number;
 
 /** How long after a line arrives its sound is heard, in samples: what the browser buffers of the voice. */
-const VOICE_BUFFER_SAMPLES = Math.round(talkMsSamples(recordingMs("voiceBuffer")));
+const VOICE_BUFFER_SAMPLES = Math.round(talkMsSamples(durationMs("recording.voiceBuffer")));
 
 /** The name the tap is registered by in the audio worklet. */
 const TAP = "archboard-talk-tap";

@@ -3,7 +3,6 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, mock, test } from "bun:test";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
-import { pictureMs } from "@archboard/timing";
 
 /** Every call the painter took, by name. */
 const taken: string[] = [];
@@ -177,7 +176,7 @@ test("a painter that starts in time brings the first picture in before hiding SV
 
 test("a late painter takes the picture as it stands", async () => {
 	const { surface } = await surfaceWithAPicture();
-	clock.advanceTo(pictureMs("painterGrace"));
+	clock.advanceTo(400);
 	expect(surface.hasAttribute("data-ink-waits")).toBe(false);
 	await start("cpu");
 	expect(taken).toContain("show");
