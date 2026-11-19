@@ -33,7 +33,7 @@ const CHECK_CODE_HELP = [
 	"- MODULE_SHALLOW: a module whose every export that is not a type has EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED or a pass-through finding, or a Terraform or OpenTofu module that wraps one resource and passes every variable through. Clear the findings of its exports, or let the module decide what its callers need not. Under `--fail-shallow-modules`, or when the model's policy sets `codeCheck.failShallowModules`, it is a warning on a module that the branch touched, working tree included.",
 	"",
 	"Module depth:",
-	"- `depth` counts the exports of each bound module by kind: functions, classes, each public method of a class, values and types. A C# `static` member counts as a function or a value of its own. `logic` counts the calls, operators, conditions, loops and hidden values behind them. They are evidence, never a score.",
+	"- `depth` counts the exports of each bound module by kind: functions, classes, each public method of a class, values and types. A C# `static` member, or a Rust associated function or constant, counts as a function or a value of its own. `logic` counts the calls, operators, conditions, loops and hidden values behind them. They are evidence, never a score.",
 	"- `--fail-shallow-modules` judges only the modules that the branch touched since its base, uncommitted changes included, so older findings never fail it. `--base` names the base. Without it, the default base decides: where `origin/HEAD` points, else `main`. A base that does not resolve is the refusal BASE_UNRESOLVED, never a pass, and so is a gated shallow module whose range the check could not read.",
 	"",
 	"What it reads:",

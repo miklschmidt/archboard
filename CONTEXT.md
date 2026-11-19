@@ -796,6 +796,7 @@ _Avoid_: depth score, depth ratio, interface measures (those are what the model 
 What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
 A type counts for no verdict, and a TypeScript enum is a type. So are a Python type alias, a Go interface or a Go named type without methods in its file, and a C# interface, enum or delegate.
 A C# `static` member of an exported class is read through the class's name, so it is a function or a value of its own.
+In Rust, a trait or a type alias is a type, and a struct, an enum or a union is a class with its public methods. An associated function or constant is read through its type's name, as a C# `static` member is, and a `const` of a function pointer's type is a function.
 A value that can be called is a function, even when a call makes it, as a compound component made by `Object.assign` or the helper that `cva(...)` returns is. A schema cannot be called, so it is a value.
 _Avoid_: export type (a type is one kind), symbol kind
 
