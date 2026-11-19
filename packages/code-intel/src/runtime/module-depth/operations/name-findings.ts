@@ -12,6 +12,9 @@
 //   defines. One door is information. Two doors to one name are a warning:
 //   files outside both modules import the defining module directly, at run
 //   time, where a bound part owns the definition. Types pass no verdict.
+// - `EXPOSED_VALUE_COMPUTED`, a warning: two or more modules write the same
+//   math on an exported value or getter (computed-math.ts). It is the sharper
+//   `EXPOSED_VALUE`: it names the math that belongs to the module.
 // - `EXPOSED_VALUE`, a warning: code outside reads an exported value at run time.
 // - `CODE_PASS_THROUGH`, information: a function or a public method only
 //   passes its call on, as its code facts say, unless the callee is a value
@@ -22,9 +25,11 @@ import {
 	type ExposedName,
 	within,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { computedValue } from "#runtime/module-depth/operations/computed-math.ts";
 import {
 	type DepthFinding,
 	type DepthReading,
+	type DepthUse,
 	evidenceOf,
 	passedOn,
 	quoted,
@@ -118,16 +123,30 @@ function reexported(reading: DepthReading, name: ExposedName): DepthFinding {
 }
 
 /**
+ * The uses of an export at run time by files outside the module.
+ * @param reading The module.
+ * @param name The export.
+ * @returns The uses.
+ */
+function runtimeReads(reading: DepthReading, name: ExposedName): DepthUse[] {
+	return usesOf(reading.exposure.directory, name, reading.uses).filter((use) => !use.typeOnly);
+}
+
+/**
  * The finding on an exported value that outside code reads.
  * @param reading The module.
  * @param name The value.
- * @returns The finding, or undefined when no code outside reads it at run time.
+ * @returns `EXPOSED_VALUE_COMPUTED` where two modules write the same math on
+ * it, else `EXPOSED_VALUE`, or undefined when no code outside reads it at run time.
  */
-function exposedValue(reading: DepthReading, name: ExposedName): DepthFinding | undefined {
-	const reads = usesOf(reading.exposure.directory, name, reading.uses).filter(
-		(use) => !use.typeOnly,
-	);
+async function exposedValue(
+	reading: DepthReading,
+	name: ExposedName,
+): Promise<DepthFinding | undefined> {
+	const reads = runtimeReads(reading, name);
 	if (reads.length === 0) return undefined;
+	const computed = await computedValue(reading, name, reads);
+	if (computed !== undefined) return computed;
 	const readers = readersOf(reads);
 	const value = `${reading.label} exports the value ${name.name}`;
 	const remedy =
@@ -147,7 +166,9 @@ function exposedValue(reading: DepthReading, name: ExposedName): DepthFinding | 
 }
 
 /**
- * The finding on a function or a method that only passes its call on.
+ * The finding on a function or a method that only passes its call on, or on
+ * a function whose result two modules compute the same math on, as a
+ * getter's is.
  * @param reading The module.
  * @param name The function or method.
  * @returns The finding, or undefined when it decides something.
@@ -156,6 +177,8 @@ async function passThrough(
 	reading: DepthReading,
 	name: ExposedName,
 ): Promise<DepthFinding | undefined> {
+	const computed = await computedValue(reading, name, runtimeReads(reading, name));
+	if (computed !== undefined) return computed;
 	const root = name.definition.passes;
 	if (root === undefined) return undefined;
 	const read = await reading.facts.read(reading.checkout, name.path);
@@ -195,7 +218,8 @@ async function nameFinding(
  * @param reading The module.
  * @param name The export.
  * @param kind Its kind.
- * @returns `EXPOSED_VALUE` for a value, `CODE_PASS_THROUGH` for a function or a method, or none.
+ * @returns `EXPOSED_VALUE_COMPUTED` or `EXPOSED_VALUE` for a value,
+ * `EXPOSED_VALUE_COMPUTED` or `CODE_PASS_THROUGH` for a function or a method, or none.
  */
 function ownFinding(
 	reading: DepthReading,
@@ -209,6 +233,7 @@ function ownFinding(
 /** The codes that say a name hands its insides to its callers, which `MODULE_SHALLOW` rolls up. */
 const SHALLOW_CODES: ReadonlySet<string> = new Set([
 	"EXPOSED_VALUE",
+	"EXPOSED_VALUE_COMPUTED",
 	"CODE_PASS_THROUGH",
 	"REEXPORT_PASS_THROUGH",
 ]);
