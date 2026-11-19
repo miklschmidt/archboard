@@ -3,6 +3,7 @@
 // and on the page itself only where the panel hides.
 
 import type { RemixiconComponentType } from "@remixicon/react";
+import { cn } from "@archboard/ui-kit/components";
 import { createContext, useCallback, useId, type JSX, type ReactNode } from "react";
 
 /** The page that scrolls, and that its sections are measured against. */
@@ -74,7 +75,7 @@ const OUTLINE_LOOK = {
 	// words on the column's edge. A bar too narrow for every entry scrolls sideways rather than grow
 	// taller, so a jump still lands clear of it. It shows only in a reading too narrow for the panel.
 	bar: {
-		nav: "bg-background border-border sticky top-0 z-10 border-b @min-[900px]/reading:hidden",
+		nav: "bg-background border-border sticky top-0 z-10 hidden border-b in-data-presenting:block",
 		list: "mx-auto flex max-w-[1096px] gap-1 overflow-x-auto px-4 py-1.5",
 		current: "aria-[current=location]:shadow-[inset_0_-2px_0_var(--primary-mark)]",
 	},
@@ -88,6 +89,7 @@ const OUTLINE_LOOK = {
  * @param props.current The key of the one being read, or null.
  * @param props.onGo Go to a section.
  * @param props.place At the top of the right panel, or in a bar over the sections.
+ * @param props.hidesNarrow Whether the bar also shows in a narrow reading.
  * @returns The outline, or nothing while there are no sections.
  */
 function AboutOutline<Key extends string>(props: {
@@ -95,6 +97,7 @@ function AboutOutline<Key extends string>(props: {
 	readonly current: string | null;
 	readonly onGo: (key: Key) => void;
 	readonly place: keyof typeof OUTLINE_LOOK;
+	readonly hidesNarrow?: boolean;
 }): JSX.Element | null {
 	if (props.sections.length === 0) return null;
 	const look = OUTLINE_LOOK[props.place];
@@ -103,7 +106,7 @@ function AboutOutline<Key extends string>(props: {
 			aria-label="Sections of this page"
 			data-slot="about-outline"
 			data-place={props.place}
-			className={look.nav}
+			className={cn(look.nav, props.hidesNarrow && "@max-[900px]/reading:block")}
 		>
 			<ol className={look.list}>
 				{props.sections.map((section) => (
@@ -179,7 +182,7 @@ function AboutSectionFrame(props: {
 		<section
 			aria-labelledby={heading}
 			data-about-section={props.section.key}
-			className="flex min-w-0 scroll-mt-16 flex-col gap-4 @min-[900px]/reading:scroll-mt-8"
+			className="flex min-w-0 scroll-mt-16 flex-col gap-4 @min-[900px]/reading:scroll-mt-8 @min-[900px]/reading:in-data-presenting:scroll-mt-16"
 		>
 			<h3 id={heading} tabIndex={-1} className="text-section outline-none">
 				{props.section.label}

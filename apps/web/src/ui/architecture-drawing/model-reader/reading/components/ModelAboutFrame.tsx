@@ -167,8 +167,14 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 					<AboutOutline sections={sections} current={current} onGo={goTo} place="panel" />,
 					outline.panel,
 				)}
-			{outlined && outline.hidesNarrow && (
-				<AboutOutline sections={sections} current={current} onGo={goTo} place="bar" />
+			{outlined && (
+				<AboutOutline
+					sections={sections}
+					current={current}
+					onGo={goTo}
+					place="bar"
+					hidesNarrow={outline.hidesNarrow}
+				/>
 			)}
 			<div className={ABOUT_COLUMNS}>
 				<AboutTitle {...props} />
