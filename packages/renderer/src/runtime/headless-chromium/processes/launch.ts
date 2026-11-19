@@ -7,6 +7,7 @@ import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
 
 import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
+import { waitUntil } from "@archboard/timing";
 
 import {
 	DevTools,
@@ -21,7 +22,6 @@ import {
 import {
 	browserSocketUrl,
 	devToolsPortIn,
-	pollUntil,
 	processGroups,
 	removeTempRoot,
 	requireChromiumHost,
@@ -203,16 +203,17 @@ async function listeningPort(
 	deadline: number,
 	signal?: AbortSignal,
 ): Promise<number> {
-	const port = await pollUntil(
+	const port = await waitUntil(
+		"raster.chromium",
 		() => {
 			signal?.throwIfAborted();
-			return Promise.resolve(exitedEarly(spawned.child) ?? devToolsPortIn(spawned.tempRoot));
+			return exitedEarly(spawned.child) ?? devToolsPortIn(spawned.tempRoot) ?? undefined;
 		},
-		deadline,
-		"Chromium did not open its DevTools port in time.",
+		{ capAtMs: deadline },
 	);
-	if (typeof port !== "number") throw port;
-	return port;
+	if (!port.ok) throw new Error("Chromium did not open its DevTools port in time.");
+	if (typeof port.value !== "number") throw port.value;
+	return port.value;
 }
 
 /**
