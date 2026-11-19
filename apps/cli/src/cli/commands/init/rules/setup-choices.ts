@@ -4,7 +4,7 @@
 // it installs its tools, so an agent does it, with the user's consent.
 
 /** The skills that an installation ships, each a directory of its skills directory. */
-const BUNDLED_SKILLS = ["archboard", "archboard-pr", "archboard-plan"] as const;
+const BUNDLED_SKILLS = ["archboard", "archboard-pr", "archboard-plan", "archboard-deepen"] as const;
 
 /** The skills CLI (skills.sh), at the version that `init` was tested with. */
 const SKILLS_CLI = "skills@1.7.6";

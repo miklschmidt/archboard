@@ -3,10 +3,11 @@ id: TASK-652
 title: >-
   archboard-deepen deepens shallow modules and wide interfaces without a human
   gate
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T14:03:00Z'
-updated_date: '2026-11-19T14:09:00Z'
+updated_date: '2026-11-19T14:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -41,15 +42,25 @@ The finding messages and the archboard skill state the principles (narrow interf
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 skills/archboard-deepen/SKILL.md exists as a shipped, model-invoked skill whose description triggers on INTERFACE_WIDE or MODULE_SHALLOW findings and on autonomous deepening requests, and whose body carries the eight steps with checkable completion criteria
-- [ ] #2 It is self-contained: it needs no third-party skill, and it loads the archboard skill for locality, interface inspection, proposals, renders, the footprint and adoption
-- [ ] #3 The advisor gate and the advisor grilling say how to run two independent advisors, how they see each other's answers, and how open points are settled and recorded
-- [ ] #4 archboard init installs it with the other shipped skills, the release includes it, and tracked symlinks expose it in .claude/skills and .agents/skills
-- [ ] #5 The archboard skill points agents to it where INTERFACE_WIDE and MODULE_SHALLOW are described, and the site install and pull-request pages name it
-- [ ] #6 The skill-link and init tests cover it, and the skill follows writing-for-agents (one source of truth, leading words, no restated environment)
+- [x] #1 skills/archboard-deepen/SKILL.md exists as a shipped, model-invoked skill whose description triggers on INTERFACE_WIDE or MODULE_SHALLOW findings and on autonomous deepening requests, and whose body carries the eight steps with checkable completion criteria
+- [x] #2 It is self-contained: it needs no third-party skill, and it loads the archboard skill for locality, interface inspection, proposals, renders, the footprint and adoption
+- [x] #3 The advisor gate and the advisor grilling say how to run two independent advisors, how they see each other's answers, and how open points are settled and recorded
+- [x] #4 archboard init installs it with the other shipped skills, the release includes it, and tracked symlinks expose it in .claude/skills and .agents/skills
+- [x] #5 The archboard skill points agents to it where INTERFACE_WIDE and MODULE_SHALLOW are described, and the site install and pull-request pages name it
+- [x] #6 The skill-link and init tests cover it, and the skill follows writing-for-agents (one source of truth, leading words, no restated environment)
 - [ ] #7 Each round puts its evidence in the pull request it produces, in the body or a comment, never in the repository: the candidate table (friction, strength, files), the before and after Archboard pictures uploaded as attachments, each advisor's independent ranking and what they agreed on, and each grilling decision with its reason; the HTML report stays outside the checkout and is attached only where the host accepts the file
 - [ ] #8 The skill reads its two advisors (provider, model family, how to pick the latest model) from the consumer repository's agent docs: `docs/agents/advisors.md` by default, or the advisors file in the directory where that repository keeps its agent context docs. Without such a file it picks two different model families the harness offers, says which, and suggests the file; this repository's docs/agents/advisors.md names Astra and Fable
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Write skills/archboard-deepen/SKILL.md (model-invoked; vocabulary, advisor protocol, eight steps with completion criteria) and references/report.md (the HTML report). Reuse the archboard skill for every architecture operation and archboard-plan's to-tickets and implement-spec sections for slices, the gate and deviations, with the advisors in the user's place.
+2. Wire it in: BUNDLED_SKILLS in init setup choices, init help, release compile, INSTALL.md, site install, first-map and pull-requests pages, .coderabbit.yaml, symlinks in .claude/skills and .agents/skills.
+3. Tests: skill-links BUNDLED_SKILLS and the init system test's skills call.
+4. One pointer line in skills/archboard/references/design-lens.md Module depth.
+5. Run types, lint:all, format:check, test:modules, test:repository, test:system, site build.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
@@ -57,4 +68,19 @@ The finding messages and the archboard skill state the principles (narrow interf
 Owner (2026-11-19): the report and the advisors' picks go in the PR for each round.
 
 Owner (2026-11-19): consumers pick their own advisory models through docs/agents/advisors.md (or the repository's agent docs location; docs/agents is the default in Matt Pocock's skills). This repository's file names Astra and Fable.
+
+Evidence:
+- AC1: skills/archboard-deepen/SKILL.md, model-invoked (no disable-model-invocation); description triggers on INTERFACE_WIDE or MODULE_SHALLOW and on deepening without a human gate; Run holds steps 1-8 (Scope, Explore, Report, Choose, Grill, Build, Review, Hand off), each ending on a Done line.
+- AC2: no third-party skill named; the vocabulary, deletion test, dependency classes and report format are carried in its own words (SKILL.md Vocabulary, references/report.md). It loads the archboard skill for locality, interface inspection, proposals, renders, footprint and proposal completion, and reuses the shipped archboard-plan sections With to-tickets and With implement-spec for slices, the gate and deviations, with the advisors in the user's place.
+- AC3: the Advisors section: fresh briefs without the parent's preference, different model families when offered, round 1 independent, round 2 each sees the other's answer verbatim, settle on agreement or by evidence after round 2, one decision-log entry per point.
+- AC4: BUNDLED_SKILLS in apps/cli/src/cli/commands/init/rules/setup-choices.ts, init help, scripts/release/compile.ts SKILLS, tracked symlinks .claude/skills/archboard-deepen and .agents/skills/archboard-deepen.
+- AC5: one pointer line at the end of Module depth in skills/archboard/references/design-lens.md; site install.mdx (install and uninstall), first-map.mdx and pull-requests.mdx name it; INSTALL.md too.
+- AC6: skill-links test BUNDLED_SKILLS and the init system test's skills call include archboard-deepen; test:repository 176 pass, test:system 227 pass. writing-for-agents: one source of truth (commands stay in the archboard skill, slices and gate in archboard-plan), leading words (advisors, frontier, seam, deletion test, candidate), no restated CLI help.
+Validation: vp run types, lint:all, format:check, test:modules (5307 pass), test:repository, test:system, site bun run build (after bun site/scripts/paint.ts in a fresh worktree) all pass.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added the shipped, model-invoked archboard-deepen skill: an autonomous deepening run from scope to hand-off, where two independent advisor sub-agents (different model families when offered) settle every choice and design question in two rounds at most, and each decision lands in a decision log beside a self-contained HTML report outside the checkout. It reuses the archboard skill for every architecture operation and archboard-plan's ticket and merge sections for slices, the footprint gate and deviations, and interrupts the owner only to reverse an owner decision. archboard init and the release ship it; INSTALL.md, the site's install, first-map and pull-request pages name it; the design lens points to it from Module depth; the skill-link and init tests cover it. Follow-up risk: the design-lens pointer names INTERFACE_WIDE, which TASK-651 adds; its merge touches the same section.
+<!-- SECTION:FINAL_SUMMARY:END -->

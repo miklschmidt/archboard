@@ -204,7 +204,7 @@ It exits <Exit command="model footprint" outcome="outside" /> when the branch ch
 
 If the vault's repository holds the ticket branch, the command reads that branch's draft. Otherwise, it reads the draft on disk.
 
-The `archboard-plan` skill runs this gate in the integration worktree with `--model-at checkout` before each ticket merge. It edits the draft there, so the ticket branch does not hold those edits.
+The `archboard-plan` skill runs this gate in the integration worktree with `--model-at checkout` before each ticket merge. It edits the draft there, so the ticket branch does not hold those edits. The `archboard-deepen` skill runs the same gate before it merges each ticket of a redesign.
 
 A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes does not count. In a stack that merges instead of rebasing, a change that a lower layer also made, and that a merge brings in, does not count either. Each changed module lists the commits that changed it.
 

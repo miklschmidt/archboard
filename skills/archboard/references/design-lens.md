@@ -204,6 +204,7 @@ A language can force a constant. No exemption exists, so use the seam that repla
 - A compile-time condition such as `#if`: move the condition into the module.
 
 Exported types count for no verdict, so an exported union or enum keeps the compiler's exhaustive checks.
+To redesign the modules that `INTERFACE_WIDE` or `MODULE_SHALLOW` name, with advisors in place of a human gate, load the `archboard-deepen` skill.
 
 ## Integrate with improve-codebase-architecture
 
