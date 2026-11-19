@@ -1,11 +1,11 @@
 ---
 id: TASK-646.12
 title: Swift, C, C++ and Objective-C modules get every module-depth rule
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:03:00Z'
-updated_date: '2026-11-19T04:17:00Z'
+updated_date: '2026-11-19T04:22:00Z'
 labels:
   - ready-for-agent
 dependencies:
