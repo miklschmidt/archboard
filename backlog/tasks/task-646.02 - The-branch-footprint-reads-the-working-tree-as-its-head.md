@@ -1,9 +1,11 @@
 ---
 id: TASK-646.02
 title: The branch footprint reads the working tree as its head
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T00:12:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -53,3 +55,13 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 A branch footprint with a committed head gives the same answer as before
 - [ ] #3 A History lens test covers the working-tree head
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. The footprint request's head can be the working tree: a caller passes { workingTree: true } in place of a ref. A part pinned to a ref its checkout lacks keeps its ref, as it does at HEAD.
+2. History lens snapshots each checkout's working tree (tracked changes and untracked, unignored files) as a commit on top of HEAD, with a copy of the index and a temporary object directory that borrows the checkout's objects. Every read of that range runs with it, and the directory is removed after. The checkout gains no object and no index change, and a clean tree reads HEAD itself.
+3. The answer says workingTree: true; the rest of the range machinery is unchanged, so a committed head answers as before.
+4. ADR 0045 and the Git client's notes name the exception: a footprint asked for the working tree reads uncommitted files.
+5. Test first at the History lens seam (readVariantFootprint): uncommitted, staged and untracked changes name their parts, ignored files do not, the checkout is left as it was.
+<!-- SECTION:PLAN:END -->
