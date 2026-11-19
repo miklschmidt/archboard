@@ -1,9 +1,11 @@
 ---
 id: TASK-646.18
 title: External modules get no verdicts, and an undeclared interface shows
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T04:22:00Z'
+updated_date: '2026-11-19T04:34:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -52,3 +54,15 @@ Follow the same section of TASK-646.05.
 - [ ] #4 The archboard skill and ADR 0082 describe all three
 - [ ] #5 Code-check tests cover each case
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Tests first: module-depth-names fixture gains an external module (kind external) with an unused and a pass-through export -> counts kept, no per-name finding, no MODULE_SHALLOW; Ledger (index-less folder) gets one INTERFACE_UNDECLARED information finding naming how many of its names files outside use and which only its own files import; rust-uses fixture gains #[derive(TS)] / #[derive(ts_rs::TS)] items -> no EXPOSED_UNUSED.
+2. Module depth: DepthReading.external (the code check sets it from the node's or a holder's kind); moduleDepth counts and lists, judges nothing for it. The code check's unjudged-language EXPOSED_UNUSED skips it too.
+3. Module depth: INTERFACE_UNDECLARED, information, on a module that declares no interface where at least one name is kept used only by a sibling import (so Go/Swift and modules with nothing left out stay quiet).
+4. Fact analysis: rust-definitions marks an item under #[derive(..TS..)] calledByLanguage, like #[wasm_bindgen].
+5. UI: Measures' Code tab names the finding (FINDING_NAMES); the About page's code exports show it over the list beside MODULE_SHALLOW. Screenshots in both themes.
+6. Docs: ADR 0082, design lens, CLI check help, CONTEXT.md if a term is new.
+7. Before/after warning totals by code on this repository with bin/archboard.
+<!-- SECTION:PLAN:END -->
