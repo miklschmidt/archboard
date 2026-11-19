@@ -59,6 +59,13 @@
 // them, or a model's policy turns the shallow-module gate on, which
 // `models[].failShallowModules` carries. No severity depends on the request:
 // the CLI promotes `MODULE_SHALLOW` on a touched module to a warning.
+// TASK-646.05 gives each exported TypeScript name, each public method of an
+// exported class among them, at most one finding with the name in `export`:
+// `EXPOSED_UNUSED`, a warning only after a complete read when the model draws
+// no caller of it whose code the check does not read; `REEXPORT_PASS_THROUGH`,
+// a warning for two doors to one name and information for one;
+// `EXPOSED_VALUE`; or `CODE_PASS_THROUGH`, information. The names of other
+// languages keep the one `EXPOSED_UNUSED` on the container.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";

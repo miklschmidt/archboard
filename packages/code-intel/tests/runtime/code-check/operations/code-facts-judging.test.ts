@@ -159,7 +159,9 @@ test("a TypeScript file holds a bound symbol it defines and an anchored one it d
 	expect(found.toSorted()).toEqual(
 		[
 			"BINDING_SYMBOL_MISSING pU",
-			// The bound directory src/web exposes names that no file outside it uses.
+			// The bound directory src/web exposes three names that no file outside it uses, one finding each.
+			"EXPOSED_UNUSED pW",
+			"EXPOSED_UNUSED pW",
 			"EXPOSED_UNUSED pW",
 			"ANCHOR_SYMBOL_MISSING e4",
 			"ANCHOR_SYMBOL_MISSING e5",

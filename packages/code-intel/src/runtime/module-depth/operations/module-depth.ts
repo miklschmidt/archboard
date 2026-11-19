@@ -1,4 +1,4 @@
-// Module depth (TASK-646.04): what a bound module's code offers its callers,
+// Module depth (TASK-646.04, TASK-646.05): what a bound module's code offers its callers,
 // and the verdicts on it, as named findings and never a score.
 //
 // A deep module has a small interface that hides much logic. A shallow one
@@ -12,21 +12,24 @@
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
 //
-// It judges each exported name:
+// It judges each exported name, each public method of an exported class
+// among them, and gives each at most one finding (name-findings.ts):
+// `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE` or
+// `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
+// `toString`, are no export a caller names: they are neither counted nor
+// judged. A method's uses run through values, which a syntax read cannot
+// follow, so no method is judged unused, and an implementation used through
+// its interface counts as used.
 //
-// - `EXPOSED_VALUE`, a warning: an exported value that code outside the module
-//   reads at run time, a value a call makes, as `durations({...})` does,
-//   included. A test is no reader, and nor is a use only as a type. Its
-//   remedies follow the readers: one reader takes the value, and several get
-//   what they do with it moved into the module. A function that returns the
-//   value, a getter, is an interface, and has no finding.
-// - `MODULE_SHALLOW`, information: every export that is not a type carries a
-//   finding of its own. Types are no verdict's concern, so an exported union or
-//   enum keeps the compiler's exhaustive checks. The answer never makes it a
-//   warning: the CLI does, for the modules a branch touched (ADR 0082).
+// `MODULE_SHALLOW`, information, rolls them up: every export that is not a
+// type carries `EXPOSED_VALUE` or a pass-through. A class stands for its
+// public methods. Types are no verdict's concern, so an exported union or enum
+// keeps the compiler's exhaustive checks. The answer never makes it a
+// warning: the CLI does, for the modules a branch touched (ADR 0082).
 //
-// It judges the names of the languages whose adapter names the kind of each
-// export: TypeScript.
+// The findings come grouped: one module's, in the order it exports the names,
+// then its roll-up. It judges the names of the languages whose adapter names
+// the kind of each export: TypeScript.
 //
 // It counts the exports of a Terraform module, a Nix flake and a Helm chart
 // by kind too, and judges none of them (TASK-646.13): a caller sets a
@@ -38,13 +41,19 @@
 // `image` only group the names below them.
 
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
-import type {
-	ExposedName,
-	ModuleExposure,
-} from "#runtime/code-facts/modules/operations/module-exposure.ts";
-import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/module-resolution.ts";
-import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
-import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
+import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
+import {
+	type DepthFinding,
+	type DepthReading,
+	memberOf,
+	passedOn,
+} from "#runtime/module-depth/operations/depth-reading.ts";
+import {
+	type NameKind,
+	nameFinding,
+	SHALLOW_CODES,
+} from "#runtime/module-depth/operations/name-findings.ts";
 
 /**
  * What this part does with the names each adapter exposes: those of an adapter
@@ -58,35 +67,22 @@ const GROUPS: ReadonlyMap<SyntaxFacts["adapter"], keyof Omit<CountedNames, "lang
 	["helm", "infrastructure"],
 ]);
 
-/** The module that owns a file outside the one judged: a part, else the file alone. */
-interface Reader {
-	readonly id?: string;
-	readonly name: string;
-}
+/**
+ * The files each judged adapter reads: only an unread file of a name's
+ * language can hold a use of it.
+ */
+const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
+	["typescript", TYPESCRIPT_FILE],
+]);
 
-/** One use of a module's code by a file outside it, as the code check read it. */
-interface DepthUse {
-	readonly file: string;
-	readonly line: number;
-	readonly symbol: string;
-	/** A use only as a type, which reads no value. */
-	readonly typeOnly: boolean;
-	/** Where the name it reaches is defined. */
-	readonly site: { readonly path: string; readonly definition: Definition };
-	readonly reader: Reader;
-}
-
-/** What judging one module reads. */
-interface DepthReading {
-	readonly facts: FactsPass;
-	readonly checkout: CheckoutFiles & { readonly repo: string };
-	readonly exposure: ModuleExposure;
-	readonly uses: readonly DepthUse[];
-	/** The module's own files, its tests aside. */
-	readonly files: readonly string[];
-	/** The module as a sentence names it, such as `module "Timing"`. */
-	readonly label: string;
-}
+/** The members a language calls itself, which no caller names. */
+const CALLED_BY_LANGUAGE: ReadonlySet<string> = new Set([
+	"constructor",
+	"toString",
+	"toLocaleString",
+	"valueOf",
+	"toJSON",
+]);
 
 /** A module's exports, by kind. */
 interface ExportCounts {
@@ -97,48 +93,19 @@ interface ExportCounts {
 	readonly types: number;
 }
 
-/** A finding of module depth, before the code check places it on a part. */
-type DepthFinding = Pick<CodeFinding, "severity" | "code" | "message" | "evidence" | "export">;
-
 /** What judging one module gives. */
 interface Depth {
 	/** The languages whose exports were counted and judged. */
 	readonly languages: readonly string[];
+	/** The exported names it judged, which no other rule judges again. */
+	readonly names: readonly string[];
 	readonly exports: ExportCounts;
 	readonly logic: number;
 	readonly findings: readonly DepthFinding[];
 }
 
-/** The kind of one export. */
+/** The kind of one top-level export. */
 type ExportKind = "function" | "class" | "value" | "type";
-
-/**
- * Whether a C++ definition is a member of another by its name, as
- * `shop::Store::open` is of `shop::Store`: a method is often defined in
- * another file than its class.
- * @param member The definition.
- * @param holder The other definition.
- * @returns True when it is.
- */
-function memberOf(member: Definition, holder: Definition): boolean {
-	return member.symbol.startsWith(`${holder.symbol}::`);
-}
-
-/**
- * Whether a use reaches an exposed definition or one inside it, such as a member.
- * @param name The exposed name.
- * @param use The use.
- * @param use.site Where the name it reaches is defined.
- * @returns True when it does.
- */
-function reaches(name: ExposedName, use: { readonly site: DepthUse["site"] }): boolean {
-	const { path, definition } = use.site;
-	const inside =
-		path === name.path &&
-		name.definition.start <= definition.start &&
-		definition.end <= name.definition.end;
-	return inside || memberOf(definition, name.definition);
-}
 
 /**
  * Whether an exposed name is a declaration of its file, not a member of one,
@@ -169,7 +136,7 @@ interface CountedNames {
 	readonly judged: readonly ExposedName[];
 	/** The names of an infrastructure adapter. */
 	readonly infrastructure: readonly ExposedName[];
-	readonly languages: readonly string[];
+	readonly languages: readonly SyntaxFacts["adapter"][];
 }
 
 /**
@@ -183,7 +150,7 @@ async function countedNames(reading: DepthReading): Promise<CountedNames> {
 		judged: new Map<string, ExposedName>(),
 		infrastructure: new Map<string, ExposedName>(),
 	};
-	const languages = new Set<string>();
+	const languages = new Set<SyntaxFacts["adapter"]>();
 	for (const name of reading.exposure.exposed) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await reading.facts.read(reading.checkout, name.path);
@@ -222,8 +189,10 @@ function pathEnds(names: readonly ExposedName[]): ExposedName[] {
 function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean {
 	const { symbol } = member.definition;
 	const holder = symbol.slice(0, Math.max(symbol.lastIndexOf("."), 0));
+	const called = CALLED_BY_LANGUAGE.has(symbol.slice(holder.length + 1));
 	return (
 		member.definition.kind === "function" &&
+		!called &&
 		classes.some((each) => each.path === member.path && each.definition.symbol === holder)
 	);
 }
@@ -233,31 +202,33 @@ function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean
  * the public methods of their classes, and the names at the end of their
  * paths of its infrastructure.
  * @param names The counted names.
- * @returns The counts, and the judged top-level names with their kinds.
+ * @returns The counts, and each judged export with its kind, in the order the module exports them.
  */
 function countExports(names: CountedNames): {
 	readonly counts: ExportCounts;
-	readonly top: readonly (readonly [ExposedName, ExportKind])[];
+	readonly judged: readonly (readonly [ExposedName, NameKind])[];
 } {
-	const { judged } = names;
-	const top = judged
-		.filter((name) => topLevel(name, judged))
+	const top = names.judged
+		.filter((name) => topLevel(name, names.judged))
 		.map((name) => [name, kindOf(name.definition)] as const);
 	const counted = [
 		...top,
 		...pathEnds(names.infrastructure).map((name) => [name, kindOf(name.definition)] as const),
 	];
 	const classes = ofKind(top, "class");
-	const members = judged.filter((name) => !topLevel(name, judged));
+	const judged = names.judged.flatMap((name): (readonly [ExposedName, NameKind])[] => {
+		if (topLevel(name, names.judged)) return [[name, kindOf(name.definition)]];
+		return methodOf(name, classes) ? [[name, "method"]] : [];
+	});
 	return {
 		counts: {
 			functions: ofKind(counted, "function").length,
 			classes: classes.length,
-			methods: members.filter((member) => methodOf(member, classes)).length,
+			methods: judged.filter(([, kind]) => kind === "method").length,
 			values: ofKind(counted, "value").length,
 			types: ofKind(counted, "type").length,
 		},
-		top,
+		judged,
 	};
 }
 
@@ -298,78 +269,18 @@ async function logicOf(reading: DepthReading): Promise<number> {
 }
 
 /**
- * The names of readers, quoted, in the order they first read.
- * @param readers The readers.
- * @returns Their names.
- */
-function quoted(readers: readonly Reader[]): string {
-	return readers.map((reader) => JSON.stringify(reader.name)).join(", ");
-}
-
-/**
- * The finding on an exported value that outside code reads.
+ * The finding on a module whose every export that is not a type hands its
+ * insides to its callers.
  * @param reading The module.
- * @param name The value.
- * @param uses Its reads.
- * @returns The finding.
- */
-function exposedValue(
-	reading: DepthReading,
-	name: ExposedName,
-	uses: readonly DepthUse[],
-): DepthFinding {
-	const readers = [...new Map(uses.map((use) => [use.reader.name, use.reader])).values()];
-	const value = `${reading.label} exports the value ${name.name}`;
-	const remedy =
-		readers.length === 1
-			? `Only ${quoted(readers)} reads it: move the value into ${quoted(readers)} and stop exporting it.`
-			: `${readers.length} modules read it: ${quoted(readers)}. Move what they do with it into ` +
-				`${reading.label}, behind a function, and stop exporting the value.`;
-	return {
-		severity: "warning",
-		code: "EXPOSED_VALUE",
-		export: name.name,
-		message:
-			`${value}, which code outside it reads: its callers hold logic that belongs to it. ` +
-			`${remedy} Where a caller needs the value itself, export a function that returns it.`,
-		evidence: evidenceOf(reading, uses),
-	};
-}
-
-/**
- * One piece of evidence for each file that reads a value, at its first read.
- * @param reading The module.
- * @param uses The reads.
- * @returns The evidence.
- */
-function evidenceOf(reading: DepthReading, uses: readonly DepthUse[]): CodeEvidence[] {
-	const first = new Map<string, DepthUse>();
-	for (const use of uses) if (!first.has(use.file)) first.set(use.file, use);
-	return [...first.values()].map((use) => ({
-		kind: "call",
-		resolution: "resolved",
-		...(use.reader.id === undefined ? {} : { from: use.reader.id }),
-		repo: reading.checkout.repo,
-		path: use.file,
-		line: use.line,
-		symbol: use.symbol,
-	}));
-}
-
-/**
- * The finding on a module whose every export that is not a type has one of its own.
- * @param reading The module.
- * @param judged The exports that are not types, each with the codes of its findings.
- * @returns The finding, or undefined when one has none or the module exports none.
+ * @param judged Each export that answers for the roll-up, and whether it does.
+ * @returns The finding, or undefined when one does not or the module exports none.
  */
 function shallow(
 	reading: DepthReading,
-	judged: ReadonlyMap<string, readonly string[]>,
+	judged: ReadonlyMap<string, boolean>,
 ): DepthFinding | undefined {
 	const names = [...judged.keys()];
-	if (names.length === 0 || names.some((name) => (judged.get(name) ?? []).length === 0)) {
-		return undefined;
-	}
+	if (names.length === 0 || [...judged.values()].some((each) => !each)) return undefined;
 	return {
 		severity: "information",
 		code: "MODULE_SHALLOW",
@@ -381,42 +292,45 @@ function shallow(
 }
 
 /**
- * Measure one bound module from its code, and judge its exports.
- * @param reading What the code check read of the module.
- * @returns The counts and the findings.
- */
-async function moduleDepth(reading: DepthReading): Promise<Depth> {
-	const names = await countedNames(reading);
-	const { counts, top } = countExports(names);
-	const findings = top.flatMap(([name, kind]) => perName(reading, name, kind));
-	const judged = new Map(
-		top
-			.filter(([, kind]) => kind !== "type")
-			.map(([name]) => [
-				name.name,
-				findings.filter((each) => each.export === name.name).map((each) => each.code),
-			]),
-	);
-	const rollUp = shallow(reading, judged);
-	return {
-		languages: names.languages,
-		exports: counts,
-		logic: await logicOf(reading),
-		findings: rollUp === undefined ? findings : [...findings, rollUp],
-	};
-}
-
-/**
- * The findings of one export of its own.
+ * Whether an export answers for the roll-up: a name that is not a type, and
+ * a class only through its methods, unless the module passes the class on.
  * @param reading The module.
  * @param name The export.
  * @param kind Its kind.
- * @returns Its findings: `EXPOSED_VALUE` for a value outside code reads.
+ * @returns True when it does.
  */
-function perName(reading: DepthReading, name: ExposedName, kind: ExportKind): DepthFinding[] {
-	if (kind !== "value") return [];
-	const reads = reading.uses.filter((use) => !use.typeOnly && reaches(name, use));
-	return reads.length === 0 ? [] : [exposedValue(reading, name, reads)];
+function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boolean {
+	if (kind === "type") return false;
+	return kind !== "class" || passedOn(reading.exposure.directory, name);
 }
 
-export { type Depth, type DepthUse, type ExportCounts, moduleDepth, reaches, topLevel };
+/**
+ * Measure one bound module from its code, and judge its exports.
+ * @param reading What the code check read of the module.
+ * @returns The counts, the findings, and the names it judged.
+ */
+async function moduleDepth(reading: DepthReading): Promise<Depth> {
+	const names = await countedNames(reading);
+	const { counts, judged } = countExports(names);
+	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
+	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
+	const findings: DepthFinding[] = [];
+	const rollUp = new Map<string, boolean>();
+	for (const [name, kind] of judged) {
+		// oxlint-disable-next-line no-await-in-loop -- one name at a time keeps the findings in export order
+		const finding = await nameFinding({ ...reading, unread }, name, kind);
+		if (finding !== undefined) findings.push(finding);
+		if (rolledUp(reading, name, kind))
+			rollUp.set(name.name, finding !== undefined && SHALLOW_CODES.has(finding.code));
+	}
+	const shallowFinding = shallow(reading, rollUp);
+	return {
+		languages: names.languages,
+		names: judged.map(([name]) => name.name),
+		exports: counts,
+		logic: await logicOf(reading),
+		findings: shallowFinding === undefined ? findings : [...findings, shallowFinding],
+	};
+}
+
+export { type Depth, type ExportCounts, moduleDepth, topLevel };

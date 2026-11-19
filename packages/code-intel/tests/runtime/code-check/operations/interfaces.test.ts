@@ -372,35 +372,37 @@ test("a container with no caller on its document has no caller to miss", () => {
 	expect(findings("CALLER_UNDRAWN", "Store alone")).toEqual([]);
 });
 
-test("exposed names no file outside the module uses are information on the container, and a test is no caller and no root file", () => {
+test("each exposed name no file outside the module uses is a finding of its own, and a test is no caller and no root file", () => {
 	for (const documentName of ["Shop", "Store alone"]) {
 		const unused = findings("EXPOSED_UNUSED", documentName).filter(
 			(each) => each.subject?.id === "Store",
 		);
-		expect(unused.map((each) => each.severity)).toEqual(["information"]);
 		// The system test calls the helper, and the report names the type.
-		expect(unused[0]?.message).toContain("unusedHelper");
-		expect(unused[0]?.message).not.toContain("ShelfType");
-		expect(unused[0]?.message).not.toContain("shelfFixture");
+		expect(unused.map((each) => [each.export, each.severity])).toEqual([
+			["unusedHelper", "warning"],
+		]);
 	}
 });
 
 test("a bound module with no parts reports its interface", () => {
 	const unused = findings("EXPOSED_UNUSED", "Timing");
-	expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
-		["Timing", "information"],
+	expect(unused.map((each) => [each.subject?.id, each.export, each.severity])).toEqual([
+		["Timing", "IDLE_MS", "warning"],
 	]);
-	expect(unused[0]?.message).toContain("IDLE_MS");
-	expect(unused[0]?.message).not.toContain("RETRY_MS");
 });
 
 test("a bound module that holds two languages reports the exports and the uses of both", () => {
 	const unused = findings("EXPOSED_UNUSED", "Kit");
-	expect(unused.map((each) => each.subject?.id)).toEqual(["Kit"]);
-	const message = unused[0]?.message ?? "";
+	expect(unused.map((each) => [each.subject?.id, each.export])).toEqual([
+		// Module depth judges a TypeScript name by itself.
+		["Kit", "tsUnused"],
+		// The Python names stay listed on the container until Module depth judges Python.
+		["Kit", undefined],
+	]);
+	const message = unused[1]?.message ?? "";
 	// Each language's unused export is named, and each language's caller is a use.
-	expect(message).toContain("tsUnused");
 	expect(message).toContain("py_unused");
+	expect(message).not.toContain("tsUnused");
 	expect(message).not.toContain("tsUsed");
 	expect(message).not.toContain("py_used");
 });

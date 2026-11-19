@@ -37,8 +37,23 @@ so agents in an implementation loop added exported constants and nothing failed.
   function that returns the value, a getter, is an interface and clears it.
   Later rules join it: pass-throughs, unused exports, and math that callers
   repeat on one export.
+- **Each exported name gets at most one finding** (TASK-646.05).
+  `EXPOSED_UNUSED` comes first, because its remedy removes the name. A
+  function or method that only passes its call on is `CODE_PASS_THROUGH`,
+  information. A name passed on from another module is
+  `REEXPORT_PASS_THROUGH`: information through one door, a warning when files
+  outside both modules also import the defining module, two doors to one name.
+- **An unused export is a warning only after a complete read**: every file
+  outside the module in its language parsed, every relative import resolved,
+  no import of the whole module, and no caller drawn in the model whose code
+  the check does not read. Otherwise it is information. Drawing the consumer
+  of a published entry is how a package says that callers outside the checkout
+  use it; no package setting does. A test is no user. Uses of a method go
+  through values, which a syntax read cannot follow, so no method is judged
+  unused, and members the language calls are never judged.
 - **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
-  is not a type carries a finding of its own. Types count for no verdict, so an
+  is not a type carries `EXPOSED_VALUE` or a pass-through finding. A class
+  stands for its public methods. Types count for no verdict, so an
   exported union or enum keeps the compiler's exhaustive checks. An enum counts
   as a type.
 - **No exemption for values a language forces to be constants.** The archboard
