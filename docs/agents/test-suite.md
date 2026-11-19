@@ -466,6 +466,7 @@ It opens the selected module's folded definition in the right panel.
 `canonical-model-publication.test.ts` covers explicit destination choice, network failure, retry, and missing-history recovery through a real local Git remote.
 It shares the canonical reader interaction helpers with the viewing owner.
 `canonical-model-navigation.test.ts` covers recursive scope, exact reading addresses, independent panes, connection aggregation, and complete interfaces.
+It covers the description and code evidence for a single selected relationship.
 It also proves that a hidden metadata edit preserves the mounted scene while the visible revision advances.
 `canonical-model-selection.test.ts` covers pointer modifiers, keyboard selection, and immediate highlighting without layout or history changes.
 `canonical-model-gestures.test.ts` covers drag selection and Space/middle-button panning through the existing renderer bounds.
