@@ -13,6 +13,8 @@
 // and only its tests read `UNUSED`. `ledger` exports a trait, a type alias,
 // an enum, a function pointer, a type with an associated constant that passes
 // calls on, and one that implements the trait and `Drop`.
+// `store` exports `Shelf`, whose methods are all elsewhere in the crate: in
+// its private module file `shelf.rs`, and in `worker`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -122,6 +124,10 @@ beforeAll(async () => {
 			"fn note(log: &Tracer) -> u64 {",
 			"    log.log(DEADLINE)",
 			"}",
+			"use crate::store::Shelf;",
+			"impl Shelf {",
+			"    pub fn restock(&self) {}",
+			"}",
 			"#[cfg(test)]",
 			"mod tests {",
 			"    use crate::timing::UNUSED;",
@@ -132,7 +138,26 @@ beforeAll(async () => {
 			"}",
 			"",
 		].join("\n"),
-		"src/store/mod.rs": "pub fn save(amount: i64) -> i64 {\n    amount * 2\n}\n",
+		"src/store/mod.rs": [
+			"mod shelf;",
+			"pub fn save(amount: i64) -> i64 {",
+			"    amount * 2",
+			"}",
+			"pub struct Shelf;",
+			"",
+		].join("\n"),
+		"src/store/shelf.rs": [
+			"use super::Shelf;",
+			"impl Shelf {",
+			"    pub fn stock(&self) -> u32 {",
+			"        1",
+			"    }",
+			"    pub(super) fn count(&self) -> u32 {",
+			"        0",
+			"    }",
+			"}",
+			"",
+		].join("\n"),
 		"src/ledger/mod.rs": [
 			"use crate::store::save;",
 			"const FEE: i64 = 4;",
@@ -276,6 +301,17 @@ test("a Rust module's exports are counted by kind: a struct or an enum with a pu
 		values: 4,
 		types: 1,
 	});
+});
+
+test("a public method counts for its type whichever file of the crate declares its impl block, a private module file of the type's module or another module, and one its module alone sees does not", () => {
+	expect(depthOf("Store")?.names.map(({ name, kind }) => [name, kind])).toEqual([
+		["save", "function"],
+		["Shelf", "class"],
+		["Shelf.stock", "method"],
+		["Shelf.restock", "method"],
+	]);
+	// `worker` counts no method of a type it does not export.
+	expect(depthOf("Worker")?.exports.methods).toBe(0);
 });
 
 test("the pieces of logic of a Rust module are its calls, macro calls, operators, conditions and its hidden values, its tests aside", () => {
