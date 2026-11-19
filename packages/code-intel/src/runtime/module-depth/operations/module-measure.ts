@@ -13,8 +13,13 @@
 //   evidence of each ground that holds.
 //
 // The thresholds are fixed. Each message states the principle and prescribes
-// no fix: an agent reasons the fix out. The measured grounds stand only on a
-// reading the counts can stand on, and the roll-up keeps its own evidence.
+// no fix: an agent reasons the fix out. The width stands where every name is
+// in a language whose adapter names each export's kind. It needs no whole
+// parse, since the exposure reader names the exports. The measured ground of
+// `MODULE_SHALLOW` also needs every file parsed whole, since logic in code
+// that did not parse goes uncounted. Where the logic counted would make the
+// module shallow but a file did not parse, the verdict is withheld, and the
+// caller says so. The roll-up keeps its own evidence.
 
 import type { DepthFinding } from "#runtime/module-depth/operations/depth-reading.ts";
 import type { ModuleDepth } from "#shared/protocol/code-check.ts";
@@ -35,11 +40,10 @@ interface ModuleMeasure {
 	readonly label: string;
 	readonly exports: ExportCounts;
 	readonly logic: number;
-	/**
-	 * Whether the counts stand on a complete reading of languages whose
-	 * adapters name each export's kind and count its logic.
-	 */
-	readonly measured: boolean;
+	/** Whether every name is in a language whose adapter names each export's kind. */
+	readonly supported: boolean;
+	/** Whether every file of such a language parsed whole and gave its count of logic. */
+	readonly complete: boolean;
 	/** The exports that each hand the module's insides to its callers, when every one does. */
 	readonly rolledUp: readonly string[] | undefined;
 }
@@ -83,6 +87,16 @@ function wide(measure: ModuleMeasure, width: number): DepthFinding | undefined {
 }
 
 /**
+ * Whether a module of this width hides too little logic behind its names.
+ * @param width Its width.
+ * @param logic The pieces of logic counted.
+ * @returns True when Ousterhout's measure calls it shallow.
+ */
+function thin(width: number, logic: number): boolean {
+	return width >= SHALLOW_WIDTH && logic < LOGIC_PER_NAME * width;
+}
+
+/**
  * The finding on a shallow module, with the evidence of each ground that holds.
  * @param measure The module.
  * @param width Its width.
@@ -91,13 +105,14 @@ function wide(measure: ModuleMeasure, width: number): DepthFinding | undefined {
 function shallow(measure: ModuleMeasure, width: number): DepthFinding | undefined {
 	const { rolledUp, logic } = measure;
 	const grounds: string[] = [];
+	const measured = measure.supported && measure.complete && thin(width, logic);
 	if (rolledUp !== undefined) {
 		grounds.push(
 			`each of its ${rolledUp.length} exports that is not a type has a finding of its own ` +
 				`(${rolledUp.join(", ")}), so it hands its insides to its callers`,
 		);
 	}
-	if (measure.measured && width >= SHALLOW_WIDTH && logic < LOGIC_PER_NAME * width) {
+	if (measured) {
 		grounds.push(
 			`its ${width} names have ${logic} pieces of logic behind them, about ${(logic / width).toFixed(1)} each`,
 		);
@@ -110,15 +125,30 @@ function shallow(measure: ModuleMeasure, width: number): DepthFinding | undefine
 	};
 }
 
+/** The verdicts on a module as a whole. */
+interface ModuleVerdicts {
+	/** `INTERFACE_WIDE` and `MODULE_SHALLOW`, where each holds. */
+	readonly findings: readonly DepthFinding[];
+	/**
+	 * Whether a file that did not parse withholds the measured shallow
+	 * verdict: the logic counted would make the module shallow, and logic in
+	 * the code that did not parse could make it deep.
+	 */
+	readonly withheld: boolean;
+}
+
 /**
  * The verdicts on a module as a whole.
  * @param measure The module.
- * @returns `INTERFACE_WIDE` and `MODULE_SHALLOW`, where each holds.
+ * @returns The findings, and whether a file that did not parse withholds one.
  */
-function moduleFindings(measure: ModuleMeasure): DepthFinding[] {
+function moduleFindings(measure: ModuleMeasure): ModuleVerdicts {
 	const width = widthOf(measure.exports);
-	const findings = [measure.measured ? wide(measure, width) : undefined, shallow(measure, width)];
-	return findings.filter((each) => each !== undefined);
+	const found = [measure.supported ? wide(measure, width) : undefined, shallow(measure, width)];
+	return {
+		findings: found.filter((each) => each !== undefined),
+		withheld: measure.supported && !measure.complete && thin(width, measure.logic),
+	};
 }
 
 export { type ExportCounts, moduleFindings };

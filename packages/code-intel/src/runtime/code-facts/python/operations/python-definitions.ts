@@ -190,9 +190,60 @@ function typeAlias(declaration: Node): boolean {
 	return TYPE_ALIAS.test(annotation?.text ?? "");
 }
 
+/** A decorator that makes a class a dataclass: `@dataclass`, `@dataclasses.dataclass(frozen=True)`. */
+const DATACLASS = /^@\s*(?:dataclasses\.)?dataclass\b/u;
+
+/** A base class that makes a class an enum. */
+const ENUM_BASE = /^(?:enum\.)?(?:Enum|IntEnum|StrEnum|Flag|IntFlag)$/u;
+
+/**
+ * Whether a class holds data: a dataclass, or an enum. It is a type unless
+ * its module gives it a public method (`Definition.data`, TASK-651).
+ * @param declaration The declaration, or the decorated definition that holds it.
+ * @returns True when it does.
+ */
+function holdsData(declaration: Node): boolean {
+	if (declaration.type === "class_definition") return enumClass(declaration);
+	if (declaration.type !== "decorated_definition") return false;
+	const definition = declaration.childForFieldName("definition");
+	return dataclass(declaration) || (definition !== null && holdsData(definition));
+}
+
+/**
+ * Whether a decorated definition is a dataclass.
+ * @param decorated The decorated definition.
+ * @returns True when a decorator makes it one.
+ */
+function dataclass(decorated: Node): boolean {
+	return decorated.namedChildren.some(
+		(each) => each.type === "decorator" && DATACLASS.test(each.text),
+	);
+}
+
+/**
+ * Whether a class is an enum: a base class makes it one.
+ * @param definition The class.
+ * @returns True when it is.
+ */
+function enumClass(definition: Node): boolean {
+	const bases = definition.childForFieldName("superclasses")?.namedChildren ?? [];
+	return bases.some((each) => ENUM_BASE.test(each.text));
+}
+
+/**
+ * What a declaration declares beside its kind: a type alias, or a class that holds data.
+ * @param declaration The declaration.
+ * @returns The mark, or nothing.
+ */
+function typeTraits(declaration: Node): Pick<Definition, "type" | "data"> {
+	if (typeAlias(declaration)) return { type: true };
+	return holdsData(declaration) ? { data: true } : {};
+}
+
 /**
  * What a declaration's syntax says beside its kind (TASK-646.11): that it
- * declares a type alias, the call it only passes on, and that Python calls it.
+ * declares a type alias or holds data, the call it only passes on, and that
+ * Python calls it.
  * @param name The declared name.
  * @param declaration The declaration.
  * @param classes The classes that hold it.
@@ -202,12 +253,12 @@ function traitsOf(
 	name: Node,
 	declaration: Node,
 	classes: readonly string[],
-): Pick<Definition, "type" | "passes" | "calledByLanguage"> {
+): Pick<Definition, "type" | "data" | "passes" | "calledByLanguage"> {
 	const passes = pythonPassesTo(declaration);
 	const special =
 		classes.length > 0 && SPECIAL.test(name.text) && kindOf(declaration) === "function";
 	return {
-		...(typeAlias(declaration) ? { type: true as const } : {}),
+		...typeTraits(declaration),
 		...(passes === undefined ? {} : { passes }),
 		...(special ? { calledByLanguage: true as const } : {}),
 	};

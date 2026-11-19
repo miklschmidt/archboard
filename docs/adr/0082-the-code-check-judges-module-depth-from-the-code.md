@@ -105,7 +105,13 @@ so agents in an implementation loop added exported constants and nothing failed.
 - **The width of a module is what its callers must learn** (TASK-651): its
   exported functions, classes, public methods and values, getters included.
   Exported types count zero, so an exported union or enum keeps the
-  compiler's exhaustive checks. An enum counts as a type. This width differs
+  compiler's exhaustive checks. An enum counts as a type. So does a type that
+  holds data and has no public method in its module, wherever its methods
+  are defined (the owner, 2026-11-19): a Rust struct, enum or union, a Go
+  struct or other named type, a C# struct or record, a Swift struct or enum,
+  a Python dataclass or enum, and a C or C++ struct, union or class with no
+  member function. With a method it is a class, and each public method
+  counts. A TypeScript class stays a class. This width differs
   from the interface width of
   [ADR 0058](0058-an-interface-is-the-few-operations-its-callers-need.md),
   which counts types.
@@ -123,11 +129,19 @@ so agents in an implementation loop added exported constants and nothing failed.
   principles of narrow interfaces, deep modules and testing at the seams,
   which the archboard skill states.
 - **The measured grounds need a reading the counts can stand on.** Every name
-  the module exposes is in a language whose adapter names each export's kind,
-  and every file of such a language parsed whole and gave its count of logic,
-  since logic in code that did not parse goes uncounted. Otherwise the
-  module gets neither `INTERFACE_WIDE` nor the measured ground of
-  `MODULE_SHALLOW`, and an `external` module gets no verdict at all.
+  the module exposes is in a language whose adapter names each export's kind.
+  Otherwise the module gets neither `INTERFACE_WIDE` nor the measured ground
+  of `MODULE_SHALLOW`, and an `external` module gets no verdict at all. The
+  width needs no whole parse, because the exposure reader names the exports,
+  so a file that did not parse keeps `INTERFACE_WIDE`. The measured ground of
+  `MODULE_SHALLOW` also needs every code file parsed whole, because logic in
+  code that did not parse goes uncounted. A manifest such as a `Cargo.toml`
+  holds no logic and changes nothing. Where the logic counted would make the
+  module shallow and a file did not parse, the check withholds the verdict
+  and says so with the skip `logic-unparsed`, which names each file and its
+  lines, so a module never passes silently. Where the logic counted already
+  makes the module deep, the code that did not parse cannot change that, and
+  nothing is said.
 - **No exemption for values a language forces to be constants.** The archboard
   skill teaches the seam that replaces each one.
 - **The answer's severities never depend on the caller.** The server

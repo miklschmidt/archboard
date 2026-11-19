@@ -6,7 +6,8 @@
 //
 // The checkout `shop` holds a canonical vault. The project `timing` exports
 // the static class `Durations`, whose constants, fields, properties and
-// methods are exports of their own, a class, and three types. `codex` and
+// methods are exports of their own, a class, three types, a struct and a
+// record with no method, and a struct with one. `codex` and
 // `relay` write the restart backoff on the durations, `relay` through a local
 // variable and the full name. `codex` and `worker` compute the same jitter on
 // the getter `JitterMs`. `worker` compares `Limit`, which is no math.
@@ -96,6 +97,15 @@ beforeAll(async () => {
 			"public enum Mode { On, Off }",
 			"",
 			"public delegate void Handler();",
+			"",
+			"public struct Point { public int X; }",
+			"",
+			"public record Money(int Cents);",
+			"",
+			"public struct Range",
+			"{",
+			"    public int Width() => 1;",
+			"}",
 			"",
 			"public class Clock",
 			"{",
@@ -218,6 +228,11 @@ test("a C# project's exports are counted by kind, a static member as an export o
 		["Shop.Timing.IWindow", "type"],
 		["Shop.Timing.Mode", "type"],
 		["Shop.Timing.Handler", "type"],
+		// A struct or a record with no method is a type that holds data.
+		["Shop.Timing.Point", "type"],
+		["Shop.Timing.Money", "type"],
+		["Shop.Timing.Range", "class"],
+		["Shop.Timing.Range.Width", "method"],
 		["Shop.Timing.Clock", "class"],
 		["Shop.Timing.Clock.Now", "method"],
 		["Shop.Timing.Clock.Tick", "method"],
@@ -245,6 +260,9 @@ test("each C# export gets the verdict its uses and its body earn", () => {
 		["Shop.Timing.IWindow", "EXPOSED_UNUSED"],
 		["Shop.Timing.Mode", "EXPOSED_UNUSED"],
 		["Shop.Timing.Handler", "EXPOSED_UNUSED"],
+		["Shop.Timing.Point", "EXPOSED_UNUSED"],
+		["Shop.Timing.Money", "EXPOSED_UNUSED"],
+		["Shop.Timing.Range", "EXPOSED_UNUSED"],
 		["Shop.Timing.Clock.Tick", "CODE_PASS_THROUGH"],
 	]);
 });

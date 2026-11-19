@@ -4,15 +4,14 @@ import {
 	ExplanationActionResultSchema,
 } from "#shared/schemas/architecture-explanation.ts";
 import { logger } from "@archboard/diagnostics/logger";
+import type { CodexWorkbenchDomain } from "#runtime/voice/protocol/extension.ts";
 
 type Dispatch = (
 	vault: string,
 	input: z.infer<typeof ExplanationActionRequestSchema>,
 ) => Promise<z.infer<typeof ExplanationActionResultSchema>>;
 let installed: Dispatch | null = null;
-let onNotification: NonNullable<
-	import("#runtime/voice/protocol/extension.ts").CodexWorkbenchDomain["onNotification"]
-> | null = null;
+let onNotification: NonNullable<CodexWorkbenchDomain["onNotification"]> | null = null;
 
 /**
  * Install the action on the existing local agent generation.
@@ -73,7 +72,6 @@ async function explainArchitecture(
  * @param event The existing domain notification.
  * @returns Nothing after the installed owner receives it.
  */
-const notifyExplanation: NonNullable<
-	import("#runtime/voice/protocol/extension.ts").CodexWorkbenchDomain["onNotification"]
-> = (event) => onNotification?.(event);
+const notifyExplanation: NonNullable<CodexWorkbenchDomain["onNotification"]> = (event) =>
+	onNotification?.(event);
 export { installExplanationActions, explainArchitecture, notifyExplanation };
