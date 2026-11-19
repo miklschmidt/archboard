@@ -1,5 +1,5 @@
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { durationMs, paneMs } from "@archboard/timing";
+import { durationMs, waitUntil } from "@archboard/timing";
 
 import { panes } from "#server/panes/services/registry.ts";
 
@@ -182,26 +182,21 @@ function rejectPendingLayouts(): void {
  * or close and the ones sharing the screen whose rectangle changes with them.
  * A pane that registers meanwhile, or one that has gone since, is not asked
  * and not waited for, and the wait ends the moment the last named pane has
- * re-reported (TASK-153). paneMs("settleCap") is the bound, never the delay.
+ * re-reported (TASK-153). "pane.settleCap" is the bound, never the delay.
  * @param askedAt When the layout change was asked for, as an ISO timestamp.
  * @param moved The client ids whose rectangles the change affects.
  */
 async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Promise<void> {
 	const waitedOn = new Set(moved);
-	const deadline = Date.now() + paneMs("settleCap");
-	while (Date.now() < deadline) {
+	await waitUntil("pane.settleCap", () => {
 		for (const clientId of waitedOn) {
 			const pane = panes.get(clientId);
 			if (!pane || pane.at > askedAt) {
 				waitedOn.delete(clientId);
 			}
 		}
-		if (waitedOn.size === 0) {
-			return;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- polling the registry: each check waits for the previous pause to elapse
-		await Bun.sleep(50);
-	}
+		return waitedOn.size === 0 ? true : undefined;
+	});
 }
 
 export {
