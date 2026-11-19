@@ -1,11 +1,11 @@
 ---
 id: TASK-646.10
 title: Rust modules get every module-depth rule
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T03:02:00Z'
+updated_date: '2026-11-19T03:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
