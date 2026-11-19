@@ -31,7 +31,8 @@ import {
 	staticImport,
 	takenNames,
 } from "#runtime/code-facts/typescript/operations/typescript-imports.ts";
-import { computationsOf } from "#runtime/code-facts/typescript/operations/typescript-math.ts";
+import { TYPESCRIPT_MATH } from "#runtime/code-facts/typescript/operations/typescript-math.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
 
 /** The captures of one file, by what the query calls them. */
@@ -387,7 +388,7 @@ function typeScriptFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		imports: [...imports, ...exportedImports(passed, imports)],
 		unparsed: unparsedOf(captured.unparsed),
 		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
-		computations: computationsOf(importedUses(captured, context, imports)),
+		computations: computationsOf(importedUses(captured, context, imports), TYPESCRIPT_MATH),
 	};
 }
 

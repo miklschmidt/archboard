@@ -16,10 +16,10 @@
 // as `base = timing.RESTART_BASE` does, is followed once: the math around each
 // later use of that variable is math on the name.
 //
-// Most languages describe their math in a table (math-shapes.ts), which reads
-// it through this file. A grammar whose tree a table cannot describe, as
-// Swift's, which nests a call's arguments and a member's name, gives its
-// reading whole (`MathGrammar`).
+// Every language but Swift describes its math in a table (math-shapes.ts),
+// which reads it through this file. A grammar whose tree a table cannot
+// describe, as Swift's, which nests a call's arguments and a member's name,
+// gives its reading whole (`MathGrammar`).
 
 import type { Node } from "web-tree-sitter";
 import type { Computation } from "#runtime/code-facts/operations/facts.ts";
