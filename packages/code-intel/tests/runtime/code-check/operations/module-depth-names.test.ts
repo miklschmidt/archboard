@@ -354,6 +354,7 @@ test("a folder module with no declared interface says how many of its names file
 	// `seal` is used outside, `freeze` only by `epoch.ts` beside it; `orphan` and `probe` by none.
 	expect(finding?.message).toContain("Files outside it use 1 of its 4 exported names");
 	expect(finding?.message).toContain("only its own files import 1: freeze.");
+	expect(finding?.message).toContain("in an index.ts, or the exports of its package.json,");
 });
 
 test("a module of kind external keeps its counts and gets no verdict", async () => {

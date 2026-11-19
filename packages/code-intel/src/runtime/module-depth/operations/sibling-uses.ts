@@ -14,12 +14,16 @@
 // such a module gets `INTERFACE_UNDECLARED`, information, which says how many
 // of its names files outside it use and how many only its own files import.
 
+import { C_FAMILY_FILE } from "#runtime/code-facts/c/operations/c-pairs.ts";
 import {
 	type ExposedName,
 	moduleOf,
 	within,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
+import { PYTHON_FILE } from "#runtime/code-facts/python/operations/python-exposure.ts";
+import { RUST_FILE } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
+import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	type DepthFinding,
 	type DepthReading,
@@ -120,6 +124,14 @@ async function siblingUses(reading: DepthReading): Promise<SiblingUse[]> {
 /** How many of the names only a module's own files import its finding names. */
 const NAMED_INSIDE = 5;
 
+/** How each language whose files import each other declares a folder's interface, by its files. */
+const DECLARATIONS: readonly (readonly [RegExp, string])[] = [
+	[TYPESCRIPT_FILE, "an index.ts, or the exports of its package.json"],
+	[PYTHON_FILE, "an __init__.py"],
+	[RUST_FILE, "a mod.rs"],
+	[C_FAMILY_FILE, "public headers in an include directory"],
+];
+
 /** A module as the per-name rules judge it: with the uses of its names by its own files. */
 type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
 
@@ -153,21 +165,22 @@ function undeclaredFinding(
 	reading: JudgedReading,
 	names: readonly ExposedName[],
 ): DepthFinding | undefined {
-	const users = names.map((name) => [name.name, userOf(reading, name)] as const);
+	const users = names.map((name) => [name, userOf(reading, name)] as const);
 	const inside = users.flatMap(([name, user]) => (user === "sibling" ? [name] : []));
 	if (inside.length === 0) return undefined;
 	const outside = users.filter(([, user]) => user === "outside").length;
 	const more = inside.length > NAMED_INSIDE ? `, and ${inside.length - NAMED_INSIDE} more` : "";
-	const named = `${inside.slice(0, NAMED_INSIDE).join(", ")}${more}`;
+	const first = inside.slice(0, NAMED_INSIDE).map((name) => name.name);
+	const ways = DECLARATIONS.filter(([files]) => inside.some((name) => files.test(name.path)));
 	return {
 		severity: "information",
 		code: "INTERFACE_UNDECLARED",
 		message:
 			`${reading.label} declares no interface, so each export of its files is open to every ` +
 			`folder. Files outside it use ${outside} of its ${names.length} exported names, and only ` +
-			`its own files import ${inside.length}: ${named}. Declare its interface with what ` +
-			"callers use, in an entry file (index.ts, __init__.py or mod.rs) or in its package's " +
-			"exports in package.json, and the names only its own files need stay inside.",
+			`its own files import ${inside.length}: ${first.join(", ")}${more}. Declare its ` +
+			`interface with what callers use, in ${ways.map(([, way]) => way).join(", or ")}, ` +
+			"and the names only its own files need stay inside.",
 	};
 }
 

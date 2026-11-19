@@ -268,6 +268,10 @@ test("a C module exposes what its public headers declare, and an outside file us
 	const library = outcome.depth.find((each) => each.directory === "src");
 	expect(library?.names.map((each) => each.name)).toContain("notify");
 	expect(outcome.findings.filter((each) => each.code === "EXPOSED_UNUSED")).toEqual([]);
+	// The remedy is C's way to declare an interface, not another language's entry file.
+	const undeclared = outcome.findings.find((each) => each.code === "INTERFACE_UNDECLARED");
+	expect(undeclared?.message).toContain("public headers in an include directory");
+	expect(undeclared?.message).not.toContain("index.ts");
 });
 
 test("a checkout with no configured C server says language-server-missing once for it, and names the command that configures one", () => {
