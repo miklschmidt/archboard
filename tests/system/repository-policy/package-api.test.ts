@@ -28,7 +28,7 @@ const ADOPTERS: {
 	{ name: "code-opener", areas: ["shared", "server", "ui"] },
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
-	{ name: "server-lifecycle", areas: ["shared", "runtime"] },
+	{ name: "server-lifecycle", areas: ["runtime"] },
 	{ name: "workbench", areas: ["shared", "runtime", "server", "ui"] },
 	{ name: "codex-realtime-voice", areas: ["shared", "runtime", "server", "ui"] },
 	{ name: "process", areas: ["runtime"] },

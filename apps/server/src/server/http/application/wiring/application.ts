@@ -17,15 +17,19 @@ import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/co
 import { mountCodeFilesRoute } from "#server/http/handlers/code-files/routes/code-files-route.ts";
 import { startServer } from "#server/start-stop/lifecycle/server-startup.ts";
 import {
+	asyncEndpoint,
 	mountMutationAdmission,
 	trackMutationWork,
 } from "#server/http/middleware/mutation-work.ts";
-import { mountPaneRoutes } from "#server/panes/connections/routes/pane-routes.ts";
-import { mountRepositoryRoutes } from "#server/http/handlers/repositories/routes/repository-routes.ts";
+import { mountPaneRoutes } from "@archboard/workbench/panes";
+import { respond } from "#server/http/handlers/routes/model-response.ts";
+import {
+	followRegistry,
+	mountRepositoryRoutes,
+} from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/reads/routes/configuration-routes.ts";
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
-import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
 import { mountServiceRoutes } from "#server/http/handlers/reads/routes/service-routes.ts";
 import { mountLegacyMigrationRoutes } from "#server/http/handlers/reads/routes/migration-routes.ts";
 import { mountArchitectureModelRoutes } from "#server/http/handlers/reads/routes/model-routes.ts";
@@ -101,7 +105,12 @@ app.use(
 	}),
 );
 
-mountPaneRoutes(app);
+mountPaneRoutes(app, {
+	runMutation: asyncEndpoint,
+	refuseRead: respond,
+	followRegistry,
+	agentActivity,
+});
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
 app.use("/api/architecture", requireVault, (req, _res, next) => {
@@ -113,7 +122,6 @@ mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);
 mountCodeCheckRoute(app);
 mountCodeFilesRoute(app);
-mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write

@@ -3,7 +3,7 @@
 // Only the ordinary model feed can supply claims and durable doing attribution.
 import { watchArchitectureModel } from "@archboard/model-store";
 import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/model-contract";
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { AgentActivityMessage } from "@archboard/workbench/browser-contract";
 import { durationMs } from "@archboard/timing";
 
 type AgentActivity = AgentActivityMessage["activity"][number];

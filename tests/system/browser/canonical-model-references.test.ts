@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
+import type { PanesReport } from "@archboard/workbench/panes";
 import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureClaimResult,
@@ -283,7 +283,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		stateA: "Current",
 		subjectA: "Ledger#Gateway",
 	});
-	const beforeReload = await request<ReturnType<typeof buildPanesReport>>("/api/panes");
+	const beforeReload = await request<PanesReport>("/api/panes");
 	await browser.run(["reload"]);
 	await pollUntil(
 		() =>
@@ -296,7 +296,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	);
 	// A completed restore leaves the reader free to open another repository.
 	await pollUntil(
-		() => request<ReturnType<typeof buildPanesReport>>("/api/panes"),
+		() => request<PanesReport>("/api/panes"),
 		(result) =>
 			result.body.panes.some(
 				(pane) =>

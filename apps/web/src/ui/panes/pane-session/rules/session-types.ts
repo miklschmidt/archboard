@@ -1,4 +1,4 @@
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { AgentActivityMessage } from "@archboard/workbench/browser-contract";
 // Shapes shared between the shell and the panes it hosts.
 //
 // Everything here describes a *session*: which model a pane is showing and how

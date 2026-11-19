@@ -4,7 +4,7 @@ import {
 	type PaneRegistration,
 	type PlacedPane,
 	panesInOrder,
-} from "#runtime/rules/panes-layout.ts";
+} from "#server/panes/rules/pane-layout.ts";
 
 /** Everything `--pane` accepts, for the message that lists them. */
 // Every spelling here has to be taught, and a spelling that is never needed is
@@ -26,18 +26,6 @@ const PANE_SPECS =
  * is still possible.
  */
 const MAX_PANES = 2;
-
-/**
- * A pane's place, in a sentence.
- *
- * `place` is a phrase, not a word — "left", but also "the only pane" — so
- * dropping it into "in the ... pane" produced "in the the only pane pane".
- * @param place The pane's place.
- * @returns The phrase, as it reads in a sentence.
- */
-function paneWords(place: string): string {
-	return place.startsWith("the ") ? place : `the ${place} pane`;
-}
 
 /**
  * The panes somebody can point at: all but a recording page's (TASK-304).
@@ -114,7 +102,6 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 	);
 }
 
-/**
 /**
  * Whether one pane answers to a spec: its place, its id, its client, its
  * position, or one of the two roles a pane can have.
@@ -209,4 +196,4 @@ function panesFull(registrations: readonly PaneRegistration[]): boolean {
 	return addressablePanes(registrations).length >= MAX_PANES;
 }
 
-export { HOW_TO_OPEN_A_PANE, addressablePanes, paneWords, panesFull, resolvePane };
+export { HOW_TO_OPEN_A_PANE, addressablePanes, panesFull, resolvePane };

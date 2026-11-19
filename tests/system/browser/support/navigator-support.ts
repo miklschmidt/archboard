@@ -1,12 +1,11 @@
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
+import type { PanesReport } from "@archboard/workbench/panes";
 import type { z } from "zod";
 import type { repositoryListingSchema } from "@archboard/workspace/repositories";
 import type { ModelDocument } from "@archboard/model-contract";
 
-type PanesReport = ReturnType<typeof buildPanesReport>;
 type PanesBody = Omit<PanesReport, "panes"> & {
 	success: boolean;
 	panes: (PanesReport["panes"][number] & {
