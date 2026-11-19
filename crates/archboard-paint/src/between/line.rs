@@ -18,11 +18,12 @@ use archboard_scene::scene::{
 };
 
 use super::content::look;
-use super::ease::{ease_in_out, emphasised, phase, receded};
+use super::ease::{ease_in_out, emphasised, receded};
 use super::found::Found;
 use super::morph::{Morph, length, route_of};
 use super::phases::Transition;
 use crate::path::path_of;
+use crate::timing::phase;
 
 /// How far a line recedes when it travels far, so that the eye stays on the cards.
 const DEEPEST: f64 = 0.5;

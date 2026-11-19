@@ -9,13 +9,14 @@ use archboard_scene::scene::{Group, Item, Mask, Role, Transform};
 use super::arrive::{Ground, Grow, Leave, Swap};
 use super::card::CardCarry;
 use super::content::shell;
-use super::ease::{ease_out, emphasised, phase};
+use super::ease::{ease_out, emphasised};
 use super::line::LineCarry;
 use super::open::Opening;
 use super::resize::Resizing;
 use super::ride::Ride;
 use super::spark::{DrawOn, Rim};
 use super::unfold::Inside;
+use crate::timing::phase;
 
 /// What changes a part of the picture during a move.
 #[derive(Clone, Debug)]

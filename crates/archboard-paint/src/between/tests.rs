@@ -7,10 +7,11 @@ use archboard_scene::scene::{
 };
 
 use super::Between;
-use super::ease::{emphasised, phase};
+use super::ease::emphasised;
 use super::testing::{
     PHASES, card, drawing, label, line, plate, rect, region, route_of, scene, shadow,
 };
+use crate::timing::phase;
 
 /// Every run of words a group draws, to any depth.
 fn said(items: &[Item]) -> Vec<String> {

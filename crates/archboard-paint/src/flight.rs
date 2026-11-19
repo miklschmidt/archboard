@@ -9,12 +9,10 @@ use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Item, Scene, Transform, Viewport};
 use serde::Deserialize;
 
-use crate::between::{
-    Between, Entrance, Handover, Heading, Phases, departure, visible_at, without,
-};
+use crate::between::{Between, Entrance, Handover, Phases, departing, visible_at, without};
 use crate::definitions::Definitions;
 use crate::draw::Picture;
-use crate::passage::{Axis, Plane, first_step, place_at};
+use crate::passage::{Axis, Heading, Plane, first_step, place_at};
 use crate::presentation::{Camera, Seen};
 use crate::timing::{EASE_IN_OUT, EASE_OUT, EMPHASISED};
 
@@ -330,7 +328,8 @@ impl Ghost {
         }
         let rest = EASE_OUT.at(self.time.share(now));
         let progress = self.from + (1.0 - self.from) * rest;
-        departure(&self.picture.scene, progress)
+        let scene = &self.picture.scene;
+        departing(scene.body.clone(), (scene.width, scene.height), progress)
     }
 
     /// What the ghost shows at a moment, kept inside a box of a picture that a

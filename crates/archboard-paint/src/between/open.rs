@@ -14,9 +14,9 @@ use archboard_scene::scene::{
     Geometry, Group, Item, Paint, Purpose, Role, Shape, Stroke, Token, Transform, Viewport,
 };
 
-use super::ease::{carried, ease_out, phase};
+use super::ease::{carried, ease_out};
 use super::found::Found;
-use crate::timing::Curve;
+use crate::timing::{Curve, phase};
 
 /// The curve of the front: it leaves the wave of cards behind early and settles
 /// slowly, so that nothing is seen to stop.

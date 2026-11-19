@@ -12,7 +12,7 @@ use kurbo::{ParamCurve as _, ParamCurveArclen as _, ParamCurveNearest as _};
 
 use super::arrive::{Grow, Leave};
 use super::circuit::{Span, holder, label_span};
-use super::ease::{ease_out, phase};
+use super::ease::ease_out;
 use super::found::{Form, Found, largest_rect};
 use super::line::{end_of, in_flight};
 use super::morph::{length, route_of};
@@ -20,6 +20,7 @@ use super::open::outline;
 use super::phases::Transition;
 use super::plan::Mover;
 use crate::path::outline_of;
+use crate::timing::phase;
 
 /// How much of a dashed line's drawing it spends fading in.
 const DASHED_FADE: f64 = 0.7;

@@ -9,13 +9,12 @@ use archboard_scene::scene::Scene;
 use peniko::Color;
 
 use super::Stage;
-use crate::between::phase;
 use crate::canvas::{Focus, Lens};
 use crate::flight::Dive;
 use crate::passage::Axis;
 use crate::path::rect_of;
 use crate::presentation::Camera;
-use crate::timing::{Curve, EMPHASISED};
+use crate::timing::{Curve, EMPHASISED, phase};
 
 /// The most a picture goes out of focus, as a share of the canvas's height.
 const MOST_BLUR: f64 = 0.02;

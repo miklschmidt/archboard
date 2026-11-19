@@ -16,9 +16,10 @@ use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform, Viewport};
 
 use super::content::{Paired, look, pair_content, shell, split};
-use super::ease::{ease_in_out, emphasised, lerp, mix_rect, phase};
+use super::ease::{ease_in_out, emphasised, lerp, mix_rect};
 use super::found::Found;
 use super::phases::Transition;
+use crate::timing::phase;
 
 /// How far, in the picture's units, a card's content travels as it swaps: the
 /// old content drops this far while it fades, the new settles this far down

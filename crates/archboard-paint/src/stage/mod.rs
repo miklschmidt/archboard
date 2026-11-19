@@ -20,7 +20,7 @@ use std::collections::HashSet;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
-use crate::between::{Entrance, Heading, Phases};
+use crate::between::{Entrance, Phases};
 use crate::canvas::Canvas;
 use crate::clock::{StageClock, TrafficClock};
 use crate::draw::Picture;
@@ -28,6 +28,7 @@ use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::parts::Parts;
+use crate::passage::Heading;
 use crate::pick::Targets;
 use crate::presentation::{Camera, FarLine, Seen};
 use crate::timing::{Fade, SWAP};

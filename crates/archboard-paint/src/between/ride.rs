@@ -7,10 +7,11 @@ use archboard_scene::scene::{Group, Item, PathStep, TrafficMark};
 
 use super::arrive::Ground;
 use super::content::shell;
-use super::ease::{ease_in_out, emphasised, phase, receded};
+use super::ease::{ease_in_out, emphasised, receded};
 use super::line::depth_of_travel;
 use super::morph::Morph;
 use super::phases::Transition;
+use crate::timing::phase;
 
 /// A curve as the steps of a path.
 fn steps_of(curve: &Curve) -> Vec<PathStep> {

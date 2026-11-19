@@ -6,10 +6,10 @@ use archboard_scene::scene::Painting;
 use kurbo::Point;
 
 use super::Stage;
-use crate::between::{Entrance, Handover, Heading, frame_of};
+use crate::between::{Entrance, Handover, frame_of};
 use crate::draw::Picture;
 use crate::flight::{Dive, DiveWay, Flight, Ghost, Stretch};
-use crate::passage::Axis;
+use crate::passage::{Axis, Heading};
 use crate::presentation::Camera;
 use crate::warnings::Warnings;
 

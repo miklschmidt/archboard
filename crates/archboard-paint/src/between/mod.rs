@@ -10,7 +10,7 @@
 //! the last sparks run on, and
 //! every phase of it comes from [`Phases`], which the host reads from
 //! `@archboard/timing`. [`Between`] turns one scene into the next, [`Entrance`]
-//! brings a scene in with nothing to carry it from, and [`departure()`] sends the
+//! brings a scene in with nothing to carry it from, and [`departing()`] sends the
 //! last scene off.
 
 mod arrive;
@@ -68,9 +68,9 @@ use ride::{Ride, mark_of};
 use spark::{redrawn, rims};
 use unfold::{Doors, Inside, Unfold};
 
-pub(crate) use departure::departing;
-pub(crate) use departure::{Heading, departure, visible_at};
-pub(crate) use ease::phase;
+use crate::timing::phase;
+
+pub(crate) use departure::{departing, visible_at};
 pub(crate) use entrance::Entrance;
 pub(crate) use handover::Handover;
 pub(crate) use phases::Phases;

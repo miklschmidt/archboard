@@ -5,8 +5,9 @@
 use archboard_scene::geometry::Rect;
 use serde::Deserialize;
 
-use crate::between::{Heading, Phases};
+use crate::between::Phases;
 use crate::flight::DiveWay;
+use crate::passage::Heading;
 
 /// How a stage keeps time: at which points of a move each of its parts
 /// happens, and how long one step of its clock can be, in milliseconds. A stage
