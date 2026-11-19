@@ -61,6 +61,14 @@ interface Definition {
 	 */
 	readonly passes?: string;
 	/**
+	 * It holds the value of another name, as the file spells it: `DialogRoot`
+	 * for `const Dialog = Object.assign(DialogRoot, { Title })`, which is
+	 * `DialogRoot` with more members on it, or `Store` for `const Made =
+	 * Store`. It is what that name is, wherever that name is defined.
+	 * TypeScript names it; module depth follows it (TASK-646.15).
+	 */
+	readonly aliases?: string;
+	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a
 	 * compose service, or, where that context is the compose file's own

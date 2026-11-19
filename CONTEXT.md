@@ -795,6 +795,7 @@ _Avoid_: depth score, depth ratio, interface measures (those are what the model 
 **Export kind**:
 What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
 A type counts for no verdict, and a TypeScript enum is a type.
+A value that can be called is a function, even when a call makes it, as a compound component made by `Object.assign` or the helper that `cva(...)` returns is. A schema cannot be called, so it is a value.
 _Avoid_: export type (a type is one kind), symbol kind
 
 **Piece of logic**:
