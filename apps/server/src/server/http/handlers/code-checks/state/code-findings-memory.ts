@@ -105,11 +105,17 @@ function ofReading(read: { readonly model: string; readonly state: string | null
  */
 function createCodeFindingsMemory(): CodeFindingsMemory {
 	const readings = new Map<string, { vault: string; reading: RememberedReading }>();
-	const models = (vault: string): KeptModel[] =>
-		[...readings.values()]
+	/**
+	 * The canonical readings remembered of one vault, with the names of their exports.
+	 * @param vault The vault.
+	 * @returns The readings.
+	 */
+	function models(vault: string): KeptModel[] {
+		return [...readings.values()]
 			.filter((kept) => kept.vault === vault)
 			.map((kept) => kept.reading)
 			.filter((reading) => "state" in reading);
+	}
 	/**
 	 * Keep what one finished pass found on each document it read.
 	 * @param vault The vault the pass read.

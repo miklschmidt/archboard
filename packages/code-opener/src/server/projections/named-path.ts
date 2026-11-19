@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
+import type { CodeTargetOpenRequest } from "#shared/schemas/code-target-open.ts";
 import { checkoutsReadFrom, isPathWithin } from "@archboard/code-binding/resolution";
 
 /** The binding a named file would be, or why it has none. */
@@ -70,13 +71,18 @@ function namedPathBinding(vault: string, named: string): NamedPathBinding {
 }
 
 /**
- * The binding of a file a code export names by its path in its repository.
+ * The binding of a file a code export names by its path in its repository, with the symbol the
+ * export defines.
  * @param vault The vault, which must read a checkout of the repository.
- * @param repo The repository.
- * @param named The file's path in it; the binding resolver refuses one that leaves the checkout.
+ * @param request The repository, the file's path in it and the symbol. The binding resolver refuses
+ * a path that leaves the checkout.
  * @returns The binding, or why the file has none.
  */
-function repositoryPathBinding(vault: string, repo: string, named: string): NamedPathBinding {
+function repositoryPathBinding(
+	vault: string,
+	request: Extract<CodeTargetOpenRequest, { repo: string }>,
+): NamedPathBinding {
+	const { repo, path: named, symbol } = request;
 	if (!checkoutsReadFrom(vault).some((entry) => entry.repo === repo)) {
 		return {
 			ok: false,
@@ -84,7 +90,22 @@ function repositoryPathBinding(vault: string, repo: string, named: string): Name
 			error: `This vault reads no checkout of ${repo}. Choose one with archboard repo use <dir>.`,
 		};
 	}
-	return { ok: true, binding: { repo, path: named } };
+	return { ok: true, binding: { repo, path: named, ...(symbol === undefined ? {} : { symbol }) } };
 }
 
-export { namedPathBinding, repositoryPathBinding };
+/**
+ * The binding of a file that a request names: by its absolute path, or by its path in a repository.
+ * @param vault The vault whose checkouts the file must be in.
+ * @param request The file.
+ * @returns The binding, or why the file has none.
+ */
+function requestedPathBinding(
+	vault: string,
+	request: Extract<CodeTargetOpenRequest, { path: string }>,
+): NamedPathBinding {
+	return "repo" in request
+		? repositoryPathBinding(vault, request)
+		: namedPathBinding(vault, request.path);
+}
+
+export { requestedPathBinding };
