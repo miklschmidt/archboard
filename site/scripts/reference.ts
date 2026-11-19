@@ -15,7 +15,7 @@ import {
 	CHECK_SEMANTICS_HELP,
 } from "../../apps/cli/src/cli/commands/vault/operations/check-help.ts";
 import { EMBED_CODES } from "../../apps/cli/src/cli/commands/vault/protocol/embeds-answer.ts";
-import { CodeCheckAnswerSchema } from "../../packages/code-intel/src/shared/api/code-check.ts";
+import { codeCheckAnswerSchema } from "../../packages/code-intel/src/shared/api/code-check.ts";
 import {
 	SCHEMA_NAMES,
 	jsonSchema,
@@ -238,7 +238,7 @@ if (unlisted.length > 0) {
 	throw new Error(`The help of "archboard check embeds" lists no ${unlisted.join(", ")}`);
 }
 // The same for every reason the code check can skip a subject for.
-const unlistedSkips = CodeCheckAnswerSchema.shape.skipped.element.shape.reason.options.filter(
+const unlistedSkips = codeCheckAnswerSchema().shape.skipped.element.shape.reason.options.filter(
 	(reason) => !findings.some((entry) => entry.severity === "skip" && entry.codes.includes(reason)),
 );
 if (unlistedSkips.length > 0) {
