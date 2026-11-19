@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { subtitleMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SpokenCue } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 
@@ -93,8 +93,8 @@ function useSubtitleFade(cue: SpokenCue | null): SubtitleFade {
 	const clearReplaced = useCallback((): void => {
 		setKept((current) => ({ ...current, replaced: null }));
 	}, []);
-	useAfter(cue === null ? kept.shown : null, subtitleMs("out"), clearShown);
-	useAfter(kept.replaced, subtitleMs("swap"), clearReplaced);
+	useAfter(cue === null ? kept.shown : null, durationMs("subtitle.out"), clearShown);
+	useAfter(kept.replaced, durationMs("subtitle.swap"), clearReplaced);
 	return { shown: cue ?? kept.shown, replaced: kept.replaced };
 }
 

@@ -4,7 +4,7 @@ import { tabSessionOf } from "#server/panes/services/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
-import { codexSessionMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type {
 	CodexWorkbenchDomainScope,
 	CodexWorkbenchDomain,
@@ -323,7 +323,10 @@ function report(entry: Entry, notification: Notification): void {
  * @param entry The action whose text changed.
  */
 function announceSoon(entry: Entry): void {
-	entry.announcing ??= setTimeout(() => announce(entry), codexSessionMs("explanationText"));
+	entry.announcing ??= setTimeout(
+		() => announce(entry),
+		durationMs("codexSession.explanationText"),
+	);
 }
 
 /**

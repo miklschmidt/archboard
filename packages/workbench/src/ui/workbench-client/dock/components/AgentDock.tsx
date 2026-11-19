@@ -28,7 +28,7 @@
 import { RiChat3Line } from "@remixicon/react";
 import { useRef, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { shellClockMs, voiceMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { useClock } from "@archboard/ui-kit/time";
 import { useOrbOffered, useOrbPlacement } from "#ui/workbench-client/orb/hooks/use-orb-stage.ts";
@@ -68,9 +68,9 @@ const VOICE_PROBLEM_ID = "voice-problem";
  * while the agent works, for the stylesheet that eases them.
  */
 const DOCK_STYLE: CSSProperties = {
-	"--voice-morph-ms": `${voiceMs("morph")}ms`,
-	"--voice-seat-out-ms": `${voiceMs("seatOut")}ms`,
-	"--dock-wash-ms": `${voiceMs("dockWash")}ms`,
+	"--voice-morph-ms": `${durationMs("voice.morph")}ms`,
+	"--voice-seat-out-ms": `${durationMs("voice.seatOut")}ms`,
+	"--dock-wash-ms": `${durationMs("voice.dockWash")}ms`,
 };
 
 /** Inputs for the dock. */
@@ -122,7 +122,10 @@ function dockSteps(view: AgentView): readonly CardStep[] {
  */
 function useDockClock(view: AgentView): number {
 	const running = view.conversation.turns.some((turn) => turn.outcome === "running");
-	return useClock(running ? shellClockMs("elapsedTick") : shellClockMs("ageTick"), true);
+	return useClock(
+		running ? durationMs("shellClock.elapsedTick") : durationMs("shellClock.ageTick"),
+		true,
+	);
 }
 
 /**

@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-import { codexApprovalMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
 const WAIT_THREADS_TIMEOUT_MAX_MS: number = 120_000;
 
-if (WAIT_THREADS_TIMEOUT_MAX_MS >= codexApprovalMs("browserCommandLease")) {
+if (WAIT_THREADS_TIMEOUT_MAX_MS >= durationMs("codexApproval.browserCommandLease")) {
 	throw new TypeError("wait_threads timeout maximum must stay below the browser command lease.");
 }
 

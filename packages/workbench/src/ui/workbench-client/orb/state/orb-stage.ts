@@ -54,7 +54,7 @@
 // however soon the voice is off. A holder moved in the same task as it is lit has no
 // transition to run, so the stage lets its style settle between the two.
 
-import { voiceMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { flightAt, type Spot } from "#ui/workbench-client/orb/rules/orb-flight.ts";
 import { SIZE } from "#ui/workbench-client/orb/clients/orb-painter.ts";
 import {
@@ -282,7 +282,7 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		width: `${SIZE}px`,
 		height: `${SIZE}px`,
 	});
-	holder.style.setProperty("--voice-morph-ms", `${voiceMs("morph")}ms`);
+	holder.style.setProperty("--voice-morph-ms", `${durationMs("voice.morph")}ms`);
 	holder.setAttribute("aria-hidden", "true");
 	holder.dataset["shown"] = "false";
 	const state: StageState = {
@@ -383,7 +383,7 @@ function createOrbStage(frames: OrbFrames = PAGE_FRAMES): OrbStage {
 		if (flight === null) return;
 		flight.start ??= time;
 		const rect = flight.socket.getBoundingClientRect();
-		const progress = (time - flight.start) / voiceMs("flight");
+		const progress = (time - flight.start) / durationMs("voice.flight");
 		if (!isDrawn(rect) || progress >= 1) {
 			land(flight.socket);
 			return;

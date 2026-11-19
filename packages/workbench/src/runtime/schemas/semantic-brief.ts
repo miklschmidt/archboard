@@ -1,4 +1,4 @@
-import { codexContextFreshUntil } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import { copyContext, fitAggregate } from "#runtime/services/semantic-brief-fit.ts";
 import {
@@ -106,7 +106,7 @@ function capArchitecture(architecture: SemanticArchitecture): {
  * @returns The frozen freshness.
  */
 function freshnessAt(capturedAtMs: number, observedAtMs: number): SemanticFreshness {
-	const freshUntilMs = codexContextFreshUntil(capturedAtMs);
+	const freshUntilMs = deadline("codexRealtime.contextFreshness", capturedAtMs);
 	return deepFreeze({
 		capturedAtMs,
 		freshUntilMs,

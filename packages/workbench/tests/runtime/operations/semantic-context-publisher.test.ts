@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { codexRealtimeMs } from "@archboard/timing";
 import { SemanticContextLifecycleError } from "#runtime/operations/semantic-context-publisher.ts";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 import {
@@ -273,7 +272,7 @@ describe("semantic context publisher", () => {
 
 	test("marks stale timestamps and model disagreement instead of hiding ambiguity", () => {
 		const h = harness();
-		h.state.now += codexRealtimeMs("contextFreshness") + 1;
+		h.state.now += 30_000 + 1;
 		const stale: Array<{
 			freshness: string;
 			reasons: readonly string[];
@@ -286,7 +285,7 @@ describe("semantic context publisher", () => {
 				ambiguity: event.ambiguity,
 			}),
 		);
-		h.emitFeed(change(h.state.now - codexRealtimeMs("contextFreshness") - 1));
+		h.emitFeed(change(h.state.now - 30_000 - 1));
 		h.emitFeed(change(h.state.now, { model: "other-board", at: "not-a-date" }));
 
 		expect(stale[0]?.freshness).toBe("stale");

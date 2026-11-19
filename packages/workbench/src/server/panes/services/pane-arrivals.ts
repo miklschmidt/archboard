@@ -1,5 +1,5 @@
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { paneMs } from "@archboard/timing";
+import { durationMs, paneMs } from "@archboard/timing";
 
 import { panes } from "#server/panes/services/registry.ts";
 
@@ -67,7 +67,7 @@ function expectPaneOpen(): {
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, paneMs("layoutTimeout")),
+			}, durationMs("pane.layoutTimeout")),
 		};
 		pendingPaneOpens.add(pending);
 	});
@@ -106,7 +106,7 @@ function expectPaneClose(
 							"The tab may be running an older build of the canvas — reload it and try again.",
 					),
 				);
-			}, paneMs("layoutTimeout")),
+			}, durationMs("pane.layoutTimeout")),
 		};
 		pendingPaneCloses.add(pending);
 	});

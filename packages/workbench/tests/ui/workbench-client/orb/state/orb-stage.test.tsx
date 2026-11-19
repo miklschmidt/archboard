@@ -20,7 +20,6 @@ import { render } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { voiceMs } from "@archboard/timing";
 import {
 	OrbHost,
 	OrbSlot,
@@ -91,12 +90,12 @@ test("an orb is flown to its other home over the page and lands exactly in the s
 	frames.step(1000);
 	expect(inTheAir(stage)).toEqual({ x: 100, y: 600 });
 
-	frames.step(1000 + voiceMs("flight") / 2);
+	frames.step(1000 + 680 / 2);
 	const halfway = inTheAir(stage);
 	expect(halfway.x).toBeGreaterThan(100);
 	expect(halfway.x).toBeLessThan(600);
 
-	frames.step(1000 + voiceMs("flight"));
+	frames.step(1000 + 680);
 	expect(whereIs(stage)).toBe("box");
 	expect(stage.holder.style.position).toBe("");
 	expect(document.querySelector("[data-slot='voice-orb-layer']")).toBeNull();
@@ -110,7 +109,7 @@ test("the opposite wish turns a flight round from where the orb is", () => {
 	stage.wish({ home: "dock", shown: true, fly: true });
 	stage.wish({ home: "box", shown: true, fly: true });
 	frames.step(0);
-	frames.step(voiceMs("flight") * 0.6);
+	frames.step(680 * 0.6);
 	const turned = inTheAir(stage);
 
 	stage.wish({ home: "dock", shown: true, fly: true });
@@ -118,7 +117,7 @@ test("the opposite wish turns a flight round from where the orb is", () => {
 	expect(inTheAir(stage)).toEqual(turned);
 
 	frames.step(5000);
-	frames.step(5000 + voiceMs("flight"));
+	frames.step(5000 + 680);
 	expect(whereIs(stage)).toBe("dock");
 	expect(frames.pending).toBe(0);
 });
@@ -155,7 +154,7 @@ test("a socket that goes while the orb flies to it sends the orb on from where i
 	stage.wish({ home: "dock", shown: true, fly: true });
 	stage.wish({ home: "box", shown: true, fly: true });
 	frames.step(0);
-	frames.step(voiceMs("flight") * 0.5);
+	frames.step(680 * 0.5);
 	const left = inTheAir(stage);
 
 	withdrawBox();
@@ -164,7 +163,7 @@ test("a socket that goes while the orb flies to it sends the orb on from where i
 	expect(inTheAir(stage)).toEqual(left);
 
 	frames.step(10_000);
-	frames.step(10_000 + voiceMs("flight"));
+	frames.step(10_000 + 680);
 	expect(whereIs(stage)).toBe("dock");
 	expect(frames.pending).toBe(0);
 });
@@ -185,7 +184,7 @@ test("a box that moves to another pane takes the orb on from where it was, and t
 	expect(whereIs(stage)).toBe("air");
 	frames.step(0);
 	expect(inTheAir(stage)).toEqual({ x: 600, y: 700 });
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("box");
 	expect(stage.holder.parentElement).toBe(elsewhere);
 });
@@ -244,7 +243,7 @@ test("a socket says whether the orb rests in it, in the air neither does, and th
 	]);
 
 	frames.step(0);
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect([dock.hasAttribute("data-occupied"), box.hasAttribute("data-occupied")]).toEqual([
 		false,
 		true,
@@ -388,7 +387,7 @@ test("while the page is fullscreen a flight crosses inside the element presented
 	expect(whereIs(stage)).toBe("air");
 	expect(stage.holder.parentElement?.parentElement).toBe(presented);
 	frames.step(0);
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("box");
 });
 
