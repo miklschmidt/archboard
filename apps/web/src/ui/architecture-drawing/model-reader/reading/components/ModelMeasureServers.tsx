@@ -39,7 +39,7 @@ function MissingServer(props: { readonly missing: MissingServers }): JSX.Element
 		<div
 			data-slot="model-measures-server"
 			data-repo={repo}
-			className="flex items-start justify-between gap-3"
+			className="flex items-center justify-between gap-3"
 		>
 			<ul className="text-body text-muted-foreground min-w-0 [overflow-wrap:anywhere]">
 				{languages.map((language) => (
