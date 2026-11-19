@@ -4,6 +4,7 @@ title: Rust modules get every module-depth rule
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T03:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +56,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 A trait implementation used through its trait counts as used, and members that the language calls, such as `Drop`, are not judged
 - [ ] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Commands (check help text) and code-intel (tests), with their holders. No architecture change; exception recorded in the proposal history (operation task-646-10-exceptions). Code check, Module depth and Fact analysis changed inside the plan. New findings on this repository's Rust crates (24 modules): EXPOSED_UNUSED 1373 names, EXPOSED_VALUE 174, EXPOSED_VALUE_COMPUTED 16, REEXPORT_PASS_THROUGH warnings 4. TASK-646.14 clears them; the review checks them for false matches first.
+<!-- SECTION:NOTES:END -->
