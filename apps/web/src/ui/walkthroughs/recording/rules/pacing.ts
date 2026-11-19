@@ -12,7 +12,7 @@
 //
 // Pure: each tick the page observes the voice and the pane and asks what to do.
 
-import { deadline, durationMs, type DurationName } from "@archboard/timing";
+import { deadline, durationMs } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
@@ -267,7 +267,7 @@ function paceStep(
 function held(
 	state: Extract<PaceState, { since: number }>,
 	observed: PaceObservation,
-	hold: Extract<DurationName, `recording.${string}`>,
+	hold: Extract<Parameters<typeof deadline>[0], `recording.${string}`>,
 	next: () => PaceTurn,
 ): PaceTurn {
 	return observed.now < deadline(hold, state.since) ? { state, action: NOTHING } : next();

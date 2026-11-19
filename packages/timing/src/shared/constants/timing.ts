@@ -39,8 +39,3 @@ export { columnSlideSettledMs } from "#shared/constants/column-motion.ts";
 export { reachHopDelayMs } from "#shared/constants/exploring.ts";
 export { painterPhasesJson } from "#shared/constants/diagram-motion.ts";
 export type { Clock } from "#shared/waits/clock.ts";
-export type { CadenceName, WaitName } from "#shared/waits/policies.ts";
-export type { PauseOptions } from "#shared/waits/pause.ts";
-export type { WaitOptions, WaitOutcome } from "#shared/waits/wait-until.ts";
-export type { DurationName } from "#shared/durations/names.ts";
-export type { ReadableName } from "#shared/durations/duration-ms.ts";
