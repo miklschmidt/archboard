@@ -61,6 +61,12 @@ interface Definition {
 	 */
 	readonly passes?: string;
 	/**
+	 * The language calls it itself, and no caller names it: a constructor, a
+	 * destructor, an operator, Swift's `hash(into:)` or Objective-C's
+	 * `dealloc`. Module depth neither counts nor judges it (TASK-646.12).
+	 */
+	readonly calledByLanguage?: true;
+	/**
 	 * It holds the value of another name, as the file spells it: `DialogRoot`
 	 * for `const Dialog = Object.assign(DialogRoot, { Title })`, which is
 	 * `DialogRoot` with more members on it, or `Store` for `const Made =

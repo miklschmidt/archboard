@@ -33,7 +33,7 @@
 // such as a C prototype in a public header, is exposed where its code is,
 // passed on by the file that declares it (definition-site.ts).
 
-import { cRootFiles, isCFile } from "#runtime/code-facts/c/operations/c-exposure.ts";
+import { cMember, cRootFiles, isCFile } from "#runtime/code-facts/c/operations/c-exposure.ts";
 import { projectDirectoryOf } from "#runtime/code-facts/csharp/operations/csharp-project.ts";
 import { projectFilesIn } from "#runtime/code-facts/csharp/operations/csharp-resolution.ts";
 import { codeSiteOf } from "#runtime/code-facts/operations/definition-site.ts";
@@ -174,6 +174,7 @@ const C: ExposureRule = {
 	 */
 	entry: () => false,
 	rootFiles: cRootFiles,
+	member: cMember,
 };
 
 /** A C# file. */

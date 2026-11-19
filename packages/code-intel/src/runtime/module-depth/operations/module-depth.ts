@@ -50,6 +50,8 @@
 import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
 import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/facts.ts";
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
+import { C_FAMILY_FILE } from "#runtime/code-facts/c/operations/c-pairs.ts";
+import { SWIFT_FILE } from "#runtime/code-facts/swift/operations/swift-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	type DepthFinding,
@@ -74,6 +76,10 @@ const GROUPS: ReadonlyMap<
 	keyof Omit<CountedNames, "languages" | "unjudged">
 > = new Map([
 	["typescript", "judged"],
+	["swift", "judged"],
+	["c", "judged"],
+	["cpp", "judged"],
+	["objc", "judged"],
 	["terraform", "infrastructure"],
 	["nix", "infrastructure"],
 	["helm", "infrastructure"],
@@ -85,9 +91,16 @@ const GROUPS: ReadonlyMap<
  */
 const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["typescript", TYPESCRIPT_FILE],
+	["swift", SWIFT_FILE],
+	["c", C_FAMILY_FILE],
+	["cpp", C_FAMILY_FILE],
+	["objc", C_FAMILY_FILE],
 ]);
 
-/** The members a language calls itself, which no caller names. */
+/**
+ * The members TypeScript calls itself, which no caller names. Other grammars
+ * mark such a member on its definition (`Definition.calledByLanguage`).
+ */
 const CALLED_BY_LANGUAGE: ReadonlySet<string> = new Set([
 	"constructor",
 	"toString",
@@ -253,20 +266,36 @@ function pathEnds(names: readonly ExposedName[]): ExposedName[] {
 }
 
 /**
- * Whether a member is a public method of an exported class.
+ * A member's own name within a holder: `post` of `Ledger.post`, and in the C
+ * family, whose names `::` qualifies, `save` of `shop::Store::save` and the
+ * selector `post:by:` of `Ledger::post:by:`.
+ * @param symbol The member's symbol.
+ * @param holder The holder's symbol.
+ * @returns The own name, or undefined when the symbol is no member of the holder's own.
+ */
+function ownName(symbol: string, holder: string): string | undefined {
+	if (!symbol.startsWith(holder)) return undefined;
+	const own = /^(?:\.|::)(.+)$/u.exec(symbol.slice(holder.length))?.[1];
+	return own === undefined || /\.|::./u.test(own) ? undefined : own;
+}
+
+/**
+ * Whether a member is a public method of an exported class: a function the
+ * class holds that callers name, not one the language calls itself. A C++ or
+ * Objective-C method's code may be in another file than its class, the pair
+ * of the class's header.
  * @param member The member.
  * @param classes The module's exported classes.
  * @returns True when it is.
  */
 function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean {
-	const { symbol } = member.definition;
-	const holder = symbol.slice(0, Math.max(symbol.lastIndexOf("."), 0));
-	const called = CALLED_BY_LANGUAGE.has(symbol.slice(holder.length + 1));
-	return (
-		member.definition.kind === "function" &&
-		!called &&
-		classes.some((each) => each.path === member.path && each.definition.symbol === holder)
-	);
+	const { symbol, kind, calledByLanguage } = member.definition;
+	if (kind !== "function" || calledByLanguage === true) return false;
+	return classes.some((each) => {
+		const own = ownName(symbol, each.definition.symbol);
+		if (own === undefined || CALLED_BY_LANGUAGE.has(own)) return false;
+		return each.path === member.path || symbol.includes("::");
+	});
 }
 
 /**

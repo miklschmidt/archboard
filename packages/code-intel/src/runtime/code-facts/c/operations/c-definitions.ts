@@ -36,6 +36,7 @@ import {
 	declaratorKind,
 	namesFunction,
 } from "#runtime/code-facts/c/operations/c-definition-kind.ts";
+import { cPassesTo } from "#runtime/code-facts/c/operations/c-pass-through.ts";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 
@@ -175,7 +176,8 @@ function qualified(walk: Walk, name: string): string {
  * @param extent The node it spans.
  * @param linkage Its word at namespace scope.
  * @param kind Its definition kind.
- * @param declares Whether its code is elsewhere: a prototype or an `extern` variable.
+ * @param more What else the declaration says: that its code is elsewhere, as
+ * a prototype's or an `extern` variable's is, or the call it only passes on.
  * @returns Its qualified symbol.
  */
 function define(
@@ -184,7 +186,7 @@ function define(
 	extent: Node,
 	linkage: string,
 	kind: Definition["kind"],
-	declares = false,
+	more: Pick<Definition, "declaration" | "passes"> = {},
 ): string {
 	const symbol = qualified(walk, name);
 	const { word, exposed } = visibilityOf(walk, linkage);
@@ -196,9 +198,42 @@ function define(
 		source: sourceRange(extent),
 		visibility: word,
 		exposed,
-		...(declares ? { declaration: true as const } : {}),
+		...more,
+		...(kind === "function" && calledByLanguage(symbol) ? { calledByLanguage: true } : {}),
 	});
 	return symbol;
+}
+
+/**
+ * Whether C++ calls a function itself, and no caller names it: a
+ * constructor, `Store::Store`, a destructor, `Store::~Store`, and an
+ * operator, `Store::operator==`.
+ * @param symbol The function's qualified symbol.
+ * @returns True when it does.
+ */
+function calledByLanguage(symbol: string): boolean {
+	const [holder, own = ""] = symbol.split("::").slice(-2);
+	return own === holder || own.startsWith("~") || /^operator\W/u.test(own);
+}
+
+/**
+ * Mark a type definition that declares nothing a caller runs: an enum, and a
+ * struct, union or class with no function among its members. Such a type is
+ * no class whose methods count, so module depth counts it as a type and
+ * never judges it (TASK-646.12).
+ * @param walk Where it stands, with the type's definition and its members.
+ * @param symbol The type's symbol.
+ * @param from Where in the definitions the type's own starts.
+ */
+function markType(walk: Walk, symbol: string, from: number): void {
+	const added = walk.definitions.slice(from);
+	const methods = added.some(
+		(each) => each.kind === "function" && each.symbol.startsWith(`${symbol}::`),
+	);
+	if (methods) return;
+	for (const [index, each] of added.entries()) {
+		if (each.symbol === symbol) walk.definitions[from + index] = { ...each, type: true };
+	}
 }
 
 /**
@@ -361,7 +396,11 @@ function variables(walk: Walk, node: Node, extent: Node): void {
 		if (name === undefined) continue;
 		const declares = declaresOnly(node, declarator, name);
 		const kind = declaratorKind(name, declarator);
-		define(walk, spell(name), extent, isStatic ? "static" : "extern", kind, declares);
+		const passes = node.type === "function_definition" ? cPassesTo(node) : undefined;
+		define(walk, spell(name), extent, isStatic ? "static" : "extern", kind, {
+			...(declares ? { declaration: true } : {}),
+			...(passes === undefined ? {} : { passes }),
+		});
 	}
 }
 
@@ -376,6 +415,7 @@ function typeSpecifier(walk: Walk, node: Node, extent: Node, alias?: string): vo
 	const body = node.childForFieldName("body");
 	if (body === null) return;
 	const named = node.childForFieldName("name");
+	const from = walk.definitions.length;
 	const symbol =
 		named === null
 			? alias === undefined
@@ -385,6 +425,7 @@ function typeSpecifier(walk: Walk, node: Node, extent: Node, alias?: string): vo
 	if (symbol === undefined) return;
 	if (node.type === "enum_specifier") enumerators(walk, node, body, symbol);
 	else classMembers(walk, node, body, symbol);
+	if (named !== null) markType(walk, symbol, from);
 }
 
 /**
@@ -445,15 +486,12 @@ function typedef(walk: Walk, node: Node, extent: Node): void {
 		.filter((name) => name !== undefined)
 		.map(spell);
 	const type = node.childForFieldName("type");
+	const from = walk.definitions.length;
 	if (type !== null && TYPE_SPECIFIERS.has(type.type)) typeSpecifier(walk, type, type, names[0]);
-	for (const name of names)
-		define(
-			walk,
-			name,
-			extent,
-			"no linkage",
-			type !== null && TYPE_SPECIFIERS.has(type.type) ? "class" : "value",
-		);
+	for (const name of names) {
+		const kind = type !== null && TYPE_SPECIFIERS.has(type.type) ? "class" : "value";
+		markType(walk, define(walk, name, extent, "no linkage", kind), from);
+	}
 }
 
 /**
@@ -486,7 +524,9 @@ function linkageBlock(walk: Walk, node: Node): void {
  */
 function usingAlias(walk: Walk, node: Node, extent: Node): void {
 	const name = node.childForFieldName("name");
-	if (name !== null) define(walk, name.text, extent, "no linkage", "value");
+	if (name === null) return;
+	const from = walk.definitions.length;
+	markType(walk, define(walk, name.text, extent, "no linkage", "value"), from);
 }
 
 /**
@@ -514,7 +554,7 @@ function macro(walk: Walk, node: Node): void {
 	const name = node.childForFieldName("name");
 	if (name === null || isIncludeGuard(node, name)) return;
 	const file: Walk = { definitions: walk.definitions, scope: { names: [], internal: false } };
-	define(file, name.text, node, "macro", "value");
+	define(file, name.text, node, "macro", node.type === "preproc_function_def" ? "function" : "value");
 }
 
 /** How each kind of declaration is read. */

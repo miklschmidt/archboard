@@ -1,9 +1,11 @@
 ---
 id: TASK-646.12
 title: Swift, C, C++ and Objective-C modules get every module-depth rule
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:03:00Z'
+updated_date: '2026-11-19T02:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +57,15 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 Members that each language calls are not judged
 - [ ] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Test first: one code-check pass test per language family over a fixture checkout (C and C++, Objective-C, Swift), asserting only what each grammar decides: export kinds (depth.exports), pieces of logic, pass-throughs and the math around uses, and through them that every module-depth rule fires; members the language calls are neither counted nor judged.
+2. Fact analysis, queries: @logic captures in c.scm (nodes both C grammars have) plus what only C++ has, objc.scm (the C captures and message sends), swift.scm.
+3. Fact analysis, C family: Definition.type for a struct, union or enum without methods, a typedef and a using alias, an Objective-C protocol; a function-like macro is a function; a mark for members the language calls (C++ constructor, destructor, operator; Objective-C init family, dealloc, description); Definition.passes for a function or method whose one statement passes its parameters on; computations through a shared math-shape engine driven by a small syntax table per grammar family.
+4. Fact analysis, Swift: the same for Swift (types: enum/struct/class without methods, protocol, typealias; init, hash(into:), encode(to:) called by the language; passes; computations through navigation expressions).
+5. Exposure: the C rule makes an enumerator a member of its enum. Module depth (shared, small): judge swift, c, cpp, objc names; a holder through :: as well as .; skip members the language calls. Code check (shared, small): an include or a Swift import of a whole module does not make a read incomplete, since those languages resolve each name.
+6. Docs: module-depth header, ADR 0082 and CONTEXT where they say TypeScript only, archboard skill design lens.
+7. Run archboard check and the shallow gate; finalize.
+<!-- SECTION:PLAN:END -->

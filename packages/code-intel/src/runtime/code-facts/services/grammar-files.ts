@@ -17,6 +17,7 @@ import terraformWasm from "@tree-sitter-grammars/tree-sitter-hcl/tree-sitter-ter
 import tsxWasm from "tree-sitter-typescript/tree-sitter-tsx.wasm" with { type: "file" };
 import typescriptWasm from "tree-sitter-typescript/tree-sitter-typescript.wasm" with { type: "file" };
 import cQuery from "#runtime/code-facts/services/c.scm" with { type: "text" };
+import cppQuery from "#runtime/code-facts/services/cpp.scm" with { type: "text" };
 import cSharpQuery from "#runtime/code-facts/services/csharp.scm" with { type: "text" };
 import goQuery from "#runtime/code-facts/services/go.scm" with { type: "text" };
 import nixQuery from "#runtime/code-facts/services/nix.scm" with { type: "text" };
@@ -35,8 +36,8 @@ interface GrammarSource {
 
 const GRAMMARS = Object.freeze({
 	c: { wasm: cWasm, query: cQuery },
-	/** C++ reads captures by the C query. */
-	cpp: { wasm: cppWasm, query: cQuery },
+	/** C++ reads captures by the C query, and what only C++ adds to it. */
+	cpp: { wasm: cppWasm, query: `${cQuery}\n${cppQuery}` },
 	csharp: { wasm: cSharpWasm, query: cSharpQuery },
 	go: { wasm: goWasm, query: goQuery },
 	nix: { wasm: nixWasm, query: nixQuery },

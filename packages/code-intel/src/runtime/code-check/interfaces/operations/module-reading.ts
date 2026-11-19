@@ -213,17 +213,32 @@ function hidesUse(read: SyntaxFacts, exposure: ModuleExposure): boolean {
 }
 
 /**
+ * The languages whose import of a whole module brings its names in under
+ * their own names, as C's `#include` and Swift's `import` do: each use spells
+ * the name it reaches, and the resolver finds it (TASK-646.12).
+ */
+const NAMES_EACH_USE: ReadonlySet<SyntaxFacts["adapter"]> = new Set(["c", "cpp", "objc", "swift"]);
+
+/**
  * Whether an import leaves the uses of a module unknown: a relative import of
  * code that resolves to no file, or an import of the module that takes it
- * whole, as `import * as ns` or a bare `import()` does.
+ * whole, as `import * as ns` or a bare `import()` does, in a language whose
+ * uses do not each name what they reach.
  * @param found The import.
  * @param directory The module.
+ * @param adapter The language of the importing file.
  * @returns True when it does.
  */
-function opaque(found: SyntaxFacts["imports"][number], directory: string): boolean {
+function opaque(
+	found: SyntaxFacts["imports"][number],
+	directory: string,
+	adapter: SyntaxFacts["adapter"],
+): boolean {
 	if (found.resolved === undefined)
 		return RELATIVE.test(found.specifier) && CODE_EXTENSION.test(found.specifier);
-	if (found.reexport || !within(directory, found.resolved)) return false;
+	if (found.reexport || !within(directory, found.resolved) || NAMES_EACH_USE.has(adapter)) {
+		return false;
+	}
 	return found.names.length === 0 || found.names.some((name) => name.imported === "*");
 }
 
@@ -237,7 +252,7 @@ function opaque(found: SyntaxFacts["imports"][number], directory: string): boole
  */
 function readWhole(read: FileFacts | undefined, exposure: ModuleExposure): boolean {
 	if (read === undefined || read.adapter === "text" || hidesUse(read, exposure)) return false;
-	return !read.imports.some((found) => opaque(found, exposure.directory));
+	return !read.imports.some((found) => opaque(found, exposure.directory, read.adapter));
 }
 
 /**

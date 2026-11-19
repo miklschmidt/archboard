@@ -38,7 +38,9 @@ import {
 } from "#runtime/code-facts/c/operations/c-definitions.ts";
 import type { Import, ParsedFacts, Reference } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
+import { C_MATH } from "#runtime/code-facts/c/operations/c-math.ts";
 import { cUnparsedOf } from "#runtime/code-facts/c/operations/c-unparsed.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 
@@ -50,6 +52,7 @@ interface Captured {
 	readonly function: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Nodes whose `name` or `scope` is part of one qualified name. */
@@ -131,6 +134,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		function: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	const byName: ReadonlyMap<string, Node[]> = new Map(Object.entries(lists));
 	for (const capture of captures) byName.get(capture.name)?.push(capture.node);
@@ -500,6 +504,24 @@ function useOf(named: Named, locals: ReadonlySet<string>): Reference | undefined
 }
 
 /**
+ * The names a file uses at run time that its functions do not declare, each
+ * at the whole name it starts a chain with: `restart_base`, `timing::base`,
+ * `config` of `config.retries`.
+ * @param named The file's names.
+ * @param locals Each function's locals.
+ * @returns The names.
+ */
+function runtimeUses(named: readonly Named[], locals: ReadonlySet<string>): Node[] {
+	const uses = new Map<number, Node>();
+	for (const each of named) {
+		const { node, top, role } = each;
+		if (role !== "use" || node.type !== "identifier" || isFieldUse(top)) continue;
+		if (!isLocal(spell(top), each, locals)) uses.set(top.id, top);
+	}
+	return [...uses.values()];
+}
+
+/**
  * The path of an include as written: `ledger.h` for `"ledger.h"`, and
  * `<vector>` with its angle brackets.
  * @param path The include's path.
@@ -586,6 +608,8 @@ function cFactsOf(tree: Tree, captures: readonly QueryCapture[]): ParsedFacts {
 			.filter((node) => !unparsed.holds(node.startIndex))
 			.flatMap((node) => includeOf(node) ?? []),
 		unparsed: broken.map(({ start, end, names }) => ({ start, end, names })),
+		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
+		computations: computationsOf(C_MATH, runtimeUses(named, locals)),
 	};
 }
 

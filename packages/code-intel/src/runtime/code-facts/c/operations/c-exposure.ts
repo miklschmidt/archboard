@@ -21,6 +21,7 @@
 
 import path from "node:path";
 import { HEADERS, SOURCES, pairOf } from "#runtime/code-facts/c/operations/c-pairs.ts";
+import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/module-resolution.ts";
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
 
@@ -72,4 +73,24 @@ function cRootFiles(
 	return Promise.resolve(paired);
 }
 
-export { cRootFiles, isCFile };
+/**
+ * Whether an exposed C, C++ or Objective-C name is a member of another, which
+ * counts for its holder: a name `::` qualifies by another (`shop::Store::save`,
+ * `Ledger::post:`), and an enumerator, which C scopes beside its enum but
+ * which is part of it.
+ * @param name The name.
+ * @param exposed Every name the module exposes.
+ * @returns True for a member.
+ */
+function cMember(name: ExposedName, exposed: readonly ExposedName[]): boolean {
+	const { symbol, start, end } = name.definition;
+	return exposed.some((holder) => {
+		const held = holder.definition;
+		if (held === name.definition) return false;
+		if (symbol.startsWith(`${held.symbol}::`)) return true;
+		const around = holder.path === name.path && held.start <= start && end <= held.end;
+		return around && held.kind === "class" && held.symbol !== symbol;
+	});
+}
+
+export { cMember, cRootFiles, isCFile };
