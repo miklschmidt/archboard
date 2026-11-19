@@ -3,22 +3,15 @@
 //! (`archboard-layout`) and the frontends that paint a scene read: each a
 //! function, so the sheet itself stays the crate's own.
 
-use crate::drawing::DiagramFont;
 use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE,
-    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
-    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, LINE_WIDTH, PILL_FONT, PILL_TEXT_SIZE, RAIL_GAP,
-    RAILS, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, TAB_PADDING, TAB_SHOULDER,
+    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, HERO_LINE_WIDTH, LINE_WIDTH, RAIL_GAP, RAILS,
+    SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, TAB_PADDING, TAB_SHOULDER,
 };
 
 /// The line widths a far view draws wider: a line of normal weight, of hero
 /// weight, and a double line's rails.
 const FAR_WIDENED: [f64; 3] = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS];
-
-/// What a connection carries: small, technical, and on a plate.
-pub const fn pill_font() -> DiagramFont {
-    PILL_FONT
-}
 
 /// The space around the final drawing.
 pub const fn diagram_margin() -> f64 {
@@ -82,11 +75,6 @@ pub fn is_flow_kind(kind: &str) -> bool {
     kind == FLOW_KIND
 }
 
-/// The size of the words on a label plate.
-pub const fn pill_text_size() -> f64 {
-    PILL_TEXT_SIZE
-}
-
 /// The size of words in a flowchart's diamonds, loops and terminals.
 pub const fn shape_text_size() -> f64 {
     SHAPE_TEXT_SIZE
@@ -95,26 +83,6 @@ pub const fn shape_text_size() -> f64 {
 /// The room one line of a flowchart shape's words takes.
 pub const fn shape_text_line() -> f64 {
     SHAPE_TEXT_LINE
-}
-
-/// The row a decision's or loop's operator tab and words stand on.
-pub const fn frame_head_height() -> f64 {
-    FRAME_HEAD_HEIGHT
-}
-
-/// The height of the row an alternative's label stands on.
-pub const fn frame_guard_height() -> f64 {
-    FRAME_GUARD_HEIGHT
-}
-
-/// The room between a decision's or loop's sides and the ink it holds.
-pub const fn frame_pad() -> f64 {
-    FRAME_PAD
-}
-
-/// The padding of a decision's or loop's tab around its operator.
-pub const fn frame_tab_padding() -> f64 {
-    FRAME_TAB_PADDING
 }
 
 /// The gap a double line's rails leave down its middle.

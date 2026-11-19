@@ -23,6 +23,7 @@ use crate::request::{SequenceFlow, SequenceFrame, Standing};
 use crate::scene::{
     Colour, Geometry, Group, Item, PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
 };
+use crate::sequence_picture::guard_words;
 use crate::sizes::{
     BAND_RADIUS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, TAB_PADDING,
 };
@@ -143,7 +144,7 @@ fn paint_guards(frame: &SequenceFrame, ink: &Colour, words: &Palette) -> Items {
                         rect.x + FRAME_PAD,
                         guard.top,
                         FRAME_GUARD_HEIGHT,
-                        &format!("[{}]", guard.label),
+                        &guard_words(&guard.label),
                         words,
                     ),
                 ])

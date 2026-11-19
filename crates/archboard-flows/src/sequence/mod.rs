@@ -151,8 +151,8 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                 },
                 bounds: frame.bounds,
                 tab: frame.tab,
-                operator: frame.operator,
-                words: frame.words.clone(),
+                operator: frame.rows.operator,
+                words: frame.rows.words.clone(),
                 guards: frame.rows.guards.clone(),
             })
             .collect(),

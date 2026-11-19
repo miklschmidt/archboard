@@ -23,7 +23,7 @@ use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
-use archboard_scene::{CardWords, ColumnLimits, HeadCard, sequence_cards};
+use archboard_scene::{CardWords, ColumnLimits, FragmentHead, HeadCard, sequence_cards};
 
 use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;
@@ -136,6 +136,12 @@ impl FrameStep<'_> {
 #[derive(Clone, Debug)]
 pub(super) struct FrameRows<'a> {
     pub step: FrameStep<'a>,
+    /// What its tab says: `alt` for a decision, `loop` for a loop.
+    pub operator: FrameOperator,
+    /// What its head row says beside the tab: the question, or the condition.
+    pub words: String,
+    /// Its head, measured once before what it holds is placed.
+    pub head: FragmentHead,
     /// Where its frame begins.
     pub top: f64,
     /// Where it ends.
@@ -156,10 +162,6 @@ pub(super) struct PlacedFrame<'a> {
     pub bounds: Rect,
     /// The tab at its top left corner that its operator stands in.
     pub tab: Rect,
-    /// What the tab says: `alt` for a decision, `loop` for a loop.
-    pub operator: FrameOperator,
-    /// What the head row says beside the tab: the question, or the condition.
-    pub words: String,
 }
 
 /// One flow, placed.

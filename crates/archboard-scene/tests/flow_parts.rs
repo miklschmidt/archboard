@@ -2,11 +2,12 @@
 //! painter draws it from, so the layout and the painter agree without sharing a
 //! size. Each test states the agreement its measure exists for.
 
+use archboard_scene::drawing::{DiagramFont, FontFamily};
 use archboard_scene::geometry::Point;
-use archboard_scene::request::MessageKind;
+use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
-    CardWords, ColumnLimits, HeadCards, activation_span, message_ends, message_plate, note_plate,
-    self_loop, sequence_cards,
+    CardWords, ColumnLimits, HeadCards, Span, activation_span, fragment_bounds, fragment_head,
+    message_ends, message_plate, note_plate, self_loop, sequence_cards, width,
 };
 
 /// A sequence card's words.
@@ -181,4 +182,50 @@ fn a_note_wraps_whole_on_a_plate_that_holds_its_lines() {
     assert_eq!(plate.width, widest.ceil() + 8.0);
     let height = plate.lines.len() as f64 * 12.825 + 4.0;
     assert!(plate.lines.len() > 1 && (plate.height - height).abs() < 1e-9);
+}
+
+/// How wide words on a fragment's head or guard row are set: the label face at 9.
+fn row_words(words: &str) -> f64 {
+    let face = DiagramFont {
+        family: FontFamily::Sans,
+        weight: 500,
+    };
+    width(words, face, 9.0)
+}
+
+#[test]
+fn a_fragment_is_never_narrower_than_its_tab_its_words_and_each_guard() {
+    let guard = "refused at the payment gateway after three tries";
+    let head = fragment_head(FrameOperator::Alt, "is the order paid", &["paid", guard]);
+    assert_eq!((head.tab.height, head.guard_height), (18.0, 16.0));
+    // The tab pads its operator by 6 a side; the words stand 6 past it and 10 short of the side.
+    assert_eq!(head.tab.width, (row_words("alt") + 12.0).ceil());
+    assert!(head.least_width >= head.tab.width + 6.0 + row_words("is the order paid") + 10.0);
+    // A guard is spelled in brackets and stands 10 in from either side.
+    assert!(head.least_width >= row_words(&format!("[{guard}]")) + 20.0);
+}
+
+#[test]
+fn a_fragment_reaches_round_the_ink_it_holds_or_spans_the_columns() {
+    let head = fragment_head(FrameOperator::Loop, "[each line]", &[]);
+    let columns = Span {
+        x: 38.0,
+        width: 400.0,
+    };
+    let ink = Span {
+        x: 100.5,
+        width: 200.0,
+    };
+    let round = fragment_bounds(Some(ink), columns, &head);
+    assert_eq!((round.x, round.width), (90.0, 221.0));
+    let tight = Span {
+        x: 100.0,
+        width: 1.0,
+    };
+    assert_eq!(
+        fragment_bounds(Some(tight), columns, &head).width,
+        head.least_width
+    );
+    let empty = fragment_bounds(None, columns, &head);
+    assert_eq!((empty.x, empty.width), (38.0, 400.0));
 }

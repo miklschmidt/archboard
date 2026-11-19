@@ -4,19 +4,12 @@
 //! The card, label, margin and type sizes the painter shares are
 //! `archboard_scene::paint::design`'s.
 
-use archboard_scene::drawing::DiagramFont;
 use archboard_scene::paint::design;
 
-pub(super) const PILL_FONT: DiagramFont = design::pill_font();
 pub(super) const ARCHITECTURE_CARD_PADDING: f64 = design::architecture_card_padding();
 pub(super) const DIAGRAM_MARGIN: f64 = design::diagram_margin();
 pub(super) const FLOW_HEADING: f64 = design::flow_heading();
 pub(super) const FLOW_HEADING_WITH_NOTE: f64 = design::flow_heading_with_note();
-pub(super) const FRAME_GUARD_HEIGHT: f64 = design::frame_guard_height();
-pub(super) const FRAME_HEAD_HEIGHT: f64 = design::frame_head_height();
-pub(super) const FRAME_PAD: f64 = design::frame_pad();
-pub(super) const FRAME_TAB_PADDING: f64 = design::frame_tab_padding();
-pub(super) const PILL_TEXT_SIZE: f64 = design::pill_text_size();
 pub(super) const TAB_PADDING: f64 = design::tab_padding();
 
 /// How far a container's well holds what it holds in from its walls.
