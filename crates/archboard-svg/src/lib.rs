@@ -6,7 +6,7 @@
 //! Its colours are the page's tokens. A document that stands alone carries the
 //! value of every token it names on its root, for one theme or for both.
 
-mod colour;
+mod css;
 mod definitions;
 mod glyphs;
 mod groups;
@@ -28,7 +28,7 @@ pub use legend::{AppliedAppearance, PictureLegend, appearances};
 use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
-use colour::css;
+use css::css;
 use definitions::{Names, write_definitions};
 use glyphs::Glyphs;
 use groups::{
