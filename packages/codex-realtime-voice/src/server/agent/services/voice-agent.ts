@@ -99,16 +99,8 @@ type VoiceAgentCodex = Omit<CreateCodexWorkbenchOptions["process"], "executableP
  * @returns The process inputs with an executable path.
  */
 function codexProcess(codex: VoiceAgentCodex = {}): CreateCodexWorkbenchOptions["process"] {
-	const { executablePath, installedIn, releasedIn, ...process } = codex;
-	return {
-		...process,
-		executablePath:
-			executablePath ??
-			resolveCodexExecutable({
-				...(installedIn === undefined ? {} : { installedIn }),
-				...(releasedIn === undefined ? {} : { releasedIn }),
-			}),
-	};
+	const { executablePath, installedIn: _installedIn, releasedIn: _releasedIn, ...process } = codex;
+	return { ...process, executablePath: executablePath ?? resolveCodexExecutable(codex) };
 }
 
 type Workbench = ReturnType<typeof createCodexWorkbench>;
