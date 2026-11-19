@@ -2,7 +2,11 @@
 export {
 	CodeCheckAnswerSchema,
 	CodeSourceLinesSchema,
-	RememberedExportsSchema,
+	parseRememberedExports,
 	RememberedFindingsSchema,
 } from "#shared/protocol/code-check.ts";
-export type { CodeCheckAnswer, RememberedExports, RememberedFindings } from "#shared/protocol/code-check.ts";
+export type {
+	CodeCheckAnswer,
+	RememberedExports,
+	RememberedFindings,
+} from "#shared/protocol/code-check.ts";

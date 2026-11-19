@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { RememberedExportsSchema, type RememberedExports } from "@archboard/code-intel/code-check";
+import { parseRememberedExports, type RememberedExports } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
@@ -47,7 +47,7 @@ function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 			});
 			if (response.status === 404) return null;
 			if (!response.ok) throw new Error(`The code exports could not be read (${response.status}).`);
-			return RememberedExportsSchema.parse(await response.json());
+			return parseRememberedExports(await response.json());
 		},
 		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,

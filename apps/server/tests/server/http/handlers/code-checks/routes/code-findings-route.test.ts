@@ -17,7 +17,7 @@ import express from "express";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { createCodeFindingsMemory } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
 import {
-	RememberedExportsSchema,
+	parseRememberedExports,
 	RememberedFindingsSchema,
 	type CodeCheckAnswer,
 } from "@archboard/code-intel/code-check";
@@ -355,7 +355,7 @@ test("every canvas reads no export names, and the exports of one module are read
 		);
 	const gateway = await exportsOf("gateway");
 	expect(gateway.status).toBe(200);
-	const read = RememberedExportsSchema.parse(await gateway.json());
+	const read = parseRememberedExports(await gateway.json());
 	expect(read.repo).toBe("example/shop");
 	expect(read.names.map(({ name, line }) => ({ name, line }))).toEqual([
 		{ name: "run0", line: 1 },

@@ -550,6 +550,16 @@ const RememberedExportsSchema = z.object({
 	names: z.array(ModuleExportSchema),
 });
 
+/**
+ * Read the answer of `GET /api/vault/code-exports`.
+ * @param body The answer's body.
+ * @returns The exports it holds.
+ * @throws {z.ZodError} When the body is no such answer.
+ */
+function parseRememberedExports(body: unknown): RememberedExports {
+	return RememberedExportsSchema.parse(body);
+}
+
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type RememberedExports = z.infer<typeof RememberedExportsSchema>;
@@ -576,7 +586,7 @@ export {
 	type ModuleDepth,
 	type ModuleExport,
 	CodeSourceLinesSchema,
-	RememberedExportsSchema,
+	parseRememberedExports,
 	type RememberedExports,
 	RememberedFindingsSchema,
 	type RememberedFindings,
