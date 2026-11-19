@@ -13,6 +13,19 @@ const MeasuredSchema = CodeCheckAnswerSchema.pick({ depth: true });
 /** A refusal, by its code. */
 const RefusalSchema = z.object({ code: z.string().optional(), error: z.string().optional() });
 
+/**
+ * The pass a refusal says the server forgot, by its code `CODE_EXPORTS_UNREAD`.
+ * @param response The refusal.
+ * @returns Null for a forgotten pass.
+ * @throws {Error} Any other refusal, with its words.
+ */
+async function forgotten(response: Response): Promise<null> {
+	const refusal = RefusalSchema.safeParse(await response.json().catch(() => null));
+	const { code, error } = refusal.success ? refusal.data : {};
+	if (code === "CODE_EXPORTS_UNREAD") return null;
+	throw new Error(error ?? `The code exports could not be read (${response.status}).`);
+}
+
 /** The pass whose exports of one module are asked for, by the reading it read and when it ran. */
 interface ExportsOfPass {
 	readonly model: string;
@@ -57,12 +70,7 @@ function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 			const response = await fetch(`${inVault("/api/vault/code-exports", vault)}&${parameters}`, {
 				signal: context.signal,
 			});
-			if (!response.ok) {
-				const refusal = RefusalSchema.safeParse(await response.json().catch(() => null));
-				const { code, error } = refusal.success ? refusal.data : {};
-				if (code === "CODE_EXPORTS_UNREAD") return null;
-				throw new Error(error ?? `The code exports could not be read (${response.status}).`);
-			}
+			if (!response.ok) return forgotten(response);
 			return MeasuredSchema.parse(await response.json()).depth?.[0] ?? null;
 		},
 		staleTime: Number.POSITIVE_INFINITY,

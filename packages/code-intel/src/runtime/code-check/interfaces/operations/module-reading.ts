@@ -50,6 +50,7 @@ import {
 	type TestImport,
 } from "#runtime/code-check/interfaces/operations/test-imports.ts";
 import {
+	type FileFacts,
 	type Import,
 	type Reference,
 	type SyntaxFacts,
@@ -267,7 +268,7 @@ async function usesIn(
 ): Promise<{ readonly uses: OutsideUse[]; readonly whole: boolean }> {
 	const read = await search.facts.read(search.checkout, file);
 	if (read === undefined) return { uses: [], whole: false };
-	if (read.adapter === "text") return { uses: [], whole: !mayUse(read.text, search.exposure) };
+	if (read.adapter === "text") return { uses: [], whole: !hidesUse(read, search.exposure) };
 	const uses: OutsideUse[] = [];
 	let whole = readWhole(read, search.exposure);
 	for (const reference of read.references) {
@@ -283,37 +284,27 @@ async function usesIn(
 const WORD = /[\p{L}\p{N}_$]+/gu;
 
 /**
- * Whether a file no grammar reads, such as JavaScript or a Vue component
- * beside TypeScript, may use a module: it writes one of the names the module
- * exposes, or the module exports a default, which an import names freely.
- * @param text The file's text.
+ * Whether a file may use a module where the grammar read no use: it names
+ * what the module exposes in code that did not parse, which the grammar
+ * records even there, or anywhere in a file no grammar reads, as JavaScript
+ * beside TypeScript, where an import names a default export freely.
+ * @param read The file's facts.
  * @param exposure What the module exposes.
  * @returns True when it may.
  */
-function mayUse(text: string, exposure: ModuleExposure): boolean {
-	const words = new Set(text.match(WORD));
-	return exposure.exposed.some(({ name }) => {
-		const [first = name] = name.split(".");
-		return first === "default" || words.has(first);
-	});
+function hidesUse(read: FileFacts, exposure: ModuleExposure): boolean {
+	const named = new Set(
+		read.adapter === "text"
+			? [...(read.text.match(WORD) ?? []), "default"]
+			: read.unparsed.flatMap((region) => region.names),
+	);
+	return exposure.exposed.some((name) => named.has(name.name.split(".")[0] ?? name.name));
 }
 
 /** A specifier that names a file by a path from the importing file. */
 const RELATIVE = /^\.\.?\//u;
 /** The extensions a relative import of code writes, or none. */
 const CODE_EXTENSION = /(?:^|\/)[^./]+$|\.[cm]?[jt]sx?$/u;
-
-/**
- * Whether code that did not parse may hide a use of a module: it names one
- * of the names the module exposes, which the grammar records even there.
- * @param read The file's facts.
- * @param exposure What the module exposes.
- * @returns True when it may.
- */
-function hidesUse(read: SyntaxFacts, exposure: ModuleExposure): boolean {
-	const named = new Set(read.unparsed.flatMap((region) => region.names));
-	return exposure.exposed.some((name) => named.has(name.name.split(".")[0] ?? name.name));
-}
 
 /**
  * The adapters whose code reaches a module it takes whole only by names it
