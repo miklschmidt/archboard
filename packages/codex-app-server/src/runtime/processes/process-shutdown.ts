@@ -156,7 +156,7 @@ async function runShutdown(state: ProcessOwnerState): Promise<CodexProcessSnapsh
 	state.stopping = true;
 	clearRestart(state);
 	if (state.state !== "stopped") setState(state, "stopping");
-	const deadlineAtMs = state.dependencies.now() + codexProcessMs("composedShutdown");
+	const deadlineAtMs = codexProcessMs("composedShutdown", state.dependencies.now());
 	rejectPendingStart(
 		state,
 		shutdownError(

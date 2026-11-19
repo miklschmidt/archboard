@@ -260,7 +260,7 @@ function recoverFromExit(
 	const cleanup = ensureGroupCleanup(
 		state,
 		record,
-		state.dependencies.now() + codexProcessMs("composedShutdown"),
+		codexProcessMs("composedShutdown", state.dependencies.now()),
 	);
 	void cleanup.then(
 		() => {
@@ -308,7 +308,7 @@ function routeClosedChild(
 	exit: ChildExit,
 	classification: CodexProcessExit["classification"],
 ): void {
-	const deadlineAtMs = state.dependencies.now() + codexProcessMs("composedShutdown");
+	const deadlineAtMs = codexProcessMs("composedShutdown", state.dependencies.now());
 	if (classification === "requested" || state.state === "terminal_failure") {
 		observeGroupCleanup(state, record, deadlineAtMs);
 		return;

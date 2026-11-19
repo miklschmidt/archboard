@@ -141,10 +141,14 @@ const CODEX_APPROVAL_MS = durations({
 /**
  * One duration of the Codex process.
  * @param key Which one.
- * @returns It, in milliseconds.
+ * @param startedAtMs When the duration starts, if asking for a deadline.
+ * @returns A duration in milliseconds, or a deadline on the supplied clock.
  */
-function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS): number {
-	return CODEX_PROCESS_MS[key];
+function codexProcessMs(key: "composedShutdown", startedAtMs: number): number;
+function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS): number;
+function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS, startedAtMs?: number): number {
+	const duration = CODEX_PROCESS_MS[key];
+	return startedAtMs === undefined ? duration : startedAtMs + duration;
 }
 
 /**
