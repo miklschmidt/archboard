@@ -10,13 +10,13 @@
 	"model-store": 20,
 	"process": 13,
 	"renderer": 56,
-	"server-lifecycle": 19,
-	"server-requests": 10,
+	"server-lifecycle": 16,
+	"server-requests": 4,
 	"skills": 1,
 	"telemetry": 7,
 	"timing": 10,
 	"ui-kit": 35,
 	"walkthrough": 20,
-	"workbench": 53,
+	"workbench": 52,
 	"workspace": 40
 }
