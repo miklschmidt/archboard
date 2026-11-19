@@ -70,6 +70,7 @@ import { evidenceOf } from "#runtime/code-check/evidence/operations/evidence.ts"
 import { infrastructureRunners } from "#runtime/code-check/evidence/operations/infrastructure-runners.ts";
 import {
 	judgeInterfaces,
+	type DepthRecord,
 	type ModuleReadings,
 } from "#runtime/code-check/interfaces/operations/interfaces.ts";
 import { lineagesOf } from "#runtime/code-check/evidence/operations/ownership.ts";
@@ -100,6 +101,8 @@ interface CodeCheckOutcome {
 	readonly timings: CheckTiming[];
 	readonly findings: CodeFinding[];
 	readonly skipped: CodeCheckSkip[];
+	/** Each judged module measured from its code (TASK-646.04). */
+	readonly depth: DepthRecord[];
 }
 
 /** The code facts of every pass, kept in the server's memory by file content. */
@@ -419,6 +422,7 @@ async function judgeStateRelationships(read: StateToCheck, pass: Pass): Promise<
 		modules: pass.modules,
 	});
 	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
+	pass.outcome.depth.push(...interfaces.depth);
 	pass.outcome.skipped.push(
 		...judged.skipped,
 		...interfaces.skipped,
@@ -543,7 +547,7 @@ async function checkCode(
 		resolve: resolveOnDisk(resolution.resolve, refs, withoutServer),
 		readAsText: new Map(),
 		modules: new Map(),
-		outcome: { timings: [], findings: [], skipped: [] },
+		outcome: { timings: [], findings: [], skipped: [], depth: [] },
 	};
 	try {
 		await judgeAll(claims, pass);

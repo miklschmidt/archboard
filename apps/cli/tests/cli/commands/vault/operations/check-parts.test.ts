@@ -6,6 +6,9 @@
 // fails it. Behind is information (ADR 0045), so a model many commits behind
 // never does. `--state`, `--every-draft` and `--plan` name what the code
 // check reads, and only `check`, `check all` and `check embeds` take `--fix`.
+// `--fail-shallow-modules`, or a model's policy, makes `MODULE_SHALLOW` on a
+// module the branch touched a warning, and `--base` names the base
+// (TASK-646.04).
 // Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
@@ -81,6 +84,12 @@ const server = Bun.serve({
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
 				{ success: false, code: "STATE_NOT_FOUND", error: "No such state." },
+				{ status: 422 },
+			);
+		}
+		if (pathname === "/api/vault/code-check" && asking.searchParams.get("base") === "nope") {
+			return Response.json(
+				{ success: false, code: "BASE_UNRESOLVED", error: "No such base." },
 				{ status: 422 },
 			);
 		}
@@ -463,4 +472,107 @@ test("check embeds passes on a checkout with no embed, and every command that ra
 	// The embed is not part of the semantics check or the code check.
 	expect((await run(["check", "code"])).exited).toBe(0);
 	expect((await run(["check", "semantics"])).exited).toBe(0);
+});
+
+/**
+ * A shallow module's finding, as the code check answers it: information.
+ * @param id The module's id.
+ * @returns The finding.
+ */
+function shallow(id: string): CodeFinding {
+	return {
+		severity: "information",
+		code: "MODULE_SHALLOW",
+		file: "modules/timing.module.json",
+		model: "Orders",
+		state: "Built",
+		subject: { kind: "node", id, name: id },
+		message: "Shallow.",
+	};
+}
+
+/** An answer with two shallow modules, one of which the branch touched, and the model's policy. */
+function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckAnswer {
+	return {
+		...codeCheck,
+		models: [
+			{
+				model: "Orders",
+				state: "Built",
+				revision: { digest: "d", files: [] },
+				failShallowModules: gate,
+			},
+		],
+		findings: [shallow("Orders#Timing"), shallow("Orders#Clock")],
+		touched: [
+			{ model: "Orders", state: "Built", base: "main", modules: ["Orders#Timing"], unread },
+		],
+	};
+}
+
+/**
+ * The severity each shallow module ends with in a command's answer.
+ * @param stdout The command's answer.
+ * @returns Each module's id and severity.
+ */
+function shallowSeverities(stdout: string) {
+	return (PartsSchema.parse(JSON.parse(stdout)).code?.findings ?? []).map((each) => [
+		each.subject?.id,
+		each.severity,
+	]);
+}
+
+test("--fail-shallow-modules asks for the touched modules and fails on a shallow one the branch touched, not on older ones", async () => {
+	plain = clean;
+	try {
+		answered = shallowAnswer(false);
+		expect((await run(["check", "code"])).exited).toBe(0);
+		expect((await run(["check", "code", "--fail-shallow-modules"])).exited).toBe(1);
+		for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
+			expect(shallowSeverities((await run(argv)).stdout)).toEqual([
+				["Orders#Timing", "information"],
+				["Orders#Clock", "information"],
+			]);
+			asked.length = 0;
+			const gated = await run([...argv, "--fail-shallow-modules"]);
+			expect(new URL(`http://host${asked.at(-1) ?? ""}`).searchParams.get("touched")).toBe("true");
+			expect(shallowSeverities(gated.stdout)).toEqual([
+				["Orders#Timing", "warning"],
+				["Orders#Clock", "information"],
+			]);
+		}
+	} finally {
+		answered = codeCheck;
+	}
+});
+
+test("the model's policy turns the same gate on without the flag", async () => {
+	plain = clean;
+	try {
+		answered = shallowAnswer(true);
+		const gated = await run(["check", "code"]);
+		expect(gated.exited).toBe(1);
+		expect(shallowSeverities(gated.stdout)).toEqual([
+			["Orders#Timing", "warning"],
+			["Orders#Clock", "information"],
+		]);
+	} finally {
+		answered = codeCheck;
+	}
+});
+
+test("--base names the base, and a base that does not resolve, or a gated module the branch range could not read, is a refusal", async () => {
+	plain = clean;
+	asked.length = 0;
+	expect((await run(["check", "code", "--base", "release"])).exited).toBe(0);
+	expect(new URL(`http://host${asked.at(-1) ?? ""}`).searchParams.get("base")).toBe("release");
+	const refused = await run(["check", "code", "--base", "nope", "--fail-shallow-modules"]);
+	expect(refused.exited).toBe(2);
+	try {
+		answered = shallowAnswer(true, ["Orders#Clock"]);
+		const unread = await run(["check", "code"]);
+		expect(unread.exited).toBe(2);
+	} finally {
+		answered = codeCheck;
+	}
 });

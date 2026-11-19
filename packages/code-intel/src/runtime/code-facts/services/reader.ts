@@ -192,6 +192,7 @@ async function resolved(
 			? {}
 			: { testImports: read.testImports.map((found) => resolver.resolve(file, found)) }),
 		unparsed: parsed.unparsed,
+		...(parsed.logic === undefined ? {} : { logic: parsed.logic }),
 	};
 }
 

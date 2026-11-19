@@ -113,6 +113,16 @@ function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.s
 				.meta({ minProperties: 1 }),
 			/** Groups nodes may belong to, by stable id. None by default. */
 			groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}),
+			codeCheck: z
+				.object({
+					failShallowModules: z.boolean().meta({
+						description:
+							"Plain `archboard check` fails on a shallow module that the branch touched, working tree included, as `--fail-shallow-modules` makes it (TASK-646.04).",
+					}),
+				})
+				.strict()
+				.optional()
+				.meta({ description: "What the code check fails on beyond its warnings. Off by default." }),
 		})
 		.strict();
 }

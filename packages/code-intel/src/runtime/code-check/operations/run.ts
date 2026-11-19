@@ -9,6 +9,13 @@
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan
 // JSON refuses the check, as `PLAN_REFUSED`, before the pass starts.
+//
+// Each judged module is measured from its code (`depth`, TASK-646.04). When the
+// caller names a base or asks for them, or a model's policy turns the
+// shallow-module gate on, the run also reads the modules that the branch
+// touched, working tree included (touched.ts), beside the pass; a base the
+// caller asked for that does not resolve refuses the run, as `BASE_UNRESOLVED`.
+// The request never changes a severity.
 
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import {
@@ -16,8 +23,18 @@ import {
 	readEveryDraftToCheck,
 	type NoSuchDraft,
 } from "#runtime/code-check/operations/states.ts";
-import { checkCode } from "#runtime/code-check/operations/check.ts";
+import { checkCode, type CodeCheckOutcome } from "#runtime/code-check/operations/check.ts";
 import { readPlans, type PlanRefused } from "#runtime/code-check/operations/plans.ts";
+import {
+	failsShallowModules,
+	readFootprints,
+	readsTouched,
+	touchedOf,
+	type BaseUnresolved,
+	type Footprints,
+} from "#runtime/code-check/operations/touched.ts";
+import type { StatesToCheck, StateToCheck } from "#runtime/code-check/operations/states.ts";
+import type { DepthRecord } from "#runtime/code-check/interfaces/operations/interfaces.ts";
 
 /** What one run reads: the vault, the draft to read where a document has one, the plans an agent named, and how to cancel. */
 interface CodeCheckRequest {
@@ -27,13 +44,17 @@ interface CodeCheckRequest {
 	/** Read every draft of every document, in place of `variant`. */
 	readonly everyDraft: boolean;
 	readonly plans: readonly string[];
+	/** The base the branch is read from for the touched modules; the default base when absent. */
+	readonly base?: string | undefined;
+	/** Read the modules that the branch touched, though no base is named. */
+	readonly touched?: boolean | undefined;
 	/** Cancels the run and every Git command it starts. */
 	readonly signal: AbortSignal;
 }
 
 /** Why a run is refused before its pass starts: a draft no document has, or a plan the check does not read. */
 interface CodeCheckRefusal {
-	readonly code: NoSuchDraft["code"] | "PLAN_REFUSED";
+	readonly code: NoSuchDraft["code"] | "PLAN_REFUSED" | BaseUnresolved["code"];
 	readonly error: string;
 }
 
@@ -83,7 +104,7 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
  * @returns The canonical finding or retained semantic evidence.
  */
 function canonicalFinding(
-	readings: readonly import("#runtime/code-check/operations/states.ts").StateToCheck[],
+	readings: readonly StateToCheck[],
 	finding: import("#shared/protocol/code-check.ts").CodeFinding,
 ) {
 	const model = readings.find(
@@ -99,9 +120,7 @@ function canonicalFinding(
  * @param model The actual inspected reading.
  * @returns Its model and state identities.
  */
-function findingIdentity(
-	model: NonNullable<import("#runtime/code-check/operations/states.ts").StateToCheck["model"]>,
-) {
+function findingIdentity(model: NonNullable<StateToCheck["model"]>) {
 	return { model: model.manifest.id, state: model.selectedState?.id ?? null };
 }
 /**
@@ -110,14 +129,80 @@ function findingIdentity(
  * @param subject The stable subject identity.
  * @returns Its authored input path.
  */
-function findingOwner(
-	model: NonNullable<import("#runtime/code-check/operations/states.ts").StateToCheck["model"]>,
-	subject: string | undefined,
-) {
+function findingOwner(model: NonNullable<StateToCheck["model"]>, subject: string | undefined) {
 	return model.modules.find(
 		(module) => module.id === subject || module.outgoing.some((edge) => edge.id === subject),
 	)?.file;
 }
+/**
+ * A judged module, at its canonical model and state.
+ * @param readings The readings.
+ * @param record The module, at its document and variant.
+ * @returns The module as the answer names it.
+ */
+function canonicalDepth(readings: readonly StateToCheck[], record: DepthRecord) {
+	const model = readings.find(
+		(reading) => reading.document.name === record.model && reading.variant.id === record.variant,
+	)?.model;
+	if (model === undefined) return record;
+	const { model: _document, variant: _variant, ...measured } = record;
+	return { ...measured, ...findingIdentity(model) };
+}
+
+/**
+ * The footprints the run reads beside its pass, when it reads any.
+ * @param request What to read.
+ * @param states The readings.
+ * @returns The footprints, the refusal, or undefined when the run reads none.
+ */
+function footprintsOf(
+	request: CodeCheckRequest,
+	states: readonly StateToCheck[],
+): Promise<Footprints | undefined> {
+	const asked = request.base !== undefined || request.touched === true;
+	if (!readsTouched(asked, states)) return Promise.resolve(undefined);
+	const { vault, base, signal } = request;
+	return readFootprints({ vault, base, asked, signal }, states);
+}
+
+/**
+ * The answer of a run: what the pass found, at the canonical identities of the
+ * readings, and the touched modules when the run read them.
+ * @param read The readings.
+ * @param code What the pass found.
+ * @param footprints The footprints read beside it, if any.
+ * @returns The answer.
+ */
+function answerOf(
+	read: StatesToCheck,
+	code: CodeCheckOutcome,
+	footprints: Exclude<Footprints, BaseUnresolved> | undefined,
+): CodeCheckAnswer {
+	return CodeCheckAnswerSchema.parse({
+		timings: code.timings,
+		states: [],
+		models: read.states.flatMap(({ model }) =>
+			model === undefined
+				? []
+				: [
+						{
+							model: model.manifest.id,
+							state: model.selectedState?.id ?? null,
+							revision: model.revision,
+							failShallowModules: failsShallowModules(model),
+						},
+					],
+		),
+		findings: code.findings.map((finding) => canonicalFinding(read.states, finding)),
+		skipped: [...read.skipped, ...code.skipped],
+		behind: [],
+		depth: code.depth.map((record) => canonicalDepth(read.states, record)),
+		...(footprints === undefined
+			? {}
+			: { touched: touchedOf(footprints, read.states, code.depth) }),
+	});
+}
+
 /**
  * Create the code check. Its reading of behind keeps what it read, so one
  * check serves every run of a process.
@@ -138,25 +223,12 @@ function createCodeCheck(): CodeCheck {
 			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);
-			const code = await checkCode(vault, read.states, request.signal, plans.plans);
-			return CodeCheckAnswerSchema.parse({
-				timings: code.timings,
-				states: [],
-				models: read.states.flatMap(({ model }) =>
-					model === undefined
-						? []
-						: [
-								{
-									model: model.manifest.id,
-									state: model.selectedState?.id ?? null,
-									revision: model.revision,
-								},
-							],
-				),
-				findings: code.findings.map((finding) => canonicalFinding(read.states, finding)),
-				skipped: [...read.skipped, ...code.skipped],
-				behind: [],
-			});
+			const [code, footprints] = await Promise.all([
+				checkCode(vault, read.states, request.signal, plans.plans),
+				footprintsOf(request, read.states),
+			]);
+			if (footprints !== undefined && "code" in footprints) return footprints;
+			return answerOf(read, code, footprints);
 		},
 	};
 }

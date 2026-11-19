@@ -48,6 +48,7 @@ interface Captured {
 	readonly type: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -65,6 +66,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	type: "type",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** JSX tags that name an element of the host, `<div>`, not a component. */
@@ -121,6 +123,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		type: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
@@ -362,6 +365,7 @@ function typeScriptFacts(tree: Tree, grammar: Grammar): ParsedFacts {
 		references: distinct(references, imports),
 		imports: [...imports, ...exportedImports(passed, imports)],
 		unparsed: unparsedOf(captured.unparsed),
+		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
 	};
 }
 

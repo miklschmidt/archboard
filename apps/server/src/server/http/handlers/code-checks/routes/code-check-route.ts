@@ -1,5 +1,5 @@
 // The code check's route,
-// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...`
+// `GET /api/vault/code-check[?variant=<draft> | ?every-draft=true][&plan=<file>]...[&base=<ref>][&touched=true]`
 // (ADR 0046).
 //
 // `archboard check code` and `archboard check all` ask it, and so does the code view
@@ -20,6 +20,10 @@
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan
 // JSON refuses the check, as `PLAN_REFUSED`, before the pass starts.
+// `base` names the base that the modules the branch touched are read from,
+// and `touched=true` asks for them from the default base (TASK-646.04); a base
+// that does not resolve is refused, as `BASE_UNRESOLVED`. Neither changes a
+// severity, so the memory holds the same findings whoever ran the pass.
 //
 // Only the code view of Measures starts a pass from a page; the panes read (TASK-367.24).
 // Each pass that finishes leaves its findings in the server's memory, and
@@ -90,6 +94,16 @@ function variantOf(request: Request): string | undefined {
 }
 
 /**
+ * The base a request names for the modules the branch touched.
+ * @param request The request.
+ * @returns Its `base`, or undefined when it is absent or blank.
+ */
+function baseOf(request: Request): string | undefined {
+	const asked = queryString(request, "base")?.trim();
+	return asked === "" ? undefined : asked;
+}
+
+/**
  * The plans a request names.
  * @param request The request.
  * @returns Each `plan`, in order.
@@ -115,6 +129,8 @@ async function answerCodeCheck(
 	const variant = variantOf(request);
 	const everyDraft = queryString(request, "every-draft") === "true";
 	const plans = plansOf(request);
+	const base = baseOf(request);
+	const touched = queryString(request, "touched") === "true";
 	const checkedAt = new Date();
 	try {
 		const answer = await dependencies.runCheckout(
@@ -122,7 +138,15 @@ async function answerCodeCheck(
 			response,
 			"GET /api/vault/code-check",
 			async (signal) => {
-				const checked = await dependencies.check({ vault, variant, everyDraft, plans, signal });
+				const checked = await dependencies.check({
+					vault,
+					variant,
+					everyDraft,
+					plans,
+					base,
+					touched,
+					signal,
+				});
 				// A cancelled pass may have stopped short, so it is nobody's news.
 				if ("states" in checked && !signal.aborted) {
 					dependencies.memory.remember(vault, checked, checkedAt);

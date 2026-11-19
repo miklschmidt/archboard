@@ -78,7 +78,7 @@ Open Measures in the left column. It lists every module and sorts by the measure
 | Change amplification: one change touches many places       | Commits, Changes with, and Callers. Select a module to see what changes with it in the Right panel. Each pair states its shared commits.             |
 | Information leakage: two modules that share a secret       | Unjoined counts modules that change together without an authored relationship. Sort by Unjoined to see modules with the most such connections first. |
 
-Archboard gives you no score. Each count describes the model or its commits, and you judge what it means. The model does not measure implementation behavior, so Measures never calls a module shallow. Read the code, or ask your agent to read it.
+Archboard gives you no score. Each count describes the model or its commits, and you judge what it means. The code check measures each bound module from its code: it counts the exports by kind and the logic behind them, and it names what makes a module shallow, such as an exported value that callers read, as findings. `archboard check --fail-shallow-modules` fails on a shallow module that your branch touched.
 
 Your agent reads the same facts through the CLI, a command-line interface. Use `archboard model inspect <module>` for an interface. Use `archboard model locality` for commit counts and modules that change together.
 

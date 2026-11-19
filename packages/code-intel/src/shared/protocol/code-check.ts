@@ -49,7 +49,16 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054). TASK-646.01 holds the
 // interface of every part bound to a module, with or without parts, and reads
-// every language the module holds.
+// every language the module holds. TASK-646.04 measures each bound
+// TypeScript module from its code (ADR 0082): `depth` counts its exports by
+// kind and the pieces of logic behind them, `EXPOSED_VALUE` is a warning on an
+// exported value that outside code reads, with the name in `export`, and
+// `MODULE_SHALLOW` is information on a module whose every export that is not a
+// type carries such a finding. `touched` marks the modules that the branch
+// touched, working tree included, when the request names a base or asks for
+// them, or a model's policy turns the shallow-module gate on, which
+// `models[].failShallowModules` carries. No severity depends on the request:
+// the CLI promotes `MODULE_SHALLOW` on a touched module to a warning.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
@@ -145,7 +154,54 @@ const CodeFindingSchema = VaultDiagnosticSchema.omit({ board: true }).extend({
 	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
 	missing: z.enum(["code", "infrastructure"]).optional(),
 	dropped: DroppedPartSchema.optional(),
+	/** The exported name that a finding of module depth judges, such as `EXPOSED_VALUE`'s value. */
+	export: z.string().optional(),
 });
+
+/**
+ * One bound module measured from its code (TASK-646.04, ADR 0082): the part
+ * that binds it, its directory, the languages whose exports were counted, its
+ * exports by kind, each public method of an exported class counted as its own
+ * export, and the pieces of logic behind them, as evidence and never a score.
+ */
+const ModuleDepthSchema = z
+	.object({
+		model: z.string(),
+		state: z.string().nullable().optional(),
+		variant: z.string().optional(),
+		subject: CodeCheckSubjectSchema,
+		repo: z.string(),
+		directory: z.string(),
+		languages: z.array(z.string()),
+		exports: z
+			.object({
+				functions: z.int().nonnegative(),
+				classes: z.int().nonnegative(),
+				methods: z.int().nonnegative(),
+				values: z.int().nonnegative(),
+				types: z.int().nonnegative(),
+			})
+			.strict(),
+		logic: z.int().nonnegative(),
+	})
+	.strict();
+
+/**
+ * The modules of one reading that the branch touched (TASK-646.04): those
+ * whose bound code, or a part's inside their module, changed from the merge
+ * base with `base` up to the working tree. `unread` names the parts the History
+ * lens could not read the range of, so no gate takes one for untouched.
+ */
+const TouchedSchema = z
+	.object({
+		model: z.string(),
+		state: z.string().nullable(),
+		/** The base read from, or null when none was named and the vault's checkout has no default. */
+		base: z.string().nullable(),
+		modules: z.array(z.string()),
+		unread: z.array(z.string()),
+	})
+	.strict();
 
 /** A pinned binding's ref, and what its checkout has out instead. */
 const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).strict();
@@ -403,6 +459,8 @@ const CodeCheckModelSchema = z.strictObject({
 	model: z.string(),
 	state: z.string().nullable(),
 	revision: ArchitectureModelReadSchema.options[0].shape.revision,
+	/** The model's policy fails plain `archboard check` on a shallow module the branch touched. */
+	failShallowModules: z.boolean().optional(),
 });
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),
@@ -411,6 +469,8 @@ const CodeCheckAnswerSchema = z.object({
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
 	behind: z.array(ModelBehindSchema),
+	depth: z.array(ModuleDepthSchema).optional(),
+	touched: z.array(TouchedSchema).optional(),
 });
 
 /**
@@ -446,6 +506,7 @@ type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
+type ModuleDepth = z.infer<typeof ModuleDepthSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
@@ -461,6 +522,7 @@ export {
 	type CodeCheckSkip,
 	type CodeEvidence,
 	type CodeFinding,
+	type ModuleDepth,
 	CodeSourceLinesSchema,
 	RememberedFindingsSchema,
 	type RememberedFindings,
