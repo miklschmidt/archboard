@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:23:00Z'
+updated_date: '2026-11-19T01:48:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -52,12 +52,12 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 `What a module exposes` shows grouped Model and Code columns side by side, each sortable
-- [ ] #2 Code findings join the findings list
-- [ ] #3 A module with no findings shows as clean, and an incomplete read names what it skipped
-- [ ] #4 Code findings memory keeps each module's exports, counts, findings, language coverage and skipped reads per model, state and revision, modules with no findings included
-- [ ] #5 Opening a pane never starts a code pass
-- [ ] #6 The model code evidence and model measures component tests cover the columns and the findings
+- [x] #1 `What a module exposes` shows grouped Model and Code columns side by side, each sortable
+- [x] #2 Code findings join the findings list
+- [x] #3 A module with no findings shows as clean, and an incomplete read names what it skipped
+- [x] #4 Code findings memory keeps each module's exports, counts, findings, language coverage and skipped reads per model, state and revision, modules with no findings included
+- [x] #5 Opening a pane never starts a code pass
+- [x] #6 The model code evidence and model measures component tests cover the columns and the findings
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -69,3 +69,35 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 4. Findings list: EXPOSED_VALUE named, a depth finding shows its export; the code view's gloss names shallow modules.
 5. Tests: memory route, module-depth (names, unjudged, canonical skips), model-measures and model-code-evidence component tests. DESIGN.md Measures section. Screenshots both themes, site audit.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Evidence:
+- AC1: model-measures.test.tsx 'what a module exposes sets the model's counts beside its code's, and a code column sorts' (Model colSpan 4, Code colSpan 4, sort by Exports). Seen in the running app, both themes (screenshots in the handback).
+- AC2: model-code-depth-findings.test.tsx: EXPOSED_VALUE and MODULE_SHALLOW stand in the findings list, warnings first, in cards and list, with the export named.
+- AC3: model-measures.test.tsx 'a module with no findings is clean, one read in part never is, and a skipped one says why' (Clean, Partial, a dash per code cell with the skip reason).
+- AC4: code-findings-route.test.ts 'a canonical reading keeps each module's depth and what the pass skipped, a module with no findings included'; module-depth.test.ts covers names, unjudged languages and canonical subject skips.
+- AC5: model-measures.test.tsx 'the code columns read the remembered pass, and opening them never starts a pass' (only /api/vault/code-findings is asked).
+- AC6: the two component tests above.
+- Lanes: test:modules 5149 pass, test:repository 174 pass, browser reader-measures/reader-context/reader-branch-footprint pass, tsc both projects, lint:policy, lint:tests, format:check clean.
+- archboard check and check code --fail-shallow-modules --base feat/module-depth: exit 1 on 813 EXPOSED_UNUSED, 246 EXPOSED_VALUE, 1 REEXPORT_PASS_THROUGH, 5 TEST_IMPORT_UNEXPOSED, none on a module this ticket changed; no touched module is shallow. The ticket adds no rule.
+- Footprint gate exits 1: namedAndChanged Code findings memory, Measures (slice) and Code check, Module depth (outside the slice: the answer contract gains names, unjudged and canonical subject skips, which AC4 and TASK-646.08 need). changedNotNamed: Archboard server, Browser, code-intel (tests and the code-check answer contract), Model reading (Measures' own head, row, dialog, rules and hooks, and the findings list, which Measures' binding to ModelMeasures.tsx alone does not hold). Unbound: DESIGN.md, the site's EvidenceTabs, the task file.
+- Site audit: EvidenceTabs glosses match the shell's new glosses; the interface panel says Measures counts the code's exports. Painted and ran the site; the evidence tabs render. The Measures demo mock keeps model and history columns only.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Measures sets a module's interface in the model beside its interface in the code, from the last code pass, and never starts one.
+
+What changed:
+- Code check answer: each measured module lists its exports (name, kind, path, line) as names, and the languages it exposes names in that no rule judges yet (unjudged). A skip that names a part carries the canonical model and state. (Module depth, Code check.)
+- Code findings memory keeps, per canonical model, state and revision, every measured module (those with no findings included) and what the pass skipped.
+- What a module exposes: head groups Model and Code; Code columns Exports (kinds on hover), Values, Logic and Findings, each sortable. A module with no findings says Clean, one read in part says Partial with what was skipped, an unjudged one takes a dash with the reason. A foot line names the pass and what it did not judge, or that none read this version. The view reads /api/vault/code-findings only.
+- Findings list: EXPOSED_VALUE named; a depth finding shows its export. Tab glosses updated in the shell and on the site; DESIGN.md Measures section.
+
+Verification: component tests (model-measures, model-code-depth-findings), route and module-depth tests, test:modules, test:repository, three Measures browser tests, tsc, lint, format; screenshots of the running app in both themes.
+
+Risks / follow-ups: the code-findings payload is ~1.1 MB on this repository (2018 export names); 08 reads names from it. Logic counts of package-level modules are large (whole directory). Findings on modules this ticket does not change: none new; the ticket adds no rule.
+<!-- SECTION:FINAL_SUMMARY:END -->
