@@ -400,23 +400,24 @@ on a URL. The request options, the reply guards `isRecord` and `trustReply` stay
 The tenth is `code-intel` (`@archboard/code-intel`). It compares canonical architectural claims with source evidence.
 It owns checkout code facts and the code inspection algorithms. It also holds the history lens
 over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 16 names, where code outside imported 7 module paths. It imports `model`,
+subpaths with 11 names, where code outside imported 7 module paths. It imports `model`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
 - `./code-check` is the answer of the code check, the answer of the route that remembers it, and
-  the source excerpt of one remembered piece of evidence: `CodeCheckAnswer` and
-  `RememberedFindings` with their schemas, and `CodeSourceLinesSchema`. The owner raised the
-  ceiling of `code-intel` from 11 to 12 on 2026-11-07 for this schema, the contract of
-  `GET /api/code/source-lines` (ADR 0046, "Where the pass runs"). The schema is in
-  `shared/protocol/code-check.ts`. `./history` is the answers of the locality and footprint routes,
+  the answers of the code browser's two routes (ADR 0080): `CodeCheckAnswer` with its schema,
+  `RememberedFindingsSchema`, `CodeFilesSchema` and `CodeFileSchema`. A reader of a schema
+  without a type derives the type with `z.infer`. The schemas are in
+  `shared/protocol/code-check.ts` and `code-files.ts`. `./history` is the answers of the locality and footprint routes,
   the start of a period and `HistoryRefusalCode`, the codes a history reading refuses with, from
   `shared/protocol/`. It also gives the label of a commit's
   attribution, from `shared/schemas/`. A part of an answer, such as a finding, a skip, a timing or a commit, has no
   public name. A reader names it by its place in the answer, such as
   `CodeCheckAnswer["findings"][number]`.
-- `./code-check-run` owns the complete pass through `createCodeCheck().run`.
+- `./code-check-run` owns the complete pass through `createCodeCheck().run`, and the owners of one file
+  through `createCodeCheck().fileOwners`, which the code browser's file route calls (ADR 0080): the
+  modules of a reading that own a file by the rule the pass judges with, and the definitions of its text.
   It reads canonical models and selected proposals through the public reader.
   The existing language, infrastructure, relationship, and interface algorithms remain the analysis owners.
   Findings name model, state, stable subject, authored file, and complete revision.

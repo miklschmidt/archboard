@@ -294,27 +294,9 @@ async function openDiagram(browser: AgentBrowserSession, pane = ""): Promise<voi
 	await openPage(browser, "diagram", pane);
 }
 
-/** Open About on the scope or on the selection, which hold the long lists of a reading. */
-async function openAbout(
-	browser: AgentBrowserSession,
-	subject: "scope" | "selection" = "scope",
-	pane = "",
-): Promise<void> {
-	const about = `${pane} [data-slot="model-about"]`;
-	const choice = `${pane} [data-slot="model-about-subject"] [data-choice="${subject}"]`;
-	await pollUntil(
-		// A reading that is still arriving shows its own page, so About opens again until it stays.
-		async () => {
-			await openPage(browser, "about", pane);
-			return browser.eval<boolean>(`(() => {
-				if (document.querySelector(${JSON.stringify(about)})?.getAttribute('data-subject') === ${JSON.stringify(subject)}) return true;
-				document.querySelector(${JSON.stringify(choice)})?.click();
-				return false;
-			})()`);
-		},
-		Boolean,
-		`About on the ${subject}`,
-	);
+/** Open About on the open scope, which holds the long lists of a reading. */
+async function openAbout(browser: AgentBrowserSession, pane = ""): Promise<void> {
+	await openPage(browser, "about", pane);
 }
 
 /** Read the parts of the reading from the list on About, where the reader stays. */

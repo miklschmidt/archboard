@@ -1,4 +1,6 @@
+import { RelationshipEvidence } from "#ui/architecture-drawing/model-reader/reading/components/ModuleDetails.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import type { JSX, ReactNode } from "react";
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
@@ -86,7 +88,7 @@ interface ConnectionSummaryProps {
  * What the panel says of a selected line: a joined line lists every relationship with its real
  * ends, and one relationship says what it carries and selects either end.
  * @param props The selected line and complete model.
- * @returns The details, without the evidence that About holds.
+ * @returns The details.
  */
 function ConnectionSummary(props: ConnectionSummaryProps): JSX.Element {
 	const { connection, model, reference } = props;
@@ -114,7 +116,12 @@ function JoinedRelationships(props: ConnectionSummaryProps): JSX.Element {
 	const { model, reference, onSelect } = props;
 	const { joins } = props.connection;
 	return (
-		<ModelPanel.Section title="Relationships" count={joins.length} slot="model-connection-joins">
+		<ModelPanel.Section
+			icon={SECTION_ICONS.relationships}
+			title="Relationships"
+			count={joins.length}
+			slot="model-connection-joins"
+		>
 			<ModelPanel.Rows items={joins}>
 				{(edge) => (
 					<RelationshipRow
@@ -131,7 +138,7 @@ function JoinedRelationships(props: ConnectionSummaryProps): JSX.Element {
 }
 
 /**
- * What one relationship carries, and its two ends.
+ * What one relationship carries, its account and evidence, and its two ends.
  * @param props The relationship and complete model.
  * @returns Its summary.
  */
@@ -142,8 +149,9 @@ function OneRelationship(
 	return (
 		<>
 			{edge.label && <p className="text-body">{edge.label}</p>}
+			<RelationshipEvidence edge={edge} />
 			<ModelSubjectStanding model={model} subject={edge.id} reference={reference} />
-			<ModelPanel.Section title="Ends" slot="model-connection-ends">
+			<ModelPanel.Section icon={SECTION_ICONS.ends} title="Ends" slot="model-connection-ends">
 				<RelationshipEnd
 					id={edge.from}
 					title="From"
@@ -181,52 +189,6 @@ function LineTitle(props: {
 			<LineArrow line={line} className="inline size-[0.7em] align-baseline" />{" "}
 			{moduleName(model, line.to, reference)}
 		</span>
-	);
-}
-
-/**
- * A projected line keeps every authored relationship with all that it says. The page's title says
- * the ends, the kind and the label of a line of one relationship, so here it adds the rest.
- * @param props The selected line and complete model.
- * @param props.connection The line and every underlying relationship.
- * @param props.model The model that resolves authored endpoints.
- * @param props.reference The coherent base for removed endpoints.
- * @returns The complete relationship details in authored order.
- */
-function ConnectionDetails(props: {
-	connection: Connection;
-	model: Model;
-	reference: Model | undefined;
-}): JSX.Element {
-	const { connection, model, reference } = props;
-	const several = connection.joins.length > 1;
-	return (
-		<article data-slot="model-connection-details" className="space-y-8">
-			<ol className="space-y-6">
-				{connection.joins.map((edge) => (
-					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
-						{several && (
-							<>
-								<p className="text-control">{lineEnds(edge, model, reference)}</p>
-								<p className="text-muted-foreground">
-									{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
-								</p>
-								{edge.label && <p>{edge.label}</p>}
-							</>
-						)}
-						{edge.description && (
-							<p className="text-control max-w-[72ch] font-normal whitespace-pre-wrap">
-								{edge.description}
-							</p>
-						)}
-						<code className="text-technical text-muted-foreground font-mono break-all">
-							{edge.id}
-						</code>
-						<ModelSubjectStanding model={model} subject={edge.id} reference={reference} />
-					</li>
-				))}
-			</ol>
-		</article>
 	);
 }
 
@@ -280,4 +242,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ConnectionDetails, ConnectionSummary, LineTitle, kindNames, lineEnds, moduleName };
+export { ConnectionSummary, LineTitle, kindNames, lineEnds, moduleName };

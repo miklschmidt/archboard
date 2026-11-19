@@ -25,6 +25,10 @@ interface ModelAddress {
 	readonly hideKinds?: readonly string[] | undefined;
 	/** The modules opened beside the scope in the same picture. */
 	readonly expand?: readonly string[] | undefined;
+	/** The file the code view shows in Code mode, relative to its repository. */
+	readonly file?: string | undefined;
+	/** The repository of that file, when it is not the repository of the model. */
+	readonly fileRepo?: string | undefined;
 	/** Set when the reader asked for every line, with any value. */
 }
 
@@ -219,6 +223,8 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 				"subject",
 				"grammar",
 				"flow",
+				"file",
+				"fileRepo",
 			] as const
 		).every((field) => one[field] === other[field]) &&
 		(["focus", "hideKinds", "expand"] as const).every((field) =>

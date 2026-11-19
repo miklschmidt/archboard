@@ -225,14 +225,13 @@ test("a reader sees what is unsettled and what belongs together, painted on both
 		"the panel to explain the warning on its subject",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector("[data-slot='model-about'] ${INSPECTOR}")?.textContent.includes('the write path') === true`,
+				`document.querySelector("[data-slot='model-panel'] ${INSPECTOR}")?.textContent.includes('the write path') === true`,
 			),
 		Boolean,
-		"About to name the group",
+		"the panel to name the group",
 		WAIT,
 	);
 

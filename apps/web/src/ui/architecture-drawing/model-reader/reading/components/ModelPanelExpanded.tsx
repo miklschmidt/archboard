@@ -4,6 +4,7 @@ import type { Model } from "@archboard/model/content";
 import { IconButton } from "@archboard/ui-kit/components";
 import { moduleName } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import { usePeekRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-peek-row.ts";
@@ -31,7 +32,12 @@ function ModelPanelExpanded(props: ModelPanelExpandedProps): JSX.Element | null 
 	const frames = framesOf(projection);
 	if (frames.length === 0 && unopened === 0) return null;
 	return (
-		<ModelPanel.Section title="Expanded" count={frames.length} slot="model-panel-expanded">
+		<ModelPanel.Section
+			icon={SECTION_ICONS.expanded}
+			title="Expanded"
+			count={frames.length}
+			slot="model-panel-expanded"
+		>
 			<ModelPanel.Rows items={frames}>
 				{(frame) => <ExpandedRow key={frame} {...props} frame={frame} />}
 			</ModelPanel.Rows>

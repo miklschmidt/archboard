@@ -10,7 +10,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { codeFindingsQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
 

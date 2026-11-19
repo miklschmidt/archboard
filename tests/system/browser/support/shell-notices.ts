@@ -45,7 +45,7 @@ function readShellNotice(
 			(document.fullscreenElement === null || document.fullscreenElement.contains(notice));
 		return {
 			text: notice?.querySelector('[data-slot="alert-description"]')?.textContent?.trim() ?? null,
-			action: notice?.querySelector('[data-slot="alert-action"] button')?.textContent?.trim() ?? null,
+			action: notice?.querySelector('[data-slot="notice-actions"] button')?.textContent?.trim() ?? null,
 			visible: shown,
 		};
 	})()`);

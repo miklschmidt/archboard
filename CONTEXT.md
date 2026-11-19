@@ -306,7 +306,7 @@ A reading on the page that shows its picture, beside About.
 _Avoid_: board, view
 
 **About**:
-The page of a reading that holds its long lists and names whether it describes the open scope or the selected subject.
+The page of a reading that holds the long lists of its open scope. The Right panel stays beside it, with the outline of About at its top and the selected subject under it.
 _Avoid_: inspector, details
 
 **Picture**:
@@ -374,7 +374,7 @@ It always stands at the foot of the Right panel on a Diagram reading, over the e
 _Avoid_: Key, filters
 
 **Right panel**:
-The permanent right column of a Diagram reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, and its Trace controls.
+The permanent right column of a reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, a module's code and evidence, and its Trace controls.
 The Legend and the engine switch close it, and long lists stay in About.
 _Avoid_: inspector
 
@@ -441,6 +441,8 @@ _Avoid_: highlight, focus (that is part of a reading)
 **Filter**:
 A choice in a reading to hide a relationship kind.
 It acts on relationships before they join, and the model keeps every relationship.
+A part of a scope that drew only lines of hidden kinds leaves the picture.
+A part that never drew a line stays, and so does each subject of a focus.
 _Avoid_: legend (that explains the marks)
 
 **Grammar**:
@@ -841,8 +843,8 @@ A module whose bound code, or a part's inside its module, the branch changed bet
 _Avoid_: changed file, dirty module
 
 **Source excerpt**:
-The lines of a file around one piece of evidence that a remembered finding names: the evidence line, with up to 3 lines on each side.
-It is the only text of a file that Archboard quotes, within the limits of ADR 0046 ("Where the pass runs").
+The lines of a file around one piece of evidence: the evidence line, with up to 3 lines on each side.
+The browser cuts it from the whole file that the code browser's file route quotes, within the limits of ADR 0080.
 _Avoid_: snippet, preview, code context, quote
 
 ### Walkthroughs and voice

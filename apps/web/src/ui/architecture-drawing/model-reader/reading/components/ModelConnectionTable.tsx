@@ -1,5 +1,5 @@
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
-import { useCallback, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, type CSSProperties, type JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
 import { cn } from "@archboard/ui-kit/components";
 import { ModelAboutTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutTable.tsx";
@@ -27,8 +27,6 @@ interface ModelConnectionTableProps {
 	onSelect: ModelSelection["select"];
 	/** Pick a subject out and show it on the diagram. */
 	onShow: (id: string) => void;
-	/** What a row adds under its cells. */
-	detail?: ((connection: Connection) => ReactNode) | undefined;
 }
 
 /** The table's columns: from, to after its arrow, what it carries, and its kind. */
@@ -110,7 +108,6 @@ function ConnectionRow(
 						))}
 					</span>
 				</button>
-				{props.detail?.(connection)}
 			</div>
 			<ModelAboutTable.Show name={lineEnds(line, model, reference)} onShow={show} />
 		</li>

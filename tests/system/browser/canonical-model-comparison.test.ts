@@ -379,7 +379,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="PREDECESSOR_CHANGED"]') !== null && document.querySelector('[data-slot="model-comparison-unavailable"]') !== null`,
+				`document.querySelector('[data-slot="model-error"][data-code="PREDECESSOR_CHANGED"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code="PREDECESSOR_CHANGED"]') !== null && document.querySelector('[data-slot="model-comparison-unavailable"]') !== null`,
 			),
 		Boolean,
 		"the changed predecessor and unavailable comparison",

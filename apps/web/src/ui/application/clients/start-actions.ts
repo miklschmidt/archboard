@@ -9,7 +9,7 @@ import { modelCatalogKeys } from "#ui/panes/model-catalog/clients/queries.ts";
 import { chooseCheckout } from "#ui/panes/model-catalog/clients/repositories.ts";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
-import { failureNotice } from "#ui/application/rules/notices.ts";
+import { failureNotice, NOTICE_ACTIONS } from "#ui/application/rules/notices.ts";
 import { PANE_IDS } from "#ui/application/rules/pane-list.ts";
 import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
 import type { SettingsSurface, ShellActions, ThemeChoice } from "#ui/shell/rules/contracts.ts";
@@ -95,7 +95,14 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 		addPane: noPane,
 		closePane: noPane,
 		present: noPane,
-		selectNoticeAction: noPane,
+		/**
+		 * Retry discovery from the chooser's listing notice.
+		 * @param _noticeId The notice.
+		 * @param actionId The chosen action.
+		 */
+		selectNoticeAction: (_noticeId, actionId): void => {
+			if (actionId === NOTICE_ACTIONS.retryListing) deps.catalog.reload();
+		},
 		dismissNotice: notices.dismiss,
 	};
 }

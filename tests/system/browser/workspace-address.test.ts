@@ -118,7 +118,7 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 		"both addressed repositories",
 	);
 	const paneB = restored.panes.find((pane) => pane.paneId === "B")!;
-	await openAbout(browser, "scope", '[data-pane="B"]');
+	await openAbout(browser, '[data-pane="B"]');
 	const before = await historyLength(browser);
 	await browser.run([
 		"click",

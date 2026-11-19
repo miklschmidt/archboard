@@ -149,23 +149,22 @@ test("structural writes refresh current modules while exact history and selected
 	).toEqual(["Cache"]);
 
 	await selectReading(browser, "current");
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() => selectedName(browser),
 		(name) => name === "API",
 		"the renamed current module",
 		WAIT,
 	);
+	const dispatch = '[data-slot="model-panel"] [data-connection-id="Shop#Dispatch"]';
 	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"] [data-about-section="receives"]').textContent`,
+		await browser.eval<string[][]>(
+			`[...document.querySelectorAll('${dispatch}')].map(row => [
+				row.closest('[data-slot="model-panel-receives"], [data-slot="model-panel-sends"]')?.getAttribute('data-slot'),
+				row.getAttribute('data-from'),
+				row.getAttribute('data-to'),
+			])`,
 		),
-	).toContain("Dispatch request");
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"] [data-about-section="sends"]')?.textContent ?? ""`,
-		),
-	).not.toContain("Dispatch request");
+	).toEqual([["model-panel-receives", "Shop#Worker", "Shop#Gateway"]]);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(JSON.stringify(after.body));
 	const cache = after.body.modules.find((module) => module.name === "Cache");
@@ -181,11 +180,10 @@ test("structural writes refresh current modules while exact history and selected
 		"the reparented module to leave the roots",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[data-slot="module-parent"]')?.textContent ?? null`,
+				`document.querySelector('[data-slot="model-panel"] [data-slot="module-parent"]')?.textContent ?? null`,
 			),
 		(name) => name === "Worker",
 		"the selected module's new parent",

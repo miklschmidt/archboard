@@ -229,7 +229,9 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	await pollUntil(
 		async () => {
 			await refreshModel(browser);
-			return browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') !== null`);
+			return browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]') !== null`,
+			);
 		},
 		Boolean,
 		"unavailable retained history",
@@ -244,7 +246,9 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 	await pollUntil(
 		async () => {
 			await refreshModel(browser);
-			return browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') === null`);
+			return browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]') === null`,
+			);
 		},
 		Boolean,
 		"restored retained history",

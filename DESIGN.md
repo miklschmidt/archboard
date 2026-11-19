@@ -7,7 +7,6 @@ colors:
   muted-ink: "oklch(0.48 0.008 75)"
   body-ink: "oklch(0.3 0.008 75)"
   chrome-chalk: "oklch(0.973 0.004 88)"
-  tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
   well-floor: "oklch(0.95 0.005 85)"
   tab-piece: "oklch(1 0 0)"
@@ -251,7 +250,6 @@ every role and changes the values. The file theme.css holds both themes.
 - **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on the About page.
-- **Tray Chalk** (`--raised`, oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): the agent's card, which stands on the chrome under the left column's list and holds Working now and the agent dock.
 - **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the trough that holds tabs or a switch. It is also the floor of a field or a count cell sunk into a surface. It is the floor of a nested container on the picture.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece that the picture raises on the edge of a container. The shell does not use it. A chosen tab or row takes Control Face.
 - **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
@@ -312,22 +310,34 @@ paths, versions, counts and times.
 
 **The Mono Is Data Rule.** Mono sets technical tokens only. It never sets a label or a heading.
 
-**The One Label Rule.** A section of either side column is named in one way: its name in Body semibold and full ink, and its count beside it in mono and muted ink. `SectionLabel` sets it in the left column and in the right panel.
+**The One Label Rule.** A section of either side column is named in one way: an icon of 16px in muted ink, its name in Control semibold and full ink, and its count beside it in mono and muted ink. `SectionLabel` sets it in the left column and in the right panel, and `SECTION_ICONS` in `model-reader/reading/constants/section-icons.ts` holds the one icon of each section, so `Flows` wears the same icon in both columns. A row of the change list that names an owner wears the icon of the section of its kind.
 
 ## Layout
 
-The shell puts columns around the picture. The left column (280px) lists where to
-go, and the agent dock is at its foot. It is a sidebar of the usual width, because History
-and Measures open in dialogs of their own and a list needs no more room. The panes are in the centre, one or two side
+The shell puts columns around the picture. The left column lists where to
+go, and the agent dock is at its foot. It starts at 280px, a sidebar of the usual width, because History
+and Measures open in dialogs of their own. A handle on its edge drags it between 240px and 520px, so long names read whole, and a double click puts it back to 280px. The browser keeps the width. The line of the handle takes the chrome's tone at rest, so the column and the pane's header stay one plane, and it shows under the pointer and takes the gold while it is dragged. The panes are in the centre, one or two side
 by side. The conversation opens between the column and the panes: it slides
-in and out, and a handle on its edge, a grip on a line that takes the gold while
+in and out, and a handle on its edge, a grip that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
+Its line, 1px in the rule's ink, runs the full height of its left edge, against the
+column, and its right edge has none: the handle there takes the chrome's tone at rest,
+so no line stands beside the picture's rounded sheet. In Code mode the code view opens
+the same way between the column and the conversation (560px, between 360px and 1100px),
+with its line on its left edge too, and dragging it shut leaves Code mode.
 Every Diagram reading of the canonical reader has a right panel beside its picture
 (360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
 that it leaves. A selection never refits the picture. A retained legacy board recording keeps a sidebar (280px). Every
 column starts with a chrome row (40px), and the left column has Find, the repository switcher and the keys of History and Measures, each 32px high. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
-cap height, so its parts sit on one line at any display scale. A row of a list
+cap height, so its parts sit on one line at any display scale. The header of a
+reading parts where the picture meets the right panel, as the reading under it does.
+Over the picture stand where the reader is, the crumbs, with all the room they need, at
+its start, and what the reader reads at its end, each 16px from the picture's edge below: a standing focus, then the state chip joined to
+the comparison as one control, `Draft · <name>` | `against Current`, because they say
+one thing. Over the panel, in a part as wide as the panel, stand `Diagram | About` on the
+panel's 16px inset and the pane's own keys at the end. No control of the reading stands
+among the crumbs, and no control of the picture stands over the panel. A row of a list
 is at least 28px high. Panels have 16px of padding. The shell has no narrow or
 phone layout.
 
@@ -345,9 +355,8 @@ The file app.css holds the values for both themes and gives each one a
 ### Shadow Vocabulary
 
 - **well** (`--elevation-well`, an inner shadow with a lit line along the foot): a field sunk into a surface, a trough, a count cell and a pressed key. `--elevation-trough` is the same piece under its other name.
-- **tray** (`--elevation-tray`): the agent's card under the left column's list. A lit top edge, and a soft shadow that rises from it.
 - **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
-- **sheet** (`--elevation-sheet`): the picture and the About page. The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane, and it casts no shadow. The picture lies on it as a sheet, framed by a lit top edge, a faint ring of 1px and a short shadow under its foot that stays within the chrome below it. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. Two panes are parted by the chrome alone, with no line between them. While two panes share the centre, the active pane's picture carries a quiet edge of 1px in Ink at 32% that follows the rounded corners. It is never gold, so it stays below a chosen card, and one pane alone has no such edge. The composer and the keys at the foot of the right panel lie on the chrome, with no tone of their own, no line and no shadow. In the left column the agent's card stands on the chrome under the list, 8px from the window's foot as the picture is: Tray Chalk, 12px corners, 8px of chrome on every side, and the tray depth (`--elevation-tray`): a lit top edge and a soft shadow that rises from it over the list. Working now stands at its top while an agent works, and the dock under it.
+- **sheet** (`--elevation-sheet`): the picture and the About page. The chrome round the picture, the left column, a pane's header, the right panel and the conversation, is one flat plane, and it casts no shadow. The picture lies on it as a sheet, framed by a lit top edge, a faint ring of 1px and a short shadow under its foot that stays within the chrome below it. The chrome holds the picture on every side: an 8px strip of chrome runs under it, and beside it while the right panel hides. The picture's four corners take the 12px window radius against the chrome, drawn by the `picture-corners` utility. A presented picture fills its pane with square corners. Two panes are parted by the chrome alone, with no line between them. While two panes share the centre, the active pane's picture carries a quiet edge of 1px in Ink at 32% that follows the rounded corners. It is never gold, so it stays below a chosen card, and one pane alone has no such edge. The composer and the keys at the foot of the right panel lie on the chrome, with no tone of their own, no line and no shadow. In the left column the agent stands on the chrome under the list, with no card: a 1px line in the rule's ink parts it from the list, and the dock's keys sit at the window's foot, so their row has the column's width. Working now stands at its top while an agent works, and the dock under it.
 - **raised** (`--elevation-raised`, a white highlight on top, a 1px contact line and a short soft shadow): a quiet key, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, the same value as well): a raised control while somebody presses it.
 - **chosen** (`--elevation-chosen`, raised and a 2px line of Wayfinding Gold inside the foot): the chosen tab of a trough. An open tree row uses `shadow-raised` and carries no gold.
@@ -547,7 +556,7 @@ The words of a chip keep APCA Lc 60: white on the chalk orange, near black on th
 
 ### Wait notice
 
-A wait that lasts 800ms names what it waits for, under the top of the pane, which it never moves. The notice is 30px high on the popover face, with a 1px Rule edge, 6px corners and `shadow-float`. Its words are Body in Body Ink. It comes down 4px into place over 200ms.
+A wait that lasts 800ms names what it waits for, under the top of the pane, which it never moves. What is wrong with a reading is a toast at the window's foot, one for each pane: a read that failed under the picture, a server that stopped answering, or a reading the server has not confirmed. So is a listing that failed. A toast's dismiss key stands in its top right corner, and its actions, such as Retry, stand in a row under its words. The notice is 30px high on the popover face, with a 1px Rule edge, 6px corners and `shadow-float`. Its words are Body in Body Ink. It comes down 4px into place over 200ms.
 
 A little picture of three cards stands before the words. A spark in Gold Mark draws it again and again while the wait lasts, as the picture itself arrives (The Spark Rule). The spark runs along a line from the card that nothing feeds. Then it runs both ways round the card it lands on, and that card's own line starts. The lines leave together, and the next round draws the mirror picture. A round takes 2600ms. The cards are Face with a Diagram Slate edge, and the lines are Line Ink. With reduced motion, the notice and its picture stand still and drawn.
 
@@ -555,16 +564,16 @@ The notice is the one sign of the wait in a reading. A pane that has no notice, 
 
 ### Navigation
 
-- **Style:** the list lies on the chrome, as the right panel's lists do, with no well, tone step or shadow of its own. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails draw its levels: a line of 1px in the Rule tone runs down from the chevron of an open row along the rows it holds. A row lets the rails show through, and a row that sticks while it is open draws the rails it covers into its floor, so they run unbroken. The column marks only where the reader is: the open module, the flow on screen or the walkthrough playing. That row rises off the chrome as a Control Face with `shadow-raised`, with no gold. A selection on the picture marks no row and moves nothing in the column. A row under the pointer takes Control Face at 50%. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies on the chrome, as the right panel's lists do, with no well, tone step or shadow of its own. A section after the first opens with a rule of 1px in the Rule tone across the column's 8px inset, as a section of the right panel does, and nothing else in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails draw its levels: a line of 1px in the Rule tone runs down from the chevron of an open row along the rows it holds, and a tick of 1px leaves it into each row at the middle of the row's first line. Each row draws its own stretch of the rail, and the last row of a branch draws it only down to its tick, so a rail always ends in a tick and never runs on into nothing. A row lets the rails show through, and a row that sticks while it is open draws the rails above it into its floor, so they run unbroken. The column marks only where the reader is: the open module, the flow on screen or the walkthrough playing. That row rises off the chrome as a Control Face with `shadow-raised`, with no gold. A selection on the picture marks no row and moves nothing in the column. A row under the pointer takes Control Face at 50%. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
 The repository switcher's popover uses Chrome Chalk, so its list and sticky rows share the shell's tone.
 
 The left column has no tabs. Two quiet keys stand over the list, side by side and as wide as the room: `History` and `Measures`, each with its icon in muted ink. Each opens its dialog, and stays pressed in while the dialog is open. A migration candidate keeps no record, so it has `Measures` alone. A reading that failed has `History` alone, and no list.
 
-The column holds one list that scrolls, with a section for each thing the model lists: `Modules`, `Flows` and `Walkthroughs`, in that order. A proposal read against its base puts `Changes` first. A section with nothing to list is left out. The head of a section is one row of 28px on the chrome and one button. It holds the section's label, set as every section label of both side columns is (`SectionLabel`): the name in Body semibold and full ink, and the count of the whole model beside it in mono and muted ink. The label starts at the column's inset, 8px from its edge, and the chevron that folds the section stands at the end of the head, where the facts of the rows end. So no chevron of a head stands over the chevron of a row, and the rows keep the whole width of the column. The head stays at the top of the list while the rows of its section scroll under it, and the next head pushes it away. A click on the head, or Enter, folds the section, and the chevron turns. What sticks inside a section, the open rows of the tree and the name of a group of flows or changes, sticks under the head (`--stuck-top`). The name of such a group, a collection of flows or the module that holds changes, is a line in Control at weight 500 and full ink, where the name of a row of depth zero stands. Its rows stand one step deeper under a rail, as the parts of an open module do, so it reads as their parent and never as a row that is off. It is no row: it takes no key and does not answer the pointer. A pane's own tabs keep their underline of Wayfinding Gold.
+The column holds one list that scrolls, with a section for each thing the model lists: `Modules`, `Flows` and `Walkthroughs`, in that order. A proposal read against its base puts `Changes` first. A section with nothing to list is left out. The head of `Changes` also counts its changes by standing, each count after the mark that the picture puts on it. The head of a section is one row of 28px on the chrome and one button. It holds the section's label, set as every section label of both side columns is (`SectionLabel`): the name in Body semibold and full ink, and the count of the whole model beside it in mono and muted ink. The label starts at the column's inset, 8px from its edge, and the chevron that folds the section stands at the end of the head, where the facts of the rows end. So no chevron of a head stands over the chevron of a row, and the rows keep the whole width of the column. The head stays at the top of the list while the rows of its section scroll under it, and the next head pushes it away. A head can carry a strip of 36px that sticks with it and stays while the section is folded: the walk of a proposal's changes. A click on the head, or Enter, folds the section, and the chevron turns. What sticks inside a section, the open rows of the tree, sticks under the head and its strip (`--stuck-top`). A collection of flows, and an owner of changes, is a row of the tree like an open module: a chevron that folds it, the icon of its kind, and its name in Control at weight 500 and full ink. Its rows stand one step deeper under the rail that hangs from its chevron, so every rail of the column starts at a row and runs unbroken. A collection that holds the flow on screen, and an owner that holds the reader's place, stays open. A pane's own tabs keep their underline of Wayfinding Gold.
 
 Every tree row shares four columns: disclosure, marker, name and facts. Depth alone
-places the columns, one 16px step per level. Flat rows reserve no disclosure space.
+places the columns, one 16px step per level, so a row's chevron stands under the marker of the row that holds it. A marker stands 6px from its words. A leaf, a row among siblings that never hold rows, such as a change under its owner or a flow under its collection, keeps no chevron slot, so its marker and words stand under its parent's marker and words, and a leaf with no marker, such as a flow, starts its words where the ink of its parent's marker starts, 2px into the marker column. The rail in the chevron column alone shows the step. Flat rows reserve no disclosure space.
 `shell/rules/tree-grid.ts` holds the shared measurements.
 
 Each tree has one tab stop, and each section heading has one more. Right opens a
@@ -621,12 +630,20 @@ selected, it says the open module's name and description, or at the roots the mo
 name and the summary of its state. A flow reading says the flow. With a selection, it
 explains the selected thing, and a click on a card lights the card and fills the panel at
 once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row of a list is a row of the left column: it lies on the panel's ground with no plate, card or rule under it, it is 28px high, and it sets its name in Control at weight 400 and its detail in Body and muted ink at its end. Its tone reaches 8px past the panel's 16px edges, so its words stand on those edges. Under the pointer it takes Control Face at 50%. The row on screen, or the row that is pressed, rises as a Control Face with `shadow-raised`, with no gold. A row that cannot be used is in muted ink and keeps still under the pointer. A row of a subject on the picture also lights it. `rowTone` in `shell/rules/row-tone.ts` holds the tone that the rows of both columns share.
-Long lists and evidence live on About, which lies over the panel, so the panel keeps its
-room and the picture keeps its camera. A pane presented fullscreen has no panel.
+The long lists of the open scope live on About, which lies over the picture, so the picture
+keeps its camera. The panel stays beside About and follows the same rule for where it shows.
+There the outline of About stands at the top of the panel, over a Rule, and does not scroll.
+Under it the panel says what is selected, as it does beside the picture, and with nothing
+selected it says nothing of its own, because the page says what is open. The legend and
+the foot stay under it. A pane presented fullscreen has no panel.
 
-A subject that differs from the state it is read against has an `Against <state>` section. It lists each field that moved: its name, then `was` over `now`, the whole of each value, with the old value in muted ink. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink: the removed standing (`--standing-removed`) under the words taken out of `was`, and the added standing (`--standing-added`) under the words put into `now`. Two values that share no word carry no tint.
+A selected module ends with `Code and evidence`: its parent, groups, former names, code and
+documents, then a folded Definition. A module bound to code then has `Code history`. A
+selected relationship says its longer account under its label, with its evidence folded.
 
-The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its kind and code path under the name. The chip stands on the top of the name's first line, so a name that wraps leaves it at the top. A subject with no kind, such as a flow or a connection, has only its name. The name and the summary under it stand 8px apart as one block, and the sections follow 20px apart. A section of the panel opens with its label, as a section of the left column does: its title in Body semibold and full ink, and its count beside it in mono and muted ink, 6px from it. Four pixels part the row of the label from its rows, and the rows touch. The words of the panel, its rows and its keys share one left edge and one right edge, 16px from the panel's sides, and the ink of the close key ends on the right one.
+A subject that differs from the state it is read against has an `Against <state>` section. Its label is the label of every section, and a chip at the end of the label says how the subject stands: the standing's mark and `Added`, `Changed` or `Removed`, on a tint of that standing with a 1px edge. Under the label, a plate holds each field that moved, parted by rules, as a diff: the field's name in Body at weight 500, then a line marked `−` for what it said and a line marked `+` for what it says, each the whole value, on a 6% tint of the removed or the added standing, the old value in muted ink. The marks name their lines `was` and `now` to assistive technology. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink. Two values that share no word carry no tint.
+
+The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its code path under the name. The chip says the kind, so no word repeats it, and the kind's name stands on the chip's hover and for assistive technology. The chip stands on the top of the name's first line, so a name that wraps leaves it at the top. A long path breaks only after a slash. A subject with no kind, such as a flow or a connection, has only its name. The name and the summary under it stand 8px apart as one block, and the sections follow 20px apart. A section of the panel opens with a rule of 1px in the Rule tone across the panel's words, and its label stands 16px under the rule, as a section of the left column is labelled: its icon, its title in Control semibold and full ink, and its count beside it in mono and muted ink, 6px from it. So the panel reads as a stack of blocks, each under its head. Six pixels part the row of the label from its rows, the rows start on the label's left edge, and the rows touch. The words of the panel, its rows and its keys share one left edge and one right edge, 16px from the panel's sides, and the ink of the close key ends on the right one.
 
 With a module expanded into the picture, the panel stays with the module that the reading
 opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
@@ -638,14 +655,14 @@ Under what it says, the panel lists the flows and the walkthroughs that touch th
 selection, or else the open module. At the roots with nothing selected it lists neither.
 Each list has a count, four rows and a row that says how many more. The flows stand under
 the names of their collections, as in the left column: the name of a collection is a line in
-Control at weight 500 and full ink, and its flows stand 16px deeper under a rail. A
+Control at weight 500 and full ink after the icon of collections, and its flows stand 22px deeper, under the words of its name, on a rail that hangs from that icon and ends in a tick into the last flow. A
 walkthrough's row ends with its steps. The flow on screen rises as the row on screen does.
 
 A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. Each count is a row of the panel, one to a line, so the counts read as a small table: what it counts at the start, and its number in the mono face and muted ink at the end. A count of none is a row that is off, in muted ink.
 
-Each count selects what it counts on the module's picture, and a count of none is disabled. `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
+Each count selects what it counts on the module's picture, and a count of none is disabled. For the open module, `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. A selected module has no such key, because About describes the open module. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
 
-With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
+A row of `Sends to` or `Receives from` ends with the sample of its line's kind, as the legend draws it, and its name, and with how many relationships the line joins when it joins more than one. With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
 
 A module with code history has a `Changes with` section. It lists the modules whose code changes in the same commits as its own, the strongest first. A row names the partner. Under the name, one line holds a short mark that joins the pair. An `Unjoined` tint chip follows it when no relationship joins them. The commits that they share stand next in mono, and the degree stands at the end in full ink. The mark is a solid line in muted ink for a joined pair and a dashed line in Changed Orange for an unjoined one. A meter of 2px runs along the foot of the row, as long as the degree. It fades from clear to Gold Mark for a joined pair and to Changed Orange for an unjoined one.
 
@@ -658,7 +675,7 @@ outside the subject, so a new subject neither redraws it nor moves it, and a pre
 tag keeps the tag where it stood and the keyboard on it. It has three parts, each under the
 label of any other section of the panel, 20px apart as the panel's sections are: `Legend` over
 the kinds in two columns, `Relationships` over the line types and the marks of lines, and
-`Groups` over the tags. Four pixels part a label from its rows. There is no rule and no plate. A
+`Groups` over the tags. Each part opens with the rule of a section, and six pixels part a label from its rows. There is no plate. A
 row is 28px high, and every mark stands in a box 24px wide, as wide as a kind's chip, so the
 names start on one line. A kind wears the kind chip of the panel's head (see Chips). A section
 with nothing to show is absent.
@@ -696,16 +713,11 @@ filter took off the picture keeps its tag, dimmed and held.
 
 ### Change list
 
-A proposal read against its base puts a `Changes` section at the top of the left column's list. Its interface changes
-stand first, over a thin rule, because an interface change costs every caller. Each module
-reads once, as one row: its name, one line for each thing that moved, such as `Callers gained`
-with the parts it names, then the counts that differ as before and after, with the numbers in
-the mono face. A line names four parts and `+N`, and shows them all on hover. A click selects
-the module on the picture that holds it and lights the row, and from About it brings the
-picture back. A module that the state lacks says `Not in this state`, and its row selects it
-on the drawing of the comparison. These rows wear no standing mark, score or warning color.
-With no interface change, one quiet line in place of the rows says so. The change list follows
-under the rule, with a section for each owner. `N` and `P` walk only that list.
+A proposal read against its base puts a `Changes` section at the top of the left column's list. The strip under its head holds the walk: the quiet key back with its `P` on the left, where the reader stands (`3 of 41`, or `41 to review` before the first step) in the middle, and the gold `Next` with its `N` on the right, the one primary action of a review. A key's letter is a chip of 2px corners filled with a tint of the key's own ink, with no edge, as a tip draws its keys. The strip sticks with the head and stays while the section is folded, so the walk never sits apart from the list it walks, and the pane's header holds no part of it.
+
+Its interface changes stand first, under a row of their own with the interface icon, `Interface changes` and a count, which folds them as an owner's row does, because an interface change costs every caller. Each module reads once, as one row one step under it, with the module icon at the top of the row: its name, one line for each thing that moved, such as `Callers gained` with the parts it names, then the counts that differ as before and after, with the numbers in the mono face. A line names four parts and `+N`, and shows them all on hover. A click selects the module on the picture that holds it and lights the row, and from About it brings the picture back. A module that the state lacks says `Not in this state`, and its row selects it on the drawing of the comparison. These rows wear no standing mark, score or warning color, and they are no step of the walk, which their line says on hover. With no interface change, one quiet line in place of the rows says so.
+
+The change list follows as a tree, one row for each owner: a module, a collection, a flow or a walkthrough, with the icon of its kind. An owner that changed itself is that change's row: the standing's mark and what changed (`Added`, `Description`) stand at the end of the row, and a click goes to the change. The changes it holds besides its own, its relationships, steps or beats, stand one step under it with their standing's mark, under the rail of an open row, and the owner's chevron folds them. An owner whose only change is its own has no chevron, so most owners take one row. `N` and `P` walk only that list.
 
 ### Settings dialog
 
@@ -746,6 +758,34 @@ An explanation of the selection stands at the foot of its pane. The foot is Chro
 
 The head of the plate is 40px high. It holds the status of Codex in Body semibold, with the OpenAI mark in Gold Mark before it. The status is accent text, which is gold on graphite and Ink on chalk. After the status come what the answer is about, in muted ink and cut short, and the retry and cancel keys when they apply. A ghost key closes the reply. The words are Body in Body Ink, 48rem wide at most, and they scroll under the head.
 
+### Code browser
+
+The code browser reads code back to the model. The switch at the foot of the left column
+turns it on: in Code mode the file tree takes the place of the column's lists, and the code
+view takes its own column beside it. The tree lies on the chrome, as the
+column's lists do: rows 28px high in Onest at 12px, and the open file's row raised as a
+Control Face. A row whose file or folder a module binds ends with a small diamond in muted
+ink, and its tooltip names the module. A file whose text Archboard never shows ends with a
+`⊘` mark, and its tooltip says so. A deep row has room for a mark, but not for words. The
+tree finds a file by name from its own search field.
+
+The code view lies on the chrome, as the conversation does, so the picture stays the one
+sheet. Its chrome row holds the file's name and then its folder in mono and muted ink,
+"Code" while no file is open. Under it, after "Owned by" in muted ink, stand the modules that own the file as quiet keys
+(28px high, never pressed, because opening the file selects them all): the module's name, then
+what it binds here in mono, `whole file`, its folder, or its symbol. A symbol that the code
+facts cannot find says `not found` in Changed Orange. A reading of a proposal, a saved
+reading or a branch adds one line that says the code is the checkout on disk now.
+
+The lines are mono at 11px on 20px rows, with their numbers in muted ink, 16px in from the
+column's left edge, under the head's words. A long line wraps, and its text stops 8px before the
+picture, as the navigator's pieces stop 8px before its edge. A thin edge after the numbers marks the lines of each bound
+definition: the rule's ink, or Gold Mark while its module is selected. A name that a module
+binds is a button: a faint wash and a dotted underline in muted ink. A name that anchors a
+relationship has a dashed underline and no wash. A pressed name, the name of a selected
+subject, takes a gold wash and a solid gold underline, and its text keeps its colour. The
+pointer or the keyboard resting on a name or an owner key lights its subject in the picture.
+
 ### Pane sidebar
 
 A retained legacy board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
@@ -769,8 +809,8 @@ nothing else. With reduced motion the sidebar appears and goes at once.
 A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
 chrome. While it lasts the control is held and says so, and nothing shows or hides
 the sidebar. A pick made on the About page lays
-no panel over the page, where it would cover the page's controls. Its panel comes
-with the diagram.
+no panel over the page, where it would cover the page's controls. Its subject shows in
+the right panel beside the page, under the outline.
 
 A walkthrough's row begins with a play mark, never a bare triangle, because a
 triangle is the mark of a row that folds open. Narrate is in every walkthrough's
@@ -781,14 +821,15 @@ its tooltip says why.
 ### About page
 
 The pane's header has two tabs, Diagram and About, and the mark of the open tab is
-Gold Mark. The About page lies over the picture on Ground Chalk and scrolls. A band at
-its top names what it describes, the open scope or the selected subject, and leads to
-the other one. Its column is 1320px wide at most and centred. The column
-keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
+Gold Mark. The About page lies over the picture on Ground Chalk and scrolls, with the
+right panel beside it. It describes the open scope, whatever is selected. What can be
+done stays at the foot of the right panel. Its column is 1096px wide at most and
+centred. The column keeps 40px of room inside each side, or 24px on a page narrower
+than 1040px.
 
 Presenting a walkthrough from About shows its picture and steps. Leaving it returns
 to About at the same scroll position. Switching to Diagram and back also restores
-the position while the subject stays the same.
+the position while the open scope stays the same.
 
 The head of the page names the model in the Figure role, in capitals. Under the
 name, one Control line gives the model's level with its mark. Then it gives the
@@ -796,18 +837,19 @@ variant on screen with its lifecycle mark, its name and where it stands in muted
 ink. The variant's summary follows in the Reading role, 68 characters wide at most.
 40px separate the head from the first section.
 
-The outline is a column 176px wide, 48px to the left of the sections, and it stays
-32px below the top of the page while the page scrolls. Each entry is a 32px row
-with the section's 16px mark, its name in Control and its count in Technical. The
-section being read has full ink and a 2px piece of Gold Mark on its left edge. On a
-page narrower than 1040px, the outline is a bar on Ground Chalk at the top of the
-page with a Rule under it. There the gold piece lies under the entry, and a bar too
-narrow for its entries scrolls sideways. A jump to a section scrolls the page
-smoothly, or at once with reduced motion.
+The outline stands at the top of the right panel, as a column of rows whose words
+stand on the panel's 16px edges. Each entry is a 32px row with the section's 16px
+mark, its name in Control and its count in Technical. The section being read has
+full ink and a 2px piece of Gold Mark on its left edge. Where the panel hides, in a
+reading narrower than 900px with nothing selected, the outline is the first row of
+the page: a bar on Ground Chalk with a Rule under it, which stays at the top while the
+page scrolls. Its entries' words stand on the column's edge. There the gold piece lies
+under the entry, and a bar too narrow for its entries scrolls sideways. A jump to a
+section scrolls the page smoothly, or at once with reduced motion.
 
 The outline appears only when the page has more than one section. Choosing a section
-gives its heading keyboard focus. The final section keeps enough height for any
-section to reach the top.
+gives its heading keyboard focus. The page ends where its last section ends, and at
+the end of the page the outline marks the last section.
 
 A section heading is Subtitle in semibold, and 56px separate one section from the
 next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
@@ -836,7 +878,7 @@ muted ink.
 
 The states are a timeline at the page's room: the lanes are 28px apart. Each state has a node of 12px on its lane, drawn as the history of the site draws it. The current state is solid Gold Mark with a soft halo. A proposal is a ring in Changed Orange. A state that was current is a ring in muted ink, and a shelved state is a fainter ring. A state's summary, or its name when it has none, is Title. Where it stands is Body, and its reason is Control at weight 400 in muted ink. The state on screen rises as a card: a Control Face with 6px corners, `shadow-raised` and a ring of Gold Mark at 35%. The words On screen stand at the end of its first line in accent text.
 
-The page of a bound module has a `Code exports` section after its Interface: what the last code check of this version of the reading counted of the module's code. One line in Body and muted ink says when the check ran, and a second names what it read only in part. The roll-up of a shallow module stands over the lists with its chip and its words. Each kind is a list of the right panel's kind, with its name and count over its rows: Functions, Classes, Methods, Values and Types, side by side in columns at least 352px wide. A method stands under its class, as a flow stands under its collection. A row names the export in mono, then the chip of each finding on it, solid Changed for a warning and tinted for information, with the finding's words on hover. At the row's end, in mono and muted ink, stands its file from the module's directory and its line, and the line stays when the path is cut. The row opens the export's source at the line that defines it. A list shows eight rows and offers the rest. Where no check read this version, the check did not measure the module, or it judged none of its languages, one line in Body and muted ink says so in place of the lists.
+When the open module is bound to code, its page has a `Code exports` section after its Interface: what the last code check of this version of the reading counted of the module's code. One line in Body and muted ink says when the check ran, and a second names what it read only in part. The roll-up of a shallow module stands over the lists with its chip and its words. Each kind is a list of the right panel's kind, with its name and count over its rows: Functions, Classes, Methods, Values and Types, side by side in columns at least 352px wide. A method stands under its class, as a flow stands under its collection. A row names the export in mono, then the chip of each finding on it, solid Changed for a warning and tinted for information, with the finding's words on hover. At the row's end, in mono and muted ink, stands its file from the module's directory and its line, and the line stays when the path is cut. The row opens the export's source at the line that defines it. A list shows eight rows and offers the rest. Where no check read this version, the check did not measure the module, or it judged none of its languages, one line in Body and muted ink says so in place of the lists.
 
 A module whose interface changed in a comparison opens the Interface section with two cards side by side, the base first. A card is a Control Face with 6px corners, 16px of padding and 12px between its parts. It has `shadow-raised` and an inset ring of 1px in the Rule tone. The card of the state that the reading is on wears a ring of Changed Orange at 45% in place of the Rule ring. Its head names the module in the Display role. A chip at the end says where the state stands: Proposal, Current, Earlier, Shelved, or This reading for a model with no states. The state read has the solid Changed chip, and the other has an outline chip. The state's name stands under the head in Body and muted ink.
 
@@ -844,11 +886,11 @@ Three Well Floor cells, Entries, Hidden and Callers, hold the counts in the mono
 
 ### Agent dock
 
-The agent dock is the foot of the agent's card, which stands on the chrome under the navigator's
-list: Tray Chalk, 12px corners and 8px of chrome round it, with a lit top edge and a soft shadow
-that rises from it.
-While an agent works, Working now stands at the top of the card, and the card grows. While voice is off it is calm. Two quiet keys of one height (32px, 4px corners) stand in a row at its foot: Talk, as wide as the room, and
-a key to the conversation, an icon alone. The conversation's key is pressed in,
+The agent dock stands on the chrome under the navigator's list, under a 1px line in the rule's ink,
+with no card round it. Its parts keep 8px from the column's edges, as the repository switcher and
+the file tree's search do.
+While an agent works, Working now stands at the top of the dock, and the dock grows. While voice is off it is calm. A row stands at its foot, all 32px tall: the switch of what the column lists, Architecture or Code, as wide as the room, each word with a 12px inset, then two quiet keys (32px, 4px corners), each an icon alone: Talk, a microphone, and
+a key to the conversation. Their names are their tooltips. The state's line is as tall as its key, such as Stop (28px), and 4px part it from what the agent is doing under it. While voice is on, the switch has its own row under the plan. The conversation's key is pressed in,
 with a gold mark under it, while the conversation is open, and has a gold dot
 while words wait unread. When the agent is on something, its state, what it is
 on and its plan stand above the keys. When it is ready and on nothing, the dock
@@ -857,7 +899,7 @@ head of the dock, with the gold ring and the lines of light, beside the state,
 what the agent is on and the voice's own line, and the conversation's key becomes
 a quiet icon in the voice line, beside mute and subtitles. That is where voice is
 while the person does not want subtitles. While they do, the voice is in the voice
-box over the picture (below), and the dock is calm again: the Talk key reads End
+box over the picture (below), and the dock is calm again: the Talk key is named End
 voice, with a handset and the gold edge of the circle, and ends voice, and the
 voice line, mute and the subtitles control are in the box. In a fullscreen
 presentation the dock is off screen, so the box carries the voice there whatever

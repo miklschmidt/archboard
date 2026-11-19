@@ -45,9 +45,12 @@ function cameraHandover(): CameraHandover {
 const ModelPaneContext = createContext<{
 	selection: ModelSelection;
 	handover: CameraHandover;
-	/** Where the reading puts what it says in the pane's header. */
+	/** Where the reading puts what it says in the pane's header, over the picture. */
 	head: HTMLElement | null;
 	attachHead: (element: HTMLElement | null) => void;
+	/** Where the reading puts what it says in the pane's header, over the right panel. */
+	side: HTMLElement | null;
+	attachSide: (element: HTMLElement | null) => void;
 } | null>(null);
 
 /** The captured presentation owns its start action and whether it replaces ordinary reading. */

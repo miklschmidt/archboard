@@ -14,7 +14,7 @@ import {
 	type Toggles,
 } from "#shared/rules/model-expansion.ts";
 import { containment, foldedScope } from "#shared/rules/module-fold.ts";
-import { drawnEnds, drawnLines, joinedLines } from "#shared/rules/model-lines.ts";
+import { drawnEnds, drawnLines, joinedLines, strandedCards } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/inspect/rules/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -95,7 +95,8 @@ function projectScope(
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
 	const trail = scope === null ? [] : ancestors(byId, scope).toReversed();
 	const frames = choices.frames.filter((id) => byId.has(id));
-	const open = new Set([...(scope === null ? [] : [scope]), ...frames]);
+	// The trail ends on the scope itself.
+	const open = new Set([...trail.slice(-1), ...frames]);
 	const boundary = new Set([...open].flatMap((id) => ancestors(byId, id)));
 	const inside = new Set(
 		complete.nodes
@@ -113,10 +114,18 @@ function projectScope(
 	 * @returns Both drawn ends.
 	 */
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
-	const joined = joinedLines(complete, shown, endsOf, open, standing);
-	const connections = drawnLines(complete, joined, open);
+	const allConnections = joinedLines(complete, relevant, endsOf, open, standing);
+	const every = drawnLines(complete, allConnections, open);
+	// With no kind hidden, the reading draws every line, so it joins them only once.
+	const connections =
+		shown.length === relevant.length
+			? every
+			: drawnLines(complete, joinedLines(complete, shown, endsOf, open, standing), open);
+	const stranded = strandedCards(every, connections, open);
 	const children = complete.nodes.filter(
-		({ parent }) => (parent ?? null) === scope || (parent !== undefined && open.has(parent)),
+		({ id, parent }) =>
+			!stranded.has(id) &&
+			((parent ?? null) === scope || (parent !== undefined && open.has(parent))),
 	);
 	const visible = new Set([
 		...children.map((node) => node.id),
@@ -130,7 +139,7 @@ function projectScope(
 		missingFocus: [] as string[],
 		complete,
 		connections,
-		allConnections: joinedLines(complete, relevant, endsOf, open, standing),
+		allConnections,
 		children,
 		context,
 		trail: trail.flatMap((id) => {

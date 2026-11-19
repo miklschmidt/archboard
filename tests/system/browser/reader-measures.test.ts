@@ -8,11 +8,14 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
+import type { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
-import { openAbout, pick, settledOn } from "./support/canonical-page.ts";
+import { pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
+
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 
 const ROW = (id: string): string => `[data-measure-row="${id}"]`;
 const DIALOG = '[data-slot="model-measures-dialog"]';
@@ -98,14 +101,13 @@ test("a selection reads the history, and the Measures dialog shows every module 
 		"the read of a selection",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<number>(
-				`document.querySelectorAll('[data-slot="semantic-inspector-commit-list"] [data-commit]').length`,
+				`document.querySelectorAll('[data-slot="model-panel"] [data-slot="module-history"] [data-slot="semantic-inspector-commit-list"] [data-commit]').length`,
 			),
 		(commits) => commits === 2,
-		"the history on About with no button",
+		"the history in the panel with no button",
 		WAIT,
 	);
 	await openMeasures(browser, "interface");

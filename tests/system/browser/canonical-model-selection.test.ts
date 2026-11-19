@@ -110,7 +110,6 @@ test("module selection supports modifiers and keyboard without layout or history
 		"normal selection replacing the set",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string | null>(
 			`document.querySelector('[data-slot="module-details"]')?.getAttribute('data-module-id') ?? null`,

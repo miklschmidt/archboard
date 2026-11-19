@@ -1,4 +1,4 @@
-// The code exports of the selected module on its About page (TASK-646.08): what the last code pass
+// The code exports of the open module on its About page (TASK-646.08): what the last code pass
 // over this version of the reading counted, by kind, each name with its findings. A row opens the
 // export's own source. The page reads the names of this module alone, and never starts a pass.
 

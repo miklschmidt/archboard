@@ -75,4 +75,30 @@ function drawnLines(
 	return lines.filter(({ line: { from, to } }) => !nested(from, to) && !nested(to, from));
 }
 
-export { drawnEnds, drawnLines, joinedLines };
+/**
+ * The cards at the ends of some lines.
+ * @param lines The lines.
+ * @returns Both ends of each line.
+ */
+function lineEnds(lines: readonly OverviewLine[]): string[] {
+	return lines.flatMap(({ line }) => [line.from, line.to]);
+}
+
+/**
+ * The cards that a filter takes off a picture: each drew a line before the reader hid a kind, and
+ * draws none now. A card that never drew a line stays, and so does a frame, which holds parts.
+ * @param every The lines that the reading draws with no kind hidden.
+ * @param shown The lines that it draws.
+ * @param frames The modules that the picture draws as frames.
+ * @returns The cards to leave out.
+ */
+function strandedCards(
+	every: readonly OverviewLine[],
+	shown: readonly OverviewLine[],
+	frames: ReadonlySet<string>,
+): ReadonlySet<string> {
+	const kept = new Set([...lineEnds(shown), ...frames]);
+	return new Set(lineEnds(every).filter((id) => !kept.has(id)));
+}
+
+export { drawnEnds, drawnLines, joinedLines, strandedCards };

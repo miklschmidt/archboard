@@ -111,7 +111,7 @@ test("migration preview preserves its source while readers navigate modules and 
 		async () => {
 			await refreshModel(browser);
 			return browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="MAPPING_STALE"]') !== null`,
+				`document.querySelector('[data-pane="A"] [data-slot="model-error"][data-code="MAPPING_STALE"]') !== null`,
 			);
 		},
 		Boolean,
@@ -194,6 +194,9 @@ test("preview module code opens through the existing local opener", async () => 
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await visible(browser, '[data-slot="module-open-code"]:enabled');
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="module-history"]') === null`),
+	).toBe(true);
 	await browser.run(["click", '[data-slot="module-open-code"]']);
 	await pollUntil(
 		async () => existsSync(capture),
@@ -222,7 +225,7 @@ test("a missing preview plan recovers to an explicit planned-only reading", asyn
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", `${server.base}/?modelA=Shop&previewA=Shop`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	await visible(browser, '[data-slot="model-error"][data-code="MAPPING_REQUIRED"]');
+	await visible(browser, '[data-pane="A"] [data-slot="model-error"][data-code="MAPPING_REQUIRED"]');
 	const inventory = readLegacyInventory(vault, "Shop");
 	if (!inventory.success) throw new Error(JSON.stringify(inventory));
 	const saved = await saveLegacyMappingPlan(vault, {

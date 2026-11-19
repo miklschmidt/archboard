@@ -1,4 +1,5 @@
 import { usePublishedNarration } from "#ui/application/hooks/use-published-narration.ts";
+import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 import { useModelArrival } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
 import {
 	useCallback,
@@ -70,6 +71,7 @@ interface ApplicationPaneProps {
 /** The pane-bound callbacks the shared ones cannot supply. */
 interface BoundCallbacks {
 	onModelError: (error: string) => void;
+	onReadingTrouble: (trouble: ReadingTrouble | null) => void;
 	onLayoutRequest: (request: "open" | "close") => void;
 	createWorkbenchSockets: () => PaneWorkbenchSocketOwner<BrowserWorkbenchTransport>;
 }
@@ -115,6 +117,10 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 		(error: string): void => callbacks.onModelError(paneId, error),
 		[callbacks, paneId],
 	);
+	const onReadingTrouble = useCallback(
+		(trouble: ReadingTrouble | null): void => callbacks.onReadingTrouble(paneId, trouble),
+		[callbacks, paneId],
+	);
 	const onLayoutRequest = useCallback(
 		(request: "open" | "close"): void => callbacks.onLayoutRequest(paneId, request),
 		[callbacks, paneId],
@@ -128,8 +134,8 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 		[handles, paneId],
 	);
 	return useMemo(
-		() => ({ onModelError, onLayoutRequest, createWorkbenchSockets }),
-		[onModelError, onLayoutRequest, createWorkbenchSockets],
+		() => ({ onModelError, onReadingTrouble, onLayoutRequest, createWorkbenchSockets }),
+		[onModelError, onReadingTrouble, onLayoutRequest, createWorkbenchSockets],
 	);
 }
 
@@ -223,6 +229,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 						paneId={paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={callbacks.onCodeTargetNotice}
+						onTrouble={bound.onReadingTrouble}
 						driven={driven}
 						onPresentationEnd={endPresentation}
 						narration={narration}

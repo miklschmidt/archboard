@@ -119,7 +119,7 @@ async function compareCheckpoint(browser: AgentBrowserSession, id: string): Prom
 }
 
 /**
- * Select a module from the list on About and read its details there. A reading that settles
+ * Select a module from the list on About and read its details in the panel. A reading that settles
  * replaces the rows and drops the selection, so each pass takes the one step that is left.
  * @param browser The page.
  * @param id The module.
@@ -136,12 +136,12 @@ async function selectModule(
 	return pollUntil(
 		() =>
 			browser.eval<string>(`(() => {
-				const details = document.querySelector('[data-slot="module-details"][data-module-id="${id}"]');
+				const panel = '[data-slot="model-panel"] [data-slot="module-details"][data-module-id="${id}"]';
+				const details = document.querySelector(panel);
 				if (details === null) {
 					document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]')?.click();
-					document.querySelector('[data-slot="model-about-subject"] [data-choice="selection"]')?.click();
 				}
-				return document.querySelector('[data-slot="module-details"][data-module-id="${id}"] ${part}')?.textContent ?? "";
+				return document.querySelector(panel + ${JSON.stringify(` ${part}`)})?.textContent ?? "";
 			})()`),
 		shows,
 		`the details of ${id}`,
@@ -155,7 +155,9 @@ async function gatewayDetails(browser: AgentBrowserSession): Promise<string> {
 }
 
 async function selectState(browser: AgentBrowserSession, id: string): Promise<void> {
-	await browser.run(["click", '[data-slot="model-reading-selector"]']);
+	// The comparison control can mount beside the chooser as a new state arrives and shift it, so
+	// the chooser is pressed where it is, not where it was when a pointer click was aimed.
+	await browser.eval(`document.querySelector('[data-slot="model-reading-selector"]').click()`);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

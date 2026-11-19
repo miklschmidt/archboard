@@ -15,7 +15,7 @@ import { ModelState } from "#ui/architecture-drawing/model-reader/reading/compon
 import { Shell } from "#ui/shell/components/Shell.tsx";
 import { createStartActions } from "#ui/application/clients/start-actions.ts";
 import { repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
-import { useNotices } from "#ui/application/hooks/use-notices.ts";
+import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import { useTheme } from "#ui/application/hooks/use-theme.ts";
 import { useSlowWait } from "#ui/architecture-drawing/model-reader/hooks/use-slow-wait.ts";
 import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
@@ -28,6 +28,7 @@ import type { SettingsSurface } from "#ui/shell/rules/contracts.ts";
 interface StartShellProps {
 	readonly start: Exclude<Start, { kind: "open" }>;
 	readonly catalog: ModelCatalog;
+	readonly notices: NoticeStack;
 }
 
 /** The command that gives a checkout a vault and makes it known to this machine. */
@@ -43,9 +44,8 @@ const NO_RECORDS = {};
  * @returns The frame, the chooser and the state.
  */
 function StartShell(props: StartShellProps): JSX.Element {
-	const { start, catalog } = props;
+	const { start, catalog, notices } = props;
 	const [theme, setTheme] = useTheme();
-	const notices = useNotices();
 	const [settings, openSettings] = useState<SettingsSurface | null>(null);
 	const closeSettings = useCallback((): void => openSettings(null), []);
 	const client = useQueryClient();
@@ -81,10 +81,10 @@ function StartShell(props: StartShellProps): JSX.Element {
  * @param props The start and the repositories.
  * @returns A state, or the ground while the wait is short.
  */
-function StartStage(props: StartShellProps): JSX.Element {
+function StartStage(props: Pick<StartShellProps, "start" | "catalog">): JSX.Element | null {
 	const { start, catalog } = props;
 	if (start.kind !== "choose") return <StartWait start={start} />;
-	if (catalog.error !== null) return <StartFailed error={catalog.error} />;
+	if (catalog.error !== null) return null;
 	if (start.missing !== null) return <StartMissing name={start.missing} />;
 	if (catalog.repositories.length === 0) return <StartEmpty />;
 	return (
@@ -116,21 +116,6 @@ function StartWait(props: {
 				</ModelState.Waiting>
 			)}
 		</div>
-	);
-}
-
-/**
- * The repositories could not be read, and the column offers to read them again.
- * @param props Why.
- * @param props.error The failure.
- * @returns The state.
- */
-function StartFailed(props: { readonly error: string }): JSX.Element {
-	return (
-		<ModelState slot="start-failed">
-			<ModelState.Title>Repositories unavailable</ModelState.Title>
-			<ModelState.Line>{props.error}</ModelState.Line>
-		</ModelState>
 	);
 }
 

@@ -4,7 +4,6 @@
 // nothing about a model. The repository switcher between them is the shell's own, because
 // a pane with nothing to read still has to reach a repository.
 
-import { RiErrorWarningLine } from "@remixicon/react";
 import { useCallback, useRef, useState, type JSX, type ReactNode } from "react";
 
 import { Popover } from "@archboard/ui-kit/components";
@@ -99,19 +98,6 @@ function openRepository(actions: ShellActions, shell: ShellRepository, beside: b
 }
 
 /**
- * Why the navigator cannot show what it should: the repositories or the panes
- * could not be read, or else the first repository whose models could not be,
- * named. Its row marks it too; this is where the way to read it again is.
- * @param view The shell view.
- * @returns The reason, or null.
- */
-function listingFailure(view: ShellView): string | null {
-	if (view.modelsError !== null) return view.modelsError;
-	const failed = view.repositories.find((shell) => shell.error !== null);
-	return failed === undefined ? null : `${failed.repository.name}: ${failed.error}`;
-}
-
-/**
  * The left column.
  * @param props The shell view and actions.
  * @returns The navigator column.
@@ -152,7 +138,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	return (
 		<div
 			data-slot="navigator-column"
-			className="bg-sidebar text-sidebar-foreground relative z-30 flex w-(--shell-navigator-width) shrink-0 flex-col"
+			className="bg-sidebar text-sidebar-foreground relative z-30 flex w-full min-w-0 flex-col"
 		>
 			{props.head}
 			<nav
@@ -185,12 +171,8 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						</Popover.Content>
 					</Popover>
 				)}
-				<ListingState
-					loading={view.modelsLoading}
-					error={listingFailure(view)}
-					empty={view.repositories.length === 0}
-					actions={actions}
-				/>
+				{/* A listing that fails says so in a toast, with Retry. */}
+				<ListingSkeleton loading={view.modelsLoading} empty={nothingListed} />
 				{/* A pane with nothing to list leaves this place empty, and the repositories take it. */}
 				<div
 					ref={attachDestinations}
@@ -211,69 +193,34 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				{props.foot === undefined && working}
 			</nav>
 			{props.foot !== undefined && (
-				// The agent's card stands on the chrome under the list, 8px from the window's foot as
-				// the picture is: what agents work on now at its top, then the dock.
-				<div data-slot="navigator-foot" className="bg-sidebar shrink-0 p-2">
-					<div
-						data-slot="agent-card"
-						className="bg-raised shadow-tray rounded-window flex flex-col overflow-clip"
-					>
-						{working}
-						{props.foot}
-					</div>
+				// The agent stands on the chrome under the list, under a line that parts it from the
+				// list: what agents work on now at its top, then the dock, with the dock's keys at the
+				// foot of the window. No card frames it, so the keys' row has the column's width.
+				<div
+					data-slot="navigator-foot"
+					className="bg-sidebar border-border flex shrink-0 flex-col border-t"
+				>
+					{working}
+					{props.foot}
 				</div>
 			)}
 		</div>
 	);
 }
 
-/** Inputs for the line shown when the tree has nothing to show. */
-interface ListingStateProps {
+/**
+ * The listing's loading state while nothing is listed yet: rows of the shape a model takes,
+ * greyed, with the words for assistive technology.
+ * @param props Whether the listing is being read, and whether nothing is listed.
+ * @param props.loading Whether the listing is being read.
+ * @param props.empty Whether nothing is listed.
+ * @returns The skeleton, or nothing.
+ */
+function ListingSkeleton(props: {
 	readonly loading: boolean;
-	readonly error: string | null;
 	readonly empty: boolean;
-	readonly actions: ShellActions;
-}
-
-/**
- * What the navigator says while it cannot list: that the repositories are being read, or why
- * the listing failed. The pane says that there are none.
- * @param props The listing state.
- * @returns The state, or nothing while repositories are listed.
- */
-function ListingState(props: ListingStateProps): JSX.Element | null {
-	const { actions } = props;
-	const retry = useCallback(() => actions.refreshModels(), [actions]);
-	if (props.error !== null) {
-		return (
-			<div
-				role="alert"
-				className="text-body rounded-control m-2 flex items-start gap-2 border px-3 py-2"
-			>
-				<RiErrorWarningLine
-					className="text-destructive mt-px size-3.5 shrink-0"
-					aria-hidden="true"
-				/>
-				<span className="min-w-0 flex-1">{props.error}</span>
-				<button
-					type="button"
-					onClick={retry}
-					className="text-primary-text decoration-primary-mark shrink-0 font-medium underline underline-offset-2 hover:decoration-2"
-				>
-					Retry
-				</button>
-			</div>
-		);
-	}
-	return props.empty && props.loading ? <ListingSkeleton /> : null;
-}
-
-/**
- * The listing's loading state: rows of the shape a model takes, greyed, with
- * the words for assistive technology.
- * @returns The skeleton.
- */
-function ListingSkeleton(): JSX.Element {
+}): JSX.Element | null {
+	if (!props.loading || !props.empty) return null;
 	return (
 		<div aria-busy="true" style={MESSAGE_STYLE} className="flex flex-col gap-3 py-3 pr-4">
 			<p aria-live="polite" className="sr-only">

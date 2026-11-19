@@ -3,6 +3,7 @@
 // shows it, with the kind chip of the panel's head.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
+import SectionLabel from "./SectionLabel.astro";
 import type { Kind } from "../../lib/icons";
 
 const kinds: [Kind, string][] = [
@@ -19,7 +20,7 @@ const lines = [
 ---
 
 <div class="legend">
-	<p class="head">Legend</p>
+	<p class="head"><SectionLabel icon="shapes" title="Legend" /></p>
 	<ul class="grid">
 		{
 			kinds.map(([kind, name]) => (
@@ -29,7 +30,7 @@ const lines = [
 			))
 		}
 	</ul>
-	<p class="head">Relationships</p>
+	<p class="head"><SectionLabel icon="share" title="Relationships" /></p>
 	<ul class="lines">
 		{
 			lines.map(([name, color]) => (
@@ -43,7 +44,7 @@ const lines = [
 	<ul class="grid marks">
 		<li><span class="line" style="--c: var(--neutral)"></span> Illustrated traffic</li>
 	</ul>
-	<p class="head">Groups</p>
+	<p class="head"><SectionLabel icon="priceTag" title="Groups" /></p>
 	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
 </div>
 
@@ -55,23 +56,25 @@ const lines = [
 	.legend {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
 		color: var(--ink);
 	}
-	/* 20px part one part from the next, as the panel's sections are. */
-	.grid + .head,
-	.tags + .head {
-		margin-top: 16px;
-	}
+	/* Each part opens with a rule, as every section of the panel does. */
 	.head {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin: 0;
 		min-height: 24px;
+		padding-top: 14px;
+		border-top: 1px solid var(--rule);
 		font-size: 12.5px;
-		font-weight: 600;
 	}
+	.grid + .head,
+	.tags + .head {
+		margin-top: 8px;
+	}
+
 	.grid {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -106,6 +109,7 @@ const lines = [
 	.tags {
 		display: flex;
 		gap: 8px;
+		margin: 0;
 	}
 	.tag {
 		padding: 3px 8px;

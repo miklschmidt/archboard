@@ -110,7 +110,8 @@ function Fact(props: FactProps): JSX.Element | null {
 }
 
 /**
- * What a relationship adds to its row: its longer account, and its evidence on demand.
+ * What a relationship adds to what the panel says of it: its longer account, and its evidence on
+ * demand.
  * @param props The authored relationship.
  * @param props.edge The relationship.
  * @returns The account, or nothing for a relationship with neither.
@@ -119,7 +120,7 @@ function RelationshipEvidence(props: { edge: Connection["joins"][number] }): JSX
 	const { edge } = props;
 	if (!edge.description && !edge.anchor) return null;
 	return (
-		<div className="text-body text-muted-foreground space-y-2 pr-1 pb-2 pl-3">
+		<div className="text-body text-muted-foreground space-y-2">
 			{edge.description && <p className="max-w-[72ch] whitespace-pre-wrap">{edge.description}</p>}
 			{edge.anchor && (
 				<details>

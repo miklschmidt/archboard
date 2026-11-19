@@ -37,26 +37,16 @@
 // (TASK-646.08). The findings answer leaves the names out, because every canvas reads it and only
 // the About page of one module shows them. No remembered pass of that version that measured the
 // module is a 404.
-//
-// `GET /api/code/source-lines?repo=<repo>&path=<path>&line=<line>` answers the
-// source excerpt of one piece of evidence that the memory holds for the vault
-// (TASK-590.06): the evidence line with up to 3 lines on each side. It is the
-// one route that quotes text of a file (ADR 0046), so
-// only a page of Archboard's own origin reads it, and it reads only a place
-// that the memory names. A place that no remembered finding names, or whose
-// file or line is gone or never quoted, is a 404.
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
-import { createCodeCheck } from "@archboard/code-intel/code-check-run";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,
 } from "#server/http/handlers/code-checks/state/code-findings-memory.ts";
-import { readSourceLines } from "#server/http/handlers/code-checks/operations/source-lines.ts";
-import { checkoutWork } from "#server/wiring/server-owners.ts";
+import { callerGone } from "#server/http/middleware/caller-gone.ts";
+import { checkoutWork, codeCheck } from "#server/wiring/server-owners.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
@@ -69,26 +59,13 @@ interface CodeCheckRouteDependencies {
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
 	/** Run the code check, or say that no document has the named draft or that a plan is refused. */
-	readonly check: ReturnType<typeof createCodeCheck>["run"];
+	readonly check: typeof codeCheck.run;
 	/** What the finished passes found, which the panes read. */
 	readonly memory: CodeFindingsMemory;
 }
 
-/** The server's one code check, so its memory of behind serves every request. */
-const codeCheck = createCodeCheck();
-
 /** The server's one memory of the last passes, so every pane reads what any pass found. */
 const codeFindings = createCodeFindingsMemory();
-
-/**
- * Whether the caller has gone, so nothing is left to answer.
- * @param request The request.
- * @param response Its response.
- * @returns True when the response can no longer be written.
- */
-function callerGone(request: Request, response: Response): boolean {
-	return request.destroyed || response.destroyed || response.headersSent;
-}
 
 /**
  * The draft a request names.
@@ -171,16 +148,6 @@ async function answerCodeCheck(
 	}
 }
 
-/** The place a source excerpt is asked for, as a piece of evidence names it. */
-const SourcePlaceQuerySchema = z.object({
-	repo: z.string().min(1),
-	path: z.string().min(1),
-	line: z
-		.string()
-		.regex(/^[1-9][0-9]{0,8}$/u)
-		.transform(Number),
-});
-
 /** The exact reading and module whose exports are asked for. A reading with no state names none. */
 const ExportsQuerySchema = z.object({
 	model: z.string().min(1),
@@ -217,53 +184,9 @@ function answerExports(memory: CodeFindingsMemory, request: Request, response: R
 }
 
 /**
- * Answer one request for the source excerpt of a remembered piece of evidence.
- * @param dependencies How checkout work runs, and what the passes found.
- * @param request The request.
- * @param response Its response.
- */
-async function answerSourceLines(
-	dependencies: CodeCheckRouteDependencies,
-	request: Request,
-	response: Response,
-): Promise<void> {
-	const place = SourcePlaceQuerySchema.safeParse(request.query);
-	if (!place.success) {
-		response
-			.status(400)
-			.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(place.error) });
-		return;
-	}
-	const vault = vaultOfRequest(request);
-	try {
-		const outcome = await dependencies.runCheckout(
-			request,
-			response,
-			"GET /api/code/source-lines",
-			(signal) =>
-				readSourceLines({
-					vault,
-					place: place.data,
-					findings: dependencies.memory.recall(vault),
-					signal,
-				}),
-		);
-		if (callerGone(request, response)) return;
-		if (outcome.ok) response.json({ success: true, ...outcome.answer });
-		else response.status(404).json({ success: false, code: outcome.code, error: outcome.error });
-	} catch (error) {
-		if (!callerGone(request, response)) {
-			response.status(500).json({ success: false, error: errorMessage(error) });
-		}
-	}
-}
-
-/**
  * Mount `GET /api/vault/code-check`, `GET /api/vault/code-findings`, which
- * answers what the finished passes found from memory and never starts one,
- * `GET /api/vault/code-exports`, which answers one module's exports from the same memory, and
- * `GET /api/code/source-lines`, which quotes the source of one remembered piece
- * of evidence.
+ * answers what the finished passes found from memory and never starts one, and
+ * `GET /api/vault/code-exports`, which answers one module's exports from the same memory.
  * @param app The application.
  * @param overrides Dependencies a test replaces.
  */
@@ -300,14 +223,6 @@ function mountCodeCheckRoute(
 	app.get("/api/vault/code-exports", requireVault, (request, response) => {
 		answerExports(dependencies.memory, request, response);
 	});
-	app.get(
-		"/api/code/source-lines",
-		createBrowserOriginGuard("settings-read"),
-		requireVault,
-		(request, response) => {
-			void answerSourceLines(dependencies, request, response);
-		},
-	);
 }
 
 export { type CodeCheckRouteDependencies, mountCodeCheckRoute };

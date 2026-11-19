@@ -6,12 +6,15 @@
 
 import { createContext, type ReactNode } from "react";
 
-import type { PaneOpening } from "#ui/shell/rules/contracts.ts";
+import type { NavigatorMode, PaneOpening } from "#ui/shell/rules/contracts.ts";
 
-/** The places in the left column that the focused pane fills. */
+/** The places beside the panes that the focused pane fills, and what the navigator lists. */
 interface PaneColumn {
 	readonly find: HTMLElement | null;
 	readonly destinations: HTMLElement | null;
+	/** The code view's column, while the navigator lists files. */
+	readonly viewer: HTMLElement | null;
+	readonly mode: NavigatorMode;
 }
 
 /** The shell's parts of one pane's header. */

@@ -154,10 +154,10 @@ async function followMeasures(browser: AgentBrowserSession): Promise<string[]> {
 	await browser.run(["click", '[data-slot="model-interface-about"]']);
 	await pollUntil(
 		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="about-outline-entry"][aria-current="location"]')?.getAttribute('data-section') ?? null`,
+			browser.eval<boolean>(
+				`document.activeElement?.matches('[data-slot="model-about-page"] [data-about-section="interface"] h3') === true`,
 			),
-		(section) => section === "interface",
+		Boolean,
 		"the interface section of About",
 		WAIT,
 	);
@@ -225,7 +225,8 @@ test("the right column follows what a reader looks at, and the left column holds
 	await lists(browser, { flows: ["Shop#Drain"], walkthroughs: ["Shop#Work"] });
 
 	// A selected module that holds parts says what it offers. Its one caller names the module itself,
-	// so nothing reaches its part, and the line says so. About opens at the rest and names that part.
+	// so nothing reaches its part, and the line says so. About describes the open module, so the
+	// selection has no way there.
 	expect(await measures(browser)).toEqual({
 		entryPoints: "0",
 		hiddenParts: "1",
@@ -233,7 +234,11 @@ test("the right column follows what a reader looks at, and the left column holds
 		wholeModule: "1",
 		passThrough: "0",
 	});
-	expect(await followMeasures(browser)).toEqual(["Shop#Queue"]);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-interface-about"]') === null`,
+		),
+	).toBe(true);
 	await browser.run(["click", CLEAR]);
 	await lists(browser, { flows: [], walkthroughs: [] });
 	expect(await measures(browser)).toBeNull();
@@ -328,7 +333,23 @@ test("the right column follows what a reader looks at, and the left column holds
 	await browser.run(["click", COUNT("hiddenParts")]);
 	await settledOn(browser, "Shop#Worker");
 	await selectedCard(browser, "Shop#Queue");
+
+	// From About, the count must bring the picture back even if its scope stays open.
+	await browser.run(["click", '[data-slot="model-page"] [data-choice="about"]']);
+	await browser.run([
+		"click",
+		'[data-slot="model-about"] [data-connection-id][data-to="Shop#Worker"]',
+	]);
+	await browser.run(["click", '[data-end-id="Shop#Worker"]']);
+	await browser.run(["click", COUNT("hiddenParts")]);
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="model-about"]') === null`),
+	).toBe(true);
+	await selectedCard(browser, "Shop#Queue");
 	await browser.run(["click", CLEAR]);
+
+	// The open module's line opens its About at the Interface section, which names that part.
+	expect(await followMeasures(browser)).toEqual(["Shop#Queue"]);
 
 	// Callers are selected where the picture draws them.
 	await browser.run(["click", COUNT("callers")]);

@@ -462,9 +462,11 @@ The runner accepts the package command or a focused selection from this inventor
 `canonical-model-viewer.test.ts` uses the browser adapter for current modules and retained readings.
 Its temporary Git repository supplies real checkpoints through the public API.
 It covers selection, changed or missing current inputs, source evidence, archive recovery, and unchanged retention records.
+It opens the selected module's folded definition in the right panel.
 `canonical-model-publication.test.ts` covers explicit destination choice, network failure, retry, and missing-history recovery through a real local Git remote.
 It shares the canonical reader interaction helpers with the viewing owner.
 `canonical-model-navigation.test.ts` covers recursive scope, exact reading addresses, independent panes, connection aggregation, and complete interfaces.
+It covers the description and code evidence for a single selected relationship.
 It also proves that a hidden metadata edit preserves the mounted scene while the visible revision advances.
 `canonical-model-selection.test.ts` covers pointer modifiers, keyboard selection, and immediate highlighting without layout or history changes.
 `canonical-model-gestures.test.ts` covers drag selection and Space/middle-button panning through the existing renderer bounds.
@@ -877,18 +879,18 @@ Existing canonical navigation, code, and reference owners cover containment and 
 Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
 `presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
-`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, and the door that opens at one click and lists its endpoints on hover.
+`reader-context.test.ts` covers the right panel's lists for the open module or the selection.
+It covers rows that open a flow or a walkthrough, and a door that lists its endpoints on hover and opens on click.
+Interface counts select parts on the module's diagram.
+The open module's Open in About button opens its About and focuses the Interface heading.
 It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader. Each further hop has its own grade, across the doors, and the trace goes with the pick.
-`reader-measures.test.ts` owns where to look across the model: a selection reads the code history with no button, and the `Measures` dialog lists every module, sorts it from a column head, walks it from the keyboard and selects a module on its picture. It also pages through the code findings.
+`reader-measures.test.ts` checks that a selected module shows its code history in the right panel.
+The `Measures` dialog lists every module, sorts by column, supports keyboard navigation, and selects a module on its diagram.
+The test also pages through code findings.
 `module-measures.test.ts` owns the one order of each measure and how a reading stands with history. `model-measures.test.tsx` owns the views of the dialog and what a table says in each state of a read. `model-code-evidence.test.tsx` owns the pager of the findings and the source lines round a finding's evidence.
 `relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
-
-`canonical-model-groups.test.ts` replaces the legacy board group browser fixture.
-It retains computed selection-ring assertions.
-It also covers membership across recursive scopes, hidden selection counts, and explicit Focus.
-The existing group UI owner continues to cover shared chips and controls used by retained replay.
 
 `canonical-model-attention.test.ts` replaces `semantic-board-exploring.test.ts`.
 It retains neighbor lighting, readable relationship labels at actual far zoom, and complete selected ink across shared routes.

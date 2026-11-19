@@ -1,5 +1,5 @@
 import { RiArrowRightSLine, type RemixiconComponentType } from "@remixicon/react";
-import { useCallback, useId, type CSSProperties, type JSX, type ReactNode } from "react";
+import { useCallback, useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { Button, cn } from "@archboard/ui-kit/components";
@@ -11,10 +11,27 @@ import { ROW_HEIGHT } from "#ui/shell/rules/tree-grid.ts";
 type ColumnSection = "changes" | "modules" | "flows" | "walkthroughs";
 
 /**
- * What sticks in a section stands under its head, which is one row high: the stuck rows of a tree
- * and the names of its sections read `--stuck-top`.
+ * A section after the first opens with a rule across the column's inset, as a section of the right
+ * panel does, so the column reads as a stack of blocks, each under its head.
  */
-const SECTION_BODY_STYLE = { "--stuck-top": `${ROW_HEIGHT}px` } as CSSProperties;
+const SECTION =
+	"flex flex-col not-first:mt-1 not-first:before:mx-2 not-first:before:mb-1 not-first:before:h-px not-first:before:bg-border";
+
+/** How high the strip under a section's head stands, such as the walk of a proposal's changes. */
+const STRIP_HEIGHT = 36;
+
+/** The strip keeps one height, which the rows that stick under it count on. */
+const STRIP_STYLE: CSSProperties = { height: STRIP_HEIGHT };
+
+/**
+ * What sticks in a section stands under its head, which is one row high, and under the strip that
+ * sticks with the head: the stuck rows of a tree read `--stuck-top`.
+ * @param strip Whether the head carries a strip.
+ * @returns The style of the section's body.
+ */
+function bodyStyle(strip: boolean): CSSProperties {
+	return { "--stuck-top": `${ROW_HEIGHT + (strip ? STRIP_HEIGHT : 0)}px` };
+}
 
 /**
  * Put a reader's Find in the bar over the left column while its pane has focus.
@@ -46,6 +63,18 @@ function ColumnLists(props: { readonly children: ReactNode }): JSX.Element | nul
 			)}
 		</>
 	);
+}
+
+/**
+ * Put a reader's code view in the code view's column while its pane has focus and the navigator
+ * lists files.
+ * @param props The code view.
+ * @param props.children The code view.
+ * @returns The code view in its column, or nothing while another pane has focus.
+ */
+function ColumnViewer(props: { readonly children: ReactNode }): JSX.Element | null {
+	const slot = usePaneChrome().column?.viewer ?? null;
+	return slot === null ? null : <>{createPortal(props.children, slot)}</>;
 }
 
 /**
@@ -118,7 +147,12 @@ function ColumnKey(props: {
 /** Inputs for a section of the list. */
 interface ColumnSectionProps {
 	readonly section: ColumnSection;
+	readonly icon: RemixiconComponentType;
 	readonly label: string;
+	/** What the head says after the count, such as how a proposal's changes stand. */
+	readonly summary?: ReactNode;
+	/** A strip that sticks with the head and stays while the section is folded. */
+	readonly strip?: ReactNode;
 	/** How many things it lists, which its head says. */
 	readonly count: number;
 	readonly folded: boolean;
@@ -130,36 +164,48 @@ interface ColumnSectionProps {
  * One section of the list: a head that stays at the top of the list while its rows scroll under
  * it, and folds them away, and the rows. The head's label stands at the column's inset and its fold
  * chevron at its end, so no chevron of the head stands over a row's chevron, and the rows keep the
- * room of the column.
+ * room of the column. A strip, such as the walk of a proposal's changes, sticks with the head and
+ * stays while the rows are folded away, so the reader keeps the controls of the list.
  * @param props The section, its head and its rows.
  * @returns The section.
  */
 function ColumnSectionList(props: ColumnSectionProps): JSX.Element {
-	const { section, label, count, folded, onFold } = props;
+	const { section, label, count, folded, onFold, strip } = props;
 	const body = useId();
 	const fold = useCallback((): void => onFold(section), [onFold, section]);
+	const style = useMemo(() => bodyStyle(strip !== undefined), [strip]);
 	return (
-		<section data-column-section={section} aria-label={label} className="flex flex-col">
-			<h2 className="bg-sidebar sticky top-0 z-[11] m-0">
-				<button
-					type="button"
-					aria-expanded={!folded}
-					aria-controls={folded ? undefined : body}
-					onClick={fold}
-					className="group/head focus-visible:ring-ring flex h-7 w-full items-center justify-between gap-2 pr-3 pl-2 outline-none focus-visible:ring-1 focus-visible:ring-inset"
-				>
-					<SectionLabel title={label} count={count} />
-					<RiArrowRightSLine
-						aria-hidden="true"
-						className={cn(
-							"text-muted-foreground group-hover/head:text-foreground size-4 shrink-0 transition-transform motion-reduce:transition-none",
-							!folded && "rotate-90",
-						)}
-					/>
-				</button>
-			</h2>
+		<section data-column-section={section} aria-label={label} className={SECTION}>
+			<div className="bg-sidebar sticky top-0 z-[11]">
+				<h2 className="m-0">
+					<button
+						type="button"
+						aria-expanded={!folded}
+						aria-controls={folded ? undefined : body}
+						onClick={fold}
+						className="group/head focus-visible:ring-ring flex h-7 w-full items-center justify-between gap-2 pr-3 pl-2 outline-none focus-visible:ring-1 focus-visible:ring-inset"
+					>
+						<span className="flex min-w-0 items-center gap-2">
+							<SectionLabel icon={props.icon} title={label} count={count} />
+							{props.summary}
+						</span>
+						<RiArrowRightSLine
+							aria-hidden="true"
+							className={cn(
+								"text-muted-foreground group-hover/head:text-foreground size-4 shrink-0 transition-transform motion-reduce:transition-none",
+								!folded && "rotate-90",
+							)}
+						/>
+					</button>
+				</h2>
+				{strip !== undefined && (
+					<div style={STRIP_STYLE} className="flex items-center px-2 pb-1">
+						{strip}
+					</div>
+				)}
+			</div>
 			{!folded && (
-				<div id={body} style={SECTION_BODY_STYLE} className="pb-2">
+				<div id={body} style={style} className="pb-2">
 					{props.children}
 				</div>
 			)}
@@ -171,6 +217,7 @@ function ColumnSectionList(props: ColumnSectionProps): JSX.Element {
 const ModelColumn = {
 	Find: ColumnFind,
 	Lists: ColumnLists,
+	Viewer: ColumnViewer,
 	Keys: ColumnKeys,
 	Key: ColumnKey,
 	Sections: ColumnSections,

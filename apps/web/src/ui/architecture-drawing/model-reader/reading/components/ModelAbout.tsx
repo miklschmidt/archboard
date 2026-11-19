@@ -1,22 +1,22 @@
 // About: every long list of a reading, on a page over the picture so that the picture keeps its
-// camera. The page says which subject it describes: the open scope, or what is selected.
+// camera. It describes the open scope. The right panel stays beside it, with the page's outline at
+// its top, then what is selected, and what can be done at its foot.
 
 import {
 	RiArrowLeftRightLine,
 	RiBox3Line,
+	RiBracesLine,
 	RiFlowChart,
 	RiGitBranchLine,
-	RiGroupLine,
 	RiInputMethodLine,
 	RiListOrdered2,
 	RiMapPinLine,
 	RiPlayCircleLine,
 } from "@remixicon/react";
 import { useMemo, type JSX, type ReactNode } from "react";
-import { ModelAboutSelection } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutSelection.tsx";
+import { CodeExports } from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
 import { ModelAboutWalkthroughs } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutWalkthroughs.tsx";
 import {
-	AboutSubject,
 	aboutSection,
 	moduleHead,
 	ModelAboutFrame,
@@ -25,10 +25,8 @@ import {
 	type AboutPageSection,
 	type AboutPlace,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
-import { ModelCodeWarnings } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelConnectionTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnectionTable.tsx";
 import { ModelFlowDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowDetails.tsx";
-import { ModelGroups } from "#ui/architecture-drawing/model-reader/reading/components/ModelGroups.tsx";
 import { ModelInterface } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterface.tsx";
 import { ModelModuleList } from "#ui/architecture-drawing/model-reader/reading/components/ModelModuleList.tsx";
 import {
@@ -38,73 +36,53 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import { ModelStateTimeline } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateTimeline.tsx";
-import type { useModelCodeFindings } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
+import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import { useStateTimeline } from "#ui/architecture-drawing/model-reader/reading/hooks/use-state-timeline.ts";
 import { modulePlaces } from "#ui/architecture-drawing/model-reader/reading/rules/module-places.ts";
 import type { StateTimeline } from "#ui/architecture-drawing/model-reader/reading/rules/state-timeline.ts";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
 /** Inputs for the page. */
-interface ModelAboutProps extends ModelSelectionDetailsProps {
-	readonly subject: Reader["aboutSubject"];
-	readonly onSubject: Reader["onAbout"];
+interface ModelAboutProps extends Pick<
+	ModelSelectionDetailsProps,
+	"vault" | "paneId" | "model" | "scope" | "projection" | "selection" | "onCodeTargetNotice"
+> {
+	/** The code pass that read the reading on screen, or null when none did. */
+	readonly code: ModelCodeReading | null;
 	/** What the reading's state says of itself, which the first surface leaves out. */
 	readonly overview: ReactNode;
-	readonly code: ReturnType<typeof useModelCodeFindings>["reading"];
-	/** Select a subject and show it on the diagram, or let go for a warning about the model. */
+	/** Select a subject and show it on the diagram. */
 	readonly onShow: (id: string | null) => void;
 	/** What the picture draws each subject with, for the marks of the lists. */
 	readonly appearances: Parameters<typeof kindLookOf>[1];
-	/** What can be done with the selection. */
-	readonly children: ReactNode;
 	/** The walkthroughs of the open scope. */
 	readonly walkthroughs: readonly ModelSelectionDetailsProps["model"]["walkthroughs"][number][];
 	readonly tree: Reader["tree"];
 	readonly place: AboutPlace;
-	readonly onReveal: () => void;
 	readonly reducedMotion: boolean;
 }
 
 /**
  * The page.
- * @param props The reading, its selection and which of the two the page describes.
+ * @param props The reading of the open scope.
  * @returns The page.
  */
 function ModelAbout(props: ModelAboutProps): JSX.Element {
-	const { subject, model, selection, onShow } = props;
+	const { model } = props;
 	const timeline = useStateTimeline(props.vault, model);
 	const look = useMemo(
 		() => kindLookOf(model.policy, props.appearances),
 		[model.policy, props.appearances],
 	);
 	const state = timeline.entries.find((entry) => entry.state.id === model.selectedState?.id);
-	const tools = (
-		<>
-			<AboutSubject
-				subject={subject}
-				onSubject={props.onSubject}
-				selecting={selection.ids.size > 0}
-			/>
-			<ModelCodeWarnings reading={props.code} onSelect={onShow} />
-			{props.children}
-		</>
-	);
 	return (
+		// The page lies on the picture's own sheet, with its four rounded corners.
 		<article
 			data-slot="model-about"
-			data-subject={subject}
-			className="bg-sidebar absolute inset-0 z-20 flex min-h-0 flex-col"
+			className="picture-corners bg-background absolute inset-0 z-20 flex min-h-0 flex-col"
 		>
-			{/* The page is a sheet in the chrome, as the picture is: a strip of chrome under it and
-			    beside it, and four rounded corners. */}
-			<div className="picture-corners bg-background relative mr-2 mb-2 flex min-h-0 flex-1 flex-col in-data-presenting:m-0">
-				{subject === "selection" ? (
-					<ModelAboutSelection {...props} look={look} state={state} tools={tools} />
-				) : (
-					<ScopePage {...props} look={look} state={state} tools={tools} timeline={timeline} />
-				)}
-			</div>
+			<ScopePage {...props} look={look} state={state} timeline={timeline} />
 		</article>
 	);
 }
@@ -113,7 +91,6 @@ function ModelAbout(props: ModelAboutProps): JSX.Element {
 interface ScopePageProps extends ModelAboutProps {
 	readonly look: ReturnType<typeof kindLookOf>;
 	readonly state: StateTimeline["entries"][number] | undefined;
-	readonly tools: ReactNode;
 	readonly timeline: StateTimeline;
 }
 
@@ -205,6 +182,30 @@ function interfaceSection(props: ScopePageProps): AboutPageSection | null {
 }
 
 /**
+ * What the code of the open module exports, by kind, from the code pass on screen.
+ * @param props The page's inputs.
+ * @returns The section, or null for a scope that is no module bound to code.
+ */
+function exportsSection(props: ScopePageProps): AboutPageSection | null {
+	const { scope } = props;
+	if (scope === null || props.projection.flow !== null) return null;
+	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
+	if (module?.binding === undefined) return null;
+	return aboutSection(
+		"exports",
+		"Code exports",
+		RiBracesLine,
+		undefined,
+		<CodeExports
+			vault={props.vault}
+			module={scope}
+			reading={props.code}
+			onNotice={props.onCodeTargetNotice}
+		/>,
+	);
+}
+
+/**
  * Each long list of the open scope. A section with nothing to show is absent.
  * @param props The page's inputs.
  * @returns The sections, in the order a reader asks.
@@ -259,13 +260,7 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 			/>,
 		),
 		interfaceSection(props),
-		aboutSection(
-			"groups",
-			"Groups",
-			RiGroupLine,
-			Object.keys(model.policy.groups).length,
-			<ModelGroups model={model} selection={selection} />,
-		),
+		exportsSection(props),
 		aboutSection(
 			"states",
 			"States",
@@ -353,7 +348,6 @@ function ScopePage(props: ScopePageProps): JSX.Element {
 			head={scopeHead(props)}
 			look={look}
 			state={state}
-			tools={props.tools}
 			sections={sections}
 			place={props.place}
 			reducedMotion={props.reducedMotion}

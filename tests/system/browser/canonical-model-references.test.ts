@@ -60,14 +60,13 @@ async function selectGateway(browser: AgentBrowserSession): Promise<void> {
 				stage: string | null;
 				modules: string[];
 			}>(
-				`({ present: document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')) })`,
+				`({ present: document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')) })`,
 			),
 		(value) => value.present,
 		"the source module",
 		WAIT,
 	);
 	await pick(browser, "Shop#Gateway");
-	await openAbout(browser, "selection");
 }
 
 async function followGateway(browser: AgentBrowserSession): Promise<void> {
@@ -101,18 +100,16 @@ async function followSubject(
 	);
 	await browser.run(["click", button]);
 	await pollUntil(
-		async () => {
-			await openAbout(browser, "selection");
-			return browser.eval<{
+		() =>
+			browser.eval<{
 				found: boolean;
 				url: string;
 				error: string | null;
 				steps: unknown[];
 				selected: unknown[];
 			}>(
-				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
-			);
-		},
+				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
+			),
 		(value) => value.found,
 		"the exact foreign subject",
 		WAIT,
@@ -335,7 +332,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		[
 			1,
 			"Ledger#Dispatch",
-			'[data-slot="model-connection-details"] [data-relationship-id="Ledger#Dispatch"]',
+			'[data-slot="model-panel"] [data-slot="model-connection-details"] [data-slot="model-connection-ends"]',
 		],
 		[
 			2,
@@ -353,12 +350,13 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		expect(
 			await browser.eval<string | null>(`new URLSearchParams(location.search).get('subjectA')`),
 		).toBe(subject);
-		if (index === 1)
-			expect(
-				await browser.eval<boolean>(
-					`document.querySelector('[data-slot="model-connection-details"] [data-relationship-id="Ledger#Audit"]') === null`,
-				),
-			).toBe(true);
+		if (index === 1) {
+			const details = await browser.eval<string>(
+				`document.querySelector('[data-slot="model-panel"] [data-slot="model-connection-details"]')?.textContent ?? ""`,
+			);
+			expect(details).toContain("Dispatch request");
+			expect(details).not.toContain("Audit dispatch");
+		}
 		if (index === 2) {
 			await browser.run([
 				"click",
