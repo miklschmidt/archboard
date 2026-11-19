@@ -45,7 +45,7 @@ pub enum Heading {
 }
 
 /// How much of a picture shows at a share of its leaving.
-pub fn visible_at(progress: f64) -> f64 {
+pub(crate) fn visible_at(progress: f64) -> f64 {
     1.0 - LEAVE_EASING.at(progress)
 }
 
@@ -54,7 +54,7 @@ pub fn visible_at(progress: f64) -> f64 {
 /// Progress is a share of the whole leaving. The picture ends invisible, and
 /// nothing is answered once it is as good as gone. The definitions it refers to
 /// are the scene's own.
-pub fn departure(scene: &Scene, progress: f64) -> Vec<Item> {
+pub(crate) fn departure(scene: &Scene, progress: f64) -> Vec<Item> {
     departing(scene.body.clone(), (scene.width, scene.height), progress)
 }
 

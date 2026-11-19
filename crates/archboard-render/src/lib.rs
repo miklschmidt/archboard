@@ -17,13 +17,13 @@ mod architecture;
 mod entries;
 mod flows;
 mod memo;
-pub mod request;
+mod request;
 mod steps;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 use archboard_layout::Solver;
-use archboard_scene::paint::design::OWN_ICONS;
+use archboard_scene::paint::design::own_icons;
 use archboard_scene::paint::paint;
 use archboard_scene::request::{DocumentRequest, PageRequest, PaintRequest};
 use archboard_scene::scene::{PaintedDocument, Painting};
@@ -31,9 +31,9 @@ use archboard_svg::{AppliedAppearance, PictureLegend};
 use serde::Serialize;
 use ts_rs::TS;
 
-pub use appearance::drill_direction;
 use memo::Layouts;
-use request::{Grammar, RenderRequest};
+use request::Grammar;
+pub use request::RenderRequest;
 
 /// What a render asks of the place it runs in: the layout's solves, and the
 /// path data of the icons a picture draws.
@@ -122,7 +122,10 @@ fn page_request(request: &RenderRequest) -> PageRequest {
 
 /// The icons a picture can draw: those named, and the renderer's own.
 fn icons_of<H: Host>(host: &H, named: &[&str]) -> Result<BTreeMap<String, Vec<String>>, String> {
-    let names: BTreeSet<&str> = OWN_ICONS.into_iter().chain(named.iter().copied()).collect();
+    let names: BTreeSet<&str> = own_icons()
+        .into_iter()
+        .chain(named.iter().copied())
+        .collect();
     host.icons(&names.into_iter().collect::<Vec<_>>())
 }
 
@@ -133,8 +136,7 @@ fn icons_of<H: Host>(host: &H, named: &[&str]) -> Result<BTreeMap<String, Vec<St
 /// A document the SVG painter refuses (`archboard_svg::document`).
 fn drawn(request: &PaintRequest) -> Result<Drawn, String> {
     let scene = paint(request);
-    let svg = archboard_svg::document(&scene, &request.document, &request.icons)
-        .map_err(|error| error.0)?;
+    let svg = archboard_svg::document(&scene, &request.document, &request.icons)?;
     let (appearances, legend) = archboard_svg::appearances(&scene.body, &request.icons);
     let width = scene.width;
     let height = scene.height;

@@ -6,7 +6,7 @@
 use serde::{Deserialize, Deserializer};
 
 /// One node of the variant: the part a participant or a message box stands for.
-pub use archboard_layout::Node;
+pub(crate) use archboard_layout::Node;
 pub use archboard_scene::request::MessageKind;
 
 /// One message: who sends it, who receives it, and what it is.

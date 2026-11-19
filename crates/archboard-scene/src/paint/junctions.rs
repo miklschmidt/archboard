@@ -5,9 +5,9 @@
 
 use std::collections::HashMap;
 
-use crate::drawing::Edge;
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord, vertices_of};
 use crate::js;
+use crate::paint::Edge;
 use crate::paint::build::{Items, concat, grouped, point, shape};
 use crate::paint::styles::stroke_width;
 use crate::scene::{Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke};

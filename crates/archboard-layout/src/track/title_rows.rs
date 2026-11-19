@@ -6,10 +6,10 @@
 //! lines, so it stands shorter, and its band shrinks with it before the bands
 //! are spaced.
 
-use crate::constants::ARCHITECTURE_HEADER_PADDING;
 use crate::ecma::{max, min};
 use crate::track::chains::{ChainId, Kind, LANE, Track};
 use crate::track::scene::{ItemId, Placement, Set, TitleStep};
+use archboard_scene::paint::design::header_words_width;
 
 /// How far a title row's words may reach in from its left edge.
 fn room_for(scene: &Placement, id: &str, lanes: &[(usize, f64)]) -> f64 {
@@ -33,9 +33,7 @@ fn room_for(scene: &Placement, id: &str, lanes: &[(usize, f64)]) -> f64 {
         .chain(items.map(|item| scene.item(item).bx.x))
         .filter(|&x| x > left && x < right)
         .collect();
-    min(std::iter::once(right - ARCHITECTURE_HEADER_PADDING)
-        .chain(blockers.iter().map(|x| x - LANE)))
-        - left
+    min(std::iter::once(header_words_width(right)).chain(blockers.iter().map(|x| x - LANE))) - left
 }
 
 /// The widest size of a title row whose words reach no further than some room.

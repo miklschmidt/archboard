@@ -31,7 +31,7 @@ const SHELL_VIEWPORT: Size = { width: 1920, height: 1080 };
  * The navigator column: the brand bar at its top, the keys of History and Measures, one list of
  * modules, flows and walkthroughs, and the agent dock at its foot. It is a sidebar of the usual
  * width, because History and Measures open in dialogs of their own and a list needs no more. The
- * core keeps the same number (`NAVIGATOR_WIDTH` in `crates/archboard-scene/src/paint/design.rs`).
+ * core keeps the same number (`NAVIGATOR_WIDTH` in `crates/archboard-layout/src/constants.rs`).
  */
 const NAVIGATOR_WIDTH = 280;
 

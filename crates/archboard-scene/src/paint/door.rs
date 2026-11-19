@@ -4,17 +4,14 @@
 //! stands in a card's tone. Its icon shows its kind. The arrow at its right end says where the door lies in the tree from the
 //! open module. This is the one place a door's look lives.
 
-use crate::drawing::{DoorWay, Node, TextRun, Toggle};
+use crate::drawing::{DoorWay, TextRun, Toggle};
 use crate::geometry::{Point, Rect, round_coord};
-use crate::measure::{DOOR_FAR, tab_runs};
+use crate::measure::door_far_runs;
 use crate::paint::Ctx;
+use crate::paint::Node;
 use crate::paint::build::{Items, concat, grouped, lines, shape};
 use crate::paint::cards::halo;
 use crate::paint::colour::translucent;
-use crate::paint::design::{
-    DOOR_ARROW_INSET, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON, DOOR_PADDING, DOOR_RADIUS,
-    ICON_CHIP_SIZE, TOGGLE_ROOM,
-};
 use crate::paint::far_card::{Part, words_in};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
 use crate::paint::finish::{Finish, finish_of};
@@ -30,6 +27,10 @@ use crate::request::{NodeAppearance, PaletteColor, Standing};
 use crate::scene::{
     Cap, Colour, GradientId, Group, Paint, PathStep, Pointer, Purpose, Role, Shape, Stroke,
     Transform,
+};
+use crate::sizes::{
+    DOOR_ARROW_INSET, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON, DOOR_PADDING, DOOR_RADIUS,
+    ICON_CHIP_SIZE, TOGGLE_ROOM,
 };
 
 /// How heavy a door's rim is.
@@ -228,7 +229,7 @@ pub(super) fn paint_door(
     } else {
         finish.ink.clone()
     };
-    let far = tab_runs(DOOR_FAR, &part.node.name, None);
+    let far = door_far_runs(&part.node.name);
     let drawn = if removed {
         slab_shadow(rect, DOOR_RADIUS, Lift::Card, palette, standing)
     } else {

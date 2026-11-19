@@ -6,14 +6,11 @@
 use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
-use crate::drawing::Node;
 use crate::geometry::{Point, Rect};
 use crate::js;
+use crate::paint::Node;
 use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
-use crate::paint::design::{
-    CARD_THICKNESS, JUMP_FONT, JUMP_TEXT_SIZE, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
-};
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{Polygon, inset, polygon_path};
 use crate::paint::shadow::{SHADOW_REACH, polygon_shadow};
@@ -24,6 +21,9 @@ use crate::request::{FlowchartShape, JumpEnd, PaletteColor, ShapedCard, Standing
 use crate::scene::{
     Colour, Definition, Gradient, GradientForm, GradientId, Paint, Purpose, Role, Shape, Stop,
     SubjectKind, Text, Token,
+};
+use crate::sizes::{
+    CARD_THICKNESS, JUMP_FONT, JUMP_TEXT_SIZE, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
 };
 
 const CORNER: f64 = 5.0;

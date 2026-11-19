@@ -6,7 +6,6 @@
 use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
-use archboard_scene::measure;
 use archboard_scene::request::WordLine;
 
 use crate::content::{Flow, Message, MessageKind, messages_of};
@@ -68,7 +67,7 @@ fn minimum_note_width(note: Option<&str>) -> f64 {
     let Some(note) = note.filter(|note| has_words(Some(note))) else {
         return 0.0;
     };
-    let lines = measure::note_lines(
+    let lines = archboard_scene::note_lines(
         note,
         STEP_NOTE_MIN_WIDTH - STEP_NOTE_PADDING_X * 2.0,
         NOTE_SIZE,
@@ -130,7 +129,7 @@ pub(super) fn place_note(
         corridor_width,
     ]);
     let line_height = NOTE_SIZE * TEXT_LINE_HEIGHT;
-    let lines = measure::note_lines(
+    let lines = archboard_scene::note_lines(
         note,
         wrap_width - STEP_NOTE_PADDING_X * 2.0,
         NOTE_SIZE,
@@ -195,7 +194,7 @@ pub(super) fn words_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds)
         UNBOUNDED
     };
     MessageWords {
-        lines: measure::message_lines(
+        lines: archboard_scene::message_lines(
             &step.drawn_label(),
             limit,
             PILL_TEXT_SIZE,

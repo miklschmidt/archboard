@@ -7,16 +7,16 @@ use crate::geometry::Rect;
 use crate::js;
 use crate::paint::build::{Items, concat, shape};
 use crate::paint::colour::{Inked, Share, ToneStep, inked_over, light_dark, mixed, tinted};
-use crate::paint::design::{
-    CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
-    SLAB_RADIUS,
-};
 use crate::paint::icons::glyph_group;
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, SlabLook, ghost_face, slab, slab_shadow};
 use crate::paint::tray::TrayLook;
 use crate::request::{NodeAppearance, PaletteColor, Standing};
 use crate::scene::{Colour, Paint, Purpose, Shape};
+use crate::sizes::{
+    CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
+    SLAB_RADIUS,
+};
 
 /// One named palette colour.
 pub(super) fn semantic_ink(color: Option<PaletteColor>) -> Option<Colour> {

@@ -182,7 +182,7 @@ fn feed<H: Hasher>(colour: &Colour, state: &mut H) {
 /// The tokens of one theme, what its `light-dark()` colours choose, and each
 /// colour it has worked out, by the hash of the colour.
 #[derive(Clone, Debug)]
-pub struct Palette {
+pub(crate) struct Palette {
     tokens: HashMap<&'static str, Oklch>,
     dark: bool,
     known: RefCell<HashMap<u64, Rgba>>,
@@ -195,7 +195,7 @@ impl Palette {
     /// # Panics
     ///
     /// When `theme.css` no longer has its dark rule.
-    pub fn of(theme: Theme) -> Palette {
+    pub(crate) fn of(theme: Theme) -> Palette {
         let (light, dark) = THEME_CSS
             .split_once(DARK_RULE)
             .expect("theme.css has a dark rule");
@@ -281,7 +281,7 @@ impl Palette {
         clippy::cast_possible_truncation,
         reason = "a painter's channels are f32"
     )]
-    pub fn colour(&self, colour: &Colour, alpha: f64) -> Color {
+    pub(crate) fn colour(&self, colour: &Colour, alpha: f64) -> Color {
         let mut key = DefaultHasher::new();
         feed(colour, &mut key);
         let [red, green, blue, own] = *self

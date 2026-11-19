@@ -5,16 +5,16 @@ use crate::geometry::{Point, Rect, round_coord};
 use crate::js;
 use crate::paint::build::{Items, grouped, lines, shape};
 use crate::paint::colour::{light_dark, translucent};
-use crate::paint::design::CARD_RADIUS;
 use crate::paint::palette::Palette;
 use crate::paint::polygon::{inset, polygon_path, translated};
 use crate::scene::{
     Colour, Definition, Gradient, GradientForm, GradientId, Group, Pointer, Purpose, Role, Shape,
     Stop,
 };
+use crate::sizes::CARD_RADIUS;
 
 /// The farthest a card's shadow reaches below its foot.
-pub const SHADOW_REACH: f64 = 12.0;
+pub(super) const SHADOW_REACH: f64 = 12.0;
 /// How far a shadow spills past a block's sides, per unit of its reach below.
 const SPILL: f64 = 0.5;
 /// Shared gradient samples.

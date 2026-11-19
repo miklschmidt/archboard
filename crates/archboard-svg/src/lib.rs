@@ -6,7 +6,7 @@
 //! Its colours are the page's tokens. A document that stands alone carries the
 //! value of every token it names on its root, for one theme or for both.
 
-mod colour;
+mod css;
 mod definitions;
 mod glyphs;
 mod groups;
@@ -25,10 +25,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
-use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
+use archboard_scene::paint::design::far_line_widths;
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
-use colour::css;
+use css::css;
 use definitions::{Names, write_definitions};
 use glyphs::Glyphs;
 use groups::{
@@ -39,16 +39,6 @@ use pulse::PULSE_CLASS;
 use shapes::HALO_CLASS;
 use write::Writer;
 use xml::{Attributes, coord, empty, escape_xml};
-
-/// Why a document could not be written.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DocumentError(pub String);
-
-impl std::fmt::Display for DocumentError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
 
 const FAR_VIEW_CLASS: &str = "is-far";
 /// What selects a relationship's group of lines.
@@ -64,11 +54,11 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         format!("opacity:0;visibility:hidden;transition:{fade},visibility 0s linear {ms}ms");
     let movement = format!("transition:transform {ms}ms {SWAP_EASE}");
     let far = format!(".{FAR_VIEW_CLASS}");
-    let mut rules: Vec<String> = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS]
+    let mut rules: Vec<String> = far_line_widths()
         .iter()
-        .map(|width| {
-            let near = archboard_scene::js::number(*width);
-            let wide = archboard_scene::js::number(width * FAR_SCALE);
+        .map(|&(near, wide)| {
+            let near = archboard_scene::js::number(near);
+            let wide = archboard_scene::js::number(wide);
             format!("{far} {LINE_GROUP}>path[stroke-width=\"{near}\"]{{stroke-width:{wide}px}}")
         })
         .collect();
@@ -152,12 +142,10 @@ fn token_value(
     document: &DocumentRequest,
     theme: StandaloneTheme,
     name: &str,
-) -> Result<String, DocumentError> {
+) -> Result<String, String> {
     let colors = document.theme_colors.as_ref().ok_or_else(|| {
-        DocumentError(
-            "This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme."
-                .to_owned(),
-        )
+        "This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme."
+            .to_owned()
     })?;
     let color = |theme: StandaloneTheme| {
         let (table, word) = match theme {
@@ -165,7 +153,7 @@ fn token_value(
             _ => (&colors.light, "light"),
         };
         table.get(name).cloned().ok_or_else(|| {
-            DocumentError(format!("Missing {word} theme color {name}. Define it in packages/renderer/assets/theme.css."))
+            format!("Missing {word} theme color {name}. Define it in packages/renderer/assets/theme.css.")
         })
     };
     if theme != StandaloneTheme::Auto {
@@ -186,7 +174,7 @@ fn standing_alone(
     document: &DocumentRequest,
     theme: StandaloneTheme,
     painted: &str,
-) -> Result<String, DocumentError> {
+) -> Result<String, String> {
     let names = properties_of(painted);
     let scheme = match theme {
         StandaloneTheme::Auto => "light dark",
@@ -210,7 +198,7 @@ pub fn document(
     scene: &Scene,
     document: &DocumentRequest,
     icons: &BTreeMap<String, Vec<String>>,
-) -> Result<String, DocumentError> {
+) -> Result<String, String> {
     let names = Names::of(scene);
     let writer = Writer {
         names: &names,

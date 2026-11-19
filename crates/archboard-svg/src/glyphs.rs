@@ -10,7 +10,7 @@ use archboard_scene::js;
 use archboard_scene::scene::{Item, Text};
 use archboard_text::{Face, Segment, outline};
 
-use crate::colour::css;
+use crate::css::css;
 use crate::xml::{Attributes, close, empty, escape_xml, open};
 
 /// The glyphs some items draw, each by its face and its id in the face.

@@ -15,13 +15,13 @@ use crate::geometry::{Point, round_coord};
 use crate::js;
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, point, text};
-use crate::paint::design::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
 use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
 use crate::paint::legend::symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
 use crate::request::{ExportFrame, LegendLayout, Standing};
 use crate::scene::{Atlas, Colour, Group, Item, Role, Slot, Text, Transform};
+use crate::sizes::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
 
 const WORD_GAP: f64 = 8.0;
 const COUNT_GAP: f64 = 6.0;

@@ -7,10 +7,6 @@ use crate::geometry::{Curve, Point, Rect, Segment, curve_through, round_coord};
 use crate::js;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, concat, group, grouped, lines, point, shape, text};
-use crate::paint::design::{
-    MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
-};
 use crate::paint::palette::Palette;
 use crate::paint::relay::PULSE_PACE;
 use crate::paint::slab::{boxed, ghost_face, slab, slab_seat};
@@ -20,10 +16,14 @@ use crate::paint::styles::{
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
-use crate::scene::traffic::PULSE_LENGTH;
+use crate::scene::traffic::{pulse_span, with_light_room};
 use crate::scene::{
     Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke,
     SubjectKind, TrafficMark,
+};
+use crate::sizes::{
+    MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
+    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
 };
 
 const STEP_WEIGHT: Emphasis = Emphasis::Normal;
@@ -183,7 +183,8 @@ pub(super) struct Crossing {
 
 /// The clock for a drawing whose turns cross lines of some lengths, in order.
 pub(super) fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
-    let distance = lengths.iter().fold(0.0, |sum, length| sum + length) + PULSE_LENGTH;
+    let distance =
+        lengths.iter().fold(0.0, |sum, length| sum + length) + with_light_room(pulse_span());
     let speed = js::js_max(
         clock.traffic_speed * PULSE_PACE,
         distance / (clock.cycle_cap_ms / 1000.0),
