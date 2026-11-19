@@ -2,7 +2,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type ReactNode } from "react";
 import { SemanticPaneContextSchema } from "@archboard/model/pane-context";
-import { ExplanationActionRequestSchema } from "@archboard/workbench/browser-contract";
+import { explanationActionRequestSchema } from "@archboard/workbench/browser-contract";
 import { SHOP, shopReading } from "#tests/ui/support/model-reader/scene.ts";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
@@ -79,7 +79,7 @@ test("pane labels survive the wire without entering an explanation request, and 
 	expect(invoke).toHaveBeenCalledTimes(1);
 	const invocation = invoke.mock.calls[0];
 	expect(
-		ExplanationActionRequestSchema.safeParse({
+		explanationActionRequestSchema().safeParse({
 			type: "invoke",
 			tabSessionId: "tab",
 			...invocation?.[1],

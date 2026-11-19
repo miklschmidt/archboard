@@ -21,10 +21,19 @@ function formatHostForUrl(host: string): string {
 
 /**
  * The URL this server is reachable at.
+ * @param scheme The protocol: `http` for the API, `ws` for the panes' socket.
  * @returns The base URL.
  */
-function serverUrl(): string {
-	return `http://${formatHostForUrl(HOST)}:${PORT}`;
+function serverUrl(scheme: "http" | "ws" = "http"): string {
+	return `${scheme}://${formatHostForUrl(HOST)}:${PORT}`;
+}
+
+/**
+ * Where this server listens.
+ * @returns The host and the port it binds.
+ */
+function listenAddress(): { readonly host: string; readonly port: number } {
+	return { host: HOST, port: PORT };
 }
 
 /**
@@ -57,15 +66,14 @@ function canConnect(host: string, port: number): Promise<boolean> {
 }
 
 /**
- * Which loopback address, if any, already has a listener on the port. Both
+ * Which loopback address, if any, already has a listener on this server's port. Both
  * are probed so an IPv4 and an IPv6 server cannot split state between them.
- * @param port The port.
  * @returns The listening loopback address, or null.
  */
-async function findExistingLoopbackListener(port: number): Promise<string | null> {
+async function findExistingLoopbackListener(): Promise<string | null> {
 	for (const host of LOOPBACK_ADDRESSES) {
 		// oxlint-disable-next-line no-await-in-loop -- the first listener found answers; probing both at once would open a second socket for nothing
-		if (await canConnect(host, port)) {
+		if (await canConnect(host, PORT)) {
 			return host;
 		}
 	}
@@ -104,8 +112,7 @@ export {
 	serverUrl,
 	findExistingLoopbackListener,
 	formatHostForUrl,
-	HOST,
 	isLoopbackGuardedHost,
+	listenAddress,
 	logHttpServerError,
-	PORT,
 };

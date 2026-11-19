@@ -30,14 +30,15 @@ import { parsePaneKey } from "@archboard/model/legacy-address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
-	semanticPaneContextFor,
+	arrivedOnModel,
+	movePaneVault,
 	paneKeyOfClient,
-	paneVaults,
+	panesWithVaults,
+	semanticPaneContextFor,
 	sendKeylessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
-import { broadcastEverywhere, movePaneVault } from "#server/panes/connections/state/pane-vaults.ts";
-import { arrivedOnModel } from "#server/panes/connections/routes/pane-routes.ts";
+import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
 import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import type { z } from "zod";
@@ -165,7 +166,7 @@ function followRegistry(): void {
 	followedRegistry = registryText();
 	registerReadableVaults();
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
-	for (const [clientId, vault] of paneVaults) {
+	for (const [clientId, vault] of panesWithVaults()) {
 		const { home, repository } = placeOfVault(vault);
 		if (home === vault) {
 			sendKeylessToPane(clientId, { type: "pane_place", vault, repository });

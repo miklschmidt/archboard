@@ -4,7 +4,7 @@ import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messa
 import type { z } from "zod";
 import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
-	SHOWN_CONVERSATION_ROUTE,
+	shownConversationPath,
 	type ShownConversationReply,
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
@@ -110,7 +110,7 @@ function showConversation(
 	vault: string,
 	request: ShownConversationRequest,
 ): Promise<ShownConversationReply> {
-	return requestJson(inVault(SHOWN_CONVERSATION_ROUTE, vault), {
+	return requestJson(inVault(shownConversationPath(), vault), {
 		method: "POST",
 		payload: request,
 	});

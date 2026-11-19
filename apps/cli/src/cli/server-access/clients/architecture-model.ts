@@ -5,8 +5,8 @@ import {
 	ArchitectureMigrationRequestSchema,
 } from "@archboard/model/contract";
 import {
-	ExplanationActionRequestSchema,
-	ExplanationActionResultSchema,
+	explanationActionResultSchema,
+	type ExplanationActionRequest,
 } from "@archboard/workbench/browser-contract";
 import type { z } from "zod";
 import type { readArchitectureModel } from "@archboard/model/store-read";
@@ -288,24 +288,24 @@ export { renderArchitectureFlowOnServer };
  * @param input The shared action request.
  * @returns Its temporary answer or refusal.
  */
-function explainArchitectureOnServer(input: z.infer<typeof ExplanationActionRequestSchema>) {
+function explainArchitectureOnServer(input: ExplanationActionRequest) {
 	const { type, ...body } = input;
 	const base = "/api/architecture/explanations";
 	if (type === "invoke")
-		return architectureResult(ExplanationActionResultSchema, base, jsonPost(body));
+		return architectureResult(explanationActionResultSchema(), base, jsonPost(body));
 	if (input.type === "latest")
 		return architectureResult(
-			ExplanationActionResultSchema,
+			explanationActionResultSchema(),
 			`${base}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
 		);
 	const path = `${base}/${encodeURIComponent(input.actionId)}`;
 	return type === "read"
 		? architectureResult(
-				ExplanationActionResultSchema,
+				explanationActionResultSchema(),
 				`${path}?${new URLSearchParams({ tabSessionId: input.tabSessionId })}`,
 			)
 		: architectureResult(
-				ExplanationActionResultSchema,
+				explanationActionResultSchema(),
 				`${path}/${type}`,
 				jsonPost({ tabSessionId: input.tabSessionId }),
 			);

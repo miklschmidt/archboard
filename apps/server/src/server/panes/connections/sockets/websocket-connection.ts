@@ -1,6 +1,5 @@
 import { agentActivity } from "#server/wiring/server-owners.ts";
 import type { IncomingMessage } from "http";
-import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
 import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
@@ -9,11 +8,9 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages
 import { parsePaneKey } from "@archboard/model/legacy-address";
 import {
 	createServerCodexBrowserSocketSend,
-	type VoiceAgentBrowserPort,
 	parseTabSessionId,
-	type TabSessionId,
 } from "@archboard/codex-realtime-voice/server";
-import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
+import { handleCodexBrowserMessage } from "@archboard/workbench/server";
 
 import {
 	isArchitectureFeed,
@@ -22,67 +19,15 @@ import {
 import { frameText } from "#server/panes/connections/sockets/frame-text.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
 import {
-	acceptedSockets,
+	admitSocket,
 	paneKeyForNewPane,
-	clientIds,
-	clients,
-	codexSocketInstances,
-	currentSocketsByClient,
-	latestSocketAcceptanceByClient,
-	notePaneClosed,
-	paneKeys,
-	paneVaults,
-	panes,
-	socketVaults,
+	paneVaultOf,
+	registerSocket,
+	trackAcceptedSocket,
+	type RegisteredSocket,
 } from "@archboard/workbench/panes";
-import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
-import { placeOfVault, repositoryOfVault } from "@archboard/workspace/repository-listing";
-
-/**
- * Retire the client-id keyed state of a socket that owned its pane identity:
- * its registration and any layout request waiting on it.
- * @param closingId The pane's client id.
- */
-function retirePaneOwner(closingId: string): void {
-	currentSocketsByClient.delete(closingId);
-	forgetTabSession(closingId);
-	panes.delete(closingId);
-	notePaneClosed(closingId);
-}
-
-/**
- * Forget a socket that has closed. Exact Codex cleanup is safe for a replaced
- * socket. Client-id keyed server state is not: a replacement may already own
- * that pane identity, so only the socket that owns it retires it.
- * @param ws The closed socket.
- * @param acceptanceToken The token this socket's acceptance was stamped with.
- */
-function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void {
-	clients.delete(ws);
-	socketVaults.delete(ws);
-	const closingId = clientIds.get(ws);
-	clientIds.delete(ws);
-	const closingCodexInstance = codexSocketInstances.get(ws);
-	codexSocketInstances.delete(ws);
-	if (closingId === undefined) {
-		logger.info("WebSocket connection closed");
-		return;
-	}
-	if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken) {
-		latestSocketAcceptanceByClient.delete(closingId);
-	}
-	if (closingCodexInstance !== undefined) {
-		void codexWiring.codex
-			.closeBrowser?.(closingCodexInstance, closingId)
-			.catch((error) => logger.error("Codex browser cleanup failed:", error));
-	}
-	if (currentSocketsByClient.get(closingId) !== ws) {
-		logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
-		return;
-	}
-	retirePaneOwner(closingId);
-	logger.info("WebSocket connection closed");
-}
+import { isRecord, namedVault, vaultOfUpgrade } from "@archboard/workbench/host";
+import { repositoryOfVault } from "@archboard/workspace/repository-listing";
 
 /**
  * Tell a pane which model it is on.
@@ -125,66 +70,6 @@ function sendStartingPlace(
 			reject(error instanceof Error ? error : new Error(String(error)));
 		}
 	});
-}
-
-/**
- * Record the vault and model a pane holds as its socket takes its authority.
- *
- * A choice of checkout may have moved the pane while its first message was on
- * the way (ADR 0050). The socket has carried that move to the page already, so
- * the pane is in the vault and on the model the move gave it.
- * @param ws The socket.
- * @param clientId The pane's client id.
- * @param startingKey The model the pane was started on.
- * @param vault The vault it was started in.
- */
-function holdPaneKey(
-	ws: WebSocket,
-	clientId: string,
-	startingKey: string | null,
-	vault: string,
-): void {
-	const current = socketVaults.get(ws) ?? vault;
-	// A pane that comes back naming another vault holds none of what it held in
-	// the first: a model key means a model of one vault.
-	if (paneVaults.get(clientId) !== current) {
-		paneKeys.delete(clientId);
-	}
-	paneVaults.set(clientId, current);
-	if (startingKey !== null && current === vault) {
-		paneKeys.set(clientId, startingKey);
-	}
-}
-
-/**
- * Make this socket the one that owns its pane identity, terminating the
- * transport it replaces. A slower predecessor that finished initializing
- * after this one is refused by its stale acceptance token.
- * @param ws The socket.
- * @param clientId The pane's client id.
- * @param acceptanceToken The token this socket's acceptance was stamped with.
- * @param startingKey The model the pane starts on.
- * @param vault The vault the pane was started in.
- * @returns False when this socket was superseded and has been terminated.
- */
-function takePaneAuthority(
-	ws: WebSocket,
-	clientId: string,
-	acceptanceToken: object,
-	startingKey: string | null,
-	vault: string,
-): boolean {
-	if (latestSocketAcceptanceByClient.get(clientId) !== acceptanceToken) {
-		ws.terminate();
-		return false;
-	}
-	const previous = currentSocketsByClient.get(clientId);
-	holdPaneKey(ws, clientId, startingKey, vault);
-	currentSocketsByClient.set(clientId, ws);
-	if (previous !== undefined && previous !== ws) {
-		previous.terminate();
-	}
-	return true;
 }
 
 /**
@@ -250,91 +135,18 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
 			send(codexRefusal(message, "The Codex workbench requires the browser tab session identity."));
 			return;
 		}
-		const handle = codexWiring.codex.handleBrowserMessage;
-		if (handle === null) {
+		const handling = handleCodexBrowserMessage(
+			codexSocketInstance,
+			clientId,
+			message,
+			codexTransport.send,
+		);
+		if (handling === null) {
 			send(codexRefusal(message, "The Codex workbench is unavailable."));
 			return;
 		}
-		void handle(codexSocketInstance, clientId, message, codexTransport.send).catch((error) =>
-			logger.error("Codex browser request failed:", error),
-		);
+		void handling.catch((error) => logger.error("Codex browser request failed:", error));
 	});
-}
-
-/**
- * Tell a freshly admitted pane what it needs to know beyond its model: where
- * that model's lock stands, and which models an agent has in every vault.
- * @param ws The socket.
- * @param clientId The pane's client id, or null for an anonymous socket.
- * @param startingKey The model the pane starts on, or null when it starts on none.
- */
-
-/** What one accepted socket is registered as, before it is presented anything. */
-interface RegisteredSocket {
-	/** The vault it named when it connected: its panes show models of this vault only. */
-	vault: string;
-	/** The pane it presents, or null for a socket that named none. */
-	clientId: string | null;
-	/** The browser tab it belongs to, or null for a socket that named none or a malformed one. */
-	tabSessionId: TabSessionId | null;
-	/** The token this acceptance is stamped with, so a predecessor cannot take authority back. */
-	acceptanceToken: object | null;
-	/** Its Codex browser connection instance. */
-	codexInstance: Parameters<VoiceAgentBrowserPort["accept"]>[0];
-}
-
-/**
- * Register one accepted socket and attach the listeners that retire it.
- * @param ws The socket.
- * @param req The upgrade request, whose `?clientId=` names the pane, `?tabSession=` its tab and
- *   `?vault=` its vault.
- * @param vault The vault the upgrade named, already checked.
- * @returns What the socket is registered as.
- */
-function registerSocket(ws: WebSocket, req: IncomingMessage, vault: string): RegisteredSocket {
-	const codexInstance = Object.freeze({});
-	codexSocketInstances.set(ws, codexInstance);
-	socketVaults.set(ws, vault);
-	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
-	const clientId = query.get("clientId");
-	const tabSessionId = parseTabSessionId(query.get("tabSession"));
-	const acceptanceToken = clientId === null ? null : Object.freeze({});
-	if (clientId !== null && acceptanceToken !== null) {
-		clientIds.set(ws, clientId);
-		latestSocketAcceptanceByClient.set(clientId, acceptanceToken);
-	}
-	ws.on("close", () => forgetClosedSocket(ws, acceptanceToken));
-	return { vault, clientId, tabSessionId, acceptanceToken, codexInstance };
-}
-
-/**
- * Take pane authority and admit the socket to broadcasts.
- *
- * Called only once the pane has been told which model it is on, so a socket
- * whose opening message never landed does not retire the live transport it was
- * replacing and then sit there owning a pane it cannot speak to.
- * @param ws The socket.
- * @param socket What it is registered as.
- * @param startingKey The model it starts on.
- * @returns False when a later socket had already taken this pane's authority.
- */
-function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: string | null): boolean {
-	const { clientId, acceptanceToken } = socket;
-	if (clientId === null || acceptanceToken === null) {
-		clients.add(ws);
-		return true;
-	}
-	if (!takePaneAuthority(ws, clientId, acceptanceToken, startingKey, socket.vault)) {
-		return false;
-	}
-	noteTabSession(clientId, socket.tabSessionId);
-	clients.add(ws);
-	try {
-		codexWiring.codex.acceptBrowser?.(socket.codexInstance, clientId);
-	} catch (error) {
-		logger.error("Codex browser acceptance failed:", error);
-	}
-	return true;
 }
 
 /**
@@ -353,7 +165,12 @@ async function acceptWebSocketConnection(
 	named: string,
 ): Promise<void> {
 	const vault = vaultOfReturningPane(req, named);
-	const socket = registerSocket(ws, req, vault);
+	const query = new URL(req.url ?? "/", "http://localhost").searchParams;
+	const socket = registerSocket(ws, {
+		vault,
+		clientId: query.get("clientId"),
+		tabSessionId: parseTabSessionId(query.get("tabSession")),
+	});
 	// Which model this pane gets, and it is a model *for this pane* — not "the"
 	// model, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
@@ -402,7 +219,7 @@ function startingPaneKey(
  */
 function vaultOfReturningPane(req: IncomingMessage, named: string): string {
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
-	const held = clientId === null ? undefined : paneVaults.get(clientId);
+	const held = clientId === null ? undefined : paneVaultOf(clientId);
 	if (held === undefined || held === named) {
 		return named;
 	}
@@ -414,38 +231,6 @@ let wss: WebSocketServer | null = null;
 
 /** The vault each upgrade named, checked when the upgrade was admitted. */
 const upgradeVaults = new WeakMap<IncomingMessage, string>();
-
-/**
- * The vault an upgrade puts its pane in, or why it can put the pane in none.
- *
- * A socket names the vault its pane was in, and that vault can be gone, as a
- * removed worktree is, when the pane comes back. An upgrade is where the server
- * places a pane, and the server is the one that moves a pane between vaults
- * (ADR 0050), so such a pane is put in the vault of its repository's chosen
- * checkout while the registry still knows the checkout. Its first message says
- * where it is. Otherwise the upgrade is refused, as one that names no vault is:
- * no other repository takes the pane in, and a reload offers the chooser.
- * @param req The upgrade request.
- * @returns The canonical vault, or the refusal.
- */
-function vaultOfUpgrade(req: IncomingMessage): NamedVault {
-	const raw = new URL(req.url ?? "/", "http://localhost").searchParams.get(VAULT_PARAMETER);
-	const named = namedVault(raw);
-	if (named.ok || raw === null || !path.isAbsolute(raw)) {
-		return named;
-	}
-	return placeInstead(raw) ?? named;
-}
-
-/**
- * A readable vault for a pane whose own vault cannot be read.
- * @param raw The absolute vault the pane named.
- * @returns The vault it is put in, or null when there is none to put it in.
- */
-function placeInstead(raw: string): NamedVault | null {
-	const home = namedVault(placeOfVault(path.resolve(raw)).home);
-	return home.ok ? home : null;
-}
 
 /**
  * Install the WebSocket server over the HTTP server and start accepting panes.
@@ -480,7 +265,7 @@ function startWebSocketServer(): void {
 			}
 			// A pane belongs to one vault from its first message (ADR 0049), so a socket
 			// that names none is turned away before it can own a pane.
-			const vault = vaultOfUpgrade(info.req);
+			const vault = vaultOfUpgrade(info.req.url);
 			if (!vault.ok) {
 				done(false, vault.refusal.status, `${vault.refusal.code}: ${vault.refusal.error}`);
 				return;
@@ -490,8 +275,7 @@ function startWebSocketServer(): void {
 		},
 	});
 	owner.on("connection", (socket, request) => {
-		acceptedSockets.add(socket);
-		socket.once("close", () => acceptedSockets.delete(socket));
+		trackAcceptedSocket(socket);
 		// A socket error with no listener would end the whole server, whichever socket it hit.
 		socket.on("error", (error) => {
 			logger.error("WebSocket error:", error);

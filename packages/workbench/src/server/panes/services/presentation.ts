@@ -427,4 +427,14 @@ const panePresentations = createPanePresentations({
 			: sendToPane(pane.clientId, message, pane.model),
 });
 
-export { createPanePresentations, panePresentations, type UserPresentationChange };
+/** Forget every walkthrough this server was presenting, because the engine state is being cleared. */
+function forgetPanePresentations(): void {
+	panePresentations.forget();
+}
+
+export {
+	createPanePresentations,
+	forgetPanePresentations,
+	panePresentations,
+	type UserPresentationChange,
+};
