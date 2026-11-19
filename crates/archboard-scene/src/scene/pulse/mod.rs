@@ -6,7 +6,7 @@
 
 use crate::geometry::{Point, Rect, Segment, round_coord};
 use crate::js;
-use crate::scene::traffic::{Motion, TrafficMark};
+use crate::scene::traffic::{Motion, TrafficMark, pulse_breadth};
 
 use legs::{leg_of, pieces_of};
 
@@ -213,14 +213,9 @@ pub fn pulse_slide(motion: &LegMotion, seconds: f64) -> Option<f64> {
     }
 }
 
-/// How thick a pulse's core is on a line of one width.
-pub fn pulse_breadth(line_width: f64) -> f64 {
-    js::js_max(1.5, line_width + 0.6)
-}
-
 /// How far a turn's clock carries a pulse across lines of some lengths, in
 /// order: the lines, and the room the last pulse's light takes to leave.
-pub fn turn_distance(lengths: &[f64]) -> f64 {
+pub(crate) fn turn_distance(lengths: &[f64]) -> f64 {
     lengths.iter().fold(0.0, |sum, length| sum + length) + (PULSE_SPAN + PULSE_MASK_ROOM)
 }
 

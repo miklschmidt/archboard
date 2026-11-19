@@ -1,8 +1,9 @@
 //! A route cut into the pieces a beam of light is drawn on, each a straight
 //! run or one bend, and each piece fitted with its frame, its light and its bar.
 
-use crate::geometry::{Curve, Point, Rect, Segment, segment_length, segment_start};
+use crate::geometry::{Curve, Point, Rect, Segment, segment_start};
 use crate::js;
+use crate::route::segment_length;
 use crate::scene::traffic::Motion;
 
 use super::{

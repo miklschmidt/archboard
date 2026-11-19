@@ -5,8 +5,7 @@ use std::f64::consts::FRAC_PI_4;
 
 use archboard_scene::geometry::{Curve, Point, Rect, Segment};
 use archboard_scene::scene::{
-    Bar, Colour, LegMotion, Motion, PulseLook, PulseTrain, Token, TrafficMark, pulse_slide,
-    pulse_train,
+    Colour, LegMotion, Motion, PulseLook, PulseTrain, Token, TrafficMark, pulse_slide, pulse_train,
 };
 
 /// The pulse train of a route on a line 1.5 wide, whose pulses have a core 2.1 thick.
@@ -87,12 +86,8 @@ fn a_bent_route_gives_each_piece_its_frame_its_light_and_a_bar_over_its_bend() {
     );
     // A steady bar covers its piece and a spacing either side.
     assert_eq!(
-        straight.bar,
-        Bar {
-            from: -81.0,
-            width: 262.0,
-            height: 2.1 + 6.0 + 2.0,
-        }
+        (straight.bar.from, straight.bar.width, straight.bar.height),
+        (-81.0, 262.0, 2.1 + 6.0 + 2.0)
     );
 
     assert_eq!(bend.from, Point { x: 100.0, y: 0.0 });

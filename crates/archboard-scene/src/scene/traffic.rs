@@ -7,7 +7,13 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::geometry::Curve;
+use crate::js;
 use crate::scene::colour::Colour;
+
+/// How thick a pulse's core is on a line of one width.
+pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
+    js::js_max(1.5, line_width + 0.6)
+}
 
 /// The colours of a pulse and how thick the line it rides is.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]

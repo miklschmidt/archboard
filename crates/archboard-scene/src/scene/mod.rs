@@ -33,12 +33,11 @@ pub use definition::{
 pub use group::{
     EntryKind, Group, LineFacts, Role, ShadowOf, Slot, Subject, SubjectKind, Transform,
 };
-pub use pulse::{
-    Bar, GlowLayer, LegMotion, PulseLeg, PulseStop, PulseTrain, pulse_breadth, pulse_slide,
-    pulse_train, turn_distance,
-};
+pub(crate) use pulse::turn_distance;
+pub use pulse::{GlowLayer, LegMotion, PulseLeg, PulseTrain, pulse_slide, pulse_train};
 pub use shape::{Cap, Geometry, Join, PathStep, Pointer, Purpose, Shape, Stroke};
 pub use text::{GlyphPlace, Icon, Text, Viewport};
+pub(crate) use traffic::pulse_breadth;
 pub use traffic::{Motion, PulseLook, TrafficMark};
 
 /// One thing in a scene's order.
