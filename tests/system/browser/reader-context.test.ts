@@ -152,12 +152,16 @@ function measures(browser: AgentBrowserSession) {
  */
 async function followMeasures(browser: AgentBrowserSession): Promise<string[]> {
 	await browser.run(["click", '[data-slot="model-interface-about"]']);
+	// A page scrolled to its end marks its last section in the outline, so the landing is read from
+	// where the interface section stands: its top is inside the page's room.
 	await pollUntil(
 		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="about-outline-entry"][aria-current="location"]')?.getAttribute('data-section') ?? null`,
-			),
-		(section) => section === "interface",
+			browser.eval<boolean>(`(() => {
+				const page = document.querySelector('[data-slot="model-about-page"]')?.getBoundingClientRect();
+				const section = document.querySelector('[data-about-section="interface"]')?.getBoundingClientRect();
+				return page !== undefined && section !== undefined && section.top >= page.top && section.top < page.bottom;
+			})()`),
+		Boolean,
 		"the interface section of About",
 		WAIT,
 	);
