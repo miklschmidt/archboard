@@ -223,7 +223,7 @@ function ExportsBody(
 		);
 	if (query.data === null)
 		return (
-			<Words slot="code-exports-unavailable">
+			<Words slot="code-exports-forgotten">
 				The server no longer remembers this code check. Run it again to list the exports.
 			</Words>
 		);
