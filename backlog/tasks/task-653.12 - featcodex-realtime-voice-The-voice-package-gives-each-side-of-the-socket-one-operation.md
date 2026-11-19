@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T17:33:00Z'
+updated_date: '2026-11-19T22:22:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -46,4 +46,6 @@ Candidate 9 of the archboard-deepen run, a breaking npm release of @archboard/co
 
 <!-- SECTION:NOTES:BEGIN -->
 Proposal: sL6y1FLr
+
+Design amended for standalone usability (owner decision 22): read 'Candidate 9, codex-realtime-voice: AMENDED for standalone usability' in the run's decision log. Four entries, ten names, agent.connect at the core with agent.bunHandlers as a thin Bun adapter, mountVoice panel, one React hook, approvals bound to their snapshot's intent.
 <!-- SECTION:NOTES:END -->
