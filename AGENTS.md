@@ -24,7 +24,9 @@ Where things are written down:
   [archboard-renderer skill](skills/archboard-renderer/SKILL.md)
 - This repository's architecture: [.archboard/README.md](.archboard/README.md)
 - Upgrading Codex: [docs/agents/codex-upgrades.md](docs/agents/codex-upgrades.md)
-- Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
+- Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`. Mark each task
+  Done in the pull request that completes it, a spec's parent task included, so the merge carries
+  the status.
 - Skills: `skills/` holds only the Archboard skills. Those marked `internal` serve this repository
   alone, and the others ship. Tracked symlinks in `.claude/skills/` and `.agents/skills/` expose
   them, beside the third-party skills tracked there.
