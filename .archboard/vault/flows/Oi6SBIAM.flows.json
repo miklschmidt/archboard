@@ -6,7 +6,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#StrSdB9p",
       "name": "A page connects its socket",
-      "summary": "Accepts a pane's socket only from the page's own origin and for a vault the server can read. If the named vault is unreadable, the upgrade falls back to its repository's chosen vault when that is readable, and otherwise refuses the upgrade.",
+      "summary": "Accepts a pane's socket from the page's own origin when the server can read the named vault. If an absolute vault path fails validation, the server tries the vault in that repository's chosen checkout. The upgrade is refused if no usable vault is found.",
       "participants": [
         "vKEsyHFk/yejBBUFY#xsn0RvSi",
         "vKEsyHFk/Oi6SBIAM#X07YebBP",

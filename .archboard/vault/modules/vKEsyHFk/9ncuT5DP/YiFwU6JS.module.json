@@ -73,7 +73,7 @@
     {
       "order": 88000,
       "kind": "call",
-      "label": "find and verify the installed Codex when no path is given",
+      "label": "resolve and verify Codex if no executable path is given",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
