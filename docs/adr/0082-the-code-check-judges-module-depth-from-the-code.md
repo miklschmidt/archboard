@@ -50,6 +50,16 @@ so agents in an implementation loop added exported constants and nothing failed.
   information. A name passed on from another module is
   `REEXPORT_PASS_THROUGH`: information through one door, a warning when files
   outside both modules also import the defining module, two doors to one name.
+- **Math that callers repeat on an export is the exporter's** (TASK-646.06).
+  When two or more modules write the same math on one exported value or
+  getter, `EXPOSED_VALUE_COMPUTED` is a warning on that export, in place of
+  `EXPOSED_VALUE`, with every line that writes the math as evidence. Two
+  pieces of math are the same when their shapes are: the callers' own names
+  count for nothing, the operands of `+`, `*`, `Math.min` and `Math.max` are
+  sorted, and one local variable that holds the export is followed. Equality,
+  comparison, bitwise and logical operators are no math, so comparisons do not
+  flood the findings. Two pieces of math that only share a shape, such as a
+  deadline and a jitter, match too; one function on the exporter clears both.
 - **An unused export is a warning only after a complete read**: every file
   outside the module in its language parsed, every relative import resolved,
   no import of the whole module, and no caller drawn in the model whose code
@@ -59,7 +69,8 @@ so agents in an implementation loop added exported constants and nothing failed.
   through values, which a syntax read cannot follow, so no method is judged
   unused, and members the language calls are never judged.
 - **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
-  is not a type carries `EXPOSED_VALUE` or a pass-through finding. A class
+  is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
+  pass-through finding. A class
   stands for its public methods. Types count for no verdict, so an
   exported union or enum keeps the compiler's exhaustive checks. An enum counts
   as a type.

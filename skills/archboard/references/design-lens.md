@@ -150,6 +150,21 @@ Clear each finding at its seam. Never silence one.
   }
   ```
 
+- `EXPOSED_VALUE_COMPUTED`: two or more modules write the same math on one exported value or getter. The evidence lists every line that writes it.
+  The math is logic the exporter owns. Give the exporter a function that does it, make every caller call that function, and stop exporting the value that no caller reads any more:
+
+  ```ts
+  // Before: two callers each compute the backoff on the exported durations.
+  Math.min(PROCESS_MS.restartMax, PROCESS_MS.restartBase * 2 ** attempt);
+  // After: the timing module owns it, and keeps the durations inside.
+  export function restartDelayMs(attempt: number): number {
+  	return Math.min(PROCESS_MS.restartMax, PROCESS_MS.restartBase * 2 ** attempt);
+  }
+  ```
+
+  The match ignores the callers' own names and operand order, and follows one local variable. Equality, comparison and bitwise operators are no math.
+  Two pieces of math that only share a shape, such as a deadline and a jitter, also match. One function on the exporter clears both.
+
 - `CODE_PASS_THROUGH` (information): a function or public method only passes its call on with its own parameters.
   Give it a decision of its own, such as a default, a check or a translation, or let callers call the code it passes to.
   A function that calls a value its own file keeps hidden, such as `parse(input)` over a hidden schema, is the module deciding and has no finding.
@@ -161,7 +176,7 @@ Clear each finding at its seam. Never silence one.
   It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
   Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor or `toString`, are never judged.
-- `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
+- `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
 
 Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, because its remedy removes the name.

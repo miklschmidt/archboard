@@ -99,7 +99,7 @@ function transparent(node: Node): boolean {
  */
 function unwrapped(node: Node): Node {
 	const inner = transparent(node) ? node.namedChildren[0] : undefined;
-	return inner === undefined || inner === null ? node : unwrapped(inner);
+	return inner === undefined ? node : unwrapped(inner);
 }
 
 /**
@@ -262,7 +262,7 @@ function signShape(node: Node, focus: Focus): Shape {
  */
 function callShape(node: Node, math: string, focus: Focus): Shape {
 	const passed = field(node, "arguments")?.namedChildren ?? [];
-	const shapes = passed.flatMap((each) => (each === null ? [] : [shapeOf(each, focus).text]));
+	const shapes = passed.map((each) => shapeOf(each, focus).text);
 	const ordered = SORTED.has(math) ? shapes.toSorted() : shapes;
 	return { text: `${math}(${ordered.join(", ")})`, binding: OPERAND };
 }
@@ -389,9 +389,9 @@ type Local = readonly [Node, string];
  * @param entry The entry.
  * @returns The variable, or none for a default, a rest or a nested pattern.
  */
-function patternLocal(entry: Node | null): Local[] {
-	if (entry?.type === "shorthand_property_identifier_pattern") return [[entry, `.${entry.text}`]];
-	return entry?.type === "pair_pattern" ? pairLocal(entry) : [];
+function patternLocal(entry: Node): Local[] {
+	if (entry.type === "shorthand_property_identifier_pattern") return [[entry, `.${entry.text}`]];
+	return entry.type === "pair_pattern" ? pairLocal(entry) : [];
 }
 
 /**
@@ -451,8 +451,7 @@ function scopeOf(declarator: Node): Node | undefined {
 function laterUses(scope: Node, local: Node, after: number): Node[] {
 	return scope
 		.descendantsOfType("identifier")
-		.filter((each) => each !== null && each.text === local.text && each.startIndex > after)
-		.filter((each) => each !== null);
+		.filter((each) => each.text === local.text && each.startIndex > after);
 }
 
 /**

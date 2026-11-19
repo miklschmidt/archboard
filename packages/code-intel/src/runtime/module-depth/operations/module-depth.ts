@@ -21,15 +21,15 @@
 //
 // It judges each exported name, each public method of an exported class
 // among them, and gives each at most one finding (name-findings.ts):
-// `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE` or
-// `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
+// `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE`,
+// `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
 // `toString`, are no export a caller names: they are neither counted nor
 // judged. A method's uses run through values, which a syntax read cannot
 // follow, so no method is judged unused, and an implementation used through
 // its interface counts as used.
 //
 // `MODULE_SHALLOW`, information, rolls them up: every export that is not a
-// type carries `EXPOSED_VALUE` or a pass-through. A class stands for its
+// type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its
 // public methods. Types are no verdict's concern, so an exported union or enum
 // keeps the compiler's exhaustive checks. The answer never makes it a
 // warning: the CLI does, for the modules a branch touched (ADR 0082).

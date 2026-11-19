@@ -807,6 +807,11 @@ An exported value that code outside its module reads at run time, a value that a
 A function that returns the value, a getter, is an interface and is no exposed value. A test is no reader.
 _Avoid_: exported constant, leaked config, global
 
+**Repeated math**:
+The same math that two or more modules write on one exported value or getter: `EXPOSED_VALUE_COMPUTED`, a warning on that export, with every line that writes it as evidence.
+The match ignores the callers' own names, sorts the operands of `+`, `*`, `Math.min` and `Math.max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
+_Avoid_: duplicated logic, copy-paste, computed constant
+
 **Code pass-through**:
 An exported function or public method whose body is one call that hands on its own parameters, so it decides nothing for its callers: `CODE_PASS_THROUGH`, information.
 A call into a value that the module keeps hidden is a decision, not a pass-through.
@@ -821,7 +826,7 @@ An exported name that no file outside its module uses, as code or as a type: `EX
 _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 
 **Shallow module**:
-A module whose every export that is not a type carries an exposed-value or pass-through finding: `MODULE_SHALLOW`, information in the answer.
+A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding: `MODULE_SHALLOW`, information in the answer.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)
 
 **Shallow-module gate**:
