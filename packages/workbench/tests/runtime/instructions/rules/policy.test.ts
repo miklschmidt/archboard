@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { ADDITIONAL_CONTEXT_POLICY } from "@archboard/codex-realtime-voice/runtime";
+import { additionalContextPolicy } from "@archboard/codex-realtime-voice/runtime";
 import {
 	ArchboardContextSchema,
 	encodeCanonicalContext,
@@ -16,6 +16,8 @@ function expectDeepFrozen(value: unknown): void {
 		expectDeepFrozen(child);
 	}
 }
+
+const ADDITIONAL_CONTEXT_POLICY = additionalContextPolicy();
 
 describe("additional-context policy contract", () => {
 	test("freezes every policy row and nested value", () => {

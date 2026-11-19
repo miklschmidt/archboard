@@ -1,9 +1,6 @@
 import { z } from "zod";
 
-import {
-	ADDITIONAL_CONTEXT_POLICY,
-	type OperationOutcome,
-} from "@archboard/codex-realtime-voice/runtime";
+import { additionalContextPolicy, type OperationOutcome } from "@archboard/codex-realtime-voice/runtime";
 import { DiagramGrammarSchema } from "@archboard/model/views";
 import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
 import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
@@ -85,16 +82,18 @@ const ReconciliationIssueSchema = z.strictObject({
 	repair: boundedUtf8Text(512, "repair"),
 });
 
+const contextPolicy = additionalContextPolicy();
+
 const threadLinkStateValues = [
-	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonNullStates,
-	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonRequiredStates,
+	...contextPolicy.threadLink.reasonNullStates,
+	...contextPolicy.threadLink.reasonRequiredStates,
 ];
-const threadLinkReasonValues = ADDITIONAL_CONTEXT_POLICY.threadLink.reasonPrecedence.map(
+const threadLinkReasonValues = contextPolicy.threadLink.reasonPrecedence.map(
 	({ reason }) => reason,
 );
-const operationKindValues = ADDITIONAL_CONTEXT_POLICY.operation.producers.map(({ kind }) => kind);
+const operationKindValues = contextPolicy.operation.producers.map(({ kind }) => kind);
 const operationRpcValues = [
-	...new Set(ADDITIONAL_CONTEXT_POLICY.operation.producers.flatMap(({ rpcs }) => rpcs)),
+	...new Set(contextPolicy.operation.producers.flatMap(({ rpcs }) => rpcs)),
 ];
 const deliveredOutcomeSchema = z.literal("delivered" satisfies OperationOutcome);
 const notDeliveredOutcomeSchema = z.literal("not_delivered" satisfies OperationOutcome);
@@ -136,7 +135,7 @@ const ArchboardContextRawSchema = z.strictObject({
 		})
 		.superRefine((value, refinementContext) => {
 			const reasonNullStates: readonly string[] =
-				ADDITIONAL_CONTEXT_POLICY.threadLink.reasonNullStates;
+				contextPolicy.threadLink.reasonNullStates;
 			if (reasonNullStates.includes(value.state)) {
 				if (value.reason !== null) {
 					refinementContext.addIssue({
@@ -261,7 +260,7 @@ const ArchboardContextRawSchema = z.strictObject({
 			if (value.id === null) {
 				return;
 			}
-			const producer = ADDITIONAL_CONTEXT_POLICY.operation.producers.find(
+			const producer = contextPolicy.operation.producers.find(
 				({ kind }) => kind === value.kind,
 			);
 			const allowedRpcs: readonly string[] = producer?.rpcs ?? [];

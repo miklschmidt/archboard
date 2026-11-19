@@ -3,11 +3,7 @@
 // the real owners do.
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import {
-	parseRealtimeCorrelationId,
-	parseRealtimeSessionId,
-} from "@archboard/codex-realtime-voice/realtime";
-import type { RealtimeCorrelation, RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import type {
 	VoiceOutputLevelSource,
 	BrowserWorkbenchState,
@@ -21,6 +17,8 @@ import type {
 import type { VoiceRealtimePort, VoiceTransportPort } from "#ui/voice-session/state/contract.ts";
 import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
+type RealtimeCorrelation = RealtimeMediaSnapshot["correlation"];
+
 /**
  * A correlation whose session and correlation ids are both the given id.
  * @param id The id.
@@ -28,8 +26,8 @@ import { snapshot } from "#tests/ui/support/voice-session/workbench-fixture.ts";
  */
 function correlation(id: string): RealtimeCorrelation {
 	return Object.freeze({
-		sessionId: parseRealtimeSessionId(id),
-		correlationId: parseRealtimeCorrelationId(id),
+		sessionId: id as RealtimeCorrelation["sessionId"],
+		correlationId: id as RealtimeCorrelation["correlationId"],
 	});
 }
 
