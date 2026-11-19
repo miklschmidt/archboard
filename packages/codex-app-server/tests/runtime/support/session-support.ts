@@ -11,6 +11,7 @@ import {
 import { createCodexSession } from "#runtime/session/services/session.ts";
 import {
 	type CodexSession,
+	type CodexSessionControl,
 	type CodexSessionStorage,
 } from "#runtime/session/services/session-api.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
@@ -56,7 +57,7 @@ export class FakeTransport implements CodexTransport {
 	readonly notifications: string[] = [];
 	readonly reverseResponses: ReverseResponseRecord[] = [];
 	private readonly responseQueues = new Map<ResponseMethod, ResponseValue[]>();
-	private identity: IdentityAuthority;
+	private readonly identity: IdentityAuthority;
 	private notificationListener: ((event: TransportServerNotification) => void) | undefined;
 	private requestListener: ((request: TransportServerRequest) => void) | undefined;
 	beforeRequest: ((method: ResponseMethod, params: unknown) => void) | undefined;
@@ -64,10 +65,6 @@ export class FakeTransport implements CodexTransport {
 	nextResponseCorrelation: WireRequestCorrelation | undefined;
 
 	constructor(identity: IdentityAuthority) {
-		this.identity = identity;
-	}
-
-	replaceIdentity(identity: IdentityAuthority): void {
 		this.identity = identity;
 	}
 
@@ -380,6 +377,7 @@ export interface SessionFixture {
 	readonly identity: IdentityAuthority;
 	readonly transport: FakeTransport;
 	readonly session: CodexSession;
+	readonly control: CodexSessionControl;
 	readonly lifecycle: {
 		readonly appServerReady: () => number;
 		readonly accountReady: () => number;
@@ -436,7 +434,7 @@ export function createSessionFixture(
 			terminalFailure += 1;
 		},
 	};
-	const session = createCodexSession({
+	const { session, control } = createCodexSession({
 		transport,
 		identity,
 		storage,
@@ -458,6 +456,7 @@ export function createSessionFixture(
 		identity,
 		transport,
 		session,
+		control,
 		lifecycle: {
 			appServerReady: () => appServerReady,
 			accountReady: () => accountReady,

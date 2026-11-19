@@ -4,7 +4,7 @@ import type { ApprovalSnapshot } from "#runtime/approvals/services/contract.ts";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type {
 	CodexWorkbenchComponents,
-	CodexWorkbenchGenerationInput,
+	CodexWorkbenchChildInput,
 	ProductionCodexWorkbenchBindings,
 } from "#server/generation/services/workbench.ts";
 import {
@@ -27,7 +27,7 @@ interface BindingContext {
 	readonly server: CodexWorkbenchServer;
 	readonly leaseLedger: import("#server/chat-conversations/gateway/protocol/contract.ts").BrowserLeaseLedger;
 	readonly storage: CodexWorkbenchStorage;
-	readonly input: CodexWorkbenchGenerationInput;
+	readonly input: CodexWorkbenchChildInput;
 	readonly owners: GenerationOwners;
 }
 
@@ -39,7 +39,7 @@ interface BindingContext {
  */
 function storageBindings(
 	context: BindingContext,
-): Pick<ProductionCodexWorkbenchBindings, "epoch" | "transport" | "session" | "threadLink"> {
+): Pick<ProductionCodexWorkbenchBindings, "epoch" | "session" | "threadLink"> {
 	const { storage, input } = context;
 	return {
 		/**
@@ -51,11 +51,6 @@ function storageBindings(
 			codexHome: storage.codexHome,
 			sqliteHome: storage.sqliteHome,
 		}),
-		/**
-		 * The child this generation's transport speaks to.
-		 * @returns The transport binding.
-		 */
-		transport: () => ({ child: input.child }),
 		/**
 		 * Where the session's own storage and configuration live.
 		 * @returns The session binding.

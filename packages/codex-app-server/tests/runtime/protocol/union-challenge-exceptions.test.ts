@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	ProtocolDecodeError,
-	decodeServerNotification,
-} from "#runtime/protocol/protocol-decoder.ts";
+import { ProtocolDecodeError } from "#runtime/protocol/protocol-decoder.ts";
+import { decodeNotificationValue } from "#tests/runtime/support/frame-decoding.ts";
 import { threadFixture } from "#tests/runtime/support/protocol-fixtures.ts";
 import {
 	notificationFixture,
@@ -68,7 +66,7 @@ describe("protocol union diagnostics", () => {
 			const mutation = challenge.mutate(prepared);
 			expect(mutation.allowedContainingUnionPaths).toEqual([]);
 			try {
-				decodeServerNotification({ method, params: mutation.params });
+				decodeNotificationValue({ method, params: mutation.params });
 				throw new Error(`expected ${method}:${name} to fail`);
 			} catch (error) {
 				if (!(error instanceof ProtocolDecodeError)) {
@@ -90,7 +88,7 @@ describe("protocol union diagnostics", () => {
 	test("retains independent issues while normalizing a regular union", () => {
 		let thrown: unknown;
 		try {
-			decodeServerNotification({
+			decodeNotificationValue({
 				method: "thread/started",
 				params: {
 					thread: {

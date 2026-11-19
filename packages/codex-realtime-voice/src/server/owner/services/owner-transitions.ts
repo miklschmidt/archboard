@@ -1,5 +1,4 @@
 import type { CodexProcessChild } from "@archboard/codex-app-server/process";
-import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { CodexWorkbenchCompositionError } from "#server/generation/rules/error.ts";
 import { appendFailure, failureMessage } from "#server/generation/rules/failures.ts";
 import type {
@@ -19,7 +18,7 @@ import {
 	stopProcess,
 	type CandidateReadiness,
 	type CodexWorkbenchExitHandler,
-	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchChildInput,
 	type CodexWorkbenchOwnerPublication,
 	type CodexWorkbenchOwnerRuntime,
 	type CodexWorkbenchOwnerSlots,
@@ -43,9 +42,9 @@ function adoptedSession(
 }
 
 /**
- * Everything one generation is built from: which child and process it runs
- * against, what the previous generation had already established, and the two
- * authority checks it must pass to publish anything.
+ * What one child's generation is built from before its connection is open: which
+ * child and process it runs against, what the previous generation had already
+ * established, and the two authority checks it must pass to publish anything.
  * @param published What the owner publishes.
  * @param runtime The runtime.
  * @param local The owner's own state.
@@ -53,8 +52,7 @@ function adoptedSession(
  * @param generation Its number.
  * @param child The Codex child it runs against.
  * @param readiness Where it records what its session reached.
- * @param initialIdentity The identity acquired with the child, when there is one.
- * @returns The generation's input.
+ * @returns The generation's input, without its connection.
  */
 function generationInput(
 	published: CodexWorkbenchOwnerPublication,
@@ -64,18 +62,11 @@ function generationInput(
 	generation: number,
 	child: CodexProcessChild,
 	readiness: CandidateReadiness,
-	initialIdentity: IdentityAuthorities | null = null,
-): CodexWorkbenchGenerationInput {
-	const kernel =
-		runtime.identityLedger === null || runtime.transport === null
-			? null
-			: { identityLedger: runtime.identityLedger, transport: runtime.transport };
+): CodexWorkbenchChildInput {
 	return Object.freeze({
 		generation,
 		child,
 		process: runtime.process,
-		kernel,
-		initialIdentity,
 		adoptedSession: adoptedSession(runtime),
 		/** Refuse a retired activation that tries to change production readiness. */
 		assertActivationCurrent: () => {
@@ -194,8 +185,8 @@ function ownsChildExit(
 	if (!isCurrentRuntime(published, runtime) || runtime.exitBridge.event !== exit) {
 		return false;
 	}
-	const ledger = runtime.identityLedger;
-	return ledger !== null && exit.child === ledger.childId && exit.epoch === ledger.epoch;
+	const connection = runtime.connection;
+	return connection !== null && exit.child === connection.child && exit.epoch === connection.epoch;
 }
 
 /**
@@ -284,8 +275,7 @@ function observeChildExit(
 		return settleCleanups(graphCleanups, failure, "Codex child graph cleanup failed.");
 	})();
 	local.recoveryBarrier = operation;
-	runtime.identityLedger = null;
-	runtime.transport = null;
+	runtime.connection = null;
 	runtime.sessionInitialized = false;
 	runtime.accountReady = false;
 	runtime.exitBridge.event = null;

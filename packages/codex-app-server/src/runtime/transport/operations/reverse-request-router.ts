@@ -1,12 +1,15 @@
-import {
-	decodeServerRequest,
-	isSupportedServerRequestMethod,
-	parseServerRequestParams,
-	type DecodedServerRequest,
-	type ServerRequestPayloads,
+import type {
+	DecodedServerRequest,
+	ServerRequestPayloads,
 } from "#runtime/protocol/protocol-decoder.ts";
-import { jsonRpcErrorCode } from "#runtime/protocol/request-schemas.ts";
-import { type ServerRequestMethod } from "#runtime/protocol/protocol-methods.ts";
+import {
+	decodeFrameBody,
+	type JsonRpcErrorKind,
+	type RequestEnvelopeProblem,
+	type RequestFrame,
+	type WireId,
+} from "#runtime/protocol/frames.ts";
+import type { ServerRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
 import type {
 	IdentityAuthority,
@@ -22,13 +25,6 @@ import type {
 } from "#runtime/transport/clients/transport-types.ts";
 import type { ReverseRecord } from "#runtime/transport/clients/transport-internals.ts";
 import type { ReverseByteAccounting } from "#runtime/transport/operations/reverse-ledger.ts";
-import {
-	hasOwn,
-	isWireId,
-	isDisabledCapabilityError,
-	wireKey,
-	type WireId,
-} from "#runtime/protocol/wire.ts";
 import { plainResponseOwner } from "#runtime/transport/clients/transport-types.ts";
 import { cloneAndFreeze } from "#runtime/transport/operations/public-values.ts";
 
@@ -40,22 +36,12 @@ const REVERSE_ERROR_MESSAGES = Object.freeze({
 	unhandled: "No reverse-request handler is available.",
 });
 
-const OVERLOADED_CODE = -32001;
-const ENVELOPE_KEYS: readonly string[] = Object.freeze(["id", "method", "params"]);
-
 /** Why a reverse request was refused, and the protocol error to answer it with, if any. */
 interface ReverseRefusal {
-	readonly kind: "refused";
 	readonly issue: TransportIssue["kind"];
 	readonly detail: string;
-	readonly code?: number;
+	readonly code?: JsonRpcErrorKind;
 	readonly message?: string;
-}
-
-/** A reverse request that passed envelope validation. */
-interface ReverseAdmission {
-	readonly kind: "admitted";
-	readonly method: ServerRequestMethod;
 }
 
 /** The correlation fields every published reverse request carries. */
@@ -78,7 +64,7 @@ type PlainOwnedRequest = Exclude<
 >;
 
 interface ReverseRequestRouterOptions {
-	readonly identity: () => IdentityAuthority;
+	readonly identity: IdentityAuthority;
 	readonly reverseRequests: Map<string, ReverseRecord>;
 	readonly completedReverseIds: Set<string>;
 	readonly reverseHandles: WeakMap<TransportServerRequest, ReverseRecord>;
@@ -86,11 +72,11 @@ interface ReverseRequestRouterOptions {
 	readonly dynamicDispatchers: Map<string, DynamicDispatcherRegistration>;
 	readonly emitServerRequest: (request: TransportServerRequest) => boolean;
 	readonly issueReverse: (kind: TransportIssue["kind"], detail: string, rawId?: WireId) => void;
-	readonly protocolError: (rawId: WireId, code: number, message: string) => void;
+	readonly protocolError: (rawId: WireId, code: JsonRpcErrorKind, message: string) => void;
 }
 
 interface ReverseRequestRouter {
-	readonly handleServerRequest: (value: Record<string, unknown>, frameBytes: number) => void;
+	readonly handleServerRequest: (frame: RequestFrame, frameBytes: number) => void;
 }
 
 /**
@@ -104,33 +90,58 @@ interface ReverseRequestRouter {
 function refusal(
 	issue: TransportIssue["kind"],
 	detail: string,
-	code: number,
+	code: JsonRpcErrorKind,
 	message: string,
 ): ReverseRefusal {
-	return { kind: "refused", issue, detail, code, message };
+	return { issue, detail, code, message };
 }
 
 const INVALID_PARAMS_REFUSAL = refusal(
 	"malformed-frame",
 	"The reverse request params were invalid",
-	jsonRpcErrorCode("invalidParams"),
+	"invalidParams",
 	REVERSE_ERROR_MESSAGES.invalidParams,
 );
 
 const DUPLICATE_ID_REFUSAL: ReverseRefusal = Object.freeze({
-	kind: "refused",
 	issue: "duplicate-server-request",
 	detail: "A reverse request id was already used",
 });
 
-/**
- * Whether a frame carries only the JSON-RPC request envelope keys.
- * @param value The decoded frame.
- * @returns True when no foreign key is present.
- */
-function hasOnlyEnvelopeKeys(value: Record<string, unknown>): boolean {
-	return Object.keys(value).every((keyName) => ENVELOPE_KEYS.includes(keyName));
-}
+/** The refusal each broken envelope rule answers with. */
+const ENVELOPE_REFUSALS: Readonly<Record<RequestEnvelopeProblem, ReverseRefusal>> = Object.freeze({
+	"method-invalid": refusal(
+		"malformed-frame",
+		"A reverse request method is missing or invalid",
+		"invalidRequest",
+		REVERSE_ERROR_MESSAGES.invalidRequest,
+	),
+	"envelope-fields": refusal(
+		"malformed-frame",
+		"A reverse request has invalid envelope fields",
+		"invalidRequest",
+		REVERSE_ERROR_MESSAGES.invalidRequest,
+	),
+	"unsupported-method": refusal(
+		"unsupported-server-request",
+		"The reverse request method is not supported",
+		"methodNotFound",
+		REVERSE_ERROR_MESSAGES.methodNotFound,
+	),
+	"no-params": refusal(
+		"malformed-frame",
+		"A reverse request has no params field",
+		"invalidParams",
+		REVERSE_ERROR_MESSAGES.invalidParams,
+	),
+});
+
+const OVERLOADED_REFUSAL = refusal(
+	"unsupported-server-request",
+	"The reverse-request capacity is full",
+	"overloaded",
+	REVERSE_ERROR_MESSAGES.overloaded,
+);
 
 /**
  * Publishes a decoded reverse request under its fixed owner.
@@ -153,86 +164,6 @@ function plainOwnedRequest(
 		params: decoded.params,
 		owner,
 	} as TransportServerRequest;
-}
-
-/**
- * Re-parses the params of a reverse request whose capability the client disabled, so the
- * session owner can answer it with the method-not-found error the contract requires.
- * @param value The decoded frame.
- * @param method The reverse method.
- * @param rawId The frame's wire id.
- * @returns The decoded request, or undefined when its params do not fit the method's schema.
- */
-function decodeDisabledCapabilityRequest(
-	value: Record<string, unknown>,
-	method: ServerRequestMethod,
-	rawId: WireId,
-): DecodedServerRequest | undefined {
-	const parsed = parseServerRequestParams(method, value["params"]);
-	if (parsed === undefined) {
-		return undefined;
-	}
-	// The params were parsed by the schema registered for this same method, so the pair is
-	// correlated; TypeScript cannot relate an indexed schema's output back to its key.
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- params parsed by this method's own schema
-	return { id: rawId, method, params: parsed.params } as DecodedServerRequest;
-}
-
-/**
- * Decodes a reverse request with the generated decoder, keeping disabled-capability
- * requests decodable so the session owner can answer them.
- * @param value The decoded frame.
- * @param method The admitted method.
- * @param rawId The frame's wire id.
- * @returns The decoded request, or undefined when its params are invalid.
- */
-function decodeReverseRequest(
-	value: Record<string, unknown>,
-	method: ServerRequestMethod,
-	rawId: WireId,
-): DecodedServerRequest | undefined {
-	try {
-		return decodeServerRequest(value);
-	} catch (error) {
-		if (!isDisabledCapabilityError(error)) {
-			return undefined;
-		}
-		return decodeDisabledCapabilityRequest(value, method, rawId);
-	}
-}
-
-/**
- * Validates a reverse frame's envelope beyond its id: a supported method and no foreign keys.
- * @param value The decoded frame.
- * @returns The admitted method, or the refusal.
- */
-function admitMethod(value: Record<string, unknown>): ReverseAdmission | ReverseRefusal {
-	const method = value["method"];
-	if (typeof method !== "string") {
-		return refusal(
-			"malformed-frame",
-			"A reverse request method is missing or invalid",
-			jsonRpcErrorCode("invalidRequest"),
-			REVERSE_ERROR_MESSAGES.invalidRequest,
-		);
-	}
-	if (!hasOnlyEnvelopeKeys(value)) {
-		return refusal(
-			"malformed-frame",
-			"A reverse request has invalid envelope fields",
-			jsonRpcErrorCode("invalidRequest"),
-			REVERSE_ERROR_MESSAGES.invalidRequest,
-		);
-	}
-	if (!isSupportedServerRequestMethod(method)) {
-		return refusal(
-			"unsupported-server-request",
-			"The reverse request method is not supported",
-			jsonRpcErrorCode("methodNotFound"),
-			REVERSE_ERROR_MESSAGES.methodNotFound,
-		);
-	}
-	return { kind: "admitted", method };
 }
 
 /**
@@ -271,35 +202,6 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 		options.reverseRequests.size >= CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseRequests ||
 		options.reverseBytes.pendingBytes() + frameBytes >
 			CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseBytes;
-
-	/**
-	 * Checks that a reverse frame carries params and that capacity remains for it.
-	 * @param value The decoded frame.
-	 * @param frameBytes The frame's size.
-	 * @returns The refusal, or undefined when the request may proceed.
-	 */
-	const admitParams = (
-		value: Record<string, unknown>,
-		frameBytes: number,
-	): ReverseRefusal | undefined => {
-		if (!hasOwn(value, "params")) {
-			return refusal(
-				"malformed-frame",
-				"A reverse request has no params field",
-				jsonRpcErrorCode("invalidParams"),
-				REVERSE_ERROR_MESSAGES.invalidParams,
-			);
-		}
-		if (reverseCapacityFull(frameBytes)) {
-			return refusal(
-				"unsupported-server-request",
-				"The reverse-request capacity is full",
-				OVERLOADED_CODE,
-				REVERSE_ERROR_MESSAGES.overloaded,
-			);
-		}
-		return undefined;
-	};
 
 	/**
 	 * Publishes a dynamic tool call under the dispatcher registered for its namespace.
@@ -348,7 +250,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 		decoded: DecodedServerRequest,
 		rawId: WireId,
 	): TransportServerRequest => {
-		const identity = options.identity();
+		const identity = options.identity;
 		const requestId = identity.decoder.adoptJsonRpcRequestId(rawId);
 		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
 			requestId,
@@ -408,7 +310,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 			return refusal(
 				"unsupported-server-request",
 				"The reverse request has no registered dispatcher",
-				jsonRpcErrorCode("methodNotFound"),
+				"methodNotFound",
 				REVERSE_ERROR_MESSAGES.methodNotFound,
 			);
 		}
@@ -418,7 +320,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 		return refusal(
 			"correlation-mismatch",
 			"The reverse request identity is invalid",
-			jsonRpcErrorCode("invalidParams"),
+			"invalidParams",
 			REVERSE_ERROR_MESSAGES.invalidParams,
 		);
 	};
@@ -472,67 +374,50 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 			options.reverseHandles.delete(request);
 			options.reverseBytes.removePendingBytes(frameBytes);
 			options.issueReverse("unsupported-server-request", REVERSE_ERROR_MESSAGES.unhandled, rawId);
-			options.protocolError(
-				rawId,
-				jsonRpcErrorCode("internalError"),
-				REVERSE_ERROR_MESSAGES.unhandled,
-			);
+			options.protocolError(rawId, "internalError", REVERSE_ERROR_MESSAGES.unhandled);
 		}
 	};
 
 	/**
-	 * Decodes, routes and publishes an admitted reverse request.
-	 * @param value The decoded frame.
-	 * @param key The wire key.
-	 * @param rawId The frame's wire id.
-	 * @param method The admitted method.
+	 * The refusal a reused id, an envelope or the reverse capacity calls for, in that order.
+	 * @param frame The request frame.
 	 * @param frameBytes The frame's size.
+	 * @returns The refusal, or undefined when the request may be decoded.
 	 */
-	const acceptServerRequest = (
-		value: Record<string, unknown>,
-		key: string,
-		rawId: WireId,
-		method: ServerRequestMethod,
+	const admissionRefusal = (
+		frame: RequestFrame & { readonly key: string },
 		frameBytes: number,
-	): void => {
-		const decoded = decodeReverseRequest(value, method, rawId);
-		if (decoded === undefined) {
-			refuse(rawId, INVALID_PARAMS_REFUSAL);
-			return;
-		}
-		const request = routeOrRefuse(decoded, rawId);
-		if (request !== undefined) {
-			deliverReverseRequest(key, rawId, request, frameBytes);
-		}
+	): ReverseRefusal | undefined => {
+		if (idAlreadyUsed(frame.key)) return DUPLICATE_ID_REFUSAL;
+		if (frame.problem !== undefined) return ENVELOPE_REFUSALS[frame.problem];
+		return reverseCapacityFull(frameBytes) ? OVERLOADED_REFUSAL : undefined;
 	};
 
 	/**
 	 * Admits, decodes, routes and publishes a reverse request frame.
-	 * @param value The decoded frame.
+	 * @param frame The request frame.
 	 * @param frameBytes The frame's size.
 	 */
-	const handleServerRequest = (value: Record<string, unknown>, frameBytes: number): void => {
-		const rawId = value["id"];
-		if (!isWireId(rawId)) {
+	const handleServerRequest = (frame: RequestFrame, frameBytes: number): void => {
+		if (frame.id === undefined) {
 			options.issueReverse("malformed-frame", "A reverse request id is invalid");
 			return;
 		}
-		const key = wireKey(rawId);
-		if (idAlreadyUsed(key)) {
-			refuse(rawId, DUPLICATE_ID_REFUSAL);
+		const rawId = frame.id;
+		const refused = admissionRefusal(frame, frameBytes);
+		if (refused) {
+			refuse(rawId, refused);
 			return;
 		}
-		const admission = admitMethod(value);
-		if (admission.kind === "refused") {
-			refuse(rawId, admission);
+		const decoded = decodeFrameBody(frame);
+		if (!decoded.ok) {
+			refuse(rawId, INVALID_PARAMS_REFUSAL);
 			return;
 		}
-		const paramsRefusal = admitParams(value, frameBytes);
-		if (paramsRefusal) {
-			refuse(rawId, paramsRefusal);
-			return;
+		const request = routeOrRefuse(decoded.value, rawId);
+		if (request !== undefined) {
+			deliverReverseRequest(frame.key, rawId, request, frameBytes);
 		}
-		acceptServerRequest(value, key, rawId, admission.method, frameBytes);
 	};
 
 	return Object.freeze({ handleServerRequest });

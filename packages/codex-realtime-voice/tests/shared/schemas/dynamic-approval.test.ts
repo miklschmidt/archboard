@@ -1,10 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	approvalFor,
-	createDynamicFixture,
-	decisionFor,
-} from "#tests/shared/support/dynamic-approval.ts";
+import { createDynamicFixture } from "#tests/shared/support/dynamic-approval.ts";
 
 describe("dynamic coordination approval browser contract", () => {
 	test("round-trips the three immutable dynamic effects and their safe projection", () => {
@@ -65,30 +61,40 @@ describe("dynamic coordination approval browser contract", () => {
 	test("represents every reviewed pending, terminal, and delivery state", () => {
 		const fixture = createDynamicFixture();
 		const request = fixture.requests[0]!;
-		const approved = decisionFor(request, "approved", "person_approved");
-		const declined = decisionFor(request, "declined", "person_declined");
-		const expired = decisionFor(request, "expired", "deadline_reached");
-		const cancelled = decisionFor(request, "cancelled", "server_shutdown");
-		const browserDisconnected = decisionFor(request, "disconnected", "browser_disconnected");
-		const childDisconnected = decisionFor(request, "disconnected", "child_disconnected");
+		const approved = fixture.decisionFor(request, "approved", "person_approved");
+		const declined = fixture.decisionFor(request, "declined", "person_declined");
+		const expired = fixture.decisionFor(request, "expired", "deadline_reached");
+		const cancelled = fixture.decisionFor(request, "cancelled", "server_shutdown");
+		const browserDisconnected = fixture.decisionFor(
+			request,
+			"disconnected",
+			"browser_disconnected",
+		);
+		const childDisconnected = fixture.decisionFor(request, "disconnected", "child_disconnected");
 		const cases = [
-			approvalFor(request, "pending", null, null, null),
-			approvalFor(request, "approved", approved, null, null),
-			approvalFor(request, "declined", declined, null, "refused:approval_declined"),
-			approvalFor(request, "expired", expired, null, "refused:expired"),
-			approvalFor(request, "cancelled", cancelled, null, "approval_required"),
-			approvalFor(request, "disconnected", browserDisconnected, null, "approval_required"),
-			approvalFor(
+			fixture.approvalFor(request, "pending", null, null, null),
+			fixture.approvalFor(request, "approved", approved, null, null),
+			fixture.approvalFor(request, "declined", declined, null, "refused:approval_declined"),
+			fixture.approvalFor(request, "expired", expired, null, "refused:expired"),
+			fixture.approvalFor(request, "cancelled", cancelled, null, "approval_required"),
+			fixture.approvalFor(request, "disconnected", browserDisconnected, null, "approval_required"),
+			fixture.approvalFor(
 				request,
 				"disconnected",
 				childDisconnected,
 				"not_delivered",
 				"transport_not_delivered",
 			),
-			approvalFor(request, "stale", approved, null, "refused:invalid_call"),
-			approvalFor(request, "delivered", approved, "delivered", null),
-			approvalFor(request, "not_delivered", approved, "not_delivered", "transport_not_delivered"),
-			approvalFor(request, "outcome_unknown", approved, "outcome_unknown", null),
+			fixture.approvalFor(request, "stale", approved, null, "refused:invalid_call"),
+			fixture.approvalFor(request, "delivered", approved, "delivered", null),
+			fixture.approvalFor(
+				request,
+				"not_delivered",
+				approved,
+				"not_delivered",
+				"transport_not_delivered",
+			),
+			fixture.approvalFor(request, "outcome_unknown", approved, "outcome_unknown", null),
 		];
 		expect(cases.map(({ state }) => state)).toEqual([
 			"pending",
@@ -113,10 +119,10 @@ describe("dynamic coordination approval browser contract", () => {
 	test("makes approval_required terminal and never resumable", () => {
 		const fixture = createDynamicFixture();
 		const request = fixture.requests[0]!;
-		const cancelled = approvalFor(
+		const cancelled = fixture.approvalFor(
 			request,
 			"cancelled",
-			decisionFor(request, "cancelled", "call_cancelled"),
+			fixture.decisionFor(request, "cancelled", "call_cancelled"),
 			null,
 			"approval_required",
 		);
@@ -181,7 +187,7 @@ describe("dynamic coordination approval browser contract", () => {
 		).toBeFalse();
 	});
 
-	test("binds response to the lease, chat, captured link, child epoch, call, operation, and hash", () => {
+	test("binds response to the lease, chat, captured link, call, operation, and hash", () => {
 		const fixture = createDynamicFixture();
 		const response = fixture.response;
 		const pendingResponseSchema = fixture.model.createDynamicApprovalResponseSchema(
@@ -191,7 +197,7 @@ describe("dynamic coordination approval browser contract", () => {
 		const swappedTargetIdentity = { ...response.identity, threadId: fixture.other };
 		const swappedTargetLink = { ...response.capturedLink, threadId: fixture.other };
 		const exactPendingMutations = [
-			{ commandId: fixture.authorities.identity.issuer.mintBrowserCommandId() },
+			{ commandId: fixture.ids.browserCommand() },
 			{ chatId: "chat-other" },
 			{ capturedLink: swappedTargetLink, identity: swappedTargetIdentity },
 			{ identity: fixture.requests[2]!.identity },
@@ -204,32 +210,15 @@ describe("dynamic coordination approval browser contract", () => {
 			).toBeTrue();
 			expect(pendingResponseSchema.safeParse(candidate).success).toBeFalse();
 		}
-		for (const mutation of [
-			{ capturedLink: { ...response.capturedLink, threadId: fixture.other } },
-			{
-				capturedLink: {
-					...response.capturedLink,
-					epoch: fixture.authorities.identity.issuer.mintChildEpoch(),
-				},
-			},
-			{ epoch: fixture.authorities.identity.issuer.mintChildEpoch() },
-			{
-				identity: {
-					...response.identity,
-					epoch: fixture.authorities.identity.issuer.mintChildEpoch(),
-				},
-			},
-		]) {
-			expect(
-				fixture.model.BrowserDynamicApprovalResponseSchema.safeParse({
-					...response,
-					...mutation,
-				}).success,
-			).toBeFalse();
-		}
+		expect(
+			fixture.model.BrowserDynamicApprovalResponseSchema.safeParse({
+				...response,
+				capturedLink: { ...response.capturedLink, threadId: fixture.other },
+			}).success,
+		).toBeFalse();
 		for (const extra of [
 			{ responses: [response] },
-			{ approvalId: fixture.authorities.identity.decoder.adoptApprovalId("ordinary-approval") },
+			{ approvalId: fixture.ids.approval("ordinary-approval") },
 			{ targetThreadId: fixture.other },
 		]) {
 			expect(
@@ -239,10 +228,10 @@ describe("dynamic coordination approval browser contract", () => {
 				}).success,
 			).toBeFalse();
 		}
-		const terminal = approvalFor(
+		const terminal = fixture.approvalFor(
 			fixture.requests[0]!,
 			"declined",
-			decisionFor(fixture.requests[0]!, "declined", "person_declined"),
+			fixture.decisionFor(fixture.requests[0]!, "declined", "person_declined"),
 			null,
 			"refused:approval_declined",
 		);
@@ -255,50 +244,50 @@ describe("dynamic coordination approval browser contract", () => {
 		const request = fixture.requests[0]!;
 		const invalid = [
 			{
-				...approvalFor(
+				...fixture.approvalFor(
 					request,
 					"declined",
-					decisionFor(request, "declined", "person_declined"),
+					fixture.decisionFor(request, "declined", "person_declined"),
 					null,
 					"refused:approval_declined",
 				),
 				delivery: "delivered",
 			},
 			{
-				...approvalFor(
+				...fixture.approvalFor(
 					request,
 					"expired",
-					decisionFor(request, "expired", "deadline_reached"),
+					fixture.decisionFor(request, "expired", "deadline_reached"),
 					null,
 					"refused:expired",
 				),
 				delivery: "outcome_unknown",
 			},
 			{
-				...approvalFor(
+				...fixture.approvalFor(
 					request,
 					"cancelled",
-					decisionFor(request, "cancelled", "server_shutdown"),
+					fixture.decisionFor(request, "cancelled", "server_shutdown"),
 					null,
 					"approval_required",
 				),
 				delivery: "delivered",
 			},
 			{
-				...approvalFor(
+				...fixture.approvalFor(
 					request,
 					"stale",
-					decisionFor(request, "approved", "person_approved"),
+					fixture.decisionFor(request, "approved", "person_approved"),
 					null,
 					"refused:invalid_call",
 				),
 				delivery: "delivered",
 			},
 			{
-				...approvalFor(
+				...fixture.approvalFor(
 					request,
 					"outcome_unknown",
-					decisionFor(request, "approved", "person_approved"),
+					fixture.decisionFor(request, "approved", "person_approved"),
 					"outcome_unknown",
 					null,
 				),
@@ -312,9 +301,8 @@ describe("dynamic coordination approval browser contract", () => {
 		}
 	});
 
-	test("rejects stale epochs and fabricated operation or identity domains", () => {
+	test("refuses an initial turn that reuses its mutation operation", () => {
 		const fixture = createDynamicFixture();
-		const request = fixture.requests[0]!;
 		const createEffect = fixture.effects[0]!;
 		const forkEffect = fixture.effects[1]!;
 		expect(
@@ -327,25 +315,6 @@ describe("dynamic coordination approval browser contract", () => {
 			fixture.model.DynamicApprovalEffectSchema.safeParse({
 				...forkEffect,
 				initialTurnOperationId: forkEffect.mutationOperationId,
-			}).success,
-		).toBeFalse();
-		const staleEpoch = fixture.authorities.identity.issuer.mintChildEpoch();
-		expect(
-			fixture.model.DynamicApprovalIdentitySchema.safeParse({
-				...request.identity,
-				epoch: staleEpoch,
-			}).success,
-		).toBeFalse();
-		expect(
-			fixture.model.DynamicApprovalIdentitySchema.safeParse({
-				...request.identity,
-				operationId: fixture.authorities.identity.issuer.mintBrowserCommandId(),
-			}).success,
-		).toBeFalse();
-		expect(
-			fixture.model.DynamicApprovalIdentitySchema.safeParse({
-				...request.identity,
-				callId: fixture.authorities.identity.issuer.mintBrowserCommandId(),
 			}).success,
 		).toBeFalse();
 	});

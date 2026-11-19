@@ -4,10 +4,8 @@ import {
 	type CodexCoordinatorToolsOptions,
 } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
-import {
-	type LogicalToolCallCorrelation,
-	IdentityValidationError,
-} from "@archboard/codex-app-server/identity";
+import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/identity";
+import { readCodexFailure, type IdentityValidationCode } from "@archboard/codex-app-server/failure";
 
 class CoordinatorToolValidationError extends Error {
 	override readonly name = "CoordinatorToolValidationError";
@@ -74,22 +72,21 @@ interface IdentityRefusal {
 	readonly message: string;
 }
 
-const IDENTITY_REFUSALS: Readonly<
-	Partial<Record<IdentityValidationError["code"], IdentityRefusal>>
-> = Object.freeze({
-	"wrong-child": {
-		reason: "stale_child",
-		message: "The coordinator tool call belongs to another Codex child.",
-	},
-	"stale-epoch": {
-		reason: "prior_epoch",
-		message: "The coordinator tool call belongs to a prior child epoch.",
-	},
-	"wrong-domain": {
-		reason: "unknown_provenance",
-		message: "The coordinator tool call contains an identity from the wrong domain.",
-	},
-});
+const IDENTITY_REFUSALS: Readonly<Partial<Record<IdentityValidationCode, IdentityRefusal>>> =
+	Object.freeze({
+		"wrong-child": {
+			reason: "stale_child",
+			message: "The coordinator tool call belongs to another Codex child.",
+		},
+		"stale-epoch": {
+			reason: "prior_epoch",
+			message: "The coordinator tool call belongs to a prior child epoch.",
+		},
+		"wrong-domain": {
+			reason: "unknown_provenance",
+			message: "The coordinator tool call contains an identity from the wrong domain.",
+		},
+	});
 
 /**
  * Translate an identity-authority failure into the refusal reason the coordinator reports.
@@ -97,8 +94,8 @@ const IDENTITY_REFUSALS: Readonly<
  * @returns The validation failure to throw, carrying the original as its cause.
  */
 function mapIdentityFailure(error: unknown): CoordinatorToolValidationError {
-	const refusal =
-		error instanceof IdentityValidationError ? IDENTITY_REFUSALS[error.code] : undefined;
+	const failure = readCodexFailure(error);
+	const refusal = failure?.kind === "identity" ? IDENTITY_REFUSALS[failure.code] : undefined;
 	if (refusal !== undefined) {
 		return new CoordinatorToolValidationError(refusal.reason, refusal.message, error);
 	}

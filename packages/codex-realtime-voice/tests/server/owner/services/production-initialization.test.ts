@@ -1,9 +1,6 @@
 import { createProductionBindingsFixture } from "#tests/server/support/generation/production-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-} from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
 import type { CodexWorkbenchComponents } from "#server/generation/services/lifecycle.ts";
 import type { CodexWorkbenchGenerationInput } from "#server/owner/services/owner-state.ts";
@@ -139,7 +136,7 @@ describe("production Codex activation guards", () => {
 			let accountEntered!: () => void;
 			const accountStarted = new Promise<void>((resolve) => void (accountEntered = resolve));
 			let active = true;
-			const identity = createIdentityAuthorities(createIdentityLedger("codex"));
+			const identity = testAuthorities();
 			const input = {
 				generation: 1,
 				child: {
@@ -229,7 +226,7 @@ describe("production Codex activation guards", () => {
 			accountRead: async () => ({ account: { type: "chatgpt" } }),
 		};
 		const components = {
-			identity: createIdentityAuthorities(createIdentityLedger("codex")),
+			identity: testAuthorities(),
 			epoch: {
 				snapshot: () => ({ manifest: { activeEpoch: null } }),
 				startEpoch: () => undefined,

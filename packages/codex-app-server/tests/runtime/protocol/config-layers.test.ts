@@ -1,14 +1,11 @@
 import { expect, test } from "bun:test";
 
 import { BrowserUseOriginPolicySchema } from "#runtime/schemas/config-schemas.ts";
-import {
-	decodeResponse,
-	decodeServerNotification,
-	ProtocolDecodeError,
-} from "#runtime/protocol/protocol-decoder.ts";
+import { decodeResponse, ProtocolDecodeError } from "#runtime/protocol/protocol-decoder.ts";
+import { decodeNotificationValue } from "#tests/runtime/support/frame-decoding.ts";
 import { responseFixtures } from "#tests/runtime/support/protocol-fixtures.ts";
 
-function localShellNotification(timeout_ms: number | bigint): unknown {
+function localShellNotification(timeout_ms: number): unknown {
 	return {
 		method: "rawResponseItem/completed" as const,
 		params: {
@@ -101,11 +98,8 @@ test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
 test("local shell i64 timeouts use the same safe-number boundary", () => {
 	const safe = localShellNotification(Number.MAX_SAFE_INTEGER);
 
-	expect(decodeServerNotification(safe)).toEqual<unknown>(safe);
+	expect(decodeNotificationValue(safe)).toEqual<unknown>(safe);
 	expect(() =>
-		decodeServerNotification(localShellNotification(Number.MAX_SAFE_INTEGER + 1)),
+		decodeNotificationValue(localShellNotification(Number.MAX_SAFE_INTEGER + 1)),
 	).toThrow(ProtocolDecodeError);
-	expect(() => decodeServerNotification(localShellNotification(1n))).toThrow(
-		/bigint; Codex JSON i64 values must be safe numbers/u,
-	);
 });

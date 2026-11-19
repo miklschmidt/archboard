@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
-import { CodexSessionMutationError, type SessionThread } from "@archboard/codex-app-server/session";
+import type { SessionThread } from "@archboard/codex-app-server/session";
 import {
 	type CoordinatorRetirement,
 	type CoordinatorSnapshot,
@@ -102,11 +103,12 @@ describe("a coordinator a voice start replaced", () => {
 	test("reports a failed unsubscribe and leaves the fresh coordinator ready", async () => {
 		const fixtureValue = fixture();
 		const retired = await ready(fixtureValue);
-		fixtureValue.session.unsubscribeError = new CodexSessionMutationError(
-			"thread/unsubscribe",
-			"outcome_unknown",
-			"fixture settlement timeout",
-		);
+		fixtureValue.session.unsubscribeError = createCodexFailure({
+			kind: "mutation",
+			method: "thread/unsubscribe",
+			outcome: "outcome_unknown",
+			message: "fixture settlement timeout",
+		});
 		const reports: CoordinatorRetirement[] = [];
 
 		const fresh = await replace(fixtureValue, reports);

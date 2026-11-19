@@ -12,10 +12,8 @@ import {
 	reviewedCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { sameValue } from "#runtime/voice/coordinator/state/state.ts";
-import {
-	codexSessionThreadSource,
-	CodexSessionMutationError,
-} from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
+import { codexSessionThreadSource } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 
@@ -123,7 +121,8 @@ function coordinatorSettings(
  * @returns The settled outcome.
  */
 function mutationOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
-	return error instanceof CodexSessionMutationError && error.outcome === "not_delivered"
+	const failure = readCodexFailure(error);
+	return failure?.kind === "mutation" && failure.outcome === "not_delivered"
 		? "not_delivered"
 		: "outcome_unknown";
 }

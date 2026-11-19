@@ -5,6 +5,13 @@ import { resolve } from "node:path";
 import { CODEX_PROCESS_MODULE_PATH as modulePath } from "../../support/codex-process-module.ts";
 
 const actual = await import(modulePath);
+// The executable failure is not one a caller makes, so the stand-in throws the package's own.
+const { CodexExecutableError } = await import(
+	resolve(
+		import.meta.dir,
+		"../../../../packages/codex-app-server/src/runtime/services/executable.ts",
+	)
+);
 // Mocking updates the imported namespace in place, so the stand-in keeps the real function.
 const { resolveCodexExecutable } = actual;
 const executable = process.env["ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE"];
@@ -15,7 +22,7 @@ if (executable !== undefined) {
 			resolveCodexExecutable:
 				process.env["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] === "verification_timeout"
 					? () => {
-							throw new actual.CodexExecutableError({
+							throw new CodexExecutableError({
 								code: "verification_timeout",
 								executablePath: executable,
 								message: `Codex codex-cli ${codexProtocolVersion()} did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.`,

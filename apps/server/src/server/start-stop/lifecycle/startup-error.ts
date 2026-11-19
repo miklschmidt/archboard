@@ -1,4 +1,4 @@
-import { CodexExecutableError, CodexProcessError } from "@archboard/codex-app-server/process";
+import { readCodexFailure, type CodexFailure } from "@archboard/codex-app-server/failure";
 import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 
 /**
@@ -18,19 +18,21 @@ function failures(error: unknown): readonly Error[] {
 	];
 }
 
+/** A failure of the Codex executable or the process that runs it. */
+type CodexStartupFailure = Extract<CodexFailure, { readonly kind: "executable" | "process" }>;
+
 /**
- * The Codex failure inside a startup failure, which is the one worth naming
- * to whoever started the server.
+ * The first Codex executable or process failure inside a startup failure, which is the one
+ * worth naming to whoever started the server.
  * @param error Whatever startup threw.
  * @returns The Codex failure, or null when startup failed for another reason.
  */
-function codexFailure(error: unknown): CodexExecutableError | CodexProcessError | null {
-	return (
-		failures(error).find(
-			(candidate): candidate is CodexExecutableError | CodexProcessError =>
-				candidate instanceof CodexExecutableError || candidate instanceof CodexProcessError,
-		) ?? null
-	);
+function codexFailure(error: unknown): CodexStartupFailure | null {
+	for (const candidate of failures(error)) {
+		const failure = readCodexFailure(candidate);
+		if (failure?.kind === "executable" || failure?.kind === "process") return failure;
+	}
+	return null;
 }
 
 /** The Codex process failures that are a refusal to start rather than a fault. */
@@ -51,7 +53,9 @@ const CODEX_INSTALL_FAILURES = new Set(["early_exit", "spawn_failed", "strict_co
  * @param codex The failure.
  * @returns The line.
  */
-function codexProcessLine(codex: CodexProcessError): string {
+function codexProcessLine(
+	codex: Extract<CodexStartupFailure, { readonly kind: "process" }>,
+): string {
 	if (CODEX_STARTUP_REFUSALS.has(codex.code)) {
 		return `Codex startup refused. ${codex.message}`;
 	}
@@ -72,10 +76,10 @@ function codexProcessLine(codex: CodexProcessError): string {
  */
 export function serverStartupFailureMessage(error: unknown): string {
 	const codex = codexFailure(error);
-	if (codex instanceof CodexExecutableError) {
+	if (codex?.kind === "executable") {
 		return `Codex startup refused. ${codex.message}`;
 	}
-	if (codex instanceof CodexProcessError) {
+	if (codex?.kind === "process") {
 		return codexProcessLine(codex);
 	}
 	return error instanceof Error

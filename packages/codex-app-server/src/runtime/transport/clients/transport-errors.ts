@@ -60,9 +60,10 @@ class CodexTransportError extends Error {
 	/**
 	 * Creates the failure.
 	 * @param message What went wrong.
+	 * @param options What it was caused by, if anything.
 	 */
-	constructor(message: string) {
-		super(message);
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options);
 		this.name = "CodexTransportError";
 	}
 }
@@ -114,9 +115,10 @@ class CodexTransportUsageError extends CodexTransportError {
 	/**
 	 * Names the misuse.
 	 * @param detail What the caller got wrong.
+	 * @param options What it was caused by, if anything.
 	 */
-	constructor(detail: string) {
-		super(`Invalid Codex transport operation: ${detail}`);
+	constructor(detail: string, options?: ErrorOptions) {
+		super(`Invalid Codex transport operation: ${detail}`, options);
 	}
 }
 
@@ -146,7 +148,8 @@ interface CodexTransportRequestErrorInput {
 /** What a remote error records about the request it answered. */
 interface CodexTransportRemoteErrorInput {
 	readonly method: string;
-	readonly correlation: WireRequestCorrelation;
+	/** The request it answered; absent when a caller made the failure itself. */
+	readonly correlation?: WireRequestCorrelation;
 	readonly rpcError: CodexRemoteError;
 }
 
@@ -184,16 +187,18 @@ class CodexTransportRequestError extends CodexTransportError {
 class CodexTransportRemoteError extends CodexTransportError {
 	override readonly name = "CodexTransportRemoteError";
 	readonly method: string;
-	readonly correlation: WireRequestCorrelation;
+	readonly correlation: WireRequestCorrelation | undefined;
 	readonly rpcError: TransportRemoteErrorSummary;
 
 	/**
 	 * Retains the redacted remote error with the request it answered.
 	 * @param input The request's method and correlation with the JSON-RPC error received.
+	 * @param options What it was caused by, if anything.
 	 */
-	constructor(input: CodexTransportRemoteErrorInput) {
+	constructor(input: CodexTransportRemoteErrorInput, options?: ErrorOptions) {
 		super(
 			`Codex request ${input.method} returned JSON-RPC error ${input.rpcError.code}: ${truncateRemoteMessage(input.rpcError.message)}`,
+			options,
 		);
 		this.method = input.method;
 		this.correlation = input.correlation;

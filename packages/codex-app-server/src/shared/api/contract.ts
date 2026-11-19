@@ -3,7 +3,6 @@ export { codexPendingReverseRequestLimit } from "#shared/constants/app-server-ca
 export {
 	codexFieldSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
-	isCodexThreadStatusType,
 } from "#shared/protocol/app-server-contract.ts";
 export type {
 	CodexCommandExecutionApprovalDecision,

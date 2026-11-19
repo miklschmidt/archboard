@@ -21,7 +21,7 @@ import {
 	parseRequiredBrowserCommandLease,
 } from "#ui/wire/clients/wire.ts";
 import { parseBrowserAccountReadResult } from "#ui/wire/clients/wire-results.ts";
-import { BrowserWorkbenchWireError } from "#ui/wire/clients/wire-identity.ts";
+import { BrowserWorkbenchWireError } from "#shared/browser/schemas/wire-identity.ts";
 
 /**
  * The live run once the account is readable, or a refusal.

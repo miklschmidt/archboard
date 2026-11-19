@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import { decodeDynamicCursor } from "#runtime/dynamic-tools/rules/cursors.ts";
 import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	CALLER_WIRE_ID,
 	CHECKOUT_ROOT,
@@ -189,11 +189,12 @@ describe("codex dynamic dispatcher", () => {
 		const rejected = optionsFor(authorities, caller);
 		const rejectedThread = thread(authorities, "rejected-thread");
 		rejected.session.threadStartResult = threadStartResult(rejectedThread);
-		rejected.session.turnStartResult = new CodexSessionMutationError(
-			"turn/start",
-			"not_delivered",
-			"turn was rejected",
-		);
+		rejected.session.turnStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "turn/start",
+			outcome: "not_delivered",
+			message: "turn was rejected",
+		});
 		const rejectedResponse = await createCodexDynamicTools(rejected.options).dispatch(
 			requestFor(authorities, caller, "create_thread", { prompt: "rejected" }, "rejected"),
 		);
@@ -209,11 +210,12 @@ describe("codex dynamic dispatcher", () => {
 		const uncertain = optionsFor(authorities, caller);
 		const uncertainThread = thread(authorities, "uncertain-thread");
 		uncertain.session.threadStartResult = threadStartResult(uncertainThread);
-		uncertain.session.turnStartResult = new CodexSessionMutationError(
-			"turn/start",
-			"outcome_unknown",
-			"turn settlement was lost",
-		);
+		uncertain.session.turnStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "turn/start",
+			outcome: "outcome_unknown",
+			message: "turn settlement was lost",
+		});
 		const uncertainResponse = await createCodexDynamicTools(uncertain.options).dispatch(
 			requestFor(authorities, caller, "create_thread", { prompt: "uncertain" }, "uncertain"),
 		);
@@ -264,11 +266,12 @@ describe("codex dynamic dispatcher", () => {
 
 		const uncertain = optionsFor(authorities, caller);
 		uncertain.threadAuthority.targets.set(otherTarget.wireThreadId, otherTarget);
-		uncertain.session.turnStartResult = new CodexSessionMutationError(
-			"turn/start",
-			"outcome_unknown",
-			"send settlement was lost",
-		);
+		uncertain.session.turnStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "turn/start",
+			outcome: "outcome_unknown",
+			message: "send settlement was lost",
+		});
 		const uncertainResponse = await createCodexDynamicTools(uncertain.options).dispatch(
 			requestFor(
 				authorities,

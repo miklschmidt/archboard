@@ -1,4 +1,4 @@
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import { CodexWorkhorseQueueError } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import {
 	CodexWorkhorseOperationsError,
@@ -75,7 +75,8 @@ function mapLinkReason(reason: string): WorkhorseOperationErrorCode {
  * @returns The outcome the session asserted, or unknown when it asserted nothing.
  */
 function sessionMutationOutcome(error: unknown): SettledDelivery {
-	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
+	const failure = readCodexFailure(error);
+	return failure?.kind === "mutation" ? failure.outcome : "outcome_unknown";
 }
 
 /**

@@ -32,7 +32,7 @@ import {
 	sameCommandTarget,
 } from "#ui/transport/rules/targeting.ts";
 import { parseBrowserCommandResult } from "#ui/wire/clients/wire-results.ts";
-import { BrowserWorkbenchWireError } from "#ui/wire/clients/wire-identity.ts";
+import { BrowserWorkbenchWireError } from "#shared/browser/schemas/wire-identity.ts";
 
 /**
  * The wire command: the draft plus the authority it runs under.

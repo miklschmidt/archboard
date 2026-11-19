@@ -1,7 +1,7 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_OPERATION_KIND,
@@ -124,11 +124,12 @@ describe("codex workhorse start transaction", () => {
 	test("rolls back locally when thread/start was not delivered", async () => {
 		const fixture = makeFixture();
 		try {
-			fixture.session.startResult = new CodexSessionMutationError(
-				"thread/start",
-				"not_delivered",
-				"transport rejected the request before delivery",
-			);
+			fixture.session.startResult = createCodexFailure({
+				kind: "mutation",
+				method: "thread/start",
+				outcome: "not_delivered",
+				message: "transport rejected the request before delivery",
+			});
 			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("failed");
@@ -148,11 +149,12 @@ describe("codex workhorse start transaction", () => {
 	test("tombstones a lost thread/start settlement without retry or cleanup", async () => {
 		const fixture = makeFixture();
 		try {
-			fixture.session.startResult = new CodexSessionMutationError(
-				"thread/start",
-				"outcome_unknown",
-				"the start response was lost",
-			);
+			fixture.session.startResult = createCodexFailure({
+				kind: "mutation",
+				method: "thread/start",
+				outcome: "outcome_unknown",
+				message: "the start response was lost",
+			});
 			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
@@ -285,11 +287,12 @@ describe("codex workhorse start transaction", () => {
 		const fixture = makeFixture();
 		try {
 			fixture.link.outcome = new Error("bind failed");
-			fixture.session.deleteResult = new CodexSessionMutationError(
-				"thread/delete",
-				"outcome_unknown",
-				"delete response was lost",
-			);
+			fixture.session.deleteResult = createCodexFailure({
+				kind: "mutation",
+				method: "thread/delete",
+				outcome: "outcome_unknown",
+				message: "delete response was lost",
+			});
 			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");
@@ -309,11 +312,12 @@ describe("codex workhorse start transaction", () => {
 		const fixture = makeFixture();
 		try {
 			fixture.link.outcome = new Error("bind failed");
-			fixture.session.deleteResult = new CodexSessionMutationError(
-				"thread/delete",
-				"not_delivered",
-				"delete rejected before delivery",
-			);
+			fixture.session.deleteResult = createCodexFailure({
+				kind: "mutation",
+				method: "thread/delete",
+				outcome: "not_delivered",
+				message: "delete rejected before delivery",
+			});
 			const result = await fixture.starter.start({ linkKey: "link-1", expected: null });
 
 			expect(result.state).toBe("inspect_only");

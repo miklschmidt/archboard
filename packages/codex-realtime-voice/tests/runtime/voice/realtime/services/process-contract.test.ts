@@ -10,7 +10,7 @@ import {
 	waitForState,
 	withHarness,
 } from "#tests/runtime/voice/realtime/services/process-fixture.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseRealtimeItemId } from "#shared/protocol/realtime-contract.ts";
 import {
 	browserCorrelation,
@@ -195,7 +195,7 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 				},
 			);
 			await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
-			const foreign = createIdentityAuthorities().identity;
+			const foreign = testAuthorities().identity;
 			const sendSdp = (
 				identity: typeof generation.identity,
 				threadId: string,

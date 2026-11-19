@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
-const { decoder } = createIdentityAuthorities().identity;
-const threadId = decoder.adoptThreadId("thread-messages");
+const ids = browserIdentities();
+const threadId = ids.thread("thread-messages");
 
 type Item = ConversationTurn["items"][number];
 
@@ -18,7 +18,7 @@ type Item = ConversationTurn["items"][number];
 function command(id: string, status: "inProgress" | "completed" | "failed"): Item {
 	return {
 		media: "command",
-		itemId: decoder.adoptItemId(id),
+		itemId: ids.item(id),
 		command: `run ${id}`,
 		status,
 		cwd: null,
@@ -45,7 +45,7 @@ function turn(
 		id: "turn",
 		owner: "workhorse",
 		threadId,
-		turnId: decoder.adoptTurnId("t1"),
+		turnId: ids.turn("t1"),
 		outcome,
 		items,
 		startedAtMs: 0,
@@ -57,8 +57,8 @@ function turn(
 	};
 }
 
-const prompt: Item = { media: "prompt", itemId: decoder.adoptItemId("p"), text: "Why?" };
-const answer: Item = { media: "text", itemId: decoder.adoptItemId("a"), text: "Because." };
+const prompt: Item = { media: "prompt", itemId: ids.item("p"), text: "Why?" };
+const answer: Item = { media: "text", itemId: ids.item("a"), text: "Because." };
 
 /**
  * The parts a turn becomes, by name.
@@ -143,7 +143,7 @@ function custom(value: ConversationTurn): unknown {
 test("a turn says whose it is in its metadata, so the voice coordinator's turns can be told apart", () => {
 	expect(custom(turn([prompt, answer], "completed"))).toEqual({
 		owner: "workhorse",
-		turnId: decoder.adoptTurnId("t1"),
+		turnId: ids.turn("t1"),
 	});
 	expect(custom({ ...turn([prompt, answer], "completed"), owner: "coordinator" })).toMatchObject({
 		owner: "coordinator",
@@ -167,8 +167,8 @@ function promptDelegations(value: ConversationTurn): unknown[] {
 }
 
 test("only the first prompt of a delegated turn says the voice coordinator delegated it", () => {
-	const delegation = { turnId: decoder.adoptTurnId("voice-1"), shown: true };
-	const steered: Item = { media: "prompt", itemId: decoder.adoptItemId("p2"), text: "Also?" };
+	const delegation = { turnId: ids.turn("voice-1"), shown: true };
+	const steered: Item = { media: "prompt", itemId: ids.item("p2"), text: "Also?" };
 	const delegated = { ...turn([prompt, answer, steered], "completed"), delegatedBy: delegation };
 	expect(promptDelegations(delegated)).toEqual([delegation, null]);
 	expect(promptDelegations(turn([prompt, answer], "completed"))).toEqual([null]);

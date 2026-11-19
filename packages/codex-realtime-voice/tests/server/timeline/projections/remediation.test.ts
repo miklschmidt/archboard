@@ -7,11 +7,8 @@ import type {
 } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-	type ThreadId,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	BROWSER_SNAPSHOT_MAX_BYTES,
 	BROWSER_SNAPSHOT_MIN_BYTES,
@@ -75,7 +72,7 @@ async function flush(): Promise<void> {
 }
 
 test("retiring a closed chat drops its refresh and notification eligibility", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("retired-thread");
 	const connection = {};
 	let calls = 0;
@@ -114,7 +111,7 @@ test("retiring a closed chat drops its refresh and notification eligibility", as
 });
 
 test("same-chat connections load independently and only the live pair recovers", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("shared-chat-thread");
 	const firstConnection = {};
 	const secondConnection = {};
@@ -185,7 +182,7 @@ test("same-chat connections load independently and only the live pair recovers",
 });
 
 test("ingests bounded source items and takes the cursor from timeline/list", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("bounded-ingest-thread");
 	const user = userMessageItem(authorities, "bounded-user", {
 		type: "userMessage",
@@ -247,7 +244,7 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 });
 
 test("caps final item chronology after matching and unmatched approvals", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("approval-cap-thread");
 	const turnId = authorities.identity.decoder.adoptTurnId("approval-cap-turn");
 	const commandId = authorities.identity.decoder.adoptItemId("approval-command");
@@ -335,7 +332,7 @@ test("caps final item chronology after matching and unmatched approvals", async 
 });
 
 test("marks a user summary truncated when text appears beyond its bounded scan", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("delayed-user-text-thread");
 	const content = [
 		...Array.from({ length: 32 }, (_, index) => ({
@@ -407,7 +404,7 @@ test("accepts exact snapshot budget boundaries and rejects every supplied invali
 });
 
 test("a budget cut drops the oldest turns and keeps the newest in-progress turn", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("truncating-thread");
 	// The thread reads newest-first, so page one carries the running turn and the
 	// older history follows behind it.

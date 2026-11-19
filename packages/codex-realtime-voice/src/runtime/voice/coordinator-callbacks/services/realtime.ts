@@ -1,4 +1,5 @@
-import { CodexSessionMutationError, type CodexSession } from "@archboard/codex-app-server/session";
+import type { CodexSession } from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type {
 	CoordinatorCallbackContextPort,
 	CoordinatorCallbackMutationResult,
@@ -52,7 +53,8 @@ function stale(): CoordinatorCallbackMutationResult {
  * @returns The mutation result.
  */
 function failed(error: unknown): CoordinatorCallbackMutationResult {
-	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered") {
+	const failure = readCodexFailure(error);
+	if (failure?.kind === "mutation" && failure.outcome === "not_delivered") {
 		return { attempted: true, outcome: "not_delivered", reason: "session_rejected" };
 	}
 	return { attempted: true, outcome: "outcome_unknown", reason: "response_lost" };

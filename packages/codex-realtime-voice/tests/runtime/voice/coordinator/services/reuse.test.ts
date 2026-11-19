@@ -1,14 +1,14 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { type EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
+import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
 import {
 	type CoordinatorPersistedState,
 	type CoordinatorSnapshot,
 	type CoordinatorThreadLinkClassification,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
 import {
 	WORKING_DIRECTORY,
@@ -220,7 +220,7 @@ describe("coordinator candidate reuse and replacement", () => {
 		const fixtureValue = fixture();
 		const first = await ready(fixtureValue);
 		const coordinatorPersistence = persistence(first);
-		const staleAuthority = createIdentityAuthorities().identity;
+		const staleAuthority = testAuthorities().identity;
 		const stalePersistence: CoordinatorPersistedState = {
 			...coordinatorPersistence,
 			childId: staleAuthority.validator.childId,
@@ -307,11 +307,12 @@ describe("coordinator replacement for a new voice session", () => {
 		const first = await ready(fixtureValue);
 		const kept = persistence(first);
 		fixtureValue.session.nextThread("coordinator-thread-2");
-		fixtureValue.session.startError = new CodexSessionMutationError(
-			"thread/start",
-			"outcome_unknown",
-			"fixture settlement timeout",
-		);
+		fixtureValue.session.startError = createCodexFailure({
+			kind: "mutation",
+			method: "thread/start",
+			outcome: "outcome_unknown",
+			message: "fixture settlement timeout",
+		});
 
 		await expect(
 			fixtureValue.coordinator.replace({

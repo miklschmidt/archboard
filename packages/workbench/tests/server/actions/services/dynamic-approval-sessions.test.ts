@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import type { DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
@@ -7,7 +7,7 @@ import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts"
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 
 test("a tab session's end settles its coordination approvals as unanswered and leaves another tab's", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { identity } = authorities;
 	const tabs = { "thread-one": "tab-one", "thread-two": "tab-two" } as Record<string, string>;
 	const owner = createServerDynamicApprovalOwner({

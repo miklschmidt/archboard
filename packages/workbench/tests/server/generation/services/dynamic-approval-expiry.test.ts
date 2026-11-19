@@ -2,7 +2,7 @@ import { expect, jest, test } from "bun:test";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 
@@ -11,7 +11,7 @@ const TAB_SESSION = parseTabSessionId("tab-one")!;
 test("dynamic approval expiry settles once at the exact production deadline", async () => {
 	jest.useFakeTimers();
 	try {
-		const identity = createIdentityAuthorities();
+		const identity = testAuthorities();
 		const token = createDynamicAuthorityTokenIssuer();
 		const threadId = identity.identity.decoder.adoptThreadId("thread-expiry");
 		const operationId = String(identity.operation.issuer.mintOperationId());

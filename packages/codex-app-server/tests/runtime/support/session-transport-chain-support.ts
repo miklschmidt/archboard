@@ -62,7 +62,7 @@ export function createTransportSessionFixture(now: () => number): TransportSessi
 	const identity = createIdentityAuthority();
 	const child = new TransportSessionChild();
 	const transport = createCodexTransport({ child, identity });
-	const session = createCodexSession({
+	const { session } = createCodexSession({
 		transport,
 		identity,
 		storage,

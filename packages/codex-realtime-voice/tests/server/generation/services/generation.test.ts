@@ -34,7 +34,7 @@ test("the production generation creates every owner once before readiness and sh
 	const events: string[] = [];
 	const fixture = createCodexWorkbenchGenerationFixture(events);
 	const generation = await composeCodexWorkbenchGeneration({
-		identityLedger: fixture.identityLedger,
+		connection: fixture.connection,
 		factories: fixture.factories,
 		hooks: fixture.hooks,
 	});
@@ -106,7 +106,7 @@ test("a generation without domain tools becomes ready and shuts down", async () 
 	const events: string[] = [];
 	const fixture = createCodexWorkbenchGenerationFixture(events);
 	const generation = await composeCodexWorkbenchGeneration({
-		identityLedger: fixture.identityLedger,
+		connection: fixture.connection,
 		factories: { ...fixture.factories, dynamicTools: () => null },
 		hooks: fixture.hooks,
 	});

@@ -1,4 +1,4 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createSemanticContextPublisher } from "#runtime/operations/semantic-context-publisher.ts";
 import {
 	type SemanticContextInput,
@@ -6,7 +6,7 @@ import {
 } from "#runtime/schemas/semantic-context-types.ts";
 
 function identities() {
-	const authority = createIdentityAuthorities().identity;
+	const authority = testAuthorities().identity;
 	return {
 		child: authority.validator.childId,
 		epoch: authority.validator.epoch,

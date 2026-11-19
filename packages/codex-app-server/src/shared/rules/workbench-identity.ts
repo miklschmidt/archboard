@@ -387,13 +387,18 @@ function createOperationAuthority(ledger: IdentityLedger): OperationAuthority {
 	});
 }
 
+/** The record prefix of a ledger that no host names: the authorities made without one. */
+const UNNAMED_RECORD_PREFIX = "codex";
+
 /**
- * Composes every capability over one ledger, first recording the ledger's own
- * child and epoch as issued.
+ * Composes every capability over one ledger, by default a fresh one that no host names, first
+ * recording the ledger's own child and epoch as issued.
  * @param ledger - The ledger to build over.
  * @returns The identity and operation authorities.
  */
-function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
+function createIdentityAuthorities(
+	ledger: IdentityLedger = createIdentityLedger(UNNAMED_RECORD_PREFIX),
+): IdentityAuthorities {
 	issueExisting(ledger, "child", ledger.childId, tokenOf(ledger.childId));
 	issueExisting(ledger, "epoch", ledger.epoch, tokenOf(ledger.epoch));
 	return {
@@ -405,9 +410,6 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
 		operation: createOperationAuthority(ledger),
 	};
 }
-
-/** The record prefix of a ledger that no host names: the authorities made without one. */
-const UNNAMED_RECORD_PREFIX = "codex";
 
 /**
  * Starts a fresh ledger with a newly minted child and epoch.
@@ -424,17 +426,6 @@ function createIdentityLedger(recordPrefix: string): IdentityLedger {
 		issued: new Map(),
 		rawByIdentity: new Map(),
 	};
-}
-
-/**
- * Builds authorities over a ledger, by default a fresh one that no host names.
- * @param ledger - The ledger to build over.
- * @returns The identity and operation authorities.
- */
-function createIdentityAuthorities(
-	ledger: IdentityLedger = createIdentityLedger(UNNAMED_RECORD_PREFIX),
-): IdentityAuthorities {
-	return createAuthority(ledger);
 }
 
 /**
@@ -460,7 +451,7 @@ function restoreIdentityAuthorities(input: {
 }): IdentityAuthorities {
 	const childId = parseValue(input.childId, "child");
 	const epoch = parseEpochValue(input.epoch, childId);
-	return createAuthority({ childId, epoch, issued: new Map(), rawByIdentity: new Map() });
+	return createIdentityAuthorities({ childId, epoch, issued: new Map(), rawByIdentity: new Map() });
 }
 
 /**

@@ -5,13 +5,13 @@ import {
 } from "#tests/runtime/support/host.ts";
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { createServerCanonicalTextActions } from "#server/chat-conversations/gateway/services/text-actions.ts";
 import { WorkhorseStopRefusal } from "#server/sessions/services/stop.ts";
 
 test("browser start requires the exact authoritative idle thread without hydrating history", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-busy");
 	let startCalls = 0;
 	let observedThreadId = threadId;
@@ -94,7 +94,7 @@ test("browser start requires the exact authoritative idle thread without hydrati
 });
 
 test("browser steering preserves the server's atomic expected-turn refusal without history", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-1");
 	const currentTurnId = authorities.identity.decoder.adoptTurnId("turn-current");
 	let steerCalls = 0;
@@ -180,7 +180,7 @@ test("browser steering preserves the server's atomic expected-turn refusal witho
 });
 
 test("browser start and steer emit canonical authored bodies from lease-bound context", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-1");
 	const turnId = authorities.identity.decoder.adoptTurnId("turn-current");
 	const starts: unknown[] = [];
@@ -315,7 +315,7 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 });
 
 test("the Stop control runs the work tree stop of the chat's checkout, and a refused workhorse takes no typed message", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-stop");
 	const turnId = authorities.identity.decoder.adoptTurnId("turn-stop");
 	const stopped: string[] = [];

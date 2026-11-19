@@ -13,7 +13,7 @@ import {
 } from "#runtime/voice/coordinator/services/model.ts";
 import { type CoordinatorModel } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { type CodexCoordinatorError } from "#runtime/voice/coordinator/protocol/contract.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 
 const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 
@@ -198,8 +198,7 @@ describe("coordinator model and literal profile", () => {
 			"experimentalRawEvents",
 		]);
 
-		const threadId =
-			createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator-thread");
+		const threadId = testAuthorities().identity.decoder.adoptThreadId("coordinator-thread");
 		expect(createCoordinatorSettingsUpdateParams(threadId, "priority")).toEqual({
 			threadId,
 			model: reviewedCoordinatorModel(),

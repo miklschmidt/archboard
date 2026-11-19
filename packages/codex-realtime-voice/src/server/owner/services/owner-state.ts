@@ -1,11 +1,11 @@
 import {
-	CodexProcessError,
 	type CodexProcess,
 	type CodexProcessChild,
 	type CodexProcessSnapshot,
 } from "@archboard/codex-app-server/process";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
+import type { CodexConnection } from "@archboard/codex-app-server/connection";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
-import type { IdentityAuthorities, IdentityLedger } from "@archboard/codex-app-server/identity";
 import type { CodexWorkbenchGateway } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import { CodexWorkbenchCompositionError } from "#server/generation/rules/error.ts";
 import { appendFailure } from "#server/generation/rules/failures.ts";
@@ -18,22 +18,11 @@ import {
 	type CodexWorkbenchStopReason,
 } from "#server/generation/services/lifecycle.ts";
 
-interface CodexWorkbenchStableKernel {
-	readonly identityLedger: IdentityLedger;
-	readonly transport: CodexTransport;
-}
-
-interface CodexWorkbenchKernelAcquisition {
-	readonly kernel: CodexWorkbenchStableKernel;
-	readonly identity: IdentityAuthorities;
-}
-
-interface CodexWorkbenchGenerationInput {
+/** What the owner knows of one child before it has opened the connection to it. */
+interface CodexWorkbenchChildInput {
 	readonly generation: number;
 	readonly child: CodexProcessChild;
 	readonly process: CodexProcess;
-	readonly kernel: CodexWorkbenchStableKernel | null;
-	readonly initialIdentity: IdentityAuthorities | null;
 	readonly adoptedSession: "login-capable" | "thread-capable" | null;
 	readonly assertActivationCurrent: () => void;
 	readonly markSessionReady: (accountReady: boolean) => void;
@@ -45,13 +34,19 @@ interface CodexWorkbenchGenerationInput {
 	readonly shutdownOwner: () => Promise<CodexWorkbenchSnapshot>;
 }
 
+/** Everything one generation is built from: its child, and the connection opened to it. */
+interface CodexWorkbenchGenerationInput extends CodexWorkbenchChildInput {
+	readonly connection: CodexConnection;
+}
+
 type CodexWorkbenchGenerationFactory = (
 	input: CodexWorkbenchGenerationInput,
 ) => Promise<CodexWorkbenchGeneration>;
 
 interface CodexWorkbenchOwnerOptions {
 	readonly createProcess: () => CodexProcess;
-	readonly createKernel: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchKernelAcquisition;
+	/** Opens the connection to a child, synchronously, as the child arrives. */
+	readonly createKernel: (input: CodexWorkbenchChildInput) => CodexConnection;
 	readonly createGeneration: CodexWorkbenchGenerationFactory;
 }
 
@@ -75,8 +70,7 @@ interface CodexWorkbenchExitBridge {
 
 interface CodexWorkbenchOwnerRuntime {
 	readonly process: CodexProcess;
-	identityLedger: IdentityLedger | null;
-	transport: CodexTransport | null;
+	connection: CodexConnection | null;
 	operation: number;
 	sessionInitialized: boolean;
 	accountReady: boolean;
@@ -193,7 +187,8 @@ function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error
 	if (current.state !== "terminal_failure") {
 		return null;
 	}
-	return new CodexProcessError({
+	return createCodexFailure({
+		kind: "process",
 		code: current.failure?.code ?? "shutdown_failed",
 		terminal: true,
 		message:
@@ -248,8 +243,7 @@ function releaseRegistration(
 	);
 	runtime.released = true;
 	runtime.exitBridge.handler = null;
-	runtime.identityLedger = null;
-	runtime.transport = null;
+	runtime.connection = null;
 	if (published.runtime !== runtime) {
 		return;
 	}
@@ -528,7 +522,7 @@ function beginGenerationCleanup(
  * @param transport The transport it must be listening to.
  */
 function attachExitBridge(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
-	if (runtime.transport !== transport) {
+	if (runtime.connection?.transport !== transport) {
 		throw new CodexWorkbenchCompositionError(
 			"startup_failed",
 			"The retained child-exit bridge does not own the acquired transport.",
@@ -569,13 +563,12 @@ export type {
 	CodexWorkbenchExitHandler,
 	CodexWorkbenchGenerationFactory,
 	CodexWorkbenchGenerationInput,
-	CodexWorkbenchKernelAcquisition,
+	CodexWorkbenchChildInput,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
 	CodexWorkbenchOwnerPublication,
 	CodexWorkbenchOwnerRuntime,
 	CodexWorkbenchOwnerSlots,
-	CodexWorkbenchStableKernel,
 	LifecycleTransaction,
 	OwnerLocalState,
 };

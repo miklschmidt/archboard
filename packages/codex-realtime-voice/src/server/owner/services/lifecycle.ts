@@ -3,7 +3,7 @@ import type {
 	CodexProcessChild,
 	CodexProcessSnapshot,
 } from "@archboard/codex-app-server/process";
-import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import type { CodexConnection } from "@archboard/codex-app-server/connection";
 import { CodexWorkbenchCompositionError } from "#server/generation/rules/error.ts";
 import { appendFailure, failureMessage } from "#server/generation/rules/failures.ts";
 import {
@@ -32,12 +32,12 @@ import {
 	type CandidateReadiness,
 	type CodexWorkbenchExitBridge,
 	type CodexWorkbenchGenerationFactory,
+	type CodexWorkbenchChildInput,
 	type CodexWorkbenchGenerationInput,
 	type CodexWorkbenchOwner,
 	type CodexWorkbenchOwnerOptions,
 	type CodexWorkbenchOwnerRuntime,
 	type CodexWorkbenchOwnerSlots,
-	type CodexWorkbenchStableKernel,
 	type LifecycleTransaction,
 	type OwnerLocalState,
 } from "#server/owner/services/owner-state.ts";
@@ -91,8 +91,7 @@ function installCodexWorkbenchOwnerLifecycle(
 	};
 	const runtime: CodexWorkbenchOwnerRuntime = {
 		process: processOwner,
-		identityLedger: null,
-		transport: null,
+		connection: null,
 		operation: 0,
 		sessionInitialized: false,
 		accountReady: false,
@@ -131,9 +130,12 @@ function installCodexWorkbenchOwnerLifecycle(
 		transaction: LifecycleTransaction,
 		readiness: CandidateReadiness,
 	): Promise<void> => {
+		const connection = runtime.connection;
 		if (
-			runtime.identityLedger !== candidate.identityLedger ||
-			runtime.transport !== candidate.transport
+			connection === null ||
+			connection !== candidate.connection ||
+			connection.transport !== candidate.transport ||
+			connection.identity !== candidate.components.identity
 		) {
 			throw new CodexWorkbenchCompositionError(
 				"startup_failed",
@@ -250,13 +252,13 @@ function installCodexWorkbenchOwnerLifecycle(
 				let resolveChild!: (prepared: {
 					readonly child: CodexProcessChild;
 					readonly transaction: LifecycleTransaction;
-					readonly initialIdentity: IdentityAuthorities;
+					readonly connection: CodexConnection;
 				}) => void;
 				let rejectChild!: (error: unknown) => void;
 				const childReady = new Promise<{
 					readonly child: CodexProcessChild;
 					readonly transaction: LifecycleTransaction;
-					readonly initialIdentity: IdentityAuthorities;
+					readonly connection: CodexConnection;
 				}>((resolve, reject) => {
 					resolveChild = resolve;
 					rejectChild = reject;
@@ -289,7 +291,7 @@ function installCodexWorkbenchOwnerLifecycle(
 							transport: null,
 						};
 						local.transaction = transaction;
-						const acquisition = options.createKernel(
+						const connection = options.createKernel(
 							generationInput(
 								published,
 								runtime,
@@ -300,11 +302,10 @@ function installCodexWorkbenchOwnerLifecycle(
 								readiness,
 							),
 						);
-						runtime.identityLedger = acquisition.kernel.identityLedger;
-						runtime.transport = acquisition.kernel.transport;
-						transaction.transport = acquisition.kernel.transport;
-						attachExitBridge(runtime, acquisition.kernel.transport);
-						resolveChild({ child, transaction, initialIdentity: acquisition.identity });
+						runtime.connection = connection;
+						transaction.transport = connection.transport;
+						attachExitBridge(runtime, connection.transport);
+						resolveChild({ child, transaction, connection });
 					} catch (error) {
 						rejectChild(error);
 					}
@@ -333,7 +334,7 @@ function installCodexWorkbenchOwnerLifecycle(
 						throw error;
 					});
 					void processStart.catch(() => undefined);
-					const { child, transaction, initialIdentity } = await childReady;
+					const { child, transaction, connection } = await childReady;
 					const recoveryFailure = await local.recoveryBarrier;
 					if (recoveryFailure !== null) {
 						throw recoveryFailure;
@@ -346,16 +347,18 @@ function installCodexWorkbenchOwnerLifecycle(
 						"A retired Codex startup cannot construct a generation.",
 					);
 					candidate = await options.createGeneration(
-						generationInput(
-							published,
-							runtime,
-							local,
-							transaction,
-							generationNumber,
-							child,
-							readiness,
-							initialIdentity,
-						),
+						Object.freeze({
+							...generationInput(
+								published,
+								runtime,
+								local,
+								transaction,
+								generationNumber,
+								child,
+								readiness,
+							),
+							connection,
+						}),
 					);
 					ownGeneration(local, candidate);
 					assertTransaction(
@@ -448,9 +451,9 @@ export type {
 	CodexWorkbenchGeneration,
 	CodexWorkbenchGenerationFactory,
 	CodexWorkbenchGenerationHooks,
+	CodexWorkbenchChildInput,
 	CodexWorkbenchGenerationInput,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
 	CodexWorkbenchSnapshot,
-	CodexWorkbenchStableKernel,
 };

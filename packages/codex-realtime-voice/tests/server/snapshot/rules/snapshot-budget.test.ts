@@ -5,7 +5,7 @@ import {
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { fitBrowserSnapshotBounded } from "#server/snapshot/rules/snapshot-bounds.ts";
 import { startCommand } from "#tests/server/support/gateway/helpers.ts";
 import { createGatewayHarness } from "#tests/server/support/gateway/support.ts";
@@ -14,7 +14,7 @@ const wireBytes = (value: unknown): number =>
 	new TextEncoder().encode(JSON.stringify(value)).byteLength;
 
 test("fits timeline history after every competing snapshot field is present", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const threadId = decoder.adoptThreadId("gateway-thread");
 	const turnId = decoder.adoptTurnId("gateway-turn");
@@ -147,7 +147,7 @@ test("fits timeline history after every competing snapshot field is present", as
 });
 
 test("removes the final paginated timeline turn when that alone crosses the byte boundary", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const value = createGatewayHarness(authorities);
 	const base = value.gateway
@@ -217,7 +217,7 @@ test("removes the final paginated timeline turn when that alone crosses the byte
 });
 
 test("gives up the oldest turns and keeps the running one when history crosses the bound", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const value = createGatewayHarness(authorities);
 	const base = value.gateway
@@ -266,7 +266,7 @@ test("gives up the oldest turns and keeps the running one when history crosses t
 });
 
 test("fits voice delivery history in fixed producer records without altering retained bodies", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const value = createGatewayHarness(authorities);
 	const base = value.gateway
 		.connect(value.browserId, value.chatId, value.tabSessionId)

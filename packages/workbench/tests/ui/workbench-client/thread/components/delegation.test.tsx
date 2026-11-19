@@ -4,13 +4,13 @@ import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import { mergeConversation } from "@archboard/codex-realtime-voice/controllers";
 import { type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 import { Conversation } from "#ui/workbench-client/thread/components/Conversation.tsx";
 
-const { decoder } = createIdentityAuthorities().identity;
+const ids = browserIdentities();
 
 let root: Root;
 /** The elements the page was asked to scroll into view, in order. */
@@ -51,8 +51,8 @@ function turn(
 	startedAtMs: number,
 	delegatedBy: string | null = null,
 ): ConversationTurn {
-	const threadId = decoder.adoptThreadId(`thread-${owner}`);
-	const turnId = decoder.adoptTurnId(id);
+	const threadId = ids.thread(`thread-${owner}`);
+	const turnId = ids.turn(id);
 	return {
 		id: `${threadId}/${turnId}`,
 		owner,
@@ -60,16 +60,15 @@ function turn(
 		turnId,
 		outcome: "completed",
 		items: [
-			{ media: "prompt", itemId: decoder.adoptItemId(`${id}-prompt`), text: `Prompt of ${id}` },
-			{ media: "text", itemId: decoder.adoptItemId(`${id}-answer`), text: `Answer of ${id}` },
+			{ media: "prompt", itemId: ids.item(`${id}-prompt`), text: `Prompt of ${id}` },
+			{ media: "text", itemId: ids.item(`${id}-answer`), text: `Answer of ${id}` },
 		],
 		startedAtMs,
 		completedAtMs: startedAtMs + 1000,
 		durationMs: 1000,
 		error: null,
 		plan: null,
-		delegatedBy:
-			delegatedBy === null ? null : { turnId: decoder.adoptTurnId(delegatedBy), shown: false },
+		delegatedBy: delegatedBy === null ? null : { turnId: ids.turn(delegatedBy), shown: false },
 	};
 }
 
@@ -133,7 +132,7 @@ test("the voice coordinator's turns are named, and the workhorse's are not", asy
 	expect(
 		shown.map((element) => element.querySelector('[data-slot="voice-turn-head"]') !== null),
 	).toEqual([true, false]);
-	expect(shown[0]?.dataset["voiceTurn"]).toBe(decoder.adoptTurnId("c1"));
+	expect(shown[0]?.dataset["voiceTurn"]).toBe(ids.turn("c1"));
 	expect(shown[1]?.dataset["voiceTurn"]).toBeUndefined();
 });
 

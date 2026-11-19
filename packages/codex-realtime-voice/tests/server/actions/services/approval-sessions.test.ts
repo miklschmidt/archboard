@@ -8,7 +8,7 @@
 import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { visibleApprovalViews } from "#server/actions/services/ordinary-approvals.ts";
 import { createProductionBindingsFixture } from "#tests/server/support/generation/production-fixture.ts";
@@ -28,7 +28,7 @@ function productionBindings() {
 }
 
 test("an approval is linked to the workhorse or coordinator whose thread asked, and one no tab session holds is cancelled on receipt", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { identity } = authorities;
 	const holders: Record<string, string> = {
 		"thread-held": "tab-one",

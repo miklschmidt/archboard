@@ -1,10 +1,8 @@
 import { expect, test } from "bun:test";
 
 import type { SessionThreadItem } from "@archboard/codex-app-server/session";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createServerTimelineOwner } from "#server/timeline/projections/timeline.ts";
 import {
 	dynamicToolCallItem,
@@ -49,7 +47,7 @@ async function projectedItems(
 }
 
 test("a tool call's arguments reach the browser with every secret-named value redacted", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const [tool] = await projectedItems(authorities, [
 		dynamicToolCallItem(authorities, "secret-tool", {
 			type: "dynamicToolCall",
@@ -82,7 +80,7 @@ test("a tool call's arguments reach the browser with every secret-named value re
 });
 
 test("a reasoning summary keeps its line breaks, each part on its own line", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const [reasoning] = await projectedItems(authorities, [
 		reasoningItem(authorities, "layout-reasoning", {
 			type: "reasoning",

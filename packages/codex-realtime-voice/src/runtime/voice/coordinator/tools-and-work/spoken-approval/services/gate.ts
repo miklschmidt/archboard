@@ -3,7 +3,8 @@ import type {
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
 } from "#shared/protocol/realtime-contract.ts";
-import { IdentityValidationError, type TurnId } from "@archboard/codex-app-server/identity";
+import type { TurnId } from "@archboard/codex-app-server/identity";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type {
 	DynamicServerRequest,
 	TransportServerNotification,
@@ -50,6 +51,16 @@ import {
 	refusal,
 	rejectTurnReady,
 } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/services/gate-state.ts";
+
+/**
+ * Why a notified turn that did not decode sends the person to the visual surface: an identity the
+ * session refused is stale state, anything else loses the classifier.
+ * @param error - What decoding the turn threw.
+ * @returns The fallback reason.
+ */
+function undecodedTurnFallback(error: unknown): "stale_state" | "classifier_lost" {
+	return readCodexFailure(error)?.kind === "identity" ? "stale_state" : "classifier_lost";
+}
 
 /**
  * Build the spoken approval gate: the module that lets a person answer one command-execution
@@ -422,10 +433,7 @@ export function createCodexSpokenApprovalGate(
 		try {
 			return options.identity.decoder.parseTurnId(rawTurnId);
 		} catch (error) {
-			enterFallback(
-				slot,
-				error instanceof IdentityValidationError ? "stale_state" : "classifier_lost",
-			);
+			enterFallback(slot, undecodedTurnFallback(error));
 			return null;
 		}
 	};

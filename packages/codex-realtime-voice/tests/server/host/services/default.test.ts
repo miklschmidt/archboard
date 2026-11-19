@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	createDefaultWorkbenchHost,
 	type DefaultWorkbenchHostInput,
@@ -33,7 +33,7 @@ function contextSource() {
 
 function harness(options: Partial<DefaultWorkbenchHostInput> = {}) {
 	const root = realpathSync(mkdtempSync(join(tmpdir(), "workbench-host-")));
-	const ids = createIdentityAuthorities();
+	const ids = testAuthorities();
 	const identity = ids.identity;
 	const childId = identity.validator.childId;
 	const epoch = identity.validator.epoch;

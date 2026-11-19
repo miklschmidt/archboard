@@ -1,4 +1,4 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
@@ -13,11 +13,10 @@ const IDLE_SPOKEN_APPROVAL: BrowserSnapshot["spokenApproval"] = Object.freeze({
 	reason: null,
 });
 
-const authorities = createIdentityAuthorities();
-const model = createCodexBrowserModel(authorities);
-const { decoder, issuer, validator } = authorities.identity;
-const thread = decoder.adoptThreadId("example-workhorse");
-const turn = decoder.adoptTurnId("example-turn");
+const ids = browserIdentities();
+const model = createCodexBrowserModel();
+const thread = ids.thread("example-workhorse");
+const turn = ids.turn("example-turn");
 
 /**
  * Build a schema-checked page fixture with an optional running turn.
@@ -34,8 +33,8 @@ function exampleSnapshot(running = false): BrowserSnapshot {
 		threadLink: {
 			kind: "thread_link",
 			state: "executable",
-			childId: validator.childId,
-			epoch: validator.epoch,
+			childId: ids.child,
+			epoch: ids.epoch,
 			threadId: thread,
 			sourcePresentation: "standard",
 			status: "idle",
@@ -105,7 +104,7 @@ function commandApproval(): BrowserSnapshot["approvals"][number] {
 	return model.BrowserApprovalSchema.parse({
 		kind: "approval",
 		approvalKind: "command_execution",
-		requestId: issuer.mintJsonRpcRequestId(),
+		requestId: ids.nextJsonRpcRequest(),
 		threadId: thread,
 		turnId: turn,
 		itemId: null,
@@ -113,8 +112,8 @@ function commandApproval(): BrowserSnapshot["approvals"][number] {
 		expiresAtMs: Date.now() + 60_000,
 		lifecycle: { state: "pending", decision: null, outcome: null, reason: null },
 		binding: {
-			child: validator.childId,
-			epoch: validator.epoch,
+			child: ids.child,
+			epoch: ids.epoch,
 			link: null,
 			target: String(thread),
 			effect: "Run a checkout command",

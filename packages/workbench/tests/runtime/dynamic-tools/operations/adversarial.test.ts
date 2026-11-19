@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
 import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import {
 	CHECKOUT_ROOT,
@@ -381,11 +381,12 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		const fixture = optionsFor(authorities, caller);
 		const createdThread = thread(authorities, "one-attempt-thread");
 		fixture.session.threadStartResult = threadForkResult(createdThread);
-		fixture.session.turnStartResult = new CodexSessionMutationError(
-			"turn/start",
-			"not_delivered",
-			"rejected once",
-		);
+		fixture.session.turnStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "turn/start",
+			outcome: "not_delivered",
+			message: "rejected once",
+		});
 		const response = await createCodexDynamicTools(fixture.options).dispatch(
 			requestFor(authorities, caller, "create_thread", { prompt: "one attempt" }),
 		);

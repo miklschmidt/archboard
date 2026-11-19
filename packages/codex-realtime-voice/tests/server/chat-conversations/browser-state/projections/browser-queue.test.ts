@@ -1,9 +1,7 @@
 import { expect, test } from "bun:test";
 
-import {
-	type IdentityAuthorities,
-	createIdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { SessionQueuedSubmission } from "@archboard/codex-app-server/session";
 import { projectionHarness } from "#tests/server/support/generation/projection-harness.ts";
 
@@ -42,7 +40,7 @@ function submission(
 }
 
 test("a snapshot refresh re-reads the authoritative queue and replaces a stale cache", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("readiness-thread");
 	const operationId = authorities.operation.issuer.mintOperationId();
 	let reads = 0;
@@ -98,7 +96,7 @@ test("a snapshot refresh re-reads the authoritative queue and replaces a stale c
 });
 
 test("a failed re-read presents the queue as unavailable rather than an unproven list", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const harness = projectionHarness({
 		workhorse: {
 			snapshot: () => ({
@@ -140,9 +138,9 @@ test("a failed re-read presents the queue as unavailable rather than an unproven
 });
 
 test("a submission's coordinator operation is recovered from its client user message identity", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("readiness-thread");
-	const foreign = createIdentityAuthorities();
+	const foreign = testAuthorities();
 	let ours: ReturnType<IdentityAuthorities["operation"]["issuer"]["mintOperationId"]> | "" = "";
 	const harness = projectionHarness({
 		workhorse: {
@@ -201,7 +199,7 @@ test("a submission's coordinator operation is recovered from its client user mes
 });
 
 test("concurrent snapshot re-reads share one read, and a looping client is floored", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("readiness-thread");
 	let reads = 0;
 	const pending: (() => void)[] = [];

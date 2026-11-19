@@ -19,7 +19,6 @@ import {
 } from "#runtime/epoch/store/contract.ts";
 import { type CodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import {
-	createIdentityAuthorities,
 	type IdentityAuthority,
 	type IdentityAuthorities,
 	type LogicalToolCallCorrelation,
@@ -28,6 +27,7 @@ import {
 	type ThreadId,
 	type TurnId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexWorkhorseOperations } from "#runtime/workhorses/workhorse-operations/services/operations.ts";
 import {
 	type WorkhorseOperationBinding,
@@ -131,7 +131,7 @@ export interface PreparedFixture {
 
 export function fixture(
 	initialStatus: "idle" | "active" = "idle",
-	authorities: IdentityAuthorities = createIdentityAuthorities(),
+	authorities: IdentityAuthorities = testAuthorities(),
 ): Fixture {
 	const group = createStandaloneFixture(initialStatus, authorities);
 	return group.fixture;

@@ -2,7 +2,6 @@ import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
 import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { type ActiveEpoch } from "#runtime/epoch/store/manifest-contract.ts";
 import type {
-	CodexSessionMutationError,
 	SessionParams,
 	SessionResponse,
 	SessionThread,
@@ -21,10 +20,8 @@ import {
 	reviewedCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthority,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthority } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { FakeEpoch } from "#tests/runtime/voice/coordinator/services/fake-epoch.ts";
 
@@ -163,8 +160,8 @@ class FakeThreadLink implements CoordinatorThreadLinkPort {
 interface FakeSessionOptions {
 	readonly model?: CoordinatorModel;
 	readonly threadRawId?: string;
-	readonly startError?: CodexSessionMutationError;
-	readonly updateError?: CodexSessionMutationError;
+	readonly startError?: Error;
+	readonly updateError?: Error;
 	readonly settingsOverrides?: Partial<CoordinatorThreadSettings>;
 	readonly staleNotificationAuthority?: IdentityAuthority;
 	readonly emitSettings?: boolean;
@@ -187,8 +184,8 @@ class FakeSession implements CoordinatorSessionPort {
 	constructor(
 		private readonly authority: IdentityAuthority,
 		modelValue: CoordinatorModel,
-		public startError: CodexSessionMutationError | null,
-		private readonly updateError: CodexSessionMutationError | null,
+		public startError: Error | null,
+		private readonly updateError: Error | null,
 		private readonly staleNotificationAuthority: IdentityAuthority | null,
 		private readonly shouldEmitSettingsNotification: boolean,
 		private readonly deferSettingsUpdate: boolean,
@@ -256,7 +253,7 @@ class FakeSession implements CoordinatorSessionPort {
 	readStatus: SessionThread["status"] = { type: "idle" };
 	/** Called as each thread/read arrives, before it answers. */
 	onRead: (() => void) | undefined;
-	unsubscribeError: CodexSessionMutationError | null = null;
+	unsubscribeError: Error | null = null;
 
 	async threadRead(params: SessionParams<"thread/read">): Promise<SessionResponse<"thread/read">> {
 		this.onRead?.();
@@ -336,7 +333,7 @@ interface Fixture {
 }
 
 function fixture(options: FixtureOptions = {}): Fixture {
-	const authority = createIdentityAuthorities().identity;
+	const authority = testAuthorities().identity;
 	const modelValue = options.model ?? coordinatorModel();
 	const epoch = new FakeEpoch(
 		authority,

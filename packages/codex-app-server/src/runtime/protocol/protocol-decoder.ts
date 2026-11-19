@@ -157,6 +157,9 @@ function methodHint(value: unknown): string {
 	return typeof method === "string" ? method : "<unknown>";
 }
 
+/** The schema of each response, by the method it answers. */
+export type ResponseSchemas = typeof RESPONSE_SCHEMAS;
+
 export type ResponsePayloads = {
 	[M in ResponseMethod]: z.infer<(typeof RESPONSE_SCHEMAS)[M]>;
 };
@@ -325,7 +328,7 @@ export function parseServerRequestParams(
 	return parsed.success ? { params: parsed.data } : undefined;
 }
 
-type DecodedJsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
+export type DecodedJsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
 
 /**
  * Decodes a JSON-RPC error envelope.

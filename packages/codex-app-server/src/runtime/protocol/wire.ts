@@ -1,10 +1,3 @@
-import { ProtocolDecodeError } from "#runtime/protocol/protocol-decoder.ts";
-import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
-import {
-	CodexTransportUsageError,
-	CodexTransportWriteError,
-} from "#runtime/transport/clients/transport-errors.ts";
-
 export type WireId = string | number;
 
 type JsonFrameDecodeFailureKind = "malformed-json" | "duplicate-key";
@@ -28,16 +21,6 @@ export class JsonFrameDecodeError extends Error {
 		this.wireId = wireId;
 		this.methodPresent = methodPresent;
 	}
-}
-
-/**
- * Whether a record carries the key itself rather than through its prototype.
- * @param record The record to inspect.
- * @param key The key to look for.
- * @returns True when the key is an own property.
- */
-export function hasOwn(record: Record<string, unknown>, key: string): boolean {
-	return Object.prototype.hasOwnProperty.call(record, key);
 }
 
 /**
@@ -349,113 +332,4 @@ class StrictJsonParser {
  */
 export function parseJsonText(text: string): unknown {
 	return new StrictJsonParser(text).parse();
-}
-
-/**
- * Whether a string is one of the listed literals, narrowing it to the list's type.
- * @param list The accepted literals.
- * @param value The string to test.
- * @returns True when the string appears in the list.
- */
-export function isInList<T extends string>(list: readonly T[], value: string): value is T {
-	return (list as readonly string[]).includes(value);
-}
-
-/**
- * Serialises a value as JSON, reporting the undefined result JSON.stringify returns for
- * values without a JSON form instead of letting TypeScript hide it behind `string`.
- * @param value The value to encode.
- * @returns The JSON text, or undefined when the value has no JSON form.
- */
-export function encodeJsonText(value: unknown): string | undefined {
-	return JSON.stringify(value);
-}
-
-/**
- * Refuses a caller-supplied label that is empty, padded, oversized or contains NUL.
- * @param value The candidate label.
- * @param field What the label names, for the refusal message.
- */
-export function boundedText(value: unknown, field: string): asserts value is string {
-	if (
-		typeof value !== "string" ||
-		value.length === 0 ||
-		value.length > CODEX_APP_SERVER_CAPACITY.text.maxChars ||
-		value.trim() !== value ||
-		value.includes("\0")
-	)
-		throw new CodexTransportUsageError(`${field} must be a non-empty bounded string`);
-}
-
-/**
- * Encodes a value as one newline-terminated JSON frame within the byte bound.
- * @param value The JSON value to send.
- * @param field What the frame carries, for refusal messages.
- * @param maximumBytes The largest payload allowed, before the newline.
- * @returns The frame bytes.
- */
-export function jsonLine(
-	value: unknown,
-	field: string,
-	maximumBytes: number = CODEX_APP_SERVER_CAPACITY.frameBytes,
-): Buffer {
-	let encoded: string | undefined;
-	try {
-		encoded = encodeJsonText(value);
-	} catch {
-		throw new CodexTransportUsageError(`${field} is not JSON serializable`);
-	}
-	if (encoded === undefined)
-		throw new CodexTransportUsageError(`${field} must be a JSON value, not undefined`);
-	const frameText = `${encoded}\n`;
-	const payloadBytes = Buffer.byteLength(encoded, "utf8");
-	if (payloadBytes > maximumBytes)
-		throw new CodexTransportWriteError("frame-too-large", `${field} exceeds ${maximumBytes} bytes`);
-	return Buffer.from(frameText, "utf8");
-}
-
-/**
- * Encodes the JSON-RPC error frame that answers a refused reverse frame.
- * @param wireId The refused frame's id.
- * @param code The error code.
- * @param message The error message.
- * @returns The frame bytes, within the reverse-response bound.
- */
-export function protocolErrorFrame(wireId: WireId, code: number, message: string): Buffer {
-	return jsonLine(
-		{ id: wireId, error: { code, message } },
-		"protocol error",
-		CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
-	);
-}
-
-/**
- * Whether a decode failure is the decoder's own refusal of a capability the client disabled,
- * which the router answers with a method-not-found error instead of treating as malformed.
- * @param error The decode failure.
- * @returns True for the disabled-capability refusal.
- */
-export function isDisabledCapabilityError(error: unknown): error is ProtocolDecodeError {
-	if (!(error instanceof ProtocolDecodeError)) return false;
-	return error.issues.some(
-		(issue) =>
-			isRecord(issue) &&
-			Array.isArray(issue["path"]) &&
-			issue["path"].length === 1 &&
-			issue["path"][0] === "method" &&
-			issue["message"] === "capability was explicitly disabled by this client",
-	);
-}
-
-/**
- * Classifies a response frame by which of result and error it carries.
- * @param value The decoded frame.
- * @returns "result" or "error" when exactly one is present, otherwise "malformed".
- */
-export function responseKind(value: Record<string, unknown>): "result" | "error" | "malformed" {
-	const result = hasOwn(value, "result");
-	const error = hasOwn(value, "error");
-	if (result && !error) return "result";
-	if (error && !result) return "error";
-	return "malformed";
 }

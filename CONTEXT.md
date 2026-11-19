@@ -938,6 +938,11 @@ _Avoid_: external edit, foreign write, third-party change
 
 ### Working
 
+**Codex connection**:
+The identities and the transport of one Codex child for one epoch, which every session on that child is opened on.
+A new child gets a new connection, so nothing named in one connection can be used in another.
+_Avoid_: kernel, client, channel, session (that is opened on a connection)
+
 **Tab session**:
 The work of one browser tab with Codex: one voice coordinator for the whole app and one workhorse for each checkout that the tab works in.
 A reload keeps it, and a new tab or window starts a new one.

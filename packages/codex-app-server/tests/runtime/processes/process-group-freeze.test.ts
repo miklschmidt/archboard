@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
+import { createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
 	fixture,
 	processOptions as options,

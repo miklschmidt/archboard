@@ -1,18 +1,14 @@
 import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
 import type { CodexWorkbenchDomain } from "#server/generation/protocol/domain.ts";
 import type { CodexEpochStore } from "#runtime/epoch/store/contract.ts";
-import {
-	codexSessionControl,
-	type CodexSession,
-	type ControlledCodexSession,
-} from "@archboard/codex-app-server/session";
+import type { CodexSession } from "@archboard/codex-app-server/session";
+import type { CodexConnection, CodexSessionControl } from "@archboard/codex-app-server/connection";
 import type { CodexThreadLinkPort } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
-	IdentityLedger,
 } from "@archboard/codex-app-server/identity";
 import type { CodexWorkbenchGateway } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import type { CodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
@@ -55,7 +51,7 @@ interface CodexWorkbenchComponents {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: CodexEpochStore;
 	readonly transport: CodexTransport;
-	readonly session: ControlledCodexSession;
+	readonly session: CodexSession;
 	readonly threadLink: CodexThreadLinkPort;
 	readonly approvals: CodexApprovalBroker;
 	readonly dynamicTools: CodexWorkbenchDomain | null;
@@ -109,6 +105,7 @@ interface GenerationRegistrations {
 
 interface GenerationState {
 	readonly components: CodexWorkbenchComponents;
+	readonly sessionControl: CodexSessionControl;
 	readonly owners: CodexWorkbenchRequestOwners;
 	readonly hooks: CodexWorkbenchGenerationHooks;
 	readonly assertActivationCurrent: () => void;
@@ -124,7 +121,7 @@ interface GenerationState {
 
 interface CodexWorkbenchGeneration {
 	readonly components: CodexWorkbenchComponents;
-	readonly identityLedger: IdentityLedger;
+	readonly connection: CodexConnection;
 	readonly transport: CodexTransport;
 	readonly gateway: CodexWorkbenchGateway;
 	readonly activate: () => Promise<void>;
@@ -136,7 +133,8 @@ interface CodexWorkbenchGeneration {
 
 interface CreateCodexWorkbenchGenerationLifecycleOptions {
 	readonly components: CodexWorkbenchComponents;
-	readonly identityLedger: IdentityLedger;
+	readonly sessionControl: CodexSessionControl;
+	readonly connection: CodexConnection;
 	readonly hooks: CodexWorkbenchGenerationHooks;
 	readonly assertActivationCurrent: () => void;
 }
@@ -316,6 +314,7 @@ function createCodexWorkbenchGenerationLifecycle(
 	const router = createCodexWorkbenchRequestRouter(owners);
 	const state: GenerationState = {
 		components,
+		sessionControl: options.sessionControl,
 		owners,
 		hooks: options.hooks,
 		assertActivationCurrent: options.assertActivationCurrent,
@@ -340,7 +339,7 @@ function createCodexWorkbenchGenerationLifecycle(
 			return;
 		}
 		state.hooks.onNotification(event);
-		codexSessionControl(components.session).onNotification(event);
+		options.sessionControl.onNotification(event);
 		components.sessions.onNotification(event);
 	};
 	const activeRouter: CodexWorkbenchRequestRouter = {
@@ -497,7 +496,7 @@ function createCodexWorkbenchGenerationLifecycle(
 
 	return Object.freeze({
 		components,
-		identityLedger: options.identityLedger,
+		connection: options.connection,
 		transport: components.transport,
 		gateway: components.gateway,
 		activate,

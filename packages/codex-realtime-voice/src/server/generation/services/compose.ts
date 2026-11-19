@@ -1,4 +1,4 @@
-import { codexSessionControl } from "@archboard/codex-app-server/session";
+import type { CodexSessionControl } from "@archboard/codex-app-server/connection";
 import {
 	createCodexWorkbenchGenerationLifecycle,
 	type CodexWorkbenchComponents,
@@ -19,8 +19,8 @@ type ConstructionCleanup = () => Promise<unknown> | void;
 
 /**
  * Build and activate the one complete child-generation graph.
- * @param options The factories, the ledger, the hooks, and whether this
- * generation owns its transport and is activated as it is built.
+ * @param options The factories, the connection, the hooks, and whether this
+ * generation is activated as it is built.
  * @returns The generation, activated unless the caller asked otherwise.
  */
 async function composeCodexWorkbenchGeneration(
@@ -28,20 +28,15 @@ async function composeCodexWorkbenchGeneration(
 ): Promise<CodexWorkbenchGeneration> {
 	const created: MutableComponents = {};
 	const constructionCleanups: ConstructionCleanup[] = [];
-	let components: CodexWorkbenchComponents;
+	let constructed: ConstructedComponents;
 	try {
-		components = constructComponents(
-			options.factories,
-			options.ownsTransport !== false,
-			created,
-			constructionCleanups,
-		);
+		constructed = constructComponents(options.factories, created, constructionCleanups);
 	} catch (error) {
 		throw await unwoundFailure(constructionCleanups, error);
 	}
 	const source = createCodexWorkbenchGenerationLifecycle({
-		components,
-		identityLedger: options.identityLedger,
+		...constructed,
+		connection: options.connection,
 		hooks: options.hooks,
 		assertActivationCurrent: options.assertActivationCurrent ?? (() => undefined),
 	});
@@ -51,23 +46,27 @@ async function composeCodexWorkbenchGeneration(
 	return source;
 }
 
+/** Every component, and the control of the session among them. */
+interface ConstructedComponents {
+	readonly components: CodexWorkbenchComponents;
+	readonly sessionControl: CodexSessionControl;
+}
+
 /**
  * Build every component in dependency order, recording as it goes what each
  * one needs undone: the order here is the graph, and each factory reads the
- * components built before it out of `created`.
+ * components built before it out of `created`. The transport belongs to the
+ * connection, so construction never shuts it down.
  * @param factories One factory per component.
- * @param ownsTransport Whether this generation owns the transport it uses, and
- * so must shut it down; a generation over a kernel's transport does not.
  * @param created Filled in as each component is built, for the factories to read.
  * @param cleanups Appended to as each component that needs unwinding is built.
- * @returns Every component, frozen.
+ * @returns Every component, frozen, and the session's control.
  */
 function constructComponents(
 	factories: CodexWorkbenchComponentFactories,
-	ownsTransport: boolean,
 	created: MutableComponents,
 	cleanups: ConstructionCleanup[],
-): CodexWorkbenchComponents {
+): ConstructedComponents {
 	const identity = factories.identity(created);
 	created.identity = identity;
 	const epoch = factories.epoch(created);
@@ -75,12 +74,9 @@ function constructComponents(
 	cleanups.push(() => epoch.close());
 	const transport = factories.transport(created);
 	created.transport = transport;
-	if (ownsTransport) {
-		cleanups.push(() => transport.shutdown());
-	}
-	const session = factories.session(created);
+	const { session, control: sessionControl } = factories.session(created);
 	created.session = session;
-	cleanups.push(() => codexSessionControl(session).dispose());
+	cleanups.push(() => sessionControl.dispose());
 	const threadLink = factories.threadLink(created);
 	created.threadLink = threadLink;
 	const approvals = factories.approvals(created);
@@ -101,7 +97,7 @@ function constructComponents(
 	const gateway = factories.gateway(created);
 	created.gateway = gateway;
 	cleanups.push(() => gateway.dispose());
-	return Object.freeze({
+	const components = Object.freeze({
 		identity,
 		epoch,
 		transport,
@@ -112,6 +108,7 @@ function constructComponents(
 		sessions,
 		gateway,
 	} satisfies CodexWorkbenchComponents);
+	return { components, sessionControl };
 }
 
 /**

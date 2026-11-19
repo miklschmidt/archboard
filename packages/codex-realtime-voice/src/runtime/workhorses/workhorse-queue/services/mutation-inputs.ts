@@ -2,7 +2,7 @@ import {
 	createTextUserInput,
 	type TextUserInput,
 } from "#runtime/host/turn-input/rules/text-input.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import {
 	CodexWorkhorseQueueError,
 	type QueueMutationOutcome,
@@ -50,7 +50,8 @@ function inputForPrompt(prompt: string): TextUserInput {
  * @returns The outcome to report.
  */
 function mutationOutcome(error: unknown): QueueMutationOutcome {
-	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
+	const failure = readCodexFailure(error);
+	return failure?.kind === "mutation" ? failure.outcome : "outcome_unknown";
 }
 
 /**

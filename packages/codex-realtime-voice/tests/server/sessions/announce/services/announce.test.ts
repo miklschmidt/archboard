@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { announceContextChange } from "#server/sessions/announce/services/announce.ts";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import type { ContextChange } from "#server/sessions/announce/protocol/contract.ts";
@@ -19,7 +19,7 @@ const CHECKOUT = "/work/shop";
  * @returns The scope and what was delivered.
  */
 function tab(voiceLive = true, coordinatorState = "ready") {
-	const ids = createIdentityAuthorities().identity;
+	const ids = testAuthorities().identity;
 	const { childId, epoch } = ids.validator;
 	const threadId = ids.decoder.adoptThreadId("workhorse");
 	const coordinatorId = ids.decoder.adoptThreadId("coordinator");

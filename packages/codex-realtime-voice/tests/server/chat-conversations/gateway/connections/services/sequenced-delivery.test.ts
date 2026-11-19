@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { BrowserGatewayMessage } from "#shared/protocol/gateway-envelope.ts";
 import type { CodexTimelineProjectionInput } from "#server/projection/protocol/projection-contract.ts";
 import { createGatewayHarness } from "#tests/server/support/gateway/support.ts";
@@ -10,7 +10,7 @@ const wireBytes = (value: unknown): number =>
 
 /** One history page whose encoded delta necessarily exceeds the 256 KiB delta bound. */
 function oversizedTimeline(
-	authorities: ReturnType<typeof createIdentityAuthorities>,
+	authorities: ReturnType<typeof testAuthorities>,
 ): CodexTimelineProjectionInput {
 	const decoder = authorities.identity.decoder;
 	return {
@@ -94,7 +94,7 @@ describe("Codex workbench sequenced browser delivery", () => {
 	});
 
 	test("a change too large for one delta is published as a complete snapshot", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		let timeline: CodexTimelineProjectionInput | null = null;
 		const value = createGatewayHarness(authorities, undefined, undefined, {
 			project: (owner) => ({ ...owner, timeline }),

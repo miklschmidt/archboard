@@ -4,25 +4,25 @@
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { IDLE_SPOKEN_APPROVAL } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
-const { decoder, validator } = createIdentityAuthorities().identity;
+const brand = browserIdentities();
 
 const ids = {
-	threadId: decoder.adoptThreadId("thread-a"),
-	turnId: decoder.adoptTurnId("turn-a"),
-	itemId: decoder.adoptItemId("item-a"),
-	loginId: decoder.adoptLoginId("login-a"),
-	coordinatorId: decoder.adoptThreadId("coordinator-a"),
+	threadId: brand.thread("thread-a"),
+	turnId: brand.turn("turn-a"),
+	itemId: brand.item("item-a"),
+	loginId: brand.login("login-a"),
+	coordinatorId: brand.thread("coordinator-a"),
 };
 
 /** An executable link to the workhorse. */
 const LINKED: BrowserSnapshot["threadLink"] = {
 	kind: "thread_link",
 	state: "executable",
-	childId: validator.childId,
-	epoch: validator.epoch,
+	childId: brand.child,
+	epoch: brand.epoch,
 	threadId: ids.threadId,
 	sourcePresentation: "standard",
 	status: "idle",
@@ -103,9 +103,9 @@ function conversation(prompts: readonly string[]): BrowserSnapshot {
 			kind: "timeline",
 			threadId: ids.threadId,
 			turns: prompts.map((text, index) => ({
-				turnId: decoder.adoptTurnId(`turn-${index}`),
+				turnId: brand.turn(`turn-${index}`),
 				status: "completed" as const,
-				items: [{ media: "prompt" as const, itemId: decoder.adoptItemId(`item-${index}`), text }],
+				items: [{ media: "prompt" as const, itemId: brand.item(`item-${index}`), text }],
 				summary: "done",
 				outputsIncluded: true,
 				outputsTruncated: false,

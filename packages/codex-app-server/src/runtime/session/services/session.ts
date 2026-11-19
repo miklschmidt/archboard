@@ -16,8 +16,7 @@ import type { TransportServerNotification } from "#runtime/transport/clients/tra
 import {
 	CodexSessionError,
 	CodexSessionMutationError,
-	CODEX_SESSION_CONTROL,
-	type ControlledCodexSession,
+	type OpenedCodexSession,
 	type CodexSessionOptions,
 } from "#runtime/session/services/session-api.ts";
 import {
@@ -90,7 +89,7 @@ function rethrowRequestFailure(method: string, error: unknown, mutation: boolean
  * notification sink and clock this session runs on.
  * @returns The session, together with the control channel its owner drives it through.
  */
-export function createCodexSession(options: CodexSessionOptions): ControlledCodexSession {
+export function createCodexSession(options: CodexSessionOptions): OpenedCodexSession {
 	const transport: CodexTransport = options.transport;
 	const identity = options.identity;
 	const lifecycle = options.lifecycle;
@@ -451,15 +450,17 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	});
 
 	return Object.freeze({
-		[CODEX_SESSION_CONTROL]: Object.freeze({
+		session: Object.freeze({
+			initialize,
+			...operations,
+			respondCurrentTime: reverseRequests.respondCurrentTime,
+			respondUnsupportedTokenRefresh: reverseRequests.respondUnsupportedTokenRefresh,
+			respondUnsupportedAttestation: reverseRequests.respondUnsupportedAttestation,
+		}),
+		control: Object.freeze({
 			onNotification,
 			onServerRequest: reverseRequests.onServerRequest,
 			dispose,
 		}),
-		initialize,
-		...operations,
-		respondCurrentTime: reverseRequests.respondCurrentTime,
-		respondUnsupportedTokenRefresh: reverseRequests.respondUnsupportedTokenRefresh,
-		respondUnsupportedAttestation: reverseRequests.respondUnsupportedAttestation,
 	});
 }

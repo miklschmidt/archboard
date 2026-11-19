@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { createCodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
 import {
@@ -59,7 +59,7 @@ function toolCall(raw: string) {
 
 /** A store over fakes whose threads run what the test says, and what it did to them. */
 function endingStore() {
-	const { identity } = createIdentityAuthorities();
+	const { identity } = testAuthorities();
 	const events: string[] = [];
 	const responses: string[] = [];
 	const unsubscribed: string[] = [];

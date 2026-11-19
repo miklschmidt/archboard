@@ -157,11 +157,12 @@ function onChild(
 }
 
 /**
- * Own one dedicated, exact-argv Codex app-server child and its restart/stop policy.
+ * Own one dedicated, exact-argv Codex app-server child and its restart/stop policy. Tests may
+ * replace the spawn, the file system and the clock through the options.
  * @param options - The process options, with test seams when supplied.
  * @returns The process owner.
  */
-function createProcessOwner(options: CodexProcessTestOptions): CodexProcess {
+function createCodexProcess(options: CodexProcessTestOptions): CodexProcess {
 	const state = createOwnerState(options);
 	/**
 	 * Close the cycle the state module cannot: stopping the owner.
@@ -212,4 +213,4 @@ function createProcessOwner(options: CodexProcessTestOptions): CodexProcess {
 	});
 }
 
-export { createProcessOwner };
+export { createCodexProcess };

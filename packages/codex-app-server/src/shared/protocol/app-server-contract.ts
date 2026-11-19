@@ -213,16 +213,6 @@ const CODEX_THREAD_STATUS_TYPES = [
 type CodexThreadStatusType = (typeof CODEX_THREAD_STATUS_TYPES)[number];
 const CodexThreadStatusTypeSchema = z.enum(CODEX_THREAD_STATUS_TYPES);
 
-/**
- * Tells whether a value is one of the thread status types the app server
- * declares, so a status read off the wire narrows without a cast.
- * @param value - Any value, usually `status.type` from a thread payload.
- * @returns True when the value names a declared thread status type.
- */
-function isCodexThreadStatusType(value: unknown): value is CodexThreadStatusType {
-	return CodexThreadStatusTypeSchema.safeParse(value).success;
-}
-
 const CodexTurnStatusSchema = z.enum([
 	"completed",
 	"interrupted",
@@ -488,7 +478,6 @@ export {
 	CODEX_SERVER_REQUEST_METHODS,
 	CodexThreadStatusSchema,
 	type CodexThreadStatusType,
-	isCodexThreadStatusType,
 	CodexTurnStatusSchema,
 	codexFieldSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,

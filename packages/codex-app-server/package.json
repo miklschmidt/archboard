@@ -14,6 +14,8 @@
 		"./identity": "./src/shared/api/identity.ts",
 		"./protocol": "./src/runtime/api/protocol.ts",
 		"./process": "./src/runtime/api/process.ts",
+		"./connection": "./src/runtime/api/connection.ts",
+		"./failure": "./src/runtime/api/failure.ts",
 		"./transport": "./src/runtime/api/transport.ts",
 		"./session": "./src/runtime/api/session.ts"
 	}

@@ -17,7 +17,7 @@ import type {
 	BrowserWorkbenchSnapshotDelta,
 	BrowserWorkbenchSnapshotMessage,
 } from "#ui/transport/state/contract.ts";
-import { BrowserWorkbenchWireError, wireIdentityContext } from "#ui/wire/clients/wire-identity.ts";
+import { BrowserWorkbenchWireError } from "#shared/browser/schemas/wire-identity.ts";
 
 const WIRE_VALUE_MAX_BYTES = 16_384;
 
@@ -184,7 +184,7 @@ function parseModel<Value>(description: string, parse: () => Value): Value {
 	}
 }
 
-const browserModel = createCodexBrowserModel(wireIdentityContext);
+const browserModel = createCodexBrowserModel();
 
 /**
  * Parse a full snapshot.

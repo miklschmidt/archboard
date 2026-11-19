@@ -13,18 +13,9 @@ import type {
 	TurnSchema,
 	TurnStartSchema,
 } from "#runtime/schemas/thread-schemas.ts";
-import type {
-	LoginAccountResponseSchema,
-	ThreadForkResponseSchema,
-	ThreadQueueAddResponseSchema,
-	ThreadQueueListResponseSchema,
-	ThreadQueueUpdateResponseSchema,
-	ThreadStartResponseSchema,
-	TurnSteerResponseSchema,
-} from "#runtime/protocol/response-schemas.ts";
 import type { ThreadItemEntrySchema, ThreadItemSchema } from "#runtime/schemas/item-schemas.ts";
 import type { QueuedSubmissionSchema } from "#runtime/session/schemas/session-contract.ts";
-import type { ResponsePayloads } from "#runtime/protocol/protocol-decoder.ts";
+import type { ResponsePayloads, ResponseSchemas } from "#runtime/protocol/protocol-decoder.ts";
 import type { SessionSourceSchema } from "#runtime/schemas/core-schemas.ts";
 import type {
 	AnyIdentity,
@@ -198,15 +189,15 @@ type BrandLoginResult<Value> = Value extends { readonly loginId: unknown }
 	? Replace<Value, { readonly loginId: LoginId }>
 	: Value;
 type SessionAccountLoginResult = BrandLoginResult<
-	ProtocolOutput<typeof LoginAccountResponseSchema>
+	ProtocolOutput<ResponseSchemas["account/login/start"]>
 >;
 
 type SessionThreadStartResult = Replace<
-	ProtocolOutput<typeof ThreadStartResponseSchema>,
+	ProtocolOutput<ResponseSchemas["thread/start"]>,
 	{ readonly thread: SessionThread }
 >;
 type SessionThreadForkResult = Replace<
-	ProtocolOutput<typeof ThreadForkResponseSchema>,
+	ProtocolOutput<ResponseSchemas["thread/fork"]>,
 	{ readonly thread: SessionThread }
 >;
 type SessionThreadPageResult = Replace<
@@ -239,22 +230,22 @@ type SessionTurnResult = Replace<
 	{ readonly turn: SessionTurn }
 >;
 type SessionTurnSteerResult = Replace<
-	ProtocolOutput<typeof TurnSteerResponseSchema>,
+	ProtocolOutput<ResponseSchemas["turn/steer"]>,
 	{ readonly turnId: TurnId }
 >;
 
 type RawQueuedSubmission = ProtocolOutput<typeof QueuedSubmissionSchema>;
 type SessionQueuedSubmission = Replace<RawQueuedSubmission, { readonly id: QueuedSubmissionId }>;
 type SessionQueueAddResult = Replace<
-	ProtocolOutput<typeof ThreadQueueAddResponseSchema>,
+	ProtocolOutput<ResponseSchemas["thread/queue/add"]>,
 	{ readonly queuedSubmission: SessionQueuedSubmission }
 >;
 type SessionQueueListResult = Replace<
-	ProtocolOutput<typeof ThreadQueueListResponseSchema>,
+	ProtocolOutput<ResponseSchemas["thread/queue/list"]>,
 	{ readonly data: readonly SessionQueuedSubmission[] }
 >;
 type SessionQueueUpdateResult = Replace<
-	ProtocolOutput<typeof ThreadQueueUpdateResponseSchema>,
+	ProtocolOutput<ResponseSchemas["thread/queue/update"]>,
 	{ readonly queuedSubmission: SessionQueuedSubmission }
 >;
 type SessionQueueStartResult = Replace<

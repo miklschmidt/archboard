@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { type BrowserActionContext } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import { createServerRealtimeActions } from "#server/voice/services/realtime-actions.ts";
@@ -9,7 +9,7 @@ import { createServerRealtimeActions } from "#server/voice/services/realtime-act
 const CHECKOUT = "/work/payments";
 
 function fixture() {
-	const identity = createIdentityAuthorities();
+	const identity = testAuthorities();
 	const threadId = identity.identity.decoder.adoptThreadId("realtime-workhorse");
 	let coordinatorThreadId = identity.identity.decoder.adoptThreadId("realtime-coordinator");
 	const calls: Array<{ readonly name: string; readonly value: unknown }> = [];

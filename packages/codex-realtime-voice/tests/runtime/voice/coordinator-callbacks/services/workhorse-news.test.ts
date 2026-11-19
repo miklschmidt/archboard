@@ -18,7 +18,11 @@ import type {
 } from "@archboard/codex-app-server/transport";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
 import { TELL_COORDINATOR_OWNER } from "#runtime/voice/coordinator-callbacks/services/tell-coordinator.ts";
-import { close, harness } from "#tests/runtime/voice/coordinator-callbacks/services/support.ts";
+import {
+	close,
+	harness,
+	priorEpoch,
+} from "#tests/runtime/voice/coordinator-callbacks/services/support.ts";
 
 type Harness = ReturnType<typeof harness>;
 
@@ -201,7 +205,7 @@ describe("workhorse news", () => {
 					method: "turn/completed",
 					params: { threadId: "workhorse", turn: { id: "old", status: "completed", error: null } },
 				},
-				"codex:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444" as Harness["ids"]["epoch"],
+				priorEpoch(live.ids),
 			),
 		);
 		await live.callbacks.flush();

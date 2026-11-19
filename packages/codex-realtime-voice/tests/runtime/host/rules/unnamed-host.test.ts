@@ -1,8 +1,5 @@
 import { expect, test } from "bun:test";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-} from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createWorkbenchThreadProfile } from "#runtime/host/rules/instructions.ts";
 import { createVoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
 import { createSpokenApprovalClassifierPrompt } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/rules/classifier.ts";
@@ -26,9 +23,7 @@ test("a host that supplies no identity gives Codex and its records no name of th
 	const coordinator = profile("coordinator");
 	const workhorse = profile("workhorse");
 	const toolset = createVoiceToolset(coordinator.identity);
-	const { identity, operation } = createIdentityAuthorities(
-		createIdentityLedger(coordinator.identity.recordPrefix),
-	);
+	const { identity, operation } = testAuthorities(coordinator.identity.recordPrefix);
 	const records = {
 		child: identity.validator.childId,
 		epoch: identity.validator.epoch,
