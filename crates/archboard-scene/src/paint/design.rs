@@ -4,7 +4,7 @@
 //! function, so the sheet itself stays the crate's own.
 
 use crate::sizes::{
-    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FLOW_KIND, RAIL_GAP, TAB_SHOULDER,
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FLOW_KIND, TAB_SHOULDER,
 };
 
 /// The space around the final drawing.
@@ -47,11 +47,6 @@ pub const fn flow_kind() -> &'static str {
 /// Whether a node's kind is that of a flowchart's frame.
 pub fn is_flow_kind(kind: &str) -> bool {
     kind == FLOW_KIND
-}
-
-/// The gap a double line's rails leave down its middle.
-pub const fn rail_gap() -> f64 {
-    RAIL_GAP
 }
 
 /// The icon a part without a known icon is drawn with.

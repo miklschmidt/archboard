@@ -47,6 +47,9 @@ pub enum Purpose {
     Port,
     /// A piece of ink a line's mask cuts away where its trunk draws it.
     Cutout,
+    /// The core a double line's mask cuts down its middle, between its two
+    /// rails. It is written as a cutout is.
+    Core,
     /// An arrowhead, drawn in its marker's own ten-unit square.
     Arrowhead,
     /// A line drawn across a box at one height, which takes no pointer.

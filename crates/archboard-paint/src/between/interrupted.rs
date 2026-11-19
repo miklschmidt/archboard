@@ -1,7 +1,6 @@
 //! A new flight starts with the geometry and cuts of the frame it interrupts.
 
 use archboard_scene::geometry::{Curve, Segment};
-use archboard_scene::paint::design::rail_gap;
 use archboard_scene::scene::{
     Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, PulseLook, Purpose, Role,
     Token, TrafficMark,
@@ -23,11 +22,7 @@ fn double_line(y: f64) -> Scene {
     let mask = Mask {
         id: MaskId { line: "e".into() },
         bounds: rect(-18.0, y - 18.0, 136.0, 36.0),
-        shapes: vec![traced(
-            Purpose::Cutout,
-            route,
-            stroke(Token::Border, rail_gap()),
-        )],
+        shapes: vec![traced(Purpose::Core, route, stroke(Token::Border, 1.2))],
     };
     let mut edge = line("e", &[(0.0, y), (100.0, y)]);
     let Item::Group(group) = &mut edge else {
@@ -48,7 +43,7 @@ fn double_line(y: f64) -> Scene {
 fn core(mask: &Mask) -> Geometry {
     mask.shapes
         .iter()
-        .find(|shape| shape.purpose == Purpose::Cutout)
+        .find(|shape| shape.purpose == Purpose::Core)
         .expect("the double line has a core")
         .geometry
         .clone()
