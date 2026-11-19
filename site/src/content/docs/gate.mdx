@@ -66,7 +66,7 @@ There are two fixes, and the finding says both. If the call is intended, the age
 
 The code check also judges how deep each bound module is. A deep module hides much logic behind few names. An exported value that code outside the module reads is [`EXPOSED_VALUE`](../reference/findings/#exposed-value), a warning on any module.
 
-Two warnings judge each module as a whole. Its width is the number of names that callers must learn: its exported functions, classes, public methods and values. Exported types do not count. [`INTERFACE_WIDE`](../reference/findings/#interface-wide) names a module whose width is above 20. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) names a module whose every export that is not a type has a finding like `EXPOSED_VALUE`, or a module with a width of at least 8 and fewer than 4 pieces of logic behind each name. The thresholds are fixed.
+Two warnings judge each module as a whole. Its width is the number of names that callers must learn: its exported functions, classes, public methods and values. Exported types do not count. [`INTERFACE_WIDE`](../reference/findings/#interface-wide) names a module whose width is above 20. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) names a module whose every export that is not a type has a finding like an exposed value, or a module with a width of at least 8 and fewer than 4 pieces of logic behind each name. The thresholds are fixed.
 
 Both codes fail the check on every module. If your repository is not ready for that, use debt mode. Set both codes to information, and fail only on the modules that a branch touched, uncommitted changes included:
 
@@ -110,7 +110,7 @@ codeCheck:
 
 A code set to information stays in the answer, and its warnings become information, which never fails the check. Its message says that the vault policy set it. A code set to off has no findings at all: no line, no count, nothing in Measures and no annotation. The check prints one line that names the codes that are off, for example `code check: off by vault policy: CODE_PASS_THROUGH`. A code without a rule keeps its built-in level.
 
-A rule can only lower a code. The check derives shallow modules before it applies the rules, so a rule that turns off exposed values does not change which modules are shallow. Another code, or another level such as warning, makes the configuration invalid, and the semantics check names the entry. A rule that sets `MODULE_SHALLOW` or `INTERFACE_WIDE` to off beside `failShallowModules: true` is invalid too, because the gate fails on them. Beside `--fail-shallow-modules`, the check refuses with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
+A rule can only lower a code. The check derives shallow modules before it applies the rules, so a rule that turns off exposed values does not change which modules are shallow. Another code, or another level such as warning, makes the configuration invalid, and the semantics check names the entry. A rule that turns off the shallow-module code or the wide-interface code beside `failShallowModules: true` is invalid too, because the gate fails on them. Beside `--fail-shallow-modules`, the check refuses with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
 
 ## In a Git hook
 

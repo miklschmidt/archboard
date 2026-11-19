@@ -99,7 +99,7 @@ function shallow(measure: ModuleMeasure, width: number): DepthFinding | undefine
 	}
 	if (measure.measured && width >= SHALLOW_WIDTH && logic < LOGIC_PER_NAME * width) {
 		grounds.push(
-			`its ${width} names have ${logic} pieces of logic behind them, about ${Math.round(logic / width)} each`,
+			`its ${width} names have ${logic} pieces of logic behind them, about ${Math.floor(logic / width)} each`,
 		);
 	}
 	if (grounds.length === 0) return undefined;
