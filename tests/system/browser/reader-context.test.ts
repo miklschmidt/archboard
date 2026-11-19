@@ -346,6 +346,19 @@ test("the right column follows what a reader looks at, and the left column holds
 	await browser.run(["click", COUNT("hiddenParts")]);
 	await settledOn(browser, "Shop#Worker");
 	await selectedCard(browser, "Shop#Queue");
+
+	// From About, the count must bring the picture back even if its scope stays open.
+	await browser.run(["click", '[data-slot="model-page"] [data-choice="about"]']);
+	await browser.run([
+		"click",
+		'[data-slot="model-about"] [data-connection-id][data-to="Shop#Worker"]',
+	]);
+	await browser.run(["click", '[data-end-id="Shop#Worker"]']);
+	await browser.run(["click", COUNT("hiddenParts")]);
+	expect(await browser.eval(`document.querySelector('[data-slot="model-about"]') === null`)).toBe(
+		true,
+	);
+	await selectedCard(browser, "Shop#Queue");
 	await browser.run(["click", CLEAR]);
 
 	// Callers are selected where the picture draws them.

@@ -161,9 +161,18 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 	);
 	const { onAbout } = props;
 	const onShow = useShowSubject(reader);
-	const { onPage } = reader;
+	const { onDiagram, onPage } = reader;
+	const { showHere } = choices;
+	const about = reader.page === "about";
 	const openAbout = useCallback((): void => onPage("about"), [onPage]);
-	const line = useMemo(() => ({ onShow: choices.showHere, onAbout }), [choices.showHere, onAbout]);
+	const showInterface = useCallback<typeof showHere>(
+		(subjects, module): void => {
+			if (about) onDiagram();
+			showHere(subjects, module);
+		},
+		[about, onDiagram, showHere],
+	);
+	const line = useMemo(() => ({ onShow: showInterface, onAbout }), [showInterface, onAbout]);
 	const subject = {
 		vault: reader.vault,
 		paneId: props.paneId,
@@ -183,7 +192,6 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 		line,
 		look,
 	};
-	const about = reader.page === "about";
 	const top = useOutlineTop(about, props.outlineSlot);
 	return (
 		<ModelPanel selecting={selecting} onClose={selection.clear} top={top}>
