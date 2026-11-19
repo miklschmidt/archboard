@@ -23,7 +23,6 @@ import { Tooltip } from "@archboard/ui-kit/components";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import {
 	OrbStageProvider,
-	subtitlePreference,
 	VoiceSurfaceProvider,
 	type AgentVoiceView,
 } from "@archboard/workbench/voice";
@@ -69,8 +68,33 @@ afterAll(async () => {
 
 afterEach(() => {
 	cleanup();
-	subtitlePreference.change(true);
+	chooseSubtitles(true);
 });
+
+/** Press the subtitles key of the voice box on the page, as the person does. */
+function pressSubtitlesKey(): void {
+	const key = document.querySelector<HTMLButtonElement>('[data-slot="voice-subtitles-toggle"]');
+	if (key === null) {
+		throw new Error("The page has no subtitles key to press.");
+	}
+	act(() => {
+		key.click();
+	});
+}
+
+/**
+ * Make the person's subtitle choice before a test draws its page, with the key of a voice box
+ * that a fullscreen presentation always draws.
+ * @param wanted Whether subtitles are wanted.
+ */
+function chooseSubtitles(wanted: boolean): void {
+	render(pane({ dockless: true }));
+	const key = document.querySelector('[data-slot="voice-subtitles-toggle"]');
+	if (key?.getAttribute("aria-pressed") !== String(wanted)) {
+		pressSubtitlesKey();
+	}
+	cleanup();
+}
 
 /** Nothing happens: the test presses nothing. */
 function nothing(): void {
@@ -276,9 +300,7 @@ test("turning subtitles off takes the box away once it has left", () => {
 	const restore = driveFramesFrom(clock);
 	try {
 		render(pane());
-		act(() => {
-			subtitlePreference.change(false);
-		});
+		pressSubtitlesKey();
 		expect(boxed()).toBe(true);
 		expect(document.querySelector('[data-slot="voice-box"]')?.hasAttribute("data-leaving")).toBe(
 			true,
@@ -309,15 +331,13 @@ test("a fullscreen presentation has no dock, so the box carries the voice whatev
 	expect(words()).toBe(true);
 
 	// The words are what the person turns off: the box holds the voice and says nothing.
-	act(() => {
-		subtitlePreference.change(false);
-	});
+	pressSubtitlesKey();
 	expect(boxed()).toBe(true);
 	expect(words()).toBe(false);
 });
 
 test("the page that records a talk has plain subtitles whatever the person chose, and never the box", () => {
-	subtitlePreference.change(false);
+	chooseSubtitles(false);
 	render(pane({ recording: true }));
 	expect(boxed()).toBe(false);
 	expect(plain()).toBe(true);
