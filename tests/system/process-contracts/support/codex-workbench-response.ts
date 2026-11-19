@@ -1,21 +1,32 @@
 import { z } from "zod";
 
-// What a dynamic tool call answered with on the wire: one text item holding the result envelope,
-// and whether the call succeeded. The envelope is read as the loose record the tests then compare
-// field by field; its closed shape is proven in the workbench package's own tests.
+// Process tests check the common wire envelope here and the result value at each call site.
 const ResponseSchema = z.strictObject({
 	contentItems: z.tuple([z.strictObject({ type: z.literal("inputText"), text: z.string() })]),
 	success: z.boolean(),
 });
 
-const EnvelopeSchema = z.looseObject({
-	tag: z.string(),
-	operationId: z.string().optional(),
-	value: z.json().optional(),
-	summary: z.string().optional(),
-	reason: z.string().optional(),
-	message: z.string().optional(),
-});
+const OperationId = z.string().min(1).refine((text) => Array.from(text).length <= 128);
+const ShortText = z
+	.string()
+	.min(1)
+	.refine((text) => Buffer.byteLength(text, "utf8") <= 512);
+const EnvelopeSchema = z.discriminatedUnion("tag", [
+	z.strictObject({ tag: z.literal("ok"), operationId: OperationId, value: z.json() }),
+	z.strictObject({
+		tag: z.literal("approval_required"),
+		operationId: OperationId,
+		summary: ShortText,
+	}),
+	z.strictObject({
+		tag: z.literal("outcome_unknown"),
+		operationId: OperationId,
+		message: z.literal(
+			"The request may have taken effect. Inspect authoritative state before another mutation.",
+		),
+	}),
+	z.strictObject({ tag: z.literal("refused"), reason: z.string().min(1), message: ShortText }),
+]);
 
 export type ToolEnvelope = z.infer<typeof EnvelopeSchema>;
 
@@ -28,9 +39,16 @@ export type ToolEnvelope = z.infer<typeof EnvelopeSchema>;
 export function parseDynamicToolCallResponse(response: unknown): { envelope: ToolEnvelope } {
 	const parsed = ResponseSchema.parse(response);
 	const text = parsed.contentItems[0].text;
-	const value: unknown = JSON.parse(text);
-	if (JSON.stringify(value) !== text) {
+	const envelope = EnvelopeSchema.parse(JSON.parse(text));
+	if (Array.from(text).length > 16_384 || JSON.stringify(envelope) !== text) {
 		throw new Error("The tool result envelope is not compact JSON.");
 	}
-	return { envelope: EnvelopeSchema.parse(value) };
+	if (
+		!parsed.success &&
+		(envelope.tag !== "refused" ||
+			(envelope.reason !== "invalid_call" && envelope.reason !== "unsupported"))
+	) {
+		throw new Error("An unsuccessful tool call must carry a boundary refusal.");
+	}
+	return { envelope };
 }
