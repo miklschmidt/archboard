@@ -146,19 +146,23 @@ function kindOf(definition: Definition): ExportKind {
 }
 
 /**
- * The names of a module that a judged language exposes, each once.
+ * The names of a module that a judged language exposes, each once, and those languages.
  * @param reading The module.
- * @returns The names.
+ * @returns The names, and the adapters that read them.
  */
-async function judgedNames(reading: DepthReading): Promise<ExposedName[]> {
+async function judgedNames(
+	reading: DepthReading,
+): Promise<{ readonly names: ExposedName[]; readonly languages: string[] }> {
 	const names = new Map<string, ExposedName>();
+	const languages = new Set<string>();
 	for (const name of reading.exposure.exposed) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await reading.facts.read(reading.checkout, name.path);
 		if (read === undefined || read.adapter === "text" || !JUDGED.has(read.adapter)) continue;
+		languages.add(read.adapter);
 		if (!names.has(name.name)) names.set(name.name, name);
 	}
-	return [...names.values()];
+	return { names: [...names.values()], languages: [...languages] };
 }
 
 /**
@@ -325,7 +329,7 @@ function shallow(
  * @returns The counts and the findings.
  */
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
-	const names = await judgedNames(reading);
+	const { names, languages } = await judgedNames(reading);
 	const { counts, top } = countExports(names);
 	const findings = top.flatMap(([name, kind]) => perName(reading, name, kind));
 	const judged = new Map(
@@ -338,7 +342,7 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	);
 	const rollUp = shallow(reading, judged);
 	return {
-		languages: names.length === 0 ? [] : ["typescript"],
+		languages,
 		exports: counts,
 		logic: await logicOf(reading),
 		findings: rollUp === undefined ? findings : [...findings, rollUp],

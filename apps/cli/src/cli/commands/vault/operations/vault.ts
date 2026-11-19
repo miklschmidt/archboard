@@ -18,6 +18,12 @@ import {
 	FIX_HELP,
 } from "#cli/commands/vault/operations/check-help.ts";
 import { checkResult } from "#cli/commands/vault/operations/check-result.ts";
+import {
+	baseRefusal,
+	gateParameters,
+	askGate,
+	gateShallowModules,
+} from "#cli/commands/vault/rules/shallow-modules.ts";
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
@@ -44,10 +50,7 @@ const output = {
 	 */
 	select: () => "json",
 } as const;
-/**
- * What the code check reads: `--state`, `--every-draft` and `--plan`, and the
- * shallow-module gate: `--fail-shallow-modules` and `--base`.
- */
+/** What the code check reads: `--state`, `--every-draft`, `--plan`, and the gate's options. */
 const CodeCheckInputSchema = z.object({
 	state: z.string().optional(),
 	everyDraft: z.boolean().optional(),
@@ -74,65 +77,13 @@ async function codeCheckOnServer(
 	const asked = new URLSearchParams(reading.state === undefined ? [] : [["state", reading.state]]);
 	if (reading.everyDraft === true) asked.append("every-draft", "true");
 	for (const plan of reading.plan ?? []) asked.append("plan", path.resolve(plan));
-	if (reading.base !== undefined) asked.append("base", reading.base);
-	if (reading.failShallowModules === true) asked.append("touched", "true");
+	askGate(asked, reading);
 	const query = asked.toString() === "" ? "" : `?${asked}`;
-	return CodeCheckAnswerSchema.parse(
-		await requestJson<unknown>(`/api/vault/code-check${query}`, { signal }),
+	const answer = await requestJson<unknown>(`/api/vault/code-check${query}`, { signal });
+	return gateShallowModules(
+		CodeCheckAnswerSchema.parse(answer),
+		reading.failShallowModules === true,
 	);
-}
-
-/** One finding of the code check. */
-type CodeFinding = CodeCheckAnswer["findings"][number];
-
-/**
- * Whether the shallow-module gate judges a finding's model: `--fail-shallow-modules`, or the
- * model's policy.
- * @param code The code check's answer.
- * @param finding The finding.
- * @param flag Whether `--fail-shallow-modules` was given.
- * @returns True when it does.
- */
-function gated(code: CodeCheckAnswer, finding: CodeFinding, flag: boolean): boolean {
-	const model = code.models?.find(
-		(each) => each.model === finding.model && each.state === (finding.state ?? null),
-	);
-	return flag || model?.failShallowModules === true;
-}
-
-/**
- * Apply the shallow-module gate (TASK-646.04): `MODULE_SHALLOW` on a module that the branch
- * touched becomes a warning, so the existing exit rule fails on it. The answer's severities never
- * depend on the caller, so the CLI owns the gate. A gated shallow module whose range the check could
- * not read is a refusal, never a pass.
- * @param code The code check's answer.
- * @param flag Whether `--fail-shallow-modules` was given.
- * @returns The answer with the gate applied.
- */
-function gateShallowModules(code: CodeCheckAnswer, flag: boolean): CodeCheckAnswer {
-	const unread: string[] = [];
-	const findings = code.findings.map((finding): CodeFinding => {
-		if (finding.code !== "MODULE_SHALLOW" || !gated(code, finding, flag)) return finding;
-		const id = finding.subject?.id ?? "";
-		const touched = code.touched?.find(
-			(each) => each.model === finding.model && each.state === (finding.state ?? null),
-		);
-		if (touched === undefined || touched.unread.includes(id)) {
-			unread.push(finding.subject?.name ?? id);
-			return finding;
-		}
-		return touched.modules.includes(id) ? { ...finding, severity: "warning" } : finding;
-	});
-	if (unread.length > 0) {
-		const named = unread.map((name) => JSON.stringify(name)).join(", ");
-		throw Object.assign(
-			new Error(
-				`The check could not read whether the branch touched the shallow modules ${named}: the base does not resolve in their checkout. Name a base that does with --base.`,
-			),
-			{ code: baseRefusal.code },
-		);
-	}
-	return { ...code, findings };
 }
 
 /** What the embeds check reads: `--fix`. */
@@ -159,14 +110,6 @@ const stateAmbiguousRefusal = {
 	stream: "stderr" as const,
 	description:
 		"--state names several states of the model. Name one by its identity, which `archboard model proposals` lists.",
-};
-
-const baseRefusal = {
-	code: "BASE_UNRESOLVED",
-	exit: 2,
-	stream: "stderr" as const,
-	description:
-		"The base that `--base` names, or the default base, does not resolve, so the check cannot tell which modules the branch touched. Also a shallow module that the gate judges whose range the check could not read. A gate never passes because it read nothing.",
 };
 
 const planRefusal = {
@@ -329,12 +272,7 @@ async function runChecks(
 	const semantics = ran.includes("semantics")
 		? await semanticsCheckOnServer(context.signal, reading.state)
 		: undefined;
-	const code = ran.includes("code")
-		? gateShallowModules(
-				await codeCheckOnServer(reading, context.signal),
-				reading.failShallowModules === true,
-			)
-		: undefined;
+	const code = ran.includes("code") ? await codeCheckOnServer(reading, context.signal) : undefined;
 	const embeds = ran.includes("embeds")
 		? await checkEmbeds(context, reading.fix === true)
 		: undefined;
@@ -378,23 +316,7 @@ const codeCheckParameters = [
 		description:
 			"Read this plan JSON, from `terraform show -json` or `tofu show -json`, for the root module of its directory. The check reads only its addresses and references, for the modules it does not read itself. The file must be in the checkout that holds the vault or in the chosen checkout of another repository",
 	},
-	{
-		kind: "option",
-		key: "failShallowModules",
-		spellings: ["--fail-shallow-modules"],
-		value: "none",
-		description:
-			"Fail on MODULE_SHALLOW in a module that the branch touched since its base, uncommitted changes included",
-	},
-	{
-		kind: "option",
-		key: "base",
-		spellings: ["--base"],
-		value: "required",
-		placeholder: "ref",
-		description:
-			"The branch, tag or commit that the branch is read from for the touched modules. Without it, the default base: where origin/HEAD points, else main",
-	},
+	...gateParameters,
 ] as const;
 
 /** The option of the embeds check, which `check`, `check all` and `check embeds` read. */
