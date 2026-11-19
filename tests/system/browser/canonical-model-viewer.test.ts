@@ -184,15 +184,15 @@ test("current model readings refresh after external edits and reconnect with exp
 	await gatewayDetails(browser);
 	const details = (): Promise<string> =>
 		browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
+			`document.querySelector('[data-slot="model-panel"] [data-slot="module-description"]')?.textContent ?? ''`,
 		);
 	const gatewayPath = join(vault, "gateway.module.json");
 	const gateway = JSON.parse(readFileSync(gatewayPath, "utf8")) as Record<string, unknown>;
-	gateway["responsibility"] = "Observed external responsibility";
+	gateway["description"] = "Observed external description";
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	await pollUntil(
 		details,
-		(text) => text.includes("Observed external responsibility"),
+		(text) => text.includes("Observed external description"),
 		"the external edit without a manual refresh",
 		WAIT,
 	);
@@ -209,12 +209,12 @@ test("current model readings refresh after external edits and reconnect with exp
 		WAIT,
 	);
 	expect(await stale()).toBe(true);
-	expect(await details()).toContain("Observed external responsibility");
-	gateway["responsibility"] = "Repaired external responsibility";
+	expect(await details()).toContain("Observed external description");
+	gateway["description"] = "Repaired external description";
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	await pollUntil(
 		details,
-		(text) => text.includes("Repaired external responsibility"),
+		(text) => text.includes("Repaired external description"),
 		"the repaired current reading",
 		WAIT,
 	);
@@ -248,13 +248,13 @@ test("current model readings refresh after external edits and reconnect with exp
 			await pollUntil(stale, Boolean, "the disconnected reading notice", WAIT);
 			// Losing the stream says nothing about ownership, so its last known mark stays.
 			expect(await claimVisible()).toBe(true);
-			expect(await details()).toContain("Repaired external responsibility");
+			expect(await details()).toContain("Repaired external description");
 			const released = await releaseArchitectureClaim(vault, {
 				claim: claimId,
 				writer: "reconnecting-agent",
 			});
 			if (!released.success) throw new Error(released.error);
-			gateway["responsibility"] = "Changed while disconnected";
+			gateway["description"] = "Changed while disconnected";
 			writeFileSync(gatewayPath, JSON.stringify(gateway));
 		},
 	});
