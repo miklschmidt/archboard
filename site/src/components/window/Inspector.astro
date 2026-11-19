@@ -1,11 +1,12 @@
 ---
 // The right panel of the mock shell, with Checkout API selected at the shop's root, as the shell
-// shows it: the subject and its interface and implementation, then the legend that ends the scroll,
+// shows it: the subject and its interface, then the legend that ends the scroll,
 // over a row of keys. The shell lists more under a module, and the mock keeps its first sections.
 // The counts are the example shop's.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import PanelLegend from "./PanelLegend.astro";
+import SectionLabel from "./SectionLabel.astro";
 
 const interfaceCounts = [
 	["Entries", 2],
@@ -21,14 +22,16 @@ const interfaceCounts = [
 				<KindChip kind="service" size={24} look="panel" />
 				<div class="title">
 					<p class="name">Checkout API</p>
-					<p class="kind">Service</p>
 				</div>
 				<Icon name="close" size={16} />
 			</div>
 			<p class="summary">Takes an order, charges it and confirms it</p>
 		</div>
 		<div class="block">
-			<p class="label">Interface <span class="small">Open in About</span></p>
+			<p class="label">
+				<SectionLabel icon="plug" title="Interface" />
+				<span class="small">Open in About</span>
+			</p>
 			<ul class="rows">
 				{
 					interfaceCounts.map(([label, value]) => (
@@ -38,12 +41,6 @@ const interfaceCounts = [
 						</li>
 					))
 				}
-			</ul>
-		</div>
-		<div class="block">
-			<p class="label">Implementation</p>
-			<ul class="rows">
-				<li>Hidden part <span class="mono">1</span></li>
 			</ul>
 		</div>
 		<PanelLegend />
@@ -72,7 +69,7 @@ const interfaceCounts = [
 		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: 14px;
 		padding: 16px;
 	}
 	.scroll > :global(:last-child) {
@@ -104,29 +101,28 @@ const interfaceCounts = [
 		text-transform: uppercase;
 		color: var(--ink);
 	}
-	.kind {
-		font-size: 12px;
-		color: var(--ink-muted);
-	}
 	.summary {
 		color: var(--ink-body);
 	}
+	/* A section opens with a rule across the panel's words, as in the shell. */
 	.block {
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 6px;
+		padding-top: 14px;
+		border-top: 1px solid var(--rule);
 	}
-	/* A section's label is the left column's: its name in full ink and semibold. */
+	/* A section's label is the left column's, and a key of the section stands at its end. */
 	.label {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		min-height: 24px;
-		font-weight: 600;
-		color: var(--ink);
 	}
 	.small {
 		padding: 3px 8px;
+		font-weight: 600;
+		color: var(--ink);
 		border-radius: 3px;
 		font-size: 12px;
 		background: var(--raised);

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, type JSX } from "react";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import {
 	interfaceCounts,
 	type InterfaceCount,
@@ -54,10 +55,19 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 	const line = { module, onShow };
 	return (
 		<>
-			<ModelPanel.Section title="Interface" slot="model-panel-interface" action={about}>
+			<ModelPanel.Section
+				icon={SECTION_ICONS.interface}
+				title="Interface"
+				slot="model-panel-interface"
+				action={about}
+			>
 				<Counts {...line} counts={counts} hidden={false} />
 			</ModelPanel.Section>
-			<ModelPanel.Section title="Implementation" slot="model-panel-implementation">
+			<ModelPanel.Section
+				icon={SECTION_ICONS.implementation}
+				title="Implementation"
+				slot="model-panel-implementation"
+			>
 				<Counts {...line} counts={counts} hidden />
 			</ModelPanel.Section>
 		</>

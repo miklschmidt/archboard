@@ -1,5 +1,6 @@
 import { RelationshipEvidence } from "#ui/architecture-drawing/model-reader/reading/components/ModuleDetails.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import type { JSX, ReactNode } from "react";
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
@@ -115,7 +116,12 @@ function JoinedRelationships(props: ConnectionSummaryProps): JSX.Element {
 	const { model, reference, onSelect } = props;
 	const { joins } = props.connection;
 	return (
-		<ModelPanel.Section title="Relationships" count={joins.length} slot="model-connection-joins">
+		<ModelPanel.Section
+			icon={SECTION_ICONS.relationships}
+			title="Relationships"
+			count={joins.length}
+			slot="model-connection-joins"
+		>
 			<ModelPanel.Rows items={joins}>
 				{(edge) => (
 					<RelationshipRow
@@ -145,7 +151,7 @@ function OneRelationship(
 			{edge.label && <p className="text-body">{edge.label}</p>}
 			<RelationshipEvidence edge={edge} />
 			<ModelSubjectStanding model={model} subject={edge.id} reference={reference} />
-			<ModelPanel.Section title="Ends" slot="model-connection-ends">
+			<ModelPanel.Section icon={SECTION_ICONS.ends} title="Ends" slot="model-connection-ends">
 				<RelationshipEnd
 					id={edge.from}
 					title="From"

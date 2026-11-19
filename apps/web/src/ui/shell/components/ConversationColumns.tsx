@@ -25,14 +25,15 @@ import { usePanelRef, type PanelSize } from "react-resizable-panels";
 import { AGENT_PANEL_WIDTH } from "@archboard/renderer/shell-geometry";
 import { COLUMN_MS } from "@archboard/timing";
 import { Resizable } from "@archboard/ui-kit/components";
+import { storedWidth, storeWidth, type ColumnWidths } from "#ui/shell/clients/column-width.ts";
 
-const STORAGE_KEY = "archboard.agent.panel.width";
-
-/** The narrowest the conversation goes before it shuts, in pixels. */
-const MIN_WIDTH = 320;
-
-/** The widest the conversation is dragged, in pixels. */
-const MAX_WIDTH = 720;
+/** What the conversation can be: it shuts below its narrowest. */
+const CONVERSATION: ColumnWidths = {
+	key: "archboard.agent.panel.width",
+	min: 320,
+	max: 720,
+	initial: AGENT_PANEL_WIDTH,
+};
 
 /** The narrowest the pane centre goes while the conversation is dragged wider. */
 const CENTRE_MIN_WIDTH = 560;
@@ -47,33 +48,6 @@ const GROUP_STYLE: CSSProperties = { "--panel-slide-ms": `${COLUMN_MS.agentPanel
  * and a scroll into view would move the whole conversation under its header.
  */
 const COLUMN_STYLE: CSSProperties = { overflow: "clip" };
-
-/**
- * The width the person last gave the conversation, or the shell's own.
- * @returns The width in pixels, within what it can be.
- */
-function storedWidth(): number {
-	try {
-		const value = Number(window.localStorage.getItem(STORAGE_KEY));
-		return Number.isFinite(value) && value >= MIN_WIDTH && value <= MAX_WIDTH
-			? value
-			: AGENT_PANEL_WIDTH;
-	} catch {
-		return AGENT_PANEL_WIDTH;
-	}
-}
-
-/**
- * Keep the width, when the browser lets us.
- * @param width The width in pixels.
- */
-function storeWidth(width: number): void {
-	try {
-		window.localStorage.setItem(STORAGE_KEY, String(Math.round(width)));
-	} catch {
-		// The width still holds for this session.
-	}
-}
 
 /** Inputs for the columns. */
 interface ConversationColumnsProps {
@@ -130,7 +104,7 @@ function ConversationSlide(props: {
 function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 	const { open, onClose } = props;
 	const panel = usePanelRef();
-	const [initialWidth] = useState(storedWidth);
+	const [initialWidth] = useState(() => storedWidth(CONVERSATION));
 	const [width, setWidth] = useState(initialWidth);
 	const size = useRef(0);
 	// Set in the render that changes `open`, so a shut conversation is never
@@ -161,9 +135,9 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 	// The width is kept when a drag settles, never on the way: a drag that shuts the
 	// conversation passes through every width below the one the person gave it.
 	const handleSettled = useCallback((): void => {
-		if (size.current < MIN_WIDTH) return;
+		if (size.current < CONVERSATION.min) return;
 		setWidth(size.current);
-		storeWidth(size.current);
+		storeWidth(CONVERSATION, size.current);
 	}, []);
 	return (
 		<Resizable
@@ -178,8 +152,8 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 				panelRef={panel}
 				collapsible
 				collapsedSize={0}
-				minSize={MIN_WIDTH}
-				maxSize={MAX_WIDTH}
+				minSize={CONVERSATION.min}
+				maxSize={CONVERSATION.max}
 				defaultSize={open ? initialWidth : 0}
 				groupResizeBehavior="preserve-pixel-size"
 				onResize={handleResize}

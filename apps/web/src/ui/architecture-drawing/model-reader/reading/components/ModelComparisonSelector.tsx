@@ -23,8 +23,8 @@ interface ModelComparisonSelectorProps {
 }
 
 /**
- * The one control of a comparison, in the header: it says what the picture is compared with,
- * and it is the way out. A checkpoint is compared from its row in History.
+ * The one control of a comparison, joined to the state chip at the end of the header: it says
+ * what the picture is compared with, and it is the way out. A checkpoint is compared from its row in History.
  * @param props The reading.
  * @returns The control, or nothing for a reading with nothing to compare with.
  */
@@ -68,7 +68,8 @@ function ModelComparisonSelector(props: ModelComparisonSelectorProps): JSX.Eleme
 }
 
 /**
- * What the control says, which names the base for a page that reads it.
+ * What the control says, which names the base for a page that reads it. It stands after the state
+ * chip, so it continues the chip's words: the state, against its base.
  * @param props The comparison and the words.
  * @param props.comparison The comparison on show.
  * @param props.line What the control says.
@@ -92,7 +93,10 @@ function ComparisonLine(props: {
 			data-reason={comparison.reason}
 			className="truncate"
 		>
-			<span className="@max-[800px]/pane-header:hidden">{COMPARED}</span>
+			<span className="sr-only">{COMPARED}</span>
+			<span aria-hidden="true" className="text-muted-foreground">
+				against{" "}
+			</span>
 			{line.slice(COMPARED.length)}
 		</span>
 	);

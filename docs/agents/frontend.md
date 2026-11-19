@@ -411,7 +411,10 @@ The list of parts on About labels comparison context with its standing, includin
 
 The shell owns the left column's frame and holds no model knowledge.
 The reader of the focused pane portals Find, its keys and its list into the column slots from `usePaneChrome`.
-The pane header slot takes the crumbs, the code path, the state chip, and `Diagram | About`.
+The pane header parts where the picture meets the right panel. Its `head` slot, over the picture, takes the crumbs and the code path, then a standing focus and `ModelReadingControls`, which joins the state chip and the comparison. Its `side` slot, as wide as the panel (`min(360px, 46cqw)` of the header), takes `Diagram | About` before the pane's keys.
+The walk of a proposal's changes is the strip of the `Changes` section (`ModelColumn.Section` takes `strip`), never part of the header.
+`NavigatorColumns` lets a reader drag the left column between 240px and 520px. `shell/clients/column-width.ts` keeps its width and the conversation's in the browser.
+Every section label of both side columns takes its icon from `SECTION_ICONS`.
 `useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
 A live `architecture_snapshot` has no `states`, so the History dialog and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.

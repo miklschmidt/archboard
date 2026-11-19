@@ -1,28 +1,28 @@
 // The desktop frame, in columns: the navigator (the brand at its top, the
-// models, and the agent at its foot), the conversation beside it while open,
-// with a handle to resize it, and the pane centre, composed from typed inputs
-// and typed actions. There is
+// models, and the agent at its foot), with a handle to resize it, the
+// conversation beside it while open, with a handle to resize it, and the pane
+// centre, composed from typed inputs and typed actions. There is
 // no row across the whole frame: each column's top row is its own header, and
 // the rows line up. The centre is also the fullscreen root, so presenting a
 // pane never remounts it.
 
 import { useMemo, useState, type CSSProperties, type JSX, type ReactNode } from "react";
 
-import { CHROME_HEIGHT, NAVIGATOR_WIDTH } from "@archboard/renderer/shell-geometry";
+import { CHROME_HEIGHT } from "@archboard/renderer/shell-geometry";
 import type { ShellActions, ShellView } from "#ui/shell/rules/contracts.ts";
 import { BrandBar } from "#ui/shell/components/BrandBar.tsx";
 import { ConversationColumns } from "#ui/shell/components/ConversationColumns.tsx";
 import { Navigator } from "#ui/shell/components/Navigator.tsx";
+import { NavigatorColumns } from "#ui/shell/components/NavigatorColumns.tsx";
 import { PaneStages } from "#ui/shell/components/PaneStages.tsx";
 
 /**
- * The navigator's width, the shell's one fixed column, and the height of the
- * chrome row at the top of every column, set here from the shared shell
- * geometry, which the shell-layout owner holds the mounted shell to. The
- * reference pane takes its width from the same geometry (ADR 0043).
+ * The height of the chrome row at the top of every column, set here from the
+ * shared shell geometry, which the shell-layout owner holds the mounted shell
+ * to. The navigator starts at the geometry's width, which the reference pane
+ * takes its width from (ADR 0043), and a person can drag it to another.
  */
 const SHELL_STYLE: CSSProperties = {
-	"--shell-navigator-width": `${NAVIGATOR_WIDTH}px`,
 	"--shell-chrome-height": `${CHROME_HEIGHT}px`,
 };
 
@@ -71,8 +71,8 @@ function Shell(props: ShellProps): JSX.Element {
 		),
 		[view.theme, actions, props.diagnostics],
 	);
-	return (
-		<div className="bg-background flex h-full min-w-0" style={SHELL_STYLE}>
+	const navigator = useMemo(
+		() => (
 			<Navigator
 				view={view}
 				actions={actions}
@@ -80,22 +80,29 @@ function Shell(props: ShellProps): JSX.Element {
 				foot={props.agentDock}
 				attachDestinations={attachDestinations}
 			/>
-			<ConversationColumns
-				open={props.agentPanelOpen ?? false}
-				onClose={props.onAgentPanelClose ?? noop}
-				conversation={props.agentPanel}
-			>
-				<PaneStages
-					panes={view.panes}
-					notices={view.notices}
-					activePaneId={view.activePaneId}
-					presentation={view.presentation}
-					column={column}
-					voiceControls={props.voiceControls ?? null}
-					attachStage={props.attachStage}
-					actions={actions}
-				/>
-			</ConversationColumns>
+		),
+		[view, actions, head, props.agentDock],
+	);
+	return (
+		<div className="bg-background flex h-full min-w-0" style={SHELL_STYLE}>
+			<NavigatorColumns navigator={navigator}>
+				<ConversationColumns
+					open={props.agentPanelOpen ?? false}
+					onClose={props.onAgentPanelClose ?? noop}
+					conversation={props.agentPanel}
+				>
+					<PaneStages
+						panes={view.panes}
+						notices={view.notices}
+						activePaneId={view.activePaneId}
+						presentation={view.presentation}
+						column={column}
+						voiceControls={props.voiceControls ?? null}
+						attachStage={props.attachStage}
+						actions={actions}
+					/>
+				</ConversationColumns>
+			</NavigatorColumns>
 		</div>
 	);
 }

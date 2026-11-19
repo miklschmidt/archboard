@@ -1,6 +1,8 @@
+import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useMemo, type JSX, type MouseEvent, type ReactNode } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { flowCollections } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
 import { contextOf } from "#ui/architecture-drawing/model-reader/reading/rules/relevance.ts";
 
@@ -40,7 +42,13 @@ function ModelPanelContext(props: ModelPanelContextProps): JSX.Element {
 	);
 	return (
 		<>
-			<ContextList title="Flows" slot="model-panel-flows" entries={flows} groupOf={collectionOf}>
+			<ContextList
+				icon={SECTION_ICONS.flows}
+				title="Flows"
+				slot="model-panel-flows"
+				entries={flows}
+				groupOf={collectionOf}
+			>
 				{(entry) => (
 					<ContextRow
 						key={entry.id}
@@ -52,7 +60,12 @@ function ModelPanelContext(props: ModelPanelContextProps): JSX.Element {
 					/>
 				)}
 			</ContextList>
-			<ContextList title="Walkthroughs" slot="model-panel-walkthroughs" entries={walkthroughs}>
+			<ContextList
+				icon={SECTION_ICONS.walkthroughs}
+				title="Walkthroughs"
+				slot="model-panel-walkthroughs"
+				entries={walkthroughs}
+			>
 				{(entry) => (
 					<ContextRow
 						key={entry.id}
@@ -81,6 +94,7 @@ function stepsOf(walkthrough: Model["walkthroughs"][number]): string {
 /**
  * One list, which a reading with nothing to list leaves out.
  * @param props The list.
+ * @param props.icon What kind of thing it lists.
  * @param props.title What it lists.
  * @param props.slot Where a test finds it.
  * @param props.entries What it lists.
@@ -89,6 +103,7 @@ function stepsOf(walkthrough: Model["walkthroughs"][number]): string {
  * @returns The list, or nothing.
  */
 function ContextList<Entry>(props: {
+	readonly icon: RemixiconComponentType;
 	readonly title: string;
 	readonly slot: string;
 	readonly entries: readonly Entry[];
@@ -98,7 +113,12 @@ function ContextList<Entry>(props: {
 	const { entries } = props;
 	if (entries.length === 0) return null;
 	return (
-		<ModelPanel.Section title={props.title} count={entries.length} slot={props.slot}>
+		<ModelPanel.Section
+			icon={props.icon}
+			title={props.title}
+			count={entries.length}
+			slot={props.slot}
+		>
 			<ModelPanel.Rows items={entries} limit={FEW_ROWS} groupOf={props.groupOf}>
 				{props.children}
 			</ModelPanel.Rows>

@@ -4,7 +4,7 @@
 // page stands over it. The long lists of the open scope live on About. Its sections and rows speak
 // as the left column's do.
 
-import { RiCloseLine } from "@remixicon/react";
+import { RiCloseLine, type RemixiconComponentType } from "@remixicon/react";
 import {
 	createContext,
 	useCallback,
@@ -24,6 +24,7 @@ import { cn, IconButton } from "@archboard/ui-kit/components";
 import { ClaimBadge } from "#ui/shell/components/ActivityLamp.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import { GROUP_LINE, rowTone, type RowState } from "#ui/shell/rules/row-tone.ts";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { sectionRuns } from "#ui/architecture-drawing/model-reader/reading/rules/section-runs.ts";
 
 /** The duration the stylesheet fades a new subject in with. */
@@ -60,6 +61,18 @@ const FOOT = [
 	// their plate 8px wider on each side.
 	"[&_[data-slot=code-warning-count]]:-mx-2 [&_[data-slot=code-warning-count]]:basis-[calc(100%+1rem)]",
 ].join(" ");
+
+/**
+ * The rows of a collection stand past its icon and the gap after it (16px and 6px), under the
+ * words of its name, so the name reads as the head of what it holds.
+ */
+const UNDER_NAME = "pl-[22px]";
+
+/**
+ * A section opens with a rule across the panel's words, over the head of the section, so each
+ * section reads as one block and the panel as a stack of them.
+ */
+const SECTION = "border-border flex flex-col gap-1.5 border-t pt-4";
 
 /**
  * A row of the panel lies on its ground as a row of the left column does. Its tone reaches 8px past
@@ -121,6 +134,7 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 			ref={panel}
 			aria-label="Right panel"
 			data-slot="model-panel"
+			data-selected={selecting ? "" : undefined}
 			style={PANEL_STYLE}
 			className={cn(
 				"bg-sidebar relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col in-data-presenting:hidden",
@@ -282,8 +296,10 @@ function Head(props: {
 }
 
 /**
- * One list of the panel, under its count, or a section of facts that is no list.
+ * One list of the panel, under its icon, its title and its count, or a section of facts that is no
+ * list.
  * @param props The list.
+ * @param props.icon What kind of thing it lists.
  * @param props.title What it lists.
  * @param props.count How many it lists.
  * @param props.slot Where a test finds it.
@@ -293,6 +309,7 @@ function Head(props: {
  * @returns The section.
  */
 function Section(props: {
+	readonly icon: RemixiconComponentType;
 	readonly title: string;
 	readonly count?: number | undefined;
 	readonly slot: string;
@@ -301,10 +318,10 @@ function Section(props: {
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
-		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
+		<section data-slot={props.slot} aria-label={props.title} className={SECTION}>
 			<div className="flex min-h-6 items-center justify-between gap-2">
 				<h4 className="m-0 min-w-0">
-					<SectionLabel title={props.title} count={props.count} />
+					<SectionLabel icon={props.icon} title={props.title} count={props.count} />
 				</h4>
 				{props.action}
 			</div>
@@ -416,22 +433,7 @@ function Row({
 					foot !== undefined && "relative overflow-hidden",
 				)}
 			>
-				<span
-					className={cn(
-						"text-control font-normal [overflow-wrap:anywhere]",
-						!stacked && "max-w-3/4 shrink-0",
-					)}
-				>
-					{name}
-				</span>
-				<span
-					className={cn(
-						"text-body text-muted-foreground min-w-0 flex-1 truncate",
-						!stacked && "text-right",
-					)}
-				>
-					{detail}
-				</span>
+				<RowWords name={name} detail={detail} stacked={stacked} />
 				{foot}
 			</button>
 			{action}
@@ -440,8 +442,62 @@ function Row({
 }
 
 /**
+ * A row's words: its name, and what it says of that, at the end of its line or under the name. A
+ * row with nothing to say of its name gives the name the whole line.
+ * @param props The words.
+ * @param props.name What the row names.
+ * @param props.detail What it says of that.
+ * @param props.stacked Whether the detail stands under the name.
+ * @returns The words.
+ */
+function RowWords(props: {
+	readonly name: ReactNode;
+	readonly detail: ReactNode;
+	readonly stacked: boolean;
+}): JSX.Element {
+	const { detail, stacked } = props;
+	const said = detail !== undefined;
+	return (
+		<>
+			<span
+				className={cn(
+					"text-control min-w-0 font-normal [overflow-wrap:anywhere]",
+					!stacked && said && "max-w-3/4 shrink-0",
+				)}
+			>
+				{props.name}
+			</span>
+			{said && (
+				<span
+					className={cn(
+						"text-body text-muted-foreground min-w-0 flex-1 truncate",
+						!stacked && "text-right",
+					)}
+				>
+					{detail}
+				</span>
+			)}
+		</>
+	);
+}
+
+/**
+ * The rail of a group, which each of its rows draws for itself, as the left column's tree does: a
+ * stretch down the row from the icon over them, and a tick into the row at the middle of its first
+ * line. The last row's stretch ends at its tick, so the rail ends where its last tick leaves it.
+ */
+const GROUP_RAILS = [
+	"[&>li]:relative",
+	"[&>li]:before:bg-border [&>li]:before:absolute [&>li]:before:top-0 [&>li]:before:-left-3.5 [&>li]:before:h-full [&>li]:before:w-px",
+	"[&>li:first-child]:before:-top-1.5 [&>li:first-child]:before:h-[calc(100%+0.375rem)]",
+	"[&>li:last-child]:before:h-3.5 [&>li:first-child:last-child]:before:h-5",
+	"[&>li]:after:bg-border [&>li]:after:absolute [&>li]:after:top-3.5 [&>li]:after:-left-3.5 [&>li]:after:h-px [&>li]:after:w-2.5",
+].join(" ");
+
+/**
  * Rows that belong together under one name, such as the flows of a collection, drawn as the left
- * column draws them: the name in full ink, and its rows one step deeper under a guide.
+ * column draws them: the collection's icon and its name in full ink, and its rows one step deeper
+ * under a guide that hangs from the icon, so the rows read as the name's.
  * @param props The name and the rows.
  * @param props.label The name.
  * @param props.children The rows.
@@ -450,11 +506,11 @@ function Row({
 function Group(props: { readonly label: string; readonly children: ReactNode }): JSX.Element {
 	return (
 		<li className="flex flex-col">
-			<span aria-hidden="true" className={cn(GROUP_LINE, "flex min-h-7 items-center truncate")}>
-				{props.label}
+			<span aria-hidden="true" className={cn(GROUP_LINE, "flex min-h-7 items-center gap-1.5")}>
+				<SECTION_ICONS.collections className="text-muted-foreground size-4 shrink-0" />
+				<span className="truncate">{props.label}</span>
 			</span>
-			<ul aria-label={props.label} className="relative flex flex-col pl-4">
-				<span aria-hidden="true" className="bg-border absolute inset-y-0 left-1.5 w-px" />
+			<ul aria-label={props.label} className={cn("flex flex-col", UNDER_NAME, GROUP_RAILS)}>
 				{props.children}
 			</ul>
 		</li>

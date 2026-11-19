@@ -312,13 +312,13 @@ paths, versions, counts and times.
 
 **The Mono Is Data Rule.** Mono sets technical tokens only. It never sets a label or a heading.
 
-**The One Label Rule.** A section of either side column is named in one way: its name in Body semibold and full ink, and its count beside it in mono and muted ink. `SectionLabel` sets it in the left column and in the right panel.
+**The One Label Rule.** A section of either side column is named in one way: an icon of 16px in muted ink, its name in Control semibold and full ink, and its count beside it in mono and muted ink. `SectionLabel` sets it in the left column and in the right panel, and `SECTION_ICONS` in `model-reader/reading/constants/section-icons.ts` holds the one icon of each section, so `Flows` wears the same icon in both columns. A row of the change list that names an owner wears the icon of the section of its kind.
 
 ## Layout
 
-The shell puts columns around the picture. The left column (280px) lists where to
-go, and the agent dock is at its foot. It is a sidebar of the usual width, because History
-and Measures open in dialogs of their own and a list needs no more room. The panes are in the centre, one or two side
+The shell puts columns around the picture. The left column lists where to
+go, and the agent dock is at its foot. It starts at 280px, a sidebar of the usual width, because History
+and Measures open in dialogs of their own. A handle on its edge drags it between 240px and 520px, so long names read whole, and a double click puts it back to 280px. The browser keeps the width. The line of the handle takes the chrome's tone at rest, so the column and the pane's header stay one plane, and it shows under the pointer and takes the gold while it is dragged. The panes are in the centre, one or two side
 by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
@@ -327,7 +327,14 @@ Every Diagram reading of the canonical reader has a right panel beside its pictu
 that it leaves. A selection never refits the picture. A retained legacy board recording keeps a sidebar (280px). Every
 column starts with a chrome row (40px), and the left column has Find, the repository switcher and the keys of History and Measures, each 32px high. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
-cap height, so its parts sit on one line at any display scale. A row of a list
+cap height, so its parts sit on one line at any display scale. The header of a
+reading parts where the picture meets the right panel, as the reading under it does.
+Over the picture stand where the reader is, the crumbs, with all the room they need, at
+its start, and what the reader reads at its end, each 16px from the picture's edge below: a standing focus, then the state chip joined to
+the comparison as one control, `Draft · <name>` | `against Current`, because they say
+one thing. Over the panel, in a part as wide as the panel, stand `Diagram | About` on the
+panel's 16px inset and the pane's own keys at the end. No control of the reading stands
+among the crumbs, and no control of the picture stands over the panel. A row of a list
 is at least 28px high. Panels have 16px of padding. The shell has no narrow or
 phone layout.
 
@@ -555,16 +562,16 @@ The notice is the one sign of the wait in a reading. A pane that has no notice, 
 
 ### Navigation
 
-- **Style:** the list lies on the chrome, as the right panel's lists do, with no well, tone step or shadow of its own. Nothing in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails draw its levels: a line of 1px in the Rule tone runs down from the chevron of an open row along the rows it holds. A row lets the rails show through, and a row that sticks while it is open draws the rails it covers into its floor, so they run unbroken. The column marks only where the reader is: the open module, the flow on screen or the walkthrough playing. That row rises off the chrome as a Control Face with `shadow-raised`, with no gold. A selection on the picture marks no row and moves nothing in the column. A row under the pointer takes Control Face at 50%. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies on the chrome, as the right panel's lists do, with no well, tone step or shadow of its own. A section after the first opens with a rule of 1px in the Rule tone across the column's 8px inset, as a section of the right panel does, and nothing else in the column is divided by a rule. A row is 28px at least, and a model or folder row 36px. Rails draw its levels: a line of 1px in the Rule tone runs down from the chevron of an open row along the rows it holds, and a tick of 1px leaves it into each row at the middle of the row's first line. Each row draws its own stretch of the rail, and the last row of a branch draws it only down to its tick, so a rail always ends in a tick and never runs on into nothing. A row lets the rails show through, and a row that sticks while it is open draws the rails above it into its floor, so they run unbroken. The column marks only where the reader is: the open module, the flow on screen or the walkthrough playing. That row rises off the chrome as a Control Face with `shadow-raised`, with no gold. A selection on the picture marks no row and moves nothing in the column. A row under the pointer takes Control Face at 50%. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
 
 The repository switcher's popover uses Chrome Chalk, so its list and sticky rows share the shell's tone.
 
 The left column has no tabs. Two quiet keys stand over the list, side by side and as wide as the room: `History` and `Measures`, each with its icon in muted ink. Each opens its dialog, and stays pressed in while the dialog is open. A migration candidate keeps no record, so it has `Measures` alone. A reading that failed has `History` alone, and no list.
 
-The column holds one list that scrolls, with a section for each thing the model lists: `Modules`, `Flows` and `Walkthroughs`, in that order. A proposal read against its base puts `Changes` first. A section with nothing to list is left out. The head of a section is one row of 28px on the chrome and one button. It holds the section's label, set as every section label of both side columns is (`SectionLabel`): the name in Body semibold and full ink, and the count of the whole model beside it in mono and muted ink. The label starts at the column's inset, 8px from its edge, and the chevron that folds the section stands at the end of the head, where the facts of the rows end. So no chevron of a head stands over the chevron of a row, and the rows keep the whole width of the column. The head stays at the top of the list while the rows of its section scroll under it, and the next head pushes it away. A click on the head, or Enter, folds the section, and the chevron turns. What sticks inside a section, the open rows of the tree and the name of a group of flows or changes, sticks under the head (`--stuck-top`). The name of such a group, a collection of flows or the module that holds changes, is a line in Control at weight 500 and full ink, where the name of a row of depth zero stands. Its rows stand one step deeper under a rail, as the parts of an open module do, so it reads as their parent and never as a row that is off. It is no row: it takes no key and does not answer the pointer. A pane's own tabs keep their underline of Wayfinding Gold.
+The column holds one list that scrolls, with a section for each thing the model lists: `Modules`, `Flows` and `Walkthroughs`, in that order. A proposal read against its base puts `Changes` first. A section with nothing to list is left out. The head of `Changes` also counts its changes by standing, each count after the mark that the picture puts on it. The head of a section is one row of 28px on the chrome and one button. It holds the section's label, set as every section label of both side columns is (`SectionLabel`): the name in Body semibold and full ink, and the count of the whole model beside it in mono and muted ink. The label starts at the column's inset, 8px from its edge, and the chevron that folds the section stands at the end of the head, where the facts of the rows end. So no chevron of a head stands over the chevron of a row, and the rows keep the whole width of the column. The head stays at the top of the list while the rows of its section scroll under it, and the next head pushes it away. A head can carry a strip of 36px that sticks with it and stays while the section is folded: the walk of a proposal's changes. A click on the head, or Enter, folds the section, and the chevron turns. What sticks inside a section, the open rows of the tree, sticks under the head and its strip (`--stuck-top`). A collection of flows, and an owner of changes, is a row of the tree like an open module: a chevron that folds it, the icon of its kind, and its name in Control at weight 500 and full ink. Its rows stand one step deeper under the rail that hangs from its chevron, so every rail of the column starts at a row and runs unbroken. A collection that holds the flow on screen, and an owner that holds the reader's place, stays open. A pane's own tabs keep their underline of Wayfinding Gold.
 
 Every tree row shares four columns: disclosure, marker, name and facts. Depth alone
-places the columns, one 16px step per level. Flat rows reserve no disclosure space.
+places the columns, one 16px step per level, so a row's chevron stands under the marker of the row that holds it. A marker stands 6px from its words. A leaf, a row among siblings that never hold rows, such as a change under its owner or a flow under its collection, keeps no chevron slot, so its marker and words stand under its parent's marker and words, and a leaf with no marker, such as a flow, starts its words where the ink of its parent's marker starts, 2px into the marker column. The rail in the chevron column alone shows the step. Flat rows reserve no disclosure space.
 `shell/rules/tree-grid.ts` holds the shared measurements.
 
 Each tree has one tab stop, and each section heading has one more. Right opens a
@@ -632,9 +639,9 @@ A selected module ends with `Code and evidence`: its parent, groups, former name
 documents, then a folded Definition. A module bound to code then has `Code history`. A
 selected relationship says its longer account under its label, with its evidence folded.
 
-A subject that differs from the state it is read against has an `Against <state>` section. It lists each field that moved: its name, then `was` over `now`, the whole of each value, with the old value in muted ink. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink: the removed standing (`--standing-removed`) under the words taken out of `was`, and the added standing (`--standing-added`) under the words put into `now`. Two values that share no word carry no tint.
+A subject that differs from the state it is read against has an `Against <state>` section. Its label is the label of every section, and a chip at the end of the label says how the subject stands: the standing's mark and `Added`, `Changed` or `Removed`, on a tint of that standing with a 1px edge. Under the label, a plate holds each field that moved, parted by rules, as a diff: the field's name in Body at weight 500, then a line marked `−` for what it said and a line marked `+` for what it says, each the whole value, on a 6% tint of the removed or the added standing, the old value in muted ink. The marks name their lines `was` and `now` to assistive technology. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink. Two values that share no word carry no tint.
 
-The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its kind and code path under the name. The chip stands on the top of the name's first line, so a name that wraps leaves it at the top. A subject with no kind, such as a flow or a connection, has only its name. The name and the summary under it stand 8px apart as one block, and the sections follow 20px apart. A section of the panel opens with its label, as a section of the left column does: its title in Body semibold and full ink, and its count beside it in mono and muted ink, 6px from it. Four pixels part the row of the label from its rows, and the rows touch. The words of the panel, its rows and its keys share one left edge and one right edge, 16px from the panel's sides, and the ink of the close key ends on the right one.
+The panel heads a module as the site's mock panel does: the chip of its kind, with the icon the picture draws it with, then its name in the display face, and its code path under the name. The chip says the kind, so no word repeats it, and the kind's name stands on the chip's hover and for assistive technology. The chip stands on the top of the name's first line, so a name that wraps leaves it at the top. A long path breaks only after a slash. A subject with no kind, such as a flow or a connection, has only its name. The name and the summary under it stand 8px apart as one block, and the sections follow 20px apart. A section of the panel opens with a rule of 1px in the Rule tone across the panel's words, and its label stands 16px under the rule, as a section of the left column is labelled: its icon, its title in Control semibold and full ink, and its count beside it in mono and muted ink, 6px from it. So the panel reads as a stack of blocks, each under its head. Six pixels part the row of the label from its rows, the rows start on the label's left edge, and the rows touch. The words of the panel, its rows and its keys share one left edge and one right edge, 16px from the panel's sides, and the ink of the close key ends on the right one.
 
 With a module expanded into the picture, the panel stays with the module that the reading
 opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
@@ -646,14 +653,14 @@ Under what it says, the panel lists the flows and the walkthroughs that touch th
 selection, or else the open module. At the roots with nothing selected it lists neither.
 Each list has a count, four rows and a row that says how many more. The flows stand under
 the names of their collections, as in the left column: the name of a collection is a line in
-Control at weight 500 and full ink, and its flows stand 16px deeper under a rail. A
+Control at weight 500 and full ink after the icon of collections, and its flows stand 22px deeper, under the words of its name, on a rail that hangs from that icon and ends in a tick into the last flow. A
 walkthrough's row ends with its steps. The flow on screen rises as the row on screen does.
 
 A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. Each count is a row of the panel, one to a line, so the counts read as a small table: what it counts at the start, and its number in the mono face and muted ink at the end. A count of none is a row that is off, in muted ink.
 
 Each count selects what it counts on the module's picture, and a count of none is disabled. For the open module, `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. A selected module has no such key, because About describes the open module. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
 
-With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
+A row of `Sends to` or `Receives from` ends with the sample of its line's kind, as the legend draws it, and its name, and with how many relationships the line joins when it joins more than one. With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
 
 A module with code history has a `Changes with` section. It lists the modules whose code changes in the same commits as its own, the strongest first. A row names the partner. Under the name, one line holds a short mark that joins the pair. An `Unjoined` tint chip follows it when no relationship joins them. The commits that they share stand next in mono, and the degree stands at the end in full ink. The mark is a solid line in muted ink for a joined pair and a dashed line in Changed Orange for an unjoined one. A meter of 2px runs along the foot of the row, as long as the degree. It fades from clear to Gold Mark for a joined pair and to Changed Orange for an unjoined one.
 
@@ -666,7 +673,7 @@ outside the subject, so a new subject neither redraws it nor moves it, and a pre
 tag keeps the tag where it stood and the keyboard on it. It has three parts, each under the
 label of any other section of the panel, 20px apart as the panel's sections are: `Legend` over
 the kinds in two columns, `Relationships` over the line types and the marks of lines, and
-`Groups` over the tags. Four pixels part a label from its rows. There is no rule and no plate. A
+`Groups` over the tags. Each part opens with the rule of a section, and six pixels part a label from its rows. There is no plate. A
 row is 28px high, and every mark stands in a box 24px wide, as wide as a kind's chip, so the
 names start on one line. A kind wears the kind chip of the panel's head (see Chips). A section
 with nothing to show is absent.
@@ -704,16 +711,11 @@ filter took off the picture keeps its tag, dimmed and held.
 
 ### Change list
 
-A proposal read against its base puts a `Changes` section at the top of the left column's list. Its interface changes
-stand first, over a thin rule, because an interface change costs every caller. Each module
-reads once, as one row: its name, one line for each thing that moved, such as `Callers gained`
-with the parts it names, then the counts that differ as before and after, with the numbers in
-the mono face. A line names four parts and `+N`, and shows them all on hover. A click selects
-the module on the picture that holds it and lights the row, and from About it brings the
-picture back. A module that the state lacks says `Not in this state`, and its row selects it
-on the drawing of the comparison. These rows wear no standing mark, score or warning color.
-With no interface change, one quiet line in place of the rows says so. The change list follows
-under the rule, with a section for each owner. `N` and `P` walk only that list.
+A proposal read against its base puts a `Changes` section at the top of the left column's list. The strip under its head holds the walk: the quiet key back with its `P` on the left, where the reader stands (`3 of 41`, or `41 to review` before the first step) in the middle, and the gold `Next` with its `N` on the right, the one primary action of a review. A key's letter is a chip of 2px corners filled with a tint of the key's own ink, with no edge, as a tip draws its keys. The strip sticks with the head and stays while the section is folded, so the walk never sits apart from the list it walks, and the pane's header holds no part of it.
+
+Its interface changes stand first, under a row of their own with the interface icon, `Interface changes` and a count, which folds them as an owner's row does, because an interface change costs every caller. Each module reads once, as one row one step under it, with the module icon at the top of the row: its name, one line for each thing that moved, such as `Callers gained` with the parts it names, then the counts that differ as before and after, with the numbers in the mono face. A line names four parts and `+N`, and shows them all on hover. A click selects the module on the picture that holds it and lights the row, and from About it brings the picture back. A module that the state lacks says `Not in this state`, and its row selects it on the drawing of the comparison. These rows wear no standing mark, score or warning color, and they are no step of the walk, which their line says on hover. With no interface change, one quiet line in place of the rows says so.
+
+The change list follows as a tree, one row for each owner: a module, a collection, a flow or a walkthrough, with the icon of its kind. An owner that changed itself is that change's row: the standing's mark and what changed (`Added`, `Description`) stand at the end of the row, and a click goes to the change. The changes it holds besides its own, its relationships, steps or beats, stand one step under it with their standing's mark, under the rail of an open row, and the owner's chevron folds them. An owner whose only change is its own has no chevron, so most owners take one row. `N` and `P` walk only that list.
 
 ### Settings dialog
 

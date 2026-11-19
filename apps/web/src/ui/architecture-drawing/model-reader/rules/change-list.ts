@@ -41,9 +41,13 @@ interface Change {
 	readonly target: ChangeTarget;
 }
 
+/** What owns a group of changes. */
+type OwnerKind = "module" | "collection" | "flow" | "walkthrough";
+
 /** The changes of one owner. */
 interface ChangeGroup {
 	readonly id: string;
+	readonly kind: OwnerKind;
 	readonly name: string;
 	readonly changes: readonly Change[];
 }
@@ -250,13 +254,19 @@ function modulesInOrder(branches: readonly Branch[]): string[] {
 
 /**
  * One owner, when it has changes.
+ * @param kind What owns them.
  * @param id The owner.
  * @param name What it is called.
  * @param changes Its changes.
  * @returns The group, or nothing.
  */
-function groupOf(id: string, name: string, changes: readonly Change[]): ChangeGroup[] {
-	return changes.length === 0 ? [] : [{ id, name, changes }];
+function groupOf(
+	kind: OwnerKind,
+	id: string,
+	name: string,
+	changes: readonly Change[],
+): ChangeGroup[] {
+	return changes.length === 0 ? [] : [{ id, kind, name, changes }];
 }
 
 /**
@@ -287,7 +297,10 @@ function moduleGroups(content: Content, reading: ChangeReading): ChangeGroup[] {
 	return modulesInOrder(moduleForest(content)).flatMap((id) => {
 		const scope = reading.parents.get(id) ?? null;
 		const own = ownRow(reading, id, { kind: "scope", scope, subject: id });
-		return groupOf(id, reading.names.get(id) ?? id, [...own, ...(relationships.get(id) ?? [])]);
+		return groupOf("module", id, reading.names.get(id) ?? id, [
+			...own,
+			...(relationships.get(id) ?? []),
+		]);
 	});
 }
 
@@ -304,7 +317,7 @@ function collectionGroups(sides: readonly Model[], reading: ChangeReading): Chan
 		),
 	);
 	return [...named].flatMap(([id, name]) =>
-		groupOf(id, name, ownRow(reading, id, { kind: "subject", subject: id })),
+		groupOf("collection", id, name, ownRow(reading, id, { kind: "subject", subject: id })),
 	);
 }
 
@@ -320,7 +333,7 @@ function flowGroups(content: Content, reading: ChangeReading): ChangeGroup[] {
 		const held = everyStep(steps).flatMap((step) =>
 			rowOf(reading, step.id, stepWords(step), { kind: "flow", flow: id, subject: step.id }),
 		);
-		return groupOf(id, name, [...own, ...held]);
+		return groupOf("flow", id, name, [...own, ...held]);
 	});
 }
 
@@ -359,7 +372,11 @@ function walkthroughGroup(
 	const held = beats.flatMap((beat, index) =>
 		rowOf(reading, beat.id, beat.title, { kind: "walkthrough", walkthrough: id, beat: index }),
 	);
-	return groupOf(id, name, [...own, ...held, ...removedBeats(walkthrough, base, reading)]);
+	return groupOf("walkthrough", id, name, [
+		...own,
+		...held,
+		...removedBeats(walkthrough, base, reading),
+	]);
 }
 
 /**
@@ -370,7 +387,10 @@ function walkthroughGroup(
  */
 function removedWalkthrough(base: Walkthrough, reading: ChangeReading): ChangeGroup[] {
 	const own = ownRow(reading, base.id, { kind: "subject", subject: base.id });
-	return groupOf(base.id, base.name, [...own, ...removedBeats(undefined, base, reading)]);
+	return groupOf("walkthrough", base.id, base.name, [
+		...own,
+		...removedBeats(undefined, base, reading),
+	]);
 }
 
 /**
@@ -512,7 +532,9 @@ export {
 	standingPlace,
 	type Change,
 	type ChangeHere,
+	type ChangeGroup,
 	type ChangeList,
 	type ChangeTarget,
+	type OwnerKind,
 	type WalkPlace,
 };

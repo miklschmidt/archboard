@@ -38,8 +38,11 @@ const { class: className } = Astro.props;
 		font-size: 12px;
 		line-height: 1.5;
 	}
+	/* A line keeps its height. When the card is full, the oldest lines leave at its top, as a
+	   conversation scrolls, and no line is squeezed over the next. */
 	.line {
 		display: flex;
+		flex-shrink: 0;
 		gap: 7px;
 		min-height: 1.5em;
 	}

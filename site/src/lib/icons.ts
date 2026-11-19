@@ -22,6 +22,9 @@ import lock from "remixicon/icons/System/lock-line.svg?raw";
 import mic from "remixicon/icons/Media/mic-line.svg?raw";
 import pause from "remixicon/icons/Media/pause-fill.svg?raw";
 import play from "remixicon/icons/Media/play-fill.svg?raw";
+import playCircle from "remixicon/icons/Media/play-circle-line.svg?raw";
+import plug from "remixicon/icons/Others/plug-line.svg?raw";
+import priceTag from "remixicon/icons/Finance/price-tag-3-line.svg?raw";
 import question from "remixicon/icons/Communication/question-answer-line.svg?raw";
 import route from "remixicon/icons/Map/route-line.svg?raw";
 import search from "remixicon/icons/System/search-line.svg?raw";
@@ -43,6 +46,8 @@ import close from "remixicon/icons/System/close-line.svg?raw";
 import fullscreen from "remixicon/icons/Media/fullscreen-line.svg?raw";
 import openai from "remixicon/icons/Logos/openai-line.svg?raw";
 import settings from "remixicon/icons/System/settings-3-line.svg?raw";
+import shapes from "remixicon/icons/Design/shapes-line.svg?raw";
+import share from "remixicon/icons/System/share-line.svg?raw";
 import sun from "remixicon/icons/Weather/sun-line.svg?raw";
 import voice from "remixicon/icons/Media/voiceprint-line.svg?raw";
 
@@ -69,6 +74,9 @@ export const icons = {
 	mic,
 	pause,
 	play,
+	playCircle,
+	plug,
+	priceTag,
 	question,
 	route,
 	search,
@@ -91,6 +99,8 @@ export const icons = {
 	fullscreen,
 	openai,
 	settings,
+	shapes,
+	share,
 	sun,
 };
 

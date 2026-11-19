@@ -152,7 +152,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	return (
 		<div
 			data-slot="navigator-column"
-			className="bg-sidebar text-sidebar-foreground relative z-30 flex w-(--shell-navigator-width) shrink-0 flex-col"
+			className="bg-sidebar text-sidebar-foreground relative z-30 flex w-full min-w-0 flex-col"
 		>
 			{props.head}
 			<nav
