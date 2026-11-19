@@ -131,6 +131,16 @@ describe("Codex realtime adapter", () => {
 			expect(h.session.speeches).toEqual([
 				{ threadId: h.coordinatorThreadId, text: "First step." },
 			]);
+			for (const listener of listeners) {
+				listener({ channel: "speech", text: "Second step." });
+				listener({ channel: "speech", text: "The walkthrough closed." });
+			}
+			await Bun.sleep(0);
+			expect(h.session.speeches).toEqual([
+				{ threadId: h.coordinatorThreadId, text: "First step." },
+				{ threadId: h.coordinatorThreadId, text: "Second step." },
+				{ threadId: h.coordinatorThreadId, text: "The walkthrough closed." },
+			]);
 			expect(h.session.texts).toEqual([]);
 			await h.adapter.stop(browser);
 			expect(listeners.size).toBe(0);
