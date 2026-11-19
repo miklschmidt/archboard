@@ -75,7 +75,7 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
 Build the core after every change to `crates/` (see [TESTING.md](../../TESTING.md)). Do not edit
 `crates/` while a measure runs. The renderer refuses a core that is older than the sources.
 
-- `bun docs/design/wide-board-layout-fixtures/measure.ts` prints the scorecard for each fixture and
+- `bun packages/renderer/tests/runtime/support/wide-boards/measure.ts` prints the scorecard for each fixture and
   vault document. Save a run with `SAVE=run.json` on the old tree, then compare the new tree with
   `AGAINST=run.json`. With an outdir argument, `PICTURES=1` writes a PNG of each drawing there.
 - `bun scripts/render-corpus.ts render <out>` and `compare <before> <after>` say which drawings

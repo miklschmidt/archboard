@@ -4,9 +4,9 @@ import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import flask from "../../../../../../docs/design/wide-board-layout-fixtures/flask-map-1.content.json";
-import systemMap from "../../../../../../docs/design/wide-board-layout-fixtures/system-map.content.json";
-import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
+import flask from "../../support/wide-boards/flask-map-1.content.json";
+import systemMap from "../../support/wide-boards/system-map.content.json";
+import publicApi from "../../support/wide-boards/public-api-independent.content.json";
 
 // Fixed coverage: labeled fan-in/fan-out, dense cross-links, and nested containers.
 // These authored fixtures never discover the vault or impose render-speed limits.

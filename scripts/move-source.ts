@@ -12,9 +12,8 @@
 // person reviews it: only `moves` and `bindings` are applied.
 //
 // Apply checks everything before it changes anything. It runs `git mv`, rewrites `#` aliases,
-// relative paths, `exports` and repository paths (never in backlog/, docs/design/*.md,
-// docs/adr/ or the vault), formats the rewritten files, restarts the server and writes one
-// claimed `model edit` intent.
+// relative paths, `exports` and repository paths (never in backlog/, docs/adr/ or the vault),
+// formats the rewritten files, restarts the server and writes one claimed `model edit` intent.
 // A dry run prints what it would do and changes nothing. When the vault refuses after the files
 // moved, `rebind` writes the vault intent again from the moved checkout.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -79,8 +78,7 @@ const TEXT = /\.(?:md|jsonc?|ya?ml|toml|txt|nix|sh)$/u;
 const LISTED =
 	/^(?:vite\.config\.ts|\.oxlintrc(?:\.tests)?\.jsonc|components\.json|package\.json|docs\/readme\/assets\.json|docs\/agents\/(?:boundaries|frontend|test-suite)\.md|(?:packages|apps)\/[^/]+\/README\.md)$/u;
 /** What no move rewrites: records of the past and the vault, which the CLI writes. */
-const EXCLUDED =
-	/^(?:backlog\/|docs\/adr\/|docs\/design\/[^/]+\.md$|\.archboard\/|node_modules\/)/u;
+const EXCLUDED = /^(?:backlog\/|docs\/adr\/|\.archboard\/|node_modules\/)/u;
 
 /**
  * The files Git tracks in the checkout.

@@ -24,7 +24,7 @@ function format(root: string, name: string, content: string): string {
 			"--config",
 			join(root, "vite.config.ts"),
 			"--stdin-filepath",
-			join(root, "docs", "design", "generated", name),
+			join(root, "artifacts", "cli-contract", name),
 		],
 		{
 			cwd: root,
