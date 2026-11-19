@@ -1,11 +1,11 @@
 ---
 id: TASK-646.08
 title: The About page lists a module's code exports
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T02:38:00Z'
+updated_date: '2026-11-19T02:40:00Z'
 labels:
   - ready-for-agent
 dependencies:
