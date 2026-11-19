@@ -185,10 +185,14 @@ function modelLockMs(key: keyof typeof MODEL_LOCK_MS): number {
 /**
  * One duration of a subject claim.
  * @param key Which one.
- * @returns It, in milliseconds.
+ * @param startedAtMs When the duration starts, if asking for a deadline.
+ * @returns A duration in milliseconds, or a deadline on the supplied clock.
  */
-function claimMs(key: keyof typeof CLAIM_MS): number {
-	return CLAIM_MS[key];
+function claimMs(key: "default", startedAtMs: number): number;
+function claimMs(key: keyof typeof CLAIM_MS): number;
+function claimMs(key: keyof typeof CLAIM_MS, startedAtMs?: number): number {
+	const duration = CLAIM_MS[key];
+	return startedAtMs === undefined ? duration : startedAtMs + duration;
 }
 
 export { modelLockMs, claimMs };

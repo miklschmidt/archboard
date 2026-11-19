@@ -121,7 +121,7 @@ function renewClaim(
 	const claim = {
 		...overlap,
 		reason: request.reason,
-		until: new Date(Date.now() + claimMs("default")).toISOString(),
+		until: new Date(claimMs("default", Date.now())).toISOString(),
 	};
 	writeState(vault, "claims.json", {
 		...state,
@@ -232,7 +232,7 @@ async function claimArchitectureSubjects(
 				...request,
 				id: mintId(),
 				since: new Date().toISOString(),
-				until: new Date(Date.now() + claimMs("default")).toISOString(),
+				until: new Date(claimMs("default", Date.now())).toISOString(),
 			};
 			writeState(vault, "claims.json", { ...state, claims: [...live, claim] });
 			return { success: true as const, claim };
