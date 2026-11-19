@@ -30,11 +30,14 @@
 // `static` of a function pointer's type can be called, so it is a function.
 // The members of an `impl` of a trait whose members the language's own
 // syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
-// `Display::fmt`, are called by the language: no caller names them.
+// `Display::fmt`, are called by the language: no caller names them. A
+// function whose body only passes its call on names its callee's root
+// (rust-pass-through.ts).
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
+import { passesTo } from "#runtime/code-facts/rust/operations/rust-pass-through.ts";
 
 /** Where the walk is: the names that qualify an item, and whether everything around it is open. */
 interface Scope {
@@ -176,10 +179,12 @@ function definition(
 	symbol: string,
 	shape: Pick<Definition, "kind" | "visibility" | "exposed">,
 ): Definition {
+	const passes = passesTo(node);
 	return {
 		symbol,
 		...shape,
 		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),

@@ -296,7 +296,7 @@ test("Rust uses and the math around them judge each export, whatever the spellin
 
 test("a Rust function or method that only passes its call on is a pass-through, and a trait's implementation and the members the language calls get no finding", () => {
 	expect(findingsOn("Ledger")).toEqual([
-		["Relay.send", "CODE_PASS_THROUGH", "information"],
 		["post", "CODE_PASS_THROUGH", "information"],
+		["Relay.send", "CODE_PASS_THROUGH", "information"],
 	]);
 });
