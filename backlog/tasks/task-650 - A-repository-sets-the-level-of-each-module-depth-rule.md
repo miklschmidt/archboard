@@ -1,9 +1,11 @@
 ---
 id: TASK-650
 title: A repository sets the level of each module-depth rule
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T13:43:00Z'
+updated_date: '2026-11-19T13:46:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -52,3 +54,13 @@ Per-path or per-module scope (the model's `external` mark covers code a reposito
 - [ ] #6 The site gate page and pull-request page, the check help and schema descriptions, the archboard skill, CONTEXT.md and ADR 0082 describe the rules, with the YAML example, and say that upgrading without rules adopts the new default warnings
 - [ ] #7 Tests: the policy schema cases, the pure rule application (lower, off, untouched, roll-up unchanged), and one CLI exit case
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Policy: codeCheck.rules (partial record of the seven depth codes to information|off) beside failShallowModules (now optional) in semantic-policy.ts; a refinement makes rules.MODULE_SHALLOW with failShallowModules: true invalid, so the existing INVALID_CONFIG diagnostic names the entry. Test: readVaultConfiguration cases.
+2. Pure rule application in code-intel module-depth (depth-rules.ts): information caps and says the vault policy set it, off removes, other codes untouched. Unit test.
+3. run.ts answerOf applies each reading's rules to its findings after the pass (MODULE_SHALLOW already derived), and models[] carries the reading's rules. Integration test in module-depth.test.ts: off EXPOSED_VALUE keeps Timing shallow.
+4. CLI: codeCheckLines prints 'code check: off by vault policy: ...'; gateShallowModules refuses --fail-shallow-modules beside rules.MODULE_SHALLOW (new refusal). CLI exit test.
+5. Docs: gate.mdx, pull-requests.mdx, check help, schema meta, archboard skill + design-lens, CONTEXT.md, ADR 0082 entry. Run the gate commands.
+<!-- SECTION:PLAN:END -->

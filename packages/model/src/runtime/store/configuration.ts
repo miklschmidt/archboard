@@ -111,7 +111,10 @@ function parsePolicy(source: string): {
 } {
 	const parsed = VaultConfigurationSchema.safeParse(Bun.YAML.parse(source));
 	if (!parsed.success) {
-		const refused = parsed.error.issues[0]?.path ?? [];
+		const issue = parsed.error.issues[0];
+		// An unknown key is refused at the object that holds it, so its name ends the path.
+		const unknown = issue?.code === "unrecognized_keys" ? issue.keys.slice(0, 1) : [];
+		const refused = [...(issue?.path ?? []), ...unknown];
 		return {
 			configuration: DEFAULT_SEMANTIC_POLICY,
 			problem: `Invalid semantic policy: ${z.prettifyError(parsed.error)}`,
