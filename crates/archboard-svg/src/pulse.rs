@@ -194,22 +194,19 @@ fn ratio(value: f64) -> String {
     js::to_fixed(js::js_min(js::js_max(value, 0.0), 1.0), 6)
 }
 
-/// How a piece's bar slides, as SMIL spells it, and where it stands before it slides.
-fn motion_of(motion: &LegMotion, span: f64) -> (f64, Attributes) {
+/// How a piece's bar slides over one turn of its train, as SMIL spells it,
+/// and where it stands before it slides.
+fn motion_of(motion: &LegMotion, train: &PulseTrain) -> (f64, Attributes) {
     let mut attributes = Attributes::new();
     attributes
         .set("attributeName", "transform")
         .set("type", "translate");
-    let (shift, cycle) = match *motion {
-        LegMotion::Steady {
-            shift,
-            period,
-            speed,
-        } => {
+    let shift = match *motion {
+        LegMotion::Steady { shift, .. } => {
             attributes
                 .set("from", "0 0")
-                .set("to", format!("{} 0", js::fixed_number(span, 4)));
-            (shift, period / speed)
+                .set("to", format!("{} 0", js::fixed_number(train.span, 4)));
+            shift
         }
         LegMotion::Turn {
             enters,
@@ -232,19 +229,25 @@ fn motion_of(motion: &LegMotion, span: f64) -> (f64, Attributes) {
             ]
             .join(";");
             attributes.set("values", values).set("keyTimes", times);
-            (0.0, cycle)
+            0.0
         }
     };
     attributes
-        .set("dur", timecount(cycle))
+        .set("dur", timecount(train.cycle))
         .set("repeatCount", "indefinite")
         .set("calcMode", "linear");
     (shift, attributes)
 }
 
 /// One piece of a pulse: the mask, the clip inside it, and the bar that slides behind them.
-fn leg_markup(leg: &PulseLeg, mask: &str, clip: &str, gradient: &str, span: f64) -> String {
-    let (shift, motion) = motion_of(&leg.motion, span);
+fn leg_markup(
+    leg: &PulseLeg,
+    mask: &str,
+    clip: &str,
+    gradient: &str,
+    train: &PulseTrain,
+) -> String {
+    let (shift, motion) = motion_of(&leg.motion, train);
     let shift = if shift == 0.0 {
         String::new()
     } else {
@@ -291,13 +294,7 @@ pub(crate) fn write_traffic(mark: &TrafficMark, out: &mut String) {
         let clip = clip_of(leg);
         out.push_str(&mask.markup);
         out.push_str(&clip.markup);
-        pieces.push_str(&leg_markup(
-            leg,
-            &mask.id,
-            &clip.id,
-            &gradient.id,
-            train.span,
-        ));
+        pieces.push_str(&leg_markup(leg, &mask.id, &clip.id, &gradient.id, &train));
     }
     out.push_str("</defs>");
     out.push_str(&pieces);
