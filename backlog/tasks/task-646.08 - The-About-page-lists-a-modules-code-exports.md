@@ -4,7 +4,7 @@ title: The About page lists a module's code exports
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:52:00Z'
+updated_date: '2026-11-19T02:38:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -56,3 +56,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 The model code warnings component test covers the list
 - [ ] #4 A canvas that opens no About page does not download every module export: the code-findings answer that every canvas reads stays about the size it was before TASK-646.07, and the About page reads the exports of the selected module only
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): Code exports reads the selected module's export names through Model queries (new code-exports route) and opens an export at its line through Code opener. Both are now relationships in the proposal (operation task-646-08-code-exports-reads). The rest of the footprint's outside-the-plan modules (the code-check protocol, the route and memory under Code check route, the Model reading file beside the Right panel's binding, server and browser tests) serve those reads; exception recorded (operation task-646-08-exceptions). Answer sizes: code findings 1.20 MB (1.13 MB before TASK-646.07), code exports about 5 KB per module.
+<!-- SECTION:NOTES:END -->
