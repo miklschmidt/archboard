@@ -198,7 +198,7 @@ function exportsSection(props: ScopePageProps): AboutPageSection | null {
 		undefined,
 		<CodeExports
 			vault={props.vault}
-			module={scope}
+			module={{ id: scope, binding: module.binding }}
 			reading={props.code}
 			onNotice={props.onCodeTargetNotice}
 		/>,

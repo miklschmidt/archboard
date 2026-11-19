@@ -85,6 +85,8 @@ test("the count of About stays for a pass with no warning, and offers nothing to
 
 const VAULT = "/work/shop/.archboard/vault";
 const GATEWAY = { kind: "node", id: "Shop#Gateway", name: "Gateway" } as const;
+/** The code the gateway is bound to. */
+const BOUND = "src/gateway/gateway.ts";
 
 /** What the last pass counted of the gateway: a function, a class with a method, a value, a type. */
 const NAMES: NonNullable<CodeCheckAnswer["depth"]>[number]["names"] = [
@@ -194,7 +196,7 @@ function showExports(reading: Reading | null): void {
 			{ client },
 			createElement(CodeExports, {
 				vault: VAULT,
-				module: GATEWAY.id,
+				module: { id: GATEWAY.id, binding: { repo: "example/shop", path: BOUND } },
 				reading,
 				onNotice: selectNothing,
 			}),
@@ -264,7 +266,10 @@ test("code exports list a module's exports by kind, each with its findings, read
 test("a module no pass measured reads no exports, and says why", () => {
 	const asked = serving();
 	showExports(pass());
-	expect(document.querySelectorAll("[data-slot='code-exports-unmeasured']")).toHaveLength(1);
+	// A module bound to a file that is no folder's entry: the words name the binding the pass passed.
+	expect(document.querySelector("[data-slot='code-exports-unmeasured']")?.textContent).toContain(
+		BOUND,
+	);
 	cleanup();
 	showExports(null);
 	expect(document.querySelectorAll("[data-slot='code-exports-unread']")).toHaveLength(1);

@@ -11,6 +11,7 @@ import {
 	type RemixiconComponentType,
 } from "@remixicon/react";
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
+import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import { rowTone } from "#ui/shell/rules/row-tone.ts";
@@ -48,7 +49,8 @@ type Finding = ModelCodeReading["findings"][number];
 /** Inputs for the code exports of one module. */
 interface CodeExportsProps {
 	readonly vault: string;
-	readonly module: string;
+	/** The module, by its identity and the code it is bound to. */
+	readonly module: { readonly id: string; readonly binding: CodeBinding };
 	/** The pass that read the reading on screen, or null when none did. */
 	readonly reading: ModelCodeReading | null;
 	/** Where an open of code tells what went wrong. */
@@ -63,8 +65,8 @@ interface CodeExportsProps {
 function CodeExports(props: CodeExportsProps): JSX.Element {
 	const { reading, module } = props;
 	const code = useMemo(
-		() => (reading === null ? undefined : codeByModule(reading).get(module)),
-		[reading, module],
+		() => (reading === null ? undefined : codeByModule(reading).get(module.id)),
+		[reading, module.id],
 	);
 	if (reading === null)
 		return (
@@ -72,10 +74,7 @@ function CodeExports(props: CodeExportsProps): JSX.Element {
 				No code check read this version of the reading. The first view of Measures runs one.
 			</Words>
 		);
-	if (code === undefined)
-		return (
-			<Words slot="code-exports-unmeasured">The last code check did not measure this module.</Words>
-		);
+	if (code === undefined) return <Unmeasured binding={module.binding} />;
 	if (code.kind === "skipped")
 		return (
 			<Words slot="code-exports-skipped">
@@ -97,16 +96,17 @@ function ReadExports(
 		readonly code: Extract<ModuleCode, { kind: "read" }>;
 	},
 ): JSX.Element {
-	const { vault, reading, module, code } = props;
+	const { vault, reading, code } = props;
+	const { id } = props.module;
 	const counted = exportCount(code.exports) > 0;
-	const query = useCodeExports(vault, reading, module, counted);
+	const query = useCodeExports(vault, reading, id, counted);
 	const list = useMemo(
 		() =>
 			exportList(query.data?.names ?? [], reading.findings, {
-				id: module,
+				id,
 				directory: query.data?.directory ?? "",
 			}),
-		[query.data, reading.findings, module],
+		[query.data, reading.findings, id],
 	);
 	return (
 		<div data-slot="code-exports" className="flex flex-col gap-6">
@@ -291,6 +291,30 @@ function FindingChip(props: { readonly finding: Finding }): JSX.Element {
 			<span className="sr-only">{SEVERITY_WORDS[finding.severity]}: </span>
 			{findingName(finding.code)}
 		</Badge>
+	);
+}
+
+/**
+ * Why the pass did not measure a bound module: it measures a module bound to a folder, or to the
+ * entry file of one, and says nothing of a binding to another file or to a symbol.
+ * @param props The module's binding.
+ * @param props.binding The binding.
+ * @returns The words.
+ */
+function Unmeasured(props: { readonly binding: CodeBinding }): JSX.Element {
+	const { path, symbol } = props.binding;
+	return (
+		<Words slot="code-exports-unmeasured">
+			The last code check did not measure this module. It measures a module bound to a folder, or to
+			the entry file of one such as <code className="font-mono">index.ts</code>, and this one is
+			bound to{" "}
+			{symbol !== undefined && (
+				<>
+					the symbol <code className="font-mono">{symbol}</code> in{" "}
+				</>
+			)}
+			<code className="font-mono">{path}</code>.
+		</Words>
 	);
 }
 
