@@ -28,7 +28,7 @@ function read(codeCheck: unknown) {
 }
 
 test("a rule sets a module-depth code to information or off", () => {
-	const rules = { EXPOSED_VALUE: "information", CODE_PASS_THROUGH: "off" };
+	const rules = { EXPOSED_VALUE: "information", CODE_PASS_THROUGH: "off" } as const;
 	const configuration = read({ rules });
 	expect(configuration.diagnostics).toEqual([]);
 	expect(configuration.configuration.codeCheck).toEqual({ rules });

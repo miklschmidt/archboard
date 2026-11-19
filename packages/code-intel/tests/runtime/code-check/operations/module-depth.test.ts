@@ -391,7 +391,10 @@ test("the vault's rules lower or remove a module-depth code after the roll-up, s
 	policy({ rules: { EXPOSED_VALUE: "off", EXPOSED_UNUSED: "information" } });
 	try {
 		const answer = await check();
-		expect(answer.models?.[0]?.rules).toEqual({ EXPOSED_VALUE: "off", EXPOSED_UNUSED: "information" });
+		expect(answer.models?.[0]?.rules).toEqual({
+			EXPOSED_VALUE: "off",
+			EXPOSED_UNUSED: "information",
+		});
 		expect(judged(answer, "EXPOSED_VALUE")).toEqual([]);
 		expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "information"]]);
 		// FIXTURE, which only a test reads, is unused after a complete read: a warning without the rule.
