@@ -83,14 +83,21 @@ function cRootFiles(
  * @returns True for a member.
  */
 function cMember(name: ExposedName, exposed: readonly ExposedName[]): boolean {
+	return exposed.some((holder) => holds(holder, name));
+}
+
+/**
+ * Whether one exposed name holds another: qualifies it, or is a type around it in its file.
+ * @param holder The one.
+ * @param name The other.
+ * @returns True when it does.
+ */
+function holds(holder: ExposedName, name: ExposedName): boolean {
+	const held = holder.definition;
 	const { symbol, start, end } = name.definition;
-	return exposed.some((holder) => {
-		const held = holder.definition;
-		if (held === name.definition) return false;
-		if (symbol.startsWith(`${held.symbol}::`)) return true;
-		const around = holder.path === name.path && held.start <= start && end <= held.end;
-		return around && held.kind === "class" && held.symbol !== symbol;
-	});
+	if (symbol.startsWith(`${held.symbol}::`)) return true;
+	const around = holder.path === name.path && held.start <= start && end <= held.end;
+	return around && held.kind === "class" && held.symbol !== symbol;
 }
 
 export { cMember, cRootFiles, isCFile };

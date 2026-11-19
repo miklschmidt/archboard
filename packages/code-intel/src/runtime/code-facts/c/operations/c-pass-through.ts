@@ -7,13 +7,19 @@
 // callee's root: the name, `this` or `self` the chain starts at.
 
 import type { Node } from "web-tree-sitter";
-import { spell } from "#runtime/code-facts/c/operations/c-definitions.ts";
+import { spell } from "#runtime/code-facts/c/operations/c-spelling.ts";
 
 /** Statements that return or make the one expression of a body. */
 const MAKERS = new Set(["return_statement", "expression_statement"]);
 
 /** Names a callee's chain can start from. */
 const ROOTS = new Set(["identifier", "this", "qualified_identifier", "template_function"]);
+
+/** The field that names what a call or a message runs. */
+const CALLEE: Readonly<Record<string, string>> = {
+	call_expression: "function",
+	message_expression: "receiver",
+};
 
 /**
  * The named children of a node that are no comment.
@@ -25,27 +31,72 @@ function codeOf(node: Node): Node[] {
 }
 
 /**
+ * The name a parameter declares, through pointers and references.
+ * @param parameter The parameter declaration.
+ * @returns The name, or none for a parameter with no name.
+ */
+function parameterName(parameter: Node): string[] {
+	const declarator = parameter.childForFieldName("declarator");
+	if (declarator === null) return [];
+	const name =
+		declarator.type === "identifier" ? declarator : declarator.descendantsOfType("identifier")[0];
+	return name === undefined ? [] : [name.text];
+}
+
+/**
+ * The names of an Objective-C method's parameters.
+ * @param method The method definition.
+ * @returns The names.
+ */
+function methodParameters(method: Node): string[] {
+	return method.namedChildren
+		.filter((child) => child.type === "method_parameter")
+		.flatMap((parameter) => parameter.namedChildren.filter((each) => each.type === "identifier"))
+		.map((name) => name.text);
+}
+
+/**
+ * The list of a function's parameters, through the declarators around its name.
+ * @param definition The function definition.
+ * @returns The list, or undefined.
+ */
+function parameterList(definition: Node): Node | undefined {
+	const declarator = definition.childForFieldName("declarator");
+	const callable = declarator?.descendantsOfType("function_declarator")[0] ?? declarator;
+	return callable?.childForFieldName("parameters") ?? undefined;
+}
+
+/**
  * The names of a function's or a method's parameters.
  * @param definition The function or method definition.
  * @returns The names.
  */
 function parametersOf(definition: Node): Set<string> {
-	if (definition.type === "method_definition") {
-		const names = definition.namedChildren
-			.filter((child) => child.type === "method_parameter")
-			.flatMap((parameter) => parameter.namedChildren.filter((each) => each.type === "identifier"))
-			.map((name) => name.text);
-		return new Set(names);
-	}
-	const declarator = definition.childForFieldName("declarator");
-	const function_ = declarator?.descendantsOfType("function_declarator")[0] ?? declarator;
-	const list = function_?.childForFieldName("parameters");
-	const names = (list === null || list === undefined ? [] : codeOf(list)).flatMap((parameter) => {
-		const name = parameter.childForFieldName("declarator");
-		const found = name?.type === "identifier" ? name : name?.descendantsOfType("identifier")[0];
-		return found === undefined || found === null ? [] : [found.text];
-	});
-	return new Set(names);
+	if (definition.type === "method_definition") return new Set(methodParameters(definition));
+	const list = parameterList(definition);
+	return new Set(list === undefined ? [] : codeOf(list).flatMap(parameterName));
+}
+
+/**
+ * The block of a function's or a method's code.
+ * @param definition The function or method definition.
+ * @returns The block, or undefined.
+ */
+function bodyOf(definition: Node): Node | undefined {
+	const body = definition.childForFieldName("body");
+	return body ?? definition.namedChildren.find((child) => child.type === "compound_statement");
+}
+
+/**
+ * The one statement of a body that returns or makes an expression.
+ * @param definition The function or method definition.
+ * @returns The statement, or undefined for a body of another number or kind.
+ */
+function onlyStatement(definition: Node): Node | undefined {
+	const body = bodyOf(definition);
+	const statements = body === undefined ? [] : codeOf(body);
+	const [only] = statements;
+	return statements.length === 1 && MAKERS.has(only?.type ?? "") ? only : undefined;
 }
 
 /**
@@ -54,13 +105,8 @@ function parametersOf(definition: Node): Set<string> {
  * @returns The expression, or undefined.
  */
 function bodyExpression(definition: Node): Node | undefined {
-	const body =
-		definition.childForFieldName("body") ??
-		definition.namedChildren.find((child) => child.type === "compound_statement");
-	const statements = body === null || body === undefined ? [] : codeOf(body);
-	const [only] = statements;
-	if (statements.length !== 1 || only === undefined || !MAKERS.has(only.type)) return undefined;
-	let expression = codeOf(only)[0];
+	const only = onlyStatement(definition);
+	let expression = only === undefined ? undefined : codeOf(only)[0];
 	while (expression?.type === "parenthesized_expression") expression = codeOf(expression)[0];
 	return expression;
 }
@@ -94,6 +140,18 @@ function argumentsOf(call: Node): Node[] {
 }
 
 /**
+ * Whether a call or message passes only its caller's parameters, one at least.
+ * @param call The call or message.
+ * @param parameters The parameters.
+ * @returns True when it does.
+ */
+function passesParameters(call: Node, parameters: ReadonlySet<string>): boolean {
+	const passed = argumentsOf(call);
+	const all = passed.every((each) => each.type === "identifier" && parameters.has(each.text));
+	return passed.length > 0 && all;
+}
+
+/**
  * The root of the callee a function or method only passes its call on to.
  * @param definition The function or method definition.
  * @returns The callee's root, such as `save`, `db_`, `this` or `self`, or
@@ -101,12 +159,10 @@ function argumentsOf(call: Node): Node[] {
  */
 function cPassesTo(definition: Node): string | undefined {
 	const call = bodyExpression(definition);
-	if (call?.type !== "call_expression" && call?.type !== "message_expression") return undefined;
-	const parameters = parametersOf(definition);
-	const passed = argumentsOf(call);
-	const all = passed.every((each) => each.type === "identifier" && parameters.has(each.text));
-	if (passed.length === 0 || !all) return undefined;
-	return rootOf(call.childForFieldName(call.type === "call_expression" ? "function" : "receiver"));
+	const field = CALLEE[call?.type ?? ""];
+	if (call === undefined || field === undefined) return undefined;
+	const passes = passesParameters(call, parametersOf(definition));
+	return passes ? rootOf(call.childForFieldName(field)) : undefined;
 }
 
 export { cPassesTo };

@@ -236,9 +236,16 @@ function opaque(
 ): boolean {
 	if (found.resolved === undefined)
 		return RELATIVE.test(found.specifier) && CODE_EXTENSION.test(found.specifier);
-	if (found.reexport || !within(directory, found.resolved) || NAMES_EACH_USE.has(adapter)) {
-		return false;
-	}
+	if (found.reexport || !within(directory, found.resolved)) return false;
+	return !NAMES_EACH_USE.has(adapter) && takesWhole(found);
+}
+
+/**
+ * Whether an import takes a module whole, as `import * as ns` or a bare `import()` does.
+ * @param found The import.
+ * @returns True when it does.
+ */
+function takesWhole(found: SyntaxFacts["imports"][number]): boolean {
 	return found.names.length === 0 || found.names.some((name) => name.imported === "*");
 }
 

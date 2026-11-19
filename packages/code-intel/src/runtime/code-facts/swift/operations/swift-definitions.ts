@@ -55,7 +55,11 @@ const KINDS: Readonly<Record<string, Definition["kind"]>> = {
  * an alias and an associated type. An enum with no method is one too
  * (typeDefinitions).
  */
-const TYPES = new Set(["protocol_declaration", "typealias_declaration", "associatedtype_declaration"]);
+const TYPES = new Set([
+	"protocol_declaration",
+	"typealias_declaration",
+	"associatedtype_declaration",
+]);
 
 /**
  * The kind of a declaration or directly assigned closure.
@@ -94,8 +98,36 @@ function calledByLanguage(node: Node, name: string): boolean {
 	if (node.type === "init_declaration") return true;
 	if (node.type !== "function_declaration" || !CALLED_BY_LANGUAGE.has(name)) return false;
 	const label = CALLED_BY_LANGUAGE.get(name);
+	return label === undefined || firstLabel(node) === label;
+}
+
+/**
+ * The label a function's first parameter takes, `into` in `hash(into:)`.
+ * @param node The function declaration.
+ * @returns The label, or undefined when it has no parameter or no label of its own.
+ */
+function firstLabel(node: Node): string | undefined {
 	const first = node.namedChildren.find((child) => child.type === "parameter");
-	return label === undefined || first?.childForFieldName("external_name")?.text === label;
+	return first?.childForFieldName("external_name")?.text;
+}
+
+/**
+ * What a declaration says beyond its name and level: that it is a type, that
+ * Swift calls it itself, or the call it only passes on (TASK-646.12).
+ * @param node The declaration.
+ * @param name Its own name.
+ * @returns What it says.
+ */
+function moreOf(
+	node: Node,
+	name: string,
+): Pick<Definition, "type" | "calledByLanguage" | "passes"> {
+	const passes = swiftPassesTo(node);
+	return {
+		...(TYPES.has(node.type) ? { type: true } : {}),
+		...(calledByLanguage(node, name) ? { calledByLanguage: true } : {}),
+		...(passes === undefined ? {} : { passes }),
+	};
 }
 
 /**
@@ -134,7 +166,6 @@ function writtenLevel(node: Node): string | undefined {
  */
 function defined(node: Node, name: string, holder: Holder): Definition {
 	const level = holder.imposed ? holder.level : (writtenLevel(node) ?? holder.level);
-	const passes = swiftPassesTo(node);
 	return {
 		symbol: holder.symbol === "" ? name : `${holder.symbol}.${name}`,
 		kind: kindOf(node),
@@ -143,12 +174,9 @@ function defined(node: Node, name: string, holder: Holder): Definition {
 		source: sourceRange(node),
 		visibility: level,
 		exposed: EXPOSED.has(level) && holder.exposed,
-		...(TYPES.has(node.type) ? { type: true } : {}),
-		...(calledByLanguage(node, name) ? { calledByLanguage: true } : {}),
-		...(passes === undefined ? {} : { passes }),
+		...moreOf(node, name),
 	};
 }
-
 
 /**
  * The name a field of a declaration holds, of one kind of node, so a
@@ -199,15 +227,20 @@ function members(node: Node, holder: Holder, imposed?: string): Definition[] {
 function typeDefinitions(node: Node, holder: Holder): Definition[] {
 	const name = nameOf(node, "type_identifier");
 	if (name === undefined) return [];
-	const declared = defined(node, name, holder);
-	const level = FILE_PRIVATE.has(declared.visibility) ? "fileprivate" : "internal";
-	const inner: Holder = { symbol: declared.symbol, level, imposed: false, exposed: declared.exposed };
-	const held = members(node, inner, declared.visibility);
+	const own = defined(node, name, holder);
+	const level = FILE_PRIVATE.has(own.visibility) ? "fileprivate" : "internal";
+	const inner: Holder = {
+		symbol: own.symbol,
+		level,
+		imposed: false,
+		exposed: own.exposed,
+	};
+	const held = members(node, inner, own.visibility);
 	// An enum whose body holds no method is a type, as a TypeScript enum is, so it keeps the compiler's exhaustive checks.
 	const enumOnly =
 		node.childForFieldName("declaration_kind")?.text === "enum" &&
-		!held.some((each) => each.kind === "function" && each.symbol.startsWith(`${declared.symbol}.`));
-	return [enumOnly ? { ...declared, type: true } : declared, ...held];
+		!held.some((each) => each.kind === "function" && each.symbol.startsWith(`${own.symbol}.`));
+	return [enumOnly ? { ...own, type: true } : own, ...held];
 }
 
 /**

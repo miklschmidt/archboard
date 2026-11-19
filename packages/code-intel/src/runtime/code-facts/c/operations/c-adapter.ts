@@ -31,12 +31,10 @@
 // (include-scope.ts).
 
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
-import {
-	cDefinitionsOf,
-	isMisread,
-	spell,
-} from "#runtime/code-facts/c/operations/c-definitions.ts";
-import type { Import, ParsedFacts, Reference } from "#runtime/code-facts/operations/facts.ts";
+import { cDefinitionsOf, isMisread } from "#runtime/code-facts/c/operations/c-definitions.ts";
+import { includeOf } from "#runtime/code-facts/c/operations/c-includes.ts";
+import { spell } from "#runtime/code-facts/c/operations/c-spelling.ts";
+import type { ParsedFacts, Reference } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { C_MATH } from "#runtime/code-facts/c/operations/c-math.ts";
 import { cUnparsedOf } from "#runtime/code-facts/c/operations/c-unparsed.ts";
@@ -519,35 +517,6 @@ function runtimeUses(named: readonly Named[], locals: ReadonlySet<string>): Node
 		if (!isLocal(spell(top), each, locals)) uses.set(top.id, top);
 	}
 	return [...uses.values()];
-}
-
-/**
- * The path of an include as written: `ledger.h` for `"ledger.h"`, and
- * `<vector>` with its angle brackets.
- * @param path The include's path.
- * @returns The path, or undefined for an include of a macro.
- */
-function includePath(path: Node | null): string | undefined {
-	if (path?.type === "system_lib_string") return path.text;
-	return path?.type === "string_literal" ? path.namedChildren[0]?.text : undefined;
-}
-
-/**
- * One `#include`: every name of the header in scope, under its path as
- * written, `<vector>` with its angle brackets.
- * @param node The include directive.
- * @returns The import, or undefined for an include of a macro.
- */
-function includeOf(node: Node): Import | undefined {
-	const specifier = includePath(node.childForFieldName("path"));
-	if (specifier === undefined || specifier === "") return undefined;
-	return {
-		specifier,
-		line: node.startPosition.row + 1,
-		names: [{ imported: "*", local: "*", typeOnly: false }],
-		typeOnly: false,
-		reexport: false,
-	};
 }
 
 /**

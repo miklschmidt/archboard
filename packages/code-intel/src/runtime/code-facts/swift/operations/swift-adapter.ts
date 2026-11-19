@@ -368,7 +368,8 @@ function scopedNames(bindings: readonly Node[], definitions: ParsedFacts["defini
  */
 function runtimeUses(references: readonly Node[], context: UseContext): Node[] {
 	return references.filter((node) => {
-		if (node.type !== "simple_identifier" || node.parent?.type === "navigation_suffix") return false;
+		if (node.type !== "simple_identifier" || node.parent?.type === "navigation_suffix")
+			return false;
 		const use = codeReference(node, context);
 		return use !== undefined && !use.typeOnly;
 	});

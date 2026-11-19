@@ -8,10 +8,13 @@
 // value, as TypeScript's `new` does, and passes nothing on.
 
 import type { Node } from "web-tree-sitter";
-import { memberName } from "#runtime/code-facts/swift/operations/swift-math.ts";
+import { argumentsOf, memberName } from "#runtime/code-facts/swift/operations/swift-math.ts";
 
 /** Wrappers that hand on the value of the expression inside. */
 const UNWRAPPED = new Set(["try_expression", "await_expression"]);
+
+/** The comments a body can hold beside its statement. */
+const COMMENTS = new Set(["comment", "multiline_comment"]);
 
 /**
  * The names a function's parameters bind.
@@ -29,18 +32,35 @@ function parametersOf(declaration: Node): Set<string> {
 }
 
 /**
+ * The one statement of a function's body.
+ * @param declaration The function declaration.
+ * @returns The statement, or undefined for a body of another number.
+ */
+function onlyStatement(declaration: Node): Node | undefined {
+	const statements = declaration.childForFieldName("body")?.namedChildren[0];
+	if (statements?.type !== "statements") return undefined;
+	const code = statements.namedChildren.filter((each) => !COMMENTS.has(each.type));
+	return code.length === 1 ? code[0] : undefined;
+}
+
+/**
+ * What a statement makes: the value a `return` returns, else the statement.
+ * @param only The statement.
+ * @returns The expression, or null for a `return` with none.
+ */
+function resultOf(only: Node): Node | null {
+	return only.type === "control_transfer_statement" ? only.childForFieldName("result") : only;
+}
+
+/**
  * The one expression a function's body makes or returns, without `try` or `await`.
  * @param declaration The function declaration.
  * @returns The expression, or undefined.
  */
 function bodyExpression(declaration: Node): Node | undefined {
-	const statements = declaration.childForFieldName("body")?.namedChildren[0];
-	const all = statements?.type === "statements" ? statements.namedChildren : [];
-	const [only] = all.filter((each) => each.type !== "comment" && each.type !== "multiline_comment");
-	if (only === undefined || all.length !== 1) return undefined;
-	let expression: Node | null | undefined =
-		only.type === "control_transfer_statement" ? only.childForFieldName("result") : only;
-	while (expression !== null && expression !== undefined && UNWRAPPED.has(expression.type)) {
+	const only = onlyStatement(declaration);
+	let expression = only === undefined ? null : resultOf(only);
+	while (expression !== null && UNWRAPPED.has(expression.type)) {
 		expression = expression.childForFieldName("expr");
 	}
 	return expression ?? undefined;
@@ -51,11 +71,12 @@ function bodyExpression(declaration: Node): Node | undefined {
  * @param callee The callee.
  * @returns The root, or undefined for any other callee.
  */
-function rootOf(callee: Node | undefined): string | undefined {
-	if (callee === undefined) return undefined;
+function rootOf(callee: Node | null | undefined): string | undefined {
+	if (callee === null || callee === undefined) return undefined;
 	if (callee.type === "simple_identifier" || callee.type === "self_expression") return callee.text;
-	const target = callee.type === "navigation_expression" ? callee.childForFieldName("target") : null;
-	return target === null ? undefined : rootOf(target);
+	return callee.type === "navigation_expression"
+		? rootOf(callee.childForFieldName("target"))
+		: undefined;
 }
 
 /**
@@ -65,16 +86,21 @@ function rootOf(callee: Node | undefined): string | undefined {
  * @returns True when it does.
  */
 function passesParameters(call: Node, parameters: ReadonlySet<string>): boolean {
-	const suffix = call.namedChildren.find((child) => child.type === "call_suffix");
-	const list = suffix?.namedChildren[0];
-	if (list?.type !== "value_arguments" || suffix?.namedChildren.length !== 1) return false;
-	const values = list.namedChildren
-		.filter((each) => each.type === "value_argument")
-		.map((each) => each.childForFieldName("value"));
-	return (
-		values.length > 0 &&
-		values.every((value) => value?.type === "simple_identifier" && parameters.has(value.text))
+	const values = argumentsOf(call) ?? [];
+	const all = values.every(
+		(value) => value.type === "simple_identifier" && parameters.has(value.text),
 	);
+	return values.length > 0 && all;
+}
+
+/**
+ * Whether a callee names a type, which Swift writes with a capital: its call constructs.
+ * @param callee The callee.
+ * @returns True when it does.
+ */
+function namesType(callee: Node | undefined): boolean {
+	const last = callee?.type === "navigation_expression" ? memberName(callee) : callee?.text;
+	return /^\p{Lu}/u.test(last ?? "");
 }
 
 /**
@@ -90,8 +116,7 @@ function swiftPassesTo(declaration: Node): string | undefined {
 		return undefined;
 	}
 	const callee = call.namedChildren[0];
-	const last = callee?.type === "navigation_expression" ? memberName(callee) : callee?.text;
-	return /^\p{Lu}/u.test(last ?? "") ? undefined : rootOf(callee);
+	return namesType(callee) ? undefined : rootOf(callee);
 }
 
 export { swiftPassesTo };

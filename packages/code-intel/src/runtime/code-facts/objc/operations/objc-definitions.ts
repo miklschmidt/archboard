@@ -240,12 +240,25 @@ type MemberHandler = (walk: Walk, holder: Holder, node: Node) => void;
 function member(walk: Walk, holder: Holder, name: string, node: Node, declares = false): void {
 	const visibility = { word: holder.word, exposed: holder.exposed };
 	const method = node.type !== "property_declaration";
-	const passes = node.type === "method_definition" ? cPassesTo(node) : undefined;
 	define(walk, `${holder.symbol}::${name}`, node, visibility, method ? "function" : "value", {
 		...(declares ? { declaration: true } : {}),
-		...(method && calledByRuntime(name) ? { calledByLanguage: true } : {}),
-		...(passes === undefined ? {} : { passes }),
+		...(method ? methodMore(node, name) : {}),
 	});
+}
+
+/**
+ * What a method says beyond its name: that the runtime calls it, or the
+ * message it only passes on.
+ * @param node The method declaration or definition.
+ * @param selector Its selector.
+ * @returns What it says.
+ */
+function methodMore(node: Node, selector: string): Pick<Definition, "calledByLanguage" | "passes"> {
+	const passes = node.type === "method_definition" ? cPassesTo(node) : undefined;
+	return {
+		...(calledByRuntime(selector) ? { calledByLanguage: true } : {}),
+		...(passes === undefined ? {} : { passes }),
+	};
 }
 
 /** How each kind of node inside a class, category, protocol or implementation is read. */
@@ -335,7 +348,9 @@ function classInterface(walk: Walk, node: Node): void {
 	if (head === undefined) return;
 	const exposed = walk.role === "header" && !head.extension;
 	if (!head.extension)
-		define(walk, head.symbol, node, { word: "@interface", exposed }, "class", { declaration: true });
+		define(walk, head.symbol, node, { word: "@interface", exposed }, "class", {
+			declaration: true,
+		});
 	const word = head.extension ? "private" : "public";
 	const holder: Holder = { symbol: head.name, word, exposed, declares: true };
 	variablesOf(walk, holder, node, "protected");

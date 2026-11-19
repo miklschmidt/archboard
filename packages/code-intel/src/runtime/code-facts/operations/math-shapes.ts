@@ -56,7 +56,7 @@ interface MathSyntax {
 	/** The expression that reads a member of another, or the getter call that passes it nothing, or undefined. */
 	readonly readOn: (operand: Node) => Node | undefined;
 	/** Whether an expression reads a member, so it is part of a chain of names. */
-	readonly member: (expression: Node, operand: Node) => boolean;
+	readonly member: (expression: Node) => boolean;
 	/** How a chain of names is spelled, as the grammar's references spell it. */
 	readonly spelled: (chain: Node) => string;
 	/** The local variable whose whole value an expression is, or undefined. */
@@ -96,209 +96,79 @@ interface Shape {
 	readonly binding: number;
 }
 
-/** The use a shape is drawn around, and what it is written as. */
+/** The use a shape is drawn around, what it is written as, and the grammar. */
 interface Focus {
+	readonly syntax: MathSyntax;
 	readonly node: Node;
 	readonly text: string;
 }
 
-/** Reads the math of one grammar. */
-class MathReading {
-	constructor(private readonly syntax: MathSyntax) {}
+/**
+ * The expression inside any parentheses.
+ * @param syntax The grammar.
+ * @param node The expression.
+ * @returns The expression the parentheses hold, or itself.
+ */
+function unwrapped(syntax: MathSyntax, node: Node): Node {
+	const inner = syntax.inner(node);
+	return inner === undefined ? node : unwrapped(syntax, inner);
+}
 
-	/**
-	 * The expression inside any parentheses.
-	 * @param node The expression.
-	 * @returns The expression the parentheses hold, or itself.
-	 */
-	unwrapped(node: Node): Node {
-		const inner = this.syntax.inner(node);
-		return inner === undefined ? node : this.unwrapped(inner);
-	}
+/**
+ * Whether a binary operation is arithmetic on numbers: no `+` that joins text.
+ * @param syntax The grammar.
+ * @param found The operation.
+ * @returns True when it is.
+ */
+function onNumbers(syntax: MathSyntax, found: Operation): boolean {
+	if (!BINDING.has(found.operator)) return false;
+	return (
+		found.operator !== "+" || !found.operands.some((each) => syntax.text(unwrapped(syntax, each)))
+	);
+}
 
-	/**
-	 * The arithmetic an expression is: a binary operation of arithmetic on
-	 * numbers, or a sign.
-	 * @param node The expression.
-	 * @returns The operation, or undefined.
-	 */
-	arithmetic(node: Node): Operation | undefined {
-		const found = this.syntax.operation(node);
-		if (found === undefined) return undefined;
-		const { operator, operands } = found;
-		if (operands.length === 1) return /^[-+]$/u.test(operator) ? found : undefined;
-		if (!BINDING.has(operator)) return undefined;
-		const joins = operands.some((each) => this.syntax.text(this.unwrapped(each)));
-		return operator === "+" && joins ? undefined : found;
-	}
+/**
+ * The arithmetic an expression is: a binary operation of arithmetic on
+ * numbers, or a sign.
+ * @param syntax The grammar.
+ * @param node The expression.
+ * @returns The operation, or undefined.
+ */
+function arithmetic(syntax: MathSyntax, node: Node): Operation | undefined {
+	const found = syntax.operation(node);
+	if (found === undefined) return undefined;
+	const keeps =
+		found.operands.length === 1 ? /^[-+]$/u.test(found.operator) : onNumbers(syntax, found);
+	return keeps ? found : undefined;
+}
 
-	/**
-	 * The math that holds an expression, one step out.
-	 * @param node The expression.
-	 * @returns The parent that keeps the math going, or undefined where the math ends.
-	 */
-	mathParent(node: Node): Node | undefined {
-		const parent = node.parent;
-		if (parent !== null && (this.syntax.inner(parent) !== undefined || this.arithmetic(parent))) {
-			return parent;
-		}
-		const call = this.syntax.callOf(node);
-		return call !== undefined && this.syntax.mathCall(call) !== undefined ? call : undefined;
+/**
+ * The math that holds an expression, one step out.
+ * @param syntax The grammar.
+ * @param node The expression.
+ * @returns The parent that keeps the math going, or undefined where the math ends.
+ */
+function mathParent(syntax: MathSyntax, node: Node): Node | undefined {
+	const parent = node.parent;
+	if (parent !== null && (syntax.inner(parent) !== undefined || arithmetic(syntax, parent))) {
+		return parent;
 	}
+	const call = syntax.callOf(node);
+	return call !== undefined && syntax.mathCall(call) !== undefined ? call : undefined;
+}
 
-	/**
-	 * The largest math around an expression.
-	 * @param node The expression.
-	 * @returns The math, or undefined when no arithmetic holds the expression.
-	 */
-	mathAround(node: Node): Node | undefined {
-		let math: Node | undefined;
-		for (let step = this.mathParent(node); step !== undefined; step = this.mathParent(step)) {
-			if (this.syntax.inner(step) === undefined) math = step;
-		}
-		return math;
+/**
+ * The largest math around an expression.
+ * @param syntax The grammar.
+ * @param node The expression.
+ * @returns The math, or undefined when no arithmetic holds the expression.
+ */
+function mathAround(syntax: MathSyntax, node: Node): Node | undefined {
+	let math: Node | undefined;
+	for (let step = mathParent(syntax, node); step !== undefined; step = mathParent(syntax, step)) {
+		if (syntax.inner(step) === undefined) math = step;
 	}
-
-	/**
-	 * The operands of a commutative operator, its own nested uses flattened.
-	 * @param node The expression.
-	 * @param operator The operator.
-	 * @returns The operands.
-	 */
-	chained(node: Node, operator: string): Node[] {
-		const inner = this.unwrapped(node);
-		const found = this.arithmetic(inner);
-		if (found?.operator !== operator || found.operands.length !== 2) return [inner];
-		return found.operands.flatMap((each) => this.chained(each, operator));
-	}
-
-	/**
-	 * The shape of an operation of arithmetic.
-	 * @param found The operation.
-	 * @param node Its expression.
-	 * @param focus The use.
-	 * @returns Its shape.
-	 */
-	operationShape(found: Operation, node: Node, focus: Focus): Shape {
-		const { operator, operands } = found;
-		if (operands.length === 1) {
-			const [operand] = operands;
-			const text = operand === undefined ? OTHER : placed(this.shapeOf(operand, focus), SIGN);
-			return { text: `${operator}${text}`, binding: SIGN };
-		}
-		const binding = BINDING.get(operator) ?? OPERAND;
-		if (COMMUTATIVE.has(operator)) {
-			const each = this.chained(node, operator).map((operand) =>
-				placed(this.shapeOf(operand, focus), binding + 1),
-			);
-			return { text: each.toSorted().join(` ${operator} `), binding };
-		}
-		const sides = operands.map((operand, index) =>
-			placed(this.shapeOf(operand, focus), binding + index),
-		);
-		return { text: sides.join(` ${operator} `), binding };
-	}
-
-	/**
-	 * The shape of an expression inside the math around a use.
-	 * @param node The expression.
-	 * @param focus The use.
-	 * @returns Its shape.
-	 */
-	shapeOf(node: Node, focus: Focus): Shape {
-		if (node.id === focus.node.id) return { text: focus.text, binding: OPERAND };
-		const inner = this.unwrapped(node);
-		if (inner.id !== node.id) return this.shapeOf(inner, focus);
-		const found = this.arithmetic(node);
-		if (found !== undefined) return this.operationShape(found, node, focus);
-		const call = this.syntax.mathCall(node);
-		if (call !== undefined) {
-			const shapes = call.arguments.map((each) => this.shapeOf(each, focus).text);
-			const ordered = this.syntax.sorted.has(call.name) ? shapes.toSorted() : shapes;
-			return { text: `${call.name}(${ordered.join(", ")})`, binding: OPERAND };
-		}
-		return { text: this.syntax.number(node) ?? OTHER, binding: OPERAND };
-	}
-
-	/**
-	 * The chain of names a use starts.
-	 * @param name The name.
-	 * @returns The chain's expression.
-	 */
-	chainOf(name: Node): Node {
-		let chain = name;
-		for (let next = this.syntax.readOn(chain); next !== undefined; next = this.syntax.readOn(chain)) {
-			if (!this.syntax.member(next, chain)) break;
-			chain = next;
-		}
-		return chain;
-	}
-
-	/**
-	 * What a use reads: its chain of names, with what the code adds to it, a
-	 * member or the call of a getter that passes nothing.
-	 * @param chain The chain of names.
-	 * @returns The expression it reads.
-	 */
-	operandOf(chain: Node): Node {
-		let operand = chain;
-		for (let next = this.syntax.readOn(operand); next !== undefined; next = this.syntax.readOn(operand)) {
-			operand = next;
-		}
-		return operand;
-	}
-
-	/**
-	 * The computation around one expression a use reads, if math holds it.
-	 * @param symbol The chain of names the use reads.
-	 * @param operand The expression.
-	 * @param text What the shape writes for the expression.
-	 * @returns The computation, or undefined.
-	 */
-	computed(symbol: string, operand: Node, text: string): Computation | undefined {
-		const math = this.mathAround(operand);
-		if (math === undefined) return undefined;
-		const call = this.syntax.calledAfter?.(operand) === true ? "()" : "";
-		const shape = this.shapeOf(math, { node: operand, text: `${text}${call}` }).text;
-		return { symbol, line: operand.startPosition.row + 1, shape };
-	}
-
-	/**
-	 * The math around each later use of the local variable that holds a use whole.
-	 * @param symbol The chain of names the use reads.
-	 * @param operand The expression the use reads.
-	 * @param text What the shape writes for it.
-	 * @returns The computations.
-	 */
-	throughLocal(symbol: string, operand: Node, text: string): Computation[] {
-		const local = this.syntax.local(operand);
-		if (local === undefined) return [];
-		return this.syntax.uses(local).flatMap((each) => {
-			const read = this.operandOf(this.chainOf(each));
-			return this.computed(symbol, read, `${text}${added(read, each)}`) ?? [];
-		});
-	}
-
-	/**
-	 * The math a file writes around the uses of names.
-	 * @param uses Each use at run time, at the name it starts with.
-	 * @returns The computations, each once.
-	 */
-	computationsOf(uses: readonly Node[]): Computation[] {
-		const found = new Map<string, Computation>();
-		for (const name of uses) {
-			const chain = this.chainOf(name);
-			const symbol = this.syntax.spelled(chain);
-			const operand = this.operandOf(chain);
-			const text = `@${added(operand, chain)}`;
-			const direct = this.computed(symbol, operand, text);
-			const each = direct === undefined ? this.throughLocal(symbol, operand, text) : [direct];
-			for (const computation of each) {
-				found.set(`${computation.symbol}\0${computation.line}\0${computation.shape}`, computation);
-			}
-		}
-		return [...found.values()];
-	}
+	return math;
 }
 
 /**
@@ -312,6 +182,113 @@ function placed(shape: Shape, least: number): string {
 }
 
 /**
+ * The operands of a commutative operator, its own nested uses flattened.
+ * @param syntax The grammar.
+ * @param node The expression.
+ * @param operator The operator.
+ * @returns The operands.
+ */
+function chained(syntax: MathSyntax, node: Node, operator: string): Node[] {
+	const inner = unwrapped(syntax, node);
+	const found = arithmetic(syntax, inner);
+	if (found?.operator !== operator || found.operands.length !== 2) return [inner];
+	return found.operands.flatMap((each) => chained(syntax, each, operator));
+}
+
+/**
+ * The shape of a sign.
+ * @param found The sign.
+ * @param focus The use.
+ * @returns Its shape.
+ */
+function signShape(found: Operation, focus: Focus): Shape {
+	const [operand] = found.operands;
+	const text = operand === undefined ? OTHER : placed(shapeOf(operand, focus), SIGN);
+	return { text: `${found.operator}${text}`, binding: SIGN };
+}
+
+/**
+ * The shape of an operation of arithmetic.
+ * @param found The operation.
+ * @param node Its expression.
+ * @param focus The use.
+ * @returns Its shape.
+ */
+function operationShape(found: Operation, node: Node, focus: Focus): Shape {
+	const { operator, operands } = found;
+	if (operands.length === 1) return signShape(found, focus);
+	const binding = BINDING.get(operator) ?? OPERAND;
+	if (COMMUTATIVE.has(operator)) {
+		const each = chained(focus.syntax, node, operator).map((operand) =>
+			placed(shapeOf(operand, focus), binding + 1),
+		);
+		return { text: each.toSorted().join(` ${operator} `), binding };
+	}
+	const sides = operands.map((operand, index) => placed(shapeOf(operand, focus), binding + index));
+	return { text: sides.join(` ${operator} `), binding };
+}
+
+/**
+ * The shape of a call of a function of math.
+ * @param call The call.
+ * @param focus The use.
+ * @returns Its shape.
+ */
+function callShape(call: MathCall, focus: Focus): Shape {
+	const shapes = call.arguments.map((each) => shapeOf(each, focus).text);
+	const ordered = focus.syntax.sorted.has(call.name) ? shapes.toSorted() : shapes;
+	return { text: `${call.name}(${ordered.join(", ")})`, binding: OPERAND };
+}
+
+/**
+ * The shape of an expression inside the math around a use.
+ * @param node The expression.
+ * @param focus The use.
+ * @returns Its shape.
+ */
+function shapeOf(node: Node, focus: Focus): Shape {
+	const { syntax } = focus;
+	if (node.id === focus.node.id) return { text: focus.text, binding: OPERAND };
+	const inner = unwrapped(syntax, node);
+	if (inner.id !== node.id) return shapeOf(inner, focus);
+	const found = arithmetic(syntax, node);
+	if (found !== undefined) return operationShape(found, node, focus);
+	const call = syntax.mathCall(node);
+	if (call !== undefined) return callShape(call, focus);
+	return { text: syntax.number(node) ?? OTHER, binding: OPERAND };
+}
+
+/**
+ * The chain of names a use starts.
+ * @param syntax The grammar.
+ * @param name The name.
+ * @returns The chain's expression.
+ */
+function chainOf(syntax: MathSyntax, name: Node): Node {
+	let chain = name;
+	for (let next = syntax.readOn(chain); next !== undefined && syntax.member(next);) {
+		chain = next;
+		next = syntax.readOn(chain);
+	}
+	return chain;
+}
+
+/**
+ * What a use reads: its chain of names, with what the code adds to it, a
+ * member or the call of a getter that passes nothing.
+ * @param syntax The grammar.
+ * @param chain The chain of names.
+ * @returns The expression it reads.
+ */
+function operandOf(syntax: MathSyntax, chain: Node): Node {
+	let operand = chain;
+	for (let next = syntax.readOn(operand); next !== undefined; next = syntax.readOn(operand)) {
+		operand = next;
+	}
+	return operand;
+}
+
+/**
  * What the code adds to an expression's start, without white space.
  * @param operand The expression.
  * @param start The start it adds to.
@@ -322,13 +299,68 @@ function added(operand: Node, start: Node): string {
 }
 
 /**
+ * The computation around one expression a use reads, if math holds it.
+ * @param syntax The grammar.
+ * @param symbol The chain of names the use reads.
+ * @param operand The expression.
+ * @param text What the shape writes for the expression.
+ * @returns The computation, or undefined.
+ */
+function computed(
+	syntax: MathSyntax,
+	symbol: string,
+	operand: Node,
+	text: string,
+): Computation | undefined {
+	const math = mathAround(syntax, operand);
+	if (math === undefined) return undefined;
+	const call = syntax.calledAfter?.(operand) === true ? "()" : "";
+	const shape = shapeOf(math, { syntax, node: operand, text: `${text}${call}` }).text;
+	return { symbol, line: operand.startPosition.row + 1, shape };
+}
+
+/**
+ * The math around each later use of the local variable that holds a use whole.
+ * @param syntax The grammar.
+ * @param symbol The chain of names the use reads.
+ * @param operand The expression the use reads.
+ * @param text What the shape writes for it.
+ * @returns The computations.
+ */
+function throughLocal(
+	syntax: MathSyntax,
+	symbol: string,
+	operand: Node,
+	text: string,
+): Computation[] {
+	const local = syntax.local(operand);
+	if (local === undefined) return [];
+	return syntax.uses(local).flatMap((each) => {
+		const read = operandOf(syntax, chainOf(syntax, each));
+		return computed(syntax, symbol, read, `${text}${added(read, each)}`) ?? [];
+	});
+}
+
+/**
  * The math a file writes around the uses of names, as a grammar writes it.
  * @param syntax How the grammar writes arithmetic.
  * @param uses Each use at run time, at the name it starts with.
  * @returns The computations, each once.
  */
 function computationsOf(syntax: MathSyntax, uses: readonly Node[]): Computation[] {
-	return new MathReading(syntax).computationsOf(uses);
+	const found = new Map<string, Computation>();
+	for (const name of uses) {
+		const chain = chainOf(syntax, name);
+		const symbol = syntax.spelled(chain);
+		const operand = operandOf(syntax, chain);
+		const text = `@${added(operand, chain)}`;
+		const direct = computed(syntax, symbol, operand, text);
+		const each = direct === undefined ? throughLocal(syntax, symbol, operand, text) : [direct];
+		for (const computation of each) {
+			found.set(`${computation.symbol}\0${computation.line}\0${computation.shape}`, computation);
+		}
+	}
+	return [...found.values()];
 }
 
-export { computationsOf, type Local, type MathSyntax };
+export { computationsOf, type Local, type MathCall, type MathSyntax, type Operation };
