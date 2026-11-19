@@ -47,6 +47,13 @@ interface Definition {
 	 */
 	readonly declaration?: true;
 	/**
+	 * It only names a module whose code is another file: Rust's `mod name;`.
+	 * Rust looks a module up among types alone, so a use that ends at its name
+	 * reaches an item of the same name the file defines, as the function
+	 * `colour` beside `mod colour;` (lookup.ts).
+	 */
+	readonly moduleFile?: true;
+	/**
 	 * It declares a type and nothing a caller runs or reads: a TypeScript
 	 * interface, type alias or enum; a C or C++ struct, union or enum with no
 	 * function among its members, a typedef or an alias; a Swift protocol,

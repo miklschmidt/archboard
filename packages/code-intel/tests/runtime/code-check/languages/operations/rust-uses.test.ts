@@ -11,7 +11,9 @@
 // `wasm` exports functions to JavaScript through `#[wasm_bindgen]`, and types
 // to TypeScript through ts-rs's `#[derive(TS)]`. `svg` calls
 // `hidden::made`, which a macro of `hidden` defines, so the check cannot tell
-// which name of `hidden` it uses.
+// which name of `hidden` it uses. `svg` calls `ink::colour` and `ink::shape`
+// by their paths: the root of `ink` defines `colour` and passes `shape` on,
+// each beside a private module of the same name, which no other crate sees.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -67,7 +69,7 @@ beforeAll(async () => {
 	writeFileSync(join(scratch, "gitconfig"), "");
 	fixtureGit(scratch, shop, "init", "-q", "-b", "main");
 	fixtureGit(scratch, shop, "remote", "add", "origin", `https://${SHOP}.git`);
-	const crates = ["scene", "text", "router", "hidden", "svg", "paint", "wasm"];
+	const crates = ["scene", "text", "router", "hidden", "ink", "svg", "paint", "wasm"];
 	write(shop, {
 		"Cargo.toml": [
 			'[workspace]\nresolver = "2"\nmembers = ["crates/*"]\n\n[workspace.dependencies]',
@@ -108,7 +110,19 @@ beforeAll(async () => {
 			"}",
 			"",
 		].join("\n"),
-		"crates/svg/Cargo.toml": manifest("svg", ["scene", "text", "router", "hidden"]),
+		"crates/ink/Cargo.toml": manifest("ink"),
+		"crates/ink/src/lib.rs": [
+			"mod colour;",
+			"mod shape;",
+			"pub use shape::shape;",
+			"pub fn colour(tone: u32) -> u32 {",
+			"    colour::css(tone)",
+			"}",
+			"",
+		].join("\n"),
+		"crates/ink/src/colour.rs": "pub fn css(tone: u32) -> u32 {\n    tone + 1\n}\n",
+		"crates/ink/src/shape.rs": "pub fn shape(words: u32) -> u32 {\n    words * 2\n}\n",
+		"crates/svg/Cargo.toml": manifest("svg", ["scene", "text", "router", "hidden", "ink"]),
 		"crates/svg/src/lib.rs": [
 			"use router::route;",
 			"use scene::scene::{Group, Item};",
@@ -121,7 +135,7 @@ beforeAll(async () => {
 			"}",
 			"pub fn draw(group: &Group, item: Item) -> u32 {",
 			"    let _ = (item, Item::Empty);",
-			"    outline(group.size) + hidden::made() + text::note!()",
+			"    outline(group.size) + hidden::made() + text::note!() + ink::colour(1) + ink::shape(2)",
 			"}",
 			"",
 		].join("\n"),
@@ -197,6 +211,7 @@ beforeAll(async () => {
 	module("Motion", "crates/paint/src/between/mod.rs", 40);
 	module("Wasm", "crates/wasm", 50);
 	module("Hidden", "crates/hidden", 60);
+	module("Ink", "crates/ink", 70);
 	fixtureGit(scratch, shop, "add", "-A");
 	fixtureGit(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the code");
 	register(scratch, { [SHOP]: shop });
@@ -239,6 +254,10 @@ test("a Rust name another crate uses counts as used, past a variant of the same 
 test("a call of a Rust function that shares its name with its module reaches the function, from another crate and from outside the module's folder, and a crate's exported macro is used at its root", () => {
 	expect(unusedOn("Text")).toEqual([]);
 	expect(unusedOn("Motion")).toEqual([]);
+});
+
+test("a path from another crate reaches the public function of a crate's root, not its private module of the same name", () => {
+	expect(unusedOn("Ink")).toEqual([]);
 });
 
 test("an item exported to JavaScript through #[wasm_bindgen], or to TypeScript through #[derive(TS)], is used by the host language", () => {
