@@ -40,6 +40,11 @@ pub const fn diagram_margin() -> f64 {
     DIAGRAM_MARGIN
 }
 
+/// The length of a drawing with a diagram margin at both ends.
+pub fn with_diagram_margins(length: f64) -> f64 {
+    length + 2.0 * DIAGRAM_MARGIN
+}
+
 /// How round a card's corner is to the layout, which keeps a line's port clear of it.
 pub const fn card_radius() -> f64 {
     CARD_RADIUS

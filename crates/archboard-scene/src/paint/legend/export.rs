@@ -15,6 +15,7 @@ use crate::geometry::{Point, round_coord};
 use crate::js;
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, point, text};
+use crate::paint::design::with_diagram_margins;
 use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
 use crate::paint::legend::symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
@@ -235,7 +236,7 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
         ]),
         width: js::js_max(
             page.width,
-            measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil() + 2.0 * DIAGRAM_MARGIN,
+            with_diagram_margins(measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil()),
         ),
         height: band + page.height,
         atlas: moved_atlas(&page.atlas, 0.0, band),

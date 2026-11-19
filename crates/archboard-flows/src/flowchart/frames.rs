@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use archboard_layout::fit_in;
 use archboard_scene::drawing::MeasuredLabel;
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::design::diagram_margin;
+use archboard_scene::paint::design::{diagram_margin, with_diagram_margins};
 
 use super::graph::Chart;
 use super::layout::{Layout, Marker, Run};
@@ -98,7 +98,7 @@ fn page(charts: &[Chart], headers: &HashMap<String, Header>, layout: &Layout<'_>
             .extend((blocks.markers.into_iter()).map(|marker| (chart.flow.clone(), marker)));
         page.runs.extend(blocks.runs);
         page.breaks += blocks.breaks;
-        page.width = page.width.max(width + 2.0 * diagram_margin());
+        page.width = page.width.max(with_diagram_margins(width));
         top += height + FLOW_GAP;
     }
     page.height = top - FLOW_GAP + diagram_margin();
