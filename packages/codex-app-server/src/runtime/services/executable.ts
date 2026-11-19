@@ -36,7 +36,7 @@ type CodexExecutableFailureCode =
 	| "wrong_version"
 	| "outside_checkout";
 
-/** Which Codex executable `resolveCodexExecutable` proves. */
+/** Which Codex executable to find and prove. */
 interface CodexExecutableOptions {
 	/** An absolute path to prove in place of the installed `@openai/codex` package. */
 	readonly executablePath?: string;
