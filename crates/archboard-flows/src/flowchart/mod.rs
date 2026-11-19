@@ -24,20 +24,17 @@ mod layout;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_layout::Node as GraphNode;
-use archboard_scene::CardWords;
 use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, DrawingEdge, DrawingNode, EdgeFacts, Emphasis, MeasuredLabel,
     MeasuredNode, NodeFacts, Painted, PaintedDrawing, PlacedLabel, ReadingDirection,
 };
 use archboard_scene::geometry::curve_through;
-use archboard_scene::js;
-use archboard_scene::paint::design::{
-    fallback_icon, flow_icon, is_flow_kind, shape_text_line, shape_text_size,
-};
+use archboard_scene::paint::design::{fallback_icon, flow_icon, is_flow_kind};
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
 };
+use archboard_scene::{CardWords, ShapeWords, shape_words};
 use serde::Deserialize;
 
 use crate::content::{Flow, Node};
@@ -89,17 +86,11 @@ pub struct FlowchartRequest {
 
 /// One shape's words, wrapped, and the width and height its box takes to hold them.
 fn shape_size(shape: FlowchartShape, name: &str) -> (Vec<String>, f64, f64) {
-    let lines = archboard_scene::message_lines(
-        name,
-        SHAPE_WORDS_WIDTH,
-        shape_text_size(),
-        shape_text_line(),
-    );
-    let text_width = lines
-        .iter()
-        .fold(0.0, |widest, line| js::js_max(widest, line.width));
-    let text_height = lines.len() as f64 * shape_text_line();
-    let words = lines.into_iter().map(|line| line.text).collect();
+    let ShapeWords {
+        lines: words,
+        width: text_width,
+        height: text_height,
+    } = shape_words(name, SHAPE_WORDS_WIDTH);
     match shape {
         FlowchartShape::Decision => {
             // The words' box inscribed in the diamond: (w/2)/a + (h/2)/b = 1, with b = aspect × a.

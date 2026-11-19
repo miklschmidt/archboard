@@ -5,7 +5,7 @@
 
 use crate::sizes::{
     ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE, FLOW_KIND,
-    HERO_LINE_WIDTH, LINE_WIDTH, RAIL_GAP, RAILS, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, TAB_SHOULDER,
+    HERO_LINE_WIDTH, LINE_WIDTH, RAIL_GAP, RAILS, TAB_SHOULDER,
 };
 
 /// The line widths a far view draws wider: a line of normal weight, of hero
@@ -52,16 +52,6 @@ pub const fn flow_kind() -> &'static str {
 /// Whether a node's kind is that of a flowchart's frame.
 pub fn is_flow_kind(kind: &str) -> bool {
     kind == FLOW_KIND
-}
-
-/// The size of words in a flowchart's diamonds, loops and terminals.
-pub const fn shape_text_size() -> f64 {
-    SHAPE_TEXT_SIZE
-}
-
-/// The room one line of a flowchart shape's words takes.
-pub const fn shape_text_line() -> f64 {
-    SHAPE_TEXT_LINE
 }
 
 /// The gap a double line's rails leave down its middle.

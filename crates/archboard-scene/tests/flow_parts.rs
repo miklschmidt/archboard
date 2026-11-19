@@ -8,7 +8,7 @@ use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
     CardWords, ColumnLimits, HeadCards, Span, activation_span, flow_tab, fragment_bounds,
     fragment_head, measure_flow_frame, message_ends, message_plate, note_plate, self_loop,
-    sequence_cards, width,
+    sequence_cards, shape_words, width,
 };
 
 /// A sequence card's words.
@@ -242,4 +242,15 @@ fn a_sequence_s_tab_holds_the_heading_a_flowchart_measures_for_the_same_flow() {
         let heading = measure_flow_frame((), &card("Place an order", summary, false));
         assert_eq!(tab.header.y * 2.0 + tab.header.height, heading.height);
     }
+}
+
+#[test]
+fn a_shape_s_words_wrap_whole_inside_its_width_a_line_at_a_time() {
+    let name = "Is every line of the order in stock";
+    let words = shape_words(name, 120.0);
+    assert!(words.lines.len() > 1);
+    assert_eq!(words.lines.join(" "), name);
+    // A shape sets its words at 11, 14 to a line.
+    assert_eq!(words.height, words.lines.len() as f64 * 14.0);
+    assert!(words.width <= 120.0 && words.width > 0.0);
 }

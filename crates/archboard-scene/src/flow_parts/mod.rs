@@ -10,6 +10,7 @@ mod cards;
 mod flow_tab;
 mod fragments;
 mod messages;
+mod shapes;
 
 pub use cards::{ColumnLimits, HeadCard, HeadCards, sequence_cards};
 pub use flow_tab::{FlowTab, flow_tab};
@@ -18,6 +19,7 @@ pub use messages::{
     ArrowEnds, MessagePlate, NotePlate, activation_span, message_ends, message_plate, note_plate,
     self_loop,
 };
+pub use shapes::{ShapeWords, shape_words};
 
 /// A stretch across the page.
 #[derive(Clone, Copy, Debug, PartialEq)]
