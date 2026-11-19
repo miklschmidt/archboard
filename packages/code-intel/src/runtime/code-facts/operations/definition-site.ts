@@ -1,6 +1,8 @@
 // Where a symbol a file names is defined in its checkout (ADR 0046): in the
 // file itself, or in the file an import of it names, through every
-// `export ... from` on the way. An import path names the file it reaches, so
+// `export ... from` on the way. A definition spelled as the symbol comes
+// first, then where an import leads, and a member whose last names are the
+// symbol's only after both (TASK-646.16). An import path names the file it reaches, so
 // a definition found this way is resolved, not a candidate. A name the code
 // reaches only through a value, such as `ledger.post()`, has no import that
 // names its file, so it has no site here: a language server resolves it
@@ -18,7 +20,7 @@
 
 import { pairOf } from "#runtime/code-facts/c/operations/c-pairs.ts";
 import type { Definition, SyntaxFacts, Target } from "#runtime/code-facts/operations/facts.ts";
-import { endsWithNames } from "#runtime/code-facts/operations/lookup.ts";
+import { dotted, endsWithNames } from "#runtime/code-facts/operations/lookup.ts";
 import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/module-resolution.ts";
 import {
 	definitionsNamedIn,
@@ -98,6 +100,30 @@ function ownSpelling(definitions: readonly Definition[], symbol: string): string
 }
 
 /**
+ * Where a file defines a symbol, or where its imports lead it: a definition
+ * spelled as the symbol first, then where `elsewhere` finds it, and only then
+ * one that ends with the symbol's names, as the member `Item.Group` ends with
+ * `Group`: a name written alone reaches a member only where nothing leads it
+ * elsewhere.
+ * @param facts The file's facts.
+ * @param symbol The symbol, as the file spells it.
+ * @param elsewhere Searches where the file's imports or re-exports lead it.
+ * @returns The site, or undefined.
+ */
+async function siteIn(
+	facts: SyntaxFacts,
+	symbol: string,
+	elsewhere: () => Promise<DefinitionSite | undefined>,
+): Promise<DefinitionSite | undefined> {
+	const named = definitionsNamedIn(facts.definitions, symbol);
+	const exact = named.find((each) => dotted(each.symbol) === dotted(symbol));
+	if (exact !== undefined) return { path: facts.path, definition: exact, via: [] };
+	const [tail] = named;
+	const site = await elsewhere();
+	return site ?? (tail === undefined ? undefined : { path: facts.path, definition: tail, via: [] });
+}
+
+/**
  * Where a file's re-exports send a symbol it does not define.
  * @param facts The file's facts.
  * @param symbol The symbol.
@@ -172,12 +198,12 @@ async function follow(
 	const facts = await search.pass.read(search.checkout, target.path);
 	if (facts === undefined || facts.adapter === "text") return undefined;
 	const symbol = ownSpelling(facts.definitions, target.symbol);
-	const definition = definitionsNamedIn(facts.definitions, symbol)[0];
-	if (definition !== undefined) return { path: facts.path, definition, via: [] };
-	const site = await firstSite(reexportTargets(facts, symbol), (next) =>
-		follow(search, next, depth - 1),
-	);
-	return site === undefined ? undefined : { ...site, via: [facts.path, ...site.via] };
+	return siteIn(facts, symbol, async () => {
+		const site = await firstSite(reexportTargets(facts, symbol), (next) =>
+			follow(search, next, depth - 1),
+		);
+		return site === undefined ? undefined : { ...site, via: [facts.path, ...site.via] };
+	});
 }
 
 /**
@@ -227,13 +253,9 @@ async function definitionSite(
 ): Promise<DefinitionSite | undefined> {
 	const facts = await pass.read(checkout, file);
 	if (facts === undefined || facts.adapter === "text") return undefined;
-	const own = definitionsNamedIn(facts.definitions, symbol)[0];
-	if (own !== undefined) {
-		return codeSiteOf(pass, checkout, { path: facts.path, definition: own, via: [] });
-	}
 	const search: Search = { pass, checkout, seen: new Set() };
-	const site = await firstSite(usedTargets(facts, symbol), (target) =>
-		follow(search, target, CHAIN_DEPTH),
+	const site = await siteIn(facts, symbol, () =>
+		firstSite(usedTargets(facts, symbol), (target) => follow(search, target, CHAIN_DEPTH)),
 	);
 	return site === undefined ? undefined : codeSiteOf(pass, checkout, site);
 }

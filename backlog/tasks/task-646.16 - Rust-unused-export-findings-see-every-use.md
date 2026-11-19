@@ -1,9 +1,11 @@
 ---
 id: TASK-646.16
 title: Rust unused-export findings see every use
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T03:12:00Z'
+updated_date: '2026-11-19T03:22:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -59,3 +61,14 @@ Follow the same section of TASK-646.05.
 - [ ] #5 Code-check tests reproduce each failing case of the audit
 - [ ] #6 On this repository, a fresh sample of 25 Rust `EXPOSED_UNUSED` warnings has no name that a file outside its module uses, tests aside
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Test-first: a code-check fixture workspace (rust-uses.test.ts) reproduces each audit case: cross-crate use through a pub use beside a same-named enum variant, a caller file defining a method of the same name, a module and function sharing a name (outline, departure), a use from outside the module folder, wasm_bindgen exports, and an unresolvable use.
+2. Fact analysis, definition-site: an exact definition first, then the names imports and re-exports lead to, then a last-name match.
+3. Fact analysis, Rust: a bare run-time use of a use-leaf that names a module leads to the value of that name its parent module offers (Rust's two namespaces); the reader takes a module reading's target for a use an import names.
+4. Fact analysis, Rust: items under #[wasm_bindgen] are called by the language.
+5. Code check: a Rust use that leads into the module but reaches no definition leaves the file unread, so EXPOSED_UNUSED there is information.
+6. Measure Rust EXPOSED_UNUSED warnings before/after on this repo, audit a fresh 25-name sample.
+<!-- SECTION:PLAN:END -->

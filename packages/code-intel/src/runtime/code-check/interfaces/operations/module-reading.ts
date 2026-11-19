@@ -42,13 +42,15 @@ import {
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { runsDefinition } from "#runtime/code-facts/operations/runs.ts";
 import { type FactsPass } from "#runtime/code-facts/services/reader.ts";
-import type { Crates } from "#runtime/code-facts/rust/operations/rust-crates.ts";
-import { cratesIn } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
 import {
-	type FileFacts,
+	privateTestImports,
+	type TestImport,
+} from "#runtime/code-check/interfaces/operations/test-imports.ts";
+import {
 	type Import,
 	type Reference,
 	type SyntaxFacts,
+	type Target,
 } from "#runtime/code-facts/operations/facts.ts";
 
 /** A module call's argument, `module.queue.var.name`: the value it gives the variable `name`. */
@@ -82,12 +84,6 @@ interface ModuleReading {
 	readonly unread: readonly string[];
 	/** A Terraform module's shape; such a module is reached only through its outputs. */
 	readonly terraform?: ModuleShape;
-}
-
-/** A resolved private import in a test outside the module. */
-interface TestImport {
-	readonly file: string;
-	readonly found: SyntaxFacts["imports"][number] & { readonly resolved: string };
 }
 
 /** The modules one pass has read, by repository and directory, so two documents share one reading. */
@@ -162,37 +158,79 @@ async function doorOf(
 /**
  * The use one reference makes of a module's code, if it reaches the module.
  * @param search The module.
- * @param file The file that holds the reference.
+ * @param read The facts of the file that holds the reference.
  * @param reference The reference.
- * @returns The use, or undefined.
+ * @returns The use, `unresolved` where it reaches a name the check cannot
+ * resolve, or undefined.
  */
 async function useOf(
 	search: UseSearch,
-	file: string,
+	read: SyntaxFacts,
 	reference: SyntaxFacts["references"][number],
-): Promise<OutsideUse | undefined> {
+): Promise<OutsideUse | "unresolved" | undefined> {
 	const { line, symbol, typeOnly } = reference;
 	const door = await doorOf(search, reference);
 	if (door === undefined) return undefined;
+	const file = read.path;
 	const site = await definitionSite(search.facts, search.checkout, file, symbol);
-	if (site === undefined || !isModules(search, site)) return undefined;
+	if (site === undefined)
+		return NAMED_ONLY.has(read.adapter) && (await unresolved(search, reference.target))
+			? "unresolved"
+			: undefined;
+	if (!isModules(search, site)) return undefined;
 	return { file, line, symbol, runs: runsCode(reference, site), typeOnly, site, door };
 }
 
 /**
- * The uses of a module's code in one file outside it.
+ * Whether a name of a module that a use of a language in `NAMED_ONLY` leads
+ * to, not a member, is one the check cannot resolve: its file neither
+ * defines it nor brings it in, as a function a macro defines.
  * @param search The module.
- * @param read The file's facts.
- * @returns Each use whose definition is the module's.
+ * @param target Where the use leads.
+ * @returns True when it is.
  */
-async function usesIn(search: UseSearch, read: SyntaxFacts): Promise<OutsideUse[]> {
+async function unresolved(search: UseSearch, target: Target | undefined): Promise<boolean> {
+	if (target === undefined || !NAME_ALONE.test(target.symbol)) return false;
+	const there = await search.facts.read(search.checkout, target.path);
+	if (there === undefined || there.adapter === "text") return false;
+	return !there.imports.some((found) => brings(found, target.symbol));
+}
+
+/** A name of a module itself: neither the whole module, `*`, nor a member. */
+const NAME_ALONE = /^[^.*]+$/u;
+
+/**
+ * Whether an import brings a name in.
+ * @param found The import.
+ * @param name The name.
+ * @returns True when it does.
+ */
+function brings(found: Import, name: string): boolean {
+	return found.names.some((each) => each.local === name);
+}
+
+/**
+ * The uses of a module's code in one file outside it, and whether the pass
+ * read the file whole.
+ * @param search The module.
+ * @param file The file.
+ * @returns Each use whose definition is the module's, and whether it read the file whole.
+ */
+async function usesIn(
+	search: UseSearch,
+	file: string,
+): Promise<{ readonly uses: OutsideUse[]; readonly whole: boolean }> {
+	const read = await search.facts.read(search.checkout, file);
+	if (read === undefined || read.adapter === "text") return { uses: [], whole: false };
 	const uses: OutsideUse[] = [];
+	let whole = readWhole(read, search.exposure);
 	for (const reference of read.references) {
 		// oxlint-disable-next-line no-await-in-loop -- one reference at a time; each search reads files the cache holds
-		const use = await useOf(search, read.path, reference);
-		if (use !== undefined) uses.push(use);
+		const use = await useOf(search, read, reference);
+		if (use === "unresolved") whole = false;
+		else if (use !== undefined) uses.push(use);
 	}
-	return uses;
+	return { uses, whole };
 }
 
 /** A specifier that names a file by a path from the importing file. */
@@ -250,15 +288,15 @@ function takesWhole(found: SyntaxFacts["imports"][number]): boolean {
 }
 
 /**
- * Whether the pass read a file outside a module whole, as far as the module
- * goes: a grammar read it, no code that did not parse names what the module
- * exposes, and no import leaves the uses of the module unknown.
- * @param read The file's facts, if a grammar read it.
+ * Whether the pass read a file outside a module whole, as far as its imports
+ * go: no code that did not parse names what the module exposes, and no
+ * import leaves the uses of the module unknown.
+ * @param read The file's facts.
  * @param exposure What the module exposes.
  * @returns True when it did.
  */
-function readWhole(read: FileFacts | undefined, exposure: ModuleExposure): boolean {
-	if (read === undefined || read.adapter === "text" || hidesUse(read, exposure)) return false;
+function readWhole(read: SyntaxFacts, exposure: ModuleExposure): boolean {
+	if (hidesUse(read, exposure)) return false;
 	return !read.imports.some((found) => opaque(found, exposure.directory, read.adapter));
 }
 
@@ -419,16 +457,16 @@ function terraformPart(exposure: ModuleExposure): ModuleExposure | undefined {
 async function callerUses(
 	search: UseSearch,
 ): Promise<{ readonly uses: OutsideUse[]; readonly unread: string[] }> {
-	const { facts, checkout, exposure } = search;
 	const uses: OutsideUse[] = [];
 	const unread: string[] = [];
-	const callers = exposure.outside.filter((file) => !isTestPath(file) && !isTerraformFile(file));
+	const callers = search.exposure.outside.filter(
+		(file) => !isTestPath(file) && !isTerraformFile(file),
+	);
 	for (const file of callers) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
-		const read = await facts.read(checkout, file);
-		if (!readWhole(read, exposure)) unread.push(file);
-		// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
-		if (read !== undefined && read.adapter !== "text") uses.push(...(await usesIn(search, read)));
+		const found = await usesIn(search, file);
+		if (!found.whole) unread.push(file);
+		uses.push(...found.uses);
 	}
 	return { uses, unread };
 }
@@ -460,101 +498,6 @@ async function readModule(
 		unread,
 		terraform: await terraformShape(facts, checkout, terraform),
 	};
-}
-
-/**
- * Imports by external tests that bypass a module's public entry files.
- * An adapter can identify test imports inside an ordinary source path too.
- * @param facts The pass.
- * @param checkout The module's checkout.
- * @param exposure The module's public entry files and possible callers.
- * @returns One import per test and private file.
- */
-async function privateTestImports(
-	facts: FactsPass,
-	checkout: RepoCheckout,
-	exposure: ModuleExposure,
-): Promise<TestImport[]> {
-	const imports: TestImport[] = [];
-	for (const file of exposure.outside) {
-		// oxlint-disable-next-line no-await-in-loop -- one file at a time yields between parses; the pass caches each file
-		const read = await facts.read(checkout, file);
-		if (read === undefined || read.adapter === "text") continue;
-		const crates = read.adapter === "rust" ? cratesIn(facts, checkout) : undefined;
-		imports.push(...privateImportsOf(read, exposure, crates));
-	}
-	return imports;
-}
-
-/**
- * Whether a Rust import reaches a name that the module exposes. A Rust import names a
- * path, never a file, so `crate::paint::design::LINE` reaches the exposed
- * `design.LINE` through the root file's `pub mod design`, wherever `LINE` is
- * defined, and a glob reaches what a module it names exposes.
- * @param found The import.
- * @param exposure What the module exposes.
- * @param crates The checkout's Rust module paths, for a Rust test.
- * @param from The importing file.
- * @returns True when it does.
- */
-function reachesExposed(
-	found: Pick<Import, "specifier">,
-	exposure: ModuleExposure,
-	crates: Crates | undefined,
-	from: string,
-): boolean {
-	if (crates === undefined) return false;
-	const path = found.specifier.split("::");
-	const glob = path.at(-1) === "*";
-	const names = glob ? path.slice(0, -1) : path;
-	return exposure.exposed.some(({ name }) => {
-		const exposed = glob ? name.split(".").slice(0, -1) : name.split(".");
-		if (!endsWithName(names.join("."), exposed.join("."))) return false;
-		const prefix = names.slice(0, names.length - exposed.length);
-		const root = crates.resolvePath(from, prefix.length === 0 ? ["self"] : prefix);
-		return root?.item.length === 0 && exposure.rootFiles.includes(root.file);
-	});
-}
-
-/**
- * Whether a dotted path ends with a dotted name, at a dot.
- * @param dotted The path.
- * @param name The name; an empty name ends nothing.
- * @returns True when it does.
- */
-function endsWithName(dotted: string, name: string): boolean {
-	return name !== "" && (dotted === name || dotted.endsWith(`.${name}`));
-}
-
-/**
- * Private imports in one external test, one per resolved file.
- * @param read The test's facts.
- * @param exposure The module's entry files.
- * @param crates The Rust module paths, when the test is Rust.
- * @returns The imports.
- */
-function privateImportsOf(
-	read: SyntaxFacts,
-	exposure: ModuleExposure,
-	crates: Crates | undefined,
-): TestImport[] {
-	const imports = [
-		...(isTestPath(read.path) ? read.imports : []),
-		...(read.testImports ?? []),
-	].flatMap((found): TestImport[] => {
-		const { resolved } = found;
-		if (resolved === undefined || resolved.endsWith("/")) return [];
-		const privateFile =
-			within(exposure.directory, resolved) &&
-			!exposure.rootFiles.includes(resolved) &&
-			!reachesExposed(found, exposure, crates, read.path);
-		return privateFile ? [{ file: read.path, found: { ...found, resolved } }] : [];
-	});
-	const unique = new Map<string, TestImport>();
-	for (const each of imports) {
-		if (!unique.has(each.found.resolved)) unique.set(each.found.resolved, each);
-	}
-	return [...unique.values()];
 }
 
 /**
