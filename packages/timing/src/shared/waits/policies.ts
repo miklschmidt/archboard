@@ -131,15 +131,7 @@ const WAITS = Object.freeze({
 		check: "beforeProbe",
 		sleep: "full",
 	},
-	/** The rasterizer waits for a document to finish loading, within the job's time. */
-	"raster.documentLoad": {
-		bound: "raster.jobTimeout",
-		cadence: "processGroup.poll",
-		check: "afterProbe",
-		strict: true,
-		sleep: "full",
-	},
-	/** Headless Chromium opens its port or its group exits, within its caller's time. */
+	/** Headless Chromium opens its port, loads a document or its group exits, within its caller's time. */
 	"raster.chromium": {
 		cadence: "processGroup.poll",
 		check: "afterProbe",
