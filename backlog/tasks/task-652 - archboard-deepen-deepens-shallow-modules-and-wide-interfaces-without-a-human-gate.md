@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-19T14:03:00Z'
-updated_date: '2026-11-19T14:05:00Z'
+updated_date: '2026-11-19T14:09:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -48,10 +48,13 @@ The finding messages and the archboard skill state the principles (narrow interf
 - [ ] #5 The archboard skill points agents to it where INTERFACE_WIDE and MODULE_SHALLOW are described, and the site install and pull-request pages name it
 - [ ] #6 The skill-link and init tests cover it, and the skill follows writing-for-agents (one source of truth, leading words, no restated environment)
 - [ ] #7 Each round puts its evidence in the pull request it produces, in the body or a comment, never in the repository: the candidate table (friction, strength, files), the before and after Archboard pictures uploaded as attachments, each advisor's independent ranking and what they agreed on, and each grilling decision with its reason; the HTML report stays outside the checkout and is attached only where the host accepts the file
+- [ ] #8 The skill reads its two advisors (provider, model family, how to pick the latest model) from the consumer repository's agent docs: `docs/agents/advisors.md` by default, or the advisors file in the directory where that repository keeps its agent context docs. Without such a file it picks two different model families the harness offers, says which, and suggests the file; this repository's docs/agents/advisors.md names Astra and Fable
 <!-- AC:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 Owner (2026-11-19): the report and the advisors' picks go in the PR for each round.
+
+Owner (2026-11-19): consumers pick their own advisory models through docs/agents/advisors.md (or the repository's agent docs location; docs/agents is the default in Matt Pocock's skills). This repository's file names Astra and Fable.
 <!-- SECTION:NOTES:END -->
