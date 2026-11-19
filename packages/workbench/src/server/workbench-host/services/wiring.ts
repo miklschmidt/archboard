@@ -25,7 +25,7 @@ import {
 import { semanticChangeFeed } from "#server/panes/services/change-feed.ts";
 import { workbenchFeedFor } from "#server/sessions/services/feed.ts";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
-import { reportStartupOwnership } from "@archboard/server-lifecycle/server-host";
+import { reportStartupOwnership } from "@archboard/server-lifecycle/server-process";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createServerCodexBrowserSocketOwner } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardWorkbenchServer } from "#server/workbench-host/services/production.ts";

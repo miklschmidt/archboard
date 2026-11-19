@@ -1,6 +1,6 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
-import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
+import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
 import { durationMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,

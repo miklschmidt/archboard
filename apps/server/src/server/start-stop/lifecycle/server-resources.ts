@@ -1,6 +1,6 @@
 import { logger } from "@archboard/diagnostics/logger";
 import { forgetModelMemory } from "@archboard/model-store";
-import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
+import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-process";
 import { server } from "#server/http/listener/wiring/server-app.ts";
 import { forgetPanePresentations, forgetSemanticPaneContexts } from "@archboard/workbench/panes";
 import { listenAddress, logHttpServerError, serverUrl } from "@archboard/workbench/host";

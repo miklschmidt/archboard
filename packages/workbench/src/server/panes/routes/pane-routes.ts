@@ -1,7 +1,7 @@
 import type { ArchitectureModelRead } from "@archboard/model-contract";
 import type { Express, Request, RequestHandler, Response } from "express";
 import { z } from "zod";
-import { staleFrontend } from "@archboard/server-lifecycle/server-host";
+import { staleFrontend } from "@archboard/server-lifecycle/server-process";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 
