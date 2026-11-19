@@ -1,4 +1,4 @@
-import type { WorkbenchVoiceInput } from "#runtime/host/protocol/context-source.ts";
+import type { WorkbenchVoicePolicy } from "#runtime/host/protocol/context-source.ts";
 import { createTestVoicePolicy } from "#tests/runtime/support/host.ts";
 import { expect } from "bun:test";
 import {
@@ -123,9 +123,7 @@ function harness(
 		read: startBrief,
 		subscribe: () => () => {},
 	},
-	presentationChanges?: {
-		readonly subscribe: (listener: (change: WorkbenchVoiceInput) => void) => () => void;
-	},
+	voice: WorkbenchVoicePolicy = createTestVoicePolicy(),
 ): Harness {
 	const identity = createIdentityAuthorities().identity;
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
@@ -150,7 +148,7 @@ function harness(
 		session: session.port,
 		identity,
 		coordinatorContext,
-		voice: createTestVoicePolicy(presentationChanges?.subscribe),
+		voice,
 		currentBinding: () => bindingState.binding,
 	});
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
