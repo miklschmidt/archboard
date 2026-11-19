@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T20:25:00Z'
+updated_date: '2026-11-19T20:41:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -58,6 +58,8 @@ Hooks: mountPaneRoutes(app, { runMutation, refuseRead, followRegistry, agentActi
 Pidfile fix (the one behavior change): releaseServerPid removes the file only while it holds the bytes recordServerPid wrote; the launcher's removals after a failed start and after a stop check the pid they know (stop's was unconditional). Tested at the pidfile seam (pidfile.test.ts isolated child). Terminal-record latch: tested with a real pipe on fd 3 of a child (server-startup-terminal.test.ts).
 
 Validation: build, types, lint:all, format:check, test:modules (5348 pass, 1 skip), test:repository (181), test:system (227), test:solo (15), server-state lane after each ownership change, whole browser lane (50 owners, 73 pass). check code --fail-shallow-modules: no finding on server-lifecycle (exit 1 from pre-existing warnings, plus anchor warnings on Pane rules because the vault still binds the old paths). Footprint gate fails until the proposal names the moved modules; the vault was left unchanged as instructed.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit e683fa156a): Pane session, Pane vaults, Architecture context input (type-import path only), the CLI's Panes (private paneWords). Unbound: this ticket and six system test files. For TASK-653.09: workbench exports PanesReport with no outside user (EXPOSED_UNUSED).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
