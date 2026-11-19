@@ -4,7 +4,7 @@ title: archboard check passes on this repository again
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:03:00Z'
-updated_date: '2026-11-19T01:11:00Z'
+updated_date: '2026-11-19T03:12:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -16,6 +16,7 @@ dependencies:
   - TASK-646.12
   - TASK-646.13
   - TASK-646.15
+  - TASK-646.16
 parent_task_id: TASK-646
 type: feature
 ordinal: 1100000
