@@ -1,11 +1,11 @@
 ---
 id: TASK-646.13
 title: Terraform, Nix flakes and Helm modules get export counts
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:03:00Z'
-updated_date: '2026-11-19T01:22:00Z'
+updated_date: '2026-11-19T01:23:00Z'
 labels:
   - ready-for-agent
 dependencies:
