@@ -194,6 +194,8 @@ async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<
 		repo: checkout.repo,
 		directory,
 		languages: [...depth.languages],
+		unjudged: [...depth.unjudged],
+		names: [...depth.listed],
 		exports,
 		logic,
 	});

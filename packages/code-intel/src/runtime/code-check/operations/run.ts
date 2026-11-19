@@ -17,7 +17,11 @@
 // caller asked for that does not resolve refuses the run, as `BASE_UNRESOLVED`.
 // The request never changes a severity.
 
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "#shared/protocol/code-check.ts";
+import {
+	CodeCheckAnswerSchema,
+	type CodeCheckAnswer,
+	type CodeCheckSkip,
+} from "#shared/protocol/code-check.ts";
 import {
 	readStatesToCheck,
 	readEveryDraftToCheck,
@@ -135,6 +139,24 @@ function findingOwner(model: NonNullable<StateToCheck["model"]>, subject: string
 	)?.file;
 }
 /**
+ * A skipped part, at its canonical model and state, so a pane finds it beside
+ * the findings of its reading. A skip that names no part keeps its document
+ * and variant, which say what was not read.
+ * @param readings The readings.
+ * @param skip The skip, at its document and variant.
+ * @returns The skip as the answer names it.
+ */
+function canonicalSkip(readings: readonly StateToCheck[], skip: CodeCheckSkip): CodeCheckSkip {
+	if (skip.subject === undefined) return skip;
+	const model = readings.find(
+		(reading) => reading.document.name === skip.model && reading.variant.id === skip.variant,
+	)?.model;
+	if (model === undefined) return skip;
+	const { model: _document, variant: _variant, ...skipped } = skip;
+	return { ...skipped, ...findingIdentity(model) };
+}
+
+/**
  * A judged module, at its canonical model and state.
  * @param readings The readings.
  * @param record The module, at its document and variant.
@@ -194,7 +216,7 @@ function answerOf(
 					],
 		),
 		findings: code.findings.map((finding) => canonicalFinding(read.states, finding)),
-		skipped: [...read.skipped, ...code.skipped],
+		skipped: [...read.skipped, ...code.skipped].map((skip) => canonicalSkip(read.states, skip)),
 		behind: [],
 		depth: code.depth.map((record) => canonicalDepth(read.states, record)),
 		...(footprints === undefined

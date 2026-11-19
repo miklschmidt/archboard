@@ -4,6 +4,7 @@ title: The About page lists a module's code exports
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -53,4 +54,5 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #1 The About page lists the selected module's code exports by kind, each with its findings
 - [ ] #2 Open code on an export opens its exact source, and the canonical model code browser test covers it
 - [ ] #3 The model code warnings component test covers the list
+- [ ] #4 A canvas that opens no About page does not download every module export: the code-findings answer that every canvas reads stays about the size it was before TASK-646.07, and the About page reads the exports of the selected module only
 <!-- AC:END -->

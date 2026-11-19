@@ -6,12 +6,13 @@
 // working tree included, when it is asked or the model's policy turns the gate
 // on, and its severities never depend on who asks.
 //
-// The checkout `shop` holds a canonical vault and six modules: `timing`
+// The checkout `shop` holds a canonical vault and its modules: `timing`
 // exports a frozen group of durations, made by a call, and a plain duration,
 // which the server and the worker read; `clock` exports a getter over a hidden
 // value; `config` exports a value the server reads beside a function, a value
 // read only as a type and one only a test reads; `ledger` exports a class; and
-// `kit` is bound through its index, with a part inside it. The branch `work`
+// `kit` is bound through its index, with a part inside it; `mixed` holds
+// TypeScript and Python, and `docs` holds no code. The branch `work`
 // changes `timing` and `kit`'s part in the working tree, after its commits.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
@@ -133,6 +134,9 @@ beforeAll(async () => {
 		"src/kit/index.ts": 'export { add } from "./lib/math";\n',
 		"src/kit/lib/math.ts":
 			"export function add(a: number, b: number): number {\n\treturn a + b;\n}\n",
+		"src/mixed/index.ts": "export function wave(): number {\n\treturn 1;\n}\n",
+		"src/mixed/__init__.py": "def wave():\n    return 1\n",
+		"docs/guide.md": "# Guide\n",
 		"src/server/kit.ts":
 			'import { add } from "../kit";\nexport function sum(): number {\n\treturn add(1, 2);\n}\n',
 	});
@@ -153,6 +157,8 @@ beforeAll(async () => {
 	module("Ledger", "src/ledger", 60);
 	module("Kit", "src/kit/index.ts", 70);
 	module("Math", "src/kit/lib/math.ts", 80, "Kit");
+	module("Mixed", "src/mixed", 90);
+	module("Docs", "docs", 100);
 	git("add", "-A");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the code");
 	git("checkout", "-q", "-b", "work");
@@ -234,6 +240,32 @@ test("the check counts each bound TypeScript module's exports by kind and the pi
 		types: 0,
 	});
 	expect(depth.get("Clock")?.exports).toMatchObject({ functions: 1, values: 0 });
+});
+
+test("each measured module lists the exports it counted, where each is defined, and the languages no rule judged", async () => {
+	const answer = await check();
+	const depth = new Map(answer.depth?.map((each) => [each.subject.name, each]));
+	expect(depth.get("Ledger")?.names).toEqual([
+		{ name: "Ledger", kind: "class", path: "src/ledger/index.ts", line: 1 },
+		{ name: "Ledger.post", kind: "method", path: "src/ledger/index.ts", line: 2 },
+	]);
+	expect(depth.get("Timing")?.names.map(({ name, kind }) => [name, kind])).toEqual([
+		["RETRY_MS", "value"],
+		["IDLE_MS", "value"],
+		["Duration", "type"],
+		["Window", "type"],
+	]);
+	expect(depth.get("Timing")?.unjudged).toEqual([]);
+	// The Python half of a module is read, but no rule judges its exports yet.
+	expect(depth.get("Mixed")).toMatchObject({ languages: ["typescript"], unjudged: ["python"] });
+});
+
+test("a skipped part carries the canonical model and state, as its findings do", async () => {
+	const answer = await check();
+	const subjects = answer.skipped.filter((skip) => skip.subject !== undefined);
+	expect(subjects.length).toBeGreaterThan(0);
+	for (const skip of subjects) expect(skip).toMatchObject({ model: "Shop", state: "Built" });
+	expect(subjects.some((skip) => skip.variant !== undefined)).toBe(false);
 });
 
 test("an exported value that outside code reads is a warning, a value made by a call included, and a getter clears it", async () => {
