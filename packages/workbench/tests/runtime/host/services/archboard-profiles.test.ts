@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { composeWorkbenchRoleInstructions } from "@archboard/codex-realtime-voice/runtime";
+import { composeRoleInstructions } from "@archboard/codex-realtime-voice/server";
 
 import { archboardProfiles } from "#tests/runtime/support/archboard-profiles.ts";
 
@@ -37,7 +38,10 @@ test("fresh Archboard profiles bind the authored canonical instructions and stab
 			"utf8",
 		);
 		expect(ARCHBOARD_INSTRUCTIONS[role].instructions).toEqual(
-			composeWorkbenchRoleInstructions(role, domain),
+			composeRoleInstructions(role, {
+				text: domain,
+				sha256: createHash("sha256").update(domain, "utf8").digest("hex"),
+			}),
 		);
 	}
 });

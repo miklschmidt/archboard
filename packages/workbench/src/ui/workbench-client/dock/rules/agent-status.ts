@@ -13,7 +13,7 @@ import type { AgentPhase } from "#ui/agent-setup/rules/phase.ts";
 import type { AgentView } from "#ui/workbench-client/surfaces/state/contracts.ts";
 import { activityLabel, runSummary } from "#ui/workbench-client/thread/rules/activity-words.ts";
 import type { ActivityItem } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
-import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 import type { ConversationItem } from "#ui/workbench-client/surfaces/state/voice-parts.ts";
 
 /** How the line is lit. */

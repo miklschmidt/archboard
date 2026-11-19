@@ -4,10 +4,6 @@
 // gesture, so the browser lets it through.
 
 import { type AgentSetup, type AgentActions, type DraftStore } from "@archboard/workbench/agent";
-import {
-	projectTimelineTurns,
-	type ConversationTurn,
-} from "@archboard/codex-realtime-voice/controllers";
 import { gestureTab, openAuthTab } from "#ui/application/clients/agent-setup-ports.ts";
 import type { VoiceOwner, WorkbenchOwners } from "#ui/application/state/workbench-owners.ts";
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
@@ -28,18 +24,16 @@ interface AgentActionTargets {
 	readonly showConversation: (checkout: string) => void;
 }
 
+/** One turn's id. */
+type TurnId = BrowserTimeline["turns"][number]["turnId"];
+
 /**
  * The turn running in a timeline: the newest, should Codex still hold an older one open.
  * @param timeline The timeline.
- * @returns Its id, or null when none runs or the timeline cannot be read.
+ * @returns Its id, or null when none runs.
  */
-function runningIn(timeline: BrowserTimeline): ConversationTurn["turnId"] | null {
-	try {
-		const turns = projectTimelineTurns(timeline, "workhorse");
-		return turns.findLast((turn) => turn.outcome === "running")?.turnId ?? null;
-	} catch {
-		return null;
-	}
+function runningIn(timeline: BrowserTimeline): TurnId | null {
+	return timeline.turns.findLast((turn) => turn.status === "inProgress")?.turnId ?? null;
 }
 
 /**
@@ -48,7 +42,7 @@ function runningIn(timeline: BrowserTimeline): ConversationTurn["turnId"] | null
  * @param owners The focused pane's owners, or null.
  * @returns Its id, or null when none runs.
  */
-function runningTurnNow(owners: WorkbenchOwners | null): ConversationTurn["turnId"] | null {
+function runningTurnNow(owners: WorkbenchOwners | null): TurnId | null {
 	const timeline = owners?.transport.state().snapshot?.timeline ?? null;
 	return timeline === null ? null : runningIn(timeline);
 }

@@ -188,6 +188,8 @@ interface VoiceSession {
 	 * would re-render every status consumer sixty times a second.
 	 */
 	readonly level: () => number;
+	/** Whether the measured output counts as the model speaking now. */
+	readonly audible: () => boolean;
 	readonly subscribeLevel: (listener: () => void) => () => void;
 	/** Re-reads both authoritative sources and republishes if the view changed. */
 	readonly refresh: () => VoiceSessionView;

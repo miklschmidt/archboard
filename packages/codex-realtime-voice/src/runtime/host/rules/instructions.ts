@@ -1,4 +1,4 @@
-import { CORE_ROLE_INSTRUCTIONS } from "#runtime/host/rules/authored.ts";
+import { CORE_ROLE_INSTRUCTIONS, readWorkbenchInstructionDocument } from "#runtime/host/rules/authored.ts";
 import {
 	assertWorkbenchThreadTools,
 	isReservedWorkbenchNamespace,
@@ -126,9 +126,29 @@ function captureWorkbenchInstructions(instructions: WorkbenchInstructions): Work
 	return Object.freeze({ coordinator, workhorse });
 }
 
+/**
+ * Compose a role's instructions from a host's own authored document, which is accepted only under
+ * its reviewed digest, as Codex receives them: the built-in role, then the document's bytes.
+ * @param role The built-in role.
+ * @param document The host's document and the SHA-256 it was reviewed at.
+ * @param document.text The document's text, canonical UTF-8 with exactly one terminal LF.
+ * @param document.sha256 The reviewed SHA-256 digest of its bytes.
+ * @returns The composed text and its SHA-256 digest.
+ * @throws {TypeError} When the document is not canonical UTF-8 or its digest drifted.
+ */
+function composeRoleInstructions(
+	role: keyof typeof CORE_ROLE_INSTRUCTIONS,
+	document: { readonly text: string; readonly sha256: string },
+): WorkbenchRoleInstructions {
+	return composeWorkbenchRoleInstructions(
+		role,
+		readWorkbenchInstructionDocument(document.text, `The ${role} instructions`, document.sha256),
+	);
+}
+
 export {
 	createWorkbenchThreadProfile,
 	captureThreadProfile,
 	captureWorkbenchInstructions,
-	composeWorkbenchRoleInstructions,
+	composeRoleInstructions,
 };

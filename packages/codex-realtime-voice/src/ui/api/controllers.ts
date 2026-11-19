@@ -13,14 +13,9 @@ export {
 	type BrowserAudioElementPort,
 	type BrowserWorkbenchMediaOwner,
 } from "#ui/media/clients/media-state.ts";
-export {
-	isSpeakingLevel,
-	type VoiceOutputLevelSource,
-} from "#ui/output-level/clients/level-source.ts";
+export type { VoiceOutputLevelSource } from "#ui/output-level/clients/level-source.ts";
 export {
 	createConversationControllers,
 	type ConversationControllers,
 } from "#ui/conversation/state/controllers.ts";
 export type { ApprovalChoice } from "#ui/approvals/state/choices.ts";
-export { mergeConversation, projectTimelineTurns } from "#ui/timeline/rules/projection.ts";
-export type { ConversationTurn } from "#ui/timeline/state/contract.ts";

@@ -3,7 +3,7 @@ import {
 	waitOwnerFor,
 	waitProbe,
 } from "#tests/server/support/generation/terminal-fixture.ts";
-import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";

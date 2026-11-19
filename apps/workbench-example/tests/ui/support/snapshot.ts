@@ -1,6 +1,6 @@
 import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 
 /** The spoken-approval state of a snapshot with no spoken approval in flight. */
 const IDLE_SPOKEN_APPROVAL: BrowserSnapshot["spokenApproval"] = Object.freeze({

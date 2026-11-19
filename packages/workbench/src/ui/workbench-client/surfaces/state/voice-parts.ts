@@ -5,9 +5,9 @@ import type {
 	BrowserWorkbenchMediaOwner,
 	BrowserWorkbenchTransport,
 	ConversationControllers,
-	ConversationTurn,
 } from "@archboard/codex-realtime-voice/controllers";
-import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 
 /** What the transport may do right now. */
 type BrowserWorkbenchCapabilities = ReturnType<BrowserWorkbenchTransport["capabilities"]>;

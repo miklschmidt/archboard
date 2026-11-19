@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	additionalContextPolicy,
 	type OperationOutcome,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "@archboard/codex-realtime-voice/server";
 import { modelShape } from "@archboard/model-contract";
 
 /**

@@ -9,10 +9,7 @@ import type {
 	VoiceSessionStatus,
 	VoiceSessionView,
 } from "@archboard/workbench/voice";
-import {
-	type BrowserWorkbenchTransport,
-	isSpeakingLevel,
-} from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 
 import type { SpokenLine, VoiceStanding } from "#ui/walkthroughs/recording/rules/pacing.ts";
 
@@ -24,7 +21,7 @@ interface RecordingSources {
 	readonly setup: Pick<AgentSetup, "snapshot" | "talk">;
 	/** The voice session and its pane's transport, or null while the pane has no transport. */
 	readonly voice: {
-		readonly session: Pick<VoiceSession, "view" | "level" | "stop">;
+		readonly session: Pick<VoiceSession, "view" | "audible" | "stop">;
 		readonly transport: RecordingTransport;
 	} | null;
 }
@@ -128,7 +125,7 @@ function readVoice(sources: RecordingSources): VoiceReading {
 	const { snapshot } = voice.transport.state();
 	return {
 		voice: voiceStanding(setup, voice.session.view()),
-		audible: isSpeakingLevel(voice.session.level()),
+		audible: voice.session.audible(),
 		transcript: snapshot === null ? SILENT : snapshot.voice.transcript,
 	};
 }

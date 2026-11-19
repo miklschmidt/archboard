@@ -1,6 +1,6 @@
 import { type BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
-import type { BrowserDynamicApprovalResponse } from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserDynamicApprovalResponse } from "@archboard/codex-realtime-voice/contract";
 import { projectDynamicApproval } from "#server/browser-state/projections/dynamic-approval-projection.ts";
 import type {
 	BrowserActionContext,

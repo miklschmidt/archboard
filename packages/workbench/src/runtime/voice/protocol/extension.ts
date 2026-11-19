@@ -5,7 +5,7 @@ import type {
 	VoiceAgentBrowserPort,
 	VoiceAgentExtensions,
 } from "@archboard/codex-realtime-voice/server";
-import type { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import type { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 
 type Extensions = Required<VoiceAgentExtensions>;
 

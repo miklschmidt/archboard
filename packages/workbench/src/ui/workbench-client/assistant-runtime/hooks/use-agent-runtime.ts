@@ -12,8 +12,8 @@ import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rule
 import {
 	mergeConversation,
 	projectTimelineTurns,
-} from "@archboard/codex-realtime-voice/controllers";
-import { type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+} from "#ui/workbench-client/timeline/rules/projection.ts";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 import { type ConversationOwner } from "#ui/workbench-client/surfaces/state/voice-parts.ts";
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type {

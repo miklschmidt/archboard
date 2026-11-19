@@ -1,4 +1,11 @@
 export { createVoiceAgent } from "#server/agent/services/voice-agent.ts";
+export { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
+export {
+	additionalContextPolicy,
+	type OperationOutcome,
+} from "#runtime/workhorses/instructions/rules/context-policy.ts";
+export { composeRoleInstructions } from "#runtime/host/rules/instructions.ts";
+export type { DeepReadonly } from "#runtime/approvals/services/contract.ts";
 export type {
 	VoiceAgent,
 	VoiceAgentBrowserPort,

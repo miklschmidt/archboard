@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 import type {
 	VoiceOutputLevelSource,
 	BrowserWorkbenchState,

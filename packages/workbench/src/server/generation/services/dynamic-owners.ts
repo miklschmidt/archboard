@@ -1,6 +1,6 @@
 import type { CodexWorkbenchDomainScope } from "#runtime/voice/protocol/extension.ts";
 import { ArchboardContextSchema } from "#runtime/instructions/rules/context.ts";
-import type { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import type { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import {
 	createServerDynamicApprovalOwner,
 	type ServerDynamicApprovalOwner,

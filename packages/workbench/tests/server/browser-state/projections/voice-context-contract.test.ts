@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 
 /**
