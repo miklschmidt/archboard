@@ -1,11 +1,11 @@
 ---
 id: TASK-646.09
 title: Fix with Codex sets up a missing language server
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T02:25:00Z'
+updated_date: '2026-11-19T02:27:00Z'
 labels:
   - ready-for-agent
 dependencies:
