@@ -65,13 +65,18 @@ function scrollToSection(page: HTMLElement, key: string, reducedMotion: boolean)
 /** How the outline lies in each of its places. */
 const OUTLINE_LOOK = {
 	// A column of rows whose words stand on the panel's 16px edges, as its other rows' do.
-	panel: { nav: "-mx-2", list: "flex flex-col" },
+	panel: {
+		nav: "-mx-2",
+		list: "flex flex-col",
+		current: "aria-[current=location]:shadow-[inset_2px_0_0_var(--primary-mark)]",
+	},
 	// The first row of the page, which stays at its top while the page scrolls, with its entries'
 	// words on the column's edge. A bar too narrow for every entry scrolls sideways rather than grow
 	// taller, so a jump still lands clear of it. It shows only in a reading too narrow for the panel.
 	bar: {
 		nav: "bg-background border-border sticky top-0 z-10 border-b @min-[900px]/reading:hidden",
 		list: "mx-auto flex max-w-[1096px] gap-1 overflow-x-auto px-4 py-1.5",
+		current: "aria-[current=location]:shadow-[inset_0_-2px_0_var(--primary-mark)]",
 	},
 } as const;
 
@@ -106,6 +111,7 @@ function AboutOutline<Key extends string>(props: {
 						key={section.key}
 						section={section}
 						current={props.current === section.key}
+						currentMark={look.current}
 						onGo={props.onGo}
 					/>
 				))}
@@ -119,12 +125,14 @@ function AboutOutline<Key extends string>(props: {
  * @param props The section, whether it is being read and the way to go to it.
  * @param props.section The section.
  * @param props.current Whether it is the one being read.
+ * @param props.currentMark Where to mark the active row.
  * @param props.onGo Go to a section.
  * @returns The entry.
  */
 function OutlineEntry<Key extends string>(props: {
 	readonly section: AboutSection<Key>;
 	readonly current: boolean;
+	readonly currentMark: string;
 	readonly onGo: (key: Key) => void;
 }): JSX.Element {
 	const { section, current, onGo } = props;
@@ -140,7 +148,7 @@ function OutlineEntry<Key extends string>(props: {
 				data-slot="about-outline-entry"
 				data-section={section.key}
 				onClick={go}
-				className="text-control text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=location]:text-foreground aria-[current=location]:bg-muted rounded-control relative flex h-8 w-full items-center gap-2 px-2 whitespace-nowrap"
+				className={`text-control text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=location]:text-foreground aria-[current=location]:bg-muted rounded-control relative flex h-8 w-full items-center gap-2 px-2 whitespace-nowrap ${props.currentMark}`}
 			>
 				<Icon aria-hidden="true" className="size-4 shrink-0" />
 				<span className="flex-1 text-left">{section.label}</span>
