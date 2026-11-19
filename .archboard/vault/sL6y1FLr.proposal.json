@@ -43,6 +43,131 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#zAZwER1T",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "symbol": "durationMs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N2puYRTF",
+      "field": "kind",
+      "value": "call"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N2puYRTF",
+      "field": "label",
+      "value": "wait for the panes to settle; the layout timeout"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N2puYRTF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "waitUntil"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#43TCPDtg",
+      "kind": "relationship",
+      "value": {
+        "order": 14000,
+        "kind": "call",
+        "label": "wait for the DevTools port",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
+          "symbol": "waitUntil"
+        },
+        "id": "vKEsyHFk#43TCPDtg",
+        "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#43TCPDtg",
+      "placement": {
+        "holder": "vKEsyHFk/SMjRfwN3#6uHnaygd"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#EX4mlIeV",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-run.ts",
+        "symbol": "durationMs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
+        "symbol": "deadline"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#zAB848k7",
+      "field": "to",
+      "value": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "field": "responsibility",
+      "value": "Owns every duration and the waiting around them: named waits, pauses and deadlines, and one getter for durations that something other than a wait takes as a number"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "field": "description",
+      "value": "Callers do not write the waiting themselves (ADR: timing owns the waiting, and one getter reads the rest). It exports nine names. waitUntil polls a probe on a named wait whose private policy keeps its bound, its cadence, whether it sleeps first, where it checks the bound, whether the bound's own moment counts and how its last sleep meets the bound. A caller may pass its own bound, an outer cap, a signal and a clock, and gets the value found or a refusal with its reason and the bound in seconds, which the caller puts in its own sentence. pause sleeps one named cadence for a loop that keeps its own decisions across passes. deadline ends a named duration from a moment, never past an optional cap; an age check compares the time now with it, and the caller keeps its own operator. durationMs is the one keyed getter, for what takes a number and is not a wait: a stylesheet, a physics constant, a timer, a library option or a message. No wait bound or cadence is readable through it except the model lock's poll, which a synchronous loop sleeps with Bun.sleepSync. painterPhasesJson, reachHopDelayMs, columnSlideSettledMs, codexRestartDelayMs and localityDefaultSinceSeconds keep their computations. The Clock port (now, and after(ms, run) that returns a cancel) is the seam a caller or a test passes; the default clock stays private and reads Date.now and setTimeout when called. A duration is named \"<owner>.<key>\" over the owner groups, which stay inside with what each pulls against. The names and policies have a published half, the Codex groups and processGroup that @archboard/codex-realtime-voice bundles, and a host half that a build under the published condition leaves out, where a host name throws by name. It stays browser-safe: no process and no node: imports."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#jY19Jvh2",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/clients/git-sync.ts",
+        "symbol": "durationMs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#iFWjFhbg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/telemetry/src/runtime/rollup/rules/daily-usage.ts",
+        "symbol": "deadline"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Y3nWPghd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
+        "symbol": "durationMs"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
       "field": "description",
       "value": "Owns the producer builders: the setters and the producer-only constructors of shapes, strokes, text and colours, private to Painting, so the scene's other callers never learn them. It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance."
@@ -65,6 +190,59 @@
       "subject": "vKEsyHFk#WUJMjQhq",
       "placement": {
         "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#1aoB46lM",
+      "field": "responsibility",
+      "value": "Asks a file's language server where a name the file uses is defined and what the definition declares, for one pass of the code check, and times that work without idle gaps"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fixV6jIm",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "dependency",
+        "label": "how long a server may take to stop",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/language-servers/services/session.ts",
+          "symbol": "durationMs"
+        },
+        "id": "vKEsyHFk#fixV6jIm",
+        "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fixV6jIm",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#a2fjUiQD",
+      "field": "kind",
+      "value": "call"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#a2fjUiQD",
+      "field": "label",
+      "value": "wait for a server to answer or to go"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#a2fjUiQD",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "waitUntil"
       }
     },
     {
@@ -105,6 +283,48 @@
       "subject": "vKEsyHFk#EEuLPVrA",
       "placement": {
         "holder": "vKEsyHFk#NFwqWgrm"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#icqdO00L",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "deadline"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
+        "symbol": "durationMs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "field": "kind",
+      "value": "call"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "field": "label",
+      "value": "drain a killed group; pause between censuses"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/process/src/runtime/processes/group-cleanup.ts",
+        "symbol": "waitUntil"
       }
     }
   ]
