@@ -4,7 +4,7 @@ title: The model is three packages that hand out operations, not schemas
 status: To Do
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T17:33:00Z'
+updated_date: '2026-11-19T18:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -45,4 +45,6 @@ Candidate 11 of the archboard-deepen run, second on the TypeScript track, landed
 
 <!-- SECTION:NOTES:BEGIN -->
 Proposal: sL6y1FLr
+
+Design amended after the first build stopped: read 'Candidate 11, model: AMENDED' in the run's decision log. Contract 15, rules 16, store 20; the store parses its formats through parseDocument kinds; no ~100-key modelShape.
 <!-- SECTION:NOTES:END -->
