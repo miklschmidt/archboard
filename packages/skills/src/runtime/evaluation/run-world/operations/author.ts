@@ -7,7 +7,7 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 
 import fs from "node:fs";
 import path from "node:path";
-import { skillEvalMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
 import type { CliContext } from "#runtime/evaluation/run-world/processes/archboard.ts";
 import {
@@ -208,7 +208,7 @@ async function runAuthorProcess(
 			argv,
 			cwd: world.paths.flask,
 			env: world.cli.env,
-			timeoutMs: skillEvalMs("author"),
+			timeoutMs: durationMs("skillEval.author"),
 			signal: job.signal,
 			/**
 			 * Retains the stream as it arrives.

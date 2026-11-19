@@ -8,7 +8,7 @@ import fs from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { z } from "zod";
-import { skillEvalMs } from "@archboard/timing";
+import { durationMs, skillEvalMs } from "@archboard/timing";
 import type { RunPaths } from "#runtime/evaluation/run-world/processes/isolation.ts";
 import { ownProcess, pause, settlesWithin } from "#runtime/evaluation/processes/process.ts";
 
@@ -49,7 +49,7 @@ async function freePort(): Promise<number> {
 async function healthPid(url: string): Promise<number | null> {
 	try {
 		const response = await fetch(`${url}/health`, {
-			signal: AbortSignal.timeout(skillEvalMs("healthRequest")),
+			signal: AbortSignal.timeout(durationMs("skillEval.healthRequest")),
 		});
 		const parsed = HealthSchema.safeParse(await response.json());
 		return parsed.success ? parsed.data.pid : null;
@@ -128,7 +128,7 @@ async function startServer(
 		// Spawn duplicates the descriptor; the parent never owns the child's copy.
 		fs.closeSync(log);
 	}
-	const owner = await ownProcess(child, skillEvalMs("serverShutdown"));
+	const owner = await ownProcess(child, durationMs("skillEval.serverShutdown"));
 	try {
 		await awaitHealthy(child, url, paths.serverLog, signal);
 		return { url, port, pid: child.pid, stop: owner.stop };

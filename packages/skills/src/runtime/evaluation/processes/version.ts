@@ -1,7 +1,7 @@
 // What an executable says of its own version, for checking a pin before any
 // model call. `codex --version` and `claude --version` both print one.
 
-import { skillEvalMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { runProcess } from "#runtime/evaluation/processes/process.ts";
 
 /**
@@ -14,7 +14,7 @@ async function executableVersion(executable: string): Promise<string> {
 		argv: [executable, "--version"],
 		cwd: process.cwd(),
 		env: { PATH: process.env["PATH"] ?? "", HOME: process.env["HOME"] ?? "" },
-		timeoutMs: skillEvalMs("cli"),
+		timeoutMs: durationMs("skillEval.cli"),
 	});
 	return /(\d+\.\d+\.\d+)/u.exec(result.stdout)?.[1] ?? `unknown (${result.stderr.trim()})`;
 }
