@@ -14,12 +14,12 @@
 
 import type { Express, Request, Response } from "express";
 import { parseDocument, type ModelDocument } from "@archboard/model-contract";
-import { staleFrontend } from "@archboard/server-lifecycle/server-host";
+import { staleFrontend } from "@archboard/server-lifecycle/server-process";
 import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
 import { panePresentations } from "#server/panes/services/presentation.ts";
 import { paneVaults, panes } from "#server/panes/services/registry.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { requireVault, vaultOfRequest } from "#server/request/services/vault.ts";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 
 type SemanticPaneContext = ModelDocument<"paneContext">;
 
@@ -121,8 +121,9 @@ function forgetSemanticPaneContexts(): void {
  * Take one pane's report.
  * @param req The request.
  * @param res Its response.
+ * @param vault The vault the request named.
  */
-function reportRoute(req: Request, res: Response): void {
+function reportRoute(req: Request, res: Response, vault: string): void {
 	const parsed = parseDocument("paneContext", bodyOf(req));
 	if (!parsed.success) {
 		res.status(400).json({
@@ -132,7 +133,6 @@ function reportRoute(req: Request, res: Response): void {
 		});
 		return;
 	}
-	const vault = vaultOfRequest(req);
 	if (paneVaults.get(parsed.data.clientId) !== vault) {
 		res.status(409).json({
 			success: false,
@@ -174,20 +174,28 @@ function reportRoute(req: Request, res: Response): void {
 /**
  * What the panes are reading, for anything that wants to see it without being
  * an agent: the same reports, in the shape they arrived.
- * @param req The request.
  * @param res Its response.
+ * @param vault The vault the request named.
  */
-function listRoute(req: Request, res: Response): void {
-	res.json({ success: true, panes: semanticPaneContexts(vaultOfRequest(req)) });
+function listRoute(res: Response, vault: string): void {
+	res.json({ success: true, panes: semanticPaneContexts(vault) });
 }
 
 /**
  * Mount the pane-context routes.
  * @param app The express application.
+ * @param hooks How the server reads the vault a request names.
  */
-function mountSemanticPaneContextRoutes(app: Express): void {
-	app.post("/api/panes/semantic-context", requireVault, reportRoute);
-	app.get("/api/panes/semantic-context", requireVault, listRoute);
+function mountSemanticPaneContextRoutes(
+	app: Express,
+	hooks: Pick<WorkbenchHooks, "requireVault" | "vaultOfRequest">,
+): void {
+	app.post("/api/panes/semantic-context", hooks.requireVault, (req, res) => {
+		reportRoute(req, res, hooks.vaultOfRequest(req));
+	});
+	app.get("/api/panes/semantic-context", hooks.requireVault, (req, res) => {
+		listRoute(res, hooks.vaultOfRequest(req));
+	});
 }
 
 export {

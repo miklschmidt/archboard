@@ -1,5 +1,3 @@
-import { createAgentActivity } from "#server/panes/announcements/state/agent-activity.ts";
-import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
 import { durationMs } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
@@ -23,7 +21,4 @@ const checkoutWork = createCheckoutWorkOwner();
 /** The server's one code check, so its facts and its memory of behind serve every route that reads code. */
 const codeCheck = createCodeCheck();
 
-/** Owns canonical activity subscriptions, snapshots, and idle timers. */
-const agentActivity = createAgentActivity(broadcastEverywhere);
-
-export { admittedMutations, checkoutWork, codeCheck, mutationAdmission, agentActivity };
+export { admittedMutations, checkoutWork, codeCheck, mutationAdmission };

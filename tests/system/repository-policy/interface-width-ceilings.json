@@ -1,5 +1,5 @@
 {
-	"code-binding": 18,
+	"code-binding": 16,
 	"code-intel": 11,
 	"code-opener": 9,
 	"codex-app-server": 108,
@@ -10,13 +10,13 @@
 	"model-store": 20,
 	"process": 13,
 	"renderer": 56,
-	"server-lifecycle": 26,
+	"server-lifecycle": 16,
 	"server-requests": 4,
 	"skills": 1,
 	"telemetry": 7,
 	"timing": 10,
 	"ui-kit": 35,
 	"walkthrough": 20,
-	"workbench": 98,
-	"workspace": 40
+	"workbench": 52,
+	"workspace": 29
 }

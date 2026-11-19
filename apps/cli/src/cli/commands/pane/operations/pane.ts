@@ -8,12 +8,23 @@ import {
 	showModelInPane,
 	type ShowModelResponse,
 } from "#cli/server-access/clients/panes.ts";
-import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { stagedTokens } from "#cli/commands/pane/rules/staged-tokens.ts";
 import { openCanvas } from "#cli/contract/clients/prerequisites.ts";
+
+/**
+ * A pane's place, in a sentence.
+ *
+ * `place` is a phrase, not a word — "left", but also "the only pane" — so
+ * dropping it into "in the ... pane" produced "in the the only pane pane".
+ * @param place The pane's place, as the server named it.
+ * @returns The phrase, as it reads in a sentence.
+ */
+function paneWords(place: string): string {
+	return place.startsWith("the ") ? place : `the ${place} pane`;
+}
 
 /** A pane as the server names it. */
 const PaneRefSchema = z.looseObject({

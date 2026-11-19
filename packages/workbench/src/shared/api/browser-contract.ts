@@ -1,4 +1,5 @@
-// Archboard conversation routes and narration payloads. Safe for the browser.
+// Archboard conversation routes, narration payloads and what the server sends a pane. Safe for the
+// browser.
 export { shownConversationPath } from "#shared/protocol/shown-conversation.ts";
 export type {
 	ShownConversationReply,
@@ -12,3 +13,4 @@ export type {
 	ExplanationActionRequest,
 	ExplanationActionResult,
 } from "#shared/schemas/architecture-explanation.ts";
+export type { AgentActivityMessage } from "#shared/protocol/pane-messages.ts";

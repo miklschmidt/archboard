@@ -53,9 +53,6 @@ interface Existence {
 type RegisteredRepoStatus = RegisteredRepo & Existence;
 type UntrackedVaultStatus = UntrackedVault & Existence;
 
-/** A refusal a caller can put in front of a person as it stands. */
-class RepoRegistryError extends Error {}
-
 /** The filesystem refused the registry, so nothing changed. */
 class RegistryWriteError extends Error {}
 
@@ -330,7 +327,6 @@ export {
 	type UntrackedVault,
 	type UntrackedVaultStatus,
 	type Registry,
-	RepoRegistryError,
 	registryPath,
 	readRegistry,
 	isDirectory,

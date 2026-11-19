@@ -11,21 +11,27 @@ import {
 import { diagramIconPaths } from "@archboard/renderer/bun";
 import { app } from "#server/http/listener/wiring/server-app.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { agentActivity, checkoutWork } from "#server/wiring/server-owners.ts";
+import {
+	requireVault,
+	statedVault,
+	vaultOfRequest,
+} from "#server/http/middleware/request-vault.ts";
+import { listenAddress } from "#server/http/listener/services/listener-address.ts";
+import { checkoutWork } from "#server/wiring/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { mountCodeFilesRoute } from "#server/http/handlers/code-files/routes/code-files-route.ts";
 import { startServer } from "#server/start-stop/lifecycle/server-startup.ts";
 import {
+	asyncEndpoint,
 	mountMutationAdmission,
 	trackMutationWork,
 } from "#server/http/middleware/mutation-work.ts";
-import { mountPaneRoutes } from "#server/panes/connections/routes/pane-routes.ts";
+import { mountWorkbenchRoutes } from "@archboard/workbench/server";
+import { refusalStatus } from "#server/http/handlers/routes/model-response.ts";
 import { mountRepositoryRoutes } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/reads/routes/configuration-routes.ts";
 import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
-import { mountSemanticPaneContextRoutes } from "@archboard/workbench/panes";
 import { mountServiceRoutes } from "#server/http/handlers/reads/routes/service-routes.ts";
 import { mountLegacyMigrationRoutes } from "#server/http/handlers/reads/routes/migration-routes.ts";
 import { mountArchitectureModelRoutes } from "#server/http/handlers/reads/routes/model-routes.ts";
@@ -101,19 +107,23 @@ app.use(
 	}),
 );
 
-mountPaneRoutes(app);
+// Before the model and history routes: its first middleware holds every route under
+// /api/architecture to a vault and observes each write there.
+mountWorkbenchRoutes(app, {
+	runMutation: asyncEndpoint,
+	refusalStatus,
+	requireVault,
+	vaultOfRequest,
+	statedVault,
+	address: listenAddress(),
+});
 mountRepositoryRoutes(app);
 mountArchitectureConfigurationRoutes(app);
-app.use("/api/architecture", requireVault, (req, _res, next) => {
-	if (req.method !== "GET") agentActivity.addressed(vaultOfRequest(req));
-	next();
-});
 mountArchitectureModelRoutes(app);
 mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);
 mountCodeCheckRoute(app);
 mountCodeFilesRoute(app);
-mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write

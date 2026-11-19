@@ -4,32 +4,11 @@
 // to the server and a repository's name to the page, and this is where one is
 // turned into the other.
 
-import fs from "fs";
-import path from "path";
-
-import {
-	chosenCheckouts,
-	listRegistry,
-	repositoryOfVault as registeredRepositoryOf,
-	type RegisteredRepoStatus,
-} from "#runtime/store/repo-registry.ts";
-import { checkoutOfVault, isVaultLayout, VAULT_DIRECTORY } from "#runtime/services/vault-finder.ts";
+import { listRegistry, repositoryOfVault } from "#runtime/store/repo-registry.ts";
+import type { RegisteredRepoStatus } from "#runtime/store/registry-file.ts";
+import { checkoutOf } from "#runtime/services/checkout-questions.ts";
+import { checkoutOfVault, vaultIn } from "#runtime/services/vault-finder.ts";
 import type { RepositoryEntry, RepositoryState } from "#shared/schemas/repositories.ts";
-
-/**
- * The canonical vault of a directory, when it holds one the server serves: a `.archboard/vault`
- * that a link leads elsewhere is refused by every call (`namedVault`), so no page opens in it.
- * @param root The checkout or the directory that holds an untracked vault.
- * @returns The vault's real path, or null when there is none.
- */
-function vaultIn(root: string): string | null {
-	try {
-		const real = fs.realpathSync(path.join(root, VAULT_DIRECTORY));
-		return isVaultLayout(real) && fs.statSync(real).isDirectory() ? real : null;
-	} catch {
-		return null;
-	}
-}
 
 /**
  * One identity's entry, built from its known checkouts.
@@ -105,6 +84,11 @@ interface VaultPlace {
 	readonly repository: string | null;
 	/** The checkout, or the directory that holds an untracked vault. */
 	readonly checkout: string;
+	/**
+	 * Whether the browser reads this checkout for its repository; an untracked vault always is,
+	 * and a vault no registered directory holds is not.
+	 */
+	readonly chosen: boolean;
 }
 
 /**
@@ -115,16 +99,17 @@ interface VaultPlace {
  * @returns Its place.
  */
 function placeOfVault(vault: string): VaultPlace {
-	const registered = registeredRepositoryOf(vault);
+	const registered = repositoryOfVault(vault);
 	if (registered === undefined) {
 		// A vault no registry entry holds is listed nowhere, so it has no repository's name.
-		return { home: vault, repository: null, checkout: checkoutOfVault(vault) };
+		return { home: vault, repository: null, checkout: checkoutOfVault(vault), chosen: false };
 	}
 	const { name, root, chosen } = registered;
 	return {
 		home: chosen ? vault : (chosenVaultOf(name) ?? vault),
 		repository: name,
 		checkout: root,
+		chosen,
 	};
 }
 
@@ -134,18 +119,8 @@ function placeOfVault(vault: string): VaultPlace {
  * @returns The vault, or null when no chosen checkout of it is here with a vault.
  */
 function chosenVaultOf(identity: string): string | null {
-	const chosen = chosenCheckouts().find((each) => each.repo === identity && each.exists);
-	return chosen === undefined ? null : vaultIn(chosen.root);
+	const chosen = checkoutOf(identity);
+	return chosen.kind === "chosen" ? vaultIn(chosen.root) : null;
 }
 
-/**
- * The name a pane in a vault reports its repository by.
- * @param vault A canonical vault.
- * @returns The repository's name, or null when no registered directory holds the vault and the
- * navigator does not list it.
- */
-function repositoryOfVault(vault: string): string | null {
-	return placeOfVault(vault).repository;
-}
-
-export { listRepositories, placeOfVault, repositoryOfVault, vaultIn };
+export { listRepositories, placeOfVault };

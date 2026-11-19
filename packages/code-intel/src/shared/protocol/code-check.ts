@@ -88,7 +88,7 @@ import {
 	type CodeCheckSkip,
 	OtherRefSchema,
 } from "#shared/protocol/code-check-skips.ts";
-import { configurableLanguages } from "@archboard/workspace/languages";
+import { workspaceShape } from "@archboard/workspace/shapes";
 import { z } from "zod";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
@@ -337,7 +337,7 @@ const CheckTimingSchema = z.discriminatedUnion("check", [
 		.object({
 			check: z.literal("language-server"),
 			elapsedMs: z.number().nonnegative(),
-			language: z.enum(configurableLanguages()),
+			language: workspaceShape("configurableLanguage"),
 			repo: z.string().optional(),
 			project: z.string(),
 			/** The file name of the program that ran, such as `typescript-language-server`. */

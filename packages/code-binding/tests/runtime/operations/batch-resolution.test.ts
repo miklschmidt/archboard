@@ -10,7 +10,7 @@ import {
 	resolveLocalCodeTargetsWith,
 	type ResolverDependencies,
 } from "#runtime/operations/binding-resolver.ts";
-import { repoIdentityAt, repoRootOf, chosenCheckouts } from "@archboard/workspace/checkouts";
+import { checkoutsReadFrom, repoIdentityAt, repoRootOf } from "@archboard/workspace/checkouts";
 import {
 	createResolverFixture,
 	type ResolverFixture,
@@ -121,7 +121,7 @@ test("one batch validates each repository once and every target independently", 
 	const dependencies: ResolverDependencies = {
 		readRegistry: () => {
 			counts.registry++;
-			return chosenCheckouts();
+			return checkoutsReadFrom(null).checkouts;
 		},
 		realpath: (candidate) => {
 			counts.realpath++;

@@ -7,7 +7,7 @@ import {
 	editArchitectureModule,
 	readArchitectureModel,
 } from "@archboard/model-store";
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { AgentActivityMessage } from "@archboard/workbench/browser-contract";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { openTestPane, type TestPane } from "../support/pane-websocket.ts";

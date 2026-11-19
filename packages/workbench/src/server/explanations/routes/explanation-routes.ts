@@ -1,0 +1,102 @@
+// The routes a page and a command ask for an explanation through: start one, read one or the
+// latest, and retry or cancel one (ADR 0049: each names its vault).
+
+import type { Express } from "express";
+import { z } from "zod";
+import { explanationActionRequestSchema } from "#shared/schemas/architecture-explanation.ts";
+import { explainArchitecture } from "#server/explanations/services/dispatch.ts";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
+
+const RequestSchema = explanationActionRequestSchema();
+const InvokeBodySchema = RequestSchema.options[1]
+	.omit({ type: true })
+	.extend({ vault: z.string().optional() });
+const ReadQuerySchema = RequestSchema.options[0].omit({ type: true }).extend({ vault: z.string() });
+const ActionBodySchema = RequestSchema.options[2]
+	.omit({ type: true, actionId: true })
+	.extend({ vault: z.string().optional() });
+const ActionIdSchema = RequestSchema.options[2].shape.actionId;
+
+/**
+ * Translate explicit explanation requests through the existing local workbench.
+ * @param app The server application.
+ * @param hooks How the server reads the vault a request names and runs a write under the
+ *   request's mutation lease.
+ */
+function mountExplanationRoutes(
+	app: Express,
+	hooks: Pick<WorkbenchHooks, "runMutation" | "requireVault" | "vaultOfRequest">,
+): void {
+	app.post(
+		"/api/architecture/explanations",
+		hooks.requireVault,
+		hooks.runMutation(async (req, res) => {
+			const parsed = InvokeBodySchema.safeParse(req.body);
+			if (!parsed.success) {
+				res.status(400).json({
+					success: false,
+					code: "INVALID_REQUEST",
+					error: "Use a complete explanation request and its tab session.",
+				});
+				return;
+			}
+			const { vault: _vault, ...input } = parsed.data;
+			const result = await explainArchitecture(hooks.vaultOfRequest(req), {
+				...input,
+				type: "invoke",
+			});
+			res
+				.status(result.success ? 200 : result.code === "AGENT_UNAVAILABLE" ? 503 : 409)
+				.json(result);
+		}),
+	);
+	app.get(
+		["/api/architecture/explanations", "/api/architecture/explanations/:actionId"],
+		hooks.requireVault,
+		async (req, res) => {
+			const parsed = ReadQuerySchema.safeParse(req.query);
+			const actionId = ActionIdSchema.optional().safeParse(req.params["actionId"]);
+			if (!parsed.success || !actionId.success) {
+				res.status(400).json({
+					success: false,
+					code: "INVALID_REQUEST",
+					error: "Name the action and its tab session.",
+				});
+				return;
+			}
+			const { vault: _vault, ...input } = parsed.data;
+			const result = await explainArchitecture(hooks.vaultOfRequest(req), {
+				...input,
+				...(actionId.data === undefined
+					? { type: "latest" }
+					: { type: "read", actionId: actionId.data }),
+			});
+			res.status(result.success ? 200 : 404).json(result);
+		},
+	);
+	for (const type of ["retry", "cancel"] as const)
+		app.post(
+			`/api/architecture/explanations/:actionId/${type}`,
+			hooks.requireVault,
+			hooks.runMutation(async (req, res) => {
+				const parsed = ActionBodySchema.safeParse(req.body);
+				const actionId = ActionIdSchema.safeParse(req.params["actionId"]);
+				if (!parsed.success || !actionId.success) {
+					res.status(400).json({
+						success: false,
+						code: "INVALID_REQUEST",
+						error: "Name the action and its tab session.",
+					});
+					return;
+				}
+				const { vault: _vault, ...input } = parsed.data;
+				const result = await explainArchitecture(hooks.vaultOfRequest(req), {
+					...input,
+					type,
+					actionId: actionId.data,
+				});
+				res.status(result.success ? 200 : 409).json(result);
+			}),
+		);
+}
+export { mountExplanationRoutes };

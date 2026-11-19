@@ -27,7 +27,7 @@ import {
 	type SemanticNode,
 	parseDocument,
 } from "@archboard/model-contract";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import type {
 	OtherRepository,
 	RepositoryPlace,

@@ -27,7 +27,7 @@ import {
 	editCanonicalModel,
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import {
 	AGENT_DOCK,
 	AGENT_PANEL,

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ArchitectureClaim } from "@archboard/model-contract";
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { AgentActivityMessage } from "@archboard/workbench/browser-contract";
 import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";

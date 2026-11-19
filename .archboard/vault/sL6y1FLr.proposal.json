@@ -11,11 +11,79 @@
   "changes": [
     {
       "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#hDNka8yA"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#kEIA3Iaa"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#lncCBP74"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#ImhHUqRg"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#nPjqFn3J"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#oK9fPKdv"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#TPbJlF5o"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#ugb7cB3Q"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#5odPEFwu"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#Ggbqp1CU"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/vKEsyHFk#fDI8NrtW"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#ZWlFN4et"
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#WaYJBOUv"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#qRuxyaeW"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#Cs9bKFjC"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#E7pOpTZi"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#b3mWnCLw"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#epRLrdt6"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/HBlhIeSD#nGUygMX9"
     },
     {
       "type": "assign",
@@ -125,6 +193,40 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+      "field": "label",
+      "value": "mounts the workbench's routes first, lending its hooks"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountWorkbenchRoutes"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+      "field": "to",
+      "value": "vKEsyHFk#eYsz7cYK"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+      "field": "description",
+      "value": "It lends its mutation lease, its refusal status for a model read, requireVault, vaultOfRequest, statedVault and where it listens, { port, httpUrl }."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#9jix9Dsx",
       "field": "responsibility",
       "value": "Turns one scene into the next as one Between, made by a carry or an entrance and sampled by progress: it pairs groups by subject id and mixes their typed geometry, opacity and transforms"
@@ -145,6 +247,59 @@
           "path": "docs/adr/0087-a-pictures-move-is-one-between-sampled-by-progress.md"
         }
       ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+      "field": "description",
+      "value": "It releases the pidfile at stop and at exit, which removes the file only while it holds this process's record, and reports the startup's end straight to the writer, whose latch keeps the first report."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#4TwcHVXq",
+      "field": "label",
+      "value": "owns the listener, its address and the loopback refusal"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
+      "field": "label",
+      "value": "prepare at the listen address; stop once per generation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "prepareWorkbench"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CS6jFAYA",
+      "kind": "relationship",
+      "value": {
+        "order": 21000,
+        "kind": "call",
+        "label": "close every browser owner, given every accepted socket",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+          "symbol": "closeBrowserOwners"
+        },
+        "id": "vKEsyHFk#CS6jFAYA",
+        "to": "vKEsyHFk#Zse70SS2"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CS6jFAYA",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+      }
     },
     {
       "type": "assign",
@@ -204,6 +359,419 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
+      "field": "label",
+      "value": "how a pane is addressed and laid out"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KnU5WSI6",
+      "kind": "module",
+      "value": {
+        "order": 4100,
+        "name": "Pane socket handler",
+        "kind": "module",
+        "responsibility": "acceptPaneSocket(ws, req, vault): one pane's socket for its whole life: registers it, tells it its vault, repository and starting model, admits it to its vault's news and passes its agent messages on",
+        "description": "A socket that names a canonical reading starts with no legacy board. It preserves explicit model and preview addresses without reading or upgrading an unrelated legacy document.",
+        "groups": [
+          "panes"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KnU5WSI6",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "handleCodexBrowserMessage"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "sendStartingPlace"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#soCnft73",
+      "kind": "relationship",
+      "value": {
+        "order": 12000,
+        "kind": "call",
+        "label": "hold its vault followed; send it every snapshot",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+          "symbol": "agentActivity"
+        },
+        "id": "vKEsyHFk#soCnft73",
+        "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#soCnft73",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "registerSocket"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#FgFSdDi2",
+      "kind": "relationship",
+      "value": {
+        "order": 22000,
+        "kind": "call",
+        "label": "whether a returning pane's vault is still readable",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+          "symbol": "resolveVault"
+        },
+        "id": "vKEsyHFk#FgFSdDi2",
+        "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#FgFSdDi2",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "placeOfVault"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "parsePaneKey"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#yO0Gg6Lz",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "paneVaultOf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#yO0Gg6Lz",
+      "placement": {
+        "holder": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Zse70SS2",
+      "field": "description",
+      "value": "At stop, closeBrowserOwners(accepted) closes the registry watch first, then the browser owners and every socket the server passes, feed sockets included, at the same point in the shutdown order as before; it keeps no tracking set of its own (TASK-653.09)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#da0cTPeu",
+      "kind": "relationship",
+      "value": {
+        "order": 970110,
+        "kind": "call",
+        "label": "close the registry watch first at stop",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+          "symbol": "unwatchRegistry"
+        },
+        "id": "vKEsyHFk#da0cTPeu",
+        "to": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#da0cTPeu",
+      "placement": {
+        "holder": "vKEsyHFk#Zse70SS2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#qhpG7ofG",
+      "kind": "module",
+      "value": {
+        "order": 4150,
+        "name": "Registry follow",
+        "kind": "module",
+        "responsibility": "followRegistry(): every pane follows the checkout registry (ADR 0050), and a private watch of the registry file follows each change, whoever made it",
+        "description": "A pane in the vault of a checkout that is not chosen moves to the chosen one, keeping its model; every other pane hears the name its repository goes by now; every tab hears repositories_changed; the agent activity hears the readable vaults. The watch starts last in prepareWorkbench and closes first in closeBrowserOwners and stopWorkbench. Moved from the server's repository routes (TASK-653.09).",
+        "groups": [
+          "panes"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/registry-follow.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qhpG7ofG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#YawQAO0P",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "movePaneVault"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#YawQAO0P",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#ic9G2qN4",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "sendKeylessToPane"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#ic9G2qN4",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "followRegistry"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#HZkTRFtf",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "parsePaneKey"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#2b0bgIDx",
+      "kind": "relationship",
+      "value": {
+        "order": 970050,
+        "kind": "call",
+        "label": "read the model a moved pane keeps",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+          "symbol": "readArchitectureModel"
+        },
+        "id": "vKEsyHFk#2b0bgIDx",
+        "to": "vKEsyHFk#ZGONZKxj"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#2b0bgIDx",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6b9833Q9",
+      "kind": "relationship",
+      "value": {
+        "order": 970060,
+        "kind": "call",
+        "label": "each pane's home vault; the readable vaults",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+          "symbol": "placeOfVault"
+        },
+        "id": "vKEsyHFk#6b9833Q9",
+        "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6b9833Q9",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#R3T47P4O",
+      "kind": "relationship",
+      "value": {
+        "order": 970070,
+        "kind": "call",
+        "label": "the registry file it watches, read once",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+          "symbol": "listRegistry"
+        },
+        "id": "vKEsyHFk#R3T47P4O",
+        "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#R3T47P4O",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#kxx97tHA",
+      "kind": "relationship",
+      "value": {
+        "order": 970080,
+        "kind": "call",
+        "label": "the readable vaults every pane hears about",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+          "symbol": "agentActivity"
+        },
+        "id": "vKEsyHFk#kxx97tHA",
+        "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#kxx97tHA",
+      "placement": {
+        "holder": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#N2puYRTF",
       "field": "kind",
       "value": "call"
@@ -222,6 +790,48 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
         "symbol": "waitUntil"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#qKqXup5o",
+      "kind": "relationship",
+      "value": {
+        "order": 9000,
+        "kind": "call",
+        "label": "which pane a request names; whether the screen is full",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+          "symbol": "resolvePane"
+        },
+        "id": "vKEsyHFk#qKqXup5o",
+        "to": "vKEsyHFk#PmExcyj9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qKqXup5o",
+      "placement": {
+        "holder": "vKEsyHFk#r2iFMYJk"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "publishPaneContext"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+      "placement": {
+        "holder": "vKEsyHFk#r2iFMYJk"
       }
     },
     {
@@ -384,6 +994,28 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#hhuZHtcv",
+      "field": "label",
+      "value": "which code the server runs"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#hhuZHtcv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "serverCodeState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
       "field": "anchor",
       "value": {
@@ -399,6 +1031,309 @@
       "value": "vKEsyHFk#QsBnI8Ja"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#lEeSgaRX",
+      "kind": "relationship",
+      "value": {
+        "order": 70030,
+        "kind": "call",
+        "label": "the checkouts a named file can lie in",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-opener/src/server/projections/named-path.ts",
+          "symbol": "checkoutsReadFrom"
+        },
+        "id": "vKEsyHFk#lEeSgaRX",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lEeSgaRX",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+      "field": "responsibility",
+      "value": "The routes a pane and the CLI reach: what each pane shows and where, the panes report, open, close and show, and the semantic-context routes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+      "field": "description",
+      "value": "A report naming a vault the pane left answers not registered. Open and close are whole private operations of the pane arrivals: the refusal checks, the waiter installed before the request is sent, the send, a cancel when the send fails, and the settle. mountWorkbenchRoutes mounts them with the hooks the server lends: its mutation lease, its refusal status for a model read, its request-vault adapter and its URL (TASK-653.09)."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "registerPane"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#wX9a448V",
+      "field": "kind",
+      "value": "call"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#wX9a448V",
+      "field": "label",
+      "value": "what every pane on screen shows"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#wX9a448V",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "panesReport"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#wvK4SWe1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "showPaneRoute"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "shownConversationRoute"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "createBrowserOriginGuard"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#4gRaPRO3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "staleFrontend"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#vTfr79yF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "browserUrl"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+      "field": "responsibility",
+      "value": "Adapts local panes, context, tools, and narration to the voice agent, mounts the workbench's routes, and prepares and stops the workbench with the server"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+      "field": "responsibility",
+      "value": "The server's one WebSocket listener: refuses an upgrade from another origin or naming no readable vault, and hands the socket to the architecture feed or to the workbench's pane socket handler"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+      "field": "description",
+      "value": "What happens on a pane's socket after the upgrade is the workbench's (Pane socket handler, TASK-653.08)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#9yd4IFw9",
+      "kind": "relationship",
+      "value": {
+        "order": 20000,
+        "kind": "call",
+        "label": "hand each pane's socket to the workbench",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+          "symbol": "acceptPaneSocket"
+        },
+        "id": "vKEsyHFk#9yd4IFw9",
+        "to": "vKEsyHFk#KnU5WSI6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#9yd4IFw9",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#X07YebBP"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#kUKOPjAB",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "resolveVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+      "field": "description",
+      "value": "TASK-472.09. No environment variable names a vault any longer: a set ARCHBOARD_VAULT is refused before the command runs, and the finder's origin is -C or working-directory. locateVault finds the vault; a command asks through findVault in Vault address. vaultIn(directory) is the vault a directory holds when the server serves it: a .archboard/vault whose real directory is in the layout. A vault named directly is one when vaultIn(checkoutOfVault(real)) === real, which is how the server and the workbench check a named vault now that isVaultLayout is private (TASK-653.10). The finder refuses a vault whose link leads out of that layout as VAULT_NOT_FOUND (reason vault-outside-layout), before the command registers anything. TASK-480: in a checkout with no vault, the finder asks the lookup it is given for the known vaults whose models bind the checkout's repository, and the refusal names each one as the -C to give, with its models."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#eYsz7cYK",
+      "kind": "module",
+      "value": {
+        "order": 10500,
+        "name": "Workbench routes",
+        "kind": "route",
+        "responsibility": "mountWorkbenchRoutes(app, hooks): mounts every route the workbench answers, panes and explanations, behind one first middleware that requires a vault and observes each write",
+        "description": "The middleware on /api/architecture is installed first, so it also holds the server's later model and history routes to a vault and observes their writes for the agent activity; vaultWritten is not exported. WorkbenchHooks is what the server lends: runMutation, refusalStatus, requireVault, vaultOfRequest, statedVault and its address { port, httpUrl } (TASK-653.09).",
+        "groups": [
+          "panes"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#eYsz7cYK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#eYsz7cYK",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#oAOh6DQs",
+      "kind": "relationship",
+      "value": {
+        "order": 970020,
+        "kind": "dependency",
+        "label": "mounts the pane routes with the server's hooks",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+          "symbol": "mountPaneRoutes"
+        },
+        "id": "vKEsyHFk#oAOh6DQs",
+        "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#oAOh6DQs",
+      "placement": {
+        "holder": "vKEsyHFk#eYsz7cYK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#m29snNpc",
+      "kind": "relationship",
+      "value": {
+        "order": 970030,
+        "kind": "dependency",
+        "label": "mounts the explanation routes",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+          "symbol": "mountExplanationRoutes"
+        },
+        "id": "vKEsyHFk#m29snNpc",
+        "to": "vKEsyHFk/HBlhIeSD#QboPNrzG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#m29snNpc",
+      "placement": {
+        "holder": "vKEsyHFk#eYsz7cYK"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zKOR7EE4",
+      "kind": "relationship",
+      "value": {
+        "order": 970040,
+        "kind": "call",
+        "label": "each write under /api/architecture names a vault",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+          "symbol": "observeWrite"
+        },
+        "id": "vKEsyHFk#zKOR7EE4",
+        "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zKOR7EE4",
+      "placement": {
+        "holder": "vKEsyHFk#eYsz7cYK"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+      "field": "description",
+      "value": "One server app serves canonical model operations, code evidence, exports, retained playback, repository selection, and pane routing. Its route and lifecycle children own those details. Reader and rendering roles do not create separate copies of this app. It mounts the workbench's routes and lends them its mutation lease, refusal status, request-vault adapter and listen address, which it keeps private (TASK-653.09)."
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#EX4mlIeV",
       "field": "anchor",
@@ -407,6 +1342,115 @@
         "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-run.ts",
         "symbol": "durationMs"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "name",
+      "value": "Agent activity"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "responsibility",
+      "value": "Publishes complete canonical subject-claim and durable action snapshots with explicit vault identity to every pane; private to the workbench"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "description",
+      "value": "Consumes the public model feed for the vaults a connected pane can show: the registry's readable vaults, each pane's own vault and every vault a write named. Multiple subject claims may coexist. Only a durable operation receipt supplies writer and doing attribution. After the last claim ends, a durable action lingers briefly and then the tracker sends an empty snapshot. Moved from the server into the workbench, which disposes it before the voice agent's shutdown (TASK-653.09)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/agent-activity.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "field": "formerNames",
+      "value": [
+        "Board announcements",
+        "Model announcements"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ZYnBClPj",
+      "kind": "relationship",
+      "value": {
+        "order": 970130,
+        "kind": "call",
+        "label": "send each vault's snapshot to every pane",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/agent-activity.ts",
+          "symbol": "sendToEveryClient"
+        },
+        "id": "vKEsyHFk#ZYnBClPj",
+        "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ZYnBClPj",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PxNrfkib",
+      "kind": "relationship",
+      "value": {
+        "order": 970140,
+        "kind": "call",
+        "label": "watch the vaults a connected pane can show",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/agent-activity.ts",
+          "symbol": "watchArchitectureModel"
+        },
+        "id": "vKEsyHFk#PxNrfkib",
+        "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PxNrfkib",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
+        "symbol": "findVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#6uWT4mUj",
+      "field": "description",
+      "value": "A JSON request is one call, requestJson: a method and payload, with the reply trusted as the endpoint's contract and a refusal thrown in the server's own words. A reply that must match a schema is another, strictReply. Every call to a model names its vault through inVault. ReplySchema stays private; a caller that names it derives it from strictReply (TASK-653.09)."
     },
     {
       "type": "assign",
@@ -447,6 +1491,31 @@
       "value": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored. A title asked for without words is named here, from the model, the view, the variant and what it is compared with, because only the model knows those names. A picture asked against a named variant reads relative to that variant and is drawn without the Planned frame, because what it adds is judged against the variant named and not against the model's lack of a current one (ADR 0031). After the drawing, the answer keeps the standing to the subjects the drawing placed and names each of them (nodes, edges, flows and steps), so the panel, a receipt and the key count only marks the picture draws. Beside the answer it names the drawn input: the drawn variant and the variant it is read against without their walkthroughs, the view's reading, the vault's presentation policy, the model's level, the Planned frame and the title, so a render recipe can fingerprint what the picture says and not the model's version or name. legacy-subjects.ts beside it holds findView, nothingBuilt and drawnSubjects, which only this answer reads; they left the model with the split (ADR 0086)."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#MiXMeDd5",
+      "kind": "relationship",
+      "value": {
+        "order": 30,
+        "kind": "call",
+        "label": "the repository of the vault's own checkout",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/code-files/operations/checkout-files.ts",
+          "symbol": "checkoutsReadFrom"
+        },
+        "id": "vKEsyHFk#MiXMeDd5",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MiXMeDd5",
+      "placement": {
+        "holder": "vKEsyHFk#fCXk4gkF"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
       "field": "anchor",
@@ -458,9 +1527,90 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+      "field": "responsibility",
+      "value": "Finds a command's vault and, when asked, registers what holds it unless the registry knows it; a registry that cannot be written, or a holder it refuses, is said in the answer"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
+      "field": "description",
+      "value": "findVault(search, { register }) absorbs findAndRegisterVault (TASK-653.10). The answer carries the found vault on found, beside registered or unregistered."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts",
+        "symbol": "locateVault"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
       "field": "description",
       "value": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed. rules/draft-ref.ts holds the draft refs, which only code-intel reads; they left the model with the split (ADR 0086)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#BY6QrV1Z",
+      "kind": "relationship",
+      "value": {
+        "order": 70050,
+        "kind": "call",
+        "label": "the checkouts a vault reads, and its own",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/history-lens/operations/source-refs.ts",
+          "symbol": "checkoutsReadFrom"
+        },
+        "id": "vKEsyHFk#BY6QrV1Z",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#BY6QrV1Z",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#LbFXuA2E",
+      "kind": "relationship",
+      "value": {
+        "order": 70040,
+        "kind": "call",
+        "label": "the vault's own checkout, for the default base",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/code-check/operations/touched.ts",
+          "symbol": "checkoutsReadFrom"
+        },
+        "id": "vKEsyHFk#LbFXuA2E",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#LbFXuA2E",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
     },
     {
       "type": "assign",
@@ -481,6 +1631,187 @@
       "value": "Callers do not write the waiting themselves (ADR: timing owns the waiting, and one getter reads the rest). It exports nine names. waitUntil polls a probe on a named wait whose private policy keeps its bound, its cadence, whether it sleeps first, where it checks the bound, whether the bound's own moment counts and how its last sleep meets the bound. A caller may pass its own bound, an outer cap, a signal and a clock, and gets the value found or a refusal with its reason and the bound in seconds, which the caller puts in its own sentence. pause sleeps one named cadence for a loop that keeps its own decisions across passes. deadline ends a named duration from a moment, never past an optional cap; an age check compares the time now with it, and the caller keeps its own operator. durationMs is the one keyed getter, for what takes a number and is not a wait: a stylesheet, a physics constant, a timer, a library option or a message. No wait bound or cadence is readable through it except the model lock's poll, which a synchronous loop sleeps with Bun.sleepSync. painterPhasesJson, reachHopDelayMs, columnSlideSettledMs, codexRestartDelayMs and localityDefaultSinceSeconds keep their computations. The Clock port (now, and after(ms, run) that returns a cancel) is the seam a caller or a test passes; the default clock stays private and reads Date.now and setTimeout when called. A duration is named \"<owner>.<key>\" over the owner groups, which stay inside with what each pulls against. The names and policies have a published half, the Codex groups and processGroup that @archboard/codex-realtime-voice bundles, and a host half that a build under the published condition leaves out, where a host name throws by name. It stays browser-safe: no process and no node: imports."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#ALiDA38p",
+      "kind": "relationship",
+      "value": {
+        "order": 16000,
+        "kind": "call",
+        "label": "which checkout of a repository is chosen",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/commands/repo/operations/language-server.ts",
+          "symbol": "checkoutOf"
+        },
+        "id": "vKEsyHFk#ALiDA38p",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ALiDA38p",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#jAKtfzMA"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+      "field": "responsibility",
+      "value": "Lists the repositories the navigator shows and chooses a repository's checkout for the whole machine; the workbench's registry follow then moves the panes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+      "field": "description",
+      "value": "GET /api/repositories answers under the settings-read browser-origin guard; PUT /api/repositories/chosen {repository, root} answers under the mutation guard, as the opener settings do. Neither names a vault, because the list and the choice belong to the machine. A root that is not a known checkout of the repository is refused (CHECKOUT_UNKNOWN, 404): the page offers nothing else, and the route never registers one. A choice, even of the checkout chosen already, calls the workbench's followRegistry; the workbench watches the registry file for every other change (TASK-653.09)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+      "field": "label",
+      "value": "choose a known checkout that holds a vault, or why not"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "chooseCheckout"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1CDMmBSY",
+      "kind": "relationship",
+      "value": {
+        "order": 970090,
+        "kind": "call",
+        "label": "follow the registry the choice changed",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+          "symbol": "followRegistry"
+        },
+        "id": "vKEsyHFk#1CDMmBSY",
+        "to": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1CDMmBSY",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Am1mLDP5",
+      "field": "kind",
+      "value": "module"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Am1mLDP5",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/panes-report.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#Am1mLDP5",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#f1wWwbHo",
+      "kind": "relationship",
+      "value": {
+        "order": 9000,
+        "kind": "call",
+        "label": "build the report from the panes on screen",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/panes-report.ts",
+          "symbol": "buildPanesReport"
+        },
+        "id": "vKEsyHFk#f1wWwbHo",
+        "to": "vKEsyHFk#PmExcyj9"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#f1wWwbHo",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#hiqkoWmI",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/panes-report.ts",
+        "symbol": "paneRegistrations"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/panes-report.ts",
+        "symbol": "placeOfVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#ZX8UUIpb",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/panes-report.ts",
+        "symbol": "parsePaneKey"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/panes-report.ts",
+        "symbol": "tabSessionOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#oEoVWYcz",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/panes-report.ts",
+        "symbol": "browserUrl"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#R3ldC44x",
       "field": "binding",
@@ -496,6 +1827,176 @@
       "placement": {
         "holder": "vKEsyHFk#QsBnI8Ja"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+      "field": "description",
+      "value": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. placeOfVault(vault) answers its home vault, its repository's name, its checkout and whether that checkout is chosen; it absorbs both repositoryOfVault names, so a show, a pane's starting place, a thread's label and the CLI's canvas address all ask it (TASK-653.10). A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nMNm8jov",
+      "kind": "relationship",
+      "value": {
+        "order": 25500,
+        "kind": "call",
+        "label": "the chosen checkout of a repository",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/server/projections/repository-listing.ts",
+          "symbol": "checkoutOf"
+        },
+        "id": "vKEsyHFk#nMNm8jov",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nMNm8jov",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#SyLH2N4H",
+      "field": "label",
+      "value": "the vault a checkout holds"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#SyLH2N4H",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/server/projections/repository-listing.ts",
+        "symbol": "vaultIn"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#29kIWfHH",
+      "field": "responsibility",
+      "value": "Every call between the browser and the server, each naming its vault: the browser's JSON requests, and the server's resolution of the vault a call names (ADR 0049)"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#29kIWfHH",
+      "field": "description",
+      "value": "Four names: inVault, requestJson and strictReply for the browser, and resolveVault in ./server for the server. It moved from layer 0 to layer 3 for the server end, which reads the workspace's repository listing and vault layout (TASK-653.09)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "field": "name",
+      "value": "Checkout questions"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "field": "kind",
+      "value": "module"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "field": "responsibility",
+      "value": "Which checkout of a repository this machine reads, choosing a known checkout, and which checkout holds each repository identity for one vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "field": "description",
+      "value": "The one rule that every reader of a vault resolves a repository identity by (ADR 0049): checkoutsReadFrom(vault) gives the chosen checkout of every identity, with the vault's own checkout in place of its own identity, and own, that checkout and its identity, so no caller filters for it. It computes eagerly. checkoutOf(repository) answers chosen, unchosen with the known roots, or unknown with the repositories that have a chosen checkout. chooseCheckout(repository, root) answers chosen (changed, replaced), unknown, gone or no-vault, from which the server sends 404 CHECKOUT_UNKNOWN and 422 CHECKOUT_UNUSABLE. Moved from code-binding's vault-checkout.ts with the registry filters of its callers (TASK-653.10)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "field": "formerNames",
+      "value": [
+        "Vault checkouts"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Zv6ZZwJP",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+        "symbol": "gitCheckoutOfVault"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#4Ep1Qw4V",
+      "kind": "relationship",
+      "value": {
+        "order": 27000,
+        "kind": "call",
+        "label": "whether a known checkout holds a vault the server serves",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+          "symbol": "vaultIn"
+        },
+        "id": "vKEsyHFk#4Ep1Qw4V",
+        "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4Ep1Qw4V",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#qwdogTBE",
+      "field": "label",
+      "value": "every checkout, the chosen among them"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#qwdogTBE",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+        "symbol": "listRegistry"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#nLp2hILd",
+      "field": "description",
+      "value": "TASK-653.10: listRegistry never throws, and answers the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads beside every entry. declareDirectory answers a refused directory as an outcome with its sentence, in place of RepoRegistryError, and the registry file beside what it recorded. Which checkout is chosen, and choosing one, are Checkout questions."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+      "field": "responsibility",
+      "value": "Accepts each page's socket, serves the architecture feed and broadcasts news about the machine to every tab; the panes themselves are the workbench's"
     },
     {
       "type": "assign",
@@ -518,6 +2019,24 @@
       "subject": "vKEsyHFk#kIIEgwrt",
       "field": "label",
       "value": "how the picture is seen, what arrives and departs, frames"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#fEJJNr2X",
+      "field": "description",
+      "value": "TASK-599 and ADR 0046. A repository names its servers in a file that it commits, so every machine and CI run that has the checkout runs the same ones, with no trust step. The global file sits beside the registry and fills each language that the repository file leaves out. A relative command in the repository file is a path from the checkout root, so a repository can commit a wrapper script. setServer keeps the stored-path rule that the CLI kept before (TASK-653.10): a command that is a name stays a name, the global file keeps a path absolute, and the repository file keeps a path inside the checkout as a path from its root and answers outside-checkout for any other, which the CLI refuses with its sentence. A file that cannot be read decides every language that it could name. A write keeps the languages in a fixed order and deletes a file that names no server. The file's shape is browser safe beside the configurable languages, handed out as workspaceShape('languageServers')."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#tdKalihR",
+      "field": "responsibility",
+      "value": "Which installation runs; where a vault, a checkout and the state directory are; which checkout of a repository this machine reads and which checkouts a vault reads; the atomic write"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#tdKalihR",
+      "field": "description",
+      "value": "TASK-653.10: workspace answers the place questions its callers assembled from the registry. ./checkouts: repoRootOf, repoIdentityAt, inspectCheckout (with the branch and commit that checkoutHead gave), listRegistry (never throws; the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads), declareDirectory (a refusal is an outcome with its sentence; a record carries the registry file), forgetDirectory, checkoutOf, chooseCheckout, checkoutsReadFrom (returns own), readServers, setServer, passServers. ./vault: findVault ({ register } absorbs findAndRegisterVault), vaultIn, placeOfVault (absorbs both repositoryOfVault names), checkoutOfVault, vaultDirectory. ./shapes: workspaceShape, the one keyed getter (repositoryListing, checkoutChoice, languageServers, vaultOrigin, configurableLanguage), replaces ./repositories and ./languages. isVaultLayout, registryPath, RepoRegistryError, chosenCheckouts, chooseKnownCheckout and gitCheckoutOfVault are private. 27 names under a ceiling of 29; the machine foundation splits out in TASK-653.15."
     },
     {
       "type": "assign",
@@ -548,6 +2067,37 @@
       "subject": "vKEsyHFk#jb2m0ZwA",
       "placement": {
         "holder": "vKEsyHFk/XppR9owz#bLpk2XKU"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+      "field": "description",
+      "value": "It resolves a binding in the checkouts that workspace's checkoutsReadFrom gives for the vault, and reads each checkout through workspace's inspectCheckout. The rule of which checkouts a vault reads moved to workspace with vault-checkout.ts (TASK-653.10)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vQSaWHTG",
+      "kind": "relationship",
+      "value": {
+        "order": 28500,
+        "kind": "call",
+        "label": "the checkouts a vault reads, to resolve its bindings in",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+          "symbol": "checkoutsReadFrom"
+        },
+        "id": "vKEsyHFk#vQSaWHTG",
+        "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vQSaWHTG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
       }
     },
     {
@@ -914,6 +2464,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#eMSAZPvG",
+      "field": "description",
+      "value": "The command that it spawns comes from the installation: a checkout's Bun with apps/server/src/server.ts, or a release's own executable with its internal server argument. It refuses to start where the installation's Codex is not installed, and reports the address a browser opens. Its cleanup after a failed start and its stop remove the pidfile only while the file records the pid it started or signalled, so a server that started after the one it watched keeps its record."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#a2fjUiQD",
       "field": "kind",
       "value": "call"
@@ -936,6 +2492,64 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+      "field": "responsibility",
+      "value": "The one Express application, the HTTP server that answers for it, and where it listens: its address, the refusal beside a server on the other loopback address, and listener errors"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/listener"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+      "field": "description",
+      "value": "listener-address.ts moved here from the workbench and stays private to the server; the server passes { port, httpUrl } to the workbench rather than the workbench reading it (TASK-653.09, ADR 0058 ceilings)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xOJ6QtXJ",
+      "kind": "relationship",
+      "value": {
+        "order": 58000,
+        "kind": "call",
+        "label": "the repository a canvas address names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
+          "symbol": "placeOfVault"
+        },
+        "id": "vKEsyHFk#xOJ6QtXJ",
+        "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xOJ6QtXJ",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#XKjn4icZ"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#doujM3ih",
+      "field": "responsibility",
+      "value": "Starts, finds, restarts and stops the server of a checkout or a release, carries a CLI invocation's requests to it, and holds what the server process does for itself"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#doujM3ih",
+      "field": "description",
+      "value": "Sixteen names on four entries: ./server (ensureServerRunning, restartServer, serverStatus, connectedBrowsers, stopServer), ./server-client (requestJson, stateInvocation, statedInvocation), ./config (archboardUrl, removedEnvironmentMessage) and ./server-process, what the server process does for itself: recordServerPid, releaseServerPid, reportStartupOwnership, reportStartupEnd, serverCodeState and staleFrontend. A server owns its pidfile by the exact bytes it wrote: releaseServerPid removes the file only while it still holds them, so a server that bound the freed port, or the winner of a concurrent start, keeps its record. The launcher makes the same check by pid when it cleans up after a failed start or a stop. reportStartupEnd is a first-call-wins latch in the writer: a process writes one terminal startup record, and a later report writes nothing. The pane rules and the messages a pane is sent belong to workbench (TASK-653.08)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
       "field": "binding",
       "value": {
@@ -954,6 +2568,12 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "field": "label",
+      "value": "the holders of the vaults this machine reads"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
@@ -964,21 +2584,17 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
-      "field": "anchor",
-      "value": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
-        "symbol": "isVaultLayout"
-      }
+      "field": "label",
+      "value": "the vault each holder holds"
     },
     {
       "type": "assign",
-      "subject": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "subject": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
-        "symbol": "chosenCheckouts"
+        "symbol": "vaultIn"
       }
     },
     {
@@ -990,6 +2606,157 @@
         "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
         "symbol": "readArchitectureModel"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#9KeBXIBQ",
+      "kind": "module",
+      "value": {
+        "order": 36000,
+        "name": "Request vault",
+        "kind": "module",
+        "responsibility": "The vault a request names, read one way for every route (?vault= first, else the body's vault field); refuses one naming none or an unreadable one, and remembers the canonical vault",
+        "description": "The Express end of ADR 0049's request-vault contract, private to the server: requireVault, vaultOfRequest, statedVault and queryString. The server lends the first three to the workbench's routes through WorkbenchHooks, so a route either side mounts reads the same remembered vault (TASK-653.09).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/middleware/request-vault.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#9KeBXIBQ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#9KeBXIBQ",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#nU6dNHBE"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ZDqomga8",
+      "kind": "relationship",
+      "value": {
+        "order": 970010,
+        "kind": "call",
+        "label": "make the stated vault canonical, or the refusal",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/middleware/request-vault.ts",
+          "symbol": "resolveVault"
+        },
+        "id": "vKEsyHFk#ZDqomga8",
+        "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ZDqomga8",
+      "placement": {
+        "holder": "vKEsyHFk#9KeBXIBQ"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+      "field": "responsibility",
+      "value": "Archboard's host of the voice package: model context, domain tools, narration, the panes (registry, rules, routes, socket, registry follow, agent activity), explanations and the shell"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+      "field": "description",
+      "value": "The server half is seven operations in ./server: mountWorkbenchRoutes(app, hooks), acceptPaneSocket(ws, req, vault), followRegistry(), prepareWorkbench(signal, address), closeBrowserOwners(accepted), stopWorkbench() and admittedClientCount(); ./browser-contract keeps shownConversationPath and the two explanation schemas. ./panes and ./host are gone (TASK-653.09). The workbench owns the registry follow with its watch private (started last in prepare, closed first at stop), the agent activity (private), the explanation routes, and write observation as the mount's first middleware on /api/architecture. stopWorkbench shares one stop per application generation: it disposes the activity before the shutdown and clears that generation's memories and wiring in finally. The server lends requireVault, vaultOfRequest, statedVault, its mutation lease, its refusal status and { port, httpUrl } through WorkbenchHooks, and passes the sockets it accepted to closeBrowserOwners."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "field": "name",
+      "value": "Vault resolution"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "field": "responsibility",
+      "value": "resolveVault: the vault a call or a socket upgrade names, made canonical once, or the refusal that says how to name one; only an upgrade recovers the chosen checkout's vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "field": "description",
+      "value": "The server end of ADR 0049's request-vault contract, beside the browser end that names the vault: the server has no working directory and no default vault, and it starts without one. A directory whose real path is not <dir>/.archboard/vault is refused. Moved from the workbench, which lent it to the server as ./host (TASK-653.09)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/server/services/vault.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "field": "formerNames",
+      "value": [
+        "Vault requirement"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#29kIWfHH"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#KBBwvHf9",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/server/services/vault.ts",
+        "symbol": "placeOfVault"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dIVa8Cp4",
+      "kind": "relationship",
+      "value": {
+        "order": 70070,
+        "kind": "call",
+        "label": "whether a named directory is the vault its holder holds",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/server-requests/src/server/services/vault.ts",
+          "symbol": "vaultIn"
+        },
+        "id": "vKEsyHFk#dIVa8Cp4",
+        "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dIVa8Cp4",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#Z7IOHBEv",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "type": "assign",
@@ -1015,6 +2782,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ncTGv1jp",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#gCSSYsMT",
       "field": "label",
       "value": "changeArchitectureClaims"
@@ -1031,12 +2804,24 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
+      "field": "description",
+      "value": "The resources record the pidfile once the listener runs and release it at stop. Nothing tracks whether this process owns the file, because the release compares the bytes."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/read"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+      "field": "responsibility",
+      "value": "The server's socket listener and the architecture feed; what a pane's socket does after the upgrade, and the news panes hear, are the workbench's"
     },
     {
       "type": "assign",
@@ -1047,6 +2832,12 @@
         "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts",
         "symbol": "changeArchitecturePublication"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ofrMAblk",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "type": "add",
@@ -1071,6 +2862,28 @@
       "subject": "vKEsyHFk#6OgjwUVz",
       "placement": {
         "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#7fKX6THX",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#OFwD2rtg",
+      "field": "label",
+      "value": "the identity of the vault's own checkout, for the recipe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#OFwD2rtg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "checkoutsReadFrom"
       }
     },
     {
@@ -1134,12 +2947,56 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#QboPNrzG",
+      "field": "description",
+      "value": "The existing workbench action owns capture delivery, temporary progress, exact retry, cancellation, and the shared text result. A route names the actual vault and tab session. Mounted by mountWorkbenchRoutes, under the server's mutation lease and vault requirement that the hooks lend (TASK-653.09)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#QboPNrzG",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/explanations/routes/explanation-routes.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#QboPNrzG",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#NKyQrZnS",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/explanations/routes/explanation-routes.ts",
+        "symbol": "explainArchitecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+      "field": "description",
+      "value": "Takes the address the server lends, the port its Codex state is kept under and its URL, rather than reading the listener itself (TASK-653.09)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/history"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#CugxYaZL",
+      "field": "to",
+      "value": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "type": "assign",
@@ -1436,6 +3293,184 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
         "symbol": "addressedVariant"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
+      "field": "label",
+      "value": "open, close, show and list panes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "mountPaneRoutes"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#RZTsoQN5",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#RZTsoQN5",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vJcnJ28p",
+      "kind": "relationship",
+      "value": {
+        "order": 9000,
+        "kind": "call",
+        "label": "read the model a show names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+          "symbol": "readArchitectureModel"
+        },
+        "id": "vKEsyHFk#vJcnJ28p",
+        "to": "vKEsyHFk#ZGONZKxj"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vJcnJ28p",
+      "placement": {
+        "holder": "vKEsyHFk#RZTsoQN5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AhlSvvxZ",
+      "kind": "relationship",
+      "value": {
+        "order": 9100,
+        "kind": "call",
+        "label": "the reading the pane is sent",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+          "symbol": "projectModel"
+        },
+        "id": "vKEsyHFk#AhlSvvxZ",
+        "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AhlSvvxZ",
+      "placement": {
+        "holder": "vKEsyHFk#RZTsoQN5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#2gAyg0pA",
+      "kind": "relationship",
+      "value": {
+        "order": 9200,
+        "kind": "call",
+        "label": "the pane's new focus, for its agent",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+          "symbol": "publishPaneContext"
+        },
+        "id": "vKEsyHFk#2gAyg0pA",
+        "to": "vKEsyHFk#OY4JPr8G"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#2gAyg0pA",
+      "placement": {
+        "holder": "vKEsyHFk#RZTsoQN5"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+        "symbol": "sendToPane"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#HIkVOOeA",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+        "symbol": "movePaneVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#57KDyakx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+        "symbol": "placeOfVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ALYb99sn",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+        "symbol": "chooseCheckout"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ALYb99sn",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#0mIkI1GM",
+      "kind": "relationship",
+      "value": {
+        "order": 970100,
+        "kind": "call",
+        "label": "follow the registry when a show chose a checkout",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/routes/pane-show-route.ts",
+          "symbol": "followRegistry"
+        },
+        "id": "vKEsyHFk#0mIkI1GM",
+        "to": "vKEsyHFk#qhpG7ofG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#0mIkI1GM",
+      "placement": {
+        "holder": "vKEsyHFk#RZTsoQN5"
       }
     },
     {
@@ -2724,6 +4759,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#apyQZjM7",
+      "field": "responsibility",
+      "value": "Says which code the running server runs: whether it loaded the source on disk now, which frontend build is on disk, and whether a tab's bundle is older"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#apyQZjM7",
+      "field": "description",
+      "value": "A checkout's server runs TypeScript that it loaded once, so it compares the time of every source file it loaded with the time of loading, and compares the entry script of the bundle a tab fetched with the bundle on disk. It reads the root and the frontend directory from the installation. serverCodeState answers /health with the source state and the frontend build; a tab's question goes to staleFrontend, which stats no source file. status says when either is stale."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#t7OeO7ll",
       "field": "responsibility",
       "value": "Prints the JSON Schemas that the consumer skill names, through the model contract, with no server and no vault"
@@ -3308,6 +5355,113 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#OY4JPr8G",
+      "field": "responsibility",
+      "value": "Builds the voice agent for one server and joins it to the panes, the model news and the context sources; prepareWorkbench and stopWorkbench"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#OY4JPr8G",
+      "field": "description",
+      "value": "prepareWorkbench(signal, address) takes the address the server listens on and watches the registry last. stopWorkbench shares one stop promise per application generation: it disposes the agent activity before the shutdown, and clears that generation's memories and wiring in finally, so overlapping stops and a failed shutdown clean up once (TASK-653.09)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#hJaOWiEr",
+      "kind": "relationship",
+      "value": {
+        "order": 70060,
+        "kind": "call",
+        "label": "the vault a thread's checkout holds",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+          "symbol": "vaultIn"
+        },
+        "id": "vKEsyHFk#hJaOWiEr",
+        "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#hJaOWiEr",
+      "placement": {
+        "holder": "vKEsyHFk#OY4JPr8G"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+        "symbol": "placeOfVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+      "field": "label",
+      "value": "watch the registry file last in prepare"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+        "symbol": "watchRegistry"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+      "field": "to",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+      "placement": {
+        "holder": "vKEsyHFk#OY4JPr8G"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QecAle7i",
+      "kind": "relationship",
+      "value": {
+        "order": 970120,
+        "kind": "call",
+        "label": "dispose the activity before the shutdown",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+          "symbol": "agentActivity"
+        },
+        "id": "vKEsyHFk#QecAle7i",
+        "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QecAle7i",
+      "placement": {
+        "holder": "vKEsyHFk#OY4JPr8G"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#EAT8ges2",
+      "field": "to",
+      "value": "vKEsyHFk#KnU5WSI6"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#qOrTIIKT",
       "field": "binding",
       "value": {
@@ -3428,6 +5582,44 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#PmExcyj9",
+      "field": "responsibility",
+      "value": "How a pane is addressed, laid out and reported: resolves the pane a request names, orders the panes on screen and builds the panes report"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#PmExcyj9",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/rules"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#PmExcyj9",
+      "field": "description",
+      "value": "Private to workbench (TASK-653.08): the pane registry, the pane arrivals and the panes report read it, and no entry exports it. The pane keys it reads stay in model-contract."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PmExcyj9",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#o56610zg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/rules/pane-report.ts",
+        "symbol": "paneAddressKey"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#50jWlhsK",
       "field": "binding",
       "value": {
@@ -3504,12 +5696,712 @@
         "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
         "symbol": "notifyArchitecture"
       }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#9AH65q3i",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#CCzGfHOu",
+        "before": "vKEsyHFk#vKVMVlcG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vKVMVlcG",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#vKVMVlcG",
+        "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+        "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+        "label": "is the port held on the other loopback address?",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+          "symbol": "loopbackRefusal"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vKVMVlcG",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#CCzGfHOu",
+        "before": "vKEsyHFk/6E6hL0Zk#MAbVX98e"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#iac54vzl",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "startServer"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#90uVynO9",
+      "field": "label",
+      "value": "start the workbench at the address it listens on"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#90uVynO9",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "prepareWorkbench"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#zeZA4CvA",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/Oi6SBIAM#X07YebBP",
+        "vKEsyHFk/Oi6SBIAM#RjaKX25k",
+        "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+        "vKEsyHFk#KnU5WSI6"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#YoFotxiU",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "resolveVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
+      "field": "to",
+      "value": "vKEsyHFk#KnU5WSI6"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
+      "field": "label",
+      "value": "hand it the pane's socket"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "acceptPaneSocket"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#nAWRKg6a",
+        "alternative": "readable",
+        "before": "vKEsyHFk/6E6hL0Zk#5dimKCaV"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
+      "field": "from",
+      "value": "vKEsyHFk#KnU5WSI6"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "sendStartingPlace"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#nAWRKg6a",
+        "alternative": "readable"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#U1HsxCvz",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+        "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+        "vKEsyHFk#Zse70SS2",
+        "vKEsyHFk/Oi6SBIAM#X07YebBP",
+        "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+        "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      ]
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AAcQXjAL",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#AAcQXjAL",
+        "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+        "to": "vKEsyHFk#Zse70SS2",
+        "label": "close every browser owner and accepted socket",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+          "symbol": "closeBrowserOwners"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AAcQXjAL",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Hn5dZswW",
+        "alternative": "settled",
+        "before": "vKEsyHFk/6E6hL0Zk#TyYrGUII"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Utzarf5j",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "stopWorkbench"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+      "field": "summary",
+      "value": "Makes one known checkout with a vault the repository's chosen one: workspace chooses it, or says why not, for the 404 and 422 refusals. The workbench then follows the registry: panes left in an unchosen checkout move with their model, and every tab hears repositories_changed."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "vKEsyHFk/0T9enjhi#klNuMiwC",
+        "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+        "vKEsyHFk#qhpG7ofG",
+        "vKEsyHFk/HBlhIeSD#KLt72lWa",
+        "vKEsyHFk#CgXCbunb",
+        "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#Yyk0IoPZ",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#Yyk0IoPZ",
+      "field": "label",
+      "value": "choose the checkout"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#Yyk0IoPZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "chooseCheckout"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#Yyk0IoPZ",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+        "before": "vKEsyHFk/HBlhIeSD#IXevfcB3"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#IXevfcB3",
+      "field": "from",
+      "value": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#IXevfcB3",
+      "field": "to",
+      "value": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#IXevfcB3",
+      "field": "label",
+      "value": "does the checkout hold a vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#IXevfcB3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+        "symbol": "vaultIn"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#vgoiHzwl",
+      "field": "from",
+      "value": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#vgoiHzwl",
+      "field": "to",
+      "value": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#vgoiHzwl",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-finder.ts",
+        "symbol": "vaultIn"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#vgoiHzwl",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+        "before": "vKEsyHFk/HBlhIeSD#myGzl930"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#myGzl930",
+      "field": "from",
+      "value": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#myGzl930",
+      "field": "label",
+      "value": "chosen, or unknown, gone or without a vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#myGzl930",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+        "symbol": "chooseCheckout"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/HBlhIeSD#myGzl930",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
+        "before": "vKEsyHFk/HBlhIeSD#g5QBwDaM"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#RtOLEUXs",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "refuseChoice"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#MyZxXuzc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "refuseChoice"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#pI5sNqzy",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#pI5sNqzy",
+        "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "to": "vKEsyHFk#qhpG7ofG",
+        "label": "follow the registry",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+          "symbol": "followRegistry"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#pI5sNqzy",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#g5QBwDaM",
+        "alternative": "usable",
+        "before": "vKEsyHFk/HBlhIeSD#IMvOQpab"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ZNWAp2rJ",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#ZNWAp2rJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "placeOfVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#kqxOzNTs",
+      "field": "to",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "movePaneVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#4CvAnVr8",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#4CvAnVr8",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "sendKeylessToPane"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
+      "field": "to",
+      "value": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "sendToEveryClient"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#UYyBdq56",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
+        "symbol": "findVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#jtBpIlz1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts",
+        "symbol": "locateVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#tFu7XmRJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-finder.ts",
+        "symbol": "locateVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#L1mHc5CO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "resolveVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/server/services/vault.ts",
+        "symbol": "placeInstead"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#rNJVEA2C",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/server/services/vault.ts",
+        "symbol": "resolveVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#hn2Q6jbD",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+        "symbol": "startWebSocketServer"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
+      "field": "summary",
+      "value": "Seen from the panes: the workbench follows the registry, so each pane learns where it is, or moves into the chosen checkout's vault and reads its model again there. Every tab then refreshes its repositories."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+        "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "vKEsyHFk#qhpG7ofG",
+        "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+        "vKEsyHFk#CgXCbunb",
+        "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#ZstWLA7K",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+        "symbol": "refuseChoice"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/Oi6SBIAM#Cmp2uTOo",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#Xymg9Rr4",
+        "alternative": "known",
+        "before": "vKEsyHFk#uvI32LPW"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#uvI32LPW",
+      "kind": "step",
+      "value": {
+        "id": "vKEsyHFk#uvI32LPW",
+        "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "to": "vKEsyHFk#qhpG7ofG",
+        "label": "follow the registry",
+        "kind": "sync",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+          "symbol": "followRegistry"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uvI32LPW",
+      "placement": {
+        "holder": "vKEsyHFk/Oi6SBIAM#Xymg9Rr4",
+        "alternative": "known",
+        "before": "vKEsyHFk/Oi6SBIAM#XFiY1bF6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#l5rDHunS",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#l5rDHunS",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "sendKeylessToPane"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#D9yzkvrZ",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#D9yzkvrZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "movePaneVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#vJTlDcZe",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#vJTlDcZe",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "sendToPane"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Z5pzIome",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Z5pzIome",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "arrivedOnModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
+      "field": "from",
+      "value": "vKEsyHFk#qhpG7ofG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
+      "field": "to",
+      "value": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+        "symbol": "sendToEveryClient"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
+      "field": "from",
+      "value": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/registry.ts",
+        "symbol": "sendToEveryClient"
+      }
     }
   ],
   "retiredIds": [
     "vKEsyHFk/0T9enjhi#ZWlFN4et",
     "vKEsyHFk/0T9enjhi#E7pOpTZi",
     "vKEsyHFk#GIkJuXb8",
-    "vKEsyHFk#VUcbRXzp"
+    "vKEsyHFk#VUcbRXzp",
+    "vKEsyHFk#kEIA3Iaa",
+    "vKEsyHFk#lncCBP74",
+    "vKEsyHFk#ImhHUqRg",
+    "vKEsyHFk/Oi6SBIAM#ugb7cB3Q",
+    "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
+    "vKEsyHFk/HBlhIeSD#epRLrdt6",
+    "vKEsyHFk/Oi6SBIAM#hDNka8yA",
+    "vKEsyHFk#TPbJlF5o",
+    "vKEsyHFk/Oi6SBIAM#5odPEFwu",
+    "vKEsyHFk/HBlhIeSD#WaYJBOUv",
+    "vKEsyHFk/HBlhIeSD#qRuxyaeW",
+    "vKEsyHFk#Cs9bKFjC",
+    "vKEsyHFk#41qDeU9C",
+    "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+    "vKEsyHFk/vKEsyHFk#oK9fPKdv",
+    "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
+    "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+    "vKEsyHFk/HBlhIeSD#nGUygMX9"
   ]
 }

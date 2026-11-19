@@ -2,7 +2,7 @@
 	"name": "@archboard/server-lifecycle",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Starting, finding, restarting and stopping the Archboard server, the identity-gated request that carries what a CLI invocation states, the panes on screen and the startup records the server writes to its launcher.",
+	"description": "Starting, finding, restarting and stopping the Archboard server, the identity-gated request that carries what a CLI invocation states, and what the server process does for itself: it records its pidfile and removes it only while the file still holds the record it wrote, writes one terminal startup record to its launcher, and says which code it runs.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -12,9 +12,7 @@
 	"exports": {
 		"./config": "./src/runtime/api/config.ts",
 		"./server": "./src/runtime/api/server.ts",
-		"./server-host": "./src/runtime/api/server-host.ts",
-		"./server-client": "./src/runtime/api/server-client.ts",
-		"./panes": "./src/runtime/api/panes.ts",
-		"./pane-messages": "./src/shared/api/pane-messages.ts"
+		"./server-process": "./src/runtime/api/server-process.ts",
+		"./server-client": "./src/runtime/api/server-client.ts"
 	}
 }

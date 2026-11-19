@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { vaultOrigins } from "@archboard/workspace/vault";
+import { workspaceShape } from "@archboard/workspace/shapes";
 
 const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 	z.object({
@@ -66,7 +66,7 @@ const RegisteredVaultSchema = z.discriminatedUnion("kind", [
 const AnsweredVaultSchema = z.object({
 	/** The vault directory, as its real path. */
 	path: z.string(),
-	origin: z.enum(vaultOrigins()),
+	origin: workspaceShape("vaultOrigin"),
 	/** Present only on the answer of the command that registered it. */
 	registered: RegisteredVaultSchema.optional(),
 });

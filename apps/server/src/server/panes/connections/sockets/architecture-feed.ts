@@ -2,7 +2,7 @@ import type { IncomingMessage } from "http";
 import { WebSocket, type RawData } from "ws";
 import { parseModelRequest, type ArchitectureFeedFrame } from "@archboard/model-contract";
 import { watchArchitectureModel } from "@archboard/model-store";
-import { namedVault } from "@archboard/workbench/host";
+import { resolveVault } from "@archboard/server-requests/server";
 import { frameText } from "#server/panes/connections/sockets/frame-text.ts";
 
 /**
@@ -52,7 +52,7 @@ function serveArchitectureFeed(ws: WebSocket): void {
 			return;
 		}
 		if (watching.has(vault)) return;
-		if (namedVault(vault).ok) watching.set(vault, watchArchitectureModel(vault, send));
+		if (resolveVault(vault).ok) watching.set(vault, watchArchitectureModel(vault, send));
 		else send({ type: "architecture_unavailable", vault });
 	});
 	ws.once("close", () => {

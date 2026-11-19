@@ -51,6 +51,15 @@ const failureStatuses: Partial<
 };
 
 /**
+ * The status a refused model read or write answers with.
+ * @param refusal The refusal.
+ * @returns The HTTP status.
+ */
+function refusalStatus(refusal: Extract<ArchitectureModelRead, { success: false }>): number {
+	return failureStatuses[refusal.code] ?? 422;
+}
+
+/**
  * Keep runtime results intact at the HTTP boundary.
  * @param res The outgoing HTTP response.
  * @param result The shared architecture outcome.
@@ -61,7 +70,7 @@ function respond(
 ): void {
 	res
 		.set("Cache-Control", "no-store")
-		.status(result.success ? 200 : (failureStatuses[result.code] ?? 422))
+		.status(result.success ? 200 : refusalStatus(result))
 		.json(result);
 }
 
@@ -84,4 +93,4 @@ function requestOf<O extends RequestOperation>(
 	return undefined;
 }
 
-export { requestOf, respond };
+export { refusalStatus, requestOf, respond };

@@ -6,7 +6,7 @@ import {
 	type ArchitectureHistoryRequestSchema,
 } from "#shared/protocol/canonical-history.ts";
 import { readStatesToCheck, type StateToCheck } from "#runtime/code-check/operations/states.ts";
-import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import { mergeBaseIn, readSourceRefs } from "#runtime/history-lens/operations/source-refs.ts";
 import { createLocalityEvidence } from "#runtime/history-lens/operations/locality.ts";
 import { readFootprintEvidence } from "#runtime/history-lens/operations/footprint.ts";
@@ -142,8 +142,7 @@ async function vaultMergeBase(
 	request: z.output<typeof ArchitectureFootprintRequestSchema>,
 	signal: AbortSignal | undefined,
 ): Promise<string | undefined> {
-	const own = vaultIdentity(vault);
-	const root = checkoutsReadFrom(vault).find((checkout) => checkout.repo === own)?.root;
+	const root = checkoutsReadFrom(vault).own?.root;
 	const head = request.head ?? "HEAD";
 	const range = await mergeBaseIn(root, { base: request.base, head }, { signal });
 	return range?.mergeBase;

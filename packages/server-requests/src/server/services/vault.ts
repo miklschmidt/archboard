@@ -1,0 +1,173 @@
+// The vault a call names (ADR 0049).
+//
+// One server serves several vaults and has no working directory, so it cannot
+// know which vault a call means. The call says: `?vault=<directory>` on a
+// request, or a `vault` field in its JSON body, exactly as it names its model.
+// There is no default. A call that names none is refused with how to name one,
+// and a vault the server cannot read is refused before anything is created.
+//
+// The value on the wire is the vault's own directory on this machine, as the
+// caller's configuration spells it. It is one opaque string to the caller. The
+// server turns it into the canonical path once, here, and every key it files
+// memory under uses that path, so two spellings of one directory are one vault.
+
+import fs from "node:fs";
+import path from "node:path";
+import { checkoutOfVault, placeOfVault, vaultIn } from "@archboard/workspace/vault";
+
+/** The query parameter of an upgrade that names the vault. */
+const VAULT_PARAMETER = "vault";
+
+/** Why a call's vault cannot be used. */
+interface VaultRefusal {
+	readonly status: number;
+	readonly code: "VAULT_REQUIRED" | "VAULT_UNREADABLE";
+	readonly error: string;
+}
+
+type NamedVault =
+	| { readonly ok: true; readonly vault: string }
+	| { readonly ok: false; readonly refusal: VaultRefusal };
+
+const HOW_TO_NAME =
+	"Name it: `?vault=<absolute path of the vault directory>` on the API, or a `vault` field in the " +
+	"request body. A command line finds its vault from the directory it runs in, or from `-C <dir>`.";
+
+/**
+ * The refusal for a call that named no vault.
+ * @returns The refusal, which says how to name one.
+ */
+function vaultRequiredRefusal(): VaultRefusal {
+	return {
+		status: 400,
+		code: "VAULT_REQUIRED",
+		error:
+			`This call names no vault, so there is no telling which models it means. Nothing was done. ` +
+			`${HOW_TO_NAME} There is no default vault on purpose: one server serves every vault (ADR 0049).`,
+	};
+}
+
+/** What a caller does with a readable directory in no layout. */
+const HOW_TO_LAY_OUT =
+	"The server serves only a vault at <dir>/.archboard/vault, because its agents work in <dir>. " +
+	"Move the models to <dir>/.archboard/vault and name that directory.";
+
+/**
+ * The refusal for a vault the server cannot read.
+ * @param named What the call named.
+ * @param why What is wrong with it.
+ * @param next What the caller can do next.
+ * @returns The refusal.
+ */
+function vaultUnreadableRefusal(named: string, why: string, next = HOW_TO_NAME): VaultRefusal {
+	return {
+		status: 404,
+		code: "VAULT_UNREADABLE",
+		error:
+			`The vault "${named}" is ${why}, so the server cannot read models from it. Nothing was done ` +
+			`and nothing was created. ${next}`,
+	};
+}
+
+/**
+ * Whether a path is a directory the server can reach.
+ * @param candidate An absolute path.
+ * @returns Its canonical path, or why it is not a directory.
+ */
+function directoryAt(candidate: string): { ok: true; real: string } | { ok: false; why: string } {
+	try {
+		const real = fs.realpathSync(candidate);
+		return fs.statSync(real).isDirectory()
+			? { ok: true, real }
+			: { ok: false, why: "not a directory" };
+	} catch {
+		return { ok: false, why: "no such directory" };
+	}
+}
+
+/**
+ * The vault a call names, made canonical, or why it cannot be used.
+ *
+ * Read only: a path that is not a directory is refused here and never made one.
+ * @param raw What the call stated: the vault's absolute directory, or nothing.
+ * @returns The canonical vault, or the refusal.
+ */
+function namedVault(raw: unknown): NamedVault {
+	if (typeof raw !== "string" || raw.trim() === "") {
+		return { ok: false, refusal: vaultRequiredRefusal() };
+	}
+	if (!path.isAbsolute(raw)) {
+		return {
+			ok: false,
+			refusal: vaultUnreadableRefusal(raw, "not an absolute path"),
+		};
+	}
+	const found = directoryAt(raw);
+	if (!found.ok) {
+		return { ok: false, refusal: vaultUnreadableRefusal(raw, found.why) };
+	}
+	// The server serves only a vault in the layout: a workhorse works in the directory that holds
+	// the vault (ADR 0050), and a directory in no layout has none. A real directory is in the layout
+	// when it is the vault of the directory that would hold it.
+	return vaultIn(checkoutOfVault(found.real)) === found.real
+		? { ok: true, vault: found.real }
+		: {
+				ok: false,
+				refusal: vaultUnreadableRefusal(
+					raw,
+					"not the .archboard/vault of a directory",
+					HOW_TO_LAY_OUT,
+				),
+			};
+}
+
+/**
+ * A readable vault for a pane whose own vault cannot be read.
+ * @param raw The absolute vault the pane named.
+ * @returns The vault it is put in, or null when there is none to put it in.
+ */
+function placeInstead(raw: string): NamedVault | null {
+	const home = namedVault(placeOfVault(path.resolve(raw)).home);
+	return home.ok ? home : null;
+}
+
+/**
+ * The vault an upgrade puts its pane in, or why it can put the pane in none.
+ *
+ * A socket names the vault its pane was in, and that vault can be gone, as a
+ * removed worktree is, when the pane comes back. An upgrade is where the server
+ * places a pane, and the server is the one that moves a pane between vaults
+ * (ADR 0050), so such a pane is put in the vault of its repository's chosen
+ * checkout while the registry still knows the checkout. Its first message says
+ * where it is. Otherwise the upgrade is refused, as one that names no vault is:
+ * no other repository takes the pane in, and a reload offers the chooser.
+ * @param url The upgrade request's URL, whose `?vault=` names the vault.
+ * @returns The canonical vault, or the refusal.
+ */
+function vaultOfUpgrade(url: string | undefined): NamedVault {
+	const raw = new URL(url ?? "/", "http://localhost").searchParams.get(VAULT_PARAMETER);
+	const named = namedVault(raw);
+	if (named.ok || raw === null || !path.isAbsolute(raw)) {
+		return named;
+	}
+	return placeInstead(raw) ?? named;
+}
+
+/**
+ * The vault a call names, made canonical, or the refusal that says how to name one (ADR 0049).
+ *
+ * A request states its vault: the value of its `?vault=` or of the `vault` field of its body,
+ * which the caller reads, the query first. A socket upgrade is tagged by its URL, and only an
+ * upgrade recovers a vault that is gone by putting its pane in the vault of its repository's
+ * chosen checkout.
+ * @param named What a request stated, null when it stated nothing a vault can be, or the URL of
+ *   a socket upgrade.
+ * @returns The canonical vault, or the refusal.
+ */
+function resolveVault(named: string | null | { readonly upgrade: string | undefined }): NamedVault {
+	return named !== null && typeof named === "object"
+		? vaultOfUpgrade(named.upgrade)
+		: namedVault(named);
+}
+
+export { resolveVault };
