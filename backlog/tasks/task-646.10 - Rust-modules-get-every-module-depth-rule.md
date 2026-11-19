@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T03:01:00Z'
+updated_date: '2026-11-19T03:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,4 +80,26 @@ Evidence:
 - archboard check on this repository against feat/module-depth's code-intel: new on Rust crates only (24 modules): EXPOSED_UNUSED warning 1373 names on 24 modules, EXPOSED_VALUE warning 174 on 7, EXPOSED_VALUE_COMPUTED warning 16 on 4, CODE_PASS_THROUGH information 41 on 13, REEXPORT_PASS_THROUGH information 66 on 4 and warning 4 on 2; the container-level EXPOSED_UNUSED information on those 24 modules is gone. No MODULE_SHALLOW on a Rust module. Nothing new on a module this ticket changes.
 - check code --fail-shallow-modules --base feat/module-depth: touched Packages, Code check, code-intel, Fact analysis; no MODULE_SHALLOW on them (only Repositories, untouched, information); exit 1 on pre-existing warnings.
 - Footprint --fail-outside exits 1: namedAndChanged Code check (module-reading.ts: a whole-module Rust import leaves the read complete), Module depth (rust added to the judged tables, 4 lines), Fact analysis (slice); changedNotNamed code-intel (test files) and Packages (holder). Unbound: CONTEXT.md, design lens, check help (Commands).
+
+Footprint after the docs: changedNotNamed also Commands (check help names Rust associated items) and Agent CLI (its holder). The merge of TASK-646.11 brought calledByLanguage and static; Rust uses both in place of a field of its own.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rust modules now get every module-depth rule: their exports are counted by kind and judged one name at a time, like TypeScript, Python, Go and C#.
+
+What changed:
+- Fact analysis (Rust): rust.scm captures @logic (calls, macro calls, operators, conditions, match arms, loops, ?), counted outside #[cfg(test)]. rust-definitions marks a trait, type alias and associated type as types; a const or static of a function pointer type as a function; an associated function (no self) or constant as static, so it is an export of its own read through the type; and the members of an impl of a trait the language's syntax calls (Drop, Deref, Display and the fmt traits, operators, comparison, Iterator, Future, Fn*) as calledByLanguage. A struct, enum or union is a class with its public methods; trait-impl methods count as methods and are never judged unused.
+- rust-depth.ts: Rust's math table and the pass-through reader (a body of one call that hands on parameters or self, borrowed or not; root of the path or field chain).
+- The adapter names the math around each run-time path no local hides, spelled as its references spell it (timing::PROCESS is timing.PROCESS).
+- Shared math reader (math-shapes.ts, small change): optional method-style math (a.min(b) is min(a, b), receiver first), a regex group naming the function (std::cmp::min and u64::pow are min and pow), a number suffix (2u64 is 2), and a use spelling hook. Other languages' shapes are unchanged.
+- Module depth: rust joins the judged adapters (4 lines). Code check: a whole-module import (use crate::timing;, mod timing;) leaves a Rust read complete, since Rust reaches a module's names only by writing them.
+- Docs: CONTEXT.md Export kind, design lens, check help.
+
+Verification: new rust-depth test (kinds, logic, uses, math across .min and std::cmp::min with locals, pass-throughs, trait impl and Drop); rust-check test now expects per-name findings; test:modules 5171 pass, types, lint, format clean.
+
+Surfaced on modules this ticket does not change (this repository's Rust crates): EXPOSED_UNUSED warning on 24 modules (1373 names, mostly crate items exported from the crate root and used only inside the crate), EXPOSED_VALUE warning on 7 (174), EXPOSED_VALUE_COMPUTED warning on 4 (16), REEXPORT_PASS_THROUGH warning on 2 (4) and information on 4 (66), CODE_PASS_THROUGH information on 13 (41). The container-level EXPOSED_UNUSED information on those 24 is gone. No MODULE_SHALLOW on a Rust module.
+
+Risks / follow-ups: names used only inside macro_rules bodies (::x) are not seen as uses, so they can read as unused. Footprint exits 1 on Code check (whole-module imports), Commands (check help) and code-intel (tests), with their holders.
+<!-- SECTION:FINAL_SUMMARY:END -->
