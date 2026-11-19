@@ -4,10 +4,11 @@ title: Math that callers repeat on an export is a finding
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
-  - TASK-646.05
+  - TASK-646.15
 parent_task_id: TASK-646
 type: feature
 ordinal: 1092000
