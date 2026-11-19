@@ -3,14 +3,14 @@ import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type {
 	ActivityItem,
 	ActivityRun as Run,
 } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import { ActivityRun } from "#ui/workbench-client/thread/components/ActivityRun.tsx";
 
-const { decoder } = createIdentityAuthorities().identity;
+const { decoder } = testAuthorities().identity;
 
 let root: Root;
 beforeAll(() => {

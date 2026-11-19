@@ -50,7 +50,7 @@ type RoutableFrame = Exclude<
 >;
 
 interface InboundRouterOptions {
-	readonly identity: () => IdentityAuthority;
+	readonly identity: IdentityAuthority;
 	readonly state: () => "open" | "closing" | "closed";
 	readonly pendingRequests: Map<string, PendingRequest>;
 	readonly tombstones: Map<string, RequestTombstone>;
@@ -270,8 +270,8 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 		try {
 			const notification = cloneAndFreeze(body.value);
 			const correlation = Object.freeze({
-				child: options.identity().validator.childId,
-				epoch: options.identity().validator.epoch,
+				child: options.identity.validator.childId,
+				epoch: options.identity.validator.epoch,
 				requestId: null,
 			});
 			options.emitServerNotification(Object.freeze({ correlation, notification }));

@@ -12,7 +12,7 @@ import type {
 } from "#shared/browser/schemas/snapshot.ts";
 import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { WorkbenchApprovalsInput } from "#ui/approvals/state/contracts.ts";
 import type {
 	ApprovalCommandDraft,
@@ -26,7 +26,7 @@ import type {
 	WorkbenchTransportState,
 } from "#ui/approvals/state/transport-port.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const authority = authorities.identity;
 const model = createCodexBrowserModel(authorities);
 

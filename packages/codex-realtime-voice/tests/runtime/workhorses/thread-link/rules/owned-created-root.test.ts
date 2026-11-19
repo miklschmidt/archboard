@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	classifyCodexThreadLink,
 	currentEpoch,
@@ -17,7 +17,7 @@ async function withFixture<T>(
 	options: RealEpochOptions,
 	action: (fixture: RealEpochFixture) => Promise<T>,
 ): Promise<T> {
-	const fixture = realEpochFixture(createIdentityAuthorities().identity, options);
+	const fixture = realEpochFixture(testAuthorities().identity, options);
 	try {
 		return await action(fixture);
 	} finally {
@@ -226,9 +226,7 @@ describe("owned roots with incomplete history metadata", () => {
 						},
 						{
 							...target,
-							...(mode === "stale"
-								? { epoch: createIdentityAuthorities().identity.validator.epoch }
-								: {}),
+							...(mode === "stale" ? { epoch: testAuthorities().identity.validator.epoch } : {}),
 						},
 					);
 					expect(result.link.state).toBe("inspect_only");

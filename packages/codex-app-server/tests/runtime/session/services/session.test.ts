@@ -1,8 +1,6 @@
 import {
-	codexSessionControl,
 	CodexSessionError,
 	CodexSessionMutationError,
-	type ControlledCodexSession,
 	type SessionLoginParams,
 } from "#runtime/session/services/session-api.ts";
 import { describe, expect, test } from "bun:test";
@@ -52,7 +50,7 @@ describe("typed Codex session", () => {
 			expect(fixture.events).toEqual([]);
 			expect(fixture.transport.reverseResponses).toEqual([]);
 		} finally {
-			codexSessionControl(fixture.session as ControlledCodexSession).dispose();
+			fixture.control.dispose();
 			fixture.close();
 		}
 	});

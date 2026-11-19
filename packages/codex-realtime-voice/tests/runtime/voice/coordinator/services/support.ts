@@ -21,10 +21,8 @@ import {
 	reviewedCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { createCodexCoordinator } from "#runtime/voice/coordinator/services/coordinator.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthority,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthority } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { FakeEpoch } from "#tests/runtime/voice/coordinator/services/fake-epoch.ts";
 
@@ -336,7 +334,7 @@ interface Fixture {
 }
 
 function fixture(options: FixtureOptions = {}): Fixture {
-	const authority = createIdentityAuthorities().identity;
+	const authority = testAuthorities().identity;
 	const modelValue = options.model ?? coordinatorModel();
 	const epoch = new FakeEpoch(
 		authority,

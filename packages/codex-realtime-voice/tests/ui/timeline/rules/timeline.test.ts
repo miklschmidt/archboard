@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test";
 
 import type { BrowserTimeline } from "#shared/browser/schemas/snapshot.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	conversationTurnId,
 	mergeConversation,
 	projectTimelineTurns,
 } from "#ui/timeline/rules/projection.ts";
 
-const { decoder } = createIdentityAuthorities().identity;
+const { decoder } = testAuthorities().identity;
 const threadId = decoder.adoptThreadId("thread-timeline");
 const coordinatorThreadId = decoder.adoptThreadId("thread-coordinator");
 

@@ -3,10 +3,8 @@ import { expect, test } from "bun:test";
 
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import {
 	type BrowserProjectionInput,
@@ -85,7 +83,7 @@ function compileReadonlyTimeline(view: CodexTimelineProjectionInput): void {
 void compileReadonlyTimeline;
 
 test("timeline projection maps every owner arm with its evidence and omits private extensions", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const input = projectionInput(authorities);
 	const decoder = authorities.identity.decoder;
@@ -373,7 +371,7 @@ test("timeline projection maps every owner arm with its evidence and omits priva
 });
 
 test("settings projection closes loose nested records and refuses secrets", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const input = projectionInput(authorities);
 	const settings = {

@@ -1,12 +1,9 @@
 import {
-	codexSessionControl,
-	type ControlledCodexSession,
-	createCodexSession,
-} from "@archboard/codex-app-server/session";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-} from "@archboard/codex-app-server/identity";
+	openCodexSession,
+	type CodexConnection,
+	type CodexSessionControl,
+} from "@archboard/codex-app-server/connection";
+import { testConnection } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexWorkbenchSessions } from "#server/sessions/services/sessions.ts";
 import { type CodexWorkbenchComponentFactories } from "#server/generation/protocol/contract.ts";
 import {
@@ -40,8 +37,11 @@ export type NotificationListener = Parameters<
 >[0];
 
 export interface CodexWorkbenchGenerationFixture {
-	readonly identityLedger: ReturnType<typeof createIdentityLedger>;
+	/** The connection the fixture's generation runs over, with the fake transport. */
+	readonly connection: CodexConnection;
 	readonly components: CodexWorkbenchComponents;
+	/** The control of the fixture's session, whose dispose is recorded. */
+	readonly sessionControl: CodexSessionControl;
 	/** The owners of the one tab session the fixture opens, as a connecting chat would. */
 	readonly sessionComponents: CodexWorkbenchSessionComponents;
 	/** That session, open from the start. */
@@ -60,8 +60,8 @@ export interface CodexWorkbenchGenerationFixture {
 export function createCodexWorkbenchGenerationFixture(
 	events: string[],
 ): CodexWorkbenchGenerationFixture {
-	const identityLedger = createIdentityLedger("codex");
-	const identity = createIdentityAuthorities(identityLedger);
+	const minted = testConnection();
+	const identity = minted.identity;
 	const exitListeners = new Set<ExitListener>();
 	const requestListeners: RequestListener[] = [];
 	const notificationListeners: NotificationListener[] = [];
@@ -83,7 +83,6 @@ export function createCodexWorkbenchGenerationFixture(
 		close: () => void events.push("epoch:close"),
 	} satisfies CodexWorkbenchComponents["epoch"];
 	const transport = {
-		replaceIdentity: () => undefined,
 		request: async () => {
 			throw new Error("The generation fixture does not issue transport requests.");
 		},
@@ -145,34 +144,33 @@ export function createCodexWorkbenchGenerationFixture(
 			}
 		},
 	} satisfies CodexWorkbenchComponents["transport"];
-	const baseSession = createCodexSession({
+	const connection: CodexConnection = {
+		child: minted.child,
+		epoch: minted.epoch,
+		identity,
 		transport,
-		identity: identity.identity,
+	};
+	const opened = openCodexSession(connection, {
 		storage: {
 			codexHome: "/fixture/codex-home",
 			sqliteHome: "/fixture/sqlite-home",
 			configPath: "/fixture/codex-home/config.toml",
 		},
 		workingDirectory: "/fixture/coordinator",
-		listenerOwnership: "composition",
 	});
-	// The control's key stays private to the session package: find it on the session it made.
-	const [controlKey] = Object.getOwnPropertySymbols(baseSession) as [
-		Extract<keyof ControlledCodexSession, symbol>,
-	];
 	const session = {
-		...baseSession,
+		...opened.session,
 		respondCurrentTime: async (value: { readonly method: string }) =>
 			void events.push(`session:${value.method}`),
 		respondUnsupportedTokenRefresh: async (value: { readonly method: string }) =>
 			void events.push(`session:${value.method}`),
 		respondUnsupportedAttestation: async (value: { readonly method: string }) =>
 			void events.push(`session:${value.method}`),
-		[controlKey]: {
-			...codexSessionControl(baseSession),
-			dispose: () => void events.push("session:dispose"),
-		},
-	} satisfies ControlledCodexSession;
+	} satisfies CodexWorkbenchComponents["session"];
+	const sessionControl: CodexSessionControl = {
+		...opened.control,
+		dispose: () => void events.push("session:dispose"),
+	};
 	const threadLink = {
 		classify: async () => unavailable("threadLink.classify"),
 		classifyAndBind: async () => unavailable("threadLink.classifyAndBind"),
@@ -324,7 +322,11 @@ export function createCodexWorkbenchGenerationFixture(
 		identity: factory("identity", () => components.identity),
 		epoch: factory("epoch", () => components.epoch),
 		transport: factory("transport", () => components.transport),
-		session: factory("session", () => components.session),
+		session: () => {
+			calls.set("session", (calls.get("session") ?? 0) + 1);
+			events.push("create:session");
+			return { session: components.session, control: sessionControl };
+		},
 		threadLink: factory("threadLink", () => components.threadLink),
 		approvals: factory("approvals", () => currentApprovals),
 		dynamicTools: factory("dynamicTools", () => components.dynamicTools),
@@ -357,8 +359,9 @@ export function createCodexWorkbenchGenerationFixture(
 	};
 
 	return {
-		identityLedger,
+		connection,
 		components,
+		sessionControl,
 		sessionComponents,
 		tabSession,
 		claimedThread,

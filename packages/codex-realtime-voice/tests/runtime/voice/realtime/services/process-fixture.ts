@@ -14,22 +14,21 @@ import {
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
 } from "#runtime/voice/realtime/services/contract.ts";
-import { createCodexSession, type CodexSession } from "@archboard/codex-app-server/session";
+import type { CodexSession } from "@archboard/codex-app-server/session";
+import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import {
-	createCodexTransport,
-	type CodexTransport,
-	type CodexTransportOptions,
-} from "@archboard/codex-app-server/transport";
+	openCodexConnection,
+	openCodexSession,
+	type CodexConnectionOptions,
+} from "@archboard/codex-app-server/connection";
 import {
-	createIdentityAuthorities,
-	createIdentityLedger,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
 } from "@archboard/codex-app-server/identity";
 import type { RealtimeSemanticEvent } from "#shared/protocol/realtime-contract.ts";
 
-type CodexTransportChild = CodexTransportOptions["child"];
+type CodexTransportChild = CodexConnectionOptions["child"];
 
 const repoRoot = resolve(import.meta.dir, "../../../../../../..");
 /**
@@ -234,7 +233,8 @@ async function createHarness(
 	const unsubscribeChild = owner.onChild((child) => {
 		bridge = new PublicChildBridge(child);
 		bridgeExitForwarded = false;
-		const identity = createIdentityAuthorities(createIdentityLedger(HOST_RECORD_PREFIX)).identity;
+		const connection = openCodexConnection({ child: bridge, recordPrefix: HOST_RECORD_PREFIX });
+		const identity = connection.identity.identity;
 		const binding = makeBinding(identity);
 		writeControl(
 			controlPath,
@@ -244,10 +244,8 @@ async function createHarness(
 		const readyState = { settled: false };
 		let adapter!: CodexRealtimeAdapter;
 		bridge.stdout.prependOnceListener("end", () => bridge?.emit("exit", null, null));
-		const transport = createCodexTransport({ child: bridge, identity });
-		const session = createCodexSession({
-			transport,
-			identity,
+		const transport = connection.transport;
+		const { session, control } = openCodexSession(connection, {
 			storage: {
 				codexHome: join(root, "storage/codex-home"),
 				sqliteHome: join(root, "storage/sqlite-home"),
@@ -257,6 +255,8 @@ async function createHarness(
 			lifecycle: child.lifecycle,
 			onNotification: (event) => adapter.onNotification(event),
 		});
+		transport.onServerNotification(control.onNotification);
+		transport.onServerRequest(control.onServerRequest);
 		const generation = {
 			identity,
 			binding,

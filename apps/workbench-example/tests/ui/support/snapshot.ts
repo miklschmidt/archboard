@@ -1,4 +1,4 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/ui/support/codex-connection.ts";
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
@@ -13,7 +13,7 @@ const IDLE_SPOKEN_APPROVAL: BrowserSnapshot["spokenApproval"] = Object.freeze({
 	reason: null,
 });
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const model = createCodexBrowserModel(authorities);
 const { decoder, issuer, validator } = authorities.identity;
 const thread = decoder.adoptThreadId("example-workhorse");

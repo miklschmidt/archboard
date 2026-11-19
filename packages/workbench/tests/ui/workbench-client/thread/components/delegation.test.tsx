@@ -4,13 +4,13 @@ import { AssistantRuntimeProvider, useExternalStoreRuntime } from "@assistant-ui
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import { mergeConversation } from "@archboard/codex-realtime-voice/controllers";
 import { type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 import { Conversation } from "#ui/workbench-client/thread/components/Conversation.tsx";
 
-const { decoder } = createIdentityAuthorities().identity;
+const { decoder } = testAuthorities().identity;
 
 let root: Root;
 /** The elements the page was asked to scroll into view, in order. */

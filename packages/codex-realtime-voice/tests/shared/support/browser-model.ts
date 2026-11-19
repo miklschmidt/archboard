@@ -1,11 +1,11 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserCommand, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
 // The queue carries a server OperationId, so the fixture model needs the complete
 // authority pair rather than the identity half alone.
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const authority = authorities.identity;
 const model = createCodexBrowserModel(authorities);
 const childId = model.ChildIdSchema.parse(authority.validator.childId);

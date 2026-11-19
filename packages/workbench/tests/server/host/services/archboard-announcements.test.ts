@@ -14,7 +14,7 @@ import {
 	paneAnnouncement,
 } from "#server/host/services/archboard-announcements.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { CoordinatorCallbackCanvas } from "#runtime/coordinator-callbacks/protocol/contract.ts";
 
 // What Archboard announces of a model change and of a pane report (TASK-293, TASK-293.06,
@@ -24,7 +24,7 @@ import type { CoordinatorCallbackCanvas } from "#runtime/coordinator-callbacks/p
 const TAB = parseTabSessionId("tab-1")!;
 const NULL_OPERATION = { id: null, kind: null, rpc: null, outcome: null } as const;
 
-const { identity } = createIdentityAuthorities();
+const { identity } = testAuthorities();
 
 /** One model, one pane, read under one workhorse. */
 const INPUT: SemanticContextInput = {

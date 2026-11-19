@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { AgentSetupSnapshot } from "#ui/agent-setup/state/setup.ts";
 import type { HeldMessage } from "#ui/agent-setup/state/held.ts";
 import { agentStatus } from "#ui/workbench-client/dock/rules/agent-status.ts";
 import type { AgentView } from "#ui/workbench-client/surfaces/state/contracts.ts";
 import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
-const { decoder } = createIdentityAuthorities().identity;
+const { decoder } = testAuthorities().identity;
 const threadId = decoder.adoptThreadId("thread-status");
 
 const READY: AgentSetupSnapshot = {

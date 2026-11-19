@@ -3,7 +3,8 @@
 
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
+import { type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId, workhorseLinkKey } from "#server/tab-session/rules/tab-session.ts";
 import {
 	clearServerThreadContextForLease,
@@ -44,7 +45,7 @@ function readyCoordinator(starts: string[] = []) {
 }
 
 test("create replaces controller authority with the exact returned CAS proof", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-exact");
 	const operationId = authorities.operation.issuer.mintOperationId();
 	const link = (revision: number) =>
@@ -129,7 +130,7 @@ test("create replaces controller authority with the exact returned CAS proof", a
 });
 
 test("a stale browser disconnect token cannot clear a newer controller binding", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-current");
 	const binding = {
 		linkKey: "link-1",
@@ -157,7 +158,7 @@ test("a stale browser disconnect token cannot clear a newer controller binding",
 });
 
 test("two chats of a tab creating at once leave one workhorse: the later create is refused before thread/start", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-winner");
 	const operationId = authorities.operation.issuer.mintOperationId();
@@ -278,10 +279,7 @@ test("two chats of a tab creating at once leave one workhorse: the later create 
  * @param threadId The conversation the chat holds, or null.
  * @returns The context.
  */
-function createContext(
-	authorities: ReturnType<typeof createIdentityAuthorities>,
-	threadId: ThreadId | null,
-) {
+function createContext(authorities: ReturnType<typeof testAuthorities>, threadId: ThreadId | null) {
 	const { childId, epoch } = authorities.identity.validator;
 	return {
 		browserId: "browser-A",
@@ -301,7 +299,7 @@ function createContext(
 }
 
 test("a create whose coordinator cannot start is refused with its reason and starts no workhorse", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const reason = "Coordinator model selection failed.";
 	const failed = { state: "failed", reason } as const;
 	const workhorseStarts: unknown[] = [];
@@ -337,7 +335,7 @@ test("a create whose coordinator cannot start is refused with its reason and sta
 });
 
 test("a new conversation keeps the tab's coordinator and readies it before its workhorse starts", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-old");
 	const starts: string[] = [];
@@ -368,7 +366,7 @@ test("a new conversation keeps the tab's coordinator and readies it before its w
 });
 
 test("a new conversation gives up the workhorse thread the old one ran on once the new one is linked", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const adopt = (raw: string) => authorities.identity.decoder.adoptThreadId(raw);
 	const [left, fresh] = [adopt("thread-left"), adopt("thread-fresh")];
@@ -411,7 +409,7 @@ test("a new conversation gives up the workhorse thread the old one ran on once t
 });
 
 test("work given to a checkout starts its workhorse when its link cannot run turns, and only then, leaving the coordinator that gave it alone", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { childId, epoch } = authorities.identity.validator;
 	const threadId = authorities.identity.decoder.adoptThreadId("thread-started");
 	const cas = { revision: 1, linkKey: KEY, childId, epoch, threadId };

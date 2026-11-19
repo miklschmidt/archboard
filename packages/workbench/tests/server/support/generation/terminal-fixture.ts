@@ -1,13 +1,13 @@
 import type { CodexWaitGraph } from "#runtime/voice/protocol/extension.ts";
 import type { DynamicWaitOwner } from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
 import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createServerDynamicLifecycleOwner } from "#server/generation/services/operation-lifecycle.ts";
 
 /** One current child plus one foreign child, with their wire spellings. */
 function identities() {
-	const identity = createIdentityAuthorities();
-	const foreign = createIdentityAuthorities();
+	const identity = testAuthorities();
+	const foreign = testAuthorities();
 	const thread = identity.identity.decoder.adoptThreadId("thread-current");
 	const turn = identity.identity.decoder.adoptTurnId("turn-current");
 	const call = identity.identity.decoder.adoptDynamicToolCallId("call-current");

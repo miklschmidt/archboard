@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
 
-const { decoder } = createIdentityAuthorities().identity;
+const { decoder } = testAuthorities().identity;
 const threadId = decoder.adoptThreadId("thread-messages");
 
 type Item = ConversationTurn["items"][number];

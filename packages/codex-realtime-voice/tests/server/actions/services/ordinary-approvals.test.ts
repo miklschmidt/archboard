@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import {
 	type BrowserActionContext,
@@ -18,7 +18,7 @@ import {
 
 for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
 	test(`ordinary approval actions preserve the broker ${outcome} outcome`, async () => {
-		const identity = createIdentityAuthorities().identity;
+		const identity = testAuthorities().identity;
 		const broker = createCodexApprovalBroker({
 			identity,
 			transport: {
@@ -83,7 +83,7 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 }
 
 test("the tab session's end settles its approvals; a disconnect does not", async () => {
-	const identity = createIdentityAuthorities();
+	const identity = testAuthorities();
 	const tabSessionId = parseTabSessionId("tab-one")!;
 	const threadId = identity.identity.decoder.adoptThreadId("thread-ending");
 	const { approvals, gateway, responses } = createApprovalGateway(identity, tabSessionId, threadId);

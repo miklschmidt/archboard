@@ -6,7 +6,7 @@ import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-app
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,
@@ -17,7 +17,7 @@ import {
 } from "#ui/transport/state/contract.ts";
 import type { WorkbenchComposerTransport } from "#ui/composer/state/contract.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const authority = authorities.identity;
 const model = createCodexBrowserModel(authorities);
 

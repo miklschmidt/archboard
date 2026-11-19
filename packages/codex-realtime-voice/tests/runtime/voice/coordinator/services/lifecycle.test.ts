@@ -14,7 +14,7 @@ import {
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	WORKING_DIRECTORY,
 	coordinatorModel,
@@ -79,7 +79,7 @@ describe("coordinator lifecycle", () => {
 
 	test("starts the exact capable coordinator and records effective preserved settings", async () => {
 		const fixtureValue = fixture({
-			staleNotificationAuthority: createIdentityAuthorities().identity,
+			staleNotificationAuthority: testAuthorities().identity,
 		});
 		const snapshot = await ready(fixtureValue);
 		const coordinatorPersistence = persistence(snapshot);

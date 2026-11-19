@@ -6,5 +6,5 @@ export type {
 	CodexProcessOptions,
 	CodexProcessSnapshot,
 } from "#runtime/processes/process-contract.ts";
-export { createCodexProcess } from "#runtime/processes/process.ts";
+export { createCodexProcess } from "#runtime/processes/process-owner.ts";
 export { CodexExecutableError, resolveCodexExecutable } from "#runtime/services/executable.ts";

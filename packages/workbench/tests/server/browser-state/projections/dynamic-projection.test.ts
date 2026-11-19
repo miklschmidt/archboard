@@ -4,10 +4,10 @@ import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/author
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 import {
-	createIdentityAuthorities,
 	IdentityValidationError,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectDynamicApproval } from "#server/browser-state/projections/dynamic-approval-projection.ts";
 import {
 	type DynamicApprovalOwnerRequest,
@@ -222,7 +222,7 @@ function projectApprovals(
 }
 
 test("the projection closes all three dynamic approval presentations", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const owners = ownerViews(authorities);
 	const projected = projectApprovals(authorities, owners);
 	expect(projected.map((approval) => approval.effect.tool)).toEqual([
@@ -299,7 +299,7 @@ test("the projection closes all three dynamic approval presentations", () => {
 });
 
 test("self-fork projection keeps the requested and effective boundaries distinct", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const owner = selfForkOwner(authorities);
 	const effect = projectApprovals(authorities, [owner])[0]?.effect;
 	if (effect?.tool !== "fork_thread") {
@@ -313,10 +313,10 @@ test("self-fork projection keeps the requested and effective boundaries distinct
 });
 
 test("effective fork boundaries refuse canonical wrong-domain and unissued identities", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const owner = ownerViews(authorities)[1]!;
-	const foreignAuthorities = createIdentityAuthorities();
+	const foreignAuthorities = testAuthorities();
 	const boundaries = [
 		{
 			value: String(authorities.identity.decoder.adoptThreadId("wrong-boundary-domain")),

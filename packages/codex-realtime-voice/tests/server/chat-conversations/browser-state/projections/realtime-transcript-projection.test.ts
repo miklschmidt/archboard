@@ -11,12 +11,8 @@ import {
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
 
-import {
-	createIdentityAuthorities,
-	type ChildEpoch,
-	type ChildId,
-	type ThreadId,
-} from "@archboard/codex-app-server/identity";
+import { type ChildEpoch, type ChildId, type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import { type BrowserProjectionInput } from "#server/projection/protocol/projection-contract.ts";
 
@@ -25,7 +21,7 @@ const COORDINATOR_THREAD = "projection-coordinator-thread";
 const TRANSCRIPT_ITEM = "controlled-user-transcript";
 
 test("raw realtime transcript identities publish as canonical browser items", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const identity = authorities.identity;
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [LINKED_THREAD, COORDINATOR_THREAD],

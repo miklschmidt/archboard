@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import type { Clock } from "@archboard/timing";
-import { createIdentityAuthorities, type TurnId } from "@archboard/codex-app-server/identity";
+import { type TurnId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	guardWorkhorse,
 	refuseWhileStopping,
@@ -19,7 +20,7 @@ import type { BuiltWorkhorse } from "#server/generation/protocol/session-contrac
 /** The most threads a stop report names: what the result schema of `stop_workhorses` holds. */
 const REMAINING_WORK_LIMIT = 100;
 
-const { identity } = createIdentityAuthorities();
+const { identity } = testAuthorities();
 const { decoder } = identity;
 /**
  * The wire spelling of an identity, which keys the fake Codex.

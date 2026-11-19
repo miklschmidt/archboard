@@ -1,17 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	createIdentityAuthorities,
-	type JsonRpcRequestId,
-	type OperationId,
-} from "@archboard/codex-app-server/identity";
+import { type JsonRpcRequestId, type OperationId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { rejected } from "#tests/runtime/workhorses/workhorse-operations/operations/evidence.ts";
 import { useFixtureGroup } from "#tests/runtime/workhorses/workhorse-operations/operations/fixture-group.ts";
 import {
 	fixture as standaloneFixture,
 	turn,
 } from "#tests/runtime/workhorses/workhorse-operations/operations/support.ts";
-import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
 
 const fixture = useFixtureGroup();
 
@@ -85,16 +81,15 @@ describe("workhorse server-issued operation identity", () => {
 	});
 
 	test("rejects cross-domain, unissued, and stale identities before an effect", async () => {
-		const base = createIdentityAuthorities();
-		const staleOperation = base.operation.issuer.mintOperationId();
-		const current = restoreIdentityAuthorities({
-			childId: base.identity.validator.childId,
-			epoch: base.identity.issuer.mintChildEpoch(),
-		});
-		const unissued = restoreIdentityAuthorities({
-			childId: current.identity.validator.childId,
-			epoch: current.identity.validator.epoch,
-		}).operation.issuer.mintOperationId();
+		const current = testAuthorities();
+		// An operation id is `<prefix>:operation:<child>.<epoch>.<nonce>`: forge one of a prior
+		// epoch of the same child, and one of the current epoch that was never issued.
+		const issued = current.operation.issuer.mintOperationId();
+		const staleOperation = issued.replace(
+			/\.[^.]+\.([^.]+)$/u,
+			".h44444444444444444444444444444444.$1",
+		) as OperationId;
+		const unissued = issued.replace(/[^.]+$/u, "h55555555555555555555555555555555") as OperationId;
 		const value = standaloneFixture("idle", current);
 		try {
 			const crossDomain = value.identity.decoder.adoptJsonRpcRequestId("wrong-domain");

@@ -1,4 +1,4 @@
-// The app-server session: creating it, its options and control symbol, the decoded results of a session request, and the schemas that validate what a caller sends it.
+// The app-server session: its options, the decoded results of a session request, and the schemas that validate what a caller sends it.
 export {
 	isQueuedSubmission,
 	parseCodexServerResponse,
@@ -22,16 +22,13 @@ export type {
 	SessionTurn,
 } from "#runtime/session/schemas/session-responses.ts";
 export {
-	codexSessionControl,
 	codexSessionThreadSource,
 	CodexSessionMutationError,
 } from "#runtime/session/services/session-api.ts";
 export type {
 	CodexSession,
 	CodexSessionOptions,
-	ControlledCodexSession,
 	SessionLoginParams,
 	SessionNotificationHandler,
 	SessionParams,
 } from "#runtime/session/services/session-api.ts";
-export { createCodexSession } from "#runtime/session/services/session.ts";

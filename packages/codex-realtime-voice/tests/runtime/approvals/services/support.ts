@@ -8,11 +8,11 @@ import {
 type ApprovalResponsePort = CodexApprovalBrokerOptions["transport"];
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
 import {
-	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	type HumanApprovalMethod,
 	type ReverseResponse,
@@ -128,7 +128,7 @@ export function testBroker(
 	readonly port: FakeApprovalPort;
 	readonly broker: CodexApprovalBroker;
 } {
-	const identity = createIdentityAuthorities().identity;
+	const identity = testAuthorities().identity;
 	const port = new FakeApprovalPort(mode);
 	const broker = createCodexApprovalBroker({ ...input, identity, transport: port });
 	return { identity, port, broker };

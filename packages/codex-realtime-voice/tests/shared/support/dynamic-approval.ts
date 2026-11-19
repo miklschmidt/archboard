@@ -1,4 +1,4 @@
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type {
 	BrowserDynamicApproval,
@@ -9,7 +9,7 @@ import type {
 	DynamicApprovalRequest,
 } from "#shared/dynamic-approval/schemas/approval.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const model = createCodexBrowserModel(authorities);
 const child = model.ChildIdSchema.parse(authorities.identity.validator.childId);
 const epoch = model.ChildEpochSchema.parse(authorities.identity.validator.epoch);

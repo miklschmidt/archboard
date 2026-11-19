@@ -33,7 +33,7 @@ import type {
 import { encodingError } from "#runtime/transport/operations/frame-lines.ts";
 
 interface OutboundOperationsOptions {
-	readonly identity: () => IdentityAuthority;
+	readonly identity: IdentityAuthority;
 	readonly state: () => "open" | "closing" | "closed";
 	readonly pendingRequests: Map<string, PendingRequest>;
 	readonly removeQueuedJob: (job: FrameWriterJob<WriteJob>) => boolean;
@@ -265,7 +265,7 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 		if (options.state() !== "open") return Promise.reject(closedError());
 		const backpressure = capacityRefusal();
 		if (backpressure) return Promise.reject(backpressure);
-		const identity = options.identity();
+		const identity = options.identity;
 		const wireId = identity.issuer.mintJsonRpcRequestId();
 		const encoded = encodeFrame(
 			{

@@ -8,10 +8,8 @@ import type {
 	TransportServerRequest,
 } from "@archboard/codex-app-server/transport";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthority,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthority } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import { type BrowserProjectionInput } from "#server/projection/protocol/projection-contract.ts";
 import { createGatewayHarness } from "#tests/server/support/gateway/support.ts";
@@ -278,7 +276,7 @@ function projectionInput(
 }
 
 test("the sole public projection owns all seven ordinary approval presentations", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const broker = createCodexApprovalBroker({
 		identity: authorities.identity,
@@ -325,7 +323,7 @@ test("the sole public projection owns all seven ordinary approval presentations"
 });
 
 test("thread-link projection discloses closed provenance without vendor source details", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const broker = createCodexApprovalBroker({
 		identity: authorities.identity,

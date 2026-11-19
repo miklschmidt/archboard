@@ -11,10 +11,10 @@ import {
 	type WorkhorseQueueOptions,
 } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import {
-	createIdentityAuthorities,
 	type IdentityAuthority,
 	type QueuedSubmissionId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 
 type SessionQueueAddResult = SessionResponsePayloads["thread/queue/add"];
 type SessionQueueListResult = SessionResponsePayloads["thread/queue/list"];
@@ -177,7 +177,7 @@ interface Fixture {
 }
 
 function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
-	const identity = createIdentityAuthorities().identity;
+	const identity = testAuthorities().identity;
 	const session = new QueueSession(identity);
 	session.state = initial;
 	let currentBinding: WorkhorseQueueBinding | null = binding(identity);

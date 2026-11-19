@@ -2,12 +2,12 @@
 // minted through the real identity authorities so no test asserts a plain
 // string into an identity type.
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const authority = authorities.identity;
 const model = createCodexBrowserModel(authorities);
 const childId = model.ChildIdSchema.parse(authority.validator.childId);

@@ -3,7 +3,7 @@ import { afterEach, expect, test } from "bun:test";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { type BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import { type BrowserCommandDraft } from "#ui/transport/state/contract.ts";
 import {
@@ -16,7 +16,7 @@ import {
 	type WireRecord,
 } from "#tests/ui/support/transport/fake-socket.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const model = createCodexBrowserModel(authorities);
 const childId = authorities.identity.validator.childId;
 const epoch = authorities.identity.validator.epoch;
@@ -76,7 +76,7 @@ const pending: BrowserDynamicApproval = model.BrowserDynamicApprovalSchema.parse
 	binding,
 	resumable: false,
 });
-const other = createIdentityAuthorities();
+const other = testAuthorities();
 
 /** How the snapshot fixture may differ from the default. */
 interface SnapshotOptions {

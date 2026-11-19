@@ -336,7 +336,6 @@ interface CodexTransportRequest {
 
 interface CodexTransport {
 	/** Replace source-generation identity capabilities over the same child ledger. */
-	readonly replaceIdentity: (identity: IdentityAuthority) => void;
 	readonly request: CodexTransportRequest;
 	readonly sendNotification: (method: ClientNotificationMethod) => Promise<void>;
 	readonly registerDynamicDispatcher: (registration: DynamicDispatcherRegistration) => void;

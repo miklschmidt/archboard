@@ -5,12 +5,8 @@ import {
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";
-import {
-	createIdentityAuthorities,
-	type ChildEpoch,
-	type ChildId,
-	type ThreadId,
-} from "@archboard/codex-app-server/identity";
+import { type ChildEpoch, type ChildId, type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import { CodexSessionMutationError, type SessionParams } from "@archboard/codex-app-server/session";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
@@ -70,7 +66,7 @@ afterEach(() => {
 });
 
 function raceHarness(): RaceHarness {
-	const identity = createIdentityAuthorities().identity;
+	const identity = testAuthorities().identity;
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: ["race-linked", COORDINATOR_WIRE_THREAD_ID, "replacement-coordinator"],
 	});

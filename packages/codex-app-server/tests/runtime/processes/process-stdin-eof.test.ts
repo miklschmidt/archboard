@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { CodexProcessError } from "#runtime/processes/process-contract.ts";
-import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
+import { createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
 	driveManual,
 	expectKillAfterGrace,

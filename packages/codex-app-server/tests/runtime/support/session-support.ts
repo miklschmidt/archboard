@@ -11,6 +11,7 @@ import {
 import { createCodexSession } from "#runtime/session/services/session.ts";
 import {
 	type CodexSession,
+	type CodexSessionControl,
 	type CodexSessionStorage,
 } from "#runtime/session/services/session-api.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
@@ -380,6 +381,7 @@ export interface SessionFixture {
 	readonly identity: IdentityAuthority;
 	readonly transport: FakeTransport;
 	readonly session: CodexSession;
+	readonly control: CodexSessionControl;
 	readonly lifecycle: {
 		readonly appServerReady: () => number;
 		readonly accountReady: () => number;
@@ -436,7 +438,7 @@ export function createSessionFixture(
 			terminalFailure += 1;
 		},
 	};
-	const session = createCodexSession({
+	const { session, control } = createCodexSession({
 		transport,
 		identity,
 		storage,
@@ -458,6 +460,7 @@ export function createSessionFixture(
 		identity,
 		transport,
 		session,
+		control,
 		lifecycle: {
 			appServerReady: () => appServerReady,
 			accountReady: () => accountReady,

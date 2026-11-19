@@ -8,10 +8,8 @@ import {
 	type EpochStageInput,
 } from "#runtime/epoch/store/contract.ts";
 import { type EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthority,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthority } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { type ThreadLinkTarget } from "#runtime/workhorses/thread-link/rules/contract.ts";
 
 const INSTRUCTION_HASH = "1".repeat(64);
@@ -37,7 +35,7 @@ export interface RealEpochOptions {
 }
 
 export function realEpochFixture(
-	authority: IdentityAuthority = createIdentityAuthorities().identity,
+	authority: IdentityAuthority = testAuthorities().identity,
 	options: RealEpochOptions = {},
 ): RealEpochFixture {
 	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-thread-link-epoch-")));

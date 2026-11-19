@@ -3,7 +3,7 @@ import type { CodexSession } from "@archboard/codex-app-server/session";
 import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import {
 	projectionHarness,
@@ -53,7 +53,7 @@ function harness(overrides: HarnessOverrides = {}) {
 	};
 	const notify = (method: string, params: Record<string, unknown>, foreign = false) => {
 		const notification = serverNotification({ method, params });
-		const authority = foreign ? createIdentityAuthorities() : value.authorities;
+		const authority = foreign ? testAuthorities() : value.authorities;
 		const event: TransportServerNotification = {
 			correlation: {
 				child: authority.identity.validator.childId,
@@ -100,7 +100,7 @@ function deferred<T>() {
 }
 
 test("authorization URLs are HTTPS and malformed input is a closed refusal", () => {
-	const identity = createIdentityAuthorities();
+	const identity = testAuthorities();
 	const schema = createCodexBrowserModel(identity).BrowserLoginSchema;
 	const pending = {
 		kind: "login",

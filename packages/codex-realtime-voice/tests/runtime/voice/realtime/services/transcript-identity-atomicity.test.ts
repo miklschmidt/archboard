@@ -7,13 +7,8 @@ import {
 	parseRealtimeSessionId,
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-	type IdentityAuthority,
-	type IdentityLedger,
-	type ThreadId,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthority, type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
@@ -40,7 +35,6 @@ function deferred<Value>(): Deferred<Value> {
 interface Harness {
 	readonly adapter: CodexRealtimeAdapter;
 	readonly identity: IdentityAuthority;
-	readonly ledger: IdentityLedger;
 	readonly starts: SessionParams<"thread/realtime/start">[];
 	readonly timelineRequests: SessionParams<"thread/timeline/list">[];
 	readonly transcriptEvents: RealtimeSemanticEvent[];
@@ -51,8 +45,7 @@ interface Harness {
 const COORDINATOR_THREAD = "atomic-recovery-coordinator";
 
 function harness(): Harness {
-	const ledger = createIdentityLedger("codex");
-	const identity = createIdentityAuthorities(ledger).identity;
+	const identity = testAuthorities().identity;
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: ["atomic-recovery-linked", COORDINATOR_THREAD],
 	}).threadIds;
@@ -103,7 +96,6 @@ function harness(): Harness {
 	return {
 		adapter,
 		identity,
-		ledger,
 		starts,
 		timelineRequests,
 		transcriptEvents,
@@ -180,8 +172,21 @@ function page(
 	};
 }
 
-function issuedItems(h: Harness): readonly string[] {
-	return [...(h.ledger.issued.get("item") ?? [])];
+/**
+ * The raw item ids the authority has issued, of those named.
+ * @param h The harness.
+ * @param raws The raw Codex item ids to look for.
+ * @returns Those the authority resolves, in the order named.
+ */
+function issuedItems(h: Harness, raws: readonly string[]): readonly string[] {
+	return raws.filter((raw) => {
+		try {
+			h.identity.decoder.resolveItemId(raw);
+			return true;
+		} catch {
+			return false;
+		}
+	});
 }
 
 async function waitForTimelineRequests(h: Harness, count: number): Promise<void> {
@@ -203,7 +208,7 @@ test("recovery issues and publishes only after every page succeeds", async () =>
 		const recovery = h.adapter.recover(active.browser);
 		await waitForTimelineRequests(h, 2);
 		expect(h.adapter.transcript()).toEqual([]);
-		expect(issuedItems(h)).toEqual([]);
+		expect(issuedItems(h, ["first-page-item", "second-page-item"])).toEqual([]);
 		expect(h.transcriptEvents).toEqual([]);
 
 		secondPage.resolve(page("second-page-item", active.wireSessionId, null, 20));
@@ -212,7 +217,7 @@ test("recovery issues and publishes only after every page succeeds", async () =>
 			parseRealtimeItemId(h.identity.decoder.resolveItemId("first-page-item")),
 			parseRealtimeItemId(h.identity.decoder.resolveItemId("second-page-item")),
 		]);
-		expect(issuedItems(h)).toHaveLength(2);
+		expect(issuedItems(h, ["first-page-item", "second-page-item"])).toHaveLength(2);
 		expect(h.transcriptEvents).toHaveLength(2);
 	} finally {
 		h.adapter.dispose();
@@ -233,8 +238,7 @@ test("late invalid recovery leaves transcript and authority unchanged", async ()
 			reason: "transport_failure",
 		});
 		expect(h.adapter.transcript()).toEqual([]);
-		expect(issuedItems(h)).toEqual([]);
-		expect([...h.ledger.rawByIdentity.values()]).not.toContain(oversized);
+		expect(issuedItems(h, ["valid-first-page", oversized])).toEqual([]);
 		expect(h.transcriptEvents).toEqual([]);
 	} finally {
 		h.adapter.dispose();
@@ -254,7 +258,7 @@ test("cursor-loop recovery leaves transcript and authority unchanged", async () 
 			reason: "transport_failure",
 		});
 		expect(h.adapter.transcript()).toEqual([]);
-		expect(issuedItems(h)).toEqual([]);
+		expect(issuedItems(h, ["loop-first-page", "loop-second-page"])).toEqual([]);
 		expect(h.transcriptEvents).toEqual([]);
 	} finally {
 		h.adapter.dispose();
@@ -280,7 +284,7 @@ test("live transcript identity accepts the authority maximum and rejects one byt
 		expect(h.adapter.transcript().map(({ itemId }) => itemId)).toEqual([
 			parseRealtimeItemId(h.identity.decoder.resolveItemId(exactMaximum)),
 		]);
-		expect(issuedItems(h)).toHaveLength(1);
+		expect(issuedItems(h, [exactMaximum, oversized])).toEqual([exactMaximum]);
 
 		notify(h, "thread/realtime/item/started", {
 			threadId: COORDINATOR_THREAD,
@@ -293,8 +297,7 @@ test("live transcript identity accepts the authority maximum and rejects one byt
 			},
 		});
 		expect(h.adapter.transcript()).toHaveLength(1);
-		expect(issuedItems(h)).toHaveLength(1);
-		expect([...h.ledger.rawByIdentity.values()]).not.toContain(oversized);
+		expect(issuedItems(h, [exactMaximum, oversized])).toEqual([exactMaximum]);
 		expect(h.transcriptEvents).toHaveLength(1);
 	} finally {
 		h.adapter.dispose();

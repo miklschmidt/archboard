@@ -4,10 +4,8 @@ import type {
 	CodexProcessSnapshot,
 	CodexProcessError,
 } from "@archboard/codex-app-server/process";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-} from "@archboard/codex-app-server/identity";
+import type { CodexConnection } from "@archboard/codex-app-server/connection";
+import { testConnection } from "#tests/runtime/support/codex-connection.ts";
 import type { CodexWorkbenchGateway } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import type {
 	CodexWorkbenchGeneration,
@@ -15,7 +13,6 @@ import type {
 } from "#server/generation/services/lifecycle.ts";
 import type {
 	CodexWorkbenchGenerationInput,
-	CodexWorkbenchKernelAcquisition,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
 } from "#server/owner/services/owner-state.ts";
@@ -174,11 +171,9 @@ function fakeGeneration(
 	number: number,
 	control: FakeGenerationControl = {},
 ): CodexWorkbenchGeneration {
-	const identityLedger = createIdentityLedger("codex");
-	const identity = createIdentityAuthorities(identityLedger);
+	const minted = testConnection();
 	let transportState: "open" | "closed" = "open";
 	const transport = {
-		replaceIdentity: () => undefined,
 		request: async () => ({}) as never,
 		sendNotification: async () => undefined,
 		registerDynamicDispatcher: () => undefined,
@@ -197,15 +192,21 @@ function fakeGeneration(
 	};
 	const gateway = { marker: number, dispose: async () => undefined };
 	const components = {
-		identity,
+		identity: minted.identity,
 		transport,
 		gateway,
 	} as unknown as CodexWorkbenchGeneration["components"];
+	const connection = {
+		child: minted.child,
+		epoch: minted.epoch,
+		identity: minted.identity,
+		transport,
+	} as unknown as CodexConnection;
 	let stopped = false;
 	let finished = false;
 	return {
 		components,
-		identityLedger,
+		connection,
 		transport,
 		gateway: gateway as unknown as CodexWorkbenchGateway,
 		activate: async () => {
@@ -237,14 +238,14 @@ function fakeGeneration(
 }
 
 interface FakeKernel {
-	readonly acquisition: CodexWorkbenchKernelAcquisition;
+	readonly connection: CodexConnection;
 	/** Deliver one transport exit for this acquired child, as the real bridge sees it. */
 	readonly exit: () => void;
 }
 
 function fakeKernelAcquisition(): FakeKernel {
 	const source = fakeGeneration([], 0);
-	const ledger = source.identityLedger;
+	const connection = source.connection;
 	const transport = source.transport as unknown as {
 		onExit: (listener: (event: unknown) => void) => () => void;
 	};
@@ -254,14 +255,11 @@ function fakeKernelAcquisition(): FakeKernel {
 		return () => void listeners.delete(listener);
 	};
 	return Object.freeze({
-		acquisition: {
-			kernel: { identityLedger: ledger, transport: source.transport },
-			identity: source.components.identity,
-		},
+		connection,
 		exit: () => {
 			const event = Object.freeze({
-				child: ledger.childId,
-				epoch: ledger.epoch,
+				child: connection.child,
+				epoch: connection.epoch,
 				code: 1,
 				signal: null,
 			});
@@ -276,16 +274,13 @@ function adoptFakeKernel(
 	input: CodexWorkbenchGenerationInput,
 	candidate: CodexWorkbenchGeneration,
 ): CodexWorkbenchGeneration {
-	if (input.kernel === null || input.initialIdentity === null) {
-		throw new Error("The fake initial generation has no acquired kernel.");
-	}
 	Object.assign(candidate, {
-		identityLedger: input.kernel.identityLedger,
-		transport: input.kernel.transport,
+		connection: input.connection,
+		transport: input.connection.transport,
 	});
 	Object.assign(candidate.components, {
-		identity: input.initialIdentity,
-		transport: input.kernel.transport,
+		identity: input.connection.identity,
+		transport: input.connection.transport,
 	});
 	return candidate;
 }
@@ -304,7 +299,7 @@ function installFakeCodexWorkbenchOwner(
 		...options,
 		createKernel: () => {
 			current = fakeKernelAcquisition();
-			return current.acquisition;
+			return current.connection;
 		},
 		createGeneration: async (input) =>
 			adoptFakeKernel(input, await options.createGeneration(input)),

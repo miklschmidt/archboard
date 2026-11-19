@@ -6,14 +6,14 @@ import type { TransportServerRequest } from "@archboard/codex-app-server/transpo
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import { type BrowserProjectionInput } from "#server/projection/protocol/projection-contract.ts";
 
 const NOW = 1_700_000_000_000;
 
 test("a real unknown owner settlement remains unknown through the browser projection", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const { identity } = authorities;
 	const threadId = identity.decoder.adoptThreadId("spoken-terminal-workhorse");
 	const coordinatorThreadId = identity.decoder.adoptThreadId("spoken-terminal-coordinator");

@@ -2,10 +2,8 @@
 // with the overrides they need: another child, epoch, workhorse or
 // coordinator, and server coordinator and voice states.
 
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
@@ -49,7 +47,7 @@ interface FixtureWorld {
  * @returns The world.
  */
 function world(): FixtureWorld {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	return {
 		authorities,

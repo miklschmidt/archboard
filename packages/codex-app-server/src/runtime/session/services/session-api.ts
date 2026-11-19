@@ -81,26 +81,17 @@ export interface CodexSessionStorage {
 
 export type SessionNotificationHandler = (event: TransportServerNotification) => void;
 
-export const CODEX_SESSION_CONTROL: unique symbol = Symbol("codex-session-control");
-
-interface CodexSessionControl {
+/** What only the owner of a session holds: it delivers the transport's events and disposes of it. */
+export interface CodexSessionControl {
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly onServerRequest: (request: TransportServerRequest) => void;
 	readonly dispose: () => void;
 }
 
-export type ControlledCodexSession = CodexSession & {
-	readonly [CODEX_SESSION_CONTROL]: CodexSessionControl;
-};
-
-/**
- * The control that only the owner of a session holds: it delivers the transport's events to the
- * session and disposes of it.
- * @param session - A session that createCodexSession made.
- * @returns Its control.
- */
-export function codexSessionControl(session: ControlledCodexSession): CodexSessionControl {
-	return session[CODEX_SESSION_CONTROL];
+/** A session, and the control its owner drives it through. */
+export interface OpenedCodexSession {
+	readonly session: CodexSession;
+	readonly control: CodexSessionControl;
 }
 
 export interface CodexSessionOptions {

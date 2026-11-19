@@ -4,10 +4,10 @@
 import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { IDLE_SPOKEN_APPROVAL } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
 
-const { decoder, validator } = createIdentityAuthorities().identity;
+const { decoder, validator } = testAuthorities().identity;
 
 const ids = {
 	threadId: decoder.adoptThreadId("thread-a"),

@@ -2,7 +2,7 @@
 // wire records that cross the socket as JSON and are parsed like anything the
 // gateway sends, plus the branded identities a typed draft needs.
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import type { BrowserCommandDraft } from "#ui/transport/state/contract.ts";
 
@@ -21,7 +21,7 @@ interface SnapshotFixture extends WireRecord {
 	lease: WireRecord | null;
 }
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const { decoder, issuer } = authorities.identity;
 
 /** Branded identities matching the fixture strings. */

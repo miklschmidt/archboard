@@ -5,7 +5,7 @@ import {
 	type ThreadLinkTarget,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import { createCodexThreadLinkClassifier } from "#runtime/workhorses/thread-link/rules/classifier.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	classifyCodexThreadLink,
 	currentEpoch,
@@ -20,7 +20,6 @@ import {
 	type RealEpochFixture,
 	type RealEpochOptions,
 } from "#tests/runtime/workhorses/thread-link/rules/epoch-fixtures.ts";
-import { restoreIdentityAuthority } from "#tests/runtime/support/identity.ts";
 
 function onePageSession(
 	row: ReturnType<typeof thread>,
@@ -33,7 +32,7 @@ async function withFixture<T>(
 	options: RealEpochOptions,
 	action: (fixture: RealEpochFixture) => Promise<T>,
 ): Promise<T> {
-	const fixture = realEpochFixture(createIdentityAuthorities().identity, options);
+	const fixture = realEpochFixture(testAuthorities().identity, options);
 	try {
 		return await action(fixture);
 	} finally {
@@ -247,7 +246,7 @@ describe("codex thread-link classification", () => {
 	});
 
 	test("returns stale-child and prior-epoch before lower list reasons", async () => {
-		const oldAuthority = createIdentityAuthorities().identity;
+		const oldAuthority = testAuthorities().identity;
 		const fixture = realEpochFixture(oldAuthority, { threadId: "target" });
 		try {
 			const row = thread(oldAuthority, "target", {
@@ -255,7 +254,7 @@ describe("codex thread-link classification", () => {
 				status: "systemError",
 				canAcceptDirectInput: false,
 			});
-			const replacement = createIdentityAuthorities().identity;
+			const replacement = testAuthorities().identity;
 			const stale = await classifyCodexThreadLink(
 				{
 					threadSource: "example",
@@ -265,15 +264,15 @@ describe("codex thread-link classification", () => {
 				},
 				fixture.target,
 			);
-			const sameChildNewEpoch = restoreIdentityAuthority({
-				childId: oldAuthority.validator.childId,
+			const sameChildNewEpoch = {
+				...currentEpoch(oldAuthority),
 				epoch: oldAuthority.issuer.mintChildEpoch(),
-			});
+			};
 			const prior = await classifyCodexThreadLink(
 				{
 					threadSource: "example",
 					session: onePageSession(row, [row.id, row.id]),
-					currentEpoch: currentEpoch(sameChildNewEpoch),
+					currentEpoch: sameChildNewEpoch,
 					epoch: fixture.store,
 				},
 				fixture.target,
@@ -345,7 +344,7 @@ describe("codex thread-link classification", () => {
 				operationId: "missing-operation",
 				provenance: null,
 			});
-			const staleAuthority = createIdentityAuthorities().identity;
+			const staleAuthority = testAuthorities().identity;
 			const stale = await classifyCodexThreadLink(
 				{ ...options, currentEpoch: currentEpoch(staleAuthority) },
 				fixture.target,
@@ -399,7 +398,7 @@ describe("codex thread-link classification", () => {
 	});
 
 	test("returns inspect-only when no active epoch exists or the live epoch changes", async () => {
-		const authority = createIdentityAuthorities().identity;
+		const authority = testAuthorities().identity;
 		const row = thread(authority, "stopped-child");
 		const stopped = await classifyCodexThreadLink(
 			{ threadSource: "example", session: onePageSession(row), currentEpoch: () => null },
@@ -407,7 +406,7 @@ describe("codex thread-link classification", () => {
 		);
 		expect(stopped.link).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
 
-		const replacement = createIdentityAuthorities().identity;
+		const replacement = testAuthorities().identity;
 		let reads = 0;
 		const moving = await classifyCodexThreadLink(
 			{

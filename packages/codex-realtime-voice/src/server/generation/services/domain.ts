@@ -1,6 +1,6 @@
 import type { CodexWorkbenchDomainScope } from "#server/generation/protocol/domain.ts";
 import type { CodexWorkbenchComponents } from "#server/generation/services/lifecycle.ts";
-import type { CodexWorkbenchGenerationInput } from "#server/owner/services/lifecycle.ts";
+import type { CodexWorkbenchChildInput } from "#server/owner/services/lifecycle.ts";
 import { ownsProcessChild } from "#server/owner/services/owner-state.ts";
 import {
 	publishProjection,
@@ -17,7 +17,7 @@ import {
  * @returns The host domain capabilities for this generation.
  */
 export function domainScope(
-	context: { readonly input: CodexWorkbenchGenerationInput; readonly owners: GenerationOwners },
+	context: { readonly input: CodexWorkbenchChildInput; readonly owners: GenerationOwners },
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
 ): CodexWorkbenchDomainScope {
 	return Object.freeze<CodexWorkbenchDomainScope>({

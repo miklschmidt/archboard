@@ -26,7 +26,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
-import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;
@@ -44,11 +44,7 @@ interface Identities {
 }
 
 function identities(): Identities {
-	const childId = "codex:child:h11111111111111111111111111111111";
-	const authorities = restoreIdentityAuthorities({
-		childId,
-		epoch: "codex:epoch:h11111111111111111111111111111111.h22222222222222222222222222222222",
-	});
+	const authorities = testAuthorities();
 	const identity = authorities.identity;
 	const coordinator = identity.decoder.adoptThreadId("coordinator");
 	const workhorse = identity.decoder.adoptThreadId("workhorse");
@@ -393,10 +389,21 @@ function close(value: Harness): void {
 	value.callbacks.dispose();
 }
 
+/**
+ * Another epoch of the harness's child, spelled as Codex would spell a prior one.
+ * @param ids The harness identities.
+ * @returns The epoch.
+ */
+function priorEpoch(ids: Identities): Identities["epoch"] {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a forged epoch of the same child, for the refusal under test
+	return ids.epoch.replace(/[^.]+$/u, "h44444444444444444444444444444444") as Identities["epoch"];
+}
+
 export {
 	type Answer,
 	type Identities,
 	identities,
+	priorEpoch,
 	link,
 	type CallbackSourceType,
 	operationEvent,

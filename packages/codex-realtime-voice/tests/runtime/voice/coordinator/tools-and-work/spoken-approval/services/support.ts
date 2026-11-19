@@ -11,12 +11,12 @@ import {
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
 import {
-	createIdentityAuthorities,
 	type DynamicToolCallId,
 	type IdentityAuthority,
 	type ThreadId,
 	type TurnId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	COORDINATOR_CAPABILITY_POLICY,
 	type CoordinatorSnapshot,
@@ -217,7 +217,7 @@ function classifierContext(
 }
 
 function makeHarness(options: HarnessOptions = {}): GateHarness {
-	const identity = createIdentityAuthorities().identity;
+	const identity = testAuthorities().identity;
 	const responses: unknown[] = [];
 	const port = {
 		responses,

@@ -71,7 +71,7 @@ function defaultLane(job: WriteJob): WriteLane {
  */
 export function createCodexTransport(options: CodexTransportOptions): CodexTransport {
 	const child: CodexTransportChild = options.child;
-	let identity: IdentityAuthority = options.identity;
+	const identity: IdentityAuthority = options.identity;
 	let state: TransportState = "open";
 	let inputEndStarted = false;
 	let inputFinished = false;
@@ -106,12 +106,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	 * @returns True once closed.
 	 */
 	const isClosed = (): boolean => currentState() === "closed";
-
-	/**
-	 * The current identity authority.
-	 * @returns The authority.
-	 */
-	const currentIdentity = (): IdentityAuthority => identity;
 
 	/**
 	 * The closed error for the current state.
@@ -484,7 +478,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	);
 
 	const outbound = createOutboundOperations({
-		identity: currentIdentity,
+		identity,
 		state: currentState,
 		pendingRequests,
 		removeQueuedJob: writer.remove,
@@ -492,7 +486,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		enqueue: enqueueRegular,
 	});
 	const router = createInboundRouter({
-		identity: currentIdentity,
+		identity,
 		state: currentState,
 		pendingRequests,
 		tombstones,
@@ -522,22 +516,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			throw closedError();
 		}
 		router.registerDynamicDispatcher(registration);
-	};
-
-	/**
-	 * Replaces the identity authority over the same child epoch.
-	 * @param replacement The new authority; it must keep the exact child and epoch.
-	 */
-	const replaceIdentity = (replacement: IdentityAuthority): void => {
-		if (
-			replacement.validator.childId !== identity.validator.childId ||
-			replacement.validator.epoch !== identity.validator.epoch
-		) {
-			throw new TypeError(
-				"A Codex transport identity replacement must keep the exact child epoch.",
-			);
-		}
-		identity = replacement;
 	};
 
 	/**
@@ -578,7 +556,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	start();
 
 	return Object.freeze({
-		replaceIdentity,
 		request: outbound.request,
 		sendNotification: outbound.sendNotification,
 		registerDynamicDispatcher,

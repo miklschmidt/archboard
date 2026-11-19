@@ -10,7 +10,8 @@ import type {
 	BrowserThreadLink,
 	DeliveryOutcome,
 } from "#shared/browser/schemas/snapshot.ts";
-import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
+import { type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	THREAD_LINK_MODULE_COMMANDS,
 	type ThreadLinkChatCapture,
@@ -26,7 +27,7 @@ import type {
 	WorkbenchTransportErrorCode,
 } from "#ui/thread-link/state/transport-port.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const { decoder, issuer, validator } = authorities.identity;
 
 const threadA = decoder.adoptThreadId("thread-a");

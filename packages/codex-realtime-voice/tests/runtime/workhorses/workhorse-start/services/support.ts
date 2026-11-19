@@ -16,12 +16,12 @@ import {
 	type ThreadLinkSnapshot,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
-	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthorities,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexWorkhorseStart } from "#runtime/workhorses/workhorse-start/services/start.ts";
 import {
 	type CodexWorkhorseStart,
@@ -135,7 +135,7 @@ function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture 
 	mkdirSync(codexHome, { recursive: true, mode: 0o700 });
 	mkdirSync(sqliteHome, { recursive: true, mode: 0o700 });
 
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const epoch = createCodexEpochStore({ rootDirectory: epochRoot, codexHome, sqliteHome });
 	const epochOperationId = authorities.operation.issuer.mintOperationId();
 	const epochInput: EpochStageInput = {

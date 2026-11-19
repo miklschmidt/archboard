@@ -64,7 +64,7 @@ type PlainOwnedRequest = Exclude<
 >;
 
 interface ReverseRequestRouterOptions {
-	readonly identity: () => IdentityAuthority;
+	readonly identity: IdentityAuthority;
 	readonly reverseRequests: Map<string, ReverseRecord>;
 	readonly completedReverseIds: Set<string>;
 	readonly reverseHandles: WeakMap<TransportServerRequest, ReverseRecord>;
@@ -250,7 +250,7 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 		decoded: DecodedServerRequest,
 		rawId: WireId,
 	): TransportServerRequest => {
-		const identity = options.identity();
+		const identity = options.identity;
 		const requestId = identity.decoder.adoptJsonRpcRequestId(rawId);
 		const correlation: WireRequestCorrelation = identity.decoder.createWireRequestCorrelation({
 			requestId,

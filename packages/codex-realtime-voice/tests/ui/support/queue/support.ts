@@ -8,7 +8,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 } from "#shared/browser/schemas/snapshot.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { WorkbenchQueueEntry } from "#ui/queue/state/contracts.ts";
 import type {
 	WorkbenchCommandIntent,
@@ -25,7 +25,7 @@ type Timeline = NonNullable<BrowserSnapshot["timeline"]>;
 type Approval = BrowserSnapshot["approvals"][number];
 type SubmissionId = WorkbenchQueueEntry["submissionId"];
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const { decoder, issuer, validator } = authorities.identity;
 
 const THREAD_ID = decoder.adoptThreadId("workhorse-a");
