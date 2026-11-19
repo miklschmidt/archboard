@@ -12,6 +12,12 @@
 //   with fewer than 4 pieces of logic behind each name. One warning, with the
 //   evidence of each ground that holds.
 //
+// In a folder module that declares no interface (decision 16), the width
+// counts only the names a file outside it uses: its language makes a file
+// export a name for another file of the module to import it, so a name only
+// its own files import costs a caller nothing, and neither does a name
+// nothing uses, which `EXPOSED_UNUSED` names. The message says so.
+//
 // The thresholds are fixed. Each message states the principle and prescribes
 // no fix: an agent reasons the fix out. The width stands where every name is
 // in a language whose adapter names each export's kind. It needs no whole
@@ -38,7 +44,13 @@ const LOGIC_PER_NAME = 4;
 interface ModuleMeasure {
 	/** The module as a sentence names it, such as `module "Timing"`. */
 	readonly label: string;
+	/** The exports its width counts, by kind. */
 	readonly exports: ExportCounts;
+	/**
+	 * Where the module declares no interface, the names its width leaves out:
+	 * those only its own files import, and those nothing uses.
+	 */
+	readonly undeclared?: { readonly inside: number; readonly unused: number };
 	readonly logic: number;
 	/** Whether every name is in a language whose adapter names each export's kind. */
 	readonly supported: boolean;
@@ -82,8 +94,24 @@ function wide(measure: ModuleMeasure, width: number): DepthFinding | undefined {
 		code: "INTERFACE_WIDE",
 		message:
 			`${measure.label} has a wide interface: callers must learn ${width} names (${kinds.join(", ")}). ` +
-			"A narrow interface is the few operations callers need.",
+			`${undeclaredWhy(measure.undeclared)}A narrow interface is the few operations callers need.`,
 	};
+}
+
+/**
+ * What the width of a module that declares no interface leaves out.
+ * @param undeclared The names it leaves out, where the module declares no interface.
+ * @returns The sentence, or nothing where the module declares its interface.
+ */
+function undeclaredWhy(undeclared: ModuleMeasure["undeclared"]): string {
+	if (undeclared === undefined) return "";
+	const { inside, unused } = undeclared;
+	const left = [
+		...(inside === 0 ? [] : [`only its own files import ${inside} more`]),
+		...(unused === 0 ? [] : [`nothing uses ${unused}`]),
+	];
+	const why = left.length === 0 ? "" : `; ${left.join(", and ")}, which cost a caller nothing`;
+	return `It declares no interface, so its width counts only the names files outside it use${why}. `;
 }
 
 /**
@@ -151,4 +179,4 @@ function moduleFindings(measure: ModuleMeasure): ModuleVerdicts {
 	};
 }
 
-export { type ExportCounts, moduleFindings };
+export { type ExportCounts, type ModuleMeasure, moduleFindings };
