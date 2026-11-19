@@ -3,6 +3,7 @@
 // of the repository to an agent.
 
 import { z } from "zod";
+import { languageServerSetupBrief } from "@archboard/workspace/language-server-setup";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { installBundledSkills } from "#cli/commands/init/operations/skills-install.ts";
 import { setUpRepository } from "#cli/commands/init/operations/repo-setup.ts";
@@ -108,7 +109,11 @@ const initContract = defineCommand({
 			...(input.repo === undefined ? {} : { repoSpec: input.repo }),
 			context,
 		});
-		const handoff = await handOffLanguageServers(setup.repo, interactive);
+		const handoff = await handOffLanguageServers(
+			setup.repo,
+			languageServerSetupBrief(),
+			interactive,
+		);
 		// The handoff comes last, so that an agent that ran init reads its prompt at the end.
 		return { result: { success: true as const, skills, setup, ...handoff } };
 	},
