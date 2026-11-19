@@ -2,7 +2,7 @@
 
 import { existsSync } from "node:fs";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { serverLifecycleMs } from "@archboard/timing";
+import { serverLifecycleMs, waitUntil } from "@archboard/timing";
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { type HealthStatus } from "#runtime/clients/server-client.ts";
 import { foreignServiceError } from "#runtime/clients/server-client-transport.ts";
@@ -55,8 +55,7 @@ function stuckOwnerError(port: number, pid: number): Error {
  * recorded process still runs after the wait.
  */
 async function awaitPidFileGone(port: number, pid: number): Promise<StopResult | undefined> {
-	const deadline = Date.now() + serverLifecycleMs("stopPidfileWait");
-	for (;;) {
+	const gone = await waitUntil("serverLifecycle.stopPidfileWait", (): StopResult | undefined => {
 		if (removePidFileIfOwnerGone(port)) {
 			return {
 				stopped: false,
@@ -67,10 +66,9 @@ async function awaitPidFileGone(port: number, pid: number): Promise<StopResult |
 		if (!existsSync(pidFilePath(port))) {
 			return { stopped: false, pid, message: "Archboard server is not running." };
 		}
-		if (Date.now() >= deadline) return undefined;
-		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the pidfile
-		await new Promise((resolve) => setTimeout(resolve, serverLifecycleMs("stopPidfilePoll")));
-	}
+		return undefined;
+	});
+	return gone.ok ? gone.value : undefined;
 }
 
 /**
