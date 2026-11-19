@@ -659,7 +659,7 @@ It bundles the four MIT packages into ESM and bundled declarations for each publ
 `tsconfig.voice-package.json` names the sources the declarations come from.
 The generated manifest declares zod and ws, `@openai/codex` at the pinned version as a peer, and React and Express as optional peers.
 The release workflow packs that directory and publishes it to npm ([releasing](releasing.md)).
-`resolveCodexExecutable` from `./server` finds the installed `@openai/codex` and proves its exact version. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
+`resolveCodexExecutable` finds the installed `@openai/codex` and proves its exact version. The npm build adds it to the published `./server` entry (`PUBLISHED_ADDITIONS` of `scripts/pack-codex-realtime-voice.ts`), and the workspace entry does not pass it on: Archboard imports it from `@archboard/codex-app-server/process`. Archboard passes `installation().codexLocation`: `installedIn` refuses any other install in a checkout, and `releasedIn` finds the native binary of a release.
 `tests/system/process-contracts/voice-package.test.ts` installs the packed tarball into a project outside the repository.
 
 Its public entries separate browser code from Bun code.
