@@ -12,6 +12,11 @@ The one architecture that one vault holds, assembled from its modules, relations
 It has a stable identity and a name, and every reading derives from it.
 _Avoid_: board, document, drawing, diagram, whiteboard, sketch
 
+**Model contract**:
+The shapes that every side of a model exchanges and keeps: its files, its requests and answers, and the records the store writes beside them.
+A caller reads them only through the contract's parse operations, and builds its own contract from the shapes it hands out (ADR 0085).
+_Avoid_: schema, wire format, protocol
+
 **Manifest**:
 The record that gives a model its stable identity, its name and its optional current designation.
 It holds no copy of the modules.
