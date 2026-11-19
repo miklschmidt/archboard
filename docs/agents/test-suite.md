@@ -877,7 +877,10 @@ Existing canonical navigation, code, and reference owners cover containment and 
 Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
 `presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
-`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens the module and its About at the Interface section, and the door that opens at one click and lists its endpoints on hover.
+`reader-context.test.ts` covers the right panel's lists for the open module or the selection.
+It covers rows that open a flow or a walkthrough, and a door that lists its endpoints on hover and opens on click.
+Interface counts select parts on the module's diagram.
+The Open in About button opens that module and focuses the Interface heading.
 It also owns the layout engine switch in the `Picture` tab of the Settings dialog.
 `reader-expand.test.ts` owns a door's second action through a real browser: the control expands the door into the picture, the address keeps it across a reload and Back, and a tab, a panel row or a key takes it back. Unit owners hold its rules: `model-projection.test.ts` and `expansion.test.ts`.
 `reader-trace.test.ts` owns a trace in the reader. Each further hop has its own grade, across the doors, and the trace goes with the pick.

@@ -152,15 +152,11 @@ function measures(browser: AgentBrowserSession) {
  */
 async function followMeasures(browser: AgentBrowserSession): Promise<string[]> {
 	await browser.run(["click", '[data-slot="model-interface-about"]']);
-	// A page scrolled to its end marks its last section in the outline, so the landing is read from
-	// where the interface section stands: its top is inside the page's room.
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(`(() => {
-				const page = document.querySelector('[data-slot="model-about-page"]')?.getBoundingClientRect();
-				const section = document.querySelector('[data-about-section="interface"]')?.getBoundingClientRect();
-				return page !== undefined && section !== undefined && section.top >= page.top && section.top < page.bottom;
-			})()`),
+			browser.eval<boolean>(
+				`document.activeElement?.matches('[data-slot="model-about-page"] [data-about-section="interface"] h3') === true`,
+			),
 		Boolean,
 		"the interface section of About",
 		WAIT,
@@ -229,8 +225,8 @@ test("the right column follows what a reader looks at, and the left column holds
 	await lists(browser, { flows: ["Shop#Drain"], walkthroughs: ["Shop#Work"] });
 
 	// A selected module that holds parts says what it offers. Its one caller names the module itself,
-	// so nothing reaches its part, and the line says so. The line's heading opens the module, and its
-	// About at the rest, which names that part.
+	// so nothing reaches its part, and the line says so. Open in About opens the module and
+	// focuses its Interface section, which names that part.
 	expect(await measures(browser)).toEqual({
 		entryPoints: "0",
 		hiddenParts: "1",
