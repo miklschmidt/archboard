@@ -18,7 +18,8 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
-import type { Local, MathSyntax } from "#runtime/code-facts/operations/math-shapes.ts";
+import type { Local } from "#runtime/code-facts/operations/math-grammar.ts";
+import type { MathSyntax } from "#runtime/code-facts/operations/math-shapes.ts";
 
 /**
  * The name a declarator declares, where the value it holds is the declarator's last part.

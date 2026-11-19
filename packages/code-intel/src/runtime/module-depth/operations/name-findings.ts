@@ -9,7 +9,8 @@
 //   read is complete: the pass read every file outside the module whole, and
 //   the model draws no caller of the name whose code the pass did not read, as
 //   a consumer of a published package is. Information otherwise. Its remedy,
-//   to stop exporting the name, outranks every other.
+//   to stop exporting the name, outranks every other. A method, a static
+//   member and a name the language calls are never judged unused.
 // - `REEXPORT_PASS_THROUGH`: the module passes on a name another module
 //   defines. One door is information. Two doors to one name are a warning:
 //   files outside both modules import the defining module directly, at run
@@ -189,6 +190,20 @@ async function passThrough(
 }
 
 /**
+ * Whether an export may be judged unused: not a method, whose uses run
+ * through values; not a static member, which a class that derives from its
+ * own may name alone; and not a name the language calls, as JavaScript calls
+ * what `#[wasm_bindgen]` exports to it.
+ * @param name The export.
+ * @param kind Its kind.
+ * @returns True when it can.
+ */
+function mayBeUnused(name: ExposedName, kind: NameKind): boolean {
+	const { definition } = name;
+	return kind !== "method" && definition.static !== true && definition.calledByLanguage !== true;
+}
+
+/**
  * The one finding of one export, if any.
  * @param reading The module.
  * @param name The export.
@@ -200,10 +215,7 @@ async function nameFinding(
 	name: ExposedName,
 	kind: NameKind,
 ): Promise<DepthFinding | undefined> {
-	// A static member may be used by its bare name from a class that derives
-	// from its own, which the syntax cannot see: it is never judged unused.
-	const idle =
-		kind === "method" || name.definition.static === true ? undefined : unused(reading, name);
+	const idle = mayBeUnused(name, kind) ? unused(reading, name) : undefined;
 	if (idle !== undefined || kind === "type") return idle;
 	return passedOn(reading.exposure.directory, name)
 		? reexported(reading, name)

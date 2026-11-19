@@ -1,25 +1,10 @@
 // The math a file writes on the names other files define (TASK-646.06,
-// TASK-646.11), in any language whose syntax table this file is given: for
-// each use at run time that arithmetic holds, the shape of that math, which
-// module depth compares across the modules that read one export.
-//
-// The math is the largest arithmetic expression around the use: `+ - * / %`,
-// `**` and `//` where the language has them, a unary sign, parentheses, and
-// the math functions the language names, such as Python's `min` or C#'s
-// `Math.Max`. Equality, comparison, bitwise and logical operators end it, and
-// so does a `+` that joins text. The use is the chain of names it starts,
-// with the `()` of a call that passes nothing, as a getter's is. Inside the
-// shape the use is `@`, a number is its value and every other operand, the
-// caller's own names among them, is `…`. The operands of `+`, `*` and of the
-// math functions the table sorts, such as `min` and `max`, are sorted, so
-// `a * b` and `b * a` have one shape. A use that a local variable holds whole,
-// as `base = timing.RESTART_BASE` does, is followed once: the math around each
-// later use of that variable is math on the name.
-//
-// Each language gives its table (`MathSyntax`): the syntax of its operations,
-// calls, chains of names, numbers, text and local variables. Its adapter
-// gives the uses: the names at run time that start a chain and that another
-// file may define.
+// TASK-646.11, TASK-646.12), for a language that describes its math in a
+// table (`MathSyntax`): the node types and fields of its operations, calls,
+// chains of names, numbers, text and local variables. The table is read
+// through the grammar reading that every language shares (math-grammar.ts).
+// Its adapter gives the uses: the names at run time that start a chain and
+// that another file may define.
 //
 // A table can also name math functions called as methods of a number (Rust's
 // `a.min(b)` is `min(a, b)`), a number's type suffix (`2u64` is `2`), and how
@@ -27,11 +12,15 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Computation } from "#runtime/code-facts/operations/facts.ts";
+import {
+	computationsThrough,
+	type Local,
+	type MathCall,
+	type MathGrammar,
+	type Operation,
+} from "#runtime/code-facts/operations/math-grammar.ts";
 
-/** A local variable, and the member of the use it takes, `""` for the whole use. */
-type Local = readonly [Node, string];
-
-/** The syntax of one language that the math is read through. */
+/** The syntax of one language that the math is read through, as node types and fields. */
 interface MathSyntax {
 	/** Binary operations, whose operator is their `operator` field. */
 	readonly binary: ReadonlySet<string>;
@@ -72,37 +61,6 @@ interface MathSyntax {
 	readonly scopes: ReadonlySet<string>;
 }
 
-/** The operators of arithmetic every language has, by how tightly each binds. */
-const BINDING: ReadonlyMap<string, number> = new Map([
-	["+", 1],
-	["-", 1],
-	["*", 2],
-	["/", 2],
-	["%", 2],
-]);
-
-/** How tightly a sign, and an operand that is no operation, binds. */
-const SIGN = 4;
-const OPERAND = 5;
-
-/** The operators whose operands can change places. */
-const COMMUTATIVE = new Set(["+", "*"]);
-
-/** What any operand that is not the use and no math shapes as. */
-const OTHER = "…";
-
-/** One part of a shape, and how tightly it binds. */
-interface Shape {
-	readonly text: string;
-	readonly binding: number;
-}
-
-/** The use a shape is drawn around, and what it is written as. */
-interface Focus {
-	readonly node: Node;
-	readonly text: string;
-}
-
 /**
  * A child of a node by its field.
  * @param node The node.
@@ -124,399 +82,6 @@ function holds(node: Node, name: string, child: Node): boolean {
 	return field(node, name)?.id === child.id;
 }
 
-/** Reads the math of one language through its syntax table. */
-class MathReader {
-	readonly #syntax: MathSyntax;
-	readonly #binding: ReadonlyMap<string, number>;
-	readonly #spelling: (use: Node) => string;
-
-	/**
-	 * A reader for one language.
-	 * @param syntax The language's syntax table.
-	 */
-	constructor(syntax: MathSyntax) {
-		this.#syntax = syntax;
-		this.#binding = new Map([...BINDING, ...(syntax.operators ?? [])]);
-		this.#spelling = syntax.spelling ?? ((use) => use.text);
-	}
-
-	/**
-	 * The expression inside wrappers.
-	 * @param node The expression.
-	 * @returns The expression it holds, or itself.
-	 */
-	unwrapped(node: Node): Node {
-		const inner = this.#syntax.wrappers.has(node.type) ? node.namedChildren[0] : undefined;
-		return inner === undefined ? node : this.unwrapped(inner);
-	}
-
-	/**
-	 * The math function a call runs.
-	 * @param call The call.
-	 * @returns Its name, such as `Math.min`, or undefined for another call.
-	 */
-	mathFunction(call: Node): string | undefined {
-		const { call: syntax, math } = this.#syntax;
-		const callee = call.type === syntax.type ? field(call, syntax.callee) : undefined;
-		if (callee === undefined) return undefined;
-		const found = math.exec(callee.text.replaceAll(/\s/gu, ""));
-		return found === null ? this.methodOf(callee) : (found.groups?.["name"] ?? found[0]);
-	}
-
-	/**
-	 * The math function a callee calls as a method of a number.
-	 * @param callee The callee.
-	 * @returns Its name, such as `min` for `a.min`, or undefined.
-	 */
-	methodOf(callee: Node): string | undefined {
-		const { member, methods } = this.#syntax;
-		const name = callee.type === member.type ? field(callee, member.property)?.text : undefined;
-		return name !== undefined && methods?.has(name) === true ? name : undefined;
-	}
-
-	/**
-	 * The call of a math function that a member read names: its method.
-	 * @param read The member read.
-	 * @returns The call, or undefined.
-	 */
-	methodCall(read: Node): Node | undefined {
-		const call = read.parent;
-		const { call: syntax } = this.#syntax;
-		const calls = call?.type === syntax.type && holds(call, syntax.callee, read);
-		return calls && this.methodOf(read) !== undefined ? call : undefined;
-	}
-
-	/**
-	 * The operands of a call of a math function: its receiver, for a method, and its arguments.
-	 * @param call The call.
-	 * @returns The operands.
-	 */
-	operandsOf(call: Node): Node[] {
-		const callee = field(call, this.#syntax.call.callee);
-		const method = callee !== undefined && this.methodOf(callee) !== undefined;
-		const receiver = method ? field(callee, this.#syntax.member.object) : undefined;
-		return [...(receiver === undefined ? [] : [receiver]), ...this.argumentsOf(call)];
-	}
-
-	/**
-	 * The arguments of a call, each without what wraps it.
-	 * @param call The call.
-	 * @returns The arguments.
-	 */
-	argumentsOf(call: Node): Node[] {
-		const list = field(call, this.#syntax.call.arguments);
-		return (list?.namedChildren ?? []).flatMap((each) => {
-			if (each.type === "comment") return [];
-			if (each.type !== this.#syntax.argument) return [each];
-			return each.namedChildren.at(-1) ?? [];
-		});
-	}
-
-	/**
-	 * Whether a side of a binary expression is text, which `+` joins.
-	 * @param node The expression.
-	 * @returns True when a side is.
-	 */
-	joinsText(node: Node): boolean {
-		return [field(node, "left"), field(node, "right")].some(
-			(side) => side !== undefined && this.#syntax.texts.has(this.unwrapped(side).type),
-		);
-	}
-
-	/**
-	 * The operator of a binary expression, when it is arithmetic on numbers.
-	 * @param node The expression.
-	 * @returns The operator, or undefined.
-	 */
-	arithmetic(node: Node): string | undefined {
-		const operator = this.#syntax.binary.has(node.type) ? operatorOf(node) : "";
-		if (!this.#binding.has(operator)) return undefined;
-		return operator === "+" && this.joinsText(node) ? undefined : operator;
-	}
-
-	/**
-	 * The sign of a unary expression.
-	 * @param node The expression.
-	 * @returns `-` or `+`, or undefined for anything else.
-	 */
-	sign(node: Node): string | undefined {
-		const operator = this.#syntax.unary.has(node.type) ? operatorOf(node) : "";
-		return /^[-+]$/u.test(operator) ? operator : undefined;
-	}
-
-	/**
-	 * Whether syntax keeps math going around what it holds.
-	 * @param node The syntax.
-	 * @returns True for a wrapper, arithmetic or a sign.
-	 */
-	operation(node: Node): boolean {
-		return (
-			this.#syntax.wrappers.has(node.type) ||
-			this.arithmetic(node) !== undefined ||
-			this.sign(node) !== undefined
-		);
-	}
-
-	/**
-	 * The arguments of a call that hold an expression, through what wraps one argument.
-	 * @param node What holds the expression.
-	 * @returns The arguments, or the node itself.
-	 */
-	listOf(node: Node): Node {
-		return node.type === this.#syntax.argument ? (node.parent ?? node) : node;
-	}
-
-	/**
-	 * The call of a math function whose argument an expression is.
-	 * @param node What holds the expression: the arguments, or what wraps one of them.
-	 * @returns The call, or undefined.
-	 */
-	mathCallOf(node: Node): Node | undefined {
-		const list = this.listOf(node);
-		const call = list.parent;
-		const listed = call !== null && holds(call, this.#syntax.call.arguments, list);
-		return listed && this.mathFunction(call) !== undefined ? call : undefined;
-	}
-
-	/**
-	 * The math that holds an expression, one step out.
-	 * @param node The expression.
-	 * @returns The parent that keeps the math going, or undefined where it ends.
-	 */
-	mathParent(node: Node): Node | undefined {
-		const parent = node.parent;
-		if (parent === null) return undefined;
-		if (this.operation(parent)) return parent;
-		return this.mathCallOf(parent) ?? this.receiverOf(parent, node);
-	}
-
-	/**
-	 * The call of a math method whose receiver an expression is.
-	 * @param parent What holds the expression.
-	 * @param node The expression.
-	 * @returns The call, or undefined.
-	 */
-	receiverOf(parent: Node, node: Node): Node | undefined {
-		const { member } = this.#syntax;
-		const read = parent.type === member.type && holds(parent, member.object, node);
-		return read ? this.methodCall(parent) : undefined;
-	}
-
-	/**
-	 * The largest math around an expression.
-	 * @param node The expression.
-	 * @returns The math, or undefined when no arithmetic holds the expression.
-	 */
-	mathAround(node: Node): Node | undefined {
-		let math: Node | undefined;
-		for (let step = this.mathParent(node); step !== undefined; step = this.mathParent(step)) {
-			if (!this.#syntax.wrappers.has(step.type)) math = step;
-		}
-		return math;
-	}
-
-	/**
-	 * The operands of a commutative operator, its own nested uses flattened.
-	 * @param node The expression.
-	 * @param operator The operator.
-	 * @returns The operands.
-	 */
-	chained(node: Node, operator: string): Node[] {
-		const inner = this.unwrapped(node);
-		if (this.arithmetic(inner) !== operator) return [inner];
-		return [field(inner, "left"), field(inner, "right")].flatMap((side) =>
-			side === undefined ? [] : this.chained(side, operator),
-		);
-	}
-
-	/**
-	 * The shape of a binary operation.
-	 * @param node The operation.
-	 * @param operator Its operator.
-	 * @param focus The use.
-	 * @returns Its shape.
-	 */
-	binaryShape(node: Node, operator: string, focus: Focus): Shape {
-		const binding = this.#binding.get(operator) ?? OPERAND;
-		if (COMMUTATIVE.has(operator)) {
-			const operands = this.chained(node, operator).map((each) =>
-				placed(this.shapeOf(each, focus), binding + 1),
-			);
-			return { text: operands.toSorted().join(` ${operator} `), binding };
-		}
-		const rightward = this.#syntax.rightward?.has(operator) === true;
-		const least = rightward ? [binding + 1, binding] : [binding, binding + 1];
-		const sides = [field(node, "left"), field(node, "right")].flatMap((side, index) =>
-			side === undefined ? [] : [placed(this.shapeOf(side, focus), least[index] ?? binding)],
-		);
-		return { text: sides.join(` ${operator} `), binding };
-	}
-
-	/**
-	 * The shape of an operation of the math.
-	 * @param node The expression.
-	 * @param focus The use.
-	 * @returns Its shape, or undefined when the expression is no operation of the math.
-	 */
-	operationShape(node: Node, focus: Focus): Shape | undefined {
-		const operator = this.arithmetic(node);
-		if (operator !== undefined) return this.binaryShape(node, operator, focus);
-		const sign = this.sign(node);
-		if (sign !== undefined) {
-			const argument = node.namedChildren.at(-1);
-			const operand = argument === undefined ? OTHER : placed(this.shapeOf(argument, focus), SIGN);
-			return { text: `${sign}${operand}`, binding: SIGN };
-		}
-		const math = this.mathFunction(node);
-		if (math === undefined) return undefined;
-		const shapes = this.operandsOf(node).map((each) => this.shapeOf(each, focus).text);
-		const ordered = this.#syntax.sorted.has(math) ? shapes.toSorted() : shapes;
-		return { text: `${math}(${ordered.join(", ")})`, binding: OPERAND };
-	}
-
-	/**
-	 * The shape of an operand that is no operation: a number as its value, so
-	 * `30_000` and `30000` are one, and anything else as `…`.
-	 * @param node The operand.
-	 * @returns Its shape.
-	 */
-	operandShape(node: Node): Shape {
-		if (!this.#syntax.numbers.has(node.type)) return { text: OTHER, binding: OPERAND };
-		const digits = node.text.replaceAll("_", "");
-		const { suffix } = this.#syntax;
-		const value = Number(suffix === undefined ? digits : digits.replace(suffix, ""));
-		return { text: Number.isNaN(value) ? node.text : String(value), binding: OPERAND };
-	}
-
-	/**
-	 * The shape of an expression inside the math around a use.
-	 * @param node The expression.
-	 * @param focus The use.
-	 * @returns Its shape.
-	 */
-	shapeOf(node: Node, focus: Focus): Shape {
-		if (node.id === focus.node.id) return { text: focus.text, binding: OPERAND };
-		const inner = this.unwrapped(node);
-		if (inner.id !== node.id) return this.shapeOf(inner, focus);
-		return this.operationShape(node, focus) ?? this.operandShape(node);
-	}
-
-	/**
-	 * The chain of names a use starts, through `.`, up to a math method.
-	 * @param name The name.
-	 * @returns The chain's expression.
-	 */
-	chainOf(name: Node): Node {
-		let chain = name;
-		while (chain.parent !== null && this.readsMember(chain.parent, chain)) chain = chain.parent;
-		return chain;
-	}
-
-	/**
-	 * Whether an expression reads a member of what it holds that is no math method.
-	 * @param parent The expression.
-	 * @param operand What it holds.
-	 * @returns True when it does.
-	 */
-	readsMember(parent: Node, operand: Node): boolean {
-		const { member } = this.#syntax;
-		const read = parent.type === member.type && holds(parent, member.object, operand);
-		return read && this.methodCall(parent) === undefined;
-	}
-
-	/**
-	 * How the code spells a chain of names through `.`.
-	 * @param chain The chain.
-	 * @returns The spelling.
-	 */
-	spelled(chain: Node): string {
-		const { member } = this.#syntax;
-		const object = chain.type === member.type ? field(chain, member.object) : undefined;
-		const property = chain.type === member.type ? field(chain, member.property) : undefined;
-		return object === undefined || property === undefined
-			? this.#spelling(chain)
-			: `${this.spelled(object)}.${property.text}`;
-	}
-
-	/**
-	 * Whether an expression reads on from what it holds: a member of it, or the
-	 * call of it that passes nothing, as a getter's is.
-	 * @param parent The expression.
-	 * @param operand What it holds.
-	 * @returns True when it does.
-	 */
-	readsOn(parent: Node, operand: Node): boolean {
-		const { member, call } = this.#syntax;
-		if (parent.type === member.type) return this.readsMember(parent, operand);
-		const calls = parent.type === call.type && holds(parent, call.callee, operand);
-		return calls && this.argumentsOf(parent).length === 0;
-	}
-
-	/**
-	 * What a use reads: its chain of names, with a member or the call of a
-	 * getter that the code adds to it.
-	 * @param chain The chain of names.
-	 * @returns The expression it reads.
-	 */
-	operandOf(chain: Node): Node {
-		let operand = chain;
-		while (operand.parent !== null && this.readsOn(operand.parent, operand)) {
-			operand = operand.parent;
-		}
-		return operand;
-	}
-
-	/**
-	 * The computation around one expression a use reads, if math holds it.
-	 * @param symbol The chain of names the use reads.
-	 * @param operand The expression.
-	 * @param text What the shape writes for the expression.
-	 * @returns The computation, or undefined.
-	 */
-	computed(symbol: string, operand: Node, text: string): Computation | undefined {
-		const math = this.mathAround(operand);
-		if (math === undefined) return undefined;
-		const shape = this.shapeOf(math, { node: operand, text }).text;
-		return { symbol, line: operand.startPosition.row + 1, shape };
-	}
-
-	/**
-	 * The block a declaration's variables live in.
-	 * @param declaration The declaration.
-	 * @returns The block.
-	 */
-	scopeOf(declaration: Node): Node | undefined {
-		let scope = declaration.parent;
-		while (scope !== null && !this.#syntax.scopes.has(scope.type)) scope = scope.parent;
-		return scope ?? undefined;
-	}
-
-	/**
-	 * The math around each later use of the local variables that hold a use whole.
-	 * @param symbol The chain of names the use reads.
-	 * @param operand The expression the use reads.
-	 * @param text What the shape writes for it.
-	 * @returns The computations.
-	 */
-	throughLocals(symbol: string, operand: Node, text: string): Computation[] {
-		let held = operand;
-		while (held.parent !== null && this.#syntax.wrappers.has(held.parent.type)) held = held.parent;
-		const declared = this.#syntax.declared(held);
-		const scope = declared === undefined ? undefined : this.scopeOf(declared.at);
-		if (declared === undefined || scope === undefined) return [];
-		const after = declared.at.endIndex;
-		return declared.locals.flatMap(([local, member]) =>
-			scope
-				.descendantsOfType("identifier")
-				.filter((each) => each.text === local.text && each.startIndex > after)
-				.flatMap((each) => {
-					const read = this.operandOf(this.chainOf(each));
-					return this.computed(symbol, read, `${text}${member}${added(read, each)}`) ?? [];
-				}),
-		);
-	}
-}
-
 /**
  * The operator of an operation: its `operator` field, else its first token.
  * @param node The operation.
@@ -527,23 +92,302 @@ function operatorOf(node: Node): string {
 }
 
 /**
- * An operand, in parentheses where it binds less tightly than its place needs.
- * @param shape The operand.
- * @param least How tightly it must bind to go without them.
- * @returns Its text.
+ * The operation a binary or unary expression of a table is.
+ * @param syntax The table.
+ * @param node The expression.
+ * @returns Its operator and operands, or undefined for another expression.
  */
-function placed(shape: Shape, least: number): string {
-	return shape.binding < least ? `(${shape.text})` : shape.text;
+function tableOperation(syntax: MathSyntax, node: Node): Operation | undefined {
+	if (syntax.binary.has(node.type)) {
+		const operands = ["left", "right"].flatMap((each) => field(node, each) ?? []);
+		return { operator: operatorOf(node), operands };
+	}
+	const operand = syntax.unary.has(node.type) ? node.namedChildren.at(-1) : undefined;
+	return operand === undefined ? undefined : { operator: operatorOf(node), operands: [operand] };
 }
 
 /**
- * What the code adds to an expression's start, without white space.
- * @param operand The expression.
- * @param start The start it adds to.
- * @returns The text after the start, such as `()` or `.restartBase`.
+ * The arguments of a call of a table, each without what wraps it.
+ * @param syntax The table.
+ * @param call The call.
+ * @returns The arguments.
  */
-function added(operand: Node, start: Node): string {
-	return operand.text.slice(start.endIndex - operand.startIndex).replaceAll(/\s/gu, "");
+function tableArguments(syntax: MathSyntax, call: Node): Node[] {
+	const list = field(call, syntax.call.arguments);
+	return (list?.namedChildren ?? []).flatMap((each) => {
+		if (each.type === "comment") return [];
+		return each.type === syntax.argument ? (each.namedChildren.at(-1) ?? []) : [each];
+	});
+}
+
+/**
+ * The math function a callee of a table calls as a method of a number.
+ * @param syntax The table.
+ * @param callee The callee.
+ * @returns Its name, such as `min` for `a.min`, or undefined.
+ */
+function methodOf(syntax: MathSyntax, callee: Node): string | undefined {
+	const { member, methods } = syntax;
+	const name = callee.type === member.type ? field(callee, member.property)?.text : undefined;
+	return name !== undefined && methods?.has(name) === true ? name : undefined;
+}
+
+/**
+ * The call of a math function that a member read of a table names: its method.
+ * @param syntax The table.
+ * @param read The member read.
+ * @returns The call, or undefined.
+ */
+function methodCall(syntax: MathSyntax, read: Node): Node | undefined {
+	const call = read.parent;
+	const calls = call?.type === syntax.call.type && holds(call, syntax.call.callee, read);
+	return calls && methodOf(syntax, read) !== undefined ? call : undefined;
+}
+
+/**
+ * The operands of a call of a math function: its receiver, for a method, and its arguments.
+ * @param syntax The table.
+ * @param call The call.
+ * @param callee Its callee.
+ * @returns The operands.
+ */
+function operandsOf(syntax: MathSyntax, call: Node, callee: Node): Node[] {
+	const method = methodOf(syntax, callee) !== undefined;
+	const receiver = method ? field(callee, syntax.member.object) : undefined;
+	return [...(receiver === undefined ? [] : [receiver]), ...tableArguments(syntax, call)];
+}
+
+/**
+ * The math function a callee of a table calls.
+ * @param syntax The table.
+ * @param callee The callee.
+ * @returns Its name, such as `Math.min`, or undefined for another callee.
+ */
+function mathFunction(syntax: MathSyntax, callee: Node): string | undefined {
+	const found = syntax.math.exec(callee.text.replaceAll(/\s/gu, ""));
+	return found === null ? methodOf(syntax, callee) : (found.groups?.["name"] ?? found[0]);
+}
+
+/**
+ * The call of a math function an expression of a table is.
+ * @param syntax The table.
+ * @param node The expression.
+ * @returns The call, or undefined.
+ */
+function tableMathCall(syntax: MathSyntax, node: Node): MathCall | undefined {
+	const callee = node.type === syntax.call.type ? field(node, syntax.call.callee) : undefined;
+	if (callee === undefined) return undefined;
+	const name = mathFunction(syntax, callee);
+	return name === undefined ? undefined : { name, arguments: operandsOf(syntax, node, callee) };
+}
+
+/**
+ * The arguments of a call that hold an expression, through what wraps one argument.
+ * @param syntax The table.
+ * @param holder What holds the expression.
+ * @returns The arguments, or the holder itself.
+ */
+function listOf(syntax: MathSyntax, holder: Node): Node | null {
+	return holder.type === syntax.argument ? holder.parent : holder;
+}
+
+/**
+ * The call of a table whose argument or receiver an expression is, through what wraps one argument.
+ * @param syntax The table.
+ * @param argument The expression.
+ * @returns The call, or undefined.
+ */
+function tableCallOf(syntax: MathSyntax, argument: Node): Node | undefined {
+	const parent = argument.parent;
+	if (parent === null) return undefined;
+	const { member } = syntax;
+	const receives = parent.type === member.type && holds(parent, member.object, argument);
+	if (receives) return methodCall(syntax, parent);
+	const list = listOf(syntax, parent);
+	return list === null ? undefined : callHolding(syntax, list);
+}
+
+/**
+ * The call of a table that holds a list of arguments.
+ * @param syntax The table.
+ * @param list The list.
+ * @returns The call, or undefined when the list is no call's arguments.
+ */
+function callHolding(syntax: MathSyntax, list: Node): Node | undefined {
+	const call = list.parent;
+	return call !== null && holds(call, syntax.call.arguments, list) ? call : undefined;
+}
+
+/**
+ * Whether a call of a table calls an expression and passes it nothing, as a getter's does.
+ * @param syntax The table.
+ * @param parent The call.
+ * @param operand The expression.
+ * @returns True when it does.
+ */
+function getterCall(syntax: MathSyntax, parent: Node, operand: Node): boolean {
+	const { call } = syntax;
+	const calls = parent.type === call.type && holds(parent, call.callee, operand);
+	return calls && tableArguments(syntax, parent).length === 0;
+}
+
+/**
+ * The expression that reads on from another in a table: a member of it, or
+ * the call of it that passes nothing, as a getter's is.
+ * @param syntax The table.
+ * @param operand The expression.
+ * @returns The reading expression, or undefined; a math method is no member read.
+ */
+function tableReadOn(syntax: MathSyntax, operand: Node): Node | undefined {
+	const parent = operand.parent;
+	if (parent === null) return undefined;
+	const { member } = syntax;
+	const readsMember = parent.type === member.type && holds(parent, member.object, operand);
+	const reads = readsMember && methodCall(syntax, parent) === undefined;
+	return reads || getterCall(syntax, parent, operand) ? parent : undefined;
+}
+
+/**
+ * How a table spells the name that starts a chain.
+ * @param syntax The table.
+ * @param name The name.
+ * @returns Its spelling, which is its text unless the table says otherwise.
+ */
+function spelled(syntax: MathSyntax, name: Node): string {
+	return syntax.spelling?.(name) ?? name.text;
+}
+
+/**
+ * How a table spells a chain of names through `.`.
+ * @param syntax The table.
+ * @param chain The chain.
+ * @returns The spelling.
+ */
+function tableSpelled(syntax: MathSyntax, chain: Node): string {
+	const { member } = syntax;
+	const object = chain.type === member.type ? field(chain, member.object) : undefined;
+	const property = chain.type === member.type ? field(chain, member.property) : undefined;
+	if (object === undefined || property === undefined) return spelled(syntax, chain);
+	return `${tableSpelled(syntax, object)}.${property.text}`;
+}
+
+/**
+ * The block a declaration's variables live in.
+ * @param syntax The table.
+ * @param declaration The declaration.
+ * @returns The block.
+ */
+function scopeOf(syntax: MathSyntax, declaration: Node): Node | undefined {
+	let scope = declaration.parent;
+	while (scope !== null && !syntax.scopes.has(scope.type)) scope = scope.parent;
+	return scope ?? undefined;
+}
+
+/**
+ * The later uses of each local variable of a table that holds an expression whole.
+ * @param syntax The table.
+ * @param operand The expression.
+ * @returns Each later use and the member it takes.
+ */
+function tableLater(syntax: MathSyntax, operand: Node): Local[] {
+	let held = operand;
+	while (held.parent !== null && syntax.wrappers.has(held.parent.type)) held = held.parent;
+	const declared = syntax.declared(held);
+	const scope = declared === undefined ? undefined : scopeOf(syntax, declared.at);
+	if (declared === undefined || scope === undefined) return [];
+	const after = declared.at.endIndex;
+	return declared.locals.flatMap(([local, member]) =>
+		scope
+			.descendantsOfType("identifier")
+			.filter((each) => each.text === local.text && each.startIndex > after)
+			.map((each) => [each, member] as const),
+	);
+}
+
+/**
+ * A number of a table: its value, so `30_000` and `30000` are one.
+ * @param syntax The table.
+ * @param node The expression.
+ * @returns The value, or undefined for anything but a number.
+ */
+function tableNumber(syntax: MathSyntax, node: Node): string | undefined {
+	if (!syntax.numbers.has(node.type)) return undefined;
+	const digits = node.text.replaceAll("_", "");
+	const value = Number(syntax.suffix === undefined ? digits : digits.replace(syntax.suffix, ""));
+	return Number.isNaN(value) ? node.text : String(value);
+}
+
+/**
+ * The reading of a language's math that its table describes.
+ * @param syntax The table.
+ * @returns The reading.
+ */
+function tableGrammar(syntax: MathSyntax): MathGrammar {
+	return {
+		/**
+		 * The operation an expression is.
+		 * @param node The expression.
+		 * @returns Its operator and operands, or undefined.
+		 */
+		operation: (node) => tableOperation(syntax, node),
+		/**
+		 * The expression a wrapper holds.
+		 * @param node The expression.
+		 * @returns What it holds, or undefined for anything else.
+		 */
+		inner: (node) => (syntax.wrappers.has(node.type) ? node.namedChildren[0] : undefined),
+		/**
+		 * The call of a math function an expression is.
+		 * @param node The expression.
+		 * @returns The call, or undefined.
+		 */
+		mathCall: (node) => tableMathCall(syntax, node),
+		/**
+		 * The call an expression is an argument of.
+		 * @param argument The expression.
+		 * @returns The call, or undefined.
+		 */
+		callOf: (argument) => tableCallOf(syntax, argument),
+		sorted: syntax.sorted,
+		...(syntax.operators === undefined ? {} : { operators: syntax.operators }),
+		...(syntax.rightward === undefined ? {} : { rightward: syntax.rightward }),
+		/**
+		 * A number's value.
+		 * @param node The expression.
+		 * @returns The value, or undefined for anything but a number.
+		 */
+		number: (node) => tableNumber(syntax, node),
+		/**
+		 * Whether an expression is text.
+		 * @param node The expression.
+		 * @returns True for a text literal.
+		 */
+		text: (node) => syntax.texts.has(node.type),
+		/**
+		 * The expression that reads on from another.
+		 * @param operand The expression.
+		 * @returns The reading expression, or undefined.
+		 */
+		readOn: (operand) => tableReadOn(syntax, operand),
+		/**
+		 * Whether an expression reads a member.
+		 * @param expression The expression.
+		 * @returns True for a member read.
+		 */
+		member: (expression) => expression.type === syntax.member.type,
+		/**
+		 * How a chain of names is spelled.
+		 * @param chain The chain.
+		 * @returns The spelling.
+		 */
+		spelled: (chain) => tableSpelled(syntax, chain),
+		/**
+		 * The later uses of the local variables that hold an expression whole.
+		 * @param operand The expression.
+		 * @returns Each use and the member it takes.
+		 */
+		later: (operand) => tableLater(syntax, operand),
+	};
 }
 
 /**
@@ -574,20 +418,7 @@ function declaredBy(
  * @returns The computations, each once.
  */
 function computationsOf(uses: readonly Node[], syntax: MathSyntax): Computation[] {
-	const reader = new MathReader(syntax);
-	const found = new Map<string, Computation>();
-	for (const name of uses) {
-		const chain = reader.chainOf(name);
-		const symbol = reader.spelled(chain);
-		const operand = reader.operandOf(chain);
-		const text = `@${added(operand, chain)}`;
-		const direct = reader.computed(symbol, operand, text);
-		const each = direct === undefined ? reader.throughLocals(symbol, operand, text) : [direct];
-		for (const computation of each) {
-			found.set(`${computation.symbol}\0${computation.line}\0${computation.shape}`, computation);
-		}
-	}
-	return [...found.values()];
+	return computationsThrough(uses, tableGrammar(syntax));
 }
 
-export { computationsOf, declaredBy, type Local, type MathSyntax };
+export { computationsOf, declaredBy, type MathSyntax };

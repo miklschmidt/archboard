@@ -227,7 +227,8 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 			// The ledger's header only declares the audit, and its source defines none of it.
 			"RELATIONSHIP_UNDRAWN pL information",
 			"CALLER_UNDRAWN pR warning",
-			"EXPOSED_UNUSED pK information",
+			// The notifier, which no file outside `src` calls, and the read is complete.
+			"EXPOSED_UNUSED pK warning",
 		].toSorted(),
 	);
 	// Nothing was read as text.

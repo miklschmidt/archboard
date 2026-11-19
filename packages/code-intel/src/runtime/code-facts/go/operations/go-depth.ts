@@ -9,7 +9,8 @@
 // fact keeps (`c` for `c.advance(step)`, `c` being the receiver).
 
 import type { Node } from "web-tree-sitter";
-import type { Local, MathSyntax } from "#runtime/code-facts/operations/math-shapes.ts";
+import type { Local } from "#runtime/code-facts/operations/math-grammar.ts";
+import type { MathSyntax } from "#runtime/code-facts/operations/math-shapes.ts";
 
 /**
  * The names a declaration of variables writes, in the order of their values.

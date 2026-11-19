@@ -33,9 +33,13 @@
 
 import type { Node } from "web-tree-sitter";
 import {
+	calledByLanguage,
 	declaratorKind,
+	markType,
 	namesFunction,
 } from "#runtime/code-facts/c/operations/c-definition-kind.ts";
+import { cPassesTo } from "#runtime/code-facts/c/operations/c-pass-through.ts";
+import { spell } from "#runtime/code-facts/c/operations/c-spelling.ts";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 
@@ -89,46 +93,6 @@ const MISREAD_NAMESPACE = /^namespace\b\s*([\w:\s]*)$/u;
 const MEMBER_ACCESS = new Set(["public", "protected", "private"]);
 
 /**
- * How C++ spells a name with a qualifier: its scope and its name joined by `::`.
- * @param node The qualified name.
- * @returns The spelling.
- */
-function spellQualified(node: Node): string {
-	const scope = node.childForFieldName("scope");
-	const name = node.childForFieldName("name");
-	const rest = name === null ? "" : spell(name);
-	return scope === null ? rest : `${spell(scope)}::${rest}`;
-}
-
-/**
- * How C++ spells a template's name: without its arguments.
- * @param node The template type, function or method.
- * @returns The spelling.
- */
-function spellTemplate(node: Node): string {
-	const name = node.childForFieldName("name");
-	return name === null ? node.text : spell(name);
-}
-
-/** How each kind of qualified name is spelled. */
-const SPELLINGS: Readonly<Record<string, (node: Node) => string>> = {
-	qualified_identifier: spellQualified,
-	template_type: spellTemplate,
-	template_function: spellTemplate,
-	template_method: spellTemplate,
-};
-
-/**
- * How C++ spells a name: the names of a qualified one joined by `::`, with
- * no template arguments and no spaces.
- * @param node The name.
- * @returns The spelling.
- */
-function spell(node: Node): string {
-	return SPELLINGS[node.type]?.(node) ?? node.text.replaceAll(/\s+/gu, "");
-}
-
-/**
  * The name a declarator declares, through pointers, references, arrays,
  * parentheses, initializers and parameter lists.
  * @param node The declarator.
@@ -175,7 +139,8 @@ function qualified(walk: Walk, name: string): string {
  * @param extent The node it spans.
  * @param linkage Its word at namespace scope.
  * @param kind Its definition kind.
- * @param declares Whether its code is elsewhere: a prototype or an `extern` variable.
+ * @param more What else the declaration says: that its code is elsewhere, as
+ * a prototype's or an `extern` variable's is, or the call it only passes on.
  * @returns Its qualified symbol.
  */
 function define(
@@ -184,7 +149,7 @@ function define(
 	extent: Node,
 	linkage: string,
 	kind: Definition["kind"],
-	declares = false,
+	more: Pick<Definition, "declaration" | "passes"> = {},
 ): string {
 	const symbol = qualified(walk, name);
 	const { word, exposed } = visibilityOf(walk, linkage);
@@ -196,7 +161,8 @@ function define(
 		source: sourceRange(extent),
 		visibility: word,
 		exposed,
-		...(declares ? { declaration: true as const } : {}),
+		...more,
+		...(kind === "function" && calledByLanguage(symbol) ? { calledByLanguage: true } : {}),
 	});
 	return symbol;
 }
@@ -216,6 +182,27 @@ function declaresOnly(node: Node, declarator: Node, name: Node): boolean {
 		(child) => child.type === "storage_class_specifier" && child.text === "extern",
 	);
 	return isExtern && declarator.type !== "init_declarator";
+}
+
+/**
+ * Whether a declarator's code is elsewhere, as a prototype's or an `extern` variable's is.
+ * @param node The function definition, declaration or field declaration.
+ * @param declarator One of its declarators.
+ * @param name The name it declares.
+ * @returns The mark, or nothing.
+ */
+function declarationOf(node: Node, declarator: Node, name: Node): Pick<Definition, "declaration"> {
+	return declaresOnly(node, declarator, name) ? { declaration: true } : {};
+}
+
+/**
+ * The call a function definition only passes on, if it does.
+ * @param node The function definition, declaration or field declaration.
+ * @returns The callee's root, for a function definition that only passes its call on.
+ */
+function passesOf(node: Node): Pick<Definition, "passes"> {
+	const passes = node.type === "function_definition" ? cPassesTo(node) : undefined;
+	return passes === undefined ? {} : { passes };
 }
 
 /**
@@ -359,9 +346,11 @@ function variables(walk: Walk, node: Node, extent: Node): void {
 	for (const declarator of node.childrenForFieldName("declarator")) {
 		const name = declaredName(declarator);
 		if (name === undefined) continue;
-		const declares = declaresOnly(node, declarator, name);
 		const kind = declaratorKind(name, declarator);
-		define(walk, spell(name), extent, isStatic ? "static" : "extern", kind, declares);
+		define(walk, spell(name), extent, isStatic ? "static" : "extern", kind, {
+			...declarationOf(node, declarator, name),
+			...passesOf(node),
+		});
 	}
 }
 
@@ -376,6 +365,7 @@ function typeSpecifier(walk: Walk, node: Node, extent: Node, alias?: string): vo
 	const body = node.childForFieldName("body");
 	if (body === null) return;
 	const named = node.childForFieldName("name");
+	const from = walk.definitions.length;
 	const symbol =
 		named === null
 			? alias === undefined
@@ -385,6 +375,7 @@ function typeSpecifier(walk: Walk, node: Node, extent: Node, alias?: string): vo
 	if (symbol === undefined) return;
 	if (node.type === "enum_specifier") enumerators(walk, node, body, symbol);
 	else classMembers(walk, node, body, symbol);
+	markType(walk.definitions, symbol, from);
 }
 
 /**
@@ -445,15 +436,12 @@ function typedef(walk: Walk, node: Node, extent: Node): void {
 		.filter((name) => name !== undefined)
 		.map(spell);
 	const type = node.childForFieldName("type");
+	const from = walk.definitions.length;
 	if (type !== null && TYPE_SPECIFIERS.has(type.type)) typeSpecifier(walk, type, type, names[0]);
-	for (const name of names)
-		define(
-			walk,
-			name,
-			extent,
-			"no linkage",
-			type !== null && TYPE_SPECIFIERS.has(type.type) ? "class" : "value",
-		);
+	for (const name of names) {
+		const kind = type !== null && TYPE_SPECIFIERS.has(type.type) ? "class" : "value";
+		markType(walk.definitions, define(walk, name, extent, "no linkage", kind), from);
+	}
 }
 
 /**
@@ -486,7 +474,9 @@ function linkageBlock(walk: Walk, node: Node): void {
  */
 function usingAlias(walk: Walk, node: Node, extent: Node): void {
 	const name = node.childForFieldName("name");
-	if (name !== null) define(walk, name.text, extent, "no linkage", "value");
+	if (name === null) return;
+	const from = walk.definitions.length;
+	markType(walk.definitions, define(walk, name.text, extent, "no linkage", "value"), from);
 }
 
 /**
@@ -514,7 +504,13 @@ function macro(walk: Walk, node: Node): void {
 	const name = node.childForFieldName("name");
 	if (name === null || isIncludeGuard(node, name)) return;
 	const file: Walk = { definitions: walk.definitions, scope: { names: [], internal: false } };
-	define(file, name.text, node, "macro", "value");
+	define(
+		file,
+		name.text,
+		node,
+		"macro",
+		node.type === "preproc_function_def" ? "function" : "value",
+	);
 }
 
 /** How each kind of declaration is read. */
@@ -591,4 +587,4 @@ function cDefinitionsOf(root: Node): Definition[] {
 	return withMemberAccess(definitions);
 }
 
-export { cDefinitionsOf, isMisread, spell };
+export { cDefinitionsOf, isMisread };
