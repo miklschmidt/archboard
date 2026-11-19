@@ -4,7 +4,7 @@
 
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 import { parsePaneKey, type ModelDocument } from "@archboard/model-contract";
-import { placeOfVault } from "@archboard/workspace/repository-listing";
+import { placeOfVault } from "@archboard/workspace/vault";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 
 import type { PaneReport, PanesReport } from "#server/panes/rules/pane-layout.ts";

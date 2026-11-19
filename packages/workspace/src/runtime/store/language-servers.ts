@@ -16,22 +16,12 @@ import { registryPath, withFileLock } from "#runtime/store/registry-file.ts";
 import {
 	CONFIGURABLE_LANGUAGES,
 	type ConfigurableLanguage,
+	type ConfiguredServerSchema,
+	LanguageServersSchema,
 } from "#shared/schemas/configurable-languages.ts";
-
-/** The server of one language: its command and the arguments after it. */
-const ConfiguredServerSchema = z.strictObject({
-	command: z.string().min(1),
-	args: z.array(z.string()).default([]),
-});
 
 /** The server of one language. */
 type ConfiguredServer = z.infer<typeof ConfiguredServerSchema>;
-
-/** The servers that one file names, by language. */
-const LanguageServersSchema = z.partialRecord(
-	z.enum(CONFIGURABLE_LANGUAGES),
-	ConfiguredServerSchema,
-);
 
 /** The servers that one file names. */
 type LanguageServers = z.infer<typeof LanguageServersSchema>;
@@ -181,57 +171,126 @@ function checkoutServers(
 	};
 }
 
+/** Where a server is set: the checkout's root, for the repository file, and the directory a command path is read from. */
+interface ServerPlace {
+	readonly root?: string;
+	readonly cwd: string;
+}
+
+/** What setting a server did: the file as it now stands, or the path the repository file cannot hold. */
+type ServerWrite =
+	| { readonly kind: "written"; readonly file: string; readonly servers: LanguageServers }
+	| { readonly kind: "outside-checkout"; readonly absolute: string };
+
 /**
- * Set or remove the server of one language in one file. The file lists its
- * languages in a fixed order and leaves out empty arguments, so a person reads
- * and diffs it easily. A file left with no server is deleted.
+ * The server as its file keeps it. A command that is a name stays a name. A
+ * path is read from the directory the person typed it in. The global file
+ * belongs to this machine and keeps it absolute. Every machine reads the
+ * repository file, so it keeps a path inside the checkout as a path from the
+ * checkout root, which `checkoutServers` reads back, and holds no other path.
+ * @param server The server, with its command as typed.
+ * @param root The checkout's root, for the repository file; undefined for the global file.
+ * @param cwd Where the command was typed.
+ * @returns The server to store, or the absolute path that lies outside the checkout.
+ */
+function storedServer(
+	server: ConfiguredServer,
+	root: string | undefined,
+	cwd: string,
+): ConfiguredServer | { readonly outside: string } {
+	if (path.basename(server.command) === server.command) return server;
+	const absolute = path.resolve(cwd, server.command);
+	if (root === undefined) return { ...server, command: absolute };
+	const relative = path.relative(root, absolute);
+	const outside =
+		relative === "" || path.isAbsolute(relative) || relative.split(path.sep)[0] === "..";
+	return outside
+		? { outside: absolute }
+		: { ...server, command: `./${relative.split(path.sep).join("/")}` };
+}
+
+/**
+ * Set or remove the server of one language in one file. The server is stored
+ * as `storedServer` keeps it, and a path the repository file cannot hold
+ * changes nothing. The file lists its languages in a fixed order and leaves out
+ * empty arguments, so a person reads and diffs it easily. A file left with no
+ * server is deleted.
  * @param scope Which file.
  * @param language The language.
- * @param server Its command and arguments, or undefined to remove it.
- * @param root The checkout's root, for the repository file.
- * @returns The file as it now stands.
+ * @param server Its command as typed and its arguments, or undefined to remove it.
+ * @param place The checkout's root, for the repository file, and where the command was typed.
+ * @returns The file as it now stands, or the path outside the checkout.
  * @throws {Error} When the file cannot be read or written: nothing changed.
  */
 function setServer(
 	scope: ServerScope,
 	language: ConfigurableLanguage,
 	server: ConfiguredServer | undefined,
-	root?: string,
-): { readonly file: string; readonly servers: LanguageServers } {
+	place: ServerPlace,
+): ServerWrite {
+	const root = scope === "repository" ? place.root : undefined;
+	const stored = server === undefined ? undefined : storedServer(server, root, place.cwd);
+	if (stored !== undefined && "outside" in stored)
+		return { kind: "outside-checkout", absolute: stored.outside };
 	return withFileLock(serversPath(scope, root), () => {
 		const current = readServers(scope, root);
 		if ("problem" in current)
 			throw new Error(`${current.problem}. Fix or delete it, then run this again.`);
 		const { file } = current;
-		const { [language]: _replaced, ...others } = current.servers;
-		const changed: LanguageServers =
-			server === undefined ? others : { ...others, [language]: server };
-		const servers: LanguageServers = Object.fromEntries(
-			CONFIGURABLE_LANGUAGES.flatMap((each) => {
-				const entry = changed[each];
-				return entry === undefined ? [] : [[each, entry]];
-			}),
-		);
-		try {
-			if (Object.keys(servers).length === 0) {
-				if (fs.existsSync(file)) unlinkDurably(file);
-			} else {
-				fs.mkdirSync(path.dirname(file), { recursive: true });
-				const stored = Object.fromEntries(
-					Object.entries(servers).map(([each, { command, args }]) => [
-						each,
-						args.length === 0 ? { command } : { command, args },
-					]),
-				);
-				writeFileAtomic(file, `${JSON.stringify(stored, null, "\t")}\n`);
-			}
-		} catch (error) {
-			throw new Error(`Could not write ${file}, so nothing changed: ${errorMessage(error)}`, {
-				cause: error,
-			});
-		}
-		return { file, servers };
+		const servers = withServer(current.servers, language, stored);
+		writeServers(file, servers);
+		return { kind: "written" as const, file, servers };
 	});
+}
+
+/**
+ * The servers of a file with one language's server set or removed, in language order.
+ * @param current What the file names now.
+ * @param language The language.
+ * @param server Its server, or undefined to remove it.
+ * @returns The servers.
+ */
+function withServer(
+	current: LanguageServers,
+	language: ConfigurableLanguage,
+	server: ConfiguredServer | undefined,
+): LanguageServers {
+	const { [language]: _replaced, ...others } = current;
+	const changed: LanguageServers =
+		server === undefined ? others : { ...others, [language]: server };
+	return Object.fromEntries(
+		CONFIGURABLE_LANGUAGES.flatMap((each) => {
+			const entry = changed[each];
+			return entry === undefined ? [] : [[each, entry]];
+		}),
+	);
+}
+
+/**
+ * Write a file's servers without empty arguments, or delete a file left with none.
+ * @param file The file.
+ * @param servers Its servers.
+ * @throws {Error} When the file cannot be written: nothing changed.
+ */
+function writeServers(file: string, servers: LanguageServers): void {
+	try {
+		if (Object.keys(servers).length === 0) {
+			if (fs.existsSync(file)) unlinkDurably(file);
+			return;
+		}
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		const stored = Object.fromEntries(
+			Object.entries(servers).map(([each, { command, args }]) => [
+				each,
+				args.length === 0 ? { command } : { command, args },
+			]),
+		);
+		writeFileAtomic(file, `${JSON.stringify(stored, null, "\t")}\n`);
+	} catch (error) {
+		throw new Error(`Could not write ${file}, so nothing changed: ${errorMessage(error)}`, {
+			cause: error,
+		});
+	}
 }
 
 /**
@@ -250,12 +309,4 @@ function passServers(): (root: string, language: ConfigurableLanguage) => Server
 	};
 }
 
-export { LanguageServersSchema, passServers, readServers, setServer };
-
-/**
- * The schema `LanguageServersSchema`, for callers that parse it or build on it.
- * @returns The schema.
- */
-export function languageServersSchema(): typeof LanguageServersSchema {
-	return LanguageServersSchema;
-}
+export { passServers, readServers, setServer };

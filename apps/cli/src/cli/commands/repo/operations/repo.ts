@@ -1,11 +1,9 @@
 import { z } from "zod";
 import {
-	chosenCheckouts,
+	checkoutOf,
 	declareDirectory,
 	forgetDirectory,
 	listRegistry,
-	registryPath,
-	RepoRegistryError,
 } from "@archboard/workspace/checkouts";
 import { CliUsageError, defineCommand, type Paint } from "#cli/contract/protocol/contract.ts";
 import { child, contract, type CommandRoute } from "#cli/routing/protocol/route.ts";
@@ -137,7 +135,7 @@ const repoListContract = defineCommand({
 			return {
 				result: {
 					success: true as const,
-					registry: registryPath(),
+					registry: listing.path,
 					repos: checkouts,
 					vaults,
 					unchosen,
@@ -249,16 +247,12 @@ const registryOutput = {
  * @param choose Whether to make a checkout the chosen one.
  * @param signal Cancels the git calls.
  * @returns What was recorded.
+ * @throws {CliUsageError} When the registry refuses the directory.
  */
 async function declare(dir: string, choose: boolean, signal: AbortSignal) {
-	try {
-		return await declareDirectory(dir, { choose, signal });
-	} catch (error) {
-		if (error instanceof RepoRegistryError) {
-			throw new CliUsageError(error.message);
-		}
-		throw error;
-	}
+	const declared = await declareDirectory(dir, { choose, signal });
+	if (declared.kind === "refused") throw new CliUsageError(declared.message);
+	return declared;
 }
 
 type Declared = Awaited<ReturnType<typeof declare>>;
@@ -278,7 +272,7 @@ function vaultReceipt(declared: Extract<Declared, { kind: "vault" }>) {
 			root,
 			addedAt,
 			added: declared.added,
-			registry: registryPath(),
+			registry: declared.registry,
 		},
 		diagnostics: [`"${name}" is the registry name of the untracked vault at ${root}.`],
 	};
@@ -305,7 +299,7 @@ function checkoutReceipt(declared: Extract<Declared, { kind: "checkout" }>) {
 			...(replaced === undefined ? {} : { replaced: replaced.root }),
 			worktrees: worktrees.map((each) => each.root),
 			...(renamed === undefined ? {} : { renamed }),
-			registry: registryPath(),
+			registry: declared.registry,
 		},
 		diagnostics: checkoutLines(declared),
 	};
@@ -320,7 +314,8 @@ function checkoutReceipt(declared: Extract<Declared, { kind: "checkout" }>) {
  */
 function checkoutLines(declared: Extract<Declared, { kind: "checkout" }>): string[] {
 	const { checkout, worktrees, renamed } = declared;
-	const chosenRoot = chosenCheckouts().find((each) => each.repo === checkout.repo)?.root;
+	const chosen = checkoutOf(checkout.repo);
+	const chosenRoot = chosen.kind === "chosen" ? chosen.root : undefined;
 	const reading = checkout.chosen
 		? `"${checkout.repo}" is now read at ${checkout.root}: a node bound to ${checkout.repo} opens the file it names there.`
 		: `${checkout.root} is known, and ${chosenRoot ?? "no checkout"} stays the one read for "${checkout.repo}". Run archboard repo use ${checkout.root} to read this one instead.`;
@@ -488,9 +483,9 @@ const repoForgetContract = defineCommand({
 	async handler(input, context) {
 		const dir = context.resolvePath(input.dir);
 		const gone = await forgetDirectory(dir, { signal: context.signal });
-		const base = { success: true as const, root: dir, registry: registryPath() };
+		const known = listRegistry();
+		const base = { success: true as const, root: dir, registry: known.path };
 		if (gone === undefined) {
-			const known = listRegistry();
 			const where = [
 				...known.checkouts.map((each) => each.root),
 				...known.vaults.map((each) => each.root),

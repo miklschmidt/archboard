@@ -15,8 +15,9 @@
 // `repo use`, the navigator's menu and an agent's `browser show` from another
 // checkout change it (ADR 0050). Registering a checkout never does, except
 // that the first known checkout of an identity becomes its chosen one.
-// Readers that turn an identity into a directory ask for `chosenCheckouts()`
-// and so never see the others.
+// Readers that turn an identity into a directory ask `checkoutOf` or
+// `checkoutsReadFrom` (`runtime/services/checkout-questions.ts`) and so never see
+// the others.
 //
 // A checkout becomes known when a person declares it. Its worktrees, as
 // `git worktree list` reports them, become known with it. Nothing is
@@ -39,7 +40,7 @@ import {
 	changeRegistry,
 	isDirectory,
 	readRegistry,
-	RepoRegistryError,
+	registryPath,
 	type RegisteredRepo,
 	type RegisteredRepoStatus,
 	type Registry,
@@ -78,6 +79,15 @@ type Declared =
 	  }
 	| { kind: "vault"; vault: UntrackedVault; added: boolean };
 
+/** A declaration refused: its sentence says why, as a person reads it. */
+interface Refused {
+	readonly kind: "refused";
+	readonly message: string;
+}
+
+/** What a declaration recorded, with the registry file it went in, or why it was refused. */
+type Declaration = (Declared & { readonly registry: string }) | Refused;
+
 /** What forgetting a directory removed. */
 type Forgotten =
 	| { kind: "checkout"; checkout: RegisteredRepo; unchosen: boolean; others: string[] }
@@ -85,36 +95,42 @@ type Forgotten =
 
 /** Every entry plus whether its directory is still there. */
 interface RegistryListing {
+	/** The registry file. */
+	path: string;
 	checkouts: RegisteredRepoStatus[];
 	vaults: UntrackedVaultStatus[];
 	/** Identities that have known checkouts and no chosen one, until `repo use`. */
 	unchosen: string[];
+	/**
+	 * The directories that hold the vaults this machine reads, as the registry spells them: each
+	 * chosen checkout and each untracked vault whose directory is still there, sorted, each once.
+	 */
+	holders: string[];
 }
 
 /**
- * Every entry, with whether its directory is still on this machine.
- * @returns The checkouts, the untracked vaults and the identities with no chosen checkout.
+ * Every entry, with whether its directory is still on this machine. Never
+ * throws: a registry that cannot be read lists nothing.
+ * @returns The registry file, the checkouts, the untracked vaults, the identities with no chosen
+ * checkout, and the directories that hold the vaults this machine reads.
  */
 function listRegistry(): RegistryListing {
-	const { checkouts, vaults } = readRegistry();
-	const chosen = new Set(checkouts.filter((each) => each.chosen).map((each) => each.repo));
+	const read = readRegistry();
+	const checkouts = read.checkouts.map((entry) => ({ ...entry, exists: isDirectory(entry.root) }));
+	const vaults = read.vaults.map((entry) => ({ ...entry, exists: isDirectory(entry.root) }));
+	const chosen = checkouts.filter((each) => each.chosen);
+	const chosenRepos = new Set(chosen.map((each) => each.repo));
 	return {
-		checkouts: checkouts.map((entry) => ({ ...entry, exists: isDirectory(entry.root) })),
-		vaults: vaults.map((entry) => ({ ...entry, exists: isDirectory(entry.root) })),
+		path: registryPath(),
+		checkouts,
+		vaults,
 		unchosen: [...new Set(checkouts.map((each) => each.repo))]
-			.filter((repo) => !chosen.has(repo))
+			.filter((repo) => !chosenRepos.has(repo))
 			.toSorted(),
+		holders: [
+			...new Set([...chosen, ...vaults].filter((each) => each.exists).map((each) => each.root)),
+		].toSorted(),
 	};
-}
-
-/**
- * The checkouts that this machine reads: the chosen checkout of each identity,
- * whether or not its directory is still there. This is what resolves an
- * identity to a directory, so an identity without one resolves as unregistered.
- * @returns One checkout for each identity that has a chosen one.
- */
-function chosenCheckouts(): RegisteredRepoStatus[] {
-	return listRegistry().checkouts.filter((entry) => entry.chosen);
 }
 
 /**
@@ -283,16 +299,30 @@ function declareUntrackedVault(holder: string): Declared {
  * @param dir The directory to register: a git checkout, or outside any
  * checkout the directory that holds `.archboard/vault`.
  * @param options Whether to make the checkout the chosen one, and how to cancel the git calls.
- * @returns What was recorded.
- * @throws {RepoRegistryError} When the directory is missing, is neither inside
- * a git repository nor inside a directory that holds a vault, or is a vault
- * and so has no repository identity to choose.
+ * @returns What was recorded and the registry file, or the refusal of a directory that is
+ * missing, is neither inside a git repository nor inside a directory that holds a vault, or is a
+ * vault and so has no repository identity to choose.
  * @throws {RegistryWriteError} When the registry cannot be written.
  */
-async function declareDirectory(dir: string, options: DeclareOptions = {}): Promise<Declared> {
+async function declareDirectory(dir: string, options: DeclareOptions = {}): Promise<Declaration> {
+	const declared = await declaredDirectory(dir, options);
+	return declared.kind === "refused" ? declared : { ...declared, registry: registryPath() };
+}
+
+/**
+ * Record a directory, or refuse it.
+ * @param dir The directory.
+ * @param options Whether to make the checkout the chosen one, and how to cancel the git calls.
+ * @returns What was recorded, or the refusal.
+ * @throws {RegistryWriteError} When the registry cannot be written.
+ */
+async function declaredDirectory(
+	dir: string,
+	options: DeclareOptions,
+): Promise<Declared | Refused> {
 	const named = path.resolve(dir);
 	if (!isDirectory(named)) {
-		throw new RepoRegistryError(`${named} is not a directory on this machine.`);
+		return { kind: "refused", message: `${named} is not a directory on this machine.` };
 	}
 	// A checkout root is the real path Git reports, and an untracked vault is
 	// recorded the same way, so the directory a command finds a vault in is
@@ -304,52 +334,20 @@ async function declareDirectory(dir: string, options: DeclareOptions = {}): Prom
 	}
 	const holder = vaultHolder(target);
 	if (holder === undefined) {
-		throw new RepoRegistryError(
-			`${target} is not inside a git repository and holds no ${VAULT_DIRECTORY}, so there is nothing to register it as. ` +
+		return {
+			kind: "refused",
+			message:
+				`${target} is not inside a git repository and holds no ${VAULT_DIRECTORY}, so there is nothing to register it as. ` +
 				"A binding names a repo plus a path inside it; a bare directory cannot be either.",
-		);
+		};
 	}
 	if (options.choose === true) {
-		throw new RepoRegistryError(
-			`${holder} is an untracked vault: it has no repository identity, so there is no checkout to choose. Register it with repo add.`,
-		);
+		return {
+			kind: "refused",
+			message: `${holder} is an untracked vault: it has no repository identity, so there is no checkout to choose. Register it with repo add.`,
+		};
 	}
 	return declareUntrackedVault(holder);
-}
-
-/** What choosing a known checkout did. */
-interface Chosen {
-	/** The checkout, chosen now. */
-	readonly checkout: RegisteredRepo;
-	/** Whether it was not the chosen one before. */
-	readonly changed: boolean;
-	/** The root of the checkout it replaced, or null when its identity had none chosen or nothing changed. */
-	readonly replaced: string | null;
-}
-
-/**
- * Make a known checkout the chosen one of its identity, as `repo use` does, in
- * the registry alone: the checkout is known, so Git has nothing to add. The
- * navigator's menu and `browser show` choose through here (ADR 0050).
- * @param root The checkout's root, as the registry holds it.
- * @returns What the choice did, or undefined when the root is not a known checkout.
- * @throws {RegistryWriteError} When the registry cannot be written.
- */
-function chooseKnownCheckout(root: string): Chosen | undefined {
-	return changeRegistry((registry): Chosen | undefined => {
-		const checkout = registry.checkouts.find((each) => each.root === root);
-		if (checkout === undefined) return undefined;
-		if (checkout.chosen) return { checkout, changed: false, replaced: null };
-		const before = registry.checkouts.find((each) => each.repo === checkout.repo && each.chosen);
-		registry.checkouts = registry.checkouts.map((each) =>
-			each.repo === checkout.repo ? { ...each, chosen: each === checkout } : each,
-		);
-		return {
-			checkout: { ...checkout, chosen: true },
-			changed: true,
-			replaced: before?.root ?? null,
-		};
-	});
 }
 
 /**
@@ -357,14 +355,14 @@ function chooseKnownCheckout(root: string): Chosen | undefined {
  * unless the registry already knows that directory (ADR 0049).
  * @param holder The checkout root, or the directory that holds an untracked vault.
  * @param options How to cancel the git calls.
- * @returns What was recorded, or undefined when the registry knew the directory.
- * @throws {RepoRegistryError} When the directory is neither a checkout nor holds a vault.
+ * @returns What was recorded, the refusal of a directory that is neither a checkout nor holds a
+ * vault, or undefined when the registry knew the directory.
  * @throws {RegistryWriteError} When the registry cannot be written.
  */
 async function declareIfUnknown(
 	holder: string,
 	options: Pick<DeclareOptions, "signal"> = {},
-): Promise<Declared | undefined> {
+): Promise<Declaration | undefined> {
 	const { checkouts, vaults } = readRegistry();
 	// A finder names the holder by its real path, and an entry written before
 	// the registry stored real paths can name it through a link.
@@ -486,12 +484,8 @@ async function forgetDirectory(
 }
 
 export {
-	type RegisteredRepoStatus,
-	type Declared,
-	RepoRegistryError,
+	type Declaration,
 	listRegistry,
-	chosenCheckouts,
-	chooseKnownCheckout,
 	declareDirectory,
 	declareIfUnknown,
 	forgetDirectory,

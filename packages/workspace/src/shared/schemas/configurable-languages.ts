@@ -1,6 +1,8 @@
-// The languages an agent can configure a server for (ADR 0046, TASK-433). Browser safe: the
-// code-check answer names these, and the validation of a command (node:path) is in
-// runtime/store/language-servers.ts.
+// The languages an agent can configure a server for (ADR 0046, TASK-433), and the servers one
+// language server file names. Browser safe: the code-check answer names these languages, and the
+// validation of a command (node:path) is in runtime/store/language-servers.ts.
+
+import { z } from "zod";
 
 /**
  * The languages whose server a checkout can configure. `c` is the whole C family:
@@ -21,12 +23,21 @@ const CONFIGURABLE_LANGUAGES = [
 /** A language whose server an agent configures. */
 type ConfigurableLanguage = (typeof CONFIGURABLE_LANGUAGES)[number];
 
-export { type ConfigurableLanguage, CONFIGURABLE_LANGUAGES };
+/** The server of one language: its command and the arguments after it. */
+const ConfiguredServerSchema = z.strictObject({
+	command: z.string().min(1),
+	args: z.array(z.string()).default([]),
+});
 
-/**
- * The value `CONFIGURABLE_LANGUAGES`, for callers that read it.
- * @returns The value.
- */
-export function configurableLanguages(): typeof CONFIGURABLE_LANGUAGES {
-	return CONFIGURABLE_LANGUAGES;
-}
+/** The servers that one file names, by language. */
+const LanguageServersSchema = z.partialRecord(
+	z.enum(CONFIGURABLE_LANGUAGES),
+	ConfiguredServerSchema,
+);
+
+export {
+	type ConfigurableLanguage,
+	CONFIGURABLE_LANGUAGES,
+	ConfiguredServerSchema,
+	LanguageServersSchema,
+};

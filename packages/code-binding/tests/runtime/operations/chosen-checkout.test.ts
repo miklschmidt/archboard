@@ -7,7 +7,7 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { chosenCheckouts, declareDirectory, forgetDirectory } from "@archboard/workspace/checkouts";
+import { checkoutOf, declareDirectory, forgetDirectory } from "@archboard/workspace/checkouts";
 import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
@@ -24,7 +24,8 @@ import {
  * @returns Its root, or undefined when it has none.
  */
 function chosenRoot(repo: string): string | undefined {
-	return chosenCheckouts().find((each) => each.repo === repo)?.root;
+	const checkout = checkoutOf(repo);
+	return checkout.kind === "chosen" ? checkout.root : undefined;
 }
 
 let fixture: ResolverFixture;

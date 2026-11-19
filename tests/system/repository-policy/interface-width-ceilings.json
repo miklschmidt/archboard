@@ -1,5 +1,5 @@
 {
-	"code-binding": 18,
+	"code-binding": 16,
 	"code-intel": 11,
 	"code-opener": 9,
 	"codex-app-server": 108,
@@ -18,5 +18,5 @@
 	"ui-kit": 35,
 	"walkthrough": 20,
 	"workbench": 52,
-	"workspace": 40
+	"workspace": 29
 }

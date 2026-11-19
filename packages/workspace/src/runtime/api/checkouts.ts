@@ -1,18 +1,9 @@
-// What is known of checkouts: Git lookups of a directory, the repository registry (declare, forget, choose, list) with the vault it binds, and the language servers of a checkout.
-export { checkoutHead, inspectCheckout, repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
-export { gitCheckoutOfVault } from "#runtime/clients/git-sync.ts";
+// What is known of checkouts: Git lookups of a directory, the repository registry (declare, forget, list), which checkout of a repository is chosen and choosing one, the checkouts a vault reads (ADR 0049), and the language servers of a checkout.
+export { inspectCheckout, repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
+export { passServers, readServers, setServer } from "#runtime/store/language-servers.ts";
+export { declareDirectory, forgetDirectory, listRegistry } from "#runtime/store/repo-registry.ts";
 export {
-	languageServersSchema,
-	passServers,
-	readServers,
-	setServer,
-} from "#runtime/store/language-servers.ts";
-export { registryPath, RepoRegistryError } from "#runtime/store/registry-file.ts";
-export {
-	chooseKnownCheckout,
-	chosenCheckouts,
-	declareDirectory,
-	forgetDirectory,
-	listRegistry,
-	repositoryOfVault as registeredRepositoryOfVault,
-} from "#runtime/store/repo-registry.ts";
+	checkoutOf,
+	checkoutsReadFrom,
+	chooseCheckout,
+} from "#runtime/services/checkout-questions.ts";

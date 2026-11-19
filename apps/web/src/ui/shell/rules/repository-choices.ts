@@ -2,7 +2,7 @@
 // machine. A repository can hold hundreds of them, so they stay folded until a person opens
 // one, and what is typed reaches both, so a checkout is one word away.
 
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import { shownRepository } from "@archboard/ui-kit/components";
 import { matchIn, type TextRange } from "#ui/shell/rules/text-match.ts";
 import type { ShellRepository } from "#ui/shell/rules/contracts.ts";

@@ -3,7 +3,7 @@ import { readArchitectureModel } from "@archboard/model-store";
 import type { ArchitectureModelRead, ModelRequest } from "@archboard/model-contract";
 import { projectModel, projectFlow, type Model } from "@archboard/model-rules";
 import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
-import { vaultIdentity } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
@@ -159,6 +159,14 @@ function renderProjection(model: Model, input: Reading, reference?: Model) {
 	};
 }
 /**
+ * The repository a recipe names: the identity of the checkout that holds the vault (ADR 0049).
+ * @param vault The addressed vault.
+ * @returns The identity, or null for a vault in no checkout.
+ */
+function ownRepository(vault: string): string | null {
+	return checkoutsReadFrom(vault).own?.identity ?? null;
+}
+/**
  * Attach exact reading evidence through the existing recipe owner.
  * @param model The coherent architecture.
  * @param input The public selectors.
@@ -182,7 +190,7 @@ function renderReceipt(
 		grammar: input.grammar,
 		revision: model.revision,
 		checkpoint: model.checkpoint?.id,
-		svg: recordArchitectureRecipe(drawn.svg, model, input, vaultIdentity(vault) ?? null),
+		svg: recordArchitectureRecipe(drawn.svg, model, input, ownRepository(vault)),
 		width: drawn.width,
 		height: drawn.height,
 		placed: drawn.placed,

@@ -4,11 +4,8 @@ import { modelShape, type ModelDocument } from "@archboard/model-contract";
 import { readArchitectureModel } from "@archboard/model-store";
 import { projectModel } from "@archboard/model-rules";
 import { logger } from "@archboard/diagnostics/logger";
-import { placeOfVault } from "@archboard/workspace/repository-listing";
-import {
-	chooseKnownCheckout,
-	registeredRepositoryOfVault as registeredRepositoryOf,
-} from "@archboard/workspace/checkouts";
+import { placeOfVault } from "@archboard/workspace/vault";
+import { chooseCheckout } from "@archboard/workspace/checkouts";
 import type { PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
 import { movePaneVault } from "#server/panes/services/pane-vaults.ts";
@@ -302,16 +299,16 @@ interface ShowChoice {
  * @returns The choice, or undefined when it changed no choice.
  */
 function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefined {
-	const shown = registeredRepositoryOf(vault);
-	if (shown === undefined || shown.chosen) {
+	const { repository, checkout, chosen } = placeOfVault(vault);
+	if (repository === null || chosen) {
 		return undefined;
 	}
-	const chosen = chooseKnownCheckout(shown.root);
-	if (chosen?.changed !== true) {
+	const choice = chooseCheckout(repository, checkout);
+	if (choice.kind !== "chosen" || !choice.changed) {
 		return undefined;
 	}
-	logger().info(`${act} made ${shown.root} the chosen checkout of ${shown.name}`);
-	return { repository: shown.name, checkout: shown.root, replaced: chosen.replaced };
+	logger().info(`${act} made ${checkout} the chosen checkout of ${repository}`);
+	return { repository, checkout, replaced: choice.replaced };
 }
 
 /**

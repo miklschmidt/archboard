@@ -58,7 +58,7 @@ import {
 	shownCheckoutOf,
 	tabSessionOf,
 } from "#server/panes/services/tab-sessions.ts";
-import { repositoryOfVault, vaultIn } from "@archboard/workspace/repository-listing";
+import { placeOfVault, vaultIn } from "@archboard/workspace/vault";
 import {
 	boundSessionOf,
 	changePane,
@@ -260,7 +260,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			 */
 			checkoutLabel: (checkout) => {
 				const vault = vaultIn(checkout);
-				return (vault === null ? null : repositoryOfVault(vault)) ?? basename(checkout);
+				return (vault === null ? null : placeOfVault(vault).repository) ?? basename(checkout);
 			},
 			narrative: ARCHBOARD_VOICE_PRESENTATION,
 			domainTools: {

@@ -10,7 +10,7 @@ import {
 	createServerCodexBrowserSocketSend,
 	parseTabSessionId,
 } from "@archboard/codex-realtime-voice/server";
-import { repositoryOfVault } from "@archboard/workspace/repository-listing";
+import { placeOfVault } from "@archboard/workspace/vault";
 
 import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
 import { agentActivity } from "#server/panes/services/agent-activity.ts";
@@ -66,7 +66,7 @@ function sendStartingPlace(
 	const message: WebSocketMessage = {
 		type: "pane_place",
 		vault,
-		repository: repositoryOfVault(vault),
+		repository: placeOfVault(vault).repository,
 		...(startingKey === null
 			? { paneKey: null, identity: null }
 			: { paneKey: startingKey, identity: parsePaneKey(startingKey) }),

@@ -7,8 +7,8 @@ import type { codeFilesSchema } from "@archboard/code-intel/code-check";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
-	vaultIdentity,
 } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import { git } from "@archboard/process/git";
 import { neverQuoted } from "#server/http/handlers/code-files/operations/quoted-file.ts";
 
@@ -37,7 +37,7 @@ async function listCheckoutFiles(
 	asked: string | undefined,
 	signal: AbortSignal,
 ): Promise<CheckoutFilesOutcome> {
-	const repo = asked ?? vaultIdentity(vault);
+	const repo = asked ?? checkoutsReadFrom(vault).own?.identity;
 	if (repo === undefined) {
 		return {
 			ok: false,

@@ -4,7 +4,7 @@
 
 import { expect, test } from "bun:test";
 
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import { repositoryRows } from "#ui/shell/rules/repository-choices.ts";
 import type { ShellRepository } from "#ui/shell/rules/contracts.ts";
 

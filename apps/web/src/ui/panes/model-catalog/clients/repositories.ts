@@ -3,10 +3,7 @@
 // 0050). The choice is `repo use` for the whole machine, so every tab hears it.
 
 import type { z } from "zod";
-import {
-	repositoryListingSchema,
-	type checkoutChoiceSchema,
-} from "@archboard/workspace/repositories";
+import { workspaceShape } from "@archboard/workspace/shapes";
 import { requestJson } from "@archboard/server-requests";
 
 /**
@@ -17,8 +14,8 @@ import { requestJson } from "@archboard/server-requests";
  */
 async function fetchRepositories(
 	signal?: AbortSignal,
-): Promise<z.infer<ReturnType<typeof repositoryListingSchema>>> {
-	const parsed = repositoryListingSchema().safeParse(
+): Promise<z.infer<ReturnType<typeof workspaceShape<"repositoryListing">>>> {
+	const parsed = workspaceShape("repositoryListing").safeParse(
 		await requestJson<unknown>("/api/repositories", { signal }),
 	);
 	if (!parsed.success) {
@@ -33,7 +30,7 @@ async function fetchRepositories(
  * @returns When the server has chosen it.
  */
 async function chooseCheckout(
-	choice: z.infer<ReturnType<typeof checkoutChoiceSchema>>,
+	choice: z.infer<ReturnType<typeof workspaceShape<"checkoutChoice">>>,
 ): Promise<void> {
 	await requestJson("/api/repositories/chosen", { method: "PUT", payload: choice });
 }
