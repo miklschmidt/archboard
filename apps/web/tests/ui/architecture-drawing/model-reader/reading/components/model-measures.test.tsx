@@ -566,6 +566,21 @@ test("a module with no findings is clean, one read in part never is, and a skipp
 	);
 });
 
+test("a C++ module whose checkout has no clangd is read in part, though the pass names the server by C", async () => {
+	const exports = { functions: 2, classes: 0, methods: 0, values: 0, types: 0 };
+	const depth = [measured("api", { judged: ["cpp"], unjudged: [] }, exports)];
+	const skip = {
+		reason: "language-server-missing",
+		repo: "example/shop",
+		detail: "c: none",
+	} as const;
+	const models = REMEMBERED.models?.map((one) => ({ ...one, depth, skipped: [skip] }));
+	remembering({ readings: [], models });
+	mount(EXPOSED_CODE);
+	await waitFor(() => expect(cell("api", "codeExports")?.dataset["count"]).toBe("2"));
+	expect(cell("api", "codeFindings")?.dataset["code"]).toBe("partial");
+});
+
 test("the code columns read the remembered pass, and opening them never starts a pass", async () => {
 	const asked = remembering({ readings: [], models: [] });
 	mount(EXPOSED_CODE);

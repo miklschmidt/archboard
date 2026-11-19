@@ -66,6 +66,9 @@ function languageName(language: string): string {
 	return LANGUAGE_NAMES[language] ?? language;
 }
 
+/** The languages whose files another language's server reads: one clangd reads the C family. */
+const SERVED_AS: Readonly<Record<string, string>> = { cpp: "c", objc: "c" };
+
 /**
  * The language a server skip names: its detail starts with it.
  * @param skip The skip.
@@ -88,7 +91,7 @@ function partialOf(depth: Depth, skipped: readonly Skip[]): string[] {
 		return SERVER_SKIPS.has(skip.reason) &&
 			skip.repo === depth.repo &&
 			language !== undefined &&
-			depth.languages.includes(language)
+			depth.languages.some((read) => (SERVED_AS[read] ?? read) === language)
 			? [`no ${languageName(language)} language server answered`]
 			: [];
 	});
