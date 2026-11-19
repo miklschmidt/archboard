@@ -309,21 +309,20 @@ test("a module no pass measured reads no exports, and says why", () => {
 	expect(asked).toHaveLength(0);
 });
 
-test("a server that forgot the pass reads as forgotten, and any other refusal of the exports as a failure", async () => {
-	for (const [code, slot] of [
-		["CODE_EXPORTS_UNREAD", "code-exports-forgotten"],
-		["VAULT_UNREGISTERED", "code-exports-unavailable"],
-	] as const) {
+test.each([
+	["CODE_EXPORTS_UNREAD", "code-exports-forgotten"],
+	["VAULT_UNREGISTERED", "code-exports-unavailable"],
+])(
+	"a server that forgot the pass reads as forgotten, and any other refusal of the exports as a failure (%s)",
+	async (code, slot) => {
 		globalThis.fetch = Object.assign(
 			async () => Response.json({ success: false, code, error: "refused" }, { status: 404 }),
 			{ preconnect: realFetch.preconnect },
 		);
 		showExports(measured());
-		// oxlint-disable-next-line no-await-in-loop -- one refusal at a time, each on its own page
 		await waitFor(() => expect(document.querySelectorAll(`[data-slot='${slot}']`)).toHaveLength(1));
-		cleanup();
-	}
-});
+	},
+);
 
 /**
  * The gateway's code exports as a section of the right panel, in a reading.
