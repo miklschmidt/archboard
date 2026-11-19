@@ -1,9 +1,11 @@
 ---
 id: TASK-646.04
 title: An agent's loop fails on a shallow TypeScript module
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T00:37:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -63,3 +65,17 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #9 A new ADR supersedes the parts of ADR 0044 and ADR 0046 that forbid verdicts, and the README no longer says that Archboard never calls a module shallow
 - [ ] #10 `CONTEXT.md` defines the new terms, and the archboard skill tells agents to run the gate in implementation loops and how to clear `EXPOSED_VALUE` and `MODULE_SHALLOW`
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Fact analysis (TypeScript): Definition.type marks an interface, a type alias or an enum; SyntaxFacts.logic counts the pieces of logic of a file (calls, operators, conditions, loops) from a @logic capture of the TypeScript query.
+2. Module depth (packages/code-intel/src/runtime/module-depth): its own input (exposure, outside uses with reader and typeOnly, facts pass). Counts top-level exports by kind (functions, classes, public methods, values, types) and the logic of the module's files plus its hidden values. EXPOSED_VALUE (warning, named export) for an exported value that outside code reads at run time, tests aside; remedies ordered by reader count; a function getter clears it. MODULE_SHALLOW (information) when every non-type export has a per-name finding. Judges names that the TypeScript adapter read.
+3. Code check: interfaces.ts hands each judged module to Module depth and adds the site; the answer gains depth records, touched modules and models[].failShallowModules. Touched modules come from the History lens footprint with the working tree as head, read when the request names a base or asks for them, or a model's policy turns the gate on. A module is touched when its part or a changed part inside its directory changed; parts the footprint could not read are listed as unread. An asked base that does not resolve (or no default base) is the refusal BASE_UNRESOLVED. Severities never depend on the request.
+4. History lens: export the default-base lookup.
+5. Vault configuration: optional codeCheck.failShallowModules in the policy schema.
+6. Code check route: forwards base and touched.
+7. Vault check CLI: --fail-shallow-modules and --base; per model gate = flag or policy; promotes MODULE_SHALLOW on touched modules to warning, refuses (exit 2) when a gated MODULE_SHALLOW sits on an unread module; then the existing exit rule.
+8. Tests: code-intel pass over a canonical vault in a Git fixture; CLI check-parts with the stand-in server; route forwarding.
+9. Docs: new ADR superseding the verdict bans of ADR 0044/0046, README, CONTEXT.md, archboard skill (gate in loops, clearing EXPOSED_VALUE and MODULE_SHALLOW).
+<!-- SECTION:PLAN:END -->
