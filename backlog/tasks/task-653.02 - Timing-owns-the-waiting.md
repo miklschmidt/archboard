@@ -1,11 +1,11 @@
 ---
 id: TASK-653.02
 title: Timing owns the waiting
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T16:23:00Z'
-updated_date: '2026-11-19T17:20:00Z'
+updated_date: '2026-11-19T17:43:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -33,8 +33,8 @@ Candidate 1 of the archboard-deepen run, first and alone on the TypeScript track
 <!-- AC:BEGIN -->
 - [x] #1 timing exports exactly waitUntil, pause, deadline, durationMs, painterPhasesJson, reachHopDelayMs, columnSlideSettledMs, codexRestartDelayMs and localityDefaultSinceSeconds; INTERFACE_WIDE and MODULE_SHALLOW clear on timing
 - [x] #2 The hand-written poll loops use waitUntil or pause, each keeping its probe order, final sleep, deadline check placement and abort point
-- [ ] #3 Deadline and age sums use deadline; callers keep their own comparison operators; no wait bound or cadence is readable through durationMs except the registry lock poll cadence
-- [ ] #4 Every duration value, epoch timestamp, painter JSON byte and caller sentence is unchanged, and the voice package bundle and the site build pass
+- [x] #3 Deadline and age sums use deadline; callers keep their own comparison operators; no wait bound or cadence is readable through durationMs except the registry lock poll cadence
+- [x] #4 Every duration value, epoch timestamp, painter JSON byte and caller sentence is unchanged, and the voice package bundle and the site build pass
 - [x] #5 Fake-clock seam tests cover sleep-first policies, boundMs, capAtMs, signal before probe, deadline equality, overshoot, cancellation precedence and probe errors; superseded tests are replaced, not layered
 - [x] #6 An ADR records the getter rule, its one exception and the rejected timer, age and retry operations; boundaries.md and the frontend examples follow the new interface
 <!-- AC:END -->
@@ -65,10 +65,21 @@ Blocked (design conflict, reported, not worked around):
 - AC #3: "git.groupCleanup" stays readable through durationMs: it bounds the Git group-absence wait and is also the grace timer a terminated Git command races against (git-command.ts settleRun), and the settled design gives timers durationMs. ADR 0083 records it.
 - AC #6: docs/agents/boundaries.md was deleted on deepen/module-depth by TASK-653.03; the timing description now lives in the timing.ts header and ADR 0083. ADR number 0083 may collide with the Scene ticket's ADR if it lands first.
 - The vault's relationship anchors still cite the removed getters (12 ANCHOR_* warnings) and "Code check -> timing" is lost; the vault was left unchanged as instructed.
+
+Resolution of the voice package conflict (settled deviation, decisions.md "TASK-653.02 deviation, SETTLED"):
+- timing's private tables are split under src/shared/tables/rules/: published.ts holds codexApproval, codexProcess, codexRealtime, codexSession and processGroup, the wait processGroup.killDrain and the pauses processGroup.poll and codexSession.workTreeStopPoll; host.ts holds every other group (git included), the other 13 waits and the pauses modelLock.poll, git.groupPoll and recorder.poll. Both read the same owner groups under constants/. shape.ts holds NameOf, WaitPolicy<Name> and PausePolicy; published policies are typed against published durations only.
+- No Git key is published: the packed bundle reaches no Git command (process/git is not imported by the voice graph); the bundle's timing calls name only Codex and processGroup durations.
+- package.json imports '#host-tables' resolves under the published condition to host-absent.ts (empty); pack-codex-realtime-voice.ts builds with conditionNames [published, node, import, default]. Types resolve the default, so callers see every name. durationOf, waitUntil and pause throw with the name for a name the build does not carry.
+- Mechanism comments reworded (timing.ts header, names.ts, duration-ms.ts); ADR 0083 records the split and the rejected alternatives.
+- voice-package.test.ts now reads every name the packed code passes to timing through 'bun --conditions published' (waits through waitUntil), checks a host name throws by name, and runs the packed server start and shutdown against a Codex that exits plus the packed browser client's reconnect backoff.
+- Readers of package.json imports learned conditional entries (default target): the oxlint import resolver and tests/system/repository-policy/support/package-sources.ts.
+- No caller changes; timing exports unchanged (9).
+Verification after merging deepen/module-depth (only backlog tickets came in): build, types, lint:all, format:check pass; test:modules 5348 pass; test:repository 176 pass; test:system 227 pass (voice-package included); full serial browser lane passes; pack:voice builds and the concept check finds nothing; site build passes; check code --fail-shallow-modules: no INTERFACE_WIDE or MODULE_SHALLOW on timing (other modules' known findings and ANCHOR warnings for the removed getters remain; information CODE_PASS_THROUGH on durationMs -> durationOf).
+- ADR 0083 is free on deepen/module-depth, but deepen/653-01-scene also adds an ADR 0083; whichever lands second must renumber.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-timing now owns the waiting: waitUntil over private wait policies, pause for loops that keep their own decisions, deadline for named deadlines and ages, and one durationMs getter for numbers a stylesheet, timer, physics constant, library or message takes, behind a Clock port. All 142 importers moved; every hand-written poll uses waitUntil or pause with its probe order, final sleep, check placement and abort point kept; the 26 getters and one-key deadlines are gone; createElapsedClock moved to code-intel. Width 37 -> 9 functions (ceiling 37 -> 10 with types), logic 224, no finding on timing. Seam tests on a fake clock replace the value pins. ADR 0083 records the getter rule. Open: the voice package concept check fails because the single name table bundles every owner group into the published package (design conflict, needs a decision); git.groupCleanup is readable as a timer duration while it also bounds a wait.
+timing owns the waiting: waitUntil over private wait policies, pause for loops that keep their own decisions, deadline for named deadlines and ages, and one durationMs getter for numbers a stylesheet, timer, physics constant, library or message takes, behind a Clock port. All 142 importers moved; every hand-written poll uses waitUntil or pause with its probe order, final sleep, check placement and abort point kept; the 26 getters and one-key deadlines are gone; createElapsedClock moved to code-intel. Width 37 -> 9, no finding on timing. The name and policy tables are split into a published half (Codex groups and processGroup) and a host half that a build under the published condition leaves out, so the voice package bundles none of Archboard's durations; its packed-consumer test proves every name the packed code calls resolves in that build. ADR 0083 records the getter rule, its exceptions and the split. Deviations accepted by the advisors: git.groupCleanup stays readable for the cleanup grace timer.
 <!-- SECTION:FINAL_SUMMARY:END -->
