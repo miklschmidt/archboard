@@ -462,6 +462,7 @@ The runner accepts the package command or a focused selection from this inventor
 `canonical-model-viewer.test.ts` uses the browser adapter for current modules and retained readings.
 Its temporary Git repository supplies real checkpoints through the public API.
 It covers selection, changed or missing current inputs, source evidence, archive recovery, and unchanged retention records.
+It opens the selected module's folded definition in the right panel.
 `canonical-model-publication.test.ts` covers explicit destination choice, network failure, retry, and missing-history recovery through a real local Git remote.
 It shares the canonical reader interaction helpers with the viewing owner.
 `canonical-model-navigation.test.ts` covers recursive scope, exact reading addresses, independent panes, connection aggregation, and complete interfaces.
