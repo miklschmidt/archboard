@@ -11,6 +11,7 @@ import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
 import { ModelFlowDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowDetails.tsx";
 import { ModelHiddenSelection } from "#ui/architecture-drawing/model-reader/reading/components/ModelHiddenSelection.tsx";
+import { ModelHistory } from "#ui/architecture-drawing/model-reader/reading/components/ModelHistory.tsx";
 import { ModelInterfaceLine } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceLine.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import {
@@ -20,6 +21,10 @@ import {
 	type ModelSelectionDetailsProps,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
+import {
+	ModuleDefinition,
+	ModuleEvidence,
+} from "#ui/architecture-drawing/model-reader/reading/components/ModuleDetails.tsx";
 import {
 	ModuleOpenCode,
 	ModuleOpenReferences,
@@ -54,8 +59,8 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly flowHead: ReactNode;
 	/** Expand a door or collapse a frame. */
 	readonly onToggle: (id: string) => boolean;
-	/** What the interface line of a module does. */
-	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow" | "onAbout">;
+	/** Show what the interface count describes on its module's picture. */
+	readonly onShowInterface: ComponentProps<typeof ModelInterfaceLine>["onShow"];
 	/** How the kinds look, with the icons the picture draws them with. */
 	readonly look: KindLook;
 }
@@ -232,7 +237,8 @@ function OtherSubject(
 }
 
 /**
- * What the panel says of one module: what it is, how it stands, its lines, and what touches it.
+ * What the panel says of one module: what it is, how it stands, its lines, what touches it, and where
+ * its explanation comes from.
  * @param props The module and its reading.
  * @returns The body.
  */
@@ -245,7 +251,11 @@ function ModuleSubject(
 	return (
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
-			<ModelInterfaceLine {...props.line} inspection={inspection} projection={projection} />
+			<ModelInterfaceLine
+				onShow={props.onShowInterface}
+				inspection={inspection}
+				projection={projection}
+			/>
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} />
 			<ModelChangesWith
 				vault={props.vault}
@@ -263,12 +273,24 @@ function ModuleSubject(
 			/>
 			<ModuleLines {...props} model={source} id={module.id} />
 			{props.context}
+			<ModelPanel.Section title="Code and evidence" slot="module-evidence" list={false}>
+				<div className="flex flex-col gap-3">
+					<ModuleEvidence module={module} model={source} />
+					<ModuleDefinition module={module} />
+				</div>
+			</ModelPanel.Section>
+			<ModelHistory
+				vault={props.vault}
+				model={source}
+				module={module}
+				onSelect={selection.select}
+			/>
 		</ModelPanel.Body>
 	);
 }
 
 /**
- * What a module is: its name, its kind and code path, and its responsibility.
+ * What a module is: its name, its kind and code path, its responsibility and its longer account.
  * @param props The module and the model that defines it.
  * @returns The head.
  */
@@ -285,6 +307,14 @@ function ModuleHead(
 				path={props.pathOf(module.id)}
 			/>
 			{module.responsibility && <Summary>{module.responsibility}</Summary>}
+			{module.description && (
+				<p
+					data-slot="module-description"
+					className="text-body text-muted-foreground whitespace-pre-wrap"
+				>
+					{module.description}
+				</p>
+			)}
 		</Identity>
 	);
 }

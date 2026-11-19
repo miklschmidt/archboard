@@ -2,6 +2,7 @@ import { useCallback, useMemo, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model/content";
 import { Button } from "@archboard/ui-kit/components";
+import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import { PartHistory } from "#ui/architecture-drawing/canvas/presentation/components/PartHistory.tsx";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
@@ -18,6 +19,7 @@ interface HistoryProps {
 		| "modules"
 		| "policy"
 		| "migrationPreview"
+		| "sourceRef"
 	>;
 	module: Model["modules"][number];
 	onSelect: (id: string) => void;
@@ -26,11 +28,15 @@ interface HistoryProps {
 /**
  * A bound canonical module shows its source history without starting a code check.
  * @param props The module, its coherent architecture, and the selection action.
- * @returns Its local Git evidence, or nothing for an unbound or original-only module.
+ * @returns The code history section for a bound module in a reading of the local vault.
  */
 function ModelHistory(props: HistoryProps): JSX.Element | null {
 	if (props.module.binding === undefined || !readsVaultOnDisk(props.model)) return null;
-	return <HistoryReading key={props.module.id} {...props} />;
+	return (
+		<ModelPanel.Section title="Code history" slot="module-history" list={false}>
+			<HistoryReading key={props.module.id} {...props} />
+		</ModelPanel.Section>
+	);
 }
 
 /**

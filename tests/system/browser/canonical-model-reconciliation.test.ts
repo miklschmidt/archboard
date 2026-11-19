@@ -147,7 +147,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 		],
 	});
 	await standing(browser, "conflicted");
-	await openAbout(browser, "selection");
+	await openAbout(browser);
 	await selectModule(browser, "Shop#Gateway", (details) => details.includes("Accepts public work"));
 	expect(
 		await browser.eval<string>(

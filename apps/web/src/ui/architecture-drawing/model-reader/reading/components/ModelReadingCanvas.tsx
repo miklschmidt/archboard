@@ -55,6 +55,8 @@ interface ModelReadingCanvasProps
 	area: RefObject<HTMLDivElement | null>;
 	warnings: ReadonlySet<string>;
 	selection: ModelSelection;
+	/** A page that lies on the picture's sheet, such as About, so the picture keeps its camera. */
+	page: ReactNode;
 	/** What stands beside the picture: the right panel. */
 	children?: ReactNode;
 }
@@ -118,6 +120,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 							waiting={waiting}
 						/>
 					</div>
+					{props.page}
 					<PictureOverlay overlay={props.overlay} clearOfSidebar={false} />
 				</div>
 				{props.children}

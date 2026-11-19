@@ -14,16 +14,6 @@ interface ModuleNavigationProps {
 }
 
 /**
- * Keep source availability beside the architecture that owns its binding.
- * @param props The selected module, coherent reading, and existing notice action.
- * @returns The source action only when this module has an authored binding.
- */
-function ModuleNavigation(props: ModuleNavigationProps): JSX.Element | null {
-	if (props.module.binding === undefined && !props.module.references?.length) return null;
-	return <NavigationControls {...props} />;
-}
-
-/**
  * The action that opens a module's code, for a place with no room for its references.
  * @param props The selected module and exact reading context.
  * @returns The action, or nothing for a module with no binding.
@@ -70,33 +60,6 @@ function OpenReferences(
 function OpenCode(props: ModuleNavigationProps): JSX.Element {
 	const navigation = useModelNavigation(props.vault, props.model, props.module);
 	return <BoundCode {...props} navigation={navigation} />;
-}
-
-/**
- * Source and architecture links share one coherent navigation read.
- * @param props The selected module and exact reading context.
- * @returns Only the actions the module actually authors.
- */
-function NavigationControls(props: ModuleNavigationProps): JSX.Element {
-	const navigation = useModelNavigation(props.vault, props.model, props.module);
-	const references = props.module.references;
-	return (
-		<section data-slot="module-navigation" className="space-y-6">
-			{props.module.binding !== undefined && (
-				<div className="space-y-3">
-					<BoundCode {...props} navigation={navigation} />
-				</div>
-			)}
-			{references !== undefined && references.length > 0 && (
-				<ModuleReferences
-					key={JSON.stringify([props.vault, navigation.target, props.model.revision.digest])}
-					paneId={props.paneId}
-					references={references}
-					navigation={navigation}
-				/>
-			)}
-		</section>
-	);
 }
 
 /**
@@ -186,4 +149,4 @@ function CodeTargetAvailability({ target }: { target: Model["codeTarget"] }): JS
 	);
 }
 
-export { ModuleNavigation, ModuleOpenCode, ModuleOpenReferences };
+export { ModuleOpenCode, ModuleOpenReferences };

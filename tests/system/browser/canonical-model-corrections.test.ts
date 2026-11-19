@@ -92,8 +92,12 @@ async function visible(browser: AgentBrowserSession, selector: string): Promise<
 
 async function description(browser: AgentBrowserSession, value: string): Promise<void> {
 	await openAbout(browser);
-	await visible(browser, '[data-slot="module-list"] [data-module-id="Shop#Gateway"]');
-	await selectModule(browser, "Shop#Gateway", (text) => text.includes(value), "header");
+	await selectModule(
+		browser,
+		"Shop#Gateway",
+		(text) => text.includes(value),
+		'[data-slot="module-description"]',
+	);
 }
 
 async function openHistory(browser: AgentBrowserSession): Promise<void> {
@@ -195,13 +199,9 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		await browser.eval<number>(`document.querySelectorAll('[data-correction-checkpoint]').length`),
 	).toBe(0);
 	await compareCheckpoint(browser, corrected.checkpoint.id);
-	await description(browser, "An incorrect recorded description.");
 	await openHistory(browser);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-comparison-corrections"] [data-correction-checkpoint="${corrected.checkpoint.id}"]') !== null`,
-		),
-	).toBe(true);
+	await visible(browser, `[data-slot="model-comparison-corrections"] ${row}`);
+	await description(browser, "An incorrect recorded description.");
 	await browser.run(["back"]);
 	await visible(
 		browser,

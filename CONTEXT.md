@@ -305,7 +305,7 @@ A reading on the page that shows its picture, beside About.
 _Avoid_: board, view
 
 **About**:
-The page of a reading that holds its long lists and names whether it describes the open scope or the selected subject.
+The page of a reading that holds the long lists of its open scope. The Right panel stays beside it, with the outline of About at its top and the selected subject under it.
 _Avoid_: inspector, details
 
 **Picture**:
@@ -373,7 +373,7 @@ It always stands at the foot of the Right panel on a Diagram reading, over the e
 _Avoid_: Key, filters
 
 **Right panel**:
-The permanent right column of a Diagram reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, and its Trace controls.
+The permanent right column of a reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, a module's code and evidence, and its Trace controls.
 The Legend and the engine switch close it, and long lists stay in About.
 _Avoid_: inspector
 

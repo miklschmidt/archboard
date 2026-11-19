@@ -182,7 +182,6 @@ test("canonical code controls follow current draft and exact readings while miss
 		"the current architecture",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	await openCode(browser, capture, join(root, "src/gateway.ts"), false);
 	await pollUntil(
 		() =>

@@ -83,7 +83,6 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	);
 	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -99,9 +98,28 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	// Authored values are behavior. Product wording is not pinned by this test.
 	expect(details).toContain("Accepts shopping requests");
 	expect(details).toContain("Authenticates callers and sends shopping requests to the worker.");
-	expect(details).toContain("src/gateway.ts");
-	expect(details).toContain("docs/gateway.md");
-	expect(details).toContain("Dispatch request");
+	const evidence = '[data-slot="model-panel"] [data-slot="module-evidence"]';
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('${evidence} dl code:not(details code)')].map(code => code.textContent)`,
+		),
+	).toEqual(["src/gateway.ts", "docs/gateway.md", "abc123"]);
+	const definition = `${evidence} details`;
+	expect(
+		await browser.eval<boolean | null>(`document.querySelector('${definition}')?.open ?? null`),
+	).toBe(false);
+	await browser.run(["click", `${definition} summary`]);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('${definition}[open] code')].map(code => code.textContent)`,
+		),
+	).toEqual(["Shop#Gateway", "gateway.module.json"]);
+	// The panel lists the line to Worker by its other end.
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="module-details"] [data-slot="model-panel-sends"] [data-to="Shop#Worker"]') !== null`,
+		),
+	).toBe(true);
 
 	// A repository that lost its vault says so, and reads again once the vault is back.
 	const movedVault = `${vault}-moved`;
@@ -166,7 +184,7 @@ test("current model readings refresh after external edits and reconnect with exp
 	await gatewayDetails(browser);
 	const details = (): Promise<string> =>
 		browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"]')?.textContent ?? ''`,
+			`document.querySelector('[data-slot="model-panel"] [data-slot="module-description"]')?.textContent ?? ''`,
 		);
 	const gatewayPath = join(vault, "gateway.module.json");
 	const gateway = JSON.parse(readFileSync(gatewayPath, "utf8")) as Record<string, unknown>;

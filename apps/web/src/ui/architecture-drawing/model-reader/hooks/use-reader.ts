@@ -33,46 +33,24 @@ interface ReaderInputs {
 	readonly reducedMotion: boolean;
 }
 
-/** Which subject About describes. */
-type AboutSubject = "scope" | "selection";
-
-/** The module that About was opened on, and what it describes there. */
-interface AboutPlace {
-	readonly scope: string | null | undefined;
-	readonly subject: AboutSubject;
-}
-
-/** About, closed on every module. */
-const NO_ABOUT: AboutPlace = { scope: undefined, subject: "scope" };
+/** The module that About was opened on, or undefined while About is closed. */
+type AboutScope = string | null | undefined;
 
 /**
  * How the open module is read. The page is kept with the module it was chosen on, so another
- * module opens as a diagram. About opens on what is selected, or else on the open scope. A choice
- * from a list leaves it where it stands, so a reader builds a selection there, and a selection let
- * go leaves it the open scope.
+ * module opens as a diagram. About describes the open scope, and the right panel the selection.
  * @param opened The open module.
- * @param selecting Whether anything is selected.
- * @returns The page and what About describes, and how to change them.
+ * @returns The page, and how to change it.
  */
-function useReaderPage(opened: string | null, selecting: boolean) {
-	const [about, setAbout] = useState(NO_ABOUT);
-	const { scope, subject } = about;
-	const open = scope === opened;
-	if (open && subject === "selection" && !selecting) setAbout({ scope, subject: "scope" });
-	const onAbout = useCallback(
-		(next: AboutSubject): void => setAbout({ scope: opened, subject: next }),
+function useReaderPage(opened: string | null) {
+	const [about, setAbout] = useState<AboutScope>(undefined);
+	const onPage = useCallback(
+		(next: Page): void => setAbout(next === "about" ? opened : undefined),
 		[opened],
 	);
-	const onPage = useCallback(
-		(next: Page): void => {
-			if (next === "about") onAbout(selecting ? "selection" : "scope");
-			else setAbout(NO_ABOUT);
-		},
-		[onAbout, selecting],
-	);
-	const onDiagram = useCallback((): void => setAbout(NO_ABOUT), []);
-	const page: Page = open ? "about" : "diagram";
-	return { page, onPage, onDiagram, aboutSubject: subject, onAbout };
+	const onDiagram = useCallback((): void => setAbout(undefined), []);
+	const page: Page = about === opened ? "about" : "diagram";
+	return { page, onPage, onDiagram };
 }
 
 /**
@@ -154,7 +132,7 @@ function useReader(inputs: ReaderInputs) {
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPage(opened, selection.ids.size > 0);
+	const places = useReaderPage(shown.projection.opened);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
 		model,

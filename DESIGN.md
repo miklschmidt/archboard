@@ -621,8 +621,16 @@ selected, it says the open module's name and description, or at the roots the mo
 name and the summary of its state. A flow reading says the flow. With a selection, it
 explains the selected thing, and a click on a card lights the card and fills the panel at
 once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row of a list is a row of the left column: it lies on the panel's ground with no plate, card or rule under it, it is 28px high, and it sets its name in Control at weight 400 and its detail in Body and muted ink at its end. Its tone reaches 8px past the panel's 16px edges, so its words stand on those edges. Under the pointer it takes Control Face at 50%. The row on screen, or the row that is pressed, rises as a Control Face with `shadow-raised`, with no gold. A row that cannot be used is in muted ink and keeps still under the pointer. A row of a subject on the picture also lights it. `rowTone` in `shell/rules/row-tone.ts` holds the tone that the rows of both columns share.
-Long lists and evidence live on About, which lies over the panel, so the panel keeps its
-room and the picture keeps its camera. A pane presented fullscreen has no panel.
+The long lists of the open scope live on About, which lies over the picture, so the picture
+keeps its camera. The panel stays beside About and follows the same rule for where it shows.
+There the outline of About stands at the top of the panel, over a Rule, and does not scroll.
+Under it the panel says what is selected, as it does beside the picture, and with nothing
+selected it says nothing of its own, because the page says what is open. The legend and
+the foot stay under it. A pane presented fullscreen has no panel.
+
+A selected module ends with `Code and evidence`: its parent, groups, former names, code and
+documents, then a folded Definition. A module bound to code then has `Code history`. A
+selected relationship says its longer account under its label, with its evidence folded.
 
 A subject that differs from the state it is read against has an `Against <state>` section. It lists each field that moved: its name, then `was` over `now`, the whole of each value, with the old value in muted ink. Where the two values share words, the words that moved carry a tint of 20% with 2px corners and full ink: the removed standing (`--standing-removed`) under the words taken out of `was`, and the added standing (`--standing-added`) under the words put into `now`. Two values that share no word carry no tint.
 
@@ -643,7 +651,7 @@ walkthrough's row ends with its steps. The flow on screen rises as the row on sc
 
 A module with parts, open or selected, has an `Interface` section under its head. It holds the counts of entries, callers, `To module` and pass-through. `To module` counts the callers that reach the module itself. An `Implementation` section holds the hidden parts. Each count is a row of the panel, one to a line, so the counts read as a small table: what it counts at the start, and its number in the mono face and muted ink at the end. A count of none is a row that is off, in muted ink.
 
-Each count selects what it counts on the module's picture, and a count of none is disabled. `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
+Each count selects what it counts on the module's picture, and a count of none is disabled. For the open module, `Open in About`, a 24px quiet key in the heading, opens the Interface section of About. A selected module has no such key, because About describes the open module. Each count of a module open in the picture selects on this picture. No count takes a warning color, nothing combines the counts, and the picture gains no permanent mark.
 
 With one module selected, the head of `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward` and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle takes the primary mark, and the picture grades what it reached, each further hop fainter.
 
@@ -769,8 +777,8 @@ nothing else. With reduced motion the sidebar appears and goes at once.
 A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
 chrome. While it lasts the control is held and says so, and nothing shows or hides
 the sidebar. A pick made on the About page lays
-no panel over the page, where it would cover the page's controls. Its panel comes
-with the diagram.
+no panel over the page, where it would cover the page's controls. Its subject shows in
+the right panel beside the page, under the outline.
 
 A walkthrough's row begins with a play mark, never a bare triangle, because a
 triangle is the mark of a row that folds open. Narrate is in every walkthrough's
@@ -781,14 +789,15 @@ its tooltip says why.
 ### About page
 
 The pane's header has two tabs, Diagram and About, and the mark of the open tab is
-Gold Mark. The About page lies over the picture on Ground Chalk and scrolls. A band at
-its top names what it describes, the open scope or the selected subject, and leads to
-the other one. Its column is 1320px wide at most and centred. The column
-keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
+Gold Mark. The About page lies over the picture on Ground Chalk and scrolls, with the
+right panel beside it. It describes the open scope, whatever is selected. What can be
+done stays at the foot of the right panel. Its column is 1096px wide at most and
+centred. The column keeps 40px of room inside each side, or 24px on a page narrower
+than 1040px.
 
 Presenting a walkthrough from About shows its picture and steps. Leaving it returns
 to About at the same scroll position. Switching to Diagram and back also restores
-the position while the subject stays the same.
+the position while the open scope stays the same.
 
 The head of the page names the model in the Figure role, in capitals. Under the
 name, one Control line gives the model's level with its mark. Then it gives the
@@ -796,18 +805,19 @@ variant on screen with its lifecycle mark, its name and where it stands in muted
 ink. The variant's summary follows in the Reading role, 68 characters wide at most.
 40px separate the head from the first section.
 
-The outline is a column 176px wide, 48px to the left of the sections, and it stays
-32px below the top of the page while the page scrolls. Each entry is a 32px row
-with the section's 16px mark, its name in Control and its count in Technical. The
-section being read has full ink and a 2px piece of Gold Mark on its left edge. On a
-page narrower than 1040px, the outline is a bar on Ground Chalk at the top of the
-page with a Rule under it. There the gold piece lies under the entry, and a bar too
-narrow for its entries scrolls sideways. A jump to a section scrolls the page
-smoothly, or at once with reduced motion.
+The outline stands at the top of the right panel, as a column of rows whose words
+stand on the panel's 16px edges. Each entry is a 32px row with the section's 16px
+mark, its name in Control and its count in Technical. The section being read has
+full ink and a 2px piece of Gold Mark on its left edge. Where the panel hides, in a
+reading narrower than 900px with nothing selected, the outline is the first row of
+the page: a bar on Ground Chalk with a Rule under it, which stays at the top while the
+page scrolls. Its entries' words stand on the column's edge. There the gold piece lies
+under the entry, and a bar too narrow for its entries scrolls sideways. A jump to a
+section scrolls the page smoothly, or at once with reduced motion.
 
 The outline appears only when the page has more than one section. Choosing a section
-gives its heading keyboard focus. The final section keeps enough height for any
-section to reach the top.
+gives its heading keyboard focus. The page ends where its last section ends, and at
+the end of the page the outline marks the last section.
 
 A section heading is Subtitle in semibold, and 56px separate one section from the
 next. A walkthrough is a Page Card, 24px from the next one. Its head has the name
