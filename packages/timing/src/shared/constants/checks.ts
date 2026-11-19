@@ -37,14 +37,4 @@ const CHECK_MS = durations({
 	fetchIncomingStale: 3 * VAULT_FETCH_MS,
 });
 
-/**
- * One duration of the checks.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function checkMs(key: keyof typeof CHECK_MS): number {
-	return CHECK_MS[key];
-}
-
-export { checkMs };
 export { CHECK_MS };

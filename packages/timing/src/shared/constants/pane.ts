@@ -113,14 +113,4 @@ const PANE_MS = durations({
 	browserConnectPoll: 250,
 });
 
-/**
- * One duration of a pane.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function paneMs(key: keyof typeof PANE_MS): number {
-	return PANE_MS[key];
-}
-
-export { paneMs };
 export { PANE_MS };

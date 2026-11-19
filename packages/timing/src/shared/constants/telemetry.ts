@@ -25,14 +25,4 @@ const TELEMETRY_MS = durations({
 	agentOverlap: 30 * 60 * 1000,
 });
 
-/**
- * One duration of telemetry.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function telemetryMs(key: keyof typeof TELEMETRY_MS): number {
-	return TELEMETRY_MS[key];
-}
-
-export { telemetryMs };
 export { TELEMETRY_MS };

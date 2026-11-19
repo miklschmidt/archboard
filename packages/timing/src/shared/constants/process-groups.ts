@@ -8,12 +8,4 @@ const PROCESS_GROUP_MS = durations({
 	poll: 10,
 });
 
-/**
- * How often an owner of a killed process group looks again to see whether it is gone.
- * @returns The cadence, in milliseconds.
- */
-function processGroupPollMs(): number {
-	return PROCESS_GROUP_MS.poll;
-}
-
-export { processGroupPollMs, PROCESS_GROUP_MS };
+export { PROCESS_GROUP_MS };

@@ -1,7 +1,7 @@
 // A Git command and the process group it runs in.
 
 import { durations } from "#shared/constants/durations.ts";
-import { processGroupPollMs } from "#shared/constants/process-groups.ts";
+import { PROCESS_GROUP_MS } from "#shared/constants/process-groups.ts";
 
 /** Grace for a terminated Git group to disappear: see `GIT_MS.groupCleanup`. */
 const GROUP_CLEANUP_MS = 3000;
@@ -27,7 +27,7 @@ const GIT_MS = durations({
 	 */
 	groupCleanup: GROUP_CLEANUP_MS,
 	/** Git process cleanup uses the shared process-group observation cadence. */
-	groupPoll: processGroupPollMs(),
+	groupPoll: PROCESS_GROUP_MS.poll,
 	/**
 	 * Outer grace before an interrupted CLI restores the signal's default action.
 	 * Git may spend one cleanup grace terminating and cancelling its leader and
@@ -38,23 +38,4 @@ const GIT_MS = durations({
 	cliInterruptCleanup: 3 * GROUP_CLEANUP_MS,
 });
 
-/**
- * One duration of a Git command and its process group.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function gitMs(key: keyof typeof GIT_MS): number {
-	return GIT_MS[key];
-}
-
-/**
- * When a Git group terminated now must have disappeared.
- * @param nowMs The current time, in milliseconds.
- * @returns The deadline, in milliseconds on the same clock.
- */
-function gitGroupCleanupDeadline(nowMs: number): number {
-	return nowMs + GIT_MS.groupCleanup;
-}
-
-export { gitMs, gitGroupCleanupDeadline };
 export { GIT_MS };

@@ -93,24 +93,6 @@ const SIDEBAR_MS = durations({
 });
 
 /**
- * One duration of a column.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function columnMs(key: keyof typeof COLUMN_MS): number {
-	return COLUMN_MS[key];
-}
-
-/**
- * One duration of a sidebar.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function sidebarMs(key: keyof typeof SIDEBAR_MS): number {
-	return SIDEBAR_MS[key];
-}
-
-/**
  * How long after a slide starts a column calls it over: the slide, then the
  * settling past it.
  * @param slideMs How long the slide takes.
@@ -120,5 +102,4 @@ function columnSlideSettledMs(slideMs: number): number {
 	return slideMs + COLUMN_MS.slideSettled;
 }
 
-export { columnMs, sidebarMs, columnSlideSettledMs };
-export { COLUMN_MS, SIDEBAR_MS };
+export { columnSlideSettledMs, COLUMN_MS, SIDEBAR_MS };
