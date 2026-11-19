@@ -42,9 +42,7 @@ function callableOf(declaration: Node | null): Node | undefined {
  * @returns The children.
  */
 function codeOf(node: Node): Node[] {
-	return node.namedChildren.filter(
-		(child): child is Node => child !== null && child.type !== "comment",
-	);
+	return node.namedChildren.filter((child) => child.type !== "comment");
 }
 
 /**
