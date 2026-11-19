@@ -1,9 +1,11 @@
 ---
 id: TASK-646.05
 title: The other per-name rules judge TypeScript exports
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:17:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -58,3 +60,13 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #6 The check gives one finding per name, grouped by module
 - [ ] #7 The archboard skill shows how to clear each of these findings
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Fact analysis (TypeScript): Definition.passes names the root of the one call a function or method only passes its own parameters on to (one statement or arrow body, optionally awaited; at least one argument; every argument a parameter or a spread of one; callee a name or member chain of names or this).
+2. Code check (module-reading.ts): a use belongs to a module when its definition is inside it, or is a name it re-exports, through any door; each use says whether it came through this module's door. Defining sites are followed only where the reference's target file re-exports. Coverage: the outside files the read could not complete (no grammar, unparsed code, an unresolved relative import, a whole-module or dynamic import of the module). interfaces.ts hands Module depth the uses with reader and the owner of each definition, the unread files, and for each name the drawn callers whose code the pass did not read (unbound, external, other checkout).
+3. Module depth, TypeScript names, one finding per name, grouped by module in export order, then MODULE_SHALLOW: EXPOSED_UNUSED (top-level names, types included; no outside use through any door for own names, through this door for re-exported ones; tests no users; warning only after a complete read with no drawn unread caller, else information; wins over a pass-through); REEXPORT_PASS_THROUGH for a non-type name defined outside the module (warning when a bound part other than this module owns the definition and a file it does not own imports the definition by another door, else information; the only depth finding on that name); CODE_PASS_THROUGH, information, on a function or public method with passes, unless the callee is rooted in a module-level value of its file; members the language calls (constructor, toString, valueOf, toJSON, toLocaleString, Symbol members) are neither counted nor judged; methods are not judged unused (their uses go through values). MODULE_SHALLOW rolls up EXPOSED_VALUE and the two pass-throughs over functions, values and public methods. The container-level EXPOSED_UNUSED stays only for names of languages Module depth does not judge yet.
+4. Docs: protocol header, CLI check-help, web finding labels, archboard skill (clearing each finding; framework-called exports cleared by drawing the consumer), CONTEXT.md.
+5. Tests: module-depth-names.test.ts over a fixture checkout; update interfaces.test.ts for TypeScript modules.
+<!-- SECTION:PLAN:END -->
