@@ -39,10 +39,7 @@ import {
 	readersOf,
 	usesOf,
 } from "#runtime/module-depth/operations/depth-reading.ts";
-import {
-	type SiblingUse,
-	usedBySibling,
-} from "#runtime/module-depth/operations/sibling-uses.ts";
+import { type SiblingUse, usedBySibling } from "#runtime/module-depth/operations/sibling-uses.ts";
 
 /** A module as the per-name rules judge it: with the uses of its names by its own files. */
 type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
@@ -78,9 +75,8 @@ function unused(reading: JudgedReading, name: ExposedName): DepthFinding | undef
 	// A name can have parts in several files, as a C# partial class does: a use of any part is a use.
 	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
 	const { directory } = reading.exposure;
-	const used = (part: ExposedName): boolean =>
-		usesOf(directory, part, reading.uses).length > 0 || usedBySibling(part, reading.siblings);
-	if (parts.some(used)) return undefined;
+	const outside = parts.some((part) => usesOf(directory, part, reading.uses).length > 0);
+	if (outside || parts.some((part) => usedBySibling(part, reading.siblings))) return undefined;
 	const unseen = reading.unseen(name);
 	const why = [
 		...unreadWhy(reading.unread),

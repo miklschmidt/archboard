@@ -174,6 +174,7 @@ Clear each finding at its seam. Never silence one.
   Keep one door. Stop passing the name on, or make every caller import it through this module.
 - `EXPOSED_UNUSED`: no file outside the module uses an exported name, as code or as a type. A test is no user.
   Stop exporting it. If files of the module use it, keep it out of the module's root files.
+  In a folder module that declares no interface (no file that stands for it, such as `index.ts`, and no `package.json` `exports`), a name that another of its files imports counts as used. A Go file sees its package's names without an import, so there an exported name only the package uses stays a finding: unexport it.
   It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import. A Rust `use crate::timing;` or `mod timing;` names each use it makes, so it leaves the read complete.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
   Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor, `toString`, a Python `__repr__`, a Go `String` or what a Rust `impl Drop` or `impl Display` defines, are never judged.

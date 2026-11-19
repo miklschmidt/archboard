@@ -170,8 +170,11 @@ beforeAll(async () => {
 		].join("\n"),
 		"src/ledger/epoch.ts":
 			'import { freeze } from "./manifest.ts";\nexport function seal(value: number): number {\n\treturn freeze(value) * 2;\n}\n',
-		"src/ledger/manifest.test.ts": 'import { probe } from "./manifest.ts";\nconsole.log(probe(1));\n',
-		"src/vendor/package.json": JSON.stringify({ exports: { ".": "./main.ts", "./raw": "./raw.ts" } }),
+		"src/ledger/manifest.test.ts":
+			'import { probe } from "./manifest.ts";\nconsole.log(probe(1));\n',
+		"src/vendor/package.json": JSON.stringify({
+			exports: { ".": "./main.ts", "./raw": "./raw.ts" },
+		}),
 		"src/vendor/raw.ts": "export function bytes(value: number): number {\n\treturn value + 7;\n}\n",
 		"src/vendor/main.ts":
 			'import { bytes } from "./raw.ts";\nexport function decode(value: number): number {\n\treturn bytes(value) * 3;\n}\n',

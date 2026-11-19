@@ -24,21 +24,26 @@ interface SiblingUse {
 }
 
 /**
- * Whether a module's directory holds a `package.json` that declares `exports`.
- * @param reading The module.
+ * Whether a `package.json` declares `exports`.
+ * @param text Its text.
  * @returns True when it does.
  */
-async function declaresExports(reading: DepthReading): Promise<boolean> {
-	const { directory } = reading.exposure;
-	const manifest = directory === "" ? "package.json" : `${directory}/package.json`;
-	const read = await reading.facts.read(reading.checkout, manifest);
-	if (read?.adapter !== "text") return false;
+function namesExports(text: string): boolean {
 	try {
-		const parsed: unknown = JSON.parse(read.text);
+		const parsed: unknown = JSON.parse(text);
 		return typeof parsed === "object" && parsed !== null && "exports" in parsed;
 	} catch {
 		return false;
 	}
+}
+
+/**
+ * The directory of a file, `""` for the checkout's root.
+ * @param file The file.
+ * @returns Its directory.
+ */
+function directoryOf(file: string): string {
+	return file.slice(0, Math.max(file.lastIndexOf("/"), 0));
 }
 
 /**
@@ -49,12 +54,35 @@ async function declaresExports(reading: DepthReading): Promise<boolean> {
  */
 async function declared(reading: DepthReading): Promise<boolean> {
 	const { directory, rootFiles } = reading.exposure;
-	const topLevel = (file: string): boolean =>
-		file.slice(0, Math.max(file.lastIndexOf("/"), 0)) === directory;
 	const entry = [...reading.checkout.files].some(
-		(file) => topLevel(file) && moduleOf(file, "file") === directory,
+		(file) => directoryOf(file) === directory && moduleOf(file, "file") === directory,
 	);
-	return entry || !rootFiles.every(topLevel) || declaresExports(reading);
+	if (entry || rootFiles.some((file) => directoryOf(file) !== directory)) return true;
+	const manifest = directory === "" ? "package.json" : `${directory}/package.json`;
+	const read = await reading.facts.read(reading.checkout, manifest);
+	return read?.adapter === "text" && namesExports(read.text);
+}
+
+/**
+ * The uses one file of a module makes of names another of its files defines.
+ * @param reading The module.
+ * @param file The file.
+ * @returns Each use, at the definition it reaches.
+ */
+async function usesIn(reading: DepthReading, file: string): Promise<SiblingUse[]> {
+	const read = await reading.facts.read(reading.checkout, file);
+	if (read === undefined || read.adapter === "text") return [];
+	const { directory } = reading.exposure;
+	const imported = read.references.filter(
+		({ via, target }) => via === "code" && target !== undefined && within(directory, target.path),
+	);
+	const uses: SiblingUse[] = [];
+	for (const { symbol } of imported) {
+		// oxlint-disable-next-line no-await-in-loop -- one reference at a time; the pass caches each file it reads
+		const site = await definitionSite(reading.facts, reading.checkout, file, symbol);
+		if (site !== undefined && site.path !== file) uses.push({ file, site });
+	}
+	return uses;
 }
 
 /**
@@ -65,20 +93,10 @@ async function declared(reading: DepthReading): Promise<boolean> {
  */
 async function siblingUses(reading: DepthReading): Promise<SiblingUse[]> {
 	if (await declared(reading)) return [];
-	const { directory } = reading.exposure;
 	const uses: SiblingUse[] = [];
 	for (const file of reading.files) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
-		const read = await reading.facts.read(reading.checkout, file);
-		if (read === undefined || read.adapter === "text") continue;
-		for (const reference of read.references) {
-			const { target } = reference;
-			if (reference.via !== "code" || target === undefined || !within(directory, target.path))
-				continue;
-			// oxlint-disable-next-line no-await-in-loop -- one reference at a time; the pass caches each file it reads
-			const site = await definitionSite(reading.facts, reading.checkout, file, reference.symbol);
-			if (site !== undefined && site.path !== file) uses.push({ file, site });
-		}
+		uses.push(...(await usesIn(reading, file)));
 	}
 	return uses;
 }
