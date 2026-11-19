@@ -8,7 +8,7 @@
 
 import type { Subprocess } from "bun";
 
-import { deadline, durationMs, gitMs } from "@archboard/timing";
+import { durationMs, waitUntil } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -28,17 +28,10 @@ import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.t
  * @returns True when the group disappeared in time.
  */
 async function processGroupDisappeared(pgid: number): Promise<boolean> {
-	const deadlineAt = deadline("git.groupCleanup", Date.now());
-	for (;;) {
-		if (!processGroupExists(pgid)) {
-			return true;
-		}
-		if (Date.now() >= deadlineAt) {
-			return false;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- polling one interval at a time
-		await new Promise((resolve) => setTimeout(resolve, gitMs("groupPoll")));
-	}
+	const gone = await waitUntil("git.groupCleanup", () =>
+		processGroupExists(pgid) ? undefined : true,
+	);
+	return gone.ok;
 }
 
 type GitProcess = Subprocess<"ignore" | Blob, "pipe", "pipe">;
