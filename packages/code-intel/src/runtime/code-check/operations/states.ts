@@ -122,6 +122,7 @@ async function readPredecessor(vault: string, model: Model, ref?: string) {
  * @param selections.checkpoint The retained checkpoint.
  * @param selections.against The comparison source.
  * @param selections.ref A branch, tag or commit of the vault's repository: read the vault as it holds it there.
+ * @param selections.model The canonical model, where the vault holds several.
  * @returns Complete evidence or its structured refusal.
  */
 async function readStatesToCheck(
@@ -131,12 +132,14 @@ async function readStatesToCheck(
 		checkpoint?: string | undefined;
 		against?: string | undefined;
 		ref?: string | undefined;
+		model?: string | undefined;
 	} = {},
 ): Promise<StatesToCheck | NoSuchDraft> {
 	const model = await readArchitectureModel(vault, undefined, undefined, {
 		checkpoint: selections.checkpoint,
 		against: selections.against,
 		ref: selections.ref,
+		model: selections.model,
 		state,
 		compare: true,
 	});

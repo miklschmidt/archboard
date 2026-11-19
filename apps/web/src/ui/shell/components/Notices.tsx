@@ -120,32 +120,42 @@ interface NoticeProps {
 /**
  * One persistent notice with its actions and a dismiss control. The icon
  * names the tone: an information mark for a message, a warning mark for a
- * failure with its recovery.
+ * failure with its recovery. The dismiss control stands in the top right corner,
+ * and the actions, when there are any, stand in a row under the words.
  * @param props The notice and the shell actions.
  * @returns The alert.
  */
 function Notice(props: NoticeProps): JSX.Element {
 	const { notice, actions } = props;
-	const handleDismiss = useCallback(() => actions.dismissNotice(notice.id), [actions, notice.id]);
+	const handleDismiss = useCallback(() => actions.dismissNotice(notice), [actions, notice]);
 	return (
 		<Alert
+			data-notice={notice.id}
+			data-code={notice.code}
 			variant={notice.tone}
-			className="bg-popover text-popover-foreground rounded-table shadow-float w-full border p-4"
+			className="bg-popover text-popover-foreground rounded-table shadow-float w-full border p-4 has-data-[slot=alert-action]:pr-12"
 		>
 			{notice.tone === "destructive" ? <RiErrorWarningLine /> : <RiInformationLine />}
-			<Alert.Title className="pr-6">{notice.title}</Alert.Title>
+			<Alert.Title>{notice.title}</Alert.Title>
 			<Alert.Description className="min-w-0 break-words" title={notice.description}>
 				{notice.description}
 			</Alert.Description>
-			<Alert.Action className="static col-start-2 mt-2 flex flex-wrap items-center gap-2">
-				{notice.actions.map((action) => (
-					<NoticeAction
-						key={actionKey(action)}
-						noticeId={notice.id}
-						action={action}
-						actions={actions}
-					/>
-				))}
+			{notice.actions.length > 0 && (
+				<div
+					data-slot="notice-actions"
+					className="col-start-2 mt-2 flex flex-wrap items-center gap-2"
+				>
+					{notice.actions.map((action) => (
+						<NoticeAction
+							key={actionKey(action)}
+							noticeId={notice.id}
+							action={action}
+							actions={actions}
+						/>
+					))}
+				</div>
+			)}
+			<Alert.Action className="top-3 right-3">
 				<IconButton
 					label={`Dismiss notice: ${notice.title}`}
 					className="text-muted-foreground"
@@ -181,7 +191,7 @@ function Notices(props: NoticesProps): JSX.Element {
 			if (current.current.has(notice)) continue;
 			/** Remove shell state only while this exact notice remains current. */
 			const dismiss = (): void => {
-				if (current.current.get(notice) === id) props.actions.dismissNotice(notice.id);
+				if (current.current.get(notice) === id) props.actions.dismissNotice(notice);
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
 				duration: isPersistent(notice) ? Infinity : SHELL_CLOCK_MS.notice,

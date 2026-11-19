@@ -145,9 +145,9 @@ function shellNotices(browser: PageEvaluator): Promise<ShellNoticeView[]> {
 	return browser.eval<ShellNoticeView[]>(`${SHELL_NOTICES}.map(node => ({
 		title: node.querySelector('[data-slot="alert-title"]')?.textContent?.trim() ?? '',
 		description: node.querySelector('[data-slot="alert-description"]')?.textContent?.trim() ?? '',
-		actions: [...node.querySelectorAll('[data-slot="alert-action"] button, [data-slot="alert-action"] a')]
+		actions: [...node.querySelectorAll('[data-slot="notice-actions"] button, [data-slot="notice-actions"] a, [data-slot="alert-action"] button')]
 			.map(action => (action.getAttribute('aria-label') ?? action.textContent ?? '').trim()),
-		links: [...node.querySelectorAll('[data-slot="alert-action"] a')].map(link => link.href),
+		links: [...node.querySelectorAll('[data-slot="notice-actions"] a')].map(link => link.href),
 		role: node.getAttribute('role'),
 	}))`);
 }

@@ -15,6 +15,7 @@ import {
 	serverTestEnvironment,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { seedCanonicalModel } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
@@ -321,3 +322,123 @@ test("every move of the left column has a keyboard route, also in a presented pa
 	await reads(browser, "");
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);
+
+test("Code shows the focused pane's addressed file again after a mode or focus change", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "code-address");
+	const vault = vaultIn(root);
+	const model = await seedCanonicalModel(vault, "Shop", {
+		nodes: [
+			{
+				name: "Gateway",
+				kind: "module",
+				binding: { repo: "github.com/acme/shop", path: "gateway.ts" },
+			},
+			{ name: "Handler", kind: "module", parent: "Gateway" },
+		],
+	});
+	initializeSource(root);
+	for (const name of ["gateway", "notes", "orders"])
+		writeFileSync(join(root, `${name}.ts`), "export {};");
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+	const search = new URLSearchParams({
+		modelA: model.manifest.id,
+		modelB: model.manifest.id,
+		scopeB: model.modules.find((module) => module.name === "Gateway")!.id,
+		fileB: "notes.ts",
+		pane: "B",
+	});
+	await browser.run(["open", `${server.base}/?${search}`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+
+	const navigator = '[data-slot="navigator-destinations"]';
+	const viewer = '[data-slot="code-view"]';
+	const switcher = '[data-slot="navigator-mode"]';
+	/**
+	 * Wait for the focused pane's tree and file to fill their shell slots.
+	 * @param pane The focused pane.
+	 * @param file Its addressed file.
+	 */
+	const showsFile = async (pane: string, file: string): Promise<void> => {
+		await pollUntil(
+			() =>
+				browser.eval<string | null>(
+					`document.querySelector('${viewer} [data-slot="code-lines"]')?.closest('[data-slot="code-source"]')?.getAttribute('aria-label') ?? null`,
+				),
+			(label) => label === `Code of ${file}`,
+			`pane ${pane}'s file ${file} in the viewer`,
+			WAIT,
+		);
+		expect(
+			await browser.eval<number>(
+				`document.querySelectorAll('${navigator} [data-slot="code-tree"]').length`,
+			),
+		).toBe(1);
+		expect(
+			await browser.eval<number>(
+				`document.querySelectorAll('${viewer} [data-slot="code-source"]').length`,
+			),
+		).toBe(1);
+		// The address follows the open file a moment later, so it is waited for too.
+		await pollUntil(
+			async () =>
+				new URLSearchParams(await browser.eval<string>("window.location.search")).get(
+					`file${pane}`,
+				),
+			(addressed) => addressed === file,
+			`pane ${pane}'s file ${file} in the address`,
+			WAIT,
+		);
+	};
+	/**
+	 * Focus a pane through the stage's pointer handler and wait for its tree to take over.
+	 * @param pane The pane to focus.
+	 */
+	const focus = async (pane: string): Promise<void> => {
+		const section = `section[aria-label="Pane ${pane}"]`;
+		await browser.eval(
+			`document.querySelector(${JSON.stringify(section)}).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))`,
+		);
+		await browser.run([
+			"wait",
+			"--fn",
+			`document.querySelector(${JSON.stringify(`${section}[aria-current="true"]`)}) !== null`,
+		]);
+	};
+	await showsFile("B", "notes.ts");
+	await browser.run(["click", `${switcher} [data-choice="architecture"]`]);
+	await browser.run(["wait", "--fn", `!document.querySelector('${viewer}')`]);
+	expect(
+		new URLSearchParams(await browser.eval<string>("window.location.search")).get("fileB"),
+	).toBe("notes.ts");
+	await browser.run(["click", `${switcher} [data-choice="code"]`]);
+	await showsFile("B", "notes.ts");
+	await focus("A");
+	const orderRow = `document.querySelector('[data-slot="code-tree"]')?.shadowRoot?.querySelector('[data-item-path="orders.ts"]')`;
+	await browser.run(["wait", "--fn", `Boolean(${orderRow})`]);
+	await browser.eval(`${orderRow}.click()`);
+	await showsFile("A", "orders.ts");
+	await focus("B");
+	await showsFile("B", "notes.ts");
+
+	const handle = '[role="separator"][aria-label="Code view width"]';
+	const { x, y } = await browser.eval<{ x: number; y: number }>(`(() => {
+		const box = document.querySelector('${handle}').getBoundingClientRect();
+		return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+	})()`);
+	await browser.run(["mouse", "move", String(x), String(y)]);
+	await browser.run(["mouse", "down", "left"]);
+	await browser.run(["mouse", "move", String(x - 500), String(y)]);
+	await browser.run(["mouse", "up", "left"]);
+	await browser.run(["wait", `${switcher} [data-choice="architecture"][aria-pressed="true"]`]);
+	await browser.run(["wait", "--fn", `!document.querySelector('${viewer}')`]);
+	expect(await browser.eval<string>("localStorage.getItem('archboard.navigator.mode')")).toBe(
+		"architecture",
+	);
+	expect(await browser.eval<string>("new URLSearchParams(location.search).get('fileB')")).toBe(
+		"notes.ts",
+	);
+}, 45_000);

@@ -118,7 +118,6 @@ function viewOf(workspace: Workspace): ShellView {
 	return {
 		theme: "light",
 		repositories: [repositoryOf(ready(SHOP, SHOP_VAULT), model, agentActivity)],
-		modelsError: null,
 		modelsLoading: false,
 		choosing: false,
 		selectedPaneKey: null,

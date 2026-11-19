@@ -18,7 +18,11 @@
 // It is no copy of a document either: it answers what the code said, never what is
 // on a document, and a pane shows it only over the version it was found on.
 
-import type { CodeCheckAnswer, RememberedFindings } from "@archboard/code-intel/code-check";
+import type { z } from "zod";
+import type { CodeCheckAnswer, RememberedFindingsSchema } from "@archboard/code-intel/code-check";
+
+/** What the server remembers of a vault's code passes, as the findings route answers it. */
+type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 
 /** What the last pass found on one document at one variant. */
 type RememberedReading =

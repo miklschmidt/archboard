@@ -60,7 +60,7 @@ async function selectGateway(browser: AgentBrowserSession): Promise<void> {
 				stage: string | null;
 				modules: string[];
 			}>(
-				`({ present: document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')) })`,
+				`({ present: document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]') !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]')?.textContent ?? null, stage: document.querySelector('[data-slot="architecture-model-stage"]')?.getAttribute('data-state') ?? null, modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')) })`,
 			),
 		(value) => value.present,
 		"the source module",
@@ -108,7 +108,7 @@ async function followSubject(
 				steps: unknown[];
 				selected: unknown[];
 			}>(
-				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
+				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
 			),
 		(value) => value.found,
 		"the exact foreign subject",

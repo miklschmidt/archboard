@@ -145,6 +145,8 @@ findings name, never quotes a file whose values the check does not read, and
 answers only a page of the server's own origin. The excerpt can still quote a
 key that somebody wrote into the code near the evidence line.
 
+[ADR 0080](0080-the-code-browser-quotes-whole-files-to-its-own-page.md) replaces that exception. The excerpt now reads through the whole-file route of the code browser, and the restriction to remembered evidence is gone.
+
 ### The cache
 
 Code facts are cached in memory by file content. Each pass reads and hashes

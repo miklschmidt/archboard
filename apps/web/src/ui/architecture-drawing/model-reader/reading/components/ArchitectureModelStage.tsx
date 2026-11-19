@@ -1,7 +1,6 @@
 import {
 	ModelHeader,
 	ModelError,
-	ModelFailureActions,
 	type ModelErrorProps,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelFrame.tsx";
 import {
@@ -49,7 +48,13 @@ import { useModelVault } from "#ui/architecture-drawing/model-reader/reading/hoo
 import { useArchitectureFeed } from "#ui/architecture-drawing/model-reader/access/hooks/use-architecture-feed.ts";
 import { retryFailedDrawings } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
-import { readingIsStale } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
+import { useTroubleReport } from "#ui/architecture-drawing/model-reader/reading/hooks/use-trouble-report.ts";
+import {
+	readingIsStale,
+	readingTrouble,
+	UNANSWERED_READ_CODE,
+	type ReadingTrouble,
+} from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 
 type ModelQuery = UseQueryResult<Extract<ArchitectureModelRead, { success: true }>>;
 
@@ -67,6 +72,8 @@ interface ModelStageProps
 	arrival?: number | undefined;
 	/** The repository of this reading, when the listing names it. */
 	repository?: string | null | undefined;
+	/** What is wrong with the reading on screen, or null once nothing is, for the shell to say. */
+	onTrouble?: ((trouble: ReadingTrouble | null) => void) | undefined;
 }
 
 /**
@@ -226,6 +233,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				failure={feed.failure}
 				refresh={refresh}
 				onCodeTargetNotice={props.onCodeTargetNotice}
+				onTrouble={props.onTrouble}
 				arrival={props.arrival}
 				driven={props.driven}
 				onPresentationEnd={props.onPresentationEnd}
@@ -388,6 +396,7 @@ interface ModelResponseProps extends Pick<
 	| "paneId"
 	| "reducedMotion"
 	| "onCodeTargetNotice"
+	| "onTrouble"
 	| "arrival"
 	| "driven"
 	| "narration"
@@ -419,6 +428,13 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const model = useVisibleModel(query, props.current);
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
 	const { paneId, states, vault, catalogue } = props;
+	const trouble = readingTrouble({
+		stale: props.stale,
+		lost: props.lost,
+		shown: model !== undefined,
+		problem,
+	});
+	useTroubleReport(trouble, props.onTrouble);
 	const overview = useCallback(
 		(shown: NonNullable<typeof model>): JSX.Element => (
 			<>
@@ -469,81 +485,10 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 						paneId={props.paneId}
 						reducedMotion={props.reducedMotion}
 						onCodeTargetNotice={props.onCodeTargetNotice}
-					>
-						<ReadingNotices {...props} problem={problem} />
-					</ModelReading>
+					/>
 				</ModelBookmarkReading>
 			)}
 		</ModelWalkthroughReader>
-	);
-}
-
-/**
- * What the stage has to say over the picture, which it never moves.
- * @param props The read and the stream.
- * @returns The notices that hold now.
- */
-function ReadingNotices(
-	props: Pick<ModelResponseProps, "query" | "stale" | "lost" | "refresh"> & {
-		problem: ModelErrorProps | null;
-	},
-): JSX.Element {
-	const { stale, lost } = props;
-	return (
-		<>
-			{stale && <StaleNotice lost={lost} />}
-			{!serverLost(props) && <ReadFailure problem={props.problem} onRetry={props.refresh} />}
-		</>
-	);
-}
-
-/**
- * A lost server fails every read, and the stale notice says so once.
- * @param props The read and the stream.
- * @param props.stale Whether the reading on screen is unconfirmed.
- * @param props.lost Whether the stream lost the server.
- * @param props.query The selected read.
- * @returns True when the server said nothing, so a failed read adds nothing.
- */
-function serverLost(props: Pick<ModelResponseProps, "stale" | "lost" | "query">): boolean {
-	return props.stale && props.lost && !(props.query.error instanceof ArchitectureReadError);
-}
-
-/**
- * Name a failed read over the picture it left in place.
- * @param props The failure and the way to try again.
- * @param props.problem The failure, if any.
- * @param props.onRetry Read again.
- * @returns The failure, or nothing.
- */
-function ReadFailure(props: {
-	problem: ModelErrorProps | null;
-	onRetry: () => void;
-}): JSX.Element | null {
-	if (props.problem === null) return null;
-	return (
-		<ModelError {...props.problem} compact>
-			<ModelFailureActions onRetry={props.onRetry} />
-		</ModelError>
-	);
-}
-
-/**
- * Say what the picture under it no longer knows.
- * @param props Why.
- * @param props.lost Whether the server stopped answering.
- * @returns The notice.
- */
-function StaleNotice(props: { lost: boolean }): JSX.Element {
-	return (
-		<output
-			data-slot="model-stale"
-			className="border-border bg-status-subtle text-status-foreground text-body border-b px-4 py-2"
-		>
-			{props.lost
-				? "The Archboard server is not answering, so this is the last reading it sent. Start the server, and the reading updates by itself."
-				: "This is the last coherent reading, and the server has not confirmed it. Refresh to retry."}
-		</output>
 	);
 }
 
@@ -569,7 +514,7 @@ function readingProblem(
  * @returns Its public refusal code or the transport fallback.
  */
 function failureCode(error: Error): string {
-	return "code" in error && typeof error.code === "string" ? error.code : "READ_FAILED";
+	return "code" in error && typeof error.code === "string" ? error.code : UNANSWERED_READ_CODE;
 }
 
 /**

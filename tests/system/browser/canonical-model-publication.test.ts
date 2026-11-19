@@ -180,7 +180,7 @@ test("saved architecture publishes only after the reader chooses its destination
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"]') !== null && document.querySelector('[data-slot="module-details"]') === null`,
+				`document.querySelector('[data-pane="A"] [data-slot="model-error"][data-code="ARCHITECTURE_UNAVAILABLE"]') !== null && document.querySelector('[data-slot="module-details"]') === null`,
 			),
 		Boolean,
 		"unavailable history without substituted current content",

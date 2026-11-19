@@ -128,7 +128,7 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+				`document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]')?.getAttribute('data-code') ?? null`,
 			),
 		(code) => code !== null,
 		"the unavailable vault refusal",
@@ -198,16 +198,23 @@ test("current model readings refresh after external edits and reconnect with exp
 	);
 	writeFileSync(gatewayPath, "{");
 	const stale = (): Promise<boolean> =>
-		browser.eval<boolean>(`document.querySelector('[data-slot="model-stale"]') !== null`);
+		browser.eval<boolean>(
+			`document.querySelector('[data-slot="architecture-model-stage"][data-stale="true"]') !== null`,
+		);
 	await pollUntil(
 		() =>
-			browser.eval<string | null>(
-				`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+			browser.eval<string>(
+				`document.querySelector('[data-sonner-toast]:not([data-removed="true"]) [data-notice="reading:A"][data-code="MODEL_INVALID"]')?.textContent ?? ''`,
 			),
-		(code) => code === "MODEL_INVALID",
+		(text) => text.includes("gateway.module.json"),
 		"the invalid external edit refusal",
 		WAIT,
 	);
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-sonner-toast]:not([data-removed="true"]) [data-notice="listing"]') === null`,
+		),
+	).toBe(true);
 	expect(await stale()).toBe(true);
 	expect(await details()).toContain("Observed external description");
 	gateway["description"] = "Repaired external description";
@@ -267,6 +274,32 @@ test("current model readings refresh after external edits and reconnect with exp
 	await pollUntil(stale, (value) => !value, "the reconnected reading to become current", WAIT);
 	await pollUntil(claimVisible, (visible) => !visible, "the released claim to leave", WAIT);
 	await pollUntil(working, (visible) => !visible, "the expired activity to leave the shell", WAIT);
+	await browser.eval(`(() => {
+		const original = window.fetch;
+		window.fetch = async (input, init) => {
+			const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+			if (url.pathname !== '/api/architecture/model') return original.call(window, input, init);
+			window.fetch = original;
+			throw new TypeError('The model request ended without a reply.');
+		};
+	})()`);
+	gateway["description"] = "Confirmed after retry";
+	writeFileSync(gatewayPath, JSON.stringify(gateway));
+	const retry =
+		'[data-sonner-toast]:not([data-removed="true"]) [data-notice="reading:A"]:not([data-code]) [data-slot="notice-actions"] button';
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(retry)}) !== null`),
+		Boolean,
+		"the unconfirmed reading's Retry action",
+		WAIT,
+	);
+	await browser.run(["click", retry]);
+	await pollUntil(
+		details,
+		(text) => text.includes("Confirmed after retry"),
+		"the unconfirmed reading to recover after Retry",
+		WAIT,
+	);
 }, 40_000);
 
 test("saved readings stay exact after current inputs change and expose missing evidence and archive recovery", async () => {
@@ -337,6 +370,25 @@ test("saved readings stay exact after current inputs change and expose missing e
 		),
 	).toBe(true);
 
+	const readingToast = '[data-sonner-toast]:not([data-removed="true"]) [data-notice="reading:A"]';
+	const notice = (): Promise<{ code: string | null; retry: boolean } | null> =>
+		browser.eval(`(() => {
+			const toast = document.querySelector(${JSON.stringify(readingToast)});
+			return toast && { code: toast.getAttribute('data-code'), retry: !!toast.querySelector('[data-slot="notice-actions"]') };
+		})()`);
+	await server.restart({
+		whileStopped: async () => {
+			const lost = await pollUntil(
+				notice,
+				Boolean,
+				"the retained reading's lost-server toast",
+				WAIT,
+			);
+			expect(lost).toEqual({ code: null, retry: false });
+		},
+	});
+	await pollUntil(notice, (value) => value === null, "the lost-server toast to clear", WAIT);
+
 	const manifestPath = join(vault, "model.json");
 	const manifest = readFileSync(manifestPath);
 	rmSync(manifestPath);
@@ -363,7 +415,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await pollUntil(state, (value) => value === "error", "the missing architecture refusal", WAIT);
 	expect(
 		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
+			`document.querySelector('[data-pane="A"] [data-slot="model-error"]')?.getAttribute('data-code') ?? null`,
 		),
 	).toBe("ARCHITECTURE_UNAVAILABLE");
 	expect(

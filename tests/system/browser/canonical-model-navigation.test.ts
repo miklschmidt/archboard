@@ -218,7 +218,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-pane="B"] [data-slot="model-diagram"] [data-semantic-kind="node"]') === null`,
+			`document.querySelector('[data-pane="B"] [data-slot="model-diagram"] [data-semantic-kind="node"], [data-sonner-toast]:not([data-removed="true"]) [data-notice="reading:B"]') === null`,
 		),
 	).toBe(true);
 	await browser.run(["reload"]);
@@ -255,7 +255,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="MODEL_NOT_FOUND"]') !== null`,
+				`document.querySelector('[data-pane="A"] [data-slot="model-error"][data-code="MODEL_NOT_FOUND"]') !== null`,
 			),
 		Boolean,
 		"the requested model refusal",

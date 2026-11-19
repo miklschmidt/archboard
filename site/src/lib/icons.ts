@@ -6,6 +6,7 @@ import arrowRight from "remixicon/icons/Arrows/arrow-right-line.svg?raw";
 import arrowUpRight from "remixicon/icons/Arrows/arrow-right-up-line.svg?raw";
 import back from "remixicon/icons/Arrows/arrow-go-back-line.svg?raw";
 import branch from "remixicon/icons/Development/git-branch-line.svg?raw";
+import chat from "remixicon/icons/Communication/chat-3-line.svg?raw";
 import check from "remixicon/icons/System/check-line.svg?raw";
 import chevronLeft from "remixicon/icons/Arrows/arrow-left-s-line.svg?raw";
 import chevronRight from "remixicon/icons/Arrows/arrow-right-s-line.svg?raw";
@@ -72,6 +73,7 @@ export const icons = {
 	image,
 	lock,
 	mic,
+	chat,
 	pause,
 	play,
 	playCircle,

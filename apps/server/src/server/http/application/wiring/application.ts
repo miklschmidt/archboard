@@ -14,6 +14,7 @@ import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directo
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { agentActivity, checkoutWork } from "#server/wiring/server-owners.ts";
 import { mountCodeCheckRoute } from "#server/http/handlers/code-checks/routes/code-check-route.ts";
+import { mountCodeFilesRoute } from "#server/http/handlers/code-files/routes/code-files-route.ts";
 import { startServer } from "#server/start-stop/lifecycle/server-startup.ts";
 import {
 	mountMutationAdmission,
@@ -111,6 +112,7 @@ mountArchitectureModelRoutes(app);
 mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);
 mountCodeCheckRoute(app);
+mountCodeFilesRoute(app);
 mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 

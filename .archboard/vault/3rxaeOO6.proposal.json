@@ -1,0 +1,254 @@
+{
+  "id": "3rxaeOO6",
+  "name": "Code browser beside the picture",
+  "summary": "A reader opens a file beside the picture, and the picture shows the modules that own it (TASK-648).",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-18T23:22:40.363Z",
+  "predecessor": "1wIcvaUQ",
+  "predecessorRevision": "7836fdce2590e9d0e643b73241a1493779857b1073e9c2cdec07c2a5534160bf",
+  "baseline": "1e8bda33eacbdd113470b0bce78f6bc90f7dc547",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#WNmQf72c"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#nbkmjsU3"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk#NHiOFhOn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#9g0Uli0a",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "run"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#fCXk4gkF",
+      "kind": "module",
+      "value": {
+        "order": 14500,
+        "name": "Code files route",
+        "kind": "route",
+        "responsibility": "Lists the Git-listed files of a registered checkout and quotes one whole file to Archboard's own page, never a secret, a binary or a file outside the checkout, with the modules that own it",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/code-files"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#fCXk4gkF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#fCXk4gkF",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#iBUsuXmL",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "name the owners of a file",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/code-files/operations/read-code-file.ts",
+          "symbol": "readCodeFile"
+        },
+        "id": "vKEsyHFk#iBUsuXmL",
+        "to": "vKEsyHFk#8sC6QgHh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#iBUsuXmL",
+      "placement": {
+        "holder": "vKEsyHFk#fCXk4gkF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#MsDSuIFY",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "dependency",
+        "label": "list the files Git tracks",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/code-files/operations/checkout-files.ts",
+          "symbol": "git"
+        },
+        "id": "vKEsyHFk#MsDSuIFY",
+        "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MsDSuIFY",
+      "placement": {
+        "holder": "vKEsyHFk#fCXk4gkF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#8sC6QgHh",
+      "kind": "module",
+      "value": {
+        "order": 14600,
+        "name": "File owners",
+        "kind": "function",
+        "responsibility": "Names the modules of a reading that own one file by the narrowest binding, and where each symbol binding is defined in it",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/code-intel/src/runtime/code-check/operations/file-owners.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#8sC6QgHh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8sC6QgHh",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#KovkhwZi",
+      "field": "responsibility",
+      "value": "Runs the code check, locality and footprint when somebody asks, as checkout work, and keeps the last code findings in memory."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#VelaZ2cn",
+      "kind": "relationship",
+      "value": {
+        "order": 970000,
+        "kind": "call",
+        "label": "in Code mode, list the files and show the open one",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#VelaZ2cn",
+        "to": "vKEsyHFk#2EpLFgGU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#VelaZ2cn",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#mgj7wHRP",
+      "kind": "relationship",
+      "value": {
+        "order": 40000,
+        "kind": "http",
+        "label": "read the file an evidence excerpt cuts its lines from",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/source-lines.ts",
+          "symbol": "sourceLinesQuery"
+        },
+        "id": "vKEsyHFk#mgj7wHRP",
+        "to": "vKEsyHFk#fCXk4gkF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#mgj7wHRP",
+      "placement": {
+        "holder": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#2EpLFgGU",
+      "kind": "module",
+      "value": {
+        "order": 970000,
+        "name": "Code browser",
+        "kind": "module",
+        "responsibility": "In Code mode, lists a repository's files in the navigator and shows the open file in its own column, selects the modules that own it, and makes each bound symbol a button",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/code-browser"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#2EpLFgGU"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#2EpLFgGU",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#POloYnX3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#sfvQPYux",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "http",
+        "label": "list and read files with their owners",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#sfvQPYux",
+        "to": "vKEsyHFk#fCXk4gkF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#sfvQPYux",
+      "placement": {
+        "holder": "vKEsyHFk#2EpLFgGU"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#4f5nsDWm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "run"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#5d3cCsSc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "run"
+      }
+    }
+  ],
+  "retiredIds": [
+    "vKEsyHFk#WNmQf72c",
+    "vKEsyHFk#NHiOFhOn",
+    "vKEsyHFk#fiQ2exOC",
+    "vKEsyHFk#nbkmjsU3"
+  ]
+}

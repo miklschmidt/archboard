@@ -228,7 +228,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		if (existsSync(heldHistory)) renameSync(heldHistory, gitDirectory);
 	});
 	await refreshModel(browser);
-	await visible(browser, '[data-slot="model-error"]');
+	await visible(browser, '[data-pane="A"] [data-slot="model-error"]');
 	expect(
 		await browser.eval<boolean>(`document.querySelector('[data-slot="model-reading"]') === null`),
 	).toBe(true);

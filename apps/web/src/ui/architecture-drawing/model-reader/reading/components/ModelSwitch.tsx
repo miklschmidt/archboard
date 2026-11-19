@@ -1,5 +1,5 @@
 import { useCallback, useMemo, type JSX } from "react";
-import { ToggleGroup } from "@archboard/ui-kit/components";
+import { cn, ToggleGroup } from "@archboard/ui-kit/components";
 
 /** Inputs for a switch between two ways of reading. */
 interface ModelSwitchProps<Choice extends string> {
@@ -8,6 +8,11 @@ interface ModelSwitchProps<Choice extends string> {
 	readonly choices: readonly { readonly value: Choice; readonly label: string }[];
 	readonly value: Choice;
 	readonly onChange: (value: Choice) => void;
+	/**
+	 * Whether the switch fills its row beside 32px keys, as tall as they are: each choice takes its
+	 * words and an inset, and they share the rest.
+	 */
+	readonly wide?: boolean;
 }
 
 /**
@@ -34,14 +39,17 @@ function ModelSwitch<Choice extends string>(props: ModelSwitchProps<Choice>): JS
 			spacing={0.5}
 			value={pressed}
 			onValueChange={change}
-			className="trough"
+			className={props.wide === true ? "trough w-full" : "trough"}
 		>
 			{choices.map((choice) => (
 				<ToggleGroup.Item
 					key={choice.value}
 					value={choice.value}
 					data-choice={choice.value}
-					className="text-muted-foreground hover:text-foreground aria-pressed:text-foreground aria-pressed:chosen-face rounded-control aria-pressed:bg-face h-6 hover:bg-transparent"
+					className={cn(
+						"text-muted-foreground hover:text-foreground aria-pressed:text-foreground aria-pressed:chosen-face rounded-control aria-pressed:bg-face h-6 hover:bg-transparent",
+						props.wide === true && "h-[26px] flex-auto px-3",
+					)}
 				>
 					{choice.label}
 				</ToggleGroup.Item>

@@ -106,6 +106,8 @@ test("imported planning models remain readable through exact history and compari
 		WAIT,
 	);
 	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="model-error"]') === null`),
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]') === null`,
+		),
 	).toBe(true);
 }, 60_000);

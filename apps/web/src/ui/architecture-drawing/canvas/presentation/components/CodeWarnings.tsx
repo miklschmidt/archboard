@@ -1,7 +1,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import { useCallback, useState, type JSX } from "react";
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { SemanticRender } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { useCodeFindings } from "#ui/architecture-drawing/canvas/picture/hooks/use-code-findings.ts";
 

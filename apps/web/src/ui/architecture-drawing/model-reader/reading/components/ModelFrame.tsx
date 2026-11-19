@@ -9,6 +9,7 @@ import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { RiRefreshLine } from "@remixicon/react";
 import { Button, cn } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
+import { namesDiagnosticFile } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 import {
 	PaneHeaderRow,
 	PaneHeaderStart,
@@ -16,7 +17,7 @@ import {
 } from "#ui/architecture-drawing/canvas/presentation/components/PaneHeaderFrame.tsx";
 
 interface ModelErrorProps {
-	/** Lay the error over a kept picture, which it never moves. */
+	/** Lay the error over a kept picture as a floating card, which never moves it. */
 	compact?: boolean;
 	title?: string;
 	code: string;
@@ -40,7 +41,7 @@ function ModelError(props: ModelErrorProps): JSX.Element {
 			data-code={props.code}
 			className={
 				props.compact
-					? "text-body border-border bg-background max-h-40 shrink-0 space-y-2 overflow-auto border-b px-4 py-3"
+					? "text-body bg-popover text-popover-foreground rounded-table shadow-float m-2 max-h-60 max-w-xl shrink-0 space-y-2 self-start overflow-auto border p-4"
 					: "text-body max-w-prose space-y-4 p-10"
 			}
 		>
@@ -48,7 +49,9 @@ function ModelError(props: ModelErrorProps): JSX.Element {
 			<p>{props.message}</p>
 			{[...diagnostics].map(([key, diagnostic]) => (
 				<div key={key} className="space-y-1">
-					{diagnostic.file && <code className="text-control break-all">{diagnostic.file}</code>}
+					{namesDiagnosticFile(diagnostic.file) && (
+						<code className="text-control break-all">{diagnostic.file}</code>
+					)}
 					<p>{diagnostic.message}</p>
 					<p className="text-muted-foreground">{diagnostic.recovery}</p>
 				</div>
