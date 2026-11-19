@@ -351,9 +351,9 @@ test("the right column follows what a reader looks at, and the left column holds
 	]);
 	await browser.run(["click", '[data-end-id="Shop#Worker"]']);
 	await browser.run(["click", COUNT("hiddenParts")]);
-	expect(await browser.eval(`document.querySelector('[data-slot="model-about"]') === null`)).toBe(
-		true,
-	);
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="model-about"]') === null`),
+	).toBe(true);
 	await selectedCard(browser, "Shop#Queue");
 	await browser.run(["click", CLEAR]);
 
