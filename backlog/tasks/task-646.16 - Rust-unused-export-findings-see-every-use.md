@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T03:12:00Z'
-updated_date: '2026-11-19T04:16:00Z'
+updated_date: '2026-11-19T11:36:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -79,6 +79,8 @@ Follow the same section of TASK-646.05.
 Measured with this checkout's CLI (bin/archboard check code, own server): Rust EXPOSED_UNUSED warnings 1373 -> 1343, none turned to information. Fresh sample of 25 (seed 1119): 0 names used by a file outside their module, tests aside; the 7 grep hits were other items of the same name (RNode, PictureLegend in archboard-svg and TS, Projection, title_of/titleOf, hypot, normalize, inset_of/insetOf) or uses inside the module (between.phase, used only inside the archboard-paint crate). 20 of the remaining warnings are #[derive(TS)] types; TypeScript names only LegendLayout of them directly.
 
 Merge gate (orchestrator): footprint exits 1 on Cached fact reader (reader.ts lets a module reading's target win for a use that an import names, so the Rust resolver reaches the function and not the module) and code-intel (tests). No architecture change; exception recorded in the proposal history (operation task-646-16-exceptions). Rust EXPOSED_UNUSED warnings went from 1373 to 1343; a fresh 25-name sample has no false match. Most of the rest sit on vendored external crates (graphviz-pure-*, vello_encoding).
+
+Follow-up (2026-11-19, from TASK-646.14.02): a Rust path that ends at a module's name, such as archboard_text::shape(..), reached the private module file instead of the crate root's pub fn or pub use of that name, so used functions read as EXPOSED_UNUSED. Fixed on fix/rust-same-name-module (47ff1ae945): the resolver reaches the value beside the module, and a bodiless mod ranks after an item of the same name. Only code-intel changed (Fact analysis, tests); no architecture change.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
