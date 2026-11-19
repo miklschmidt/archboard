@@ -57,3 +57,4 @@ function gitGroupCleanupDeadline(nowMs: number): number {
 }
 
 export { gitMs, gitGroupCleanupDeadline };
+export { GIT_MS };

@@ -46,3 +46,4 @@ function skillEvalMs(key: keyof typeof SKILL_EVAL_MS): number {
 }
 
 export { skillEvalMs };
+export { SKILL_EVAL_MS };

@@ -47,3 +47,4 @@ function checkMs(key: keyof typeof CHECK_MS): number {
 }
 
 export { checkMs };
+export { CHECK_MS };

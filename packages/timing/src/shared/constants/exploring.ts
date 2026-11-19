@@ -165,3 +165,4 @@ function reachHopDelayMs(hops: number): number {
 }
 
 export { exploringMs, reachHopDelayMs };
+export { EXPLORING_MS };

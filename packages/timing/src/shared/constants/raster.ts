@@ -52,3 +52,4 @@ function rasterMs(key: keyof typeof RASTER_MS): number {
 }
 
 export { rasterMs };
+export { RASTER_MS };

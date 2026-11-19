@@ -18,6 +18,17 @@
 // here and the override stays at the point of use, in the process that has an
 // environment to read.
 
+export { waitUntil } from "#shared/waits/wait-until.ts";
+export { pause } from "#shared/waits/pause.ts";
+export { deadline } from "#shared/durations/deadline.ts";
+export { durationMs } from "#shared/durations/duration-ms.ts";
+export type { WaitOptions, WaitOutcome } from "#shared/waits/wait-until.ts";
+export type { Clock } from "#shared/waits/clock.ts";
+export type { CadenceName, WaitName } from "#shared/waits/policies.ts";
+export type { PauseOptions } from "#shared/waits/pause.ts";
+export type { DurationName } from "#shared/durations/names.ts";
+export type { ReadableName } from "#shared/durations/duration-ms.ts";
+
 // ── The server and its processes ─────────────────────────────────────────
 export { modelLockMs, claimMs } from "#shared/constants/model-locks.ts";
 export { serverLifecycleMs } from "#shared/constants/server-lifecycle.ts";

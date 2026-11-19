@@ -71,6 +71,12 @@ const PANE_MS = durations({
 	 */
 	settleCap: 1500,
 	/**
+	 * Gap between two looks at the pane registry while a layout change waits for
+	 * PANE_MS.settleCap. Short against it, so the wait ends soon after the last moved
+	 * pane reports.
+	 */
+	settlePoll: 50,
+	/**
 	 * How long the server waits for the browser to change its layout at all.
 	 *
 	 * The acknowledgement is the pane appearing in the registry or its socket
@@ -117,3 +123,4 @@ function paneMs(key: keyof typeof PANE_MS): number {
 }
 
 export { paneMs };
+export { PANE_MS };

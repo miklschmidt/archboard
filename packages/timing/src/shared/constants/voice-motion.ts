@@ -245,3 +245,4 @@ function subtitleMs(key: keyof typeof SUBTITLE_MS): number {
 }
 
 export { voiceMs, subtitleMs };
+export { VOICE_MS, SUBTITLE_MS };

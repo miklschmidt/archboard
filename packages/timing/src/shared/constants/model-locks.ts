@@ -196,3 +196,4 @@ function claimMs(key: keyof typeof CLAIM_MS, startedAtMs?: number): number {
 }
 
 export { modelLockMs, claimMs };
+export { MODEL_LOCK_MS, CLAIM_MS };

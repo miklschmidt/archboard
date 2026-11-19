@@ -200,3 +200,4 @@ function recorderPageReadySeconds(): number {
 }
 
 export { recordingMs, recorderMs, recorderPageReadyDeadline, recorderPageReadySeconds };
+export { RECORDING_MS, RECORDER_MS };

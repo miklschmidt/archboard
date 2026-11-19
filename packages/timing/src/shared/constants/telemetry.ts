@@ -35,3 +35,4 @@ function telemetryMs(key: keyof typeof TELEMETRY_MS): number {
 }
 
 export { telemetryMs };
+export { TELEMETRY_MS };

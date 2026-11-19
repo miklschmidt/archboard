@@ -11,6 +11,8 @@ const HTTP_STOP_GRACE_MS = 250;
 const SERVER_LIFECYCLE_MS = durations({
 	/** Public server readiness classification. Pulls against mandatory Codex startup readiness. */
 	startupReadiness: 8000,
+	/** Gap between two health probes while a start waits for SERVER_LIFECYCLE_MS.startupReadiness. */
+	startupProbePoll: 250,
 	/**
 	 * Longest a stop attempt waits for admitted request parsing and explicit
 	 * mutation work to settle before refusing teardown and restoring admission.
@@ -61,3 +63,4 @@ function serverLifecycleMs(key: keyof typeof SERVER_LIFECYCLE_MS): number {
 }
 
 export { serverLifecycleMs };
+export { SERVER_LIFECYCLE_MS };

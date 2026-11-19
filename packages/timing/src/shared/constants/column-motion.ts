@@ -121,3 +121,4 @@ function columnSlideSettledMs(slideMs: number): number {
 }
 
 export { columnMs, sidebarMs, columnSlideSettledMs };
+export { COLUMN_MS, SIDEBAR_MS };

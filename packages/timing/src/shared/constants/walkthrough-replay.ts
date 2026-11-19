@@ -34,3 +34,4 @@ function replayMs(key: keyof typeof REPLAY_MS): number {
 }
 
 export { replayMs };
+export { REPLAY_MS };

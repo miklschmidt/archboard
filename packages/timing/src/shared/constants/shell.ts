@@ -72,3 +72,4 @@ function modelCacheMs(key: keyof typeof MODEL_CACHE_MS): number {
 }
 
 export { shellClockMs, modelCacheMs };
+export { SHELL_CLOCK_MS, MODEL_CACHE_MS };

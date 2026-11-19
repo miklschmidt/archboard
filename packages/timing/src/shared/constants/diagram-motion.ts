@@ -307,3 +307,4 @@ function painterPhasesJson(): string {
 }
 
 export { pictureMs, presentationMs, painterPhasesJson };
+export { PICTURE_LOOKUP, PRESENTATION_MS };
