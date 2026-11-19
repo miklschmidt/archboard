@@ -53,6 +53,10 @@ git commit -m "docs(architecture): add the Archboard vault"
 	`init` adds nothing to `CLAUDE.md` or `AGENTS.md`. A command finds the vault from the repository, the way Git finds its own directory. A block that an earlier version wrote between `<!-- archboard:begin -->` and `<!-- archboard:end -->` is removed.
 </Aside>
 
+`init` writes the model with your Git identity and signer. If signing fails, repair your Git configuration and run `init` again. Keep signing on.
+
+To set up a repository without `init`, install the skills from GitHub with `npx skills add miklschmidt/archboard -g`, and update them later with `npx skills update -g`. The first time an agent works in a checkout without a vault, it makes one with `archboard model init`.
+
 ## Set up the language servers
 
 A language server knows where code defines a name. With one, `archboard check code` resolves a name to its definition, and only resolved evidence can make a warning. A match by name only stays information.
@@ -79,6 +83,42 @@ In the browser, Measures names each language that the last code check found with
 	the checkout, as your editor does.
 </Aside>
 
+### What each language needs
+
+For each language, the check uses the first server that one of these names: the checkout's `.archboard/language-servers.json`, then the global `language-servers.json` of this machine, then the default for TypeScript. The Archboard server runs the command with its own `PATH`, which is the `PATH` of the command that started it. A command with a `/` in the repository file is a path from the checkout root, so a repository can commit a wrapper script that starts its server through Nix, devenv or devbox.
+
+Register a server with `archboard repo language-server <language> <command>`, as in the steps above. Write an argument that starts with `-` as `--arg=<argument>`.
+
+| Language            | `<language>` | `<command>`                        |
+| ------------------- | ------------ | ---------------------------------- |
+| TypeScript          | `typescript` | None needed                        |
+| Python              | `python`     | `pyright-langserver --arg=--stdio` |
+| C, C++, Objective-C | `c`          | `clangd`                           |
+| C#                  | `csharp`     | `csharp-ls`                        |
+| Swift               | `swift`      | `sourcekit-lsp`                    |
+| Rust                | `rust`       | `rust-analyzer`                    |
+| Go                  | `go`         | `gopls`                            |
+
+How to install each server, and what it needs:
+
+- TypeScript {reference.facts.nativeTypescript} and later needs nothing. The check runs `tsc --lsp --stdio` of the `typescript` package at the root of the checkout. For an older TypeScript, run `npm install --save-dev typescript-language-server`. The check finds it in `node_modules/.bin` or on the `PATH`. In a monorepo, the check reads the root package only.
+- For Python, run `npm install -g pyright`. For basedpyright, run `pipx install basedpyright` and register `basedpyright-langserver --arg=--stdio`. pyright uses the interpreter of a `.venv` or `venv` at the root of the checkout. A virtual environment elsewhere needs `venvPath` and `venv` in the pyright configuration.
+- For C, C++ and Objective-C, run `apt install clangd` or `brew install llvm`. clangd needs a `compile_commands.json`. Generate it with `cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`, with `bear -- make`, or in Meson's build directory. Add `.cache/` to `.gitignore`, because clangd keeps its index there. On NixOS, add `--arg=--query-driver=<glob>`.
+- For C#, run `dotnet tool install --global csharp-ls`. csharp-ls needs the .NET SDK that it was built for, such as .NET 10 for csharp-ls 0.28. It loads the solution nearest the root of the checkout and runs the MSBuild targets of each project. The Roslyn language server is not supported.
+- For Swift, sourcekit-lsp comes with the Swift toolchain. It needs a `Package.swift` that holds the file.
+- For Rust, run `rustup component add rust-analyzer rust-src`. rust-analyzer needs `cargo` and the source of the standard library: the `rust-src` component, or `RUST_SRC_PATH` on Nix. It runs `cargo check`, which writes into `target`.
+- For Go, run `go install golang.org/x/tools/gopls@latest`. gopls needs the `go` command on the `PATH`.
+
+A server that cannot start makes the skip [`language-server-failed`](../reference/findings/#language-server-failed). A project that the server cannot read yet, such as C without a `compile_commands.json` or Swift without a `Package.swift`, makes [`language-server-unready`](../reference/findings/#language-server-unready). Its uses stay candidates.
+
+The global file is for a server that only this machine has. Write it with `--global`, from any directory. A command there is a name on the `PATH` or an absolute path:
+
+```bash
+archboard repo language-server c clangd --global
+```
+
+Run `archboard repo language-server` with no language to see both files and the servers that they name. A file that is not valid blocks the languages that it could name, and the check says so. Fix it or delete it.
+
 ## Start the server
 
 Every command that needs the server starts it when nothing answers. To start it yourself, run:
@@ -89,6 +129,12 @@ archboard status
 ```
 
 A release server listens on <code>{`http://archboard.localhost:${reference.facts.releasePort}`}</code>. Chrome and Firefox send every `*.localhost` name to this machine with no setup. The CLI connects to <code>127.0.0.1:{reference.facts.releasePort}</code>. Set `ARCHBOARD_NO_AUTOSTART=1` to stop the autostart.
+
+The server of a clone listens on `http://127.0.0.1:3000`. To use another address, set `ARCHBOARD_URL`, or give `--url` to one command. A command starts a server only for a loopback address. The server uses the environment of the command that started it, which matters for the `PATH` of language servers.
+
+Open the server's address and sign in to Codex from the agent dock, with ChatGPT or an OpenAI API key. Archboard keeps this sign-in in the state directory, apart from your own `~/.codex`. Several servers can run on one machine, each on its own port, and they share one sign-in. A server that already runs sees a sign-in or a sign-out from another server only after a restart.
+
+One server serves every vault. The browser lists each repository that this machine knows and that has a vault. A command in a checkout, `archboard repo add`, `archboard model init` and `archboard init` each make a repository known.
 
 <Aside type="caution" title="Keep the server on loopback">
 	The server has no authentication. Do not expose its port beyond this machine.
@@ -113,6 +159,51 @@ archboard -C ~/Projects/payments-api model read
 
 If the root has no vault, the command refuses with exit <Exit command="model read" refusal="VAULT_NOT_FOUND" />, and its error says how to make one. The refusal names each known vault whose models bind this repository, as the `-C` to give.
 
+- A vault above the checkout root is never used, because it belongs to another repository.
+- Outside any Git checkout, the vault is the `.archboard/vault` of the nearest enclosing directory. That is an untracked vault. Run `archboard model archive-init` there before you write to it, because it has no repository to keep its history.
+- `-C` changes only where the vault is found. A relative `--input` or `--out` still resolves against the working directory.
+- The first command in a checkout that this machine does not know registers it, as `archboard repo add` does.
+- A set `ARCHBOARD_VAULT` makes every command refuse. Unset it.
+
+## Checkouts on this machine
+
+A binding names a repository by its identity, from the `origin` remote, or the directory name of its main checkout when there is no remote. To open code or check it, this machine must know a checkout of that repository:
+
+```bash
+archboard repo add ~/Projects/payments-api
+archboard repo list
+```
+
+A repository can have several checkouts here, such as clones and worktrees. This machine reads one of them, the chosen checkout. The first one that you register is chosen, and `archboard repo add` never changes the choice. `archboard repo use <dir>` chooses another. `archboard repo forget <dir>` removes one. The registry belongs to the machine, so each machine registers its own checkouts.
+
+- A binding into the repository that holds the vault always resolves in that checkout. So a model in a worktree is checked against that worktree's code.
+- `archboard browser show` from a checkout that is not chosen makes it the chosen one. A model read or edit never changes the choice.
+- If a binding names a branch or a commit that the checkout does not have out, the browser says so. It offers the file on GitHub at that ref, when the repository is on GitHub. Archboard never changes the branch of your checkout.
+- The browser opens a file with the opener of its configuration: `xdg-open` on Linux and `open` on macOS by default, or Visual Studio Code, Cursor, Zed or a command of your own. A command of your own is a list of arguments, where `{path}` is the file and `{line}` is the line.
+
+## Pictures and recordings
+
+`archboard model render` writes an SVG and needs no browser. `archboard model rasterize` draws a PNG, and `archboard model record` makes a video of a walkthrough. Both need Chromium or Google Chrome on the `PATH`, or in the standard macOS applications. Set `ARCHBOARD_RENDERER_CHROMIUM` to use another one.
+
+A recording also needs these things:
+
+- An `ffmpeg` that has libx264 and aac, or libvpx-vp9 and libopus for WebM. The recorder uses the one that `ARCHBOARD_FFMPEG` names, then the one on the `PATH`. Without one, it runs `nixpkgs#ffmpeg-headless` through Nix.
+- A Codex sign-in on the server, for the voice. A replay needs none.
+- In a clone, a browser app built with `bun run build`.
+
+A recording keeps its talk, the voice and the time of each step, in `recordings/` in the state directory, which keeps the newest 10. `archboard model replay <talk> --out <file.mp4>` renders a kept talk again, such as in the other theme. To attach a video to a pull request, run `gh pr comment --attach`, with gh 2.99 or newer.
+
+On macOS, Archboard refuses to start Chromium from inside a sandbox, because Chromium then crashes with a dialog. Run the command outside the sandbox, as the error says. If a managed Chrome asks to become the default browser, install Chrome for Testing and set `ARCHBOARD_RENDERER_CHROMIUM` to it.
+
+## Machine state and logs
+
+Archboard keeps the state of the machine apart from the vault, because a vault moves between machines. The state directory holds the Codex sign-in, the registry of checkouts (`repos.json`), the global `language-servers.json`, the opener configuration, the server's process files, the log, the kept recordings and the history of each untracked vault.
+
+- On Linux, the state directory is `$XDG_STATE_HOME/archboard`, by default `~/.local/state/archboard`. The log is `archboard.log` in it.
+- On macOS, the state directory is `~/Library/Application Support/archboard`. The log is `~/Library/Logs/archboard.log`.
+
+`ARCHBOARD_REPOS` moves `repos.json` and the global `language-servers.json`. `LOG_FILE_PATH` moves the log.
+
 ## Update and remove
 
 Run the install command again, then restart the server so that it runs the new version. Until then, every command warns that the server runs another version.
@@ -129,6 +220,10 @@ archboard stop
 npm uninstall --global archboard
 ```
 
-Then delete the skill directories, such as `~/.agents/skills/archboard`, `~/.agents/skills/archboard-pr`, `~/.agents/skills/archboard-plan` and `~/.agents/skills/archboard-deepen`, and the state directory. The state directory holds the Codex sign-in, the registry of checkouts and the logs. On Linux it is `~/.local/state/archboard`, and on macOS it is `~/Library/Application Support/archboard`. Keep each vault that you still need: it is in its repository, not in the state directory.
+Then delete the skill directories, such as `~/.agents/skills/archboard`, `~/.agents/skills/archboard-pr`, `~/.agents/skills/archboard-plan` and `~/.agents/skills/archboard-deepen`, and [the state directory](#machine-state-and-logs). Keep each vault that you still need: it is in its repository, not in the state directory. An untracked vault keeps its history in the state directory, so back it up first.
 
-[`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers builds from a clone, Nix, every language server, recordings, machine state and macOS.
+### A vault from an earlier version
+
+If `archboard model read` refuses with `LEGACY_AUTHORITY`, the vault holds boards of an earlier version. Ask your agent to migrate it. The archboard skill's [legacy migration](https://github.com/miklschmidt/archboard/blob/main/skills/archboard/references/legacy-migration.md) gives the steps. Opening the vault never migrates it, and only `archboard model migrate`, with your approval, installs the result.
+
+[`INSTALL.md`](https://github.com/miklschmidt/archboard/blob/main/INSTALL.md) covers builds from a clone with Nix or rustup, and usage telemetry.

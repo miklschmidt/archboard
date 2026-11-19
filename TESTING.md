@@ -150,7 +150,7 @@ out=$(mktemp -d)
 
 Write temporary pictures outside the checkout.
 Structural renders use the selected scope. Sequence and flowchart renders also name an authored flow and grammar.
-`model rasterize` accepts the same reading selectors and needs Chromium, as [INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes.
+`model rasterize` accepts the same reading selectors and needs Chromium, as [the install guide](https://usearchboard.dev/docs/install/#pictures-and-recordings) describes.
 Render recipes retain exact architecture references for reproducible output.
 `check embeds` discovers tracked artifacts through Git and reads their embedded recipes.
 It needs no tracking list in the model.
@@ -229,8 +229,8 @@ This command retains drawing assertions and speed limits outside the normal gate
 - The answer of a command is JSON on stdout. The reason for a failure is on
   stderr.
 - The server log is `archboard.log` in the state directory.
-  [INSTALL.md](INSTALL.md#machine-state-and-logs) gives the directory for each
-  system.
+  [The install guide](https://usearchboard.dev/docs/install/#machine-state-and-logs) gives the
+  directory for each system.
 - The Codex state of each server is in `codex-workbench/canvases/<port>` in the
   state directory. If the Codex of a server cannot start, the server stops with
   "The production Codex workbench did not become ready".

@@ -1,9 +1,11 @@
 ---
 id: TASK-654
 title: INSTALL.md says only how to install, set up and verify
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T16:57:00Z'
+updated_date: '2026-11-19T17:02:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -23,3 +25,12 @@ The owner: INSTALL.md is 947 lines and 'it can't be that complicated'. It mixes 
 - [ ] #3 Every link and error message that points into INSTALL.md still resolves: the telemetry notice's #usage-telemetry anchor (packages/telemetry), 'the tools INSTALL.md names' (packages/renderer, scripts/build-core.ts), site/src/lib/links.ts, README.md and AGENTS.md
 - [ ] #4 The site builds and its audit passes (site/README.md#audit-the-site), and bun run check passes apart from check:model's known INTERFACE_WIDE and MODULE_SHALLOW findings
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Rewrite INSTALL.md as the install path only (needs, install release/clone/build tools, PATH, set up, server and sign-in, make sure it works, gate, update and remove, Usage telemetry), under 200 lines, commands checked against CLI help.
+2. Move each reference section to the site page that covers it, or add it briefly to site/src/content/docs/install.mdx or concepts.mdx.
+3. Repoint links into old INSTALL.md anchors (README, TESTING, PRODUCT, platform.mdx, QuickStart.astro).
+4. Build the site, audit the changed pages with agent-browser, run bun run check.
+<!-- SECTION:PLAN:END -->
