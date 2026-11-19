@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
-import { codexSessionMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
 const CODEX_PROTOCOL_VERSION = codexProtocolVersion();
 /** What the pinned Codex binary prints for `--version`. */
@@ -321,7 +321,7 @@ function reportedVersion(executablePath: string, execute: typeof execFileSync): 
 			encoding: "utf8",
 			env: verificationEnvironment(),
 			maxBuffer: CODEX_EXECUTABLE_PROOF_MAX_BYTES,
-			timeout: codexSessionMs("requestSettlement"),
+			timeout: durationMs("codexSession.requestSettlement"),
 			killSignal: "SIGKILL",
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true,

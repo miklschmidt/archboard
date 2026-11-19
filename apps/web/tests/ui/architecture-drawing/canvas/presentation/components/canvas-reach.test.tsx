@@ -6,7 +6,6 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { exploringMs } from "@archboard/timing";
 import { cameraNow, takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import { openSidebarTab, surface } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { graded, lighting, lit, pick, served } from "#tests/ui/support/canvas/wiring-fixture.tsx";
@@ -166,7 +165,7 @@ test("choosing a row brings the part at its other end into view, and moves nothi
 		act(() => {
 			fireEvent.click(row("e3"));
 		});
-		frames.run(exploringMs("reveal") + 200);
+		frames.run(480 + 200);
 		expect(cameraNow()).toEqual(before);
 
 		// The ledger is far off to the right: the camera glides, once, to show it.
@@ -175,7 +174,7 @@ test("choosing a row brings the part at its other end into view, and moves nothi
 			fireEvent.click(row("e4"));
 		});
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
-		frames.run(exploringMs("reveal") + 200);
+		frames.run(480 + 200);
 		const after = cameraNow();
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
 		const left = 1200 * after.scale + after.x;
@@ -200,7 +199,7 @@ test("a click on the picture leaves the camera where it is, even on a part bigge
 		const before = cameraNow();
 		// The reader's own hand on a part that is there: the camera does not chase it.
 		await pick("l");
-		frames.run(exploringMs("reveal") + 200);
+		frames.run(480 + 200);
 		expect(cameraNow()).toEqual(before);
 
 		// The same part chosen from a row of the list is somebody else's pick.
@@ -208,7 +207,7 @@ test("a click on the picture leaves the camera where it is, even on a part bigge
 		act(() => {
 			fireEvent.click(row("e4"));
 		});
-		frames.run(exploringMs("reveal") + 200);
+		frames.run(480 + 200);
 		expect(cameraNow()).not.toEqual(before);
 	} finally {
 		frames.restore();

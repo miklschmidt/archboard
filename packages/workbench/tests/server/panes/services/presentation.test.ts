@@ -7,7 +7,6 @@
 // up on a pane that is only slow.
 
 import { describe, expect, jest, test } from "bun:test";
-import { paneMs } from "@archboard/timing";
 import {
 	createPanePresentations,
 	type UserPresentationChange,
@@ -129,14 +128,14 @@ describe("a walkthrough step asked of a pane", () => {
 			const asked = port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 });
 			const request = sent[0]!.request;
 			says(at(0, false, request));
-			jest.advanceTimersByTime(paneMs("presentationPaneCheck") * 3);
+			jest.advanceTimersByTime(8000 * 3);
 			says(at(0, true, request));
 			expect(await asked).toEqual({ kind: "arrived", presentation: at(0, true, request) });
 			expect(changes).toHaveLength(1);
 
 			const lost = port.present({ clientId: "client-a", walkthrough: "w1", beat: 1 });
 			gone();
-			jest.advanceTimersByTime(paneMs("presentationPaneCheck"));
+			jest.advanceTimersByTime(8000);
 			expect(await lost).toEqual({ kind: "refused", reason: "no_pane" });
 		} finally {
 			jest.useRealTimers();

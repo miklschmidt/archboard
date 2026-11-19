@@ -1,7 +1,7 @@
 // The permission and support stages: the microphone is requested, adopted,
 // and the browser's realtime support confirmed before any peer exists.
 
-import { codexRealtimeMs } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import type { RealtimeMediaDevices, RealtimeMediaStream } from "#ui/realtime/state/environment.ts";
 import { CANCELLED, stopTrack } from "#ui/realtime/clients/run.ts";
 import type { Cancelled, RealtimeMediaSnapshot, Run } from "#ui/realtime/clients/run.ts";
@@ -56,7 +56,7 @@ async function adoptMicrophone(
 	stream: RealtimeMediaStream,
 ): Promise<RealtimeMediaSnapshot | null> {
 	run.localStream = stream;
-	run.startDeadline = controller.environment.now() + codexRealtimeMs("start");
+	run.startDeadline = deadline("codexRealtime.start", controller.environment.now());
 	const localTrack = stream.getAudioTracks()[0];
 	if (controller.inactive(run)) {
 		return controller.settleCancelled(run);

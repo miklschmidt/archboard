@@ -19,7 +19,7 @@ import {
 	type HeadlessChromium,
 } from "#runtime/headless-chromium/processes/launch.ts";
 import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
-import { processGroupPollMs } from "@archboard/timing";
+import { waitUntil } from "@archboard/timing";
 
 import { regionOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
 import {
@@ -187,15 +187,20 @@ class RasterSession {
 	 */
 	private async load(devtools: DevTools, file: string, signal?: AbortSignal): Promise<void> {
 		const timeoutMs = this.options.jobTimeoutMs;
-		const deadline = Date.now() + timeoutMs;
+		const loadBy = Date.now() + timeoutMs;
 		await devtools.call("Page.navigate", { url: pathToFileURL(file).href }, timeoutMs);
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		while ((await devtools.evaluate("document.readyState", { timeoutMs })) !== "complete") {
-			signal?.throwIfAborted();
-			if (Date.now() > deadline) throw new Error("The document did not finish loading in time.");
-			// oxlint-disable-next-line no-await-in-loop -- the pause between two probes of one poll
-			await Bun.sleep(processGroupPollMs());
-		}
+		const loaded = await waitUntil(
+			"raster.chromium",
+			async () => {
+				if ((await devtools.evaluate("document.readyState", { timeoutMs })) === "complete") {
+					return true;
+				}
+				signal?.throwIfAborted();
+				return undefined;
+			},
+			{ capAtMs: loadBy },
+		);
+		if (!loaded.ok) throw new Error("The document did not finish loading in time.");
 	}
 
 	/**

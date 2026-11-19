@@ -2,7 +2,7 @@
 // keeps for a painter that starts late.
 
 import type { startPainter } from "@archboard/renderer/browser";
-import { painterPhasesJson, pictureMs } from "@archboard/timing";
+import { durationMs, painterPhasesJson } from "@archboard/timing";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import type { DiveWay } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-dive.ts";
 import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
@@ -149,7 +149,7 @@ export function briefPainter(
 ): void {
 	const { camera, farLine, awaited, marks, light, painting, trafficShown, heads, warned } = held;
 	painter.setPhases(painterPhasesJson());
-	painter.setLongestStep(pictureMs("longestStep"));
+	painter.setLongestStep(durationMs("picture.longestStep"));
 	painter.setTheme(dark);
 	painter.setTrafficShown(trafficShown);
 	painter.setHeads(JSON.stringify(heads));

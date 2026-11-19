@@ -3,7 +3,6 @@ import { chmodSync, existsSync, readFileSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import { readArchitectureModel, readLegacyInventory } from "@archboard/model/store-read";
 import { migrateArchitectureModel, recoverArchitectureModel } from "@archboard/model/store-write";
-import { modelLockMs } from "@archboard/timing";
 import { installationFixture } from "#tests/runtime/legacy-boards/reading/inventory/operations/install-fixture.ts";
 const homes: string[] = [];
 const now = Date.now;
@@ -45,7 +44,7 @@ test.each(["migration-file", "archive", "cleanup"])(
 			expect(JSON.parse(output), errors).toMatchObject({ success: true, cleanup: "pending" });
 		else {
 			expect(status, output + errors).toBe(point === "archive" ? 137 : 86);
-			Date.now = () => now() + modelLockMs("lease");
+			Date.now = () => now() + 3000;
 			expect(readArchitectureModel(value.vault)).toMatchObject({
 				success: false,
 				code: "RECOVERY_REQUIRED",

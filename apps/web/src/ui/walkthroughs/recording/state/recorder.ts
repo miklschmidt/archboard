@@ -10,7 +10,7 @@
 // stamped as they happen. The recorder outside the page reads the state and
 // takes the talk; this owns nothing else (TASK-381).
 
-import { recordingMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { talkSamplesMs } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
@@ -312,7 +312,7 @@ class WalkthroughRecorder {
 			walkthrough,
 			recording: { language, ...(against === null ? {} : { against }) },
 		});
-		this.#timer = setInterval(this.#tick.bind(this), recordingMs("paceTick"));
+		this.#timer = setInterval(this.#tick.bind(this), durationMs("recording.paceTick"));
 	}
 
 	/**

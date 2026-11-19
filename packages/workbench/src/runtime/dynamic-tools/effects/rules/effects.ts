@@ -1,5 +1,5 @@
 import type { TurnId } from "@archboard/codex-app-server/identity";
-import { codexApprovalExpiresAt } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,
@@ -237,7 +237,7 @@ export function prepareMutation(
 		effect,
 		effectHash: hash,
 		createdAtMs: nowMs,
-		expiresAtMs: codexApprovalExpiresAt(nowMs),
+		expiresAtMs: deadline("codexApproval.expiry", nowMs),
 	});
 	return Object.freeze({
 		identity,

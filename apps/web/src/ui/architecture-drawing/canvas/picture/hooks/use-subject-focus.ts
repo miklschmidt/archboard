@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { exploringMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { SemanticRender } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { subjectBox } from "#ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts";
@@ -46,7 +46,11 @@ function useSubjectFocus(
 			const box = drawing?.kind === "drawn" ? subjectBox(drawing.atlas, id) : null;
 			return (
 				box !== null &&
-				camera.glide({ kind: "focus", rect: box }, reducedMotion ? 0 : exploringMs("reveal"), true)
+				camera.glide(
+					{ kind: "focus", rect: box },
+					reducedMotion ? 0 : durationMs("exploring.reveal"),
+					true,
+				)
 			);
 		},
 		[drawing, camera, reducedMotion],

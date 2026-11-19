@@ -2,7 +2,7 @@ import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecy
 import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 import { registeredRepositoryOfVault } from "@archboard/workspace/checkouts";
-import { paneMs } from "@archboard/timing";
+import { waitUntil } from "@archboard/timing";
 import open from "open";
 import { z } from "zod";
 import type { RuntimePrerequisite } from "#cli/contract/protocol/contract.ts";
@@ -59,29 +59,13 @@ export async function openCanvas(
 		const reason = error instanceof Error ? error.message : String(error);
 		throw browserRequired(`${needs}, and the default browser did not start: ${reason}. ${retry}`);
 	});
-	const pane = await paneArrives(Date.now() + paneMs("browserConnect"));
-	if (pane === null) {
+	const pane = await waitUntil("pane.browserConnect", async () => (await firstPane()) ?? undefined);
+	if (!pane.ok) {
 		throw browserRequired(
-			`${description} opened ${url} in the default browser, and no pane connected within ${paneMs("browserConnect") / 1000} seconds. ${retry}`,
+			`${description} opened ${url} in the default browser, and no pane connected within ${pane.boundSeconds} seconds. ${retry}`,
 		);
 	}
-	return pane;
-}
-
-/**
- * Waits for the first pane to connect.
- * @param deadline - When to stop waiting, in epoch milliseconds.
- * @returns Its id, or null when the deadline passes first.
- */
-async function paneArrives(deadline: number): Promise<string | null> {
-	while (Date.now() < deadline) {
-		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the server
-		await new Promise((resolve) => setTimeout(resolve, paneMs("browserConnectPoll")));
-		// oxlint-disable-next-line no-await-in-loop -- each look depends on the wait before it
-		const pane = await firstPane();
-		if (pane !== null) return pane;
-	}
-	return null;
+	return pane.value;
 }
 
 const PaneIdsSchema = z.looseObject({ panes: z.array(z.looseObject({ paneId: z.string() })) });

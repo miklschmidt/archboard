@@ -13,7 +13,6 @@ import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { voiceMs } from "@archboard/timing";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import { OrbStageProvider } from "#ui/workbench-client/orb/components/OrbStage.tsx";
@@ -198,11 +197,11 @@ test("the box stays on the page for as long as it takes to leave, and is gone wh
 		// It takes no input while it leaves: its controls are not for pressing, nor to be tabbed to.
 		expect(theBox()?.hasAttribute("inert")).toBe(true);
 		act(() => {
-			clock.advanceTo(voiceMs("boxOut") - 1);
+			clock.advanceTo(240 - 1);
 		});
 		expect(theBox()).not.toBeNull();
 		act(() => {
-			clock.advanceTo(voiceMs("boxOut"));
+			clock.advanceTo(240);
 		});
 		expect(theBox()).toBeNull();
 
@@ -222,7 +221,7 @@ test("a box that is wanted again while it leaves is the same box, turned round, 
 		view.rerender(box({ shown: false, reducedMotion: false }));
 		const leaving = theBox();
 		act(() => {
-			clock.advanceTo(voiceMs("boxOut") / 2);
+			clock.advanceTo(240 / 2);
 		});
 		view.rerender(box({ shown: true, reducedMotion: false }));
 		expect(theBox()).toBe(leaving);
@@ -230,7 +229,7 @@ test("a box that is wanted again while it leaves is the same box, turned round, 
 		expect(theBox()?.hasAttribute("inert")).toBe(false);
 
 		act(() => {
-			clock.advanceTo(voiceMs("boxOut") * 2);
+			clock.advanceTo(240 * 2);
 		});
 		expect(theBox()).toBe(leaving);
 	} finally {

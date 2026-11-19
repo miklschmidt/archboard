@@ -138,74 +138,10 @@ const CODEX_APPROVAL_MS = durations({
 	spokenGate: 60_000,
 });
 
-/**
- * One duration of the Codex process.
- * @param key Which one.
- * @param startedAtMs When the duration starts, if asking for a deadline.
- * @returns A duration in milliseconds, or a deadline on the supplied clock.
- */
-function codexProcessMs(key: "composedShutdown", startedAtMs: number): number;
-function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS): number;
-function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS, startedAtMs?: number): number {
-	const duration = CODEX_PROCESS_MS[key];
-	return startedAtMs === undefined ? duration : startedAtMs + duration;
-}
-
-/**
- * One duration of a Codex session.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function codexSessionMs(key: keyof typeof CODEX_SESSION_MS): number {
-	return CODEX_SESSION_MS[key];
-}
-
-/**
- * One duration of the voice.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function codexRealtimeMs(key: keyof typeof CODEX_REALTIME_MS): number {
-	return CODEX_REALTIME_MS[key];
-}
-
-/**
- * One duration of a lease or an approval.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function codexApprovalMs(key: keyof typeof CODEX_APPROVAL_MS): number {
-	return CODEX_APPROVAL_MS[key];
-}
-
-/**
- * When an approval asked for now expires unanswered.
- * @param nowMs The current time, in milliseconds since the epoch.
- * @param kind Whether this is an approval or a browser command lease.
- * @returns The expiry, in milliseconds since the epoch.
- */
-function codexApprovalExpiresAt(
-	nowMs: number,
-	kind: "expiry" | "browserCommandLease" = "expiry",
-): number {
-	return nowMs + CODEX_APPROVAL_MS[kind];
-}
-
-/**
- * Until when a context change captured at a time stays fresh enough to deliver.
- * @param capturedAtMs When it was captured, in milliseconds since the epoch.
- * @returns The end of its freshness, in milliseconds since the epoch.
- */
-function codexContextFreshUntil(capturedAtMs: number): number {
-	return capturedAtMs + CODEX_REALTIME_MS.contextFreshness;
-}
-
 export {
 	codexRestartDelayMs,
-	codexProcessMs,
-	codexSessionMs,
-	codexRealtimeMs,
-	codexApprovalMs,
-	codexApprovalExpiresAt,
-	codexContextFreshUntil,
+	CODEX_PROCESS_MS,
+	CODEX_SESSION_MS,
+	CODEX_REALTIME_MS,
+	CODEX_APPROVAL_MS,
 };

@@ -16,7 +16,7 @@
 
 import { useEffect, useState, type RefObject } from "react";
 
-import { exploringMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticRenderRequest } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
@@ -203,7 +203,7 @@ function fly(
 	const letGo = camera.hold();
 	putUp(stage.surface, takeoff.standing);
 	if (leg.from !== null) camera.glide(leg.from, 0, false);
-	painter?.dive(child.painting, { way, card, frame: leg.inset }, exploringMs("dive"));
+	painter?.dive(child.painting, { way, card, frame: leg.inset }, durationMs("exploring.dive"));
 	const stops: (() => void)[] = [];
 	let landed = false;
 	/** Let go of everything the flight listens to or holds. */
@@ -227,7 +227,7 @@ function fly(
 			camera.glide(leg.to, 0, false);
 		}),
 	);
-	if (!camera.glide(leg.to, exploringMs("dive"), true)) {
+	if (!camera.glide(leg.to, durationMs("exploring.dive"), true)) {
 		release();
 		painter?.endDive();
 		letGo();
@@ -252,7 +252,7 @@ async function pictureOf(draw: DiveInputs["draw"], to: Destination): Promise<Mov
 	const clock = frameClock();
 	let timer = 0;
 	const late = new Promise<null>((resolve) => {
-		timer = clock.after(exploringMs("divePrefetch"), () => resolve(null));
+		timer = clock.after(durationMs("exploring.divePrefetch"), () => resolve(null));
 	});
 	const read = draw(to).catch(() => null);
 	try {

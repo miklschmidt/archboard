@@ -96,8 +96,10 @@ function twoSessions() {
 		// Each stop poll passes at once, so no case waits on the system clock.
 		stopClock: {
 			now: () => now,
-			wait: async (ms) => {
+			after: (ms, run) => {
 				now += ms;
+				run();
+				return () => {};
 			},
 		},
 		resolveCheckout: (named) => named,

@@ -10,7 +10,7 @@
 
 import { useLayoutEffect, useRef, type RefObject } from "react";
 
-import { voiceMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
 /** A part's box, in pixels from the dock's top left corner, so a resized window does not move it. */
 interface Box {
@@ -55,7 +55,7 @@ const FADE_DELAY = 0.3;
 const SEAT_DELAY = 0.4;
 
 const GLIDE_OPTIONS: KeyframeAnimationOptions = {
-	duration: voiceMs("morph"),
+	duration: durationMs("voice.morph"),
 	easing: EASE,
 	id: GLIDE,
 };

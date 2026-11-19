@@ -134,13 +134,23 @@ function ownersIn(root: string, prefix: string): Owner[] {
 			const directory = path.join(root, entry.name);
 			const manifest = JSON.parse(
 				fs.readFileSync(path.join(directory, "package.json"), "utf8"),
-			) as { name: string; exports?: Record<string, string>; imports?: Record<string, string> };
+			) as {
+				name: string;
+				exports?: Record<string, string>;
+				imports?: Record<string, string | { default: string }>;
+			};
 			return {
 				id: `${prefix}${entry.name}`,
 				directory,
 				name: manifest.name,
 				exports: manifest.exports ?? {},
-				imports: manifest.imports ?? {},
+				// An entry with conditions maps to its default file: the graph the repository runs.
+				imports: Object.fromEntries(
+					Object.entries(manifest.imports ?? {}).map(([key, target]) => [
+						key,
+						typeof target === "string" ? target : target.default,
+					]),
+				),
 			};
 		})
 		.toSorted((left, right) => left.id.localeCompare(right.id));

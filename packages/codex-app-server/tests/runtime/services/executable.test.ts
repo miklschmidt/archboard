@@ -14,7 +14,6 @@ import {
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
 import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
-import { codexSessionMs } from "@archboard/timing";
 import { installation } from "@archboard/workspace/installation";
 
 /** What the pinned Codex binary prints for `--version`. */
@@ -178,7 +177,7 @@ describe("Codex executable ownership", () => {
 			}
 			expect(timedOut).toBeInstanceOf(CodexExecutableError);
 			expect((timedOut as CodexExecutableError).code).toBe("verification_timeout");
-			expect(observedOptions?.["timeout"]).toBe(codexSessionMs("requestSettlement"));
+			expect(observedOptions?.["timeout"]).toBe(30_000);
 			expect(observedOptions?.["maxBuffer"]).toBe(CODEX_EXECUTABLE_PROOF_MAX_BYTES);
 			expect(observedOptions?.["env"]).not.toHaveProperty("OPENAI_API_KEY");
 

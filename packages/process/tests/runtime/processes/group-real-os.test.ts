@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 
-import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
@@ -10,13 +9,13 @@ import { readProcessObservation } from "#runtime/processes/observation.ts";
 
 async function waitForQuiescent(
 	identity: CodexProcessGroupIdentity,
-	deadlineMs = codexProcessMs("composedShutdown"),
+	deadlineMs = 10_000,
 ): Promise<void> {
 	const deadline = Date.now() + deadlineMs;
 	const operations = createCodexProcessGroupOperations();
 	while (Date.now() < deadline) {
 		if (operations.inspect(identity) === "quiescent") return;
-		await Bun.sleep(processGroupPollMs());
+		await Bun.sleep(10);
 	}
 	throw new Error(
 		`Process group ${identity.pgid} did not become quiescent before cleanup deadline.`,
@@ -35,7 +34,7 @@ async function waitForChildClose(child: ChildProcess): Promise<void> {
 			reject(
 				new Error(`Detached child ${String(child.pid)} did not close before cleanup deadline.`),
 			);
-		}, codexProcessMs("composedShutdown"));
+		}, 10_000);
 		child.once("close", onClose);
 	});
 }
@@ -108,5 +107,5 @@ test(
 			}
 		}
 	},
-	codexProcessMs("composedShutdown") + processGroupPollMs() * 4,
+	10_000 + 10 * 4,
 );

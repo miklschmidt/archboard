@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { codexSessionMs } from "@archboard/timing";
+import type { Clock } from "@archboard/timing";
 import { createIdentityAuthorities, type TurnId } from "@archboard/codex-app-server/identity";
 import {
 	guardWorkhorse,
@@ -8,7 +8,6 @@ import {
 	stopReport,
 	stopWorkTree,
 	WorkhorseStopRefusal,
-	type WorkTreeStopClock,
 } from "#server/sessions/services/stop.ts";
 import type { WorkTreeStopSession } from "#server/sessions/services/work-tree-reads.ts";
 import {
@@ -117,13 +116,15 @@ function codexTree(threads: Record<string, FakeThread>) {
 			return {} as never;
 		},
 	};
-	const clock: WorkTreeStopClock = {
+	const clock: Clock = {
 		now: () => now,
-		wait: async (ms) => {
+		after: (ms, run) => {
 			now += ms;
 			for (const id of ending) threads[id]!.turn = null;
 			ending.clear();
 			onWait.shift()?.();
+			run();
+			return () => {};
 		},
 	};
 	/**
@@ -201,7 +202,7 @@ describe("the work tree stop", () => {
 			outcome: "partial",
 			remaining: [{ threadId: decoder.adoptThreadId("child"), state: "running" }],
 		});
-		expect(stuck.clock.now()).toBeGreaterThanOrEqual(codexSessionMs("workTreeStopSettle"));
+		expect(stuck.clock.now()).toBeGreaterThanOrEqual(5000);
 		// An acknowledged interrupt is sent once per turn and never counts as an end.
 		expect(stuck.calls.filter((call) => call === "interrupt child/child-turn")).toHaveLength(1);
 
@@ -374,7 +375,7 @@ describe("the work tree stop", () => {
 		const codex = codexTree({
 			root: { parent: null, turn: "root-turn", queue: ["queued-1"], ignoresInterrupt: true },
 		});
-		codex.onRead.push(() => codex.advance(codexSessionMs("workTreeStopSettle")));
+		codex.onRead.push(() => codex.advance(5000));
 		const stop = await stopWorkTree(workhorseOn("root"), codex.session, null, codex.clock);
 		expect(stop.outcome).toBe("partial");
 		expect(codex.calls).toEqual(["delete queued-1", "interrupt root/root-turn"]);

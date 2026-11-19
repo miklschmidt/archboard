@@ -7,6 +7,10 @@
 	"type": "module",
 	"sideEffects": false,
 	"imports": {
+		"#host-tables": {
+			"published": "./src/shared/tables/rules/host-absent.ts",
+			"default": "./src/shared/tables/rules/host.ts"
+		},
 		"#*": "./src/*",
 		"#tests/*": "./tests/*"
 	},

@@ -12,7 +12,6 @@
 
 import { expect, test } from "bun:test";
 
-import { voiceMs } from "@archboard/timing";
 import {
 	homed,
 	homes,
@@ -69,13 +68,13 @@ test("a press of the older of two Narrate keys launches the orb out of that key,
 	stage.wish({ home: "box", shown: true, fly: true });
 	frames.step(0);
 	expect(inTheAir(stage)).toEqual({ x: 900, y: 650 });
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("box");
 
 	// As voice ends, it flies back to the key it left.
 	stage.wish({ home: "narrate", shown: true, fly: true });
 	frames.step(0);
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(stage.holder.parentElement).toBe(first);
 	expect(first.hasAttribute("data-occupied")).toBe(true);
 });
@@ -97,7 +96,7 @@ test("a press of Narrate launches the orb voice lights out of the key, lit from 
 	stage.wish({ home: "box", shown: true, fly: true });
 	frames.step(0);
 	expect(inTheAir(stage)).toEqual({ x: 900, y: 650 });
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("box");
 	expect(stage.holder.hasAttribute("data-launched")).toBe(false);
 
@@ -118,7 +117,7 @@ test("with subtitles off a launch flies out of the key to the dock", () => {
 	stage.wish({ home: "dock", shown: true, fly: true });
 	frames.step(0);
 	expect(inTheAir(stage)).toEqual({ x: 900, y: 650 });
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("dock");
 	expect(stage.holder.dataset["shown"]).toBe("true");
 	expect(key.hasAttribute("data-occupied")).toBe(false);
@@ -161,10 +160,10 @@ test("as voice ends in the box the orb flies home to the Narrate key while it is
 	// Voice is off before the orb is home, and the dock wishes it in itself: the orb is bound for the
 	// key it waits in, so it stays lit in the air, and lands in the key's seat before it fades.
 	stage.wish({ home: "dock", shown: false, fly: true });
-	frames.step(voiceMs("flight") / 2);
+	frames.step(680 / 2);
 	expect(whereIs(stage)).toBe("air");
 	expect(stage.holder.dataset["shown"]).toBe("true");
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("narrate");
 	expect(key.hasAttribute("data-occupied")).toBe(true);
 	expect(stage.holder.dataset["shown"]).toBe("false");
@@ -190,6 +189,6 @@ test("while the page is fullscreen a launch waits in its key for a home on scree
 	expect(whereIs(stage)).toBe("air");
 	expect(stage.holder.parentElement?.parentElement).toBe(presented);
 	frames.step(0);
-	frames.step(voiceMs("flight"));
+	frames.step(680);
 	expect(whereIs(stage)).toBe("box");
 });

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { modelLockMs } from "@archboard/timing";
+import { deadline, durationMs, pause } from "@archboard/timing";
 import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { noteClaimRevoked, processClaims } from "#runtime/lock/store/claim-state.ts";
 import {
@@ -204,54 +204,19 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Wait one poll interval before looking at the lease again.
+ * Wait one poll interval before looking at the lease again, never past the
+ * deadline and never nothing at all.
  *
  * Waiting is filesystem polling because another process has no signal it can
  * send here. Abort removes both the timer and the listener, so a disconnected
  * request does not consume application shutdown time.
- * @param model The legacy board key, for the message a cancelled wait carries.
- * @param ms How long to wait.
- * @param signal Cancels the wait when the request goes away.
- * @returns When the interval is up.
+ * @param request Who is asking, and the signal that cancels the wait.
+ * @param giveUpAt When the wait gives up.
  * @throws {ModelLockCancelledError} When the request goes away first.
  */
-function waitForLockPoll(model: string, ms: number, signal?: AbortSignal): Promise<void> {
-	if (signal?.aborted) {
-		return Promise.reject(new ModelLockCancelledError(model));
-	}
-	return new Promise((resolve, reject) => {
-		let timer: ReturnType<typeof setTimeout> | null = null;
-		/**
-		 * End the wait once, either way, dropping the timer and the listener.
-		 * @param cancelled Whether the request went away rather than the time being up.
-		 */
-		const settle = (cancelled: boolean): void => {
-			if (timer === null) {
-				return;
-			}
-			clearTimeout(timer);
-			timer = null;
-			signal?.removeEventListener("abort", onAbort);
-			if (cancelled) {
-				reject(new ModelLockCancelledError(model));
-			} else {
-				resolve();
-			}
-		};
-		/**
-		 * End the wait because the request went away.
-		 */
-		const onAbort = (): void => {
-			settle(true);
-		};
-		timer = setTimeout(() => {
-			settle(false);
-		}, ms);
-		signal?.addEventListener("abort", onAbort, { once: true });
-		if (signal?.aborted) {
-			settle(true);
-		}
-	});
+async function waitForLockPoll(request: LockRequest, giveUpAt: number): Promise<void> {
+	const paused = await pause("modelLock.poll", { untilMs: giveUpAt, signal: request.signal });
+	if (paused === "aborted") throw new ModelLockCancelledError(request.model);
 }
 
 /**
@@ -370,7 +335,7 @@ async function stealContested(
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
 	writeRecord(file, record);
-	await sleep(modelLockMs("stealGuard"));
+	await sleep(durationMs("modelLock.stealGuard"));
 	const settled = readRecord(file);
 	if (settled?.token !== record.token) {
 		return { ok: false, record: liveRecord(settled) };
@@ -412,7 +377,7 @@ async function holdModel(request: LockRequest): Promise<LockHold> {
 		if (verdict === "wait") {
 			// The poll interval between attempts, which is what waiting is here.
 			// oxlint-disable-next-line no-await-in-loop -- the interval between attempts
-			await waitForLockPoll(request.model, pollFor(plan.deadline), request.signal);
+			await waitForLockPoll(request, plan.deadline);
 		}
 	}
 	throw new ModelHeldError(
@@ -447,20 +412,13 @@ type WaitVerdict = "stop" | "retry" | "wait";
 function waitPlan(request: LockRequest): WaitPlan {
 	const startedAt = Date.now();
 	return {
-		leaseMs: request.leaseMs ?? modelLockMs("lease"),
+		leaseMs: request.leaseMs ?? durationMs("modelLock.lease"),
 		startedAt,
-		deadline: startedAt + (request.waitMs ?? modelLockMs("waitCap")),
+		deadline:
+			request.waitMs === undefined
+				? deadline("modelLock.waitCap", startedAt)
+				: startedAt + request.waitMs,
 	};
-}
-
-/**
- * How long to sleep before looking again, never past the deadline and never
- * nothing at all.
- * @param deadline When the wait gives up.
- * @returns The interval in milliseconds.
- */
-function pollFor(deadline: number): number {
-	return Math.min(modelLockMs("poll"), Math.max(1, deadline - Date.now()));
 }
 
 /**
@@ -468,14 +426,14 @@ function pollFor(deadline: number): number {
  * @param result The refused attempt.
  * @param request Who is asking.
  * @param wait What the wait has learnt, extended in place.
- * @param deadline When the wait gives up.
+ * @param giveUpAt When the wait gives up.
  * @returns Whether to refuse now, try again at once, or wait a poll interval.
  */
 function nextStep(
 	result: Extract<Attempt, { ok: false }>,
 	request: LockRequest,
 	wait: WaitState,
-	deadline: number,
+	giveUpAt: number,
 ): WaitVerdict {
 	// Null means movement or a race, not a known holder, so the last concrete
 	// blocker is kept.
@@ -483,7 +441,7 @@ function nextStep(
 	if (result.record && refusedOutright(result.record, request)) {
 		return "stop";
 	}
-	if (Date.now() < deadline) {
+	if (Date.now() < giveUpAt) {
 		return "wait";
 	}
 	return givesUp(wait) ? "stop" : "retry";
