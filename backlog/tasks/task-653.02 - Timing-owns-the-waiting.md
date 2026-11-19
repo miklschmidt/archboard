@@ -4,6 +4,7 @@ title: Timing owns the waiting
 status: To Do
 assignee: []
 created_date: '2026-11-19T16:23:00Z'
+updated_date: '2026-11-19T16:25:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -36,3 +37,9 @@ Candidate 1 of the archboard-deepen run, first and alone on the TypeScript track
 - [ ] #5 Fake-clock seam tests cover sleep-first policies, boundMs, capAtMs, signal before probe, deadline equality, overshoot, cancellation precedence and probe errors; superseded tests are replaced, not layered
 - [ ] #6 An ADR records the getter rule, its one exception and the rejected timer, age and retry operations; boundaries.md and the frontend examples follow the new interface
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Proposal: sL6y1FLr (timing's slice is added when the build reports its relationships).
+<!-- SECTION:NOTES:END -->
