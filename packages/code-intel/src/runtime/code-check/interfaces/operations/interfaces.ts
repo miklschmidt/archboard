@@ -7,7 +7,10 @@
 // module the container binds exposes: a bound directory, or the file that
 // stands for one, such as `index.ts`. Code facts say what a module exposes,
 // by the rule of its language. A container bound to another file or to a
-// symbol names no module, and is not judged.
+// symbol names no module, and is not judged. A part with no parts of its own
+// that binds a module is judged too, for what its module exposes, and a part
+// that binds the module of a part that holds it is judged with that part
+// (TASK-646.01).
 //
 // Each exposed name belongs to the part with the narrowest binding that holds
 // its definition, as all evidence does (evidence.ts). A child owns what it or
@@ -87,10 +90,10 @@ interface InterfaceOutcome {
 	readonly skipped: CodeCheckSkip[];
 }
 
-/** One container bound to a module, and what judging it reads. */
+/** One part bound to a module, and what judging it reads. */
 interface Judged {
 	readonly reading: InterfaceReading;
-	readonly inspection: ContainerInterface;
+	readonly container: SemanticNode;
 	readonly module: ModuleReading;
 	readonly checkout: RepoCheckout;
 	readonly owners: Owners;
@@ -218,7 +221,7 @@ function unusedFinding(judged: Judged): CodeFinding | undefined {
 	const names = [...new Set(declared.map((name) => name.name))].filter((name) => !used.has(name));
 	if (names.length === 0) return undefined;
 	const all = new Set(declared.map((name) => name.name)).size;
-	const { container } = judged.inspection;
+	const { container } = judged;
 	const subject = nodeSubject(container);
 	return {
 		...siteOf(judged.reading.read, `nodes.${container.id}`, subject),
@@ -278,7 +281,7 @@ function unexposedFinding(
 		severity: resolved ? "warning" : "information",
 		code: "ENTRY_POINT_UNEXPOSED",
 		message:
-			`${describeSubject(subject)} is an entry point of ${JSON.stringify(judged.inspection.container.name)}, ` +
+			`${describeSubject(subject)} is an entry point of ${JSON.stringify(judged.container.name)}, ` +
 			`and the module ${JSON.stringify(directory || ".")} exposes none of its code: no name that ` +
 			`${rootFiles.map((file) => JSON.stringify(file)).join(", ")} export reaches it. The code ` +
 			"of its callers reaches it from outside the module all the same, past the interface. Make " +
@@ -327,7 +330,7 @@ function callerFinding(
 	pieces: readonly CodeEvidence[],
 ): CodeFinding {
 	const subject = nodeSubject(hidden);
-	const container = JSON.stringify(judged.inspection.container.name);
+	const container = JSON.stringify(judged.container.name);
 	const files = new Set(pieces.map((piece) => piece.path)).size;
 	const resolved = pieces.some((piece) => piece.resolution === "resolved");
 	return {
@@ -347,14 +350,19 @@ function callerFinding(
 /**
  * Judge each child of one container against what its module exposes.
  * @param judged The container.
+ * @param inspection The container's interface.
  * @param findings The document's findings, which this adds to.
  */
-async function judgeChildren(judged: Judged, findings: CodeFinding[]): Promise<void> {
-	const { inspection } = judged;
+async function judgeChildren(
+	judged: Judged,
+	inspection: ContainerInterface,
+	findings: CodeFinding[],
+): Promise<void> {
 	const { nodes } = judged.reading.read.variant.content;
-	for (const child of nodes.filter((node) => node.parent === inspection.container.id)) {
+	for (const child of nodes.filter((node) => node.parent === judged.container.id)) {
 		// oxlint-disable-next-line no-await-in-loop -- one child at a time keeps the findings in document order
-		if (await judgedChild(judged, child)) findings.push(...childFindings(judged, child));
+		if (await judgedChild(judged, child))
+			findings.push(...childFindings(judged, inspection, child));
 	}
 }
 
@@ -363,11 +371,15 @@ async function judgeChildren(judged: Judged, findings: CodeFinding[]): Promise<v
  * nothing the module exposes, or a hidden part whose exposed code outside
  * files use with no caller on the document.
  * @param judged The container.
+ * @param inspection The container's interface.
  * @param child The child.
  * @returns Its findings.
  */
-function childFindings(judged: Judged, child: SemanticNode): CodeFinding[] {
-	const { inspection } = judged;
+function childFindings(
+	judged: Judged,
+	inspection: ContainerInterface,
+	child: SemanticNode,
+): CodeFinding[] {
 	const entry = inspection.entryPoints.find((each) => each.node.id === child.id);
 	if (entry !== undefined) {
 		const pieces = ownedBy(judged, child).length === 0 ? reachesPast(judged, entry) : [];
@@ -379,9 +391,10 @@ function childFindings(judged: Judged, child: SemanticNode): CodeFinding[] {
 }
 
 /**
- * Judge one container, or say why the pass does not.
+ * Judge the module one part binds, with or without parts of its own, and each
+ * child of a part that holds some; or say why the pass does not.
  * @param reading The document and the pass.
- * @param container The container.
+ * @param container The part.
  * @param outcome What the document gives, which this adds to.
  */
 async function judgeContainer(
@@ -395,7 +408,8 @@ async function judgeContainer(
 	const unused = unusedFinding(judged);
 	if (unused !== undefined) outcome.findings.push(unused);
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
-	await judgeChildren(judged, outcome.findings);
+	const inspection = inspectContainer(reading.read.variant.content, container);
+	if (inspection.holdsParts) await judgeChildren(judged, inspection, outcome.findings);
 }
 
 /**
@@ -404,7 +418,7 @@ async function judgeContainer(
  * @returns One warning per test and imported file.
  */
 function testImportFindings(judged: Judged): CodeFinding[] {
-	const { container } = judged.inspection;
+	const { container } = judged;
 	const subject = nodeSubject(container);
 	return judged.module.testImports.map(({ file, found }) => ({
 		...siteOf(judged.reading.read, `nodes.${container.id}`, subject),
@@ -445,56 +459,84 @@ function containerSkip(
 }
 
 /**
- * A node the pass judges as a container bound to a module, or nothing, with
- * the skip of a container whose code the pass does not read.
+ * A node the pass judges as a part bound to a module, with or without parts,
+ * or nothing. A part whose code the pass does not read is skipped where its
+ * binding is read.
  * @param reading The document and the pass.
  * @param container The node.
  * @param skipped What the document does not judge, which this adds to.
  * @returns What judging it reads, or undefined.
  */
-async function containerToJudge(
+function containerToJudge(
 	reading: InterfaceReading,
 	container: SemanticNode,
 	skipped: CodeCheckSkip[],
 ): Promise<Judged | undefined> {
-	const inspection = inspectContainer(reading.read.variant.content, container);
 	const code = reading.codes.get(container.id);
-	if (!inspection.holdsParts || code === undefined) return undefined;
-	if (code.status === "skipped") skipped.push(containerSkip(reading, container, code.skip));
-	return code.status === "read" ? judgedContainer(reading, inspection, code, skipped) : undefined;
+	return code?.status === "read"
+		? judgedContainer(reading, container, code, skipped)
+		: Promise.resolve(undefined);
 }
 
 /**
- * What judging a container reads: what its module exposes and who owns each
- * exposed definition.
+ * Whether a part that holds this one binds the same module, so the pass
+ * judges the module with that part.
+ * @param reading The document.
+ * @param node The part.
+ * @param code The part's code.
+ * @param directory The module the part binds.
+ * @returns True when one does.
+ */
+function heldModule(
+	reading: InterfaceReading,
+	node: SemanticNode,
+	code: ReadPart,
+	directory: string,
+): boolean {
+	const holders = [...(reading.lineages.get(node.id) ?? [])].filter((id) => id !== node.id);
+	return holders.some((id) => {
+		const holder = reading.codes.get(id);
+		return (
+			holder?.status === "read" &&
+			holder.checkout.root === code.checkout.root &&
+			moduleDirectory(holder) === directory
+		);
+	});
+}
+
+/**
+ * What judging a part reads: what its module exposes and who owns each
+ * exposed definition. A part that binds the module of a part that holds it
+ * is judged with that part.
  * @param reading The document and the pass.
- * @param inspection The container's interface.
- * @param code The container's code.
- * @param skipped What the document does not judge, which gains the container
+ * @param container The part.
+ * @param code The part's code.
+ * @param skipped What the document does not judge, which gains the part
  * when no language the check reads has its module's root files.
- * @returns It, or undefined when its binding names no module or the module is unknown.
+ * @returns It, or undefined when its binding names no module, a part that
+ * holds it binds the same module, or the module is unknown.
  */
 async function judgedContainer(
 	reading: InterfaceReading,
-	inspection: ContainerInterface,
+	container: SemanticNode,
 	code: ReadPart,
 	skipped: CodeCheckSkip[],
 ): Promise<Judged | undefined> {
 	const directory = moduleDirectory(code);
-	if (directory === undefined) return undefined;
+	if (directory === undefined || heldModule(reading, container, code, directory)) return undefined;
 	const module = await moduleReading(reading, code.checkout, directory);
 	if (module === undefined) {
 		const detail =
 			`${directory || "."}: no language the check reads has a root file there, or its ` +
 			"package.json exports names no file of the checkout";
 		const skip = { reason: "exposure-unknown", repo: code.checkout.repo, detail } as const;
-		skipped.push(containerSkip(reading, inspection.container, skip));
+		skipped.push(containerSkip(reading, container, skip));
 		return undefined;
 	}
 	const parts = [...reading.codes.values()].filter(
 		(each): each is ReadPart => each.status === "read" && each.checkout.root === code.checkout.root,
 	);
-	return { reading, inspection, module, checkout: code.checkout, owners: ownersOf(parts) };
+	return { reading, container, module, checkout: code.checkout, owners: ownersOf(parts) };
 }
 
 /**

@@ -6,7 +6,8 @@
 // Write through the index and Cache past it; a file of the store drawn outside
 // it that calls Hook; a report no part binds that calls Audit and names Util's
 // type; a system test that calls an exposed helper nothing else uses; and a
-// file of tests beside the index.
+// file of tests beside the index. A timing module with no parts exposes two
+// durations, and a kit with no parts exposes TypeScript and Python functions.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -110,6 +111,14 @@ beforeAll(async () => {
 			"",
 		].join("\n"),
 		"src/store/tests/private.test.ts": 'import { cached } from "../lib/cache";\ncached();\n',
+		"src/timing/index.ts": "export const RETRY_MS = 5;\nexport const IDLE_MS = 9;\n",
+		"src/server/retry.ts":
+			'import { RETRY_MS } from "../timing";\nexport function retry(): number { return RETRY_MS * 2; }\n',
+		"src/kit/index.ts": "export function tsUsed(): void {}\nexport function tsUnused(): void {}\n",
+		"src/kit/__init__.py": "def py_used():\n    pass\n\n\ndef py_unused():\n    pass\n",
+		"src/server/kit.ts":
+			'import { tsUsed } from "../kit";\nexport function useKit(): void { tsUsed(); }\n',
+		"src/app.py": "from kit import py_used\n\n\ndef main():\n    py_used()\n",
 		"docs/guide.md": "# Guide\n",
 		"infra/flake/flake.nix": '{ outputs = { self }: { lib.version = "1"; }; }\n',
 		"infra/chart/Chart.yaml": "apiVersion: v2\nname: cart\nversion: 1.0.0\n",
@@ -185,6 +194,20 @@ beforeAll(async () => {
 			},
 		},
 	]);
+	// Modules with no parts: one language, and two.
+	for (const [name, path] of [
+		["Timing", "src/timing"],
+		["Kit", "src/kit"],
+	] as const) {
+		document(vault, name, [
+			{
+				id: "v1",
+				name: "Built",
+				lifecycle: "current",
+				content: { nodes: [part(name, path)], edges: [], flows: [] },
+			},
+		]);
+	}
 	// A directory no language the check reads has a root file in.
 	document(vault, "Docs", [
 		{
@@ -351,15 +374,35 @@ test("a container with no caller on its document has no caller to miss", () => {
 
 test("exposed names no file outside the module uses are information on the container, and a test is no caller and no root file", () => {
 	for (const documentName of ["Shop", "Store alone"]) {
-		const unused = findings("EXPOSED_UNUSED", documentName);
-		expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
-			["Store", "information"],
-		]);
+		const unused = findings("EXPOSED_UNUSED", documentName).filter(
+			(each) => each.subject?.id === "Store",
+		);
+		expect(unused.map((each) => each.severity)).toEqual(["information"]);
 		// The system test calls the helper, and the report names the type.
 		expect(unused[0]?.message).toContain("unusedHelper");
 		expect(unused[0]?.message).not.toContain("ShelfType");
 		expect(unused[0]?.message).not.toContain("shelfFixture");
 	}
+});
+
+test("a bound module with no parts reports its interface", () => {
+	const unused = findings("EXPOSED_UNUSED", "Timing");
+	expect(unused.map((each) => [each.subject?.id, each.severity])).toEqual([
+		["Timing", "information"],
+	]);
+	expect(unused[0]?.message).toContain("IDLE_MS");
+	expect(unused[0]?.message).not.toContain("RETRY_MS");
+});
+
+test("a bound module that holds two languages reports the exports and the uses of both", () => {
+	const unused = findings("EXPOSED_UNUSED", "Kit");
+	expect(unused.map((each) => each.subject?.id)).toEqual(["Kit"]);
+	const message = unused[0]?.message ?? "";
+	// Each language's unused export is named, and each language's caller is a use.
+	expect(message).toContain("tsUnused");
+	expect(message).toContain("py_unused");
+	expect(message).not.toContain("tsUsed");
+	expect(message).not.toContain("py_used");
 });
 
 test("a container whose module exposes nothing the check can read is listed as not judged", () => {
@@ -410,7 +453,10 @@ test("flake outputs and chart values receive interface findings, and chart templ
 		).toEqual([[id, "information"]]);
 		expect(
 			outcome.skipped.some(
-				(each) => each.model === documentName && each.reason === "exposure-unknown",
+				(each) =>
+					each.model === documentName &&
+					each.subject?.id === id &&
+					each.reason === "exposure-unknown",
 			),
 		).toBe(false);
 	}

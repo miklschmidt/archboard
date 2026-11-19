@@ -159,13 +159,16 @@ test("a TypeScript file holds a bound symbol it defines and an anchored one it d
 	expect(found.toSorted()).toEqual(
 		[
 			"BINDING_SYMBOL_MISSING pU",
+			// The bound directory src/web exposes names that no file outside it uses.
+			"EXPOSED_UNUSED pW",
 			"ANCHOR_SYMBOL_MISSING e4",
 			"ANCHOR_SYMBOL_MISSING e5",
 			"ANCHOR_MISMATCH e3",
 			"ANCHOR_MISMATCH e6",
 		].toSorted(),
 	);
-	expect(outcome.findings.every((finding) => finding.severity === "warning")).toBe(true);
+	const claims = outcome.findings.filter((finding) => finding.code !== "EXPOSED_UNUSED");
+	expect(claims.every((finding) => finding.severity === "warning")).toBe(true);
 });
 
 test("an anchor whose symbol is defined outside both ends names the use it rests on, a use at run time before a use as a type", async () => {
