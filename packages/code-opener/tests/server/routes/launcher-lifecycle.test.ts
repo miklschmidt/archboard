@@ -12,7 +12,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { TEST_OPENER_LIFECYCLE } from "../support/timing.ts";
+import { TEST_OPENER_LIFECYCLE } from "#tests/server/support/timing.ts";
 import {
 	createOpenerFixture,
 	jsonBody,
@@ -22,9 +22,9 @@ import {
 	readCompleteCapture,
 	readLinuxProcessStatEvidence,
 	waitForProcessAbsence,
-} from "./support/opener-fixture.ts";
+} from "#tests/server/support/opener-fixture.ts";
 
-const LAUNCHER_OWNER = join(import.meta.dir, "fixtures/launcher-owner.ts");
+const LAUNCHER_OWNER = join(import.meta.dir, "../support/launcher-owner.ts");
 const syntheticStat = (pid: number, comm: string, state: string, processGroup = pid): string =>
 	`${pid} (${comm}) ${state} 1 ${processGroup}`;
 

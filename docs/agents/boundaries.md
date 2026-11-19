@@ -513,17 +513,17 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   `docs/design/` and the vault of this repository, by a relative path from the test file.
 
 The twelfth is `code-opener` (`@archboard/code-opener`). It opens the code a node binds in the person's editor. It
-adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 13 names, where code outside
+adopts the `api/` role for `shared/`, `server/` and `ui/` and exposes 5 subpaths with 9 names, where code outside
 imported 5 module paths. It imports `model`, `code-binding`, `code-intel`, `workspace`, `server-requests` and `ui-kit`.
 The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser, with no Node import. The 2 files of
 `server/api/` are Node-bound and run only in Bun.
 
 - `./opening` is the wire contract of the open, as a reader outside sees it. It holds the notice a person reads,
-  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the schema that
-  the GitHub link of a notice must pass, and the reply schemas that the system tests parse. The whole
+  `CodeTargetNotice`. An action of a notice is `CodeTargetNotice["actions"][number]`. It also holds the check
+  that the GitHub link of a notice must pass. The whole
   contract is in `shared/schemas/`, and the rule for an opener executable is in `shared/rules/`.
-- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes, and
-  `openInEditor`, which plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
+- `./opener` is the server's side of the open: the router and the pre-guard of the open and settings routes. The
+  router's `openInEditor` plans the command a selection makes for a target and launches it. `./browser-origin` is the guard that refuses a request from a page that is not
   Archboard's own and the CSRF check that a socket upgrade makes. The pre-guard puts the guard in front of every opener
   route, and the other routes of the server take the guard from the same file.
 - `server/routes/` holds the router. `projections/` turns a selection and a bound path into the command to run and
@@ -541,8 +541,9 @@ The file of `shared/api/` and the 2 files of `ui/api/` are safe for the browser,
   command rules in `rules/`. Tailwind finds the dialog's class names through the `@source` of every package's `ui`
   area.
 - The tests are in `tests/`: `shared/schemas/` tests the contract, `server/middleware/`, `server/projections/` and
-  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. The end-to-end owners stay
-  in `tests/system/code-targets` and `tests/system/browser/opener-settings.test.ts`.
+  `server/store/` test the server files, and `ui/rules/` and `ui/state/` the browser files. `server/routes/` mounts the
+  routes behind the browser-origin guard with a fake opener, and holds each reply to the schemas of `shared/schemas/`.
+  The browser owner stays in `tests/system/browser/opener-settings.test.ts`.
 
 The thirteenth is `walkthrough` (`@archboard/walkthrough`). It records an exact retained canonical walkthrough to a video
 (ADR 0041). It adopts the `api/` role for `shared/` and `runtime/` and exposes 4 subpaths with 21 names, one

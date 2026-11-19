@@ -45,7 +45,7 @@ The six normal native lanes are:
 - `test:modules`: package-owned and app-owned product tests discovered under
   `packages/` and `apps/`, excluding the capacity and benchmark inventories.
   Bun runs one worker per core (`--parallel`), and each file gets a fresh global object;
-- `test:system`: system product owners under the six explicit non-browser directories, with one Bun
+- `test:system`: system product owners under the five explicit non-browser directories, with one Bun
   worker per core. Each file owns its servers, ports, homes and registries, so files share only the
   machine. `tests/system/actions` runs the entries of the GitHub Actions against a stand-in
   `archboard` and a stand-in GitHub API;
@@ -600,7 +600,7 @@ The canonical reference owner is `packages/model/tests/runtime/canonical/edit/op
 It uses the public architecture operations with real files, signed checkpoints, and disposable Git repositories.
 It covers foreign navigation, immutable foreign pins, unavailable checkpoints, separate ownership, and exact source refusal.
 `tests/system/models/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
-`tests/system/code-targets/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
+`packages/code-opener/tests/server/routes/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
 `canonical-model-code.test.ts` owns visible current, draft, and exact code activation with unavailable source.
 It also covers matching code warnings, diagram marks, selected evidence, and their removal after the architecture revision changes.
 The same owner compares the history panel with an actual source Git commit.

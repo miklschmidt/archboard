@@ -1,5 +1,5 @@
 import express from "express";
-import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
+import { createBrowserOriginGuard } from "#server/middleware/browser-origin-guard.ts";
 import {
 	closeSync,
 	existsSync,
@@ -15,26 +15,22 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { Server } from "node:http";
 
-import { createCodeOpenerPreguard, createCodeOpenerRouter } from "@archboard/code-opener/opener";
+import { createCodeOpenerPreguard, createCodeOpenerRouter } from "#server/routes/code-opener.ts";
 import { codeBindingSchema, type CodeBinding } from "@archboard/code-binding/bindings";
-import type { z } from "zod";
-import type { OpenerSelectionReplySchema } from "@archboard/code-opener/opening";
-import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
+import type { OpenerSelection } from "#shared/schemas/opener-settings.ts";
+import { TEST_OPENER_LIFECYCLE } from "#tests/server/support/timing.ts";
 import {
 	assertBefore,
 	type ProcessCompletion,
 	waitForProcessCompletion,
-} from "./process-evidence.ts";
-
-/** An opener selection, as the settings routes answer it. */
-type OpenerSelection = z.infer<typeof OpenerSelectionReplySchema>["selection"];
+} from "#tests/server/support/process-evidence.ts";
 
 /** What the opener routes need, which a fixture replaces. */
 type CodeOpenerRouteDependencies = Required<
 	NonNullable<Parameters<typeof createCodeOpenerRouter>[1]>
 >;
 
-const FAKE_OPENER = join(import.meta.dir, "../fixtures/fake-opener.ts");
+const FAKE_OPENER = join(import.meta.dir, "fake-opener.ts");
 
 interface JsonResult {
 	status: number;
@@ -390,4 +386,4 @@ export {
 	readLinuxProcessStatEvidence,
 	processExistsEvidence,
 	waitForProcessAbsence,
-} from "./process-evidence.ts";
+} from "#tests/server/support/process-evidence.ts";

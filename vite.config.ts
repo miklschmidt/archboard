@@ -426,7 +426,6 @@ export default defineConfig({
 					"tests/system/cli",
 					"tests/system/server-state",
 					"tests/system/process-contracts",
-					"tests/system/code-targets",
 					"tests/system/models",
 					"tests/system/actions",
 				].join(" "),

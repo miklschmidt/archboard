@@ -49,7 +49,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": ["S07"],
 					"evidence": "author-run",
-					"owner": "tests/system/code-targets/canonical-model.test.ts"
+					"owner": "packages/code-opener/tests/server/routes/canonical-model.test.ts"
 				}
 			]
 		},

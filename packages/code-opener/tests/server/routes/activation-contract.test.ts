@@ -14,14 +14,14 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { CodeTargetOpenReplySchema } from "@archboard/code-opener/opening";
-import { boundFixture } from "./support/bound-model.ts";
+import { CodeTargetOpenReplySchema } from "#shared/schemas/code-target-open.ts";
+import { boundFixture } from "#tests/server/support/bound-model.ts";
 import {
 	createOpenerFixture,
 	jsonBody,
 	type Invocation,
 	type OpenerFixture,
-} from "./support/opener-fixture.ts";
+} from "#tests/server/support/opener-fixture.ts";
 
 // The vault the real binding lookup reads, handed to the opener fixture.
 const ownerVault = mkdtempSync(join(tmpdir(), "archboard-code-target-owner-"));
