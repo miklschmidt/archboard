@@ -256,8 +256,8 @@ test("each measured module lists the exports it counted, where each is defined, 
 		["Window", "type"],
 	]);
 	expect(depth.get("Timing")?.unjudged).toEqual([]);
-	// The Python half of a module is read, but no rule judges its exports yet.
-	expect(depth.get("Mixed")).toMatchObject({ languages: ["typescript"], unjudged: ["python"] });
+	// The Python half of a module is read and judged beside its TypeScript.
+	expect(depth.get("Mixed")).toMatchObject({ languages: ["typescript", "python"], unjudged: [] });
 });
 
 test("a skipped part carries the canonical model and state, as its findings do", async () => {
@@ -301,6 +301,15 @@ test("a module whose every export that is not a type carries a per-name finding 
 	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "information"]]);
 });
 
+/**
+ * Each finding's code, subject, export and severity.
+ * @param answer The answer.
+ * @returns Them, in the answer's order.
+ */
+function severities(answer: CodeCheckAnswer) {
+	return answer.findings.map((each) => [each.code, each.subject?.id, each.export, each.severity]);
+}
+
 test("the check marks the modules that the branch touched, working tree included, and its severities stay the same", async () => {
 	const plain = await check();
 	const asked = await check({ touched: true });
@@ -315,8 +324,6 @@ test("the check marks the modules that the branch touched, working tree included
 	]);
 	expect(asked.touched?.[0]?.modules).not.toContain("Shop#Clock");
 	expect(plain.touched).toBeUndefined();
-	const severities = (answer: CodeCheckAnswer) =>
-		answer.findings.map((each) => [each.code, each.subject?.id, each.export, each.severity]);
 	expect(severities(asked)).toEqual(severities(plain));
 });
 

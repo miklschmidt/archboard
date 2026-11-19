@@ -54,12 +54,6 @@ interface Definition {
 	 */
 	readonly type?: true;
 	/**
-	 * The language calls it itself, and no caller names it: Rust's `drop` of
-	 * an `impl Drop`, or the `fmt` of an `impl Display`. Module depth neither
-	 * counts nor judges it (TASK-646.10).
-	 */
-	readonly languageCalls?: true;
-	/**
 	 * It only passes its call on: its body is one call that hands every
 	 * argument straight from its parameters, and this names the callee's root,
 	 * such as `save` for `save(item)` or `this` for `this.target.send(id)`.
@@ -74,6 +68,19 @@ interface Definition {
 	 * TypeScript names it; module depth follows it (TASK-646.15).
 	 */
 	readonly aliases?: string;
+	/**
+	 * The language calls it itself, and no caller names it: a constructor, a
+	 * `toString`, a Python special method such as `__repr__`, a Go `String`.
+	 * Each adapter names its own (TASK-646.11); module depth neither counts
+	 * nor judges it.
+	 */
+	readonly calledByLanguage?: true;
+	/**
+	 * It belongs to its type, not to an instance, so callers read it through
+	 * the type's name: a C# `static` or `const` member. C# names it; module
+	 * depth counts it as an export of its own (TASK-646.11).
+	 */
+	readonly static?: true;
 	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a

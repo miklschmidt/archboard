@@ -243,8 +243,8 @@ function implShape(member: Node, ofTrait: boolean, open: boolean): Openness {
  * @param trait The trait the block implements, if any.
  * @returns The mark, or nothing.
  */
-function languageCalled(trait: Node | null): Pick<Definition, "languageCalls"> {
-	return LANGUAGE_TRAITS.has(typeName(trait) ?? "") ? { languageCalls: true } : {};
+function languageCalled(trait: Node | null): Pick<Definition, "calledByLanguage"> {
+	return LANGUAGE_TRAITS.has(typeName(trait) ?? "") ? { calledByLanguage: true } : {};
 }
 
 /**

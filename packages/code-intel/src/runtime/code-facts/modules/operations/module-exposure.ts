@@ -34,7 +34,10 @@
 // passed on by the file that declares it (definition-site.ts).
 
 import { cRootFiles, isCFile } from "#runtime/code-facts/c/operations/c-exposure.ts";
-import { projectDirectoryOf } from "#runtime/code-facts/csharp/operations/csharp-project.ts";
+import {
+	CSHARP_FILE,
+	projectDirectoryOf,
+} from "#runtime/code-facts/csharp/operations/csharp-project.ts";
 import { projectFilesIn } from "#runtime/code-facts/csharp/operations/csharp-resolution.ts";
 import { codeSiteOf } from "#runtime/code-facts/operations/definition-site.ts";
 import type {
@@ -175,9 +178,6 @@ const C: ExposureRule = {
 	entry: () => false,
 	rootFiles: cRootFiles,
 };
-
-/** A C# file. */
-const CSHARP_FILE = /\.cs$/u;
 
 /**
  * C#'s rule: a project, the `.cs` files below the directory of its project

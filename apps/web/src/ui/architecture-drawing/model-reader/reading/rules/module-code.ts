@@ -174,4 +174,41 @@ function notJudgedWords(modules: ReadonlyMap<string, ModuleCode>): string {
 	return words.length === 0 ? "" : `Not judged: ${words.join(", ")}.`;
 }
 
-export { codeByModule, notJudgedWords, type ModuleCode };
+/** The languages of one checkout that have no server, for one line that offers to set them up. */
+interface MissingServers {
+	readonly repo: string;
+	/** The languages, as the pass names them, in the order it met them. */
+	readonly languages: readonly string[];
+}
+
+/**
+ * The checkout and the language a skip says has no server.
+ * @param skip The skip.
+ * @returns Them, or none for any other skip.
+ */
+function serverMissing(skip: Skip): { readonly repo: string; readonly language: string }[] {
+	const language = skippedLanguage(skip);
+	if (skip.reason !== "language-server-missing") return [];
+	return skip.repo === undefined || language === undefined ? [] : [{ repo: skip.repo, language }];
+}
+
+/**
+ * The checkouts of the pass that miss the server of a language, each with those languages.
+ * @param reading The pass.
+ * @returns Each checkout once.
+ */
+function missingServers(reading: Remembered): readonly MissingServers[] {
+	const byRepo = new Map<string, Set<string>>();
+	for (const { repo, language } of (reading.skipped ?? []).flatMap(serverMissing))
+		byRepo.set(repo, (byRepo.get(repo) ?? new Set()).add(language));
+	return [...byRepo].map(([repo, languages]) => ({ repo, languages: [...languages] }));
+}
+
+export {
+	codeByModule,
+	languageName,
+	missingServers,
+	notJudgedWords,
+	type MissingServers,
+	type ModuleCode,
+};

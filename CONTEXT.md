@@ -794,7 +794,8 @@ _Avoid_: depth score, depth ratio, interface measures (those are what the model 
 
 **Export kind**:
 What an exported name is to its callers: a function, a class, a public method of an exported class, a value or a type.
-A type counts for no verdict, and a TypeScript enum is a type.
+A type counts for no verdict, and a TypeScript enum is a type. So are a Python type alias, a Go interface or a Go named type without methods in its file, and a C# interface, enum or delegate.
+A C# `static` member of an exported class is read through the class's name, so it is a function or a value of its own.
 A value that can be called is a function, even when a call makes it, as a compound component made by `Object.assign` or the helper that `cva(...)` returns is. A schema cannot be called, so it is a value.
 _Avoid_: export type (a type is one kind), symbol kind
 
@@ -809,7 +810,7 @@ _Avoid_: exported constant, leaked config, global
 
 **Repeated math**:
 The same math that two or more modules write on one exported value or getter: `EXPOSED_VALUE_COMPUTED`, a warning on that export, with every line that writes it as evidence.
-The match ignores the callers' own names, sorts the operands of `+`, `*`, `Math.min` and `Math.max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
+The match ignores the callers' own names, sorts the operands of `+`, `*` and of each language's `min` and `max`, and follows one local variable that holds the export. Equality, comparison, bitwise and logical operators are no math. The exporter owns the math, as a function.
 _Avoid_: duplicated logic, copy-paste, computed constant
 
 **Code pass-through**:

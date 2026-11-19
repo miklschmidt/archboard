@@ -26,7 +26,9 @@
 import type { Node, QueryCapture, Tree } from "web-tree-sitter";
 import type { Import, ParsedFacts, Reference } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
+import { GO_MATH } from "#runtime/code-facts/go/operations/go-depth.ts";
 import { definitionsOf } from "#runtime/code-facts/go/operations/go-definitions.ts";
+import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { unparsedOf } from "#runtime/code-facts/operations/unparsed.ts";
@@ -54,6 +56,7 @@ interface Captured {
 	readonly runtime: Node[];
 	readonly skip: Node[];
 	readonly unparsed: Node[];
+	readonly logic: Node[];
 }
 
 /** Which list each capture of the query joins; a capture named `_...` only constrains a pattern. */
@@ -67,6 +70,7 @@ const LIST_OF: Readonly<Record<string, keyof Captured>> = {
 	runtime: "runtime",
 	skip: "skip",
 	unparsed: "unparsed",
+	logic: "logic",
 };
 
 /** What deciding whether a captured name is a use needs. */
@@ -95,6 +99,7 @@ function sorted(captures: readonly QueryCapture[]): Captured {
 		runtime: [],
 		skip: [],
 		unparsed: [],
+		logic: [],
 	};
 	for (const capture of captures) {
 		const list = LIST_OF[capture.name];
@@ -278,6 +283,37 @@ function distinct(uses: readonly Reference[]): Reference[] {
 }
 
 /**
+ * The uses at run time of the names other packages define: each name of an
+ * imported package before its `.`, as `timing` in `timing.RestartBase`.
+ * @param captured The captures.
+ * @param context The file's bound names and spans.
+ * @param imports The file's imports.
+ * @returns The names.
+ */
+function importedUses(captured: Captured, context: UseContext, imports: readonly Import[]): Node[] {
+	const packages = new Set(imports.flatMap((found) => found.names.map((name) => name.local)));
+	return captured.reference.filter(
+		(node) =>
+			packages.has(node.text) &&
+			qualifies(node) &&
+			codeReference(node, context)?.typeOnly === false,
+	);
+}
+
+/**
+ * Whether a name stands before a selector's `.`, as a package's name does.
+ * @param node The name.
+ * @returns True when it does.
+ */
+function qualifies(node: Node): boolean {
+	const selector = node.parent;
+	return (
+		selector?.type === "selector_expression" &&
+		selector.childForFieldName("operand")?.id === node.id
+	);
+}
+
+/**
  * The code facts of one parsed Go file.
  * @param tree The file's syntax tree.
  * @param grammar The grammar it was parsed with.
@@ -319,6 +355,8 @@ function goFacts(tree: Tree, grammar: Grammar): GoFacts {
 		references: distinct(uses),
 		imports,
 		unparsed: unparsedOf(captured.unparsed),
+		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
+		computations: computationsOf(importedUses(captured, context, imports), GO_MATH),
 		package: pkg?.namedChildren[0]?.text ?? "",
 		ignored: ignoredByBuild(tree.rootNode.text),
 		scoped: [...new Set(captured.binding.map((node) => node.text))].filter(
