@@ -46,7 +46,7 @@ mod testing;
 mod tests;
 mod unfold;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform};
@@ -233,8 +233,8 @@ fn leaving(old: &Found<'_>, doors: &Doors, phases: Transition) -> Mover {
 /// line that stops, which go where the lines stand, and what is parked for a card
 /// that does not stay. `pulses` says how deep the pulses stand, and when they end.
 fn stopping(
-    traffic: &HashMap<&str, &Group>,
-    landing: &HashMap<&str, &Group>,
+    traffic: &BTreeMap<&str, &Group>,
+    landing: &BTreeMap<&str, &Group>,
     parked: &[Group],
     moved: &HashMap<&str, (f64, f64)>,
     pulses: (usize, f64),
@@ -260,8 +260,9 @@ fn stopping(
         .collect()
 }
 
-/// Every line's pulses among some items, to any depth.
-fn traffic_in<'a>(items: &'a [Item], found: &mut HashMap<&'a str, &'a Group>) {
+/// Every line's pulses among some items, to any depth, by line, so that what
+/// stops goes in the same order every time.
+fn traffic_in<'a>(items: &'a [Item], found: &mut BTreeMap<&'a str, &'a Group>) {
     for item in items {
         match item {
             Item::Group(group) => match &group.role {
@@ -284,7 +285,7 @@ struct LastPicture<'a> {
     /// How far back each carried card starts.
     moved: HashMap<&'a str, (f64, f64)>,
     /// The pulses of each line.
-    traffic: HashMap<&'a str, &'a Group>,
+    traffic: BTreeMap<&'a str, &'a Group>,
     /// The shadows and marks of the last frame, with their visibility.
     parked: &'a [Group],
     /// The new subjects that ride inside a door, by id.
@@ -468,9 +469,9 @@ impl Between {
             )
         });
         let (movers, of_subject) = gathered(carries.chain(arrivals), new.len());
-        let mut traffic = HashMap::new();
+        let mut traffic = BTreeMap::new();
         traffic_in(&last.body, &mut traffic);
-        let mut landing = HashMap::new();
+        let mut landing = BTreeMap::new();
         traffic_in(&next.body, &mut landing);
         landing.retain(|line, _| !spans.contains_key(line));
         let pulses = (depth_of(&next.body, SubjectKind::Edge), phases.exit_end);

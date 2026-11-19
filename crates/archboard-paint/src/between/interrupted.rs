@@ -8,7 +8,7 @@ use archboard_scene::scene::{
 };
 
 use super::testing::{PHASES, card, drawing, line, plate, rect, scene};
-use super::{Between, Entrance, Scene};
+use super::{Between, Entrance, Handover, Scene};
 use crate::testing::{stroke, traced};
 
 fn double_line(y: f64) -> Scene {
@@ -97,12 +97,8 @@ fn an_interrupted_entrance_keeps_the_box_the_reader_saw() {
     }
 }
 
-#[test]
-fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
-    let frame = rect(10.0, 10.0, 100.0, 50.0);
-    let Item::Group(shadow) = super::testing::shadow() else {
-        unreachable!("a shadow is a group");
-    };
+/// The pulses of a line that runs from one point to another.
+fn pulses(id: &str, from: (f64, f64), to: (f64, f64)) -> Item {
     let mark = TrafficMark {
         look: PulseLook {
             head: Colour::White,
@@ -110,9 +106,9 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
             line_width: 1.2,
         },
         route: Curve {
-            from: super::testing::at(110.0, 35.0),
+            from: super::testing::at(from.0, from.1),
             segments: vec![Segment::Line {
-                to: super::testing::at(200.0, 35.0),
+                to: super::testing::at(to.0, to.1),
             }],
         },
         motion: Motion::Steady {
@@ -121,6 +117,18 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
             phase: 0.0,
         },
     };
+    Item::Group(Group::new(
+        Role::Traffic(id.into()),
+        vec![Item::Traffic(mark)],
+    ))
+}
+
+#[test]
+fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
+    let frame = rect(10.0, 10.0, 100.0, 50.0);
+    let Item::Group(shadow) = super::testing::shadow() else {
+        unreachable!("a shadow is a group");
+    };
     let next = scene(
         vec![
             Item::Group(Group {
@@ -128,10 +136,7 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
                 ..shadow
             }),
             line("e", &[(110.0, 35.0), (200.0, 35.0)]),
-            Item::Group(Group::new(
-                Role::Traffic("e".into()),
-                vec![Item::Traffic(mark)],
-            )),
+            pulses("e", (110.0, 35.0), (200.0, 35.0)),
             card("a", frame, &["Title"]),
         ],
         &[("a", frame)],
@@ -156,4 +161,41 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
         };
         assert_eq!(visibility(&carried), visibility(&seen.body));
     }
+}
+
+#[test]
+fn an_edit_of_an_interrupted_entrance_moves_the_same_way_every_time() {
+    let frame = rect(10.0, 10.0, 100.0, 50.0);
+    let cards = || vec![card("a", frame, &["Title"])];
+    let first = scene(cards(), &[("a", frame)]);
+    let mut lined = cards();
+    for at in 0..6 {
+        let y = 40.0 + f64::from(at) * 2.0;
+        let id = format!("e{at}");
+        lined.push(line(&id, &[(110.0, y), (200.0, y)]));
+        lined.push(pulses(&id, (110.0, y), (200.0, y)));
+    }
+    let second = scene(lined, &[("a", frame)]);
+    let edited = scene(cards(), &[("a", frame)]);
+    let run = || {
+        let entering = Scene {
+            body: Entrance::new(&first, &PHASES, None).at(0.4),
+            ..first.clone()
+        };
+        let handover = Handover {
+            last: &entering,
+            shown: 0.6,
+        };
+        let interrupted = Entrance::new(&second, &PHASES, Some(handover));
+        let seen = Scene {
+            body: interrupted.at(interrupted.length() * 0.9),
+            ..second.clone()
+        };
+        let edit = Between::new(&seen, &edited, (0.0, 0.0), &PHASES);
+        let frames: Vec<_> = [0.0, 0.1, 0.2, 0.3]
+            .map(|progress| edit.at(progress))
+            .into();
+        serde_json::to_vec(&frames).expect("items as JSON")
+    };
+    assert!(run() == run(), "the same edit draws the same bytes");
 }
