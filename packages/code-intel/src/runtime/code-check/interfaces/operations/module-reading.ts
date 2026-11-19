@@ -3,19 +3,18 @@
 // pass for each module, however many documents draw it.
 //
 // A use is a reference in a file outside the module whose import leads to a
-// definition inside it, or to a name it passes on from another module,
-// followed through every re-export: through the module's own root files, its
-// door, or through another module that passes the name on (TASK-646.05). A
-// test exercises code and is not its caller at run time, so a test file is no
-// caller. The files outside that the pass could not read whole are named, so
-// a judge never takes an incomplete read for a complete one: a file no grammar
-// read that writes a name the module exposes, as JavaScript, a Vue or a Svelte
-// component can import TypeScript, code that did not parse and names what the module exposes, a relative
-// import that resolves to no file, and an import of the whole module, as
-// `import * as ns`, a bare `import()` or `typeof import()` is, whose names no
-// reference spells. In Rust, so is a file with a use that leads to a name in
-// the module that no definition answers, as a function a macro makes; a path
-// to a crate's root reaches the macros it exports (TASK-646.16).
+// definition inside it, or to a name it passes on from another module, followed
+// through every re-export: through the module's own root files, its door, or
+// through another module that passes the name on (TASK-646.05). A test file is
+// no caller: it exercises code. The files outside that the pass could not read
+// whole are named, so a judge never takes an incomplete read for a complete
+// one: a file no grammar read that imports and names what the module exposes,
+// as JavaScript, Vue and Svelte import TypeScript, code that did not parse and
+// names it, a relative import that resolves to no file, and an import of the
+// whole module, as `import * as ns`, a bare `import()` or `typeof import()` is,
+// whose names no reference spells. In Rust, so is a file with a use that leads
+// to a name in the module that no definition answers, as a function a macro
+// makes; a path to a crate's root reaches the macros it exports (TASK-646.16).
 //
 // Terraform and OpenTofu name no definition through an import: a module call
 // passes the module its arguments and reads its outputs (TASK-368.11). Each
@@ -37,6 +36,7 @@ import {
 	type DefinitionSite,
 } from "#runtime/code-facts/operations/definition-site.ts";
 import { isTerraformFile } from "#runtime/code-facts/terraform/operations/terraform-address.ts";
+import { importsNothing } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	moduleExposure,
 	within,
@@ -286,13 +286,14 @@ const WORD = /[\p{L}\p{N}_$]+/gu;
 /**
  * Whether a file may use a module where the grammar read no use: it names
  * what the module exposes in code that did not parse, which the grammar
- * records even there, or anywhere in a file no grammar reads, as JavaScript
- * beside TypeScript, where an import names a default export freely.
+ * records even there, or anywhere in a file no grammar reads that imports, as
+ * JavaScript beside TypeScript, where an import names a default export freely.
  * @param read The file's facts.
  * @param exposure What the module exposes.
  * @returns True when it may.
  */
 function hidesUse(read: FileFacts, exposure: ModuleExposure): boolean {
+	if (read.adapter === "text" && importsNothing(read.path, read.text)) return false;
 	const named = new Set(
 		read.adapter === "text"
 			? [...(read.text.match(WORD) ?? []), "default"]

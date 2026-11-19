@@ -235,8 +235,8 @@ function answerOf(
 }
 
 /**
- * Run the pass with the footprints beside it. A base that the footprints refuse stops the pass,
- * so a base that does not resolve never costs a whole pass.
+ * Run the pass with the footprints beside it. A base that the footprints refuse, or footprints
+ * that fail, stop the pass, so neither costs a whole pass.
  * @param request What to read.
  * @param read The readings.
  * @param plans The plans the pass reads.
@@ -248,10 +248,16 @@ async function passBeside(
 	plans: Parameters<typeof checkCode>[3],
 ): Promise<CodeCheckAnswer | BaseUnresolved> {
 	const refused = new AbortController();
-	const footprints = footprintsOf(request, read.states).then((touched) => {
-		if (touched !== undefined && "code" in touched) refused.abort();
-		return touched;
-	});
+	const footprints = footprintsOf(request, read.states).then(
+		(touched) => {
+			if (touched !== undefined && "code" in touched) refused.abort();
+			return touched;
+		},
+		(error: unknown) => {
+			refused.abort();
+			throw error;
+		},
+	);
 	const signal = AbortSignal.any([request.signal, refused.signal]);
 	const [code, touched] = await Promise.allSettled([
 		checkCode(request.vault, read.states, signal, plans),

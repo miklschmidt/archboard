@@ -354,6 +354,7 @@ test("a folder module with no declared interface says how many of its names file
 	// `seal` is used outside, `freeze` only by `epoch.ts` beside it; `orphan` and `probe` by none.
 	expect(finding?.message).toContain("Files outside it use 1 of its 4 exported names");
 	expect(finding?.message).toContain("only its own files import 1: freeze.");
+	expect(finding?.message).toContain("in an index.ts, or the exports of its package.json,");
 });
 
 test("a module of kind external keeps its counts and gets no verdict", async () => {
@@ -418,6 +419,8 @@ test("a JavaScript, Vue or Svelte file outside that names an export makes the mo
 	write(shop, {
 		"web/widget.vue": '<script setup>\nimport { unusedHelper } from "../src/util";\n</script>\n',
 		"scripts/tool.mjs": 'console.log("no module names here");\n',
+		// A bundle that imports nothing can use no module, whatever names it writes.
+		"scripts/bundle.js": "(function () { var orphan = 1; window.probe = orphan; })();\n",
 	});
 	try {
 		const answer = await check();
@@ -425,7 +428,7 @@ test("a JavaScript, Vue or Svelte file outside that names an export makes the mo
 			name,
 			severity,
 		]);
-		// `widget.vue` names `unusedHelper`; `tool.mjs` names nothing a module exports.
+		// `widget.vue` imports and names `unusedHelper`; `tool.mjs` names nothing a module exports.
 		expect(severities).toEqual([
 			["unusedHelper", "information"],
 			["testOnly", "information"],
