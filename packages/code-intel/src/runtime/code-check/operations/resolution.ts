@@ -28,6 +28,10 @@
 // pair, as an include leads (definition-site.ts), and where the pair defines
 // nothing of the name the use stays as code facts read it.
 //
+// The pass also asks what type a server gives a name a file declares, from
+// the file's semantic tokens, so Module depth can tell an exported value that
+// can be called from one that cannot (TASK-646.15).
+//
 // One pass opens one resolution. Its servers start on their first question,
 // and closing it stops every one, killing them at once when the pass was
 // cancelled, and only then answers. It says once for each checkout and language

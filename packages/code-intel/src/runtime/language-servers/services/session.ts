@@ -1,6 +1,7 @@
 // The language servers of one pass of the code check (ADR 0046).
 //
-// The pass asks where the name that a file uses on a line is defined. The
+// The pass asks where the name that a file uses on a line is defined, and
+// what type the server's semantic tokens give a name a file declares. The
 // session starts the server of the file's language in the file's checkout on
 // the first question there, and asks it every later question. Answers are kept
 // for the pass, since the documents of one vault ask about the same files, and

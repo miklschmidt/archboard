@@ -1,4 +1,4 @@
-// Module depth (TASK-646.04, TASK-646.05): what a bound module's code offers its callers,
+// Module depth (TASK-646.04, TASK-646.05, TASK-646.15): what a bound module's code offers its callers,
 // and the verdicts on it, as named findings and never a score.
 //
 // A deep module has a small interface that hides much logic. A shallow one
@@ -11,6 +11,13 @@
 // method of an exported class, values and types. It counts the pieces of
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
+//
+// An export that can be called is a function, even when a call makes it
+// (TASK-646.15). A value that holds another name, as `const Dialog =
+// Object.assign(DialogRoot, {...})` holds `DialogRoot`, is what that name is,
+// wherever that name is defined. Any other value is what its language server
+// types it as, where a server answers: the helper that `cva(...)` returns is
+// a function, and a zod schema, which cannot be called, is a value.
 //
 // It judges each exported name, each public method of an exported class
 // among them, and gives each at most one finding (name-findings.ts):
