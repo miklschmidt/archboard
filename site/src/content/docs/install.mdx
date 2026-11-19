@@ -71,6 +71,8 @@ A language server knows where code defines a name. With one, `archboard check co
 
 </Steps>
 
+In the browser, Measures names each language that the last code check found with no server, and the server that it needs. **Fix with Codex** there asks the agent of that checkout to set it up, with the same steps that `archboard init` gives.
+
 <Aside type="caution" title="A language server runs the repository's code">
 	Read the `.archboard/language-servers.json` of a checkout before you run `archboard check code` on
 	a repository that you do not trust. `pyright`, `rust-analyzer`, `gopls` and the others run code of

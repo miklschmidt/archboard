@@ -5,6 +5,7 @@ import {
 	RiArrowLeftRightLine,
 	RiArrowRightLine,
 	RiBox3Line,
+	RiBracesLine,
 	RiDoorOpenLine,
 	RiFileCodeLine,
 	RiHistoryLine,
@@ -23,6 +24,7 @@ import {
 	type AboutPlace,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
 import { ModelAboutWalkthroughs } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutWalkthroughs.tsx";
+import { CodeExports } from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
 import { ModelConnectionTable } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnectionTable.tsx";
 import {
 	ConnectionDetails,
@@ -49,6 +51,7 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/components/ModuleDetails.tsx";
 import { ModuleNavigation } from "#ui/architecture-drawing/model-reader/reading/module-navigation/components/ModuleNavigation.tsx";
 import type { Reader } from "#ui/architecture-drawing/model-reader/hooks/use-reader.ts";
+import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import { modulePlaces } from "#ui/architecture-drawing/model-reader/reading/rules/module-places.ts";
 import { walkthroughsAbout } from "#ui/architecture-drawing/model-reader/reading/rules/relevance.ts";
 import {
@@ -76,6 +79,8 @@ interface ModelAboutSelectionProps extends ModelSelectionDetailsProps {
 	readonly reducedMotion: boolean;
 	readonly onShow: (id: string) => void;
 	readonly onReveal: () => void;
+	/** The code pass that read the reading on screen, or null when none did. */
+	readonly code: ModelCodeReading | null;
 }
 
 /**
@@ -232,6 +237,20 @@ function useModuleSections(props: ModulePageProps) {
 					/>,
 				)
 			: null,
+		module.binding === undefined
+			? null
+			: aboutSection(
+					"exports",
+					"Code exports",
+					RiBracesLine,
+					undefined,
+					<CodeExports
+						vault={props.vault}
+						module={id}
+						reading={props.code}
+						onNotice={props.onCodeTargetNotice}
+					/>,
+				),
 		aboutSection("code", "Code and evidence", RiFileCodeLine, undefined, <ModuleCode {...props} />),
 		module.binding === undefined
 			? null

@@ -195,6 +195,46 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#uqmjh4QQ",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the selected module's export names and lines",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#uqmjh4QQ",
+        "to": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uqmjh4QQ",
+      "placement": {
+        "holder": "vKEsyHFk#Y0s83yrf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#UyHDAo3L",
+      "kind": "relationship",
+      "value": {
+        "order": 910,
+        "kind": "call",
+        "label": "open an export at the line that defines it",
+        "emphasis": "normal",
+        "id": "vKEsyHFk#UyHDAo3L",
+        "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#UyHDAo3L",
+      "placement": {
+        "holder": "vKEsyHFk#Y0s83yrf"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
       "field": "description",

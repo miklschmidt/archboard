@@ -578,7 +578,7 @@ function cFactsOf(tree: Tree, captures: readonly QueryCapture[]): ParsedFacts {
 			.flatMap((node) => includeOf(node) ?? []),
 		unparsed: broken.map(({ start, end, names }) => ({ start, end, names })),
 		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
-		computations: computationsOf(C_MATH, runtimeUses(named, locals)),
+		computations: computationsOf(runtimeUses(named, locals), C_MATH),
 	};
 }
 

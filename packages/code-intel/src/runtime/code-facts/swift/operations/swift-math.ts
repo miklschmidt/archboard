@@ -11,9 +11,9 @@ import type { Node } from "web-tree-sitter";
 import {
 	type Local,
 	type MathCall,
-	type MathSyntax,
+	type MathGrammar,
 	type Operation,
-} from "#runtime/code-facts/operations/math-shapes.ts";
+} from "#runtime/code-facts/operations/math-grammar.ts";
 
 /** The functions of math whose arguments can change places. */
 const SORTED = new Set(["min", "max", "hypot", "Swift.min", "Swift.max"]);
@@ -110,28 +110,42 @@ function passesNothing(call: Node): boolean {
 }
 
 /**
- * The local variable a property declaration binds, where its scope is a block or the file.
+ * The block or file a property declaration binds its variable in.
  * @param declaration The declaration.
- * @returns The variable, or undefined for a pattern or a member.
+ * @returns The scope, or undefined for a member.
  */
-function declaredLocal(declaration: Node): Local | undefined {
-	const name = declaration.childForFieldName("name")?.childForFieldName("bound_identifier");
+function scopeOf(declaration: Node): Node | undefined {
 	const scope = declaration.parent;
-	if (name === null || name === undefined || scope === null) return undefined;
-	return SCOPES.has(scope.type)
-		? { name: name.text, scope, after: declaration.endIndex }
-		: undefined;
+	return scope !== null && SCOPES.has(scope.type) ? scope : undefined;
 }
 
 /**
- * The local variable a property declaration fills with an expression whole.
- * @param operand The expression.
- * @returns The variable, or undefined.
+ * The later uses of the variable a property declaration binds: its name
+ * after the declaration, in the block or the file that holds it, but a member
+ * after `.`, a label or a binding of that name.
+ * @param declaration The declaration.
+ * @returns The uses, none for a pattern or a member.
  */
-function local(operand: Node): Local | undefined {
+function laterUses(declaration: Node): Local[] {
+	const name = declaration.childForFieldName("name")?.childForFieldName("bound_identifier");
+	const scope = scopeOf(declaration);
+	if (name === null || name === undefined || scope === undefined) return [];
+	return scope
+		.descendantsOfType("simple_identifier")
+		.filter((each) => each.text === name.text && each.startIndex > declaration.endIndex)
+		.filter((each) => !NO_USE.has(each.parent?.type ?? ""))
+		.map((each) => [each, ""] as const);
+}
+
+/**
+ * The later uses of a local variable that a property declaration fills with an expression whole.
+ * @param operand The expression.
+ * @returns The uses.
+ */
+function later(operand: Node): Local[] {
 	const declaration = operand.parent;
 	const held = declaration?.type === "property_declaration" && holds(declaration, "value", operand);
-	return held ? declaredLocal(declaration) : undefined;
+	return held ? laterUses(declaration) : [];
 }
 
 /**
@@ -273,7 +287,7 @@ function number(node: Node): string | undefined {
 }
 
 /** How Swift writes arithmetic. */
-const SWIFT_MATH: MathSyntax = {
+const SWIFT_MATH: MathGrammar = {
 	operation,
 	/**
 	 * The expression parentheses hold: a tuple of one value.
@@ -307,18 +321,7 @@ const SWIFT_MATH: MathSyntax = {
 	 * @returns Its spelling through `.`.
 	 */
 	spelled: (node) => chain(node) ?? node.text,
-	local,
-	/**
-	 * The later uses of a local variable: its name after its declaration, but
-	 * a member after `.`, a label or a binding of that name.
-	 * @param variable The variable.
-	 * @returns The uses.
-	 */
-	uses: (variable) =>
-		variable.scope
-			.descendantsOfType("simple_identifier")
-			.filter((each) => each.text === variable.name && each.startIndex > variable.after)
-			.filter((each) => !NO_USE.has(each.parent?.type ?? "")),
+	later,
 	calledAfter,
 };
 

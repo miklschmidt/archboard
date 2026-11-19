@@ -19,6 +19,7 @@
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange, type Spans } from "#runtime/code-facts/operations/spans.ts";
+import { pythonPassesTo } from "#runtime/code-facts/python/operations/python-depth.ts";
 
 /** The syntax that can hold a declaration and keep it at module level or in a class body. */
 const HOLDERS = new Set([
@@ -170,6 +171,48 @@ function visibilityOf(
 	return classes.length > 0 ? memberVisibility(name) : moduleVisibility(name, listed);
 }
 
+/** A special method, which Python calls itself: `__init__`, `__repr__`. */
+const SPECIAL = /^__.+__$/u;
+
+/** The annotation of an assignment that makes its name a type alias. */
+const TYPE_ALIAS = /(?:^|\.)TypeAlias$/u;
+
+/**
+ * Whether a declaration declares a type alias: `type Name = ...`, or an
+ * assignment annotated `TypeAlias`.
+ * @param declaration The declaration.
+ * @returns True when it does.
+ */
+function typeAlias(declaration: Node): boolean {
+	if (declaration.type === "type_alias_statement") return true;
+	const annotation =
+		declaration.type === "assignment" ? declaration.childForFieldName("type") : null;
+	return TYPE_ALIAS.test(annotation?.text ?? "");
+}
+
+/**
+ * What a declaration's syntax says beside its kind (TASK-646.11): that it
+ * declares a type alias, the call it only passes on, and that Python calls it.
+ * @param name The declared name.
+ * @param declaration The declaration.
+ * @param classes The classes that hold it.
+ * @returns Those that hold.
+ */
+function traitsOf(
+	name: Node,
+	declaration: Node,
+	classes: readonly string[],
+): Pick<Definition, "type" | "passes" | "calledByLanguage"> {
+	const passes = pythonPassesTo(declaration);
+	const special =
+		classes.length > 0 && SPECIAL.test(name.text) && kindOf(declaration) === "function";
+	return {
+		...(typeAlias(declaration) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
+		...(special ? { calledByLanguage: true as const } : {}),
+	};
+}
+
 /**
  * Whether the class that holds a declaration is exposed. A declaration no
  * class holds has nothing to hide it.
@@ -213,6 +256,7 @@ function definitionOf(
 		source: sourceRange(declaration),
 		visibility,
 		exposed,
+		...traitsOf(name, declaration, classes),
 	};
 }
 

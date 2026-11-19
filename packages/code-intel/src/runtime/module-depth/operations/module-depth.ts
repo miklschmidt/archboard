@@ -8,7 +8,10 @@
 // reads nothing twice.
 //
 // It counts the module's exports by kind: functions, classes, each public
-// method of an exported class, values and types. It counts the pieces of
+// method of an exported class, values and types. A member that belongs to an
+// exported class rather than to an instance, as a C# `static` member does, is
+// read through the class's name and counts as a function or a value of its
+// own (TASK-646.11). It counts the pieces of
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
 //
@@ -23,8 +26,8 @@
 // among them, and gives each at most one finding (name-findings.ts):
 // `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE`,
 // `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. Members the language calls itself, a constructor or a
-// `toString`, are no export a caller names: they are neither counted nor
-// judged. A method's uses run through values, which a syntax read cannot
+// `toString`, are no export a caller names: each adapter marks them
+// (`Definition.calledByLanguage`), and they are neither counted nor judged. A method's uses run through values, which a syntax read cannot
 // follow, so no method is judged unused, and an implementation used through
 // its interface counts as used.
 //
@@ -36,9 +39,8 @@
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
-// the kind of each export: TypeScript, Swift, C, C++ and Objective-C
-// (TASK-646.12). Their grammars mark the members the language calls, such as
-// a C++ destructor or Swift's `hash(into:)`.
+// the kind of each export: TypeScript, Python, Go, C#, Swift, C, C++ and
+// Objective-C (TASK-646.11, TASK-646.12).
 //
 // It counts the exports of a Terraform module, a Nix flake and a Helm chart
 // by kind too, and judges none of them (TASK-646.13): a caller sets a
@@ -54,6 +56,9 @@ import type { Definition, SyntaxFacts } from "#runtime/code-facts/operations/fac
 import type { ExposedName } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { C_FAMILY_FILE } from "#runtime/code-facts/c/operations/c-pairs.ts";
 import { SWIFT_FILE } from "#runtime/code-facts/swift/operations/swift-exposure.ts";
+import { CSHARP_FILE } from "#runtime/code-facts/csharp/operations/csharp-project.ts";
+import { GO_FILE } from "#runtime/code-facts/go/operations/go-resolution.ts";
+import { PYTHON_FILE } from "#runtime/code-facts/python/operations/python-exposure.ts";
 import { TYPESCRIPT_FILE } from "#runtime/code-facts/typescript/operations/typescript-exposure.ts";
 import {
 	type DepthFinding,
@@ -78,6 +83,9 @@ const GROUPS: ReadonlyMap<
 	keyof Omit<CountedNames, "languages" | "unjudged">
 > = new Map([
 	["typescript", "judged"],
+	["python", "judged"],
+	["go", "judged"],
+	["csharp", "judged"],
 	["swift", "judged"],
 	["c", "judged"],
 	["cpp", "judged"],
@@ -93,22 +101,13 @@ const GROUPS: ReadonlyMap<
  */
 const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["typescript", TYPESCRIPT_FILE],
+	["python", PYTHON_FILE],
+	["go", GO_FILE],
+	["csharp", CSHARP_FILE],
 	["swift", SWIFT_FILE],
 	["c", C_FAMILY_FILE],
 	["cpp", C_FAMILY_FILE],
 	["objc", C_FAMILY_FILE],
-]);
-
-/**
- * The members TypeScript calls itself, which no caller names. Other grammars
- * mark such a member on its definition (`Definition.calledByLanguage`).
- */
-const CALLED_BY_LANGUAGE: ReadonlySet<string> = new Set([
-	"constructor",
-	"toString",
-	"toLocaleString",
-	"valueOf",
-	"toJSON",
 ]);
 
 /** A module's exports, by kind. */
@@ -282,21 +281,47 @@ function ownName(symbol: string, holder: string): string | undefined {
 }
 
 /**
- * Whether a member is a public method of an exported class: a function the
- * class holds that callers name, not one the language calls itself. A method
- * may be in another file than its class: a C++ or Objective-C method in the
- * pair of its class's header, a Swift method in an extension.
+ * Whether a member belongs to an exported class. It may be in another file
+ * than its class: a C++ or Objective-C method in the pair of its class's
+ * header, a Swift method in an extension.
+ * @param member The member.
+ * @param classes The module's exported classes.
+ * @returns True when it does.
+ */
+function heldBy(member: ExposedName, classes: readonly ExposedName[]): boolean {
+	const { symbol } = member.definition;
+	return classes.some((each) => ownName(symbol, each.definition.symbol) !== undefined);
+}
+
+/**
+ * Whether a member is a public method of an exported class, which callers
+ * call on an instance.
  * @param member The member.
  * @param classes The module's exported classes.
  * @returns True when it is.
  */
 function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean {
-	const { symbol, kind, calledByLanguage } = member.definition;
-	if (kind !== "function" || calledByLanguage === true) return false;
-	return classes.some((each) => {
-		const own = ownName(symbol, each.definition.symbol);
-		return own !== undefined && !CALLED_BY_LANGUAGE.has(own);
-	});
+	const { definition } = member;
+	return (
+		definition.kind === "function" &&
+		definition.calledByLanguage !== true &&
+		definition.static !== true &&
+		heldBy(member, classes)
+	);
+}
+
+/**
+ * The kind of a member of an exported class that belongs to the class, not
+ * to an instance, as a C# `static` member does: callers read it through the
+ * class's name, as they read a top-level name, so it counts as one.
+ * @param member The member.
+ * @param classes The module's exported classes.
+ * @returns Its kind, or undefined for any other member.
+ */
+function staticKind(member: ExposedName, classes: readonly ExposedName[]): ExportKind | undefined {
+	const { definition } = member;
+	const counted = definition.static === true && definition.calledByLanguage !== true;
+	return counted && heldBy(member, classes) ? declaredKind(definition) : undefined;
 }
 
 /**
@@ -321,12 +346,16 @@ async function countExports(
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
 		top.push([name, await kindOf(reading, name)]);
 	}
-	const counted = [
-		...top,
-		...pathEnds(names.infrastructure).map((name) => [name, declaredKind(name.definition)] as const),
-	];
 	const classes = ofKind(top, "class");
 	const kinds = new Map(top);
+	for (const name of names.judged) {
+		const kind = kinds.has(name) ? undefined : staticKind(name, classes);
+		if (kind !== undefined) kinds.set(name, kind);
+	}
+	const counted = [
+		...kinds,
+		...pathEnds(names.infrastructure).map((name) => [name, declaredKind(name.definition)] as const),
+	];
 	const judged = names.judged.flatMap((name): (readonly [ExposedName, NameKind])[] => {
 		const kind = kinds.get(name);
 		if (kind !== undefined) return [[name, kind]];
@@ -379,7 +408,7 @@ function ofKind(
  * @param symbols Every symbol its file defines.
  * @returns True when it does.
  */
-function heldBy(symbol: string, symbols: ReadonlySet<string>): boolean {
+function memberOfFile(symbol: string, symbols: ReadonlySet<string>): boolean {
 	const at = Math.max(symbol.lastIndexOf("."), symbol.lastIndexOf("::"));
 	return at > 0 && symbols.has(symbol.slice(0, at));
 }
@@ -404,7 +433,7 @@ async function logicOf(reading: DepthReading): Promise<number> {
 				!each.exposed &&
 				each.kind === "value" &&
 				each.type !== true &&
-				!heldBy(each.symbol, symbols),
+				(each.static === true || !memberOfFile(each.symbol, symbols)),
 		);
 		logic += (read.logic ?? 0) + hidden.length;
 	}

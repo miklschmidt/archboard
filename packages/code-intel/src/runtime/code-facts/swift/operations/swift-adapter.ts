@@ -48,7 +48,7 @@ import type {
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
 import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
-import { computationsOf } from "#runtime/code-facts/operations/math-shapes.ts";
+import { computationsThrough } from "#runtime/code-facts/operations/math-grammar.ts";
 import { definitionsOf } from "#runtime/code-facts/swift/operations/swift-definitions.ts";
 import { chain, SWIFT_MATH } from "#runtime/code-facts/swift/operations/swift-math.ts";
 
@@ -406,7 +406,7 @@ function swiftFacts(tree: Tree, grammar: Grammar): SwiftFacts {
 		unparsed: uncertainPart(tree.rootNode),
 		scoped: scopedNames(captured.binding, definitions),
 		logic: captured.logic.filter((node) => !unparsed.holds(node.startIndex)).length,
-		computations: computationsOf(SWIFT_MATH, runtimeUses(captured.reference, context)),
+		computations: computationsThrough(runtimeUses(captured.reference, context), SWIFT_MATH),
 	};
 }
 

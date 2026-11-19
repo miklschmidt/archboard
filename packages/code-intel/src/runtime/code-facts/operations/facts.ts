@@ -64,12 +64,6 @@ interface Definition {
 	 */
 	readonly passes?: string;
 	/**
-	 * The language calls it itself, and no caller names it: a constructor, a
-	 * destructor, an operator, Swift's `hash(into:)` or Objective-C's
-	 * `dealloc`. Module depth neither counts nor judges it (TASK-646.12).
-	 */
-	readonly calledByLanguage?: true;
-	/**
 	 * It holds the value of another name, as the file spells it: `DialogRoot`
 	 * for `const Dialog = Object.assign(DialogRoot, { Title })`, which is
 	 * `DialogRoot` with more members on it, or `Store` for `const Made =
@@ -77,6 +71,20 @@ interface Definition {
 	 * TypeScript names it; module depth follows it (TASK-646.15).
 	 */
 	readonly aliases?: string;
+	/**
+	 * The language calls it itself, and no caller names it: a constructor, a
+	 * `toString`, a Python special method such as `__repr__`, a Go `String`,
+	 * a C++ destructor or operator, Swift's `hash(into:)`, Objective-C's
+	 * `dealloc`. Each adapter names its own (TASK-646.11, TASK-646.12); module
+	 * depth neither counts nor judges it.
+	 */
+	readonly calledByLanguage?: true;
+	/**
+	 * It belongs to its type, not to an instance, so callers read it through
+	 * the type's name: a C# `static` or `const` member. C# names it; module
+	 * depth counts it as an export of its own (TASK-646.11).
+	 */
+	readonly static?: true;
 	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a

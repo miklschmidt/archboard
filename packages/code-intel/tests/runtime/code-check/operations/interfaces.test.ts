@@ -393,18 +393,11 @@ test("a bound module with no parts reports its interface", () => {
 
 test("a bound module that holds two languages reports the exports and the uses of both", () => {
 	const unused = findings("EXPOSED_UNUSED", "Kit");
+	// Each language's unused export is named by itself, and each language's caller is a use.
 	expect(unused.map((each) => [each.subject?.id, each.export])).toEqual([
-		// Module depth judges a TypeScript name by itself.
 		["Kit", "tsUnused"],
-		// The Python names stay listed on the container until Module depth judges Python.
-		["Kit", undefined],
+		["Kit", "py_unused"],
 	]);
-	const message = unused[1]?.message ?? "";
-	// Each language's unused export is named, and each language's caller is a use.
-	expect(message).toContain("py_unused");
-	expect(message).not.toContain("tsUnused");
-	expect(message).not.toContain("tsUsed");
-	expect(message).not.toContain("py_used");
 });
 
 test("a container whose module exposes nothing the check can read is listed as not judged", () => {
