@@ -1,9 +1,11 @@
 ---
 id: TASK-651
 title: The check fails on wide interfaces and shallow modules
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T13:59:00Z'
+updated_date: '2026-11-19T14:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -44,3 +46,14 @@ A score, configurable thresholds, thresholds per module kind, counting types, es
 - [ ] #6 ADR 0082 records the measure and why the earlier ratio rejection changed; ADR 0058 and CONTEXT.md say this width differs from the interface-width ceiling test, which counts types; the archboard skill states the principles of narrow interfaces, deep modules and testing at the seams without prescribing fixes; the site, check help and schema descriptions document both codes, the defaults and debt mode
 - [ ] #7 Tests cover each threshold edge, types not counting, the rules and debt mode, and one CLI exit case
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Pure measure (module-depth/operations/module-measure.ts): width = functions+classes+methods+values; INTERFACE_WIDE above 20; MODULE_SHALLOW from the roll-up or width>=8 && logic<4*width, once, both warnings; measured grounds only on a supported (no unjudged or infrastructure names) and complete (every judged file gave a logic count) reading; external stays exempt. Unit test the edges and types.
+2. module-depth.ts uses it; update fixtures that expected MODULE_SHALLOW information.
+3. Policy: rules gain INTERFACE_WIDE; the refinement refuses only off of MODULE_SHALLOW or INTERFACE_WIDE beside failShallowModules. Schema test.
+4. CLI gate: an information finding of either code on a touched module becomes a warning; SHALLOW_RULE_CONFLICT only for off. CLI exit test.
+5. Web labels INTERFACE_WIDE as a module-level code.
+6. Docs: ADR 0082, ADR 0058, CONTEXT.md, archboard skill (principles), site gate/pull-requests, check help, schema meta. Run gates; report this repository's findings.
+<!-- SECTION:PLAN:END -->
