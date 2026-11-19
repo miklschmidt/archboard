@@ -59,6 +59,20 @@ function keyOf(vault: string, document: string, variant: string): string {
 }
 
 /**
+ * Whether an entry of an answer belongs to one canonical reading.
+ * @param read The reading, by its model and state.
+ * @param read.model The model.
+ * @param read.state The state, or null.
+ * @returns The test of an entry by the model and state it names.
+ */
+function ofReading(read: { readonly model: string; readonly state: string | null }) {
+	return (entry: {
+		readonly model?: string | undefined;
+		readonly state?: string | null | undefined;
+	}): boolean => entry.model === read.model && entry.state === read.state;
+}
+
+/**
  * A memory of code passes, empty until the first pass finishes.
  * @returns The memory.
  */
@@ -73,8 +87,7 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	function remember(vault: string, answer: CodeCheckAnswer, checkedAt: Date): void {
 		const at = checkedAt.toISOString();
 		for (const read of answer.models ?? []) {
-			const mine = (entry: { readonly model?: string; readonly state?: string | null }) =>
-				entry.model === read.model && entry.state === read.state;
+			const mine = ofReading(read);
 			readings.set(keyOf(vault, read.model, read.state ?? ""), {
 				vault,
 				reading: {

@@ -19,43 +19,73 @@ interface CodeReadingName {
 }
 
 /**
- * Show remembered code evidence only for the exact architecture that the pass read.
+ * Show remembered code evidence only for the exact architecture that the pass read. The read only
+ * asks the server what the last pass found, and never starts a pass.
  * @param vault The reading's explicit vault.
  * @param model The coherent current, proposal, or retained architecture, by its name.
+ * @param wanted Whether the caller shows the findings now; a caller that does not reads nothing.
  * @returns Its matching findings, the subjects that carry warning marks, and how the read of the
  * remembered findings stands.
  */
-function useModelCodeFindings(vault: string, model: CodeReadingName) {
+function useModelCodeFindings(vault: string, model: CodeReadingName, wanted = true) {
 	const id = model.manifest.id;
-	const state = model.selectedState?.id ?? null;
+	const state = stateOf(model);
 	const revision = model.revision.digest;
 	const select = useCallback(
-		(all: RememberedFindings): ModelCodeReading | null =>
-			all.models?.find(
-				(reading) =>
-					reading.model === id && reading.state === state && reading.revision.digest === revision,
-			) ?? null,
+		(all: RememberedFindings): ModelCodeReading | null => passOf(all, { id, state, revision }),
 		[id, state, revision],
 	);
-	const query = useQuery({
-		...codeFindingsQuery(vault),
-		select,
-		enabled: readsVaultOnDisk(model),
-	});
-	const reading = readsVaultOnDisk(model) ? (query.data ?? null) : null;
+	const onDisk = readsVaultOnDisk(model);
+	const query = useQuery({ ...codeFindingsQuery(vault), select, enabled: wanted && onDisk });
+	const reading = onDisk ? (query.data ?? null) : null;
 	const read = query.status;
-	const warnings = useMemo(
-		() =>
-			new Set(
-				(reading?.findings ?? []).flatMap((finding) =>
-					finding.severity === "warning" && finding.subject !== undefined
-						? [finding.subject.id]
-						: [],
-				),
-			),
-		[reading],
-	);
+	const warnings = useMemo(() => warnedSubjects(reading), [reading]);
 	return { reading, warnings, read };
+}
+
+/**
+ * The state a reading shows, as a pass names it.
+ * @param model The reading.
+ * @returns The state, or null for a model with no current state.
+ */
+function stateOf(model: CodeReadingName): string | null {
+	return model.selectedState?.id ?? null;
+}
+
+/**
+ * The remembered pass that read this version of the reading.
+ * @param all Every remembered pass.
+ * @param name The reading's model, state and the digest of its version.
+ * @param name.id The model.
+ * @param name.state The state, or null.
+ * @param name.revision The digest of its version.
+ * @returns The pass, or null when none read it.
+ */
+function passOf(
+	all: RememberedFindings,
+	name: { readonly id: string; readonly state: string | null; readonly revision: string },
+): ModelCodeReading | null {
+	return (
+		all.models?.find(
+			(reading) =>
+				reading.model === name.id &&
+				reading.state === name.state &&
+				reading.revision.digest === name.revision,
+		) ?? null
+	);
+}
+
+/**
+ * The subjects that a warning of a pass names.
+ * @param reading The pass, or null.
+ * @returns Their identities.
+ */
+function warnedSubjects(reading: ModelCodeReading | null): ReadonlySet<string> {
+	return new Set(
+		(reading?.findings ?? []).flatMap((finding) =>
+			finding.severity === "warning" && finding.subject !== undefined ? [finding.subject.id] : [],
+		),
+	);
 }
 
 export { useModelCodeFindings, type CodeReadingName, type ModelCodeReading };

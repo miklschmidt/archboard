@@ -276,7 +276,7 @@ test("a canonical reading keeps each module's depth and what the pass skipped, a
 		languages: ["typescript"],
 		unjudged: [],
 		exports: { functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
-		names: [{ name: "run", kind: "function", path: `src/${id}/index.ts`, line: 1 }],
+		names: [{ name: "run", kind: "function" as const, path: `src/${id}/index.ts`, line: 1 }],
 		logic: 2,
 	});
 	const answer: CodeCheckAnswer = {
