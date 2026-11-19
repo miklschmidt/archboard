@@ -79,6 +79,23 @@ function syncStatusRoute(_req: Request, res: Response): void {
 }
 
 /**
+ * The refusal of a renderer core that cannot draw, known by its code alone, so the caller reads
+ * the command that rebuilds the core. Its diagnostic is where the CLI prints a code.
+ * @param err The error.
+ * @returns The refusal, or undefined for any other error.
+ */
+function coreBuildRefusal(err: Error) {
+	const code: unknown = "code" in err ? err.code : undefined;
+	if (typeof code !== "string" || !code.startsWith("CORE_BUILD_")) return undefined;
+	return {
+		success: false,
+		code,
+		error: err.message,
+		diagnostics: [{ code, message: "The server cannot draw with its renderer core." }],
+	};
+}
+
+/**
  * Answer an error no route handled, and record it for usage telemetry (ADR 0079).
  * @param err The error.
  * @param req The request.
@@ -97,7 +114,7 @@ function unhandledErrorRoute(err: Error, req: Request, res: Response, _next: Nex
 	if (res.headersSent || res.destroyed) {
 		return;
 	}
-	res.status(500).json({ success: false, error: "Internal server error" });
+	res.status(500).json(coreBuildRefusal(err) ?? { success: false, error: "Internal server error" });
 }
 
 /**
