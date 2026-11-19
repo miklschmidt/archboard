@@ -824,7 +824,7 @@ A name that one module passes on from another, while files outside both also imp
 _Avoid_: duplicate export, barrel leak
 
 **Unused export**:
-An exported name that no file outside its module uses, as code or as a type: `EXPOSED_UNUSED`. It is a warning only after a complete read, when the model draws no caller of it whose code the check does not read; otherwise information. A test is no user.
+An exported name that no file outside its module uses, as code or as a type, and, in a folder module that declares no interface, no other file of the module imports: `EXPOSED_UNUSED`. It is a warning only after a complete read, when the model draws no caller of it whose code the check does not read; otherwise information. A test is no user.
 _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 
 **Shallow module**:

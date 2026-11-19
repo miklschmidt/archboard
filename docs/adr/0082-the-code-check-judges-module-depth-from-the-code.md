@@ -68,6 +68,17 @@ so agents in an implementation loop added exported constants and nothing failed.
   use it; no package setting does. A test is no user. Uses of a method go
   through values, which a syntax read cannot follow, so no method is judged
   unused, and members the language calls are never judged.
+- **A sibling import keeps a folder export used** (TASK-646.17). A folder
+  module that declares no interface, with no file that stands for it (such as
+  `index.ts`, `__init__.py`, `mod.rs` or a project file) and no
+  `package.json` `exports`, exposes every export of the files directly in it.
+  TypeScript makes a file export a name so that another file can import it,
+  and cannot hide that name from other folders. So in such a module, a name
+  that another of its files imports counts as used. The rule holds in every
+  judged language: a module with a declared interface keeps the rule above,
+  and a language whose files of one module see each other without an import,
+  as Go's and Swift's do, gives no such use, so the remedy there stays to stop
+  exporting the name.
 - **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
   is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
   pass-through finding. A class
