@@ -350,7 +350,13 @@ function answerNotice(deps: ShellActionDeps, actionId: string): void {
 	}
 	if (actionId === NOTICE_ACTIONS.reloadFrontend) {
 		window.location.reload();
+		return;
 	}
+	if (actionId === NOTICE_ACTIONS.retryReading) {
+		deps.catalog.refresh();
+		return;
+	}
+	if (actionId === NOTICE_ACTIONS.retryListing) deps.catalog.reload();
 }
 
 /**
@@ -390,10 +396,10 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 		},
 		/**
 		 * A notice was dismissed.
-		 * @param noticeId The notice.
+		 * @param shown The notice the toast displayed.
 		 */
-		dismissNotice: (noticeId: string): void => {
-			deps.notices.dismiss(noticeId);
+		dismissNotice: (shown): void => {
+			deps.notices.dismiss(shown);
 		},
 	};
 }

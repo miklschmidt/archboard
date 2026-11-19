@@ -583,6 +583,14 @@
     url = "https://registry.npmjs.org/@oxlint/plugins/-/plugins-1.89.0.tgz";
     hash = "sha512-TJBBNl4KIxbxrSk7gsqlz6iM1kxidfyTizEzfWqXvijF2Ou8/Da58GvjemBVmCmaUamwRij+JwsVc0kpBFuqfg==";
   };
+  "@pierre/theming@1.0.2" = fetchurl {
+    url = "https://registry.npmjs.org/@pierre/theming/-/theming-1.0.2.tgz";
+    hash = "sha512-RmXLLqtx31UGcR8kZyO5hGAQ1EXz6loT1Cu0BFAGsbnBboIxp2BlomkLfWyvdT4WZXnBGyu25onL1gKpFQuSUw==";
+  };
+  "@pierre/trees@1.0.0" = fetchurl {
+    url = "https://registry.npmjs.org/@pierre/trees/-/trees-1.0.0.tgz";
+    hash = "sha512-skHNPs4LK1nScFrSvMwN4LnZyHfFf1M7I9ivWePecFqWSYYJYdgKUFCaxPBL0MPY/Z8c3q0yhl8bkkzdDfotug==";
+  };
   "@polka/url@1.0.0-next.29" = fetchurl {
     url = "https://registry.npmjs.org/@polka/url/-/url-1.0.0-next.29.tgz";
     hash = "sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==";
@@ -2954,6 +2962,14 @@
   "powershell-utils@0.2.1" = fetchurl {
     url = "https://registry.npmjs.org/powershell-utils/-/powershell-utils-0.2.1.tgz";
     hash = "sha512-C+y9x90UElAddDZmV4qOx9W53B61PO7cIqWz2dQsWlwswuq4mr8NEwytdGKboYbQlGZ3awrkTeNvcZiZNHnQ8A==";
+  };
+  "preact-render-to-string@6.6.5" = fetchurl {
+    url = "https://registry.npmjs.org/preact-render-to-string/-/preact-render-to-string-6.6.5.tgz";
+    hash = "sha512-O6MHzYNIKYaiSX3bOw0gGZfEbOmlIDtDfWwN1JJdc/T3ihzRT6tGGSEWE088dWrEDGa1u7101q+6fzQnO9XCPA==";
+  };
+  "preact@11.0.0-beta.0" = fetchurl {
+    url = "https://registry.npmjs.org/preact/-/preact-11.0.0-beta.0.tgz";
+    hash = "sha512-IcODoASASYwJ9kxz7+MJeiJhvLriwSb4y4mHIyxdgaRZp6kPUud7xytrk/6GZw8U3y6EFJaRb5wi9SrEK+8+lg==";
   };
   "prelude-ls@1.2.1" = fetchurl {
     url = "https://registry.npmjs.org/prelude-ls/-/prelude-ls-1.2.1.tgz";

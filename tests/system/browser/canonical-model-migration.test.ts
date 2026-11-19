@@ -175,7 +175,7 @@ test("installed bookmarks keep canonical authority and old addresses reopen exac
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="BOOKMARK_UNAVAILABLE"]') !== null`,
+				`document.querySelector('[data-slot="model-error"][data-code="BOOKMARK_UNAVAILABLE"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code="BOOKMARK_UNAVAILABLE"]') !== null`,
 			),
 		Boolean,
 		"explicit missing bookmark content",
@@ -255,7 +255,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="RECOVERY_REQUIRED"]') !== null`,
+				`document.querySelector('[data-slot="model-error"][data-code="RECOVERY_REQUIRED"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code="RECOVERY_REQUIRED"]') !== null`,
 			),
 		Boolean,
 		"visible recovery without legacy fallback",
@@ -278,7 +278,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	await pollUntil(
 		() =>
 			browser.eval<{ modules: string[]; error: string | null; address: string }>(
-				`({ modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(item => item.getAttribute('data-semantic-id')), error: document.querySelector('[data-slot="model-error"]')?.textContent ?? null, address: location.search })`,
+				`({ modules: [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(item => item.getAttribute('data-semantic-id')), error: document.querySelector('[data-slot="model-error"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code]')?.textContent ?? null, address: location.search })`,
 			),
 		(result) => result.modules.includes("Shop/System#Shop"),
 		"durable canonical completion in the open pane",

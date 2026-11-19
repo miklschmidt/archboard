@@ -29,7 +29,7 @@ const { readRetainedFrom, retainedReads } =
 const { fetchCodeFindings } =
 	await import("#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts");
 const { codeTokensQuery } =
-	await import("#ui/architecture-drawing/model-reader/access/clients/code-highlighter.ts");
+	await import("#ui/architecture-drawing/code-highlighting/clients/code-highlighter.ts");
 
 type Props = ComponentProps<typeof ModelCodeEvidence>;
 type Reading = NonNullable<Props["reading"]>;
@@ -136,14 +136,19 @@ const ENDS: Props["ends"] = {
 	edges: [],
 };
 
-/** The lines round the call, as the server answers them. */
+/** The lines of the file from line 18, round the call. */
+const TAIL = ["const a = 1;", "b();", "c();", "work();", "e();", "f();", "g();", "h();", "i();"];
+
+/** The whole file that holds the call, as the file route answers it: the call is on line 21. */
 const LINES = {
 	success: true,
 	repo: CALL.repo,
 	path: CALL.path,
-	line: CALL.line,
-	first: 18,
-	lines: ["const a = 1;", "b();", "c();", "work();", "e();", "f();", "g();"],
+	source: {
+		status: "quoted",
+		text: [...Array.from({ length: 17 }, (_, index) => `// ${index + 1}`), ...TAIL].join("\n"),
+		definitions: [],
+	},
 };
 
 /**
@@ -386,12 +391,11 @@ test("the excerpt marks the evidence line among the lines round it, in the colou
 	expect(document.querySelectorAll("mark")).toHaveLength(1);
 	expect(document.querySelector("mark")?.getAttribute("data-line")).toBe("21");
 	expect(document.querySelector("mark")?.textContent).toContain("work();");
-	expect(asked[0]?.pathname).toBe("/api/code/source-lines");
+	expect(asked[0]?.pathname).toBe("/api/code/file");
 	expect(Object.fromEntries(asked[0]!.searchParams)).toEqual({
 		vault: VAULT,
 		repo: CALL.repo,
 		path: CALL.path,
-		line: String(CALL.line),
 	});
 	await waitFor(() => expect(document.querySelector("code[data-highlighted]")).not.toBeNull());
 	const keyword = [...document.querySelectorAll<HTMLElement>("[data-line='18'] span[style]")].find(
@@ -401,19 +405,28 @@ test("the excerpt marks the evidence line among the lines round it, in the colou
 	expect(document.querySelector("mark")?.textContent).toContain("work();");
 });
 
-test.each([404, 500])(
-	"the excerpt is quietly unavailable when the server answers %d",
-	async (status) => {
-		answering(() => Response.json({ error: "no" }, { status }));
-		mount();
-		await waitFor(() =>
-			expect(
-				document.querySelector('[data-slot="code-source-state"][data-unavailable]'),
-			).not.toBeNull(),
-		);
-		expect(document.querySelector("mark")).toBeNull();
-	},
-);
+/** A refusal to quote the file, which the route answers with 200. */
+const REFUSED = {
+	success: true,
+	repo: CALL.repo,
+	path: CALL.path,
+	source: { status: "refused", code: "SOURCE_REFUSED", error: "never quoted" },
+};
+
+test.each([
+	["refuses to quote the file", () => Response.json(REFUSED)],
+	["answers 404", () => Response.json({ error: "no" }, { status: 404 })],
+	["answers 500", () => Response.json({ error: "no" }, { status: 500 })],
+])("the excerpt is quietly unavailable when the server %s", async (_, answer) => {
+	answering(answer);
+	mount();
+	await waitFor(() =>
+		expect(
+			document.querySelector('[data-slot="code-source-state"][data-unavailable]'),
+		).not.toBeNull(),
+	);
+	expect(document.querySelector("mark")).toBeNull();
+});
 
 test.each([
 	["flake.nix", "let value = 1; in value"],

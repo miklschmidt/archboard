@@ -1,7 +1,15 @@
-// The code exports of the selected module on its About page (TASK-646.08): what the last code pass
+// The code exports of the open module on its About page (TASK-646.08): what the last code pass
 // over this version of the reading counted, by kind, each name with its findings. A row opens the
 // export's own source. The page reads the names of this module alone, and never starts a pass.
 
+import {
+	RiCodeBoxLine,
+	RiCornerDownRightLine,
+	RiFunctionLine,
+	RiHashtag,
+	RiTBoxLine,
+	type RemixiconComponentType,
+} from "@remixicon/react";
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Badge, cn } from "@archboard/ui-kit/components";
@@ -26,6 +34,15 @@ import {
 } from "#ui/architecture-drawing/model-reader/reading/rules/module-code.ts";
 
 type Notice = Parameters<typeof activateCodeTarget>[0]["onNotice"];
+
+/** The icon of each kind's list. */
+const KIND_ICONS = {
+	function: RiFunctionLine,
+	class: RiCodeBoxLine,
+	method: RiCornerDownRightLine,
+	value: RiHashtag,
+	type: RiTBoxLine,
+} as const satisfies Readonly<Record<ExportKind["kind"], RemixiconComponentType>>;
 type Finding = ModelCodeReading["findings"][number];
 
 /** Inputs for the code exports of one module. */
@@ -190,7 +207,12 @@ function KindList(props: KindListProps): JSX.Element {
 	const { kind } = props;
 	return (
 		<div data-export-kind={kind.kind}>
-			<ModelPanel.Section title={kind.label} count={kind.exports.length} slot="code-export-kind">
+			<ModelPanel.Section
+				icon={KIND_ICONS[kind.kind]}
+				title={kind.label}
+				count={kind.exports.length}
+				slot="code-export-kind"
+			>
 				<ModelPanel.Rows
 					items={kind.exports}
 					groupOf={kind.kind === "method" ? ownerOf : undefined}

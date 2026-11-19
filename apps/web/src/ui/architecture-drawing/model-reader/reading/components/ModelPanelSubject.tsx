@@ -1,18 +1,24 @@
-import { useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
+import type { RemixiconComponentType } from "@remixicon/react";
+import { Fragment, useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
 import type { Model } from "@archboard/model/content";
 import {
 	ConnectionSummary,
 	kindNames,
 	moduleName,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
-import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
+import {
+	KindChip,
+	RelationshipChip,
+} from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { ModelChangesWith } from "#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
 import { ModelFlowDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowDetails.tsx";
 import { ModelHiddenSelection } from "#ui/architecture-drawing/model-reader/reading/components/ModelHiddenSelection.tsx";
+import { ModelHistory } from "#ui/architecture-drawing/model-reader/reading/components/ModelHistory.tsx";
 import { ModelInterfaceLine } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceLine.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import {
 	OpenModule,
 	SelectedSubjects,
@@ -20,6 +26,10 @@ import {
 	type ModelSelectionDetailsProps,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
+import {
+	ModuleDefinition,
+	ModuleEvidence,
+} from "#ui/architecture-drawing/model-reader/reading/components/ModuleDetails.tsx";
 import {
 	ModuleOpenCode,
 	ModuleOpenReferences,
@@ -54,8 +64,8 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly flowHead: ReactNode;
 	/** Expand a door or collapse a frame. */
 	readonly onToggle: (id: string) => boolean;
-	/** What the interface line of a module does. */
-	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow" | "onAbout">;
+	/** Show what the interface count describes on its module's picture. */
+	readonly onShowInterface: ComponentProps<typeof ModelInterfaceLine>["onShow"];
 	/** How the kinds look, with the icons the picture draws them with. */
 	readonly look: KindLook;
 }
@@ -232,7 +242,8 @@ function OtherSubject(
 }
 
 /**
- * What the panel says of one module: what it is, how it stands, its lines, and what touches it.
+ * What the panel says of one module: what it is, how it stands, its lines, what touches it, and where
+ * its explanation comes from.
  * @param props The module and its reading.
  * @returns The body.
  */
@@ -245,7 +256,11 @@ function ModuleSubject(
 	return (
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
-			<ModelInterfaceLine {...props.line} inspection={inspection} projection={projection} />
+			<ModelInterfaceLine
+				onShow={props.onShowInterface}
+				inspection={inspection}
+				projection={projection}
+			/>
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} />
 			<ModelChangesWith
 				vault={props.vault}
@@ -263,12 +278,29 @@ function ModuleSubject(
 			/>
 			<ModuleLines {...props} model={source} id={module.id} />
 			{props.context}
+			<ModelPanel.Section
+				icon={SECTION_ICONS.codeEvidence}
+				title="Code and evidence"
+				slot="module-evidence"
+				list={false}
+			>
+				<div className="flex flex-col gap-3">
+					<ModuleEvidence module={module} model={source} />
+					<ModuleDefinition module={module} />
+				</div>
+			</ModelPanel.Section>
+			<ModelHistory
+				vault={props.vault}
+				model={source}
+				module={module}
+				onSelect={selection.select}
+			/>
 		</ModelPanel.Body>
 	);
 }
 
 /**
- * What a module is: its name, its kind and code path, and its responsibility.
+ * What a module is: its name, its kind and code path, its responsibility and its longer account.
  * @param props The module and the model that defines it.
  * @returns The head.
  */
@@ -285,13 +317,22 @@ function ModuleHead(
 				path={props.pathOf(module.id)}
 			/>
 			{module.responsibility && <Summary>{module.responsibility}</Summary>}
+			{module.description && (
+				<p
+					data-slot="module-description"
+					className="text-body text-muted-foreground whitespace-pre-wrap"
+				>
+					{module.description}
+				</p>
+			)}
 		</Identity>
 	);
 }
 
 /**
- * The head of a module's panel: the chip of its kind before its name, and its kind and its code
- * path under the name.
+ * The head of a module's panel: the chip of its kind before its name, and its code path under the
+ * name. The chip says the kind, so no word repeats it; the kind's name is for assistive technology
+ * and the chip's hover.
  * @param props The module's kind, name and path, and how the kinds look.
  * @param props.look How the kinds look.
  * @param props.kind The kind.
@@ -306,14 +347,55 @@ function KindHead(props: {
 	readonly path: string | undefined;
 }): JSX.Element {
 	const { look, kind, path } = props;
-	const chip = useMemo(() => <KindChip look={look} kind={kind} />, [look, kind]);
+	const name = look.nodeName(kind);
+	const chip = useMemo(
+		() => (
+			<span title={name} className="flex shrink-0">
+				<KindChip look={look} kind={kind} />
+				<span className="sr-only">{name}</span>
+			</span>
+		),
+		[look, kind, name],
+	);
 	return (
 		<ModelPanel.Head mark={chip} title={props.title}>
-			<span>{look.nodeName(kind)}</span>
 			{path !== undefined && (
-				<code className="text-technical min-w-0 font-mono break-all">{path}</code>
+				<code
+					data-slot="model-panel-path"
+					className="text-technical min-w-0 font-mono [overflow-wrap:anywhere]"
+				>
+					<PathWords path={path} />
+				</code>
 			)}
 		</ModelPanel.Head>
+	);
+}
+
+/**
+ * A code path with a preferred break after each slash.
+ * @param props The path.
+ * @param props.path The path.
+ * @returns The path, with a place to break after each slash.
+ */
+function PathWords(props: { readonly path: string }): JSX.Element {
+	const parts = props.path.split("/");
+	return (
+		<>
+			{parts.map((part, index) => {
+				// The path up to a part names it, because no two parts of one path end in one place.
+				const upTo = parts.slice(0, index + 1).join("/");
+				return (
+					<Fragment key={upTo}>
+						{part}
+						{index < parts.length - 1 && (
+							<>
+								/<wbr />
+							</>
+						)}
+					</Fragment>
+				);
+			})}
+		</>
 	);
 }
 
@@ -326,9 +408,17 @@ function ModuleLines(props: ModelPanelSubjectProps & { readonly id: string }): J
 	const { sends, receives } = linesOf(props.projection, props.id);
 	return (
 		<>
-			<LineList {...props} title="Sends to" slot="model-panel-sends" lines={sends} way="onward" />
 			<LineList
 				{...props}
+				icon={SECTION_ICONS.sendsTo}
+				title="Sends to"
+				slot="model-panel-sends"
+				lines={sends}
+				way="onward"
+			/>
+			<LineList
+				{...props}
+				icon={SECTION_ICONS.receivesFrom}
 				title="Receives from"
 				slot="model-panel-receives"
 				lines={receives}
@@ -341,6 +431,7 @@ function ModuleLines(props: ModelPanelSubjectProps & { readonly id: string }): J
 /** One direction of a module's lines. */
 interface LineListProps extends ModelPanelSubjectProps {
 	readonly id: string;
+	readonly icon: RemixiconComponentType;
 	readonly title: string;
 	readonly slot: string;
 	readonly lines: readonly Connection[];
@@ -363,7 +454,13 @@ function LineList(props: LineListProps): JSX.Element | null {
 	);
 	if (lines.length === 0) return null;
 	return (
-		<ModelPanel.Section title={props.title} count={lines.length} slot={props.slot} action={trace}>
+		<ModelPanel.Section
+			icon={props.icon}
+			title={props.title}
+			count={lines.length}
+			slot={props.slot}
+			action={trace}
+		>
 			<ModelPanel.Rows items={lines}>
 				{(connection) => <LineRow key={connection.line.id} {...props} connection={connection} />}
 			</ModelPanel.Rows>
@@ -386,7 +483,10 @@ function LineRow(
 	const { line, joins } = connection;
 	const pick = useModelPick(line.id, selection.select);
 	const peek = usePeekRow(line.id);
-	const kinds = kindNames(model, joins);
+	const detail = useMemo(
+		() => <LineKinds model={model} joins={joins} look={props.look} />,
+		[model, joins, props.look],
+	);
 	return (
 		<ModelPanel.Row
 			data-connection-id={line.id}
@@ -395,8 +495,34 @@ function LineRow(
 			{...pick}
 			{...peek}
 			name={moduleName(model, line.from === id ? line.to : line.from, projection.reference)}
-			detail={joins.length === 1 ? kinds : `${joins.length} · ${kinds}`}
+			detail={detail}
 		/>
+	);
+}
+
+/**
+ * What a line joins, at the end of its row: the sample of its kind as the legend draws it, and how
+ * many relationships it joins when it joins more than one.
+ * @param props The relationships and how their kinds look.
+ * @param props.model The reading.
+ * @param props.joins The relationships the line joins.
+ * @param props.look How the kinds look.
+ * @returns The kinds.
+ */
+function LineKinds(props: {
+	readonly model: Model;
+	readonly joins: Connection["joins"];
+	readonly look: KindLook;
+}): JSX.Element {
+	const { model, joins, look } = props;
+	const [kind, other] = new Set(joins.map((edge) => edge.kind));
+	if (kind === undefined || other !== undefined)
+		return <>{`${joins.length} · ${kindNames(model, joins)}`}</>;
+	return (
+		<span className="inline-flex items-center gap-1.5">
+			{joins.length > 1 && <span className="text-technical font-mono">{joins.length}</span>}
+			<RelationshipChip look={look} kind={kind} />
+		</span>
 	);
 }
 

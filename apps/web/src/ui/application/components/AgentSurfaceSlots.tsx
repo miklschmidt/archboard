@@ -5,7 +5,7 @@
 // the dock and the panel again and nothing around them: the shell, the
 // navigator and the panes stay as they are (TASK-385.03).
 
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 
 import { useAgentView } from "#ui/application/hooks/use-agent.ts";
 import { useUnread } from "#ui/application/hooks/use-agent-panel.ts";
@@ -21,13 +21,18 @@ interface AgentSurfaceProps {
 
 /**
  * The agent dock, and whether the agent said something while the panel was closed.
- * @param props The workbench, the agent, the motion preference and whether the dock is off screen.
+ * @param props The workbench, the agent, the motion preference, whether the dock is off screen and the switch at the start of its keys.
  * @param props.reducedMotion Whether the person asked for reduced motion.
  * @param props.dockless Whether the dock is off screen, as while a pane is presented fullscreen.
+ * @param props.lead The switch of what the navigator lists.
  * @returns The dock.
  */
 function AgentDockSlot(
-	props: AgentSurfaceProps & { readonly reducedMotion: boolean; readonly dockless: boolean },
+	props: AgentSurfaceProps & {
+		readonly reducedMotion: boolean;
+		readonly dockless: boolean;
+		readonly lead: ReactNode;
+	},
 ): JSX.Element {
 	const { agent } = props;
 	const view = useAgentView(props, agent.voice);
@@ -41,6 +46,7 @@ function AgentDockSlot(
 			onTogglePanel={agent.panel.togglePanel}
 			reducedMotion={props.reducedMotion}
 			dockless={props.dockless}
+			lead={props.lead}
 		/>
 	);
 }

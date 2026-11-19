@@ -1,39 +1,21 @@
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import {
+	useCallback,
+	useMemo,
+	useState,
+	type ComponentProps,
+	type JSX,
+	type ReactNode,
+} from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
-import {
-	ModelAbout,
-	scopeHead,
-} from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
+import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
-import {
-	ModelCodeDetails,
-	ModelCodeWarnings,
-} from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
-import { ModelFlowHead } from "#ui/architecture-drawing/model-reader/reading/components/ModelFlowHead.tsx";
-import { ModelInterfaceLine } from "#ui/architecture-drawing/model-reader/reading/components/ModelInterfaceLine.tsx";
-import { ModelLegend } from "#ui/architecture-drawing/model-reader/reading/components/ModelLegend.tsx";
-import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
-import { ModelPanelContext } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanelContext.tsx";
-import { ModelPanelExpanded } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanelExpanded.tsx";
-import {
-	ModelPanelActions,
-	ModelPanelScope,
-	ModelPanelSubject,
-} from "#ui/architecture-drawing/model-reader/reading/components/ModelPanelSubject.tsx";
+import { AboutOutlineContext } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutOutline.tsx";
 import { ModelReadingCanvas } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingCanvas.tsx";
-import {
-	ReadingExplain,
-	SelectionControls,
-	type SelectionActions,
-} from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingControls.tsx";
-import {
-	ModelComparisonNotice,
-	ModelStateStanding,
-} from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
+import { ModelReadingPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelReadingPanel.tsx";
+import { ModelComparisonNotice } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import { PeekProvider } from "#ui/architecture-drawing/canvas/presentation/components/Peek.tsx";
 import { useAboutPlace } from "#ui/architecture-drawing/model-reader/reading/hooks/use-about-place.ts";
-import { useHistoryOnSelection } from "#ui/architecture-drawing/model-reader/reading/hooks/use-history-on-selection.ts";
 import { useModelCodeFindings } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 import { useModelExplanation } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-explanation.ts";
 import { ModelSubjectMenu } from "#ui/architecture-drawing/model-reader/reading/components/ModelSubjectMenu.tsx";
@@ -43,29 +25,16 @@ import { useSubjectMenu } from "#ui/architecture-drawing/model-reader/reading/ho
 import { useShowSubject } from "#ui/architecture-drawing/model-reader/reading/hooks/use-show-subject.ts";
 import { useSceneAppearances } from "#ui/architecture-drawing/model-reader/reading/hooks/use-scene-appearances.ts";
 import {
-	kindLookOf,
-	type KindLook,
-} from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
-import {
 	flowSubjects,
 	collectionSubjects,
 	walkthroughSubjects,
-	flowCollections,
 } from "#ui/architecture-drawing/model-reader/rules/flow-reading.ts";
 import {
 	scopeSubjects,
 	walkthroughsAbout,
 } from "#ui/architecture-drawing/model-reader/reading/rules/relevance.ts";
-import { claimsOn } from "#ui/architecture-drawing/model-reader/rules/claimed-subjects.ts";
-import { selectedSubject } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
-
-/** What a flow reading filters: nothing, because it keeps its whole exchange. */
-const NO_FILTERS = {};
-
-/** No agent claims what the panel explains. */
-const NO_CLAIMS: readonly string[] = [];
 
 /** Inputs for what the middle of a reading shows. */
 interface ModelReadingSurfaceProps {
@@ -96,197 +65,18 @@ function useBehavioralIds(reader: Reader): ReadonlySet<string> {
 }
 
 /**
- * What the marks of the picture on screen mean.
- * @param props The reader and how kinds look.
- * @param props.reader The reader.
- * @param props.look How the vault's kinds look.
- * @returns The legend.
- */
-function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook }): JSX.Element {
-	const { accepted, location, selection } = props.reader;
-	const { shown, scene } = accepted;
-	const picture = scene?.picture.legend ?? null;
-	return (
-		<ModelLegend
-			model={shown.model}
-			projection={shown.projection}
-			picture={picture}
-			look={props.look}
-			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
-			onToggle={location.toggleFilter}
-			onShowAll={location.showAllKinds}
-			selection={selection}
-		/>
-	);
-}
-
-/**
- * What touches what the panel explains.
- * @param props The reader and the selection.
- * @param props.reader The reader.
- * @param props.selected What the panel explains.
- * @returns The lists.
- */
-function ReadingContext(props: {
-	readonly reader: Reader;
-	readonly selected: ReadonlySet<string>;
-}): JSX.Element {
-	const { accepted, choices } = props.reader;
-	const { model, projection, reading } = accepted.shown;
-	return (
-		<ModelPanelContext
-			model={model}
-			projection={projection}
-			selected={props.selected}
-			flow={reading.grammar === "architecture" ? null : reading.flow}
-			onFlow={choices.chooseFlow}
-			onWalkthrough={choices.findWalkthrough}
-		/>
-	);
-}
-
-/** What the right panel of a reading holds. */
-interface ReadingPanelProps {
-	readonly surface: ModelReadingSurfaceProps;
-	readonly code: ReturnType<typeof useModelCodeFindings>;
-	readonly actions: SelectionActions;
-	readonly onReveal: () => void;
-	/** Open the interface section of About. */
-	readonly onAbout: () => void;
-}
-
-/**
- * The column beside the picture: what is selected, or else what is open, and what touches it, then
- * the legend, which ends the scroll under every subject, so a reader finds it in one place and a new
- * subject neither redraws it nor takes a group's tag from under the pointer. The foot under them
- * holds what can be done.
- * @param props The surface and what the panel explains.
- * @returns The panel.
- */
-function ReadingPanel(props: ReadingPanelProps): JSX.Element {
-	const { surface, code } = props;
-	const { reader } = surface;
-	const { accepted, selection, tree, location, choices } = reader;
-	const { shown } = accepted;
-	const { model, projection } = shown;
-	const scope = projection.opened;
-	const ids = selectionToExplain(selection.ids, accepted.selected);
-	useHistoryOnSelection(reader.vault, model, ids);
-	const held = useMemo(() => ({ ...selection, ids }), [selection, ids]);
-	const selecting = ids.size > 0;
-	const key = [scope, ...ids].join();
-	const pathOf = useCallback((id: string) => tree.owner.get(id)?.path, [tree]);
-	const head = scopeHead({ model, scope, tree, projection });
-	const appearances = useSceneAppearances(accepted.scene);
-	const look = useMemo(() => kindLookOf(model.policy, appearances), [model.policy, appearances]);
-	const legend = useMemo(() => <ReadingLegend reader={reader} look={look} />, [reader, look]);
-	const context = <ReadingContext reader={reader} selected={ids} />;
-	const { flow, reference } = projection;
-	const { grammar, selectGrammar } = location;
-	const { claimed } = reader;
-	// The badge names the selection, or the flow or module that the head shows.
-	const claims = useMemo(() => {
-		if (!selecting) {
-			const subject = flow?.id ?? scope;
-			return subject === null ? NO_CLAIMS : claimsOn(claimed, [subject]);
-		}
-		const subject = selectedSubject({ model, projection, ids });
-		return claimsOn(claimed, subject.kind === "flow" ? [...ids, subject.flow.id] : ids);
-	}, [selecting, claimed, model, projection, ids, scope, flow]);
-	const flowHead = useMemo(
-		() =>
-			flow === null ? undefined : (
-				<ModelFlowHead
-					flow={flow}
-					collection={flowCollections(model, reference).get(flow.id)}
-					grammar={grammar}
-					onGrammar={selectGrammar}
-				/>
-			),
-		[flow, model, reference, grammar, selectGrammar],
-	);
-	const { onAbout } = props;
-	const onShow = useShowSubject(reader);
-	const { onPage } = reader;
-	const openAbout = useCallback((): void => onPage("about"), [onPage]);
-	const line = useMemo(() => ({ onShow: choices.showHere, onAbout }), [choices.showHere, onAbout]);
-	const subject = {
-		vault: reader.vault,
-		paneId: surface.paneId,
-		onCodeTargetNotice: surface.onCodeTargetNotice,
-		model,
-		projection,
-		selection: held,
-		scope,
-		onOpen: reader.onOpen,
-		onToggle: reader.onToggle,
-		onReveal: props.onReveal,
-		onRevealFlow: reader.openFlow,
-		code: code.reading,
-		pathOf,
-		context,
-		flowHead,
-		line,
-		look,
-	};
-	return (
-		<ModelPanel onClose={selecting ? selection.clear : undefined} covered={reader.page === "about"}>
-			<ModelPanel.Scroll subject={key} under={legend}>
-				<ModelPanel.Subject key={key} claims={claims}>
-					{selecting ? (
-						<ModelPanelSubject {...subject} />
-					) : (
-						<ModelPanelScope
-							name={head.name}
-							kind={head.kind}
-							path={head.path}
-							look={look}
-							description={head.description ?? head.lead}
-							flowHead={flowHead}
-						>
-							<ModelInterfaceLine
-								{...line}
-								inspection={projection.inspection}
-								projection={projection}
-							/>
-							<ModelPanelExpanded
-								model={model}
-								projection={projection}
-								selection={held}
-								onToggle={reader.onToggle}
-							/>
-							<ModelCodeDetails reading={code.reading} selected={ids} scope={scope} />
-							<ModelStateStanding model={model} onOpen={openAbout} />
-							{context}
-						</ModelPanelScope>
-					)}
-				</ModelPanel.Subject>
-			</ModelPanel.Scroll>
-			<ModelPanel.Foot>
-				<ModelCodeWarnings reading={code.reading} onSelect={onShow} quiet />
-				{selecting ? (
-					<ModelPanelActions {...subject}>
-						<SelectionControls {...props.actions} />
-					</ModelPanelActions>
-				) : (
-					<ReadingExplain {...props.actions} />
-				)}
-			</ModelPanel.Foot>
-		</ModelPanel>
-	);
-}
-
-/**
  * The picture of a reading, with the right panel beside it.
- * @param props The surface, the code findings and the panel.
+ * @param props The surface, the code findings, the page on the picture and the panel.
  * @param props.surface The surface's inputs.
  * @param props.warnings What the code findings mark on the picture.
+ * @param props.page About while it is open, which lies on the picture's sheet.
  * @param props.children The panel.
  * @returns The picture.
  */
 function ReadingPicture(props: {
 	readonly surface: ModelReadingSurfaceProps;
 	readonly warnings: ReturnType<typeof useModelCodeFindings>["warnings"];
+	readonly page: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
 	const { surface } = props;
@@ -322,6 +112,7 @@ function ReadingPicture(props: {
 			onToggle={reader.onToggle}
 			onAttention={moves.ahead}
 			overlay={overlay}
+			page={props.page}
 		>
 			{props.children}
 		</ModelReadingCanvas>
@@ -330,14 +121,14 @@ function ReadingPicture(props: {
 
 /**
  * What the reading of a pane shows while no walkthrough does: the caption, the picture with the
- * right panel beside it, and About over both. It reports the reading, so a walkthrough that
+ * right panel beside it, and About over the picture. It reports the reading, so a walkthrough that
  * replaces it reports alone.
  * @param props The reader and the pane's parts.
  * @returns The surface.
  */
 function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	const { reader } = props;
-	const { model, vault, location, accepted, selection, comparison, page } = reader;
+	const { model, vault, location, accepted, selection, comparison, page, onPage } = reader;
 	const { reveal, grammar, scope } = location;
 	const { shown } = accepted;
 	const code = useModelCodeFindings(vault, shown.model);
@@ -372,11 +163,24 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	useReaderKeys(reader.onMove);
 	const about = aboutKey(reader);
 	const place = useAboutPlace(about);
-	const { onPage } = reader;
 	const onInterface = useCallback((): void => {
 		place.ask("interface");
 		onPage("about");
 	}, [place, onPage]);
+	const [outlineSlot, setOutlineSlot] = useState<HTMLElement | null>(null);
+	const aboutPage = useMemo(
+		() =>
+			page === "about" && (
+				<ReadingAbout
+					key={about}
+					surface={props}
+					code={code.reading}
+					place={place}
+					outlineSlot={outlineSlot}
+				/>
+			),
+		[page, about, props, code.reading, place, outlineSlot],
+	);
 	return (
 		<PeekProvider selection={soleSelected(selection.ids)}>
 			<div
@@ -393,75 +197,51 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 					menu={subjectMenu.menu}
 					onOpenChange={subjectMenu.onOpenChange}
 				/>
-				<ReadingPicture surface={props} warnings={code.warnings}>
-					<ReadingPanel
-						surface={props}
+				<ReadingPicture surface={props} warnings={code.warnings} page={aboutPage}>
+					<ModelReadingPanel
+						reader={reader}
+						paneId={props.paneId}
+						onCodeTargetNotice={props.onCodeTargetNotice}
 						code={code}
 						actions={actions}
 						onReveal={revealSelection}
 						onAbout={onInterface}
+						outlineSlot={setOutlineSlot}
 					/>
 				</ReadingPicture>
-				{page === "about" && (
-					<ReadingAbout
-						key={about}
-						surface={props}
-						code={code}
-						actions={actions}
-						place={place}
-						onReveal={revealSelection}
-					/>
-				)}
 			</div>
 		</PeekProvider>
 	);
 }
 
 /**
- * What the panel explains. A selection that comes with a move explains the picture it comes with,
- * so the panel waits for that picture, and a selection let go leaves at once.
- * @param ids The selected identities.
- * @param shown The selection of the picture on show.
- * @returns The identities.
- */
-function selectionToExplain(
-	ids: ReadonlySet<string>,
-	shown: ReadonlySet<string>,
-): ReadonlySet<string> {
-	return ids.size === 0 ? ids : shown;
-}
-
-/**
- * What About describes, as a key: the page starts again, with its own place, for each.
+ * What About describes, as a key: the page starts again, with its own place, for each open scope.
  * @param reader The reader.
  * @returns The key.
  */
 function aboutKey(reader: Reader): string {
-	const { aboutSubject, accepted, selection } = reader;
-	const chosen = aboutSubject === "scope" ? "" : [...selection.ids].join();
-	return `${aboutSubject}:${accepted.shown.projection.opened}:${chosen}`;
+	return `about:${reader.accepted.shown.projection.opened}`;
 }
 
 /**
- * The About page of the open module, over the picture so that the picture keeps its camera.
+ * The About page of the open module, over the picture so that the picture keeps its camera. What
+ * can be done stays at the foot of the right panel beside it.
  * @param props The surface, and what the page offers.
  * @param props.surface The surface's inputs.
- * @param props.code The code findings of the reading.
- * @param props.actions What can be done with the selection.
+ * @param props.code The code pass that read the reading on screen, or null when none did.
  * @param props.place Where the page was scrolled to, which it comes back to.
- * @param props.onReveal Bring a hidden selection into the reading.
+ * @param props.outlineSlot The slot at the top of the right panel, which the outline stands in.
  * @returns The page.
  */
 function ReadingAbout(props: {
 	readonly surface: ModelReadingSurfaceProps;
-	readonly code: ReturnType<typeof useModelCodeFindings>;
-	readonly actions: SelectionActions;
+	readonly code: ComponentProps<typeof ModelAbout>["code"];
 	readonly place: AboutPlace;
-	readonly onReveal: () => void;
+	readonly outlineSlot: HTMLElement | null;
 }): JSX.Element {
-	const { surface, code } = props;
+	const { surface } = props;
 	const { reader } = surface;
-	const { accepted, selection, aboutSubject } = reader;
+	const { accepted, selection } = reader;
 	const { shown, scene } = accepted;
 	const walkthroughs = useMemo(
 		() => walkthroughsAbout(shown.model, scopeSubjects(shown.projection.opened)),
@@ -469,42 +249,31 @@ function ReadingAbout(props: {
 	);
 	const onShow = useShowSubject(reader);
 	const appearances = useSceneAppearances(scene);
-	const evidence = useMemo(
-		() => (
-			<ModelCodeDetails
-				reading={code.reading}
-				selected={selection.ids}
-				scope={shown.projection.opened}
-			/>
-		),
-		[code.reading, selection.ids, shown.projection.opened],
+	const hidesNarrow = selection.ids.size === 0;
+	const outline = useMemo(
+		() => ({ panel: props.outlineSlot, hidesNarrow }),
+		[props.outlineSlot, hidesNarrow],
 	);
 	return (
-		<ModelAbout
-			subject={aboutSubject}
-			onSubject={reader.onAbout}
-			overview={surface.overview?.(shown.model) ?? null}
-			code={code.reading}
-			onShow={onShow}
-			appearances={appearances}
-			walkthroughs={walkthroughs}
-			tree={reader.tree}
-			place={props.place}
-			reducedMotion={surface.reducedMotion}
-			evidence={evidence}
-			vault={reader.vault}
-			paneId={surface.paneId}
-			onCodeTargetNotice={surface.onCodeTargetNotice}
-			model={shown.model}
-			scope={shown.projection.opened}
-			projection={shown.projection}
-			selection={selection}
-			onOpen={reader.onOpen}
-			onReveal={props.onReveal}
-			onRevealFlow={reader.openFlow}
-		>
-			<SelectionControls {...props.actions} />
-		</ModelAbout>
+		<AboutOutlineContext value={outline}>
+			<ModelAbout
+				overview={surface.overview?.(shown.model) ?? null}
+				onShow={onShow}
+				appearances={appearances}
+				walkthroughs={walkthroughs}
+				tree={reader.tree}
+				place={props.place}
+				reducedMotion={surface.reducedMotion}
+				vault={reader.vault}
+				paneId={surface.paneId}
+				model={shown.model}
+				scope={shown.projection.opened}
+				projection={shown.projection}
+				selection={selection}
+				code={props.code}
+				onCodeTargetNotice={surface.onCodeTargetNotice}
+			/>
+		</AboutOutlineContext>
 	);
 }
 

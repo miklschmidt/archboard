@@ -1,9 +1,10 @@
 // The voice, seen and controlled in one place, by one button. While voice is
-// off the button is a key that says Talk; pressing it starts voice, setting up
+// off the button is an icon key named Talk, as small as the conversation's key beside
+// it; pressing it starts voice, setting up
 // whatever is missing first. Once voice is on, the same button ends it, and it has
 // one of two forms. With the orb at home in the dock it is the voice circle at the
 // head of the agent dock. While the voice box over a pane's picture carries the voice
-// it is a key again, that says End voice, and the orb is drawn in the box. It is one
+// it is an icon key again, named End voice, and the orb is drawn in the box. It is one
 // element in every form, so the key turns into the circle instead of being swapped
 // for it, and keyboard focus stays on it. The dock's motion moves its plate between
 // the shapes (hooks/dock/use-dock-motion.ts); the voice orb draws the circle's face
@@ -38,7 +39,7 @@ const PLATE = cn(
 	"rounded-control border-border bg-card shadow-raised absolute inset-0 border",
 	"dark:border-input dark:bg-input/30 transition-[border-color,background-color,box-shadow]",
 	"group-hover/voice:border-primary-mark group-active/voice:shadow-pressed",
-	"group-focus-visible/voice:ring-ring group-focus-visible/voice:ring-2 group-focus-visible/voice:ring-offset-2 group-focus-visible/voice:ring-offset-(--raised)",
+	"group-focus-visible/voice:ring-ring group-focus-visible/voice:ring-offset-sidebar group-focus-visible/voice:ring-2 group-focus-visible/voice:ring-offset-2",
 	"group-aria-disabled/voice:opacity-50",
 );
 
@@ -66,8 +67,9 @@ function formOf(state: CircleState, boxed: boolean): "key" | "circle" {
 }
 
 /**
- * The voice control: Talk while voice is off, the circle that ends it while the orb
- * is at home, and the End voice key while the voice box has the orb.
+ * The voice control: the Talk key while voice is off, the circle that ends it while the orb
+ * is at home, and the End voice key while the voice box has the orb. The keys show only their
+ * icon, and their name is the button's label and tooltip.
  * @param props The voice, the actions, where its problem is said, the motion preference and where the voice is.
  * @returns The button.
  */
@@ -85,7 +87,7 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 			data-form={formOf(state, boxed)}
 			aria-label={CIRCLE_NAMES[state]}
 			aria-describedby={voice.problem === null ? undefined : props.problemId}
-			title={off ? undefined : CIRCLE_NAMES[state]}
+			title={CIRCLE_NAMES[state]}
 			aria-disabled={press === undefined}
 			onClick={press}
 			className="group/voice relative outline-none"
@@ -97,12 +99,8 @@ function VoiceControl(props: VoiceControlProps): JSX.Element {
 					className="pointer-events-none absolute top-1/2 left-1/2 size-16 -translate-1/2"
 				/>
 			</span>
-			<span
-				data-part="label"
-				className="text-control relative flex items-center justify-center gap-2 font-medium whitespace-nowrap"
-			>
+			<span data-part="label" className="relative flex items-center justify-center">
 				<KeyMark off={off} problem={voice.problem !== null} />
-				{CIRCLE_NAMES[state]}
 			</span>
 			<OrbHost mode={state} level={voice.level.read} reducedMotion={props.reducedMotion} />
 		</button>

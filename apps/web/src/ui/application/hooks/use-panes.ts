@@ -23,11 +23,14 @@ import {
 	type PaneRecords,
 } from "#ui/application/rules/pane-records.ts";
 import type { PaneSessionOptions } from "#ui/panes/pane-session/rules/session-contracts.ts";
+import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 import type { AgentActivityEntry, PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
 	readonly onModelError: (paneId: string, error: string) => void;
+	/** Something went wrong with a pane's reading, or nothing is wrong any more. */
+	readonly onReadingTrouble: (paneId: string, trouble: ReadingTrouble | null) => void;
 	/** Which models an agent is working on in one vault (ADR 0022). */
 	readonly onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]) => void;
 	/** A checkout was chosen somewhere, so the repositories are read again (ADR 0050). */
@@ -61,6 +64,8 @@ type PaneCallbacks = Required<
 > & {
 	/** A model could not be shown in one pane. */
 	readonly onModelError: (paneId: string, error: string) => void;
+	/** Something went wrong with a pane's reading, or nothing is wrong any more. */
+	readonly onReadingTrouble: (paneId: string, trouble: ReadingTrouble | null) => void;
 	/**
 	 * The server asked the shell for another pane, or for one to go. Carried
 	 * with the pane it is about, because a close names the pane to close.
@@ -155,6 +160,14 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		 */
 		onModelError: (paneId: string, error: string): void => {
 			events.read().onModelError(paneId, error);
+		},
+		/**
+		 * Something went wrong with a pane's reading, or nothing is wrong any more.
+		 * @param paneId The pane.
+		 * @param trouble What is wrong, or null.
+		 */
+		onReadingTrouble: (paneId: string, trouble: ReadingTrouble | null): void => {
+			events.read().onReadingTrouble(paneId, trouble);
 		},
 		/**
 		 * This tab runs a bundle the server no longer serves.

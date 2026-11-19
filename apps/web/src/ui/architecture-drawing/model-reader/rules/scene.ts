@@ -236,6 +236,20 @@ function isNarrowed(reading: SceneReading): boolean {
 }
 
 /**
+ * A picture with no card to select can still have switches that bring its cards back.
+ * @param scene The accepted reading.
+ * @returns True when there are hidden lines to show again.
+ */
+function emptyWithFilters(scene: AcceptedScene | null): boolean {
+	return (
+		scene?.grammar === "architecture" &&
+		scene.picture.svg === "" &&
+		scene.reading.filters.hideKinds.length > 0 &&
+		scene.projection.allConnections.length > 0
+	);
+}
+
+/**
  * Where the reader goes from one reading to another, read from the two readings.
  * Every route to a reading takes the same way out: a card, a crumb, the list, and Back.
  * @param from The scene on screen.
@@ -441,6 +455,7 @@ export {
 	destinationName,
 	drawableGrammar,
 	isNarrowed,
+	emptyWithFilters,
 	leavingTo,
 	moveTo,
 	nextScene,

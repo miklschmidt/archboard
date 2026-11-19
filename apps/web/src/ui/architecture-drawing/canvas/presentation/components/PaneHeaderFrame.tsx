@@ -29,7 +29,7 @@ function PaneHeaderRow(props: HeaderPartProps): JSX.Element {
 function PaneHeaderStart(props: HeaderPartProps): JSX.Element {
 	const { letter } = usePaneChrome();
 	return (
-		<div className="mr-3 flex min-w-0 flex-1 items-center gap-3">
+		<div className="mr-4 flex min-w-0 flex-1 items-center gap-3">
 			{letter}
 			{props.children}
 		</div>

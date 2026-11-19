@@ -18,12 +18,9 @@ const VAULT = "/work/shop/.archboard/vault";
 
 /**
  * A catalog of one repository whose chosen checkout is VAULT.
- * @param error Why the repositories could not be read, or null.
  * @returns The catalog.
  */
-function catalogOf(
-	error: string | null = null,
-): Pick<ModelCatalog, "repositories" | "error" | "loading"> {
+function catalogOf(): Pick<ModelCatalog, "repositories" | "loading"> {
 	const repository: RepositoryEntry = {
 		name: "github.com/acme/shop",
 		untracked: false,
@@ -33,7 +30,6 @@ function catalogOf(
 	};
 	return {
 		repositories: [{ repository, error: null, loading: false }],
-		error,
 		loading: false,
 	};
 }
@@ -85,13 +81,12 @@ test("the focused pane's model key is the selected navigator entry", () => {
 		list: initialPaneList(),
 		records,
 		panes: {},
-		catalog: catalogOf("offline"),
+		catalog: catalogOf(),
 		presentation: { kind: "live", paneId: "A" },
 		notices: [],
 		agentActivity: {},
 	});
 	expect(view.selectedPaneKey).toBe("Checkout");
-	expect(view.modelsError).toBe("offline");
 	expect(view.presentation).toEqual({ kind: "live", paneId: "A" });
 	expect(view.panes[0]?.stage).toBeNull();
 });

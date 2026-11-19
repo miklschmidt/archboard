@@ -218,7 +218,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-pane="B"] [data-slot="model-diagram"] [data-semantic-kind="node"]') === null`,
+			`document.querySelector('[data-pane="B"] [data-slot="model-diagram"] [data-semantic-kind="node"], [data-sonner-toast]:not([data-removed="true"]) [data-notice="reading:B"]') === null`,
 		),
 	).toBe(true);
 	await browser.run(["reload"]);
@@ -255,7 +255,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="MODEL_NOT_FOUND"]') !== null`,
+				`document.querySelector('[data-pane="A"] [data-slot="model-error"][data-code="MODEL_NOT_FOUND"]') !== null`,
 			),
 		Boolean,
 		"the requested model refusal",
@@ -304,6 +304,8 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		kind: "call",
 		order: 50,
 		label: "Re-enter",
+		description: "Retries the same request.",
+		anchor: { repo: "github.com/acme/shop", path: "src/retry.ts", symbol: "retry" },
 	});
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	const handlerPath = join(vault, "internal/handler.module.json");
@@ -372,7 +374,6 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		WAIT,
 	);
 	await browser.run(["click", line]);
-	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
@@ -391,12 +392,23 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		),
 	).toEqual(["Shop#Whole"]);
 	await browser.run(["click", '[data-slot="model-connections"] [data-connection-id="Shop#Self"]']);
-	await openAbout(browser, "selection");
+	const relationship = '[data-slot="model-panel"] [data-slot="model-connection-details"]';
 	expect(
 		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-connection-details"] [data-relationship-id]')].map(node => node.getAttribute('data-relationship-id'))`,
+			`[...document.querySelectorAll('${relationship} [data-end-id]')].map(node => node.getAttribute('data-end-id'))`,
 		),
-	).toEqual(["Shop#Self"]);
+	).toEqual(["Shop#Gateway", "Shop#Gateway"]);
+	const relationshipText = await browser.eval<string>(
+		`document.querySelector('${relationship}').textContent`,
+	);
+	expect(relationshipText).toContain("Re-enter");
+	expect(relationshipText).toContain("Retries the same request.");
+	await browser.run(["click", `${relationship} details summary`]);
+	expect(
+		await browser.eval<string>(
+			`document.querySelector('${relationship} details[open] code')?.textContent ?? ""`,
+		),
+	).toContain("src/retry.ts");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

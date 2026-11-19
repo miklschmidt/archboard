@@ -2,6 +2,7 @@ import { ModelStateHistory } from "#ui/architecture-drawing/model-reader/reading
 import { useMemo, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorStanding.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { useModelComparison } from "#ui/architecture-drawing/model-reader/hooks/use-model-comparison.ts";
 import type { Model } from "@archboard/model/content";
 import { proposalStanding } from "#ui/architecture-drawing/model-reader/rules/standing.ts";
@@ -147,7 +148,7 @@ function ModelSubjectStanding({
 	);
 	const open =
 		model.selectedState?.standing?.issues.filter((issue) => issue.subject === subject) ?? NO_ISSUES;
-	return <Standing against={against} open={open} code={null} flush />;
+	return <Standing against={against} open={open} code={null} icon={SECTION_ICONS.against} flush />;
 }
 
 /** What a proposal that cannot be adopted yet says, in the panel. */

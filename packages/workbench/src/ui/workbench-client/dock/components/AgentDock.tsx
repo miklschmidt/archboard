@@ -1,7 +1,8 @@
 // The agent, at the foot of the navigator column: its voice and its state.
 // The dock is one grid in two layouts. While voice is off it is calm: what the
 // agent is on, when it is on anything, with its plan under it, and at the foot a
-// key to talk and a key to the conversation, where the composer is. Nothing says
+// row of the host's own control, a key to talk and a key to the conversation,
+// where the composer is. Nothing says
 // that it is ready and that voice is off: the keys do. While voice is on the
 // circle is the head of the dock, beside the state, what the agent is on and the
 // voice's own line with mute and subtitles, and the plan under them.
@@ -25,7 +26,7 @@
 // (hooks/dock/use-dock-motion.ts).
 
 import { RiChat3Line } from "@remixicon/react";
-import { useRef, type CSSProperties, type JSX } from "react";
+import { useRef, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import { SHELL_CLOCK_MS, VOICE_MS } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
@@ -83,6 +84,12 @@ interface AgentDockProps {
 	readonly reducedMotion: boolean;
 	/** Whether the dock is off screen, as while a pane is presented fullscreen: the voice box then carries the voice. */
 	readonly dockless: boolean;
+	/**
+	 * The host's own control for the keys' row, such as a switch of what the column beside the dock
+	 * lists: at the row's start while voice is off, and on its own row under the plan while it is
+	 * on. It holds no `data-part` of its own, because the dock's motion moves each part it finds.
+	 */
+	readonly lead?: ReactNode;
 }
 
 /**
@@ -150,6 +157,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 		wide: <WideAction status={status} actions={actions} />,
 		problem: <VoiceProblem problem={voice.problem} />,
 		line: <VoiceLine voice={voice} actions={actions} />,
+		lead: props.lead === undefined ? null : <div data-part="lead">{props.lead}</div>,
 	});
 	return (
 		<section
@@ -161,7 +169,7 @@ function AgentDock(props: AgentDockProps): JSX.Element {
 			data-agent-tone={status.tone}
 			aria-label="Agent"
 			style={DOCK_STYLE}
-			className="relative shrink-0 px-4 py-3"
+			className="relative shrink-0 px-2 py-3"
 		>
 			{slots.head}
 			<VoiceControl
@@ -191,6 +199,7 @@ interface DockParts {
 	readonly wide: JSX.Element;
 	readonly problem: JSX.Element;
 	readonly line: JSX.Element;
+	readonly lead: JSX.Element | null;
 }
 
 /**
@@ -205,8 +214,9 @@ interface DockSlots {
 
 /**
  * Where each part goes in the page, so the page reads in the order the eye does. Calm: what the
- * agent is on, its plan and why voice cannot start, then the keys. Live: the circle, what the agent
- * is on, the voice's line with the conversation's icon at its end, then the plan.
+ * agent is on, its plan and why voice cannot start, then the row of the host's control and the
+ * keys. Live: the circle, what the agent is on, the voice's line with the conversation's icon at
+ * its end, then the plan and the host's control.
  * @param live Whether the dock is in its live layout.
  * @param parts The parts.
  * @returns The slots.
@@ -219,6 +229,7 @@ function slotsOf(live: boolean, parts: DockParts): DockSlots {
 				{parts.plan}
 				{parts.wide}
 				{parts.problem}
+				{parts.lead}
 			</>
 		);
 		return { head, beside: null, under: null };
@@ -233,6 +244,7 @@ function slotsOf(live: boolean, parts: DockParts): DockSlots {
 		<>
 			{parts.plan}
 			{parts.wide}
+			{parts.lead}
 		</>
 	);
 	return { head: null, beside, under };
@@ -255,7 +267,7 @@ function Activity(props: {
 	const { status } = props;
 	if (isReady(status)) return null;
 	return (
-		<div data-part="status" className="flex min-w-0 flex-col">
+		<div data-part="status" className="flex min-w-0 flex-col gap-1">
 			<AgentLine status={status} now={props.now} actions={props.actions} />
 			{status.detail !== null && (
 				<p
@@ -313,7 +325,8 @@ function VoiceProblem(props: { readonly problem: string | null }): JSX.Element |
 
 /**
  * The agent's state in a word with how long, and the control that state needs
- * when it is a small one.
+ * when it is a small one. The line is as tall as that control (28px), and 4px stand between it
+ * and what the agent is doing under it.
  * @param props The status, the clock and the actions.
  * @param props.status The status.
  * @param props.now The clock.
@@ -328,7 +341,11 @@ function AgentLine(props: {
 	const { status } = props;
 	const small = status.action === "stop" || status.action === "review" || status.action === "show";
 	return (
-		<div data-slot="agent-status" data-tone={status.tone} className="flex h-6 items-center gap-2">
+		<div
+			data-slot="agent-status"
+			data-tone={status.tone}
+			className="flex min-h-6 items-center gap-2"
+		>
 			<StatusLamp tone={status.tone} />
 			<span className="text-control text-muted-foreground min-w-0 truncate font-medium">
 				{status.headline}

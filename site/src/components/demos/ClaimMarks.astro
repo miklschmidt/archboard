@@ -5,6 +5,7 @@
 // `Claims  none` answer prints, and the marks leave.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
+import SectionLabel from "../window/SectionLabel.astro";
 
 const rows = [
 	{ name: "Storefront" },
@@ -23,7 +24,7 @@ const rows = [
 				<span class="dot mark"></span>
 				<Icon name="chevronDown" size={15} />
 			</p>
-			<p class="head">Modules <span class="mono total">18</span></p>
+			<p class="head"><SectionLabel icon="box" title="Modules" count={18} /></p>
 			<ul class="rows">
 				{
 					rows.map((row) => (
@@ -126,16 +127,8 @@ const rows = [
 	.head {
 		display: flex;
 		align-items: center;
-		gap: 6px;
 		height: 28px;
 		padding: 0 4px;
-		font-weight: 600;
-		color: var(--ink);
-	}
-	.total {
-		font-size: 11px;
-		font-weight: 400;
-		color: var(--ink-muted);
 	}
 	.rows {
 		list-style: none;

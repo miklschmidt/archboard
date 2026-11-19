@@ -1,6 +1,6 @@
 // Retained documents come from an explicit capture. Live panes read only canonical models.
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {
 	fetchCodeFindings,
 	ReadingError,

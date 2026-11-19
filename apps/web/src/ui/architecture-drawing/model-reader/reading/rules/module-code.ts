@@ -2,7 +2,7 @@
 // (TASK-646.07, ADR 0082): its exports by kind, the logic behind them and its findings, or why the
 // pass did not judge it. A module the pass read only in part never looks clean.
 
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 type Remembered = NonNullable<RememberedFindings["models"]>[number];
 type Depth = NonNullable<Remembered["depth"]>[number];

@@ -28,7 +28,7 @@ interface ShellViewInputs {
 	readonly records: PaneRecords;
 	/** The mounted pane per pane id. */
 	readonly panes: Readonly<Record<string, ReactNode>>;
-	readonly catalog: Pick<ModelCatalog, "repositories" | "error" | "loading">;
+	readonly catalog: Pick<ModelCatalog, "repositories" | "loading">;
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
 	readonly agentActivity: AgentActivityByVault;
@@ -111,7 +111,6 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	return {
 		theme: inputs.theme,
 		repositories: shellRepositories(inputs),
-		modelsError: inputs.catalog.error,
 		modelsLoading: inputs.catalog.loading,
 		choosing: inputs.choosing === true,
 		selectedPaneKey: active.status.paneKey,

@@ -5,6 +5,7 @@ import {
 	moduleName,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import { usePeekRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-peek-row.ts";
@@ -33,6 +34,7 @@ function ModelDoorEndpoints(props: ModelDoorEndpointsProps): JSX.Element | null 
 			{groups.map(({ part, edges }) => (
 				<ModelPanel.Section
 					key={part}
+					icon={SECTION_ICONS.modules}
 					title={moduleName(model, part, projection.reference)}
 					count={edges.length}
 					slot="model-door-part"

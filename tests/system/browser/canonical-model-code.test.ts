@@ -182,7 +182,6 @@ test("canonical code controls follow current draft and exact readings while miss
 		"the current architecture",
 		WAIT,
 	);
-	await openAbout(browser, "selection");
 	await openCode(browser, capture, join(root, "src/gateway.ts"), false);
 	await pollUntil(
 		() =>
@@ -342,10 +341,10 @@ test("a code export on the About page opens its own source, at the line that def
 	const browser = resources.use(await createAgentBrowser());
 	const address = new URL(server.base);
 	address.searchParams.set("modelA", "Shop");
+	address.searchParams.set("scopeA", "Shop#Gateway");
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await openAbout(browser);
-	await selectModule(browser, "Shop#Gateway");
 	const admit = '[data-slot="code-export"][data-export="admit"]';
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${admit}') !== null`),

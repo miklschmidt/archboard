@@ -6,7 +6,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps, type ContextType } from "react";
-import type { RememberedFindings } from "@archboard/code-intel/code-check";
+import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 GlobalRegistrator.register();

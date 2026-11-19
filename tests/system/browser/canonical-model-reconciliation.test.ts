@@ -147,7 +147,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 		],
 	});
 	await standing(browser, "conflicted");
-	await openAbout(browser, "selection");
+	await openAbout(browser);
 	await selectModule(browser, "Shop#Gateway", (details) => details.includes("Accepts public work"));
 	expect(
 		await browser.eval<string>(
@@ -162,7 +162,10 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 		),
 	).toEqual({ mine: "Queues accepted work.", theirs: "Dispatches work immediately." });
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-stale"]') === null`),
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="architecture-model-stage"][data-stale="true"]') === null`,
+			),
 		Boolean,
 		"the confirmed conflicted reading",
 		WAIT,
@@ -210,7 +213,7 @@ test("proposal conflicts preserve coherent content, blocked ancestry, live settl
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="PREDECESSOR_CHANGED"]') !== null`,
+				`document.querySelector('[data-slot="model-error"][data-code="PREDECESSOR_CHANGED"], [data-sonner-toast]:not([data-removed="true"]) [data-notice^="reading:"][data-code="PREDECESSOR_CHANGED"]') !== null`,
 			),
 		Boolean,
 		"the explicit changed-predecessor refusal",

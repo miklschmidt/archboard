@@ -7,7 +7,10 @@ import {
 	modelErrorNotice,
 	codeTargetShellNotice,
 	staleFrontendNotice,
+	readingNotice,
+	readingNoticeId,
 } from "#ui/application/rules/notices.ts";
+import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 import type { PaneSession } from "#ui/application/state/pane-handles.ts";
 import type { AgentActivity } from "#ui/application/hooks/use-agent-activity.ts";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
@@ -60,6 +63,15 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		 */
 		onModelError: (paneId: string, error: string): void => {
 			notices.raise(modelErrorNotice(paneId, error));
+		},
+		/**
+		 * Something went wrong with a pane's reading, or nothing is wrong any more.
+		 * @param paneId The pane.
+		 * @param trouble What is wrong, or null.
+		 */
+		onReadingTrouble: (paneId: string, trouble: ReadingTrouble | null): void => {
+			if (trouble === null) notices.dismiss(readingNoticeId(paneId));
+			else notices.raise(readingNotice(paneId, trouble));
 		},
 		/**
 		 * The server moved a pane onto another model or variant.

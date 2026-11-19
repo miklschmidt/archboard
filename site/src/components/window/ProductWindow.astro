@@ -29,8 +29,10 @@ const shop = drawings.webShop;
 			</div>
 			<div class="pane-head">
 				<span class="crumb">Shop</span>
-				<span class="field reading">Current</span>
-				<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
+				<span class="reading">
+					<span class="field state">Current</span>
+					<span class="field">No comparison <Icon name="chevronDown" size={15} /></span>
+				</span>
 			</div>
 			<div class="panel-head">
 				<span class="views"><span class="is-on">Diagram</span><span>About</span></span>
@@ -52,6 +54,11 @@ const shop = drawings.webShop;
 						</div>
 						<p class="dock-title"><Icon name="terminal" size={13} /> Agent</p>
 						<DockLines />
+						<div class="dock-keys">
+							<span class="views wide"><span class="is-on">Architecture</span><span>Code</span></span>
+							<span class="icon-key"><Icon name="mic" size={16} /></span>
+							<span class="icon-key"><Icon name="chat" size={16} /></span>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -138,6 +145,11 @@ const shop = drawings.webShop;
 		margin-left: auto;
 		color: var(--ink);
 	}
+	/* The header parts where the picture meets the panel. Over the picture, the crumbs stand at
+	   its start and what the reader reads at its end. */
+	.pane-head {
+		padding-right: 16px;
+	}
 	.panel-head {
 		justify-content: flex-end;
 		gap: 16px;
@@ -161,11 +173,29 @@ const shop = drawings.webShop;
 		background: var(--well);
 		box-shadow: var(--shadow-well);
 	}
+	/* The state chip and the comparison are one control of two keys, because they say one
+	   thing: what this reading is, against what. */
 	.reading {
+		display: inline-flex;
+		margin-left: auto;
+	}
+	.reading .field {
+		font-weight: 500;
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 0 0 1px var(--rule);
+	}
+	.reading .field + .field {
+		margin-left: -1px;
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	.state {
 		justify-content: center;
 		width: 128px;
-		background: var(--raised);
-		box-shadow: var(--shadow-raised);
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
 	}
 	.views {
 		margin-right: auto;
@@ -184,6 +214,39 @@ const shop = drawings.webShop;
 			var(--shadow-raised),
 			inset 0 -2px 0 var(--gold-mark);
 	}
+	/* At the foot of the dock, a switch of what the navigator lists fills the row, then the keys
+	   to talk and to the conversation, all 32px tall, as in the shell. */
+	.dock-keys {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-top: 12px;
+	}
+	.dock-keys .views {
+		flex: 1;
+		height: 32px;
+		margin-right: 0;
+		padding: 3px;
+	}
+	/* Each choice takes its words and a fair inset, and the two share what is left. */
+	.dock-keys .views span {
+		flex: 1 1 auto;
+		text-align: center;
+		padding: 4px 12px;
+		font-size: 12.5px;
+	}
+	.icon-key {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		width: 32px;
+		height: 32px;
+		border-radius: 4px;
+		background: var(--card);
+		box-shadow: var(--shadow-raised);
+		color: var(--ink-muted);
+	}
 	.left {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
@@ -191,24 +254,20 @@ const shop = drawings.webShop;
 		min-height: 0;
 		background: var(--chrome);
 	}
-	/* The agent's card stands on the chrome under the column's list, as in the shell. */
+	/* The agent stands on the chrome under the column's list, under a line that parts it from the
+	   list, as in the shell: no card frames it. */
 	.dock-well {
-		padding: 8px;
+		border-top: 1px solid var(--rule);
 		background: var(--chrome);
 	}
 	.dock {
 		display: flex;
 		flex-direction: column;
-		padding: 12px;
-		height: 318px;
-		border-radius: 12px;
-		background: oklch(0.205 0.007 75);
-		box-shadow:
-			inset 0 1px 0 var(--highlight),
-			0 -10px 24px -14px oklch(0.04 0.006 75 / 0.9);
+		padding: 12px 8px;
+		height: 334px;
 		overflow: hidden;
 	}
-	/* While the agent holds its claim, Working now stands at the top of its card, as in the shell. */
+	/* While the agent holds its claim, Working now stands at the top of the dock, as in the shell. */
 	.working {
 		display: none;
 		padding-bottom: 14px;
@@ -315,6 +374,8 @@ const shop = drawings.webShop;
 		min-height: 0;
 		overflow: hidden;
 		justify-content: flex-end;
+		/* Fade the oldest lines where they leave the top of the card. */
+		mask-image: linear-gradient(to bottom, transparent, #000 28px);
 	}
 	.replay {
 		position: absolute;
@@ -354,8 +415,10 @@ const shop = drawings.webShop;
 		}
 		.window {
 			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr);
 		}
 		.column-head,
+		.pane-head,
 		.panel-head,
 		.left,
 		.window > :global([data-inspector]) {

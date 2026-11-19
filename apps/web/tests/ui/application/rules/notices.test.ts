@@ -4,6 +4,7 @@ import {
 	NOTICE_ACTIONS,
 	modelErrorNotice,
 	codeTargetShellNotice,
+	readingNotice,
 	staleFrontendNotice,
 	unreachableModelsNotice,
 	withNotice,
@@ -27,6 +28,22 @@ test("raising the same words or dismissing an absent id keeps the stack's identi
 	expect(withNotice(stack, modelErrorNotice("A", "the model could not be drawn"))).toBe(stack);
 	expect(withoutNotice(stack, "pane-error:B")).toBe(stack);
 	expect(withNotice(stack, modelErrorNotice("A", "something else"))).not.toBe(stack);
+});
+
+test("an outgoing toast cannot dismiss a new notice that reuses its pane id", () => {
+	const trouble = {
+		code: "READ_FAILED",
+		title: "Read failed",
+		description: "The reading failed.",
+		tone: "destructive",
+		retry: true,
+	} as const;
+	const outgoing = readingNotice("B", trouble);
+	const reopened = readingNotice("B", trouble);
+	const closed = withoutNotice(withNotice([], outgoing), outgoing.id);
+	const current = withNotice(closed, reopened);
+	expect(withoutNotice(current, outgoing)).toBe(current);
+	expect(withoutNotice(current, reopened)).toEqual([]);
 });
 
 test("code target notices carry the typed actions through and stale builds offer a reload", () => {
