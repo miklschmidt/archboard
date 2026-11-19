@@ -174,12 +174,15 @@ holds files only. When it grows past about 12 files, split its behavior into sub
   lives in `src/`, and only a test can import it.
 
 The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
-grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
-`MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
-pulls against written beside it. The groups stay inside: a caller asks the owner's function for one
-duration by its key, such as `paneMs("report")`. A computation that callers would repeat from a
-group is one function of the package, such as the Codex restart backoff `codexRestartDelayMs` or
-the deadline `codexApprovalExpiresAt(nowMs)`, and callers call it.
+grouped by the subsystem that owns it, and the waiting that callers would otherwise write around
+them (ADR 0083). Each owner has one frozen group in a file of its own, such as `MODEL_LOCK_MS`,
+`CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it pulls against
+written beside it. The groups stay inside, and a duration is named by its owner and key, such as
+`"pane.report"`. A caller polls with `waitUntil` on a named wait, pauses a loop that keeps its own
+decisions with `pause`, ends a named duration from a moment with `deadline`, and reads a number
+with `durationMs` only for what takes one and is not a wait: a stylesheet, a timer, a physics
+constant, a library's option or a message. A computation that callers would repeat from a group
+is one function of the package, such as the Codex restart backoff `codexRestartDelayMs`.
 
 The second is `diagnostics` (`@archboard/diagnostics`). Its `./logger` export is the process logger
 and is the only Node-bound file, in `runtime/`. The `./errno`, `./thrown-error` and
