@@ -36,6 +36,24 @@ import {
 /** The kind of one export: a public method of an exported class is a `method`. */
 type NameKind = "function" | "class" | "value" | "type" | "method";
 
+/** How many unread files a finding names. */
+const NAMED_UNREAD = 3;
+
+/**
+ * Why the files outside a module that the check could not read whole leave a
+ * use unknown, naming the first of them.
+ * @param unread The files.
+ * @returns The reason, or none when it read them all.
+ */
+function unreadWhy(unread: readonly string[]): string[] {
+	if (unread.length === 0) return [];
+	const named = unread.slice(0, NAMED_UNREAD).map((file) => JSON.stringify(file));
+	const more = unread.length > NAMED_UNREAD ? `, and ${unread.length - NAMED_UNREAD} more` : "";
+	return [
+		`the check could not read ${unread.length} file(s) outside it whole: ${named.join(", ")}${more}`,
+	];
+}
+
 /**
  * The finding on an exported name that no file outside the module uses.
  * @param reading The module.
@@ -45,9 +63,8 @@ type NameKind = "function" | "class" | "value" | "type" | "method";
 function unused(reading: DepthReading, name: ExposedName): DepthFinding | undefined {
 	if (usesOf(reading.exposure.directory, name, reading.uses).length > 0) return undefined;
 	const unseen = reading.unseen(name);
-	const unread = reading.unread.length;
 	const why = [
-		...(unread === 0 ? [] : [`the check could not read ${unread} file(s) outside it whole`]),
+		...unreadWhy(reading.unread),
 		...(unseen.length === 0
 			? []
 			: [`the model draws callers whose code it does not read: ${unseen.join(", ")}`]),

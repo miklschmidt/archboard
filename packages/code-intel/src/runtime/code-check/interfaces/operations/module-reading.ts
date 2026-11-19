@@ -9,9 +9,10 @@
 // test exercises code and is not its caller at run time, so a test file is no
 // caller. The files outside that the pass could not read whole are named, so
 // a judge never takes an incomplete read for a complete one: a file no grammar
-// read or one with code that did not parse, a relative import that resolves
-// to no file, and an import of the whole module, as `import * as ns` or a bare
-// `import()` is, whose names no reference spells.
+// read, code that did not parse and names what the module exposes, a relative
+// import that resolves to no file, and an import of the whole module, as
+// `import * as ns`, a bare `import()` or `typeof import()` is, whose names no
+// reference spells.
 //
 // Terraform and OpenTofu name no definition through an import: a module call
 // passes the module its arguments and reads its outputs (TASK-368.11). Each
@@ -200,21 +201,43 @@ const RELATIVE = /^\.\.?\//u;
 const CODE_EXTENSION = /(?:^|\/)[^./]+$|\.[cm]?[jt]sx?$/u;
 
 /**
- * Whether the pass read a file outside a module whole: a grammar read it,
- * all of it parsed, each relative import of code resolves, and no import of
- * the module takes it whole.
- * @param read The file's facts, if a grammar read it.
+ * Whether code that did not parse may hide a use of a module: it names one
+ * of the names the module exposes, which the grammar records even there.
+ * @param read The file's facts.
+ * @param exposure What the module exposes.
+ * @returns True when it may.
+ */
+function hidesUse(read: SyntaxFacts, exposure: ModuleExposure): boolean {
+	const named = new Set(read.unparsed.flatMap((region) => region.names));
+	return exposure.exposed.some((name) => named.has(name.name.split(".")[0] ?? name.name));
+}
+
+/**
+ * Whether an import leaves the uses of a module unknown: a relative import of
+ * code that resolves to no file, or an import of the module that takes it
+ * whole, as `import * as ns` or a bare `import()` does.
+ * @param found The import.
  * @param directory The module.
+ * @returns True when it does.
+ */
+function opaque(found: SyntaxFacts["imports"][number], directory: string): boolean {
+	if (found.resolved === undefined)
+		return RELATIVE.test(found.specifier) && CODE_EXTENSION.test(found.specifier);
+	if (found.reexport || !within(directory, found.resolved)) return false;
+	return found.names.length === 0 || found.names.some((name) => name.imported === "*");
+}
+
+/**
+ * Whether the pass read a file outside a module whole, as far as the module
+ * goes: a grammar read it, no code that did not parse names what the module
+ * exposes, and no import leaves the uses of the module unknown.
+ * @param read The file's facts, if a grammar read it.
+ * @param exposure What the module exposes.
  * @returns True when it did.
  */
-function readWhole(read: FileFacts | undefined, directory: string): boolean {
-	if (read === undefined || read.adapter === "text" || read.unparsed.length > 0) return false;
-	return read.imports.every((found) => {
-		if (found.resolved === undefined)
-			return !(RELATIVE.test(found.specifier) && CODE_EXTENSION.test(found.specifier));
-		if (found.reexport || !within(directory, found.resolved)) return true;
-		return found.names.length > 0 && found.names.every((name) => name.imported !== "*");
-	});
+function readWhole(read: FileFacts | undefined, exposure: ModuleExposure): boolean {
+	if (read === undefined || read.adapter === "text" || hidesUse(read, exposure)) return false;
+	return !read.imports.some((found) => opaque(found, exposure.directory));
 }
 
 /**
@@ -381,7 +404,7 @@ async function callerUses(
 	for (const file of callers) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
 		const read = await facts.read(checkout, file);
-		if (!readWhole(read, exposure.directory)) unread.push(file);
+		if (!readWhole(read, exposure)) unread.push(file);
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time, so the pass yields between parses
 		if (read !== undefined && read.adapter !== "text") uses.push(...(await usesIn(search, read)));
 	}

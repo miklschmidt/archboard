@@ -284,8 +284,8 @@ test("one finding per name, grouped by module", async () => {
 	expect(new Set(runs).size).toBe(runs.length);
 });
 
-test("an outside file that the check could not read fully makes an unused export information", async () => {
-	write(shop, { "src/broken.ts": "export function (\n" });
+test("code outside that did not parse and names an export makes the module's unused exports information", async () => {
+	write(shop, { "src/broken.ts": "if (unusedHelper(1) {\n" });
 	try {
 		const answer = await check();
 		expect(judged(answer, "EXPOSED_UNUSED").map(([, name, severity]) => [name, severity])).toEqual([
