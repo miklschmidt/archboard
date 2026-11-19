@@ -6,7 +6,7 @@
 
 import { rmSync, statSync } from "node:fs";
 
-import { recorderMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import { SAMPLES_PER_FRAME, TALK_FRAME_RATE, TALK_SAMPLE_RATE } from "#shared/protocol/talk.ts";
 
@@ -278,7 +278,7 @@ class FfmpegEncoder implements VideoEncoder {
 	async #requireFinished(status: number): Promise<void> {
 		if (this.#overdue) {
 			throw new VideoEncodingError(
-				`ffmpeg did not finish the file within ${recorderMs("encodeFinish") / 1000} s. ${tailOf(await this.#said)}`,
+				`ffmpeg did not finish the file within ${durationMs("recorder.encodeFinish") / 1000} s. ${tailOf(await this.#said)}`,
 			);
 		}
 		if (status !== 0) throw await this.#stopped(status);
@@ -294,7 +294,7 @@ class FfmpegEncoder implements VideoEncoder {
 		const timeout = setTimeout(() => {
 			this.#overdue = true;
 			this.#child.kill();
-		}, recorderMs("encodeFinish"));
+		}, durationMs("recorder.encodeFinish"));
 		try {
 			const status = await this.#closed();
 			signal.throwIfAborted();

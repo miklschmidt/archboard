@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 
-import { recorderMs } from "@archboard/timing";
 import type { RecordingState } from "#shared/protocol/recording-page.ts";
 import { drive, type RecordingPageHandle } from "#runtime/recorder/clients/recording-page.ts";
 
@@ -40,7 +39,7 @@ test("an interrupt that lands while the page is answering ends the recording at 
 		onProgress: () => undefined,
 	});
 	// Several polls' worth: a recorder that missed the interrupt is still polling by then.
-	const stillGoing = Bun.sleep(recorderMs("poll") * 4).then(() => "still recording");
+	const stillGoing = Bun.sleep(250 * 4).then(() => "still recording");
 	await expect(Promise.race([recording, stillGoing])).rejects.toBe(interrupt);
 	expect(asked).toBe(1);
 });
