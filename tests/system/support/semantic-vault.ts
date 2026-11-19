@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-const TEST_SEMANTIC_LEVELS = DEFAULT_SEMANTIC_POLICY.levels;
+const TEST_SEMANTIC_LEVELS = defaultSemanticPolicy().levels;
 
 /**
  * Give a temporary test vault the semantic-level vocabulary production reads.
@@ -16,7 +16,7 @@ function ensureSemanticVaultConfiguration(vault: string): void {
 		return;
 	}
 	mkdirSync(directory, { recursive: true });
-	writeFileSync(configuration, Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(configuration, Bun.YAML.stringify(defaultSemanticPolicy()));
 }
 
 export { TEST_SEMANTIC_LEVELS, ensureSemanticVaultConfiguration };

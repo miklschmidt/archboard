@@ -118,7 +118,7 @@ function observeArchitectureHistory(vault: string, listener: (completion: Comple
 						!stopped &&
 						!(error instanceof ArchiveError && error.code === "ARCHIVE_NOT_INITIALIZED")
 					)
-						logger.warn("Architecture history observation failed.", { error });
+						logger().warn("Architecture history observation failed.", { error });
 				})
 				.finally(() => {
 					pending = false;

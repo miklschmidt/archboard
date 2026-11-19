@@ -431,7 +431,7 @@ async function reachOrStartServer(options: EnsureOptions): Promise<Reached> {
 
 	refuseUnlessAutoStartAllowed(options.force === true);
 	const spawned = spawnServer();
-	logger.info(`Auto-starting Archboard server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
+	logger().info(`Auto-starting Archboard server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
 	return awaitServerReadiness(spawned, timeoutMs);
 }
 

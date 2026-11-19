@@ -5,15 +5,15 @@ import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
 import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	useVaultCheck,
 	useVaultPolicyRefresh,
 } from "#ui/vault-diagnostics/hooks/use-vault-check.ts";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** The vault the check reads. */
 const VAULT = "/work/archboard/.archboard/vault";
@@ -42,7 +42,7 @@ test("check failure preserves issues; recovery clears only checked issues and re
 		message: "Unknown kind old-service",
 	};
 	let answer: VaultCheck = {
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		configurationValid: true,
 		configurationFile: "archboard.yaml",
 		fingerprint: "first",
@@ -171,7 +171,7 @@ test.each([false, true])(
 				firstCheck.resolve(
 					new Response(
 						JSON.stringify({
-							policy: DEFAULT_SEMANTIC_POLICY,
+							policy: defaultSemanticPolicy(),
 							configurationValid: true,
 							configurationFile: "archboard.yaml",
 							fingerprint: "B",
@@ -226,7 +226,7 @@ test("a pane moved into another vault refreshes that vault's pictures, even unde
 		async () =>
 			new Response(
 				JSON.stringify({
-					policy: DEFAULT_SEMANTIC_POLICY,
+					policy: defaultSemanticPolicy(),
 					configurationValid: true,
 					configurationFile: "archboard.yaml",
 					fingerprint: "same",

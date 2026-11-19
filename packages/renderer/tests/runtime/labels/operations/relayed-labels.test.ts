@@ -6,14 +6,14 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { labelsAcrossWalls, runsUnderLabels } from "#tests/runtime/support/drawn-checks.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import labelBeside from "#tests/runtime/support/fixtures/relayed-label-beside.json";
 import loneFrame from "#tests/runtime/support/fixtures/lone-frame-label.json";
 
 /** The vocabulary the fixtures draw with, its groups in the dogfood vault's order. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		service: { name: "Service", icon: "RiServerLine", color: "blue" },
@@ -51,7 +51,7 @@ test("a relaid label stays off a line drawn straight to its block's wall", async
 test("a relaid label stays clear of a lone frame's inner top border", async () => {
 	const drawing = await renderArchitecture({
 		content: orderedFixture(loneFrame.content),
-		policy: SemanticPolicySchema.parse(loneFrame.policy),
+		policy: semanticPolicySchema().parse(loneFrame.policy),
 		theme: "light",
 		layout: "track",
 	});

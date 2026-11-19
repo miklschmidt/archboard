@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
-import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
+import { diagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
 import { SKILL_EVAL_MS } from "@archboard/timing";
 import {
 	SAMPLES_PER_FRAME,
@@ -25,9 +25,9 @@ import {
 } from "#runtime/evaluation/run-checks/outcomes/rules/reading.ts";
 import type { TalkFixture } from "#runtime/evaluation/schemas/fixture.ts";
 import type { OutcomeCheck } from "#runtime/evaluation/batch/schemas/suite.ts";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** A video the harness must look for before the checks run. */
 interface VideoRequest {
@@ -44,7 +44,7 @@ const ReceiptSchema = z.object({
 	file: z.string(),
 	bytes: z.int(),
 	frames: z.int(),
-	theme: DiagramThemeSchema,
+	theme: diagramThemeSchema(),
 });
 
 /** How many first bytes of a file say which container it is. */

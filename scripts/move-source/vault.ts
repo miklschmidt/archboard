@@ -8,10 +8,10 @@ import { join } from "node:path";
 import type { z } from "zod";
 
 import {
-	ArchitectureClaimResultSchema,
-	ArchitectureModelReadSchema,
-	ArchitectureModuleEditResultSchema,
-	type ArchitectureModuleEditSchema,
+	architectureClaimResultSchema,
+	architectureModelReadSchema,
+	architectureModuleEditResultSchema,
+	type architectureModuleEditSchema,
 } from "@archboard/model/contract";
 import { repoIdentityAt } from "@archboard/workspace/checkouts";
 
@@ -21,7 +21,7 @@ import type { MoveMap } from "./layout.ts";
 const WRITER = "move-source";
 
 /** The current model, as `archboard model read` answers it. */
-type Reading = Extract<z.infer<typeof ArchitectureModelReadSchema>, { success: true }>;
+type Reading = Extract<z.infer<ReturnType<typeof architectureModelReadSchema>>, { success: true }>;
 /** A flow step of a reading. */
 type Step = Reading["collections"][number]["flows"][number]["steps"][number];
 /** A binding or an anchor. */
@@ -32,11 +32,14 @@ interface Location {
 }
 /** A statement of an intent, of the three kinds a move writes. */
 type Change = Extract<
-	Extract<z.input<typeof ArchitectureModuleEditSchema>, { changes: unknown }>["changes"][number],
+	Extract<
+		z.input<ReturnType<typeof architectureModuleEditSchema>>,
+		{ changes: unknown }
+	>["changes"][number],
 	{ type: "edit-module" | "edit-relationship" | "edit-step" }
 >;
 /** What the edit answers. */
-type EditAnswer = z.infer<typeof ArchitectureModuleEditResultSchema>;
+type EditAnswer = z.infer<ReturnType<typeof architectureModuleEditResultSchema>>;
 
 /** What deriving the intent needs. */
 interface VaultContext {
@@ -97,7 +100,7 @@ function withoutVault(answer: unknown): unknown {
  * @throws {Error} When the model cannot be read.
  */
 function readModel(root: string): Reading {
-	const reading = archboard(root, ["model", "read"], ArchitectureModelReadSchema);
+	const reading = archboard(root, ["model", "read"], architectureModelReadSchema());
 	if (!reading.success) throw new Error(`model read refused: ${JSON.stringify(reading)}`);
 	return reading;
 }
@@ -224,7 +227,7 @@ function applyVaultChanges(
 			const answer = archboard(
 				root,
 				["model", "edit", ...doing],
-				ArchitectureModuleEditResultSchema,
+				architectureModuleEditResultSchema(),
 				request,
 			);
 			const missing = missingSubjects(answer, subjects);
@@ -249,7 +252,7 @@ function applyVaultChanges(
 function claimSubjects(root: string, target: unknown, subjects: readonly string[]): string {
 	const reason = "Rebind the code bindings and anchors of moved source files";
 	const request = { target, writer: WRITER, reason, subjects };
-	const answer = archboard(root, ["model", "claim"], ArchitectureClaimResultSchema, request);
+	const answer = archboard(root, ["model", "claim"], architectureClaimResultSchema(), request);
 	if (!answer.success) throw new Error(`model claim refused: ${JSON.stringify(answer)}`);
 	return answer.claim.id;
 }

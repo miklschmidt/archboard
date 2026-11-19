@@ -284,7 +284,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 		// asked for: the shell re-lays all of them side by side.
 		await settleAfterLayout(askedAt, [...pending.known, pane.clientId]);
 		const onScreen = addressablePanes([...panes.values()]).length;
-		logger.info(`Pane opened on request: ${pane.paneId} (${onScreen} on screen)`);
+		logger().info(`Pane opened on request: ${pane.paneId} (${onScreen} on screen)`);
 		res.json({
 			success: true,
 			...paneResponse(panes.get(pane.clientId) ?? pane),
@@ -421,7 +421,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 				.filter((clientId) => clientId !== target.clientId),
 		);
 		const onScreen = addressablePanes([...panes.values()]).length;
-		logger.info(`Pane closed on request: ${target.paneId} (${onScreen} left on screen)`);
+		logger().info(`Pane closed on request: ${target.paneId} (${onScreen} left on screen)`);
 		res.json({
 			success: true,
 			closed: {
@@ -495,7 +495,7 @@ function warnOfSharedPaneId(registration: PaneRegistration): void {
 	);
 	if (others.length > 0) {
 		const ids = others.map((one) => one.clientId).join(", ");
-		logger.warn(
+		logger().warn(
 			`Pane ${registration.paneId} is presented by two browsers: ${registration.clientId} ` +
 				`arrived while ${ids} still holds it. Voice addresses the browser it was started from.`,
 		);

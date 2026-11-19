@@ -122,7 +122,7 @@ function deliverToPane(clientId: string, data: string): boolean {
 			socket.send(data);
 			delivered = true;
 		} catch {
-			logger.warn("Failed to send to a pane, removing");
+			logger().warn("Failed to send to a pane, removing");
 			clients.delete(socket);
 		}
 	}

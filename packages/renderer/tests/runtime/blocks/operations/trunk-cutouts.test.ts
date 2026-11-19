@@ -13,7 +13,7 @@ import { expect, test } from "bun:test";
 
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 // One service calls three others: their routes leave it along one lane.
 const FAN_OUT = orderedFixture({
@@ -50,7 +50,7 @@ function capsOf(svg: string): string[][] {
 
 test("the stretch another route of a trunk draws is cut with butt ends, and nothing else is", async () => {
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: FAN_OUT,
 		theme: "light",
 	});
@@ -63,7 +63,7 @@ test("the stretch another route of a trunk draws is cut with butt ends, and noth
 
 test("the gap under a line that crosses over is cut with round ends", async () => {
 	const { svg } = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CROSSED,
 		theme: "light",
 	});

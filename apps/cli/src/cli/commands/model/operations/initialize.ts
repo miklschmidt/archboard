@@ -4,8 +4,8 @@ import type { z } from "zod";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { serverRefusal, doingRefusal } from "#cli/contract/protocol/refusals.ts";
 import {
-	ArchitectureInitializationRequestSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureInitializationRequestSchema,
+	architectureModuleEditResultSchema,
 	type ArchitectureModuleEditResult,
 } from "@archboard/model/contract";
 import {
@@ -13,14 +13,14 @@ import {
 	initializeArchitectureArchive,
 } from "@archboard/model/store-write";
 import { repoRootOf } from "@archboard/workspace/checkouts";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 import { initializeArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { modelArchiveInitContract } from "#cli/commands/model/operations/archive.ts";
 import { findVaultOf } from "#cli/routing/operations/addressed-vault.ts";
 import { defineCommand, type CommandContext } from "#cli/contract/protocol/contract.ts";
 
 /** One initialization intent, complete with its doing line. */
-type InitializationIntent = z.infer<typeof ArchitectureInitializationRequestSchema>;
+type InitializationIntent = z.infer<ReturnType<typeof architectureInitializationRequestSchema>>;
 
 /**
  * Make the vault of a repository that holds none: `<repo>/.archboard/vault`, with the default
@@ -38,7 +38,7 @@ async function makeVault(
 	intent: InitializationIntent,
 	context: Pick<CommandContext, "diagnostic">,
 ): Promise<ArchitectureModuleEditResult> {
-	const vault = path.join(repo, VAULT_DIRECTORY);
+	const vault = path.join(repo, vaultDirectory());
 	fs.mkdirSync(vault, { recursive: true });
 	if ((await repoRootOf(repo)) === undefined) {
 		const archive = await initializeArchitectureArchive(vault);
@@ -105,8 +105,8 @@ const modelInitContract = defineCommand({
 		required: true,
 		description,
 	})),
-	input: { ingress: ArchitectureInitializationRequestSchema.omit({ doing: true }) },
-	result: ArchitectureModuleEditResultSchema,
+	input: { ingress: architectureInitializationRequestSchema().omit({ doing: true }) },
+	result: architectureModuleEditResultSchema(),
 	effects: ["write", "server-state-write", "local-write"],
 	relationships: [
 		{
@@ -125,7 +125,7 @@ const modelInitContract = defineCommand({
 	 */
 	async handler(input, context) {
 		if (context.checkout === null) await context.require("server", "model init");
-		const request = context.parse(ArchitectureInitializationRequestSchema, {
+		const request = context.parse(architectureInitializationRequestSchema(), {
 			...input,
 			doing: statedInvocation().doing,
 		});

@@ -2,12 +2,12 @@ import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import { queryOptions, skipToken } from "@tanstack/react-query";
 import type { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureCheckpointRowsSchema,
-	ArchitectureClaimListSchema,
-	ModuleNavigationReadSchema,
+	architectureModelReadSchema,
+	architectureCheckpointRowsSchema,
+	architectureClaimListSchema,
+	moduleNavigationReadSchema,
 	type ArchitectureEvent,
-	ArchitectureRetainedModuleSchema,
+	architectureRetainedModuleSchema,
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
@@ -24,7 +24,7 @@ type StateSelection = {
 	readonly reference?: number;
 };
 
-type CheckpointRows = z.infer<typeof ArchitectureCheckpointRowsSchema>;
+type CheckpointRows = z.infer<ReturnType<typeof architectureCheckpointRowsSchema>>;
 type ArchitectureSummary = Extract<ArchitectureEvent, { type: "architecture_snapshot" }>["reading"];
 
 /** What a repository row knows of a vault, as the feed last reported it. */
@@ -45,7 +45,7 @@ interface ModuleTarget {
 
 /** Where a removed module was last retained, or null when no reading holds it. */
 type RetainedModule = Extract<
-	z.output<typeof ArchitectureRetainedModuleSchema>,
+	z.output<ReturnType<typeof architectureRetainedModuleSchema>>,
 	{ success: true }
 >["retained"];
 
@@ -211,7 +211,7 @@ async function readModel(
 		),
 	);
 	const url = `${inVault("/api/architecture/model", vault)}&${parameters}`;
-	const result = await readReply(url, ArchitectureModelReadSchema, signal);
+	const result = await readReply(url, architectureModelReadSchema(), signal);
 	if (!result.success) throw new ArchitectureReadError(result);
 	// A walkthrough plays the vault on disk, so a branch reading offers none.
 	return selection.ref == null ? result : { ...result, walkthroughs: [] };
@@ -315,7 +315,7 @@ function architectureModuleQuery(vault: string, target: ModuleTarget, digest: st
 			);
 			const result = await readReply(
 				`${inVault("/api/architecture/module", vault)}&${parameters}`,
-				ModuleNavigationReadSchema,
+				moduleNavigationReadSchema(),
 				context.signal,
 			);
 			if (!result.success) throw new ArchitectureReadError(result);
@@ -341,7 +341,7 @@ function architectureCheckpointsQuery(vault: string) {
 		queryFn: (context) =>
 			readReply(
 				inVault("/api/architecture/checkpoints/rows", vault),
-				ArchitectureCheckpointRowsSchema,
+				architectureCheckpointRowsSchema(),
 				context.signal,
 			),
 		/**
@@ -372,7 +372,7 @@ function retainedModuleQuery(vault: string, module: string) {
 		 */
 		queryFn: async (context) => {
 			const url = `${inVault("/api/architecture/retained-module", vault)}&${new URLSearchParams({ module })}`;
-			const result = await readReply(url, ArchitectureRetainedModuleSchema, context.signal);
+			const result = await readReply(url, architectureRetainedModuleSchema(), context.signal);
 			if (!result.success) throw new ArchitectureReadError(result);
 			return result.retained;
 		},
@@ -397,7 +397,7 @@ function architectureClaimsQuery(vault: string) {
 		queryFn: (context) =>
 			readReply(
 				inVault("/api/architecture/claims", vault),
-				ArchitectureClaimListSchema,
+				architectureClaimListSchema(),
 				context.signal,
 			),
 		...followed,

@@ -65,7 +65,7 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	const closingCodexInstance = codexSocketInstances.get(ws);
 	codexSocketInstances.delete(ws);
 	if (closingId === undefined) {
-		logger.info("WebSocket connection closed");
+		logger().info("WebSocket connection closed");
 		return;
 	}
 	if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken) {
@@ -74,14 +74,14 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	if (closingCodexInstance !== undefined) {
 		void codexWiring.codex
 			.closeBrowser?.(closingCodexInstance, closingId)
-			.catch((error) => logger.error("Codex browser cleanup failed:", error));
+			.catch((error) => logger().error("Codex browser cleanup failed:", error));
 	}
 	if (currentSocketsByClient.get(closingId) !== ws) {
-		logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
+		logger().info(`Replaced WebSocket connection closed (client ${closingId})`);
 		return;
 	}
 	retirePaneOwner(closingId);
-	logger.info("WebSocket connection closed");
+	logger().info("WebSocket connection closed");
 }
 
 /**
@@ -230,7 +230,7 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
 	const send = (response: unknown): void => {
 		void codexTransport
 			.send(response)
-			.catch((error) => logger.error("Codex browser response send failed:", error));
+			.catch((error) => logger().error("Codex browser response send failed:", error));
 	};
 	ws.on("message", (raw) => {
 		const message = codexRequestOf(raw);
@@ -256,7 +256,7 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
 			return;
 		}
 		void handle(codexSocketInstance, clientId, message, codexTransport.send).catch((error) =>
-			logger.error("Codex browser request failed:", error),
+			logger().error("Codex browser request failed:", error),
 		);
 	});
 }
@@ -332,7 +332,7 @@ function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: strin
 	try {
 		codexWiring.codex.acceptBrowser?.(socket.codexInstance, clientId);
 	} catch (error) {
-		logger.error("Codex browser acceptance failed:", error);
+		logger().error("Codex browser acceptance failed:", error);
 	}
 	return true;
 }
@@ -367,7 +367,7 @@ async function acceptWebSocketConnection(
 	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading.
-	logger.info(
+	logger().info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
 	listenForCodexRequests(ws, socket);
@@ -494,7 +494,7 @@ function startWebSocketServer(): void {
 		socket.once("close", () => acceptedSockets.delete(socket));
 		// A socket error with no listener would end the whole server, whichever socket it hit.
 		socket.on("error", (error) => {
-			logger.error("WebSocket error:", error);
+			logger().error("WebSocket error:", error);
 			socket.terminate();
 		});
 		if (isArchitectureFeed(request)) {
@@ -507,7 +507,7 @@ function startWebSocketServer(): void {
 			return;
 		}
 		void acceptWebSocketConnection(socket, request, vault).catch((error) => {
-			logger.error("WebSocket pane acceptance failed:", error);
+			logger().error("WebSocket pane acceptance failed:", error);
 			socket.terminate();
 		});
 	});

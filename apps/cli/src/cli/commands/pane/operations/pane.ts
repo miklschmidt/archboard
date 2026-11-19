@@ -1,4 +1,4 @@
-import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 import { z } from "zod";
 import {
@@ -380,14 +380,14 @@ function choiceLine(result: Pick<ShowModelResponse, "chose">): string[] {
 	];
 }
 
-const ShowInputSchema = ArchitecturePaneReadingSchema.extend({
+const ShowInputSchema = architecturePaneReadingSchema().extend({
 	pane: z.string().optional(),
 	input: z.string().optional(),
 });
 const ShowResultSchema = z.looseObject({
 	success: z.literal(true),
 	model: z.string(),
-	reading: ArchitecturePaneReadingSchema,
+	reading: architecturePaneReadingSchema(),
 	revision: z.unknown(),
 	repository: z.string().nullable(),
 	checkout: z.string(),
@@ -518,7 +518,10 @@ const browserShowContract = defineCommand({
 		const reading =
 			file === undefined
 				? flags
-				: context.parse(ArchitecturePaneReadingSchema, await statedJson({ input: file }, context));
+				: context.parse(
+						architecturePaneReadingSchema(),
+						await statedJson({ input: file }, context),
+					);
 		const opened = await openCanvas(context.vault?.path ?? null, "Show architecture");
 		const result = await showModelInPane(reading, pane ?? opened ?? undefined);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };

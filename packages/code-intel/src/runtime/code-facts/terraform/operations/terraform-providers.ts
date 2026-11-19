@@ -35,10 +35,10 @@
 
 import type { Reference } from "#runtime/code-facts/operations/facts.ts";
 import { isEnvironmentArgument } from "#runtime/code-facts/terraform/operations/terraform-environment.ts";
-import type { EvidenceKindSchema } from "@archboard/model/policy";
+import type { evidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
+type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
 
 /** The evidence kinds a Terraform reference can prove. */
 type TerraformKind = Extract<

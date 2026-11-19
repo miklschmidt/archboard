@@ -12,15 +12,15 @@ import {
 	createPanePresentations,
 	type UserPresentationChange,
 } from "#server/panes/services/presentation.ts";
-import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
+import type { panePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type SemanticPanePresentation = NonNullable<
-	z.infer<typeof SemanticPaneContextSchema>["presentation"]
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["presentation"]
 >;
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
-type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
+type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
 
 /** One port over one live pane, keeping what the pane was sent and what a user did. */
 function harness(live = true) {

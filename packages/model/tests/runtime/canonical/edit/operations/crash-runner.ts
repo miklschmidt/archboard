@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { editArchitectureModule } from "@archboard/model/store-write";
-import { ArchitectureModuleEditSchema } from "@archboard/model/contract";
+import { architectureModuleEditSchema } from "@archboard/model/contract";
 const vault = process.argv[2];
 const request = process.argv[3];
 if (vault === undefined || request === undefined) throw new Error("Fixture arguments are required");
@@ -8,7 +8,7 @@ process.stdout.write(
 	JSON.stringify(
 		await editArchitectureModule(
 			vault,
-			ArchitectureModuleEditSchema.parse(JSON.parse(readFileSync(request, "utf8"))),
+			architectureModuleEditSchema().parse(JSON.parse(readFileSync(request, "utf8"))),
 		),
 	) + "\n",
 );

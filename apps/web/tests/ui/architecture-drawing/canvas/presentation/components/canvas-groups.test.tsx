@@ -6,7 +6,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import { announceModelChange } from "#ui/architecture-drawing/canvas/picture/reads/state/model-changes.ts";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import {
 	PANE_VAULT,
 	chooseVariantInShell,
@@ -31,7 +31,7 @@ const GROUPS = {
 function vaultWith(groups: SemanticPolicy["groups"]): Record<string, unknown> {
 	return {
 		success: true,
-		policy: { ...DEFAULT_SEMANTIC_POLICY, groups },
+		policy: { ...defaultSemanticPolicy(), groups },
 		configurationValid: true,
 		configurationFile: ".archboard/config.yaml",
 		fingerprint: JSON.stringify(groups),

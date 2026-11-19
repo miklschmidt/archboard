@@ -1,8 +1,8 @@
 import { z } from "zod";
 import {
-	ArchitectureCheckpointRequestSchema,
-	ArchitectureCheckpointRetainSchema,
-	ArchitectureCheckpointListSchema,
+	architectureCheckpointRequestSchema,
+	architectureCheckpointRetainSchema,
+	architectureCheckpointListSchema,
 } from "@archboard/model/contract";
 import {
 	listArchitectureCheckpointsOnServer,
@@ -21,7 +21,7 @@ const modelCheckpointsContract = defineCommand({
 	examples: ["archboard model checkpoints -C /tmp/shop"],
 	parameters: [],
 	input: { ingress: z.object({}) },
-	result: ArchitectureCheckpointListSchema,
+	result: architectureCheckpointListSchema(),
 	output: {
 		cases: [
 			{
@@ -150,17 +150,17 @@ const modelRetainContract = defineCommand({
 	],
 	input: {
 		ingress: z.object({
-			operationId: ArchitectureCheckpointRequestSchema.shape.operationId,
-			writer: ArchitectureCheckpointRequestSchema.shape.writer,
-			expectedRevision: ArchitectureCheckpointRequestSchema.shape.expectedRevision,
-			dependencies: ArchitectureCheckpointRequestSchema.shape.dependencies,
-			origin: ArchitectureCheckpointRequestSchema.shape.origin,
+			operationId: architectureCheckpointRequestSchema().shape.operationId,
+			writer: architectureCheckpointRequestSchema().shape.writer,
+			expectedRevision: architectureCheckpointRequestSchema().shape.expectedRevision,
+			dependencies: architectureCheckpointRequestSchema().shape.dependencies,
+			origin: architectureCheckpointRequestSchema().shape.origin,
 			expectedPlan: z
-				.union([z.literal("none"), ArchitectureCheckpointRequestSchema.shape.expectedPlan])
+				.union([z.literal("none"), architectureCheckpointRequestSchema().shape.expectedPlan])
 				.transform((value) => (value === "none" ? null : value)),
 		}),
 	},
-	result: ArchitectureCheckpointRetainSchema,
+	result: architectureCheckpointRetainSchema(),
 	output: {
 		cases: [
 			{
@@ -204,7 +204,7 @@ const modelRetainContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "model retain");
-		const request = context.parse(ArchitectureCheckpointRequestSchema, {
+		const request = context.parse(architectureCheckpointRequestSchema(), {
 			...input,
 			target: input.origin === undefined ? "current" : "migration",
 			doing: statedInvocation().doing,

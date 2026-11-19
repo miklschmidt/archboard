@@ -1,8 +1,8 @@
 import { z } from "zod";
 import {
-	ArchitectureExportResultSchema,
-	ArchitectureImportRequestSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureExportResultSchema,
+	architectureImportRequestSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
 import {
 	exportArchitectureModelOnServer,
@@ -44,7 +44,7 @@ const modelExportContract = defineCommand({
 			model: z.string(),
 			revision: z.string(),
 		}),
-		ArchitectureExportResultSchema.options[1],
+		architectureExportResultSchema().options[1],
 	]),
 	output: {
 		cases: [
@@ -123,7 +123,7 @@ const modelImportContract = defineCommand({
 		},
 	],
 	input: { ingress: z.strictObject({ input: z.string().optional() }) },
-	result: ArchitectureModuleEditResultSchema,
+	result: architectureModuleEditResultSchema(),
 	output: {
 		cases: [
 			{
@@ -160,7 +160,7 @@ const modelImportContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model import");
 		const result = await importArchitectureModelOnServer(
-			context.parse(ArchitectureImportRequestSchema, await statedJson(input, context)),
+			context.parse(architectureImportRequestSchema(), await statedJson(input, context)),
 		);
 		return {
 			result,

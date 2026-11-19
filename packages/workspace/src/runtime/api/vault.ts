@@ -3,8 +3,8 @@ export {
 	checkoutOfVault,
 	findVault,
 	isVaultLayout,
-	VAULT_DIRECTORY,
-	VAULT_ORIGINS,
+	vaultDirectory,
+	vaultOrigins,
 } from "#runtime/services/vault-finder.ts";
 export type { BoundVault } from "#runtime/services/vault-finder.ts";
 export { findAndRegisterVault } from "#runtime/services/vault-address.ts";

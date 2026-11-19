@@ -68,3 +68,27 @@ export {
 	ArchitectureExportResultSchema,
 	PortableInstallationSchema,
 };
+
+/**
+ * The schema `ArchitectureImportRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureImportRequestSchema(): typeof ArchitectureImportRequestSchema {
+	return ArchitectureImportRequestSchema;
+}
+
+/**
+ * The schema `ArchitectureExportResultSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureExportResultSchema(): typeof ArchitectureExportResultSchema {
+	return ArchitectureExportResultSchema;
+}
+
+/**
+ * The schema `ArchitectureInitializationRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureInitializationRequestSchema(): typeof ArchitectureInitializationRequestSchema {
+	return ArchitectureInitializationRequestSchema;
+}

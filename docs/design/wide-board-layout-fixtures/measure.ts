@@ -23,8 +23,8 @@ import path from "node:path";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultLayoutEngine, layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import {
@@ -37,7 +37,7 @@ const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
-const layout = LayoutEngineSchema.parse(process.env["ENGINE"] ?? DEFAULT_LAYOUT_ENGINE);
+const layout = layoutEngineSchema().parse(process.env["ENGINE"] ?? defaultLayoutEngine());
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
@@ -70,7 +70,7 @@ for (const file of fs
 		name: file.replace(".content.json", ""),
 		variant: "fixture",
 		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 	});
 }
 const { configuration: policy } = readVaultConfiguration(vault);

@@ -29,7 +29,7 @@ function broadcastEverywhere(message: WebSocketMessage): void {
 				client.send(data);
 			}
 		} catch {
-			logger.warn("Failed to send to client, removing");
+			logger().warn("Failed to send to client, removing");
 			clients.delete(client);
 		}
 	});

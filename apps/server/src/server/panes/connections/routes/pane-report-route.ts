@@ -11,10 +11,10 @@ import { serverUrl, statedVault } from "@archboard/workbench/host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
 import { paneKeyOf, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
+type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
 
 /**
  * What one pane last said it was reading, when that is still about the model

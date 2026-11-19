@@ -60,10 +60,10 @@ import {
 import { renderTalk } from "#runtime/recorder/operations/render-talk.ts";
 import { writeSilence } from "#runtime/recorder/store/silence.ts";
 import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/recorder/store/talk-files.ts";
-import type { VaultCheckSchema } from "@archboard/model/policy";
+import type { vaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** What to record, and where. */
 interface RecordingOptions {

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { keepTalk, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { captureCanonicalWalkthrough } from "../support/canonical-walkthrough.ts";
@@ -34,7 +34,7 @@ test.each(["canonical", "retained"] as const)(
 			document: architecture === undefined ? ORIGINAL : null,
 			architecture,
 			policy: {
-				policy: architecture?.policy ?? DEFAULT_SEMANTIC_POLICY,
+				policy: architecture?.policy ?? defaultSemanticPolicy(),
 				configurationValid: true,
 				configurationFile: ".archboard/config.yaml",
 				fingerprint: architecture?.revision.digest ?? "retained",

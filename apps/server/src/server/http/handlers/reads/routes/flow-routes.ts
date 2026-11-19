@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import {
-	ArchitectureRenderRequestSchema,
+	architectureRenderRequestSchema,
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { projectModel, projectFlow, type Model } from "@archboard/model/content";
@@ -12,7 +12,7 @@ import { renderArchitecture } from "@archboard/renderer/bun";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 
-type Reading = z.infer<typeof ArchitectureRenderRequestSchema>;
+type Reading = z.infer<ReturnType<typeof architectureRenderRequestSchema>>;
 /**
  * Read the explicitly selected current or retained flow through the public runtime.
  * @param vault The addressed vault.
@@ -199,14 +199,16 @@ function renderReceipt(
  */
 function mountArchitectureFlowRoutes(app: Express): void {
 	app.get("/api/architecture/render", requireVault, async (req, res) => {
-		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse({
-			...req.query,
-			...Object.fromEntries(
-				["focus", "hideKinds", "expand"]
-					.filter((key) => typeof req.query[key] === "string")
-					.map((key) => [key, [req.query[key]]]),
-			),
-		});
+		const query = architectureRenderRequestSchema()
+			.extend({ vault: z.string() })
+			.safeParse({
+				...req.query,
+				...Object.fromEntries(
+					["focus", "hideKinds", "expand"]
+						.filter((key) => typeof req.query[key] === "string")
+						.map((key) => [key, [req.query[key]]]),
+				),
+			});
 		if (!query.success) {
 			res
 				.status(400)

@@ -7,7 +7,7 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { ArchitectureCheckpointRetainSchema } from "@archboard/model/contract";
+import { architectureCheckpointRetainSchema } from "@archboard/model/contract";
 
 import { readTalk } from "@archboard/walkthrough/recorder";
 import { TALK_SAMPLE_RATE, type Talk } from "@archboard/walkthrough/talk";
@@ -98,7 +98,7 @@ function videoOf(spec: NarratedSpec): string {
 async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Promise<string> {
 	if (spec.checkpoint !== undefined) return spec.checkpoint;
 	const model = await readModel(server);
-	const retained = ArchitectureCheckpointRetainSchema.parse(
+	const retained = architectureCheckpointRetainSchema().parse(
 		modelResult(
 			await server.cli([
 				"model",

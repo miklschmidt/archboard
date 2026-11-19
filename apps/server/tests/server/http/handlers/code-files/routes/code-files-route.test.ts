@@ -15,8 +15,8 @@ import { dirname, join } from "node:path";
 import type express from "express";
 import type { z } from "zod";
 import type * as ServerModule from "#server/http/application/wiring/application.ts";
-import { CodeFileSchema, CodeFilesSchema } from "@archboard/code-intel/code-check";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { codeFileSchema, codeFilesSchema } from "@archboard/code-intel/code-check";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const REPO = "github.com/test/files";
 const ORDERS = [
@@ -120,7 +120,7 @@ async function codeFile(path: string) {
 		`/api/code/file?${new URLSearchParams({ repo: REPO, path, model: "Shop" })}`,
 	);
 	expect(JSON.stringify(asked.body).slice(0, 900)).toContain('"success":true');
-	const answer: z.infer<typeof CodeFileSchema> = CodeFileSchema.parse(asked.body);
+	const answer: z.infer<ReturnType<typeof codeFileSchema>> = codeFileSchema().parse(asked.body);
 	if (answer.owners === undefined) throw new Error("The answer has no owners.");
 	return { ...answer, owners: answer.owners };
 }
@@ -151,7 +151,7 @@ beforeAll(async () => {
 		]),
 	);
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(
 		join(vault, "model.json"),
 		JSON.stringify({
@@ -215,7 +215,7 @@ test("the files route answers the vault's repository with the files Git lists an
 	for (const route of ["/api/code/files?", `/api/code/files?repo=${REPO}`]) {
 		const asked = await get(route);
 		expect(asked.status).toBe(200);
-		const answer = CodeFilesSchema.parse(asked.body);
+		const answer = codeFilesSchema().parse(asked.body);
 		expect(answer.repo).toBe(REPO);
 		// Tracked, and new and not ignored; sorted; never an ignored file.
 		expect(answer.files).toContain("src/orders.ts");
@@ -269,7 +269,7 @@ test("a source ref names the model that owns the file while the quote remains li
 	});
 	const asked = await get(`/api/code/file?${query}`);
 	expect(asked.status).toBe(200);
-	const answer = CodeFileSchema.parse(asked.body);
+	const answer = codeFileSchema().parse(asked.body);
 	expect(answer.source).toMatchObject({ status: "quoted", text: ORDERS });
 	expect(answer.owners?.file).toEqual(["Shop#Core"]);
 });
@@ -279,7 +279,7 @@ test("a request that names no model quotes the file and answers no owners", asyn
 		`/api/code/file?${new URLSearchParams({ repo: REPO, path: "src/orders.ts" })}`,
 	);
 	expect(asked.status).toBe(200);
-	const answer = CodeFileSchema.parse(asked.body);
+	const answer = codeFileSchema().parse(asked.body);
 	expect(answer.source).toMatchObject({ status: "quoted", text: ORDERS });
 	expect(answer.owners).toBeUndefined();
 });

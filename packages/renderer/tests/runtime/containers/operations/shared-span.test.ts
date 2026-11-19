@@ -9,7 +9,7 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import sharedSpan from "#tests/runtime/support/fixtures/shared-span.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The narrowest shared span a straight line keeps its nudging distance in. */
 const SHARED_SPAN = 24;
@@ -19,7 +19,7 @@ test.each(["track"] as const)(
 	async (layout) => {
 		const content = orderedFixture(sharedSpan);
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,

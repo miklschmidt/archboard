@@ -6,7 +6,7 @@
 // render that answers differently after another document was drawn.
 import { expect, test } from "bun:test";
 import type { VariantContent } from "@archboard/model/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import {
@@ -34,7 +34,7 @@ const CARD_MAX_WIDTH = 340;
  * @returns The drawing.
  */
 async function drawn(content: VariantContent) {
-	return await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme: "light" });
+	return await renderArchitecture({ policy: defaultSemanticPolicy(), content, theme: "light" });
 }
 
 /**

@@ -18,7 +18,7 @@ import {
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/model/render-reply";
 import { themeColor } from "#runtime/theme/store/source.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** A default and a muted line, neutral and coloured, the muted ones with traffic. */
 const CONTENT = orderedFixture({
@@ -67,7 +67,7 @@ test.each(THEMES)(
 	"a muted line is as wide as a default one and quieter by its ink (%s)",
 	async (theme) => {
 		const { svg } = seenIn(
-			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT }),
 			theme,
 		);
 		const page = themeColor(theme, "--background");

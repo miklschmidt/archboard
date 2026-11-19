@@ -6,8 +6,8 @@ import {
 	initializeArchitectureModel,
 } from "@archboard/model/store-write";
 import {
-	ArchitectureImportRequestSchema,
-	ArchitectureInitializationRequestSchema,
+	architectureImportRequestSchema,
+	architectureInitializationRequestSchema,
 } from "@archboard/model/contract";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
@@ -21,9 +21,11 @@ function mountArchitecturePortableRoutes(app: Express) {
 		"/api/architecture/init",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = ArchitectureInitializationRequestSchema.extend({
-				vault: z.string().optional(),
-			}).safeParse(req.body);
+			const parsed = architectureInitializationRequestSchema()
+				.extend({
+					vault: z.string().optional(),
+				})
+				.safeParse(req.body);
 			if (!parsed.success) {
 				res
 					.status(400)
@@ -52,9 +54,11 @@ function mountArchitecturePortableRoutes(app: Express) {
 		"/api/architecture/import",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = ArchitectureImportRequestSchema.extend({
-				vault: z.string().optional(),
-			}).safeParse(req.body);
+			const parsed = architectureImportRequestSchema()
+				.extend({
+					vault: z.string().optional(),
+				})
+				.safeParse(req.body);
 			if (!parsed.success) {
 				res
 					.status(400)

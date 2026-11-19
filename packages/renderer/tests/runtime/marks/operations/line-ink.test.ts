@@ -14,7 +14,7 @@ import { APCA, lightnessContrast, seenIn } from "#tests/runtime/support/drawn-co
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/model/render-reply";
 import { themeColor } from "#runtime/theme/store/source.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Three neutral lines of each emphasis inside a container, and one exchange. */
 const CONTENT = orderedFixture({
@@ -97,7 +97,7 @@ function grounds(theme: DiagramTheme) {
 describe("a neutral line reads on every ground and stays quieter than text", () => {
 	test.each(THEMES)("a relationship and its head (%s)", async (theme) => {
 		const { svg } = seenIn(
-			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT }),
 			theme,
 		);
 		const { page, floor, text } = grounds(theme);
@@ -114,7 +114,7 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 	test.each(THEMES)("a message and a lifeline (%s)", async (theme) => {
 		const { svg } = seenIn(
 			await renderSemanticView({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content: CONTENT,
 				grammar: "sequence",
 			}),
@@ -136,7 +136,7 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 
 test("every arrowhead has one length, whatever the emphasis of its line", async () => {
 	const { svg } = seenIn(
-		await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+		await renderArchitecture({ policy: defaultSemanticPolicy(), content: CONTENT }),
 	);
 	const lengths = headedLines(svg).map(({ head, width }) => headLength(svg, head, width));
 	expect(lengths).toHaveLength(3);

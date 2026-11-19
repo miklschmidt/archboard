@@ -150,7 +150,7 @@ function requireCorrelatedTurn(entry: Entry) {
  */
 function fail(entry: Entry, error: unknown) {
 	entry.action.status = entry.threadId === undefined ? "unavailable" : "failed";
-	logger.error("Cannot answer a captured explanation:", error);
+	logger().error("Cannot answer a captured explanation:", error);
 	entry.action.error = failureMessage(entry, error);
 	entry.action.retryable = !unknownOutcome(error) && entry.submission === undefined;
 	if (entry.action.retryable) releaseCapture(entry);

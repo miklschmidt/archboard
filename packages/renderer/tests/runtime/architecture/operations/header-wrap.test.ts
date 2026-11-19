@@ -1,12 +1,12 @@
 // Parent headers use normal card sizing in both engines and every theme (TASK-548.11).
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const RESPONSIBILITY =
 	"Loads the retained state and reopens the same hardware key, renews with a fresh proof of that key when a renewal is due, and saves the outcome without any identity rollback.";
@@ -44,11 +44,11 @@ function iconSize(svg: string, id: string): number {
 	return Number(/<svg [^>]*width="([\d.]+)"/u.exec(own)?.[1]);
 }
 
-for (const layout of LayoutEngineSchema.options) {
+for (const layout of layoutEngineSchema().options) {
 	for (const theme of ["light", "dark", undefined] as const) {
 		test(`a compact parent keeps its text and visible line ends (${layout}, ${theme ?? "page"})`, async () => {
 			const drawing = await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content,
 				theme,
 				layout,

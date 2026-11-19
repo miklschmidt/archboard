@@ -14,16 +14,18 @@
 // The wire shape is `@archboard/model/pane-context`, which the reader of these
 // reports owns; nothing about it is restated here.
 
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
+import { semanticPaneContextRoute } from "@archboard/model/pane-context";
 import { PANE_MS } from "@archboard/timing";
 import { createUserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { StaleFrontend } from "#ui/panes/pane-session/clients/pane-requests.ts";
 import type { z } from "zod";
 
-type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
+type SemanticPanePart = NonNullable<
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
+>[number];
+type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
@@ -110,7 +112,7 @@ interface ReadingReply {
  * @returns The server's answer.
  */
 function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingReply> {
-	return requestJson<ReadingReply>(inVault(SEMANTIC_PANE_CONTEXT_ROUTE, vault), {
+	return requestJson<ReadingReply>(inVault(semanticPaneContextRoute(), vault), {
 		method: "POST",
 		payload: body,
 	});

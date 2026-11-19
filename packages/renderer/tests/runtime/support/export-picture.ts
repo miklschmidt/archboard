@@ -8,7 +8,7 @@ import {
 	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 import type { DrawnPicture } from "@archboard/model/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { type LegacyRenderChoices } from "#shared/render/rules/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -96,7 +96,7 @@ const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
  */
 async function exported(
 	choices: Omit<LegacyRenderChoices, "fonts">,
-	policy = DEFAULT_SEMANTIC_POLICY,
+	policy = defaultSemanticPolicy(),
 ): Promise<DrawnPicture> {
 	const outcome = await renderLegacyBoard(EXPORT_DOCUMENT, { theme: "light", ...choices }, policy);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");

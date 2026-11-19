@@ -84,3 +84,19 @@ export {
 	type EdgeEmphasis,
 	VariantLifecycleSchema,
 };
+
+/**
+ * The schema `VariantLifecycleSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function variantLifecycleSchema(): typeof VariantLifecycleSchema {
+	return VariantLifecycleSchema;
+}
+
+/**
+ * The schema `DiagramGrammarSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function diagramGrammarSchema(): typeof DiagramGrammarSchema {
+	return DiagramGrammarSchema;
+}

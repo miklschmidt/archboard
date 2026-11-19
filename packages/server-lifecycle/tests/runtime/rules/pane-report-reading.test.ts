@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
 
@@ -30,7 +30,9 @@ const reading = {
  * @param architecture What the pane reported, if anything.
  * @returns The report.
  */
-function reportOf(architecture: z.infer<typeof SemanticPaneContextSchema>["architecture"]) {
+function reportOf(
+	architecture: z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"],
+) {
 	return buildPanesReport([pane], {
 		identity: () => null,
 		reading: () => null,

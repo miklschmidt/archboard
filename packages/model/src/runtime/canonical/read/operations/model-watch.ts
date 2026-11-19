@@ -143,7 +143,7 @@ function observeVault(vault: string) {
 			try {
 				listener(event);
 			} catch (error) {
-				logger.warn("Architecture follower failed.", { error });
+				logger().warn("Architecture follower failed.", { error });
 			}
 		}
 	}

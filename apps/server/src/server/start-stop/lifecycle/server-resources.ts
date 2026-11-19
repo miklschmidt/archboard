@@ -212,7 +212,7 @@ function listen(
 					return;
 				}
 				http.phase = "running";
-				logger.info(`POC server running on http://${formatHostForUrl(HOST)}:${PORT}`);
+				logger().info(`POC server running on http://${formatHostForUrl(HOST)}:${PORT}`);
 				recordServerPid(PORT);
 				http.ownsPidFile = true;
 				settleStart();

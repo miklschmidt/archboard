@@ -1,5 +1,5 @@
 import {
-	LegacyInventoryReadSchema,
+	legacyInventoryReadSchema,
 	type LegacyInventoryRead,
 	type LegacyMappingWrite,
 } from "@archboard/model/migration";
@@ -14,9 +14,9 @@ import { statedInvocation, requestJson } from "@archboard/server-lifecycle/serve
  */
 async function migrationRequest(path: string, init?: RequestInit): Promise<LegacyInventoryRead> {
 	try {
-		return LegacyInventoryReadSchema.parse(await requestJson<unknown>(path, init));
+		return legacyInventoryReadSchema().parse(await requestJson<unknown>(path, init));
 	} catch (error) {
-		const parsed = LegacyInventoryReadSchema.safeParse(
+		const parsed = legacyInventoryReadSchema().safeParse(
 			isRecord(error) ? error["answer"] : undefined,
 		);
 		if (parsed.success && !parsed.data.success) return parsed.data;
