@@ -1,4 +1,4 @@
-import { codexRealtimeMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 
 /** The chats on screen by tab, and when each tab that has none left ends. */
@@ -44,7 +44,9 @@ function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () =
  * @param graceMs How long a tab with no chat left still holds its conversation.
  * @returns The tab sessions.
  */
-function createTabSessions(graceMs: number = codexRealtimeMs("tabSessionGrace")): TabSessions {
+function createTabSessions(
+	graceMs: number = durationMs("codexRealtime.tabSessionGrace"),
+): TabSessions {
 	const byBrowser = new Map<string, TabSessionId>();
 	const graces = new Map<TabSessionId, ReturnType<typeof setTimeout>>();
 	const listeners = new Set<(tabSessionId: TabSessionId) => void>();

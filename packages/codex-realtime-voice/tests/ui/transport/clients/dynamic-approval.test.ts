@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { type BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
-import { codexApprovalExpiresAt, codexApprovalMs } from "@archboard/timing";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
@@ -70,7 +69,7 @@ const pending: BrowserDynamicApproval = model.BrowserDynamicApprovalSchema.parse
 	effect: browserEffect,
 	effectHash,
 	createdAtMs,
-	expiresAtMs: codexApprovalExpiresAt(createdAtMs),
+	expiresAtMs: createdAtMs + 90_000,
 	decision: null,
 	delivery: null,
 	toolResult: null,
@@ -316,7 +315,7 @@ function unansweredApprovals(clock: number): readonly (readonly unknown[])[] {
 				binding: null,
 			}),
 		],
-		[{ ...pending, createdAtMs: clock - codexApprovalMs("expiry"), expiresAtMs: clock }],
+		[{ ...pending, createdAtMs: clock - 90_000, expiresAtMs: clock }],
 		[],
 	];
 }

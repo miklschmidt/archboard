@@ -40,7 +40,7 @@ import {
 	fallbackResponse,
 	validateApprovalResponse,
 } from "#runtime/approvals/services/response.ts";
-import { codexApprovalExpiresAt } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import type { JsonRpcRequestId } from "@archboard/codex-app-server/identity";
 import type { TransportServerRequest } from "@archboard/codex-app-server/transport";
 
@@ -276,7 +276,11 @@ export function createCodexApprovalBroker(
 	 * @returns The normalized request.
 	 */
 	const normalizedRequest = (request: TransportServerRequest): ApprovalRequest => {
-		const provisional = normalizeApprovalRequest(identity, request, codexApprovalExpiresAt(now()));
+		const provisional = normalizeApprovalRequest(
+			identity,
+			request,
+			deadline("codexApproval.expiry", now()),
+		);
 		const bindingInput = options.getCurrentBinding?.(provisional);
 		return bindingInput === undefined
 			? provisional

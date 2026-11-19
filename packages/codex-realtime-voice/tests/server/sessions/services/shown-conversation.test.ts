@@ -5,7 +5,6 @@
 
 import { afterEach, beforeEach, expect, jest, test } from "bun:test";
 
-import { codexRealtimeMs } from "@archboard/timing";
 import { parseTabSessionId, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { createTabSessions } from "#server/sessions/services/browser-tabs.ts";
 
@@ -46,12 +45,12 @@ test("a tab's shown conversation ends with the tab, and a tab that comes back is
 
 	// A reload within the grace keeps it.
 	tabs.forget("chat-a");
-	jest.advanceTimersByTime(codexRealtimeMs("tabSessionGrace") - 1);
+	jest.advanceTimersByTime(60_000 - 1);
 	tabs.note("chat-a", TAB);
 	expect(tabs.current(TAB)).toBe(SHOP);
 
 	tabs.forget("chat-a");
-	jest.advanceTimersByTime(codexRealtimeMs("tabSessionGrace"));
+	jest.advanceTimersByTime(60_000);
 	expect(tabs.current(TAB)).toBeNull();
 	tabs.note("chat-a", TAB);
 	expect(tabs.shown(TAB, () => PAYMENTS)).toBe(PAYMENTS);

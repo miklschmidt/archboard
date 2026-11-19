@@ -2,7 +2,7 @@
 // and dispose, a mute that touches only the captured track, and publications
 // delivered in order to every subscriber whatever a subscriber does.
 
-import { codexRealtimeMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { browserRealtimeMediaEnvironment } from "#ui/realtime/clients/browser-environment.ts";
 import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "#ui/realtime/state/contract.ts";
 import type {
@@ -202,7 +202,7 @@ function createRealtimeMediaSession(
 					(outcome) => stopConfirmed(run, outcome),
 					() => false,
 				),
-			codexRealtimeMs("stop"),
+			durationMs("codexRealtime.stop"),
 			false,
 		).then((result) => result === true);
 		return run.serverStop;
