@@ -95,11 +95,11 @@ archboard changed seven things:
    The zero-coordinate cases retain the previous path.
    Both complete corpora remain byte-identical in the exploration comparison.
 
-7. Two tests import the names they use from `graphviz-pure-core` through its
-   root, not its modules: the tests of `graphviz-pure-parser/src/canon.rs`
-   import `charset::{decode, encode}`, and those of
+7. Two tests import the items they use directly from public modules of
+   `graphviz-pure-core`. The tests in `graphviz-pure-parser/src/canon.rs` import
+   `charset::{decode, encode}`. The tests in
    `graphviz-pure-render/src/emit/emit.rs` import `arrows::ARR_TYPE_NORM`
-   (TASK-646.14.02), so the code check reads no test that opens a private file.
+   (TASK-646.14.02).
 
 ## Why they are not workspace members
 
