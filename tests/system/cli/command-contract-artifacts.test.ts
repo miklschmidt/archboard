@@ -70,7 +70,7 @@ describe("command contract artifact generation", () => {
 				const ignored = fixture.git([
 					"check-ignore",
 					"--quiet",
-					join("docs", "design", "generated", name),
+					join("artifacts", "cli-contract", name),
 				]);
 				expect(ignored.status, artifactFailure(ignored)).toBe(0);
 			}
