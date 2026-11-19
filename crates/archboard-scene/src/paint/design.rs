@@ -4,9 +4,8 @@
 //! function, so the sheet itself stays the crate's own.
 
 use crate::sizes::{
-    ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE,
-    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, HERO_LINE_WIDTH, LINE_WIDTH, RAIL_GAP, RAILS,
-    SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, TAB_PADDING, TAB_SHOULDER,
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE, FLOW_KIND,
+    HERO_LINE_WIDTH, LINE_WIDTH, RAIL_GAP, RAILS, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, TAB_SHOULDER,
 };
 
 /// The line widths a far view draws wider: a line of normal weight, of hero
@@ -34,11 +33,6 @@ pub fn tab_width(frame_width: f64) -> f64 {
     frame_width - TAB_SHOULDER
 }
 
-/// The room inside a frame's edge tab, on either side of its words.
-pub const fn tab_padding() -> f64 {
-    TAB_PADDING
-}
-
 /// The room a container's words have in a header of some width: its words
 /// stand in from both sides of its box.
 pub fn header_words_width(header_width: f64) -> f64 {
@@ -48,21 +42,6 @@ pub fn header_words_width(header_width: f64) -> f64 {
 /// The narrowest a container's header is that holds words of some width.
 pub fn header_width_for(words_width: f64) -> f64 {
     words_width + ARCHITECTURE_HEADER_PADDING
-}
-
-/// The room between an architecture card's edge and its chip and words.
-pub const fn architecture_card_padding() -> f64 {
-    ARCHITECTURE_CARD_PADDING
-}
-
-/// How tall a flow's heading stands in its tab.
-pub const fn flow_heading() -> f64 {
-    FLOW_HEADING
-}
-
-/// How tall a flow's heading stands in its tab with its summary.
-pub const fn flow_heading_with_note() -> f64 {
-    FLOW_HEADING_WITH_NOTE
 }
 
 /// The kind of a flowchart's frame, which holds a flow.

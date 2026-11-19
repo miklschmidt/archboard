@@ -7,10 +7,12 @@
 //! answered here and drawn by the painter from the same private sheet.
 
 mod cards;
+mod flow_tab;
 mod fragments;
 mod messages;
 
 pub use cards::{ColumnLimits, HeadCard, HeadCards, sequence_cards};
+pub use flow_tab::{FlowTab, flow_tab};
 pub use fragments::{FragmentHead, Size, fragment_bounds, fragment_head};
 pub use messages::{
     ArrowEnds, MessagePlate, NotePlate, activation_span, message_ends, message_plate, note_plate,

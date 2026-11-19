@@ -25,9 +25,9 @@ mod sequence_picture;
 mod sizes;
 
 pub use flow_parts::{
-    ArrowEnds, ColumnLimits, FragmentHead, HeadCard, HeadCards, MessagePlate, NotePlate, Size,
-    Span, activation_span, fragment_bounds, fragment_head, message_ends, message_plate, note_plate,
-    self_loop, sequence_cards,
+    ArrowEnds, ColumnLimits, FlowTab, FragmentHead, HeadCard, HeadCards, MessagePlate, NotePlate,
+    Size, Span, activation_span, flow_tab, fragment_bounds, fragment_head, message_ends,
+    message_plate, note_plate, self_loop, sequence_cards,
 };
 pub use measure::{
     CardWords, measure_flow_frame, measure_label, measure_node, message_lines, narrow_label,

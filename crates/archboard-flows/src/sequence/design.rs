@@ -6,11 +6,7 @@
 
 use archboard_scene::paint::design;
 
-pub(super) const ARCHITECTURE_CARD_PADDING: f64 = design::architecture_card_padding();
 pub(super) const DIAGRAM_MARGIN: f64 = design::diagram_margin();
-pub(super) const FLOW_HEADING: f64 = design::flow_heading();
-pub(super) const FLOW_HEADING_WITH_NOTE: f64 = design::flow_heading_with_note();
-pub(super) const TAB_PADDING: f64 = design::tab_padding();
 
 /// How far a container's well holds what it holds in from its walls.
 pub(super) const NEST_INSET: f64 = 18.0;

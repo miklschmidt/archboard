@@ -23,20 +23,18 @@ use archboard_scene::drawing::TextRun;
 use archboard_scene::geometry::Rect;
 use archboard_scene::js;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
-use archboard_scene::{CardWords, ColumnLimits, FragmentHead, HeadCard, sequence_cards};
+use archboard_scene::{CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards};
 
 use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;
 use crate::sequence::design::{
-    ARCHITECTURE_CARD_PADDING, COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH,
-    CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN, FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP,
-    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, NEST_INSET, TAB_PADDING,
+    COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN,
+    FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP, NEST_INSET,
 };
 use crate::sequence::frames::{place_frames, span_around};
 use crate::sequence::messages::frame_span;
 use crate::sequence::placing::{lowest_drawn, place_steps};
 use crate::sequence::rows::{ColumnBounds, MessageWords, PlacedNote, required_note_column_width};
-use archboard_scene::paint::design::tab_width;
 
 /// One participant's heading.
 #[derive(Clone, Debug)]
@@ -366,14 +364,12 @@ fn layout_flow<'a>(
     let content_width = column_width * count + COLUMN_GAP * (count - 1.0);
 
     // The name and the summary stand in the frame's tab, and the heads stand as
-    // far under the well's edge as in from the frame's sides.
-    let header_top = top + ARCHITECTURE_CARD_PADDING;
-    let header_height = if flow.summary.is_none() {
-        FLOW_HEADING
-    } else {
-        FLOW_HEADING_WITH_NOTE
-    };
-    let tab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
+    // far under the well's edge as in from the frame's sides. The heading's
+    // height does not hang on the frame's width, which messages may yet widen.
+    let has_summary = flow.summary.is_some();
+    let heading = flow_tab(NEST_INSET * 2.0 + content_width, has_summary).header;
+    let header_top = top + heading.y;
+    let tab_foot = header_top + heading.height + heading.y;
     let cards_top = tab_foot + NEST_INSET;
     let (cards, tallest) = head_cards(nodes, &centres, cards_top, heads);
     let first_row = cards_top + tallest + heads.lifeline_drop + FIRST_MESSAGE_DROP;
@@ -426,6 +422,7 @@ fn layout_flow<'a>(
         ),
         &frames,
     );
+    let tab = flow_tab(width, has_summary);
     FlowLayout {
         flow,
         frame: Rect {
@@ -435,15 +432,15 @@ fn layout_flow<'a>(
             height: lifeline_bottom + CONTAINER_BOTTOM_PAD - top,
         },
         header: Rect {
-            x: x + TAB_PADDING,
+            x: x + tab.header.x,
             y: header_top,
-            width: tab_width(width) - TAB_PADDING * 2.0,
-            height: header_height,
+            width: tab.header.width,
+            height: tab.header.height,
         },
         tab: Rect {
             x,
             y: top,
-            width: tab_width(width),
+            width: tab.width,
             height: tab_foot - top,
         },
         lifeline_bottom,

@@ -6,8 +6,9 @@ use archboard_scene::drawing::{DiagramFont, FontFamily};
 use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
-    CardWords, ColumnLimits, HeadCards, Span, activation_span, fragment_bounds, fragment_head,
-    message_ends, message_plate, note_plate, self_loop, sequence_cards, width,
+    CardWords, ColumnLimits, HeadCards, Span, activation_span, flow_tab, fragment_bounds,
+    fragment_head, measure_flow_frame, message_ends, message_plate, note_plate, self_loop,
+    sequence_cards, width,
 };
 
 /// A sequence card's words.
@@ -228,4 +229,17 @@ fn a_fragment_reaches_round_the_ink_it_holds_or_spans_the_columns() {
     );
     let empty = fragment_bounds(None, columns, &head);
     assert_eq!((empty.x, empty.width), (38.0, 400.0));
+}
+
+#[test]
+fn a_sequence_s_tab_holds_the_heading_a_flowchart_measures_for_the_same_flow() {
+    for summary in [None, Some("What happens when an order is placed")] {
+        let tab = flow_tab(400.0, summary.is_some());
+        // The tab stops short of the frame's right edge by its foot and the
+        // frame's corner, 20, and its words stand 12 in from either side.
+        assert_eq!(tab.width, 380.0);
+        assert_eq!((tab.header.x, tab.header.width), (12.0, 356.0));
+        let heading = measure_flow_frame((), &card("Place an order", summary, false));
+        assert_eq!(tab.header.y * 2.0 + tab.header.height, heading.height);
+    }
 }
