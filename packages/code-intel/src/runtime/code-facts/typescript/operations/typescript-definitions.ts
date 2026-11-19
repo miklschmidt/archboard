@@ -8,6 +8,7 @@
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange, type Spans } from "#runtime/code-facts/operations/spans.ts";
+import { passesTo } from "#runtime/code-facts/typescript/operations/typescript-pass-through.ts";
 
 /** The syntax that can hold a declaration and keep it at module level. */
 const HOLDERS = new Set([
@@ -311,6 +312,7 @@ function definitionOf(
 	const { visibility, own } = visibilityOf(name, declaration, context.exported);
 	const exposed = own && holderExposed(declaration, exposure);
 	exposure.set(declaration.id, exposed);
+	const passes = passesTo(declaration);
 	return {
 		symbol: qualifiedSymbol(name, declaration),
 		kind: kindOf(declaration),
@@ -320,6 +322,7 @@ function definitionOf(
 		visibility,
 		exposed,
 		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
 	};
 }
 

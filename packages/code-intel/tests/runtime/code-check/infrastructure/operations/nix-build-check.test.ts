@@ -135,8 +135,10 @@ test("a package built from another that the document does not draw is an undrawn
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
-			// The bound directory ui exposes names that no file outside it uses.
+			// The bound directory ui exposes names that no file outside it uses: its flake's
+			// shell, listed on the part, and its TypeScript function, judged by itself.
 			"EXPOSED_UNUSED pU information",
+			"EXPOSED_UNUSED pU warning",
 			"RELATIONSHIP_UNDRAWN pL warning",
 			"RELATIONSHIP_UNSUPPORTED e3 information",
 			"RELATIONSHIP_UNSUPPORTED e4 information",
