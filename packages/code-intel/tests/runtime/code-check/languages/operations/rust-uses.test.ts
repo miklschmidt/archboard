@@ -3,7 +3,8 @@
 //
 // The checkout is a workspace. The crate `svg` uses the other crates: `Group`,
 // which `scene::scene` passes on beside the variant `Item::Group`; `outline`,
-// a function `text` passes on from its module of the same name; and `route`,
+// a function `text` passes on from its module of the same name, and `note!`,
+// a macro `#[macro_export]` puts at the root of `text`; and `route`,
 // which `svg` calls from a method of its own named `route`. In the crate
 // `paint`, files outside the folder of the module `between` call `departure`,
 // a function of the module's file of the same name, and `frame_of`. The crate
@@ -85,7 +86,9 @@ beforeAll(async () => {
 		].join("\n"),
 		"crates/scene/src/scene/group.rs": "pub struct Group {\n    pub size: u32,\n}\n",
 		"crates/text/Cargo.toml": manifest("text"),
-		"crates/text/src/lib.rs": "mod outline;\npub use outline::outline;\n",
+		"crates/text/src/lib.rs": "pub mod diag;\nmod outline;\npub use outline::outline;\n",
+		"crates/text/src/diag.rs":
+			"#[macro_export]\nmacro_rules! note {\n    () => {\n        1\n    };\n}\n",
 		"crates/text/src/outline.rs": "pub fn outline(size: u32) -> u32 {\n    size + 1\n}\n",
 		"crates/router/Cargo.toml": manifest("router"),
 		"crates/router/src/lib.rs": "pub fn route(lanes: u32) -> u32 {\n    lanes * 2\n}\n",
@@ -117,7 +120,7 @@ beforeAll(async () => {
 			"}",
 			"pub fn draw(group: &Group, item: Item) -> u32 {",
 			"    let _ = (item, Item::Empty);",
-			"    outline(group.size) + hidden::made()",
+			"    outline(group.size) + hidden::made() + text::note!()",
 			"}",
 			"",
 		].join("\n"),
@@ -222,7 +225,7 @@ test("a Rust name another crate uses counts as used, past a variant of the same 
 	expect(unusedOn("Router")).toEqual([]);
 });
 
-test("a call of a Rust function that shares its name with its module reaches the function, from another crate and from outside the module's folder", () => {
+test("a call of a Rust function that shares its name with its module reaches the function, from another crate and from outside the module's folder, and a crate's exported macro is used at its root", () => {
 	expect(unusedOn("Text")).toEqual([]);
 	expect(unusedOn("Motion")).toEqual([]);
 });

@@ -12,7 +12,9 @@
 // read, code that did not parse and names what the module exposes, a relative
 // import that resolves to no file, and an import of the whole module, as
 // `import * as ns`, a bare `import()` or `typeof import()` is, whose names no
-// reference spells.
+// reference spells. In Rust, so is a file with a use that leads to a name in
+// the module that no definition answers, as a function a macro makes; a path
+// to a crate's root reaches the macros it exports (TASK-646.16).
 //
 // Terraform and OpenTofu name no definition through an import: a module call
 // passes the module its arguments and reads its outputs (TASK-368.11). Each
@@ -172,28 +174,70 @@ async function useOf(
 	const door = await doorOf(search, reference);
 	if (door === undefined) return undefined;
 	const file = read.path;
-	const site = await definitionSite(search.facts, search.checkout, file, symbol);
+	const site = await siteOf(search, file, reference);
 	if (site === undefined)
-		return NAMED_ONLY.has(read.adapter) && (await unresolved(search, reference.target))
-			? "unresolved"
-			: undefined;
+		return door && (await unresolved(search, read, reference.target)) ? "unresolved" : undefined;
 	if (!isModules(search, site)) return undefined;
 	return { file, line, symbol, runs: runsCode(reference, site), typeOnly, site, door };
 }
 
 /**
- * Whether a name of a module that a use of a language in `NAMED_ONLY` leads
- * to, not a member, is one the check cannot resolve: its file neither
- * defines it nor brings it in, as a function a macro defines.
+ * Whether a name in a module's own files that a use of a language in
+ * `NAMED_ONLY` leads to, not a member, is one the check cannot resolve: its
+ * file neither defines it nor brings it in, as a function a macro defines.
  * @param search The module.
+ * @param read The facts of the file that holds the use.
  * @param target Where the use leads.
  * @returns True when it is.
  */
-async function unresolved(search: UseSearch, target: Target | undefined): Promise<boolean> {
-	if (target === undefined || !NAME_ALONE.test(target.symbol)) return false;
+async function unresolved(
+	search: UseSearch,
+	read: SyntaxFacts,
+	target: Target | undefined,
+): Promise<boolean> {
+	if (!NAMED_ONLY.has(read.adapter) || target === undefined || !NAME_ALONE.test(target.symbol))
+		return false;
 	const there = await search.facts.read(search.checkout, target.path);
 	if (there === undefined || there.adapter === "text") return false;
 	return !there.imports.some((found) => brings(found, target.symbol));
+}
+
+/**
+ * Where the code a reference names is defined: the site its file's imports
+ * lead to, else a macro the module exports at its crate's root.
+ * @param search The module.
+ * @param file The file that holds the reference.
+ * @param reference The reference.
+ * @returns The site, or undefined.
+ */
+async function siteOf(
+	search: UseSearch,
+	file: string,
+	reference: SyntaxFacts["references"][number],
+): Promise<DefinitionSite | undefined> {
+	const site = await definitionSite(search.facts, search.checkout, file, reference.symbol);
+	return site ?? exportedMacro(search, reference.target);
+}
+
+/**
+ * The macro a path to a root file of a module names, where the module exports
+ * it with `#[macro_export]`: Rust puts such a macro at its crate's root,
+ * whichever file of the crate defines it, as `core::gv_info!` names the macro
+ * `diag.rs` defines.
+ * @param search The module.
+ * @param target Where the use leads.
+ * @returns The macro's site, or undefined.
+ */
+function exportedMacro(search: UseSearch, target: Target | undefined): DefinitionSite | undefined {
+	const { exposed, rootFiles } = search.exposure;
+	if (target === undefined || !rootFiles.includes(target.path)) return undefined;
+	const macro = exposed.find(
+		({ definition }) =>
+			definition.visibility === "macro_export" && definition.symbol === target.symbol,
+	);
+	return macro === undefined
+		? undefined
+		: { path: macro.path, definition: macro.definition, via: [] };
 }
 
 /** A name of a module itself: neither the whole module, `*`, nor a member. */
