@@ -10,7 +10,7 @@ import {
 	readProcessObservation,
 	type ProcessObservation,
 } from "#runtime/processes/observation.ts";
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
+import { deadline, gitMs } from "@archboard/timing";
 
 type KillableProcess = Pick<Subprocess, "kill">;
 type CapturedMembers = Map<number, ProcessObservation>;
@@ -176,7 +176,7 @@ async function freezeGroup(
 			wait: operations.wait,
 			pollMs: gitMs("groupPoll"),
 		},
-		gitGroupCleanupDeadline(operations.now()),
+		deadline("git.groupCleanup", operations.now()),
 	);
 	if (!frozen) {
 		throw new Error(`Process group ${group.group} did not stop within its cleanup grace.`);

@@ -1,5 +1,5 @@
 import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
-import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
+import { deadline, processGroupPollMs } from "@archboard/timing";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
@@ -184,7 +184,7 @@ function createProcessGroupCleanup(
 		const all = Promise.allSettled(work);
 		const latch = createSettleLatch();
 		let timer: Timer | undefined;
-		const deadline = new Promise<never>((_resolve, reject) => {
+		const expiry = new Promise<never>((_resolve, reject) => {
 			/**
 			 * Reject the race once the deadline passes.
 			 */
@@ -210,7 +210,7 @@ function createProcessGroupCleanup(
 			);
 		});
 		try {
-			return await Promise.race([all, deadline]);
+			return await Promise.race([all, expiry]);
 		} finally {
 			latch.settle();
 			if (timer !== undefined) {
@@ -298,9 +298,10 @@ function createProcessGroupCleanup(
 	 * @param input - The group, its close promise and the composed deadline.
 	 */
 	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
-		const freezeDeadlineAtMs = Math.min(
+		const freezeDeadlineAtMs = deadline(
+			"codexProcess.groupFreeze",
+			clock.now(),
 			input.deadlineAtMs,
-			clock.now() + codexProcessMs("groupFreeze"),
 		);
 		try {
 			await awaitFrozenGroup(
@@ -366,7 +367,7 @@ function createProcessGroupCleanup(
 	 * @returns False when the group is already quiescent, so nothing needs escalating.
 	 */
 	const awaitTermGrace = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + codexProcessMs("termGrace"));
+		const termAtMs = deadline("codexProcess.termGrace", clock.now(), input.deadlineAtMs);
 		const firstEvent = await waitForClosedOrAt(input.childClosed, termAtMs);
 		if (!stillOwned(input.identity, "finish TERM cleanup of the Codex process group")) return false;
 		if (firstEvent === "closed" && clock.now() < termAtMs) {

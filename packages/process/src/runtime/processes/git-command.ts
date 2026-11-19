@@ -8,7 +8,7 @@
 
 import type { Subprocess } from "bun";
 
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
+import { deadline, durationMs, gitMs } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -28,12 +28,12 @@ import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.t
  * @returns True when the group disappeared in time.
  */
 async function processGroupDisappeared(pgid: number): Promise<boolean> {
-	const deadline = gitGroupCleanupDeadline(Date.now());
+	const deadlineAt = deadline("git.groupCleanup", Date.now());
 	for (;;) {
 		if (!processGroupExists(pgid)) {
 			return true;
 		}
-		if (Date.now() >= deadline) {
+		if (Date.now() >= deadlineAt) {
 			return false;
 		}
 		// oxlint-disable-next-line no-await-in-loop -- polling one interval at a time
@@ -164,7 +164,7 @@ async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
 		const cleanupExpired = run.terminationSignal.then(
 			() =>
 				new Promise<null>((resolve) => {
-					cleanupTimer = setTimeout(() => resolve(null), gitMs("groupCleanup"));
+					cleanupTimer = setTimeout(() => resolve(null), durationMs("git.groupCleanup"));
 				}),
 		);
 		const raced = await Promise.race([complete, cleanupExpired]);
@@ -358,7 +358,7 @@ async function settleWithLimits(command: RunningCommand, options: GitOptions): P
 	const timeout =
 		options.timeoutMs === null
 			? undefined
-			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? gitMs("command"));
+			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? durationMs("git.command"));
 	/** End the command because the caller gave up on it. */
 	const abort = (): void => {
 		run.terminate("aborted");

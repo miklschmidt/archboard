@@ -13,7 +13,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
 import { readProcessObservation } from "#runtime/processes/observation.ts";
 import {
 	captureDetachedProcessGroup,
@@ -81,7 +80,7 @@ function recordedPid(file: string): number {
 }
 
 async function expectPidAbsent(pid: number): Promise<void> {
-	const deadline = gitGroupCleanupDeadline(Date.now());
+	const deadline = Date.now() + 3000;
 	while (readProcessObservation(pid) !== undefined && Date.now() < deadline) {
 		await Bun.sleep(5);
 	}
@@ -299,7 +298,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			await expect(git(root, [mode, marker], { executable })).rejects.toMatchObject({
 				failure: "output",
 			});
-			expect(performance.now() - started).toBeLessThan(gitMs("groupCleanup"));
+			expect(performance.now() - started).toBeLessThan(3000);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -325,7 +324,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 		await expect(git(root, ["descendant", descendantMarker], { executable })).rejects.toMatchObject(
 			{ failure: "cleanup" },
 		);
-		expect(performance.now() - descendantStarted).toBeLessThan(gitMs("groupCleanup"));
+		expect(performance.now() - descendantStarted).toBeLessThan(3000);
 		await waitForFile(`${descendantMarker}.descendant`);
 		await expectPidAbsent(recordedPid(`${descendantMarker}.leader`));
 		await expectPidAbsent(recordedPid(`${descendantMarker}.descendant`));
@@ -358,7 +357,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			if (outcome.kind === "rejected") {
 				expect(outcome.error).toMatchObject({ failure });
 			}
-			expect(performance.now() - started).toBeLessThan(gitMs("groupCleanup"));
+			expect(performance.now() - started).toBeLessThan(3000);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -404,7 +403,7 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 		}
 		const outcome = await Promise.race([
 			stalledOutcome,
-			Bun.sleep(3 * gitMs("groupCleanup")).then(() => ({ kind: "deadline" as const })),
+			Bun.sleep(3 * 3000).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(outcome.kind).toBe("rejected");
 		if (outcome.kind === "rejected") {
