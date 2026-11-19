@@ -1,13 +1,26 @@
 //! A door keeps its measured size through ranking and port allocation on both engines.
 
 use std::collections::BTreeMap;
-use std::future::Future;
+use std::future::{Future, Ready, ready};
 use std::task::{Context, Poll, Waker};
 
-use archboard_layout::{Content, Engine, InProcess, Measured, draw};
+use archboard_layout::{Content, Engine, Measured, Solver, Unsolved, draw, lay_out_picture};
 use archboard_scene::drawing::{MeasuredNode, Painted};
 use archboard_scene::geometry::{Point, Rect};
 use serde_json::{Value, json};
+
+/// Every solve laid out here, with the core's own Graphviz.
+struct Here;
+
+impl Solver for Here {
+    type Solve<'s> = Ready<Result<String, Unsolved>>;
+
+    fn solve(&self, graph: String) -> Self::Solve<'_> {
+        ready(
+            lay_out_picture(&graph, &mut archboard_graphviz::InCore).map_err(Unsolved::Failed),
+        )
+    }
+}
 
 /// Draw semantic content through the production graph builder and the real layout engine.
 fn drawing(content: Value, sizes: &[(f64, f64)], engine: Engine) -> Painted {
@@ -26,9 +39,8 @@ fn drawing(content: Value, sizes: &[(f64, f64)], engine: Engine) -> Painted {
             },
         );
     }
-    let host = InProcess::new(|_: &str| archboard_graphviz::InCore);
     let entries = BTreeMap::new();
-    let mut drawing = std::pin::pin!(draw(&content, &measured, None, &entries, engine, &host));
+    let mut drawing = std::pin::pin!(draw(&content, &measured, None, &entries, engine, &Here));
     let Poll::Ready(answer) = drawing
         .as_mut()
         .poll(&mut Context::from_waker(Waker::noop()))

@@ -27,7 +27,7 @@ use super::packing::{
     PACK_GAP, PackLayout, Packing, Span, TRUNK_CLEARANCE, nearest_free, open_stretch,
     separate_facing_ports, spread,
 };
-use super::place::insets_of;
+use super::legacy::insets_of;
 use super::tree::{Block, BlockId, BlockTree, Line, Nesting, header_of};
 
 /// A box's middle across.

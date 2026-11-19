@@ -12,12 +12,12 @@
 
 use std::collections::BTreeMap;
 use std::fs;
-use std::future::Future;
+use std::future::{Future, Ready, ready};
 use std::pin::pin;
 use std::task::{Context, Poll, Waker};
 
 use archboard_graphviz::InCore;
-use archboard_layout::{InProcess, Laying, Solver};
+use archboard_layout::{Solver, Unsolved, lay_out_picture};
 use archboard_render::request::RenderRequest;
 use archboard_render::{Host, Rendered, Renderer};
 use serde::Deserialize;
@@ -30,32 +30,23 @@ struct Fixture {
     svg: String,
 }
 
-/// The Graphviz a solve lays its graphs out with: the core's own.
-type InCoreFor = fn(&str) -> InCore;
-
-/// Where the native render runs: its solves here, its icons the fixture's.
+/// Where the native render runs: its solves here, with the core's own Graphviz, its icons the
+/// fixture's.
 struct Native {
-    solver: InProcess<InCoreFor>,
     icons: BTreeMap<String, Vec<String>>,
 }
 
 impl Native {
     fn new(icons: BTreeMap<String, Vec<String>>) -> Native {
-        Native {
-            solver: InProcess::new(|_| InCore),
-            icons,
-        }
+        Native { icons }
     }
 }
 
 impl Solver for Native {
-    type Solve<'s>
-        = Laying<'s, InCoreFor>
-    where
-        Self: 's;
+    type Solve<'s> = Ready<Result<String, Unsolved>>;
 
     fn solve(&self, graph: String) -> Self::Solve<'_> {
-        self.solver.solve(graph)
+        ready(lay_out_picture(&graph, &mut InCore).map_err(Unsolved::Failed))
     }
 }
 
