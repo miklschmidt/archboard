@@ -14,7 +14,7 @@
 
 import { recordingMs } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
-import { talkMsSamples, talkSampleRate } from "@archboard/walkthrough/talk";
+import { talkClock, talkMsSamples } from "@archboard/walkthrough/talk";
 
 /** The log of a finished talk, as the recording page hands it over. */
 type TalkLog = NonNullable<ReturnType<Parameters<typeof publishRecordingPage>[0]["talk"]>>;
@@ -115,8 +115,8 @@ function wavOf(samples: Int16Array): Blob {
 	header.setUint32(16, 16, true);
 	header.setUint16(20, 1, true);
 	header.setUint16(22, 1, true);
-	header.setUint32(24, talkSampleRate(), true);
-	header.setUint32(28, talkSampleRate() * 2, true);
+	header.setUint32(24, talkClock("sampleRate"), true);
+	header.setUint32(28, talkClock("sampleRate") * 2, true);
 	header.setUint16(32, 2, true);
 	header.setUint16(34, 16, true);
 	ascii(36, "data");
@@ -169,7 +169,7 @@ class TalkCapture {
 	 * @returns The capture.
 	 */
 	static async open(): Promise<TalkCapture> {
-		const context = new AudioContext({ sampleRate: talkSampleRate() });
+		const context = new AudioContext({ sampleRate: talkClock("sampleRate") });
 		const module = tapModule();
 		try {
 			await context.audioWorklet.addModule(module);
@@ -278,7 +278,7 @@ class TalkCapture {
 	 * @returns Its frame now, in samples.
 	 */
 	#now(): number {
-		return Math.round(this.#context.currentTime * talkSampleRate());
+		return Math.round(this.#context.currentTime * talkClock("sampleRate"));
 	}
 
 	/**

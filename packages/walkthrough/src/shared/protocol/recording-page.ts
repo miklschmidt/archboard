@@ -59,23 +59,12 @@ const RecordingNarrationSchema = z
 	})
 	.strict();
 
-/** What voice is told when it narrates a recording. */
-type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
-
 /**
  * The schema of what voice is told when it narrates a recording, for a message that carries it.
  * @returns The schema.
  */
 function recordingNarrationSchema(): typeof RecordingNarrationSchema {
 	return RecordingNarrationSchema;
-}
-
-/**
- * The language a recording is narrated in when none is asked for.
- * @returns Its BCP 47 tag.
- */
-function defaultRecordingLanguage(): string {
-	return DEFAULT_RECORDING_LANGUAGE;
 }
 
 /**
@@ -220,7 +209,6 @@ function recordingAskedOf(search: string): {
 }
 
 export {
-	defaultRecordingLanguage,
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
 	RECORDING_PAGE_GLOBAL,
@@ -232,6 +220,5 @@ export {
 	publishRecordingPage,
 	recordingAskedOf,
 	type RecordingContainer,
-	type RecordingNarration,
 	type RecordingState,
 };

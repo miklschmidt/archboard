@@ -16,7 +16,6 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
 	TalkSchema,
 	framesOf,
-	talkFrameOf,
 	voiceLevels,
 	type Talk,
 	type TalkEvent,
@@ -126,10 +125,6 @@ describe("a talk", () => {
 		const parsed = TalkSchema.parse(talk());
 		expect(framesOf(parsed)).toBe(90);
 		expect(framesOf({ audio: { ...parsed.audio, samples: 144_001 } })).toBe(91);
-	});
-
-	test("shows an event on the first frame at or after it happened", () => {
-		expect([0, 1, 1599, 1600, 1601, 3200].map(talkFrameOf)).toEqual([0, 1, 1, 1, 2, 2]);
 	});
 
 	test("with a step skipped, repeated or out of order is refused", () => {

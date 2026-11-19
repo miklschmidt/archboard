@@ -9,7 +9,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { Talk } from "@archboard/walkthrough/talk";
-import { TalkPlayback } from "#ui/walkthroughs/replay/state/talk-playback.ts";
+import { TalkPlayback, frameOf } from "#ui/walkthroughs/replay/state/talk-playback.ts";
 
 /**
  * A playback of some events, of a walkthrough of id "wk".
@@ -38,6 +38,7 @@ function playbackOf(
 
 describe("a talk played frame by frame", () => {
 	test("shows an event on the first frame at or after it happened", () => {
+		expect([0, 1, 1599, 1600, 1601, 3200].map(frameOf)).toEqual([0, 1, 1, 1, 2, 2]);
 		const playback = playbackOf([
 			{ kind: "step", at: 1601, beat: 0 },
 			{ kind: "step", at: 3200, beat: 1 },

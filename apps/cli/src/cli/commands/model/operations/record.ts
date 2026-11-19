@@ -5,10 +5,7 @@ import {
 	LayoutEngineSchema,
 	DEFAULT_LAYOUT_ENGINE,
 } from "@archboard/model/render-reply";
-import {
-	defaultRecordingLanguage,
-	recordingLanguageInputSchema,
-} from "@archboard/walkthrough/recording";
+import { recordingLanguageInputSchema } from "@archboard/walkthrough/recording";
 import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
@@ -157,7 +154,7 @@ const modelRecordContract = defineCommand({
 			spellings: ["--language"],
 			value: "required",
 			placeholder: "tag",
-			default: defaultRecordingLanguage(),
+			default: recordingLanguageInputSchema().parse(undefined),
 			description: "The language of the narration, as a BCP 47 tag such as `en`, `da` or `pt-BR`",
 		},
 		{

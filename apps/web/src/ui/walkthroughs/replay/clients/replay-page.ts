@@ -21,7 +21,7 @@ import { createRoot } from "react-dom/client";
 import { replayMs } from "@archboard/timing";
 import {
 	talkSamplesMs,
-	talkSamplesPerFrame,
+	talkClock,
 	type Talk,
 	type publishReplayPage,
 } from "@archboard/walkthrough/talk";
@@ -49,7 +49,7 @@ import { talkReads } from "#ui/walkthroughs/replay/clients/talk-reads.ts";
 type ReplayRenderer = Parameters<typeof publishReplayPage>[0];
 
 /** How long one frame lasts, in milliseconds: a frame is a fixed run of the voice's samples. */
-const FRAME_MS = talkSamplesMs(talkSamplesPerFrame());
+const FRAME_MS = talkSamplesMs(talkClock("samplesPerFrame"));
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
 const PREROLL_FRAMES = Math.ceil(replayMs("preroll") / FRAME_MS);

@@ -440,32 +440,23 @@ function replayAskedOf(search: string): boolean {
  * @returns The count.
  */
 function framesOf(talk: Pick<Talk, "audio">): number {
-	return talkFrameOf(talk.audio.samples);
+	return Math.ceil(talk.audio.samples / SAMPLES_PER_FRAME);
 }
 
-/**
- * The frame an event first shows on: the first that begins at or after it.
- * @param at When it happened, in samples.
- * @returns The frame, counted from nought.
- */
-function talkFrameOf(at: number): number {
-	return Math.ceil(at / SAMPLES_PER_FRAME);
-}
+/** The talk's clock: the voice's samples per second, and the samples of one frame. */
+const TALK_CLOCK = Object.freeze({
+	sampleRate: TALK_SAMPLE_RATE,
+	samplesPerFrame: SAMPLES_PER_FRAME,
+});
 
 /**
- * The voice's samples per second, which is also the clock every event is stamped on.
- * @returns The rate.
+ * One number of the talk's clock.
+ * @param key The voice's samples per second, which is also the clock every event is stamped
+ *   on, or how many of them one frame is.
+ * @returns It.
  */
-function talkSampleRate(): number {
-	return TALK_SAMPLE_RATE;
-}
-
-/**
- * How many of the voice's samples one frame is.
- * @returns The count.
- */
-function talkSamplesPerFrame(): number {
-	return SAMPLES_PER_FRAME;
+function talkClock(key: keyof typeof TALK_CLOCK): number {
+	return TALK_CLOCK[key];
 }
 
 /**
@@ -538,12 +529,10 @@ export {
 	framesOf,
 	publishReplayPage,
 	replayAskedOf,
-	talkFrameOf,
+	talkClock,
 	talkFrom,
 	talkMsSamples,
-	talkSampleRate,
 	talkSamplesMs,
-	talkSamplesPerFrame,
 	voiceLevels,
 	type ReplayOptions,
 	type Talk,

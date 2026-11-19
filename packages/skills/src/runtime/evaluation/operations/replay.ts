@@ -10,12 +10,7 @@ import { z } from "zod";
 import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
 import { skillEvalMs } from "@archboard/timing";
-import {
-	talkMsSamples,
-	talkSamplesPerFrame,
-	framesOf,
-	type Talk,
-} from "@archboard/walkthrough/talk";
+import { talkMsSamples, talkClock, framesOf, type Talk } from "@archboard/walkthrough/talk";
 import { keepTalk, readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
 	finding,
@@ -105,7 +100,7 @@ function talkOfFixture(
 			{ kind: "step", at: index * step, beat: index },
 			{
 				kind: "said",
-				at: index * step + talkSamplesPerFrame(),
+				at: index * step + talkClock("samplesPerFrame"),
 				itemId: beat.id,
 				text: beat.body,
 				final: true,

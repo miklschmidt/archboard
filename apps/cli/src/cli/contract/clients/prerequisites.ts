@@ -1,5 +1,6 @@
 import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecycle/server";
-import { archboardBrowserUrl } from "@archboard/server-lifecycle/config";
+import { archboardUrl } from "@archboard/server-lifecycle/config";
+import { browserUrl } from "@archboard/workspace/source-checkout";
 import { registeredRepositoryOfVault } from "@archboard/workspace/checkouts";
 import { paneMs } from "@archboard/timing";
 import open from "open";
@@ -26,7 +27,7 @@ export async function requirePrerequisite(
 	}
 	if ((await connectedBrowsers()) === 0) {
 		throw browserRequired(
-			`${description} requires the canvas to be open in a browser. Open ${archboardBrowserUrl()} and retry.`,
+			`${description} requires the canvas to be open in a browser. Open ${browserUrl(archboardUrl())} and retry.`,
 		);
 	}
 }
@@ -102,7 +103,7 @@ async function firstPane(): Promise<string | null> {
  * @returns The address.
  */
 function canvasUrl(vault: string | null): string {
-	const base = archboardBrowserUrl();
+	const base = browserUrl(archboardUrl());
 	const repository = vault === null ? undefined : registeredRepositoryOfVault(vault);
 	if (repository === undefined) {
 		return base;
