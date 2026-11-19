@@ -2,7 +2,8 @@
 // pass-throughs, two doors to one name, and exports that no caller uses.
 //
 // The checkout `shop` holds a canonical vault. `relay` only passes calls on:
-// a function, a public method, and a `toJSON` that the language calls.
+// a function, a public method, and a `toJSON`, a `[Symbol.toPrimitive]` and a
+// `[Symbol.iterator]` that the language calls.
 // `store` defines `save`; `text` defines `format`. `kit` re-exports both: the
 // server reaches `save` through `kit` while the worker and `relay` import
 // `store` directly, so `save` has two doors; `format` has one. `util` exports a
@@ -102,6 +103,12 @@ beforeAll(async () => {
 			"\t}",
 			"\ttoJSON(key: string): string {",
 			"\t\treturn describe(key);",
+			"\t}",
+			"\t[Symbol.toPrimitive](hint: string): string {",
+			"\t\treturn describe(hint);",
+			"\t}",
+			"\t*[Symbol.iterator](): Iterator<string> {",
+			"\t\tyield describe(\"all\");",
 			"\t}",
 			"}",
 			"",
@@ -288,6 +295,8 @@ test("a function or public method that only passes its call on is information, a
 		["Relay", "put", "information"],
 		["Relay", "Relay.send", "information"],
 	]);
+	const relay = answer.depth?.find((each) => each.subject.name === "Relay");
+	expect(relay?.names.map((each) => each.name)).toEqual(["put", "Relay", "Relay.send"]);
 	// Every export that is not a type, each public method among them, passes its call on.
 	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Relay", undefined, "information"]]);
 });
