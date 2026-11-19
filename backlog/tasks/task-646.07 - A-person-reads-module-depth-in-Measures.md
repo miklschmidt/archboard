@@ -1,11 +1,11 @@
 ---
 id: TASK-646.07
 title: A person reads module depth in Measures
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:49:00Z'
+updated_date: '2026-11-19T01:52:00Z'
 labels:
   - ready-for-agent
 dependencies:
