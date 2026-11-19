@@ -191,6 +191,11 @@ async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<
 		external: judged.external,
 	});
 	outcome.findings.push(...depth.findings.map((finding) => ({ ...site, ...finding })));
+	if (depth.withheldBy.length > 0) {
+		const { model, variant } = siteOf(reading.read, "", subject);
+		const detail = depth.withheldBy.join(", ");
+		outcome.skipped.push({ reason: "logic-unparsed", model, variant, subject, repo: checkout.repo, detail });
+	}
 	const { exports, logic } = depth;
 	outcome.depth.push({
 		model: reading.read.document.name,

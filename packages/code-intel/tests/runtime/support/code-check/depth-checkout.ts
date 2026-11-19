@@ -107,6 +107,7 @@ function depthFindings(answer: CodeCheckAnswer, name: string): string[] {
 		"REEXPORT_PASS_THROUGH",
 		"EXPOSED_UNUSED",
 		"MODULE_SHALLOW",
+		"INTERFACE_WIDE",
 	]);
 	return answer.findings
 		.filter((each) => each.subject?.name === name && codes.has(each.code))

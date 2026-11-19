@@ -42,8 +42,9 @@
 // `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its public
 // methods. Types are no verdict's concern, so an exported union or enum keeps
 // the compiler's exhaustive checks. The other grounds read the counts, and only
-// where every exported name is in a judged language and every file of one
-// parsed whole and gave its count of logic.
+// where every exported name is in a judged language. The measured shallow
+// ground also needs every code file of one parsed whole; where code that did
+// not parse withholds it, the module names that code (`withheldBy`).
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
@@ -138,6 +139,12 @@ interface Depth {
 	readonly exports: ExportCounts;
 	readonly logic: number;
 	readonly findings: readonly DepthFinding[];
+	/**
+	 * The parts of the module's code that did not parse, where they withhold
+	 * the measured `MODULE_SHALLOW`: the logic counted would make the module
+	 * shallow, and the code that did not parse could make it deep.
+	 */
+	readonly withheldBy: readonly string[];
 }
 
 /** The kind of one top-level export. */
@@ -419,25 +426,34 @@ function memberOfFile(symbol: string, symbols: ReadonlySet<string>): boolean {
 	return at > 0 && symbols.has(symbol.slice(0, at));
 }
 
+/** The logic of a module's code, and the code that did not parse. */
+interface Logic {
+	readonly logic: number;
+	/** Each part of a file that did not parse, as `path:line` or `path:start-end`. */
+	readonly unparsed: readonly string[];
+}
+
 /**
- * The pieces of logic in the module's files of a judged language: what each
- * file's adapter counts, and each value it keeps hidden at module level.
+ * The pieces of logic in the module's code files of a judged language: what
+ * each file's adapter counts, and each value it keeps hidden at module level.
+ * A file its adapter gives no count, a manifest such as a `Cargo.toml`, holds
+ * no logic.
  * @param reading The module.
- * @returns The count, and whether every such file parsed whole and gave its count.
+ * @returns The count, and the parts of its code that did not parse.
  */
-async function logicOf(
-	reading: DepthReading,
-): Promise<{ readonly logic: number; readonly complete: boolean }> {
+async function logicOf(reading: DepthReading): Promise<Logic> {
 	let logic = 0;
-	let complete = true;
+	const unparsed: string[] = [];
 	for (const file of reading.files) {
 		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
 		const read = await judgedFile(reading, file);
-		if (read === undefined) continue;
-		if (read.logic === undefined || read.unparsed.length > 0) complete = false;
-		logic += (read.logic ?? 0) + hiddenValues(read.definitions);
+		if (read?.logic === undefined) continue;
+		for (const { start, end } of read.unparsed) {
+			unparsed.push(`${file}:${start === end ? start : `${start}-${end}`}`);
+		}
+		logic += read.logic + hiddenValues(read.definitions);
 	}
-	return { logic, complete };
+	return { logic, unparsed };
 }
 
 /**
@@ -508,6 +524,12 @@ function unreadFor(reading: DepthReading, name: ExposedName): string[] {
 /** What the verdicts on a module as a whole read, beside its names. */
 type Whole = Omit<Parameters<typeof moduleFindings>[0], "label" | "rolledUp">;
 
+/** The findings on a module, and whether a file that did not parse withholds its shallow verdict. */
+interface Judgement {
+	readonly findings: readonly DepthFinding[];
+	readonly withheld: boolean;
+}
+
 /**
  * The findings on a module's exports: one per name at most, the verdicts on
  * the module as a whole, and the names only its own files use where it
@@ -515,13 +537,13 @@ type Whole = Omit<Parameters<typeof moduleFindings>[0], "label" | "rolledUp">;
  * @param reading The module.
  * @param judged Each judged export with its kind, in the order the module exports them.
  * @param whole Its counts, and whether they stand on a complete reading.
- * @returns The findings, grouped.
+ * @returns The findings, grouped, and whether a file that did not parse withholds the shallow verdict.
  */
 async function depthFindings(
 	reading: DepthReading,
 	judged: readonly (readonly [ExposedName, NameKind])[],
 	whole: Whole,
-): Promise<DepthFinding[]> {
+): Promise<Judgement> {
 	const judging = { ...reading, siblings: await siblingUses(reading) };
 	const findings: DepthFinding[] = [];
 	const rollUp = new Map<string, boolean>();
@@ -535,7 +557,10 @@ async function depthFindings(
 	const module = moduleFindings({ ...whole, label: reading.label, rolledUp: everyOne(rollUp) });
 	const exported = judged.flatMap(([name, kind]) => (kind === "method" ? [] : [name]));
 	const undeclared = undeclaredFinding(judging, exported);
-	return [...findings, ...module, ...(undeclared === undefined ? [] : [undeclared])];
+	return {
+		findings: [...findings, ...module.findings, ...(undeclared === undefined ? [] : [undeclared])],
+		withheld: module.withheld,
+	};
 }
 
 /**
@@ -547,9 +572,12 @@ async function depthFindings(
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
 	const { counts, judged, listed } = await countExports(reading, names);
-	const { logic, complete } = await logicOf(reading);
+	const { logic, unparsed } = await logicOf(reading);
 	const supported = names.unjudged.length === 0 && names.infrastructure.length === 0;
-	const whole = { exports: counts, logic, measured: supported && complete };
+	const whole = { exports: counts, logic, supported, complete: unparsed.length === 0 };
+	const judgement = reading.external
+		? { findings: [], withheld: false }
+		: await depthFindings(reading, judged, whole);
 	return {
 		languages: names.languages,
 		unjudged: names.unjudged,
@@ -557,7 +585,8 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 		listed,
 		exports: counts,
 		logic,
-		findings: reading.external ? [] : await depthFindings(reading, judged, whole),
+		findings: judgement.findings,
+		withheldBy: judgement.withheld ? unparsed : [],
 	};
 }
 

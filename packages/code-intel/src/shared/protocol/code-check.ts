@@ -268,6 +268,13 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * - `symbol-unparsed`: a bound or anchored symbol the check found only inside
  *   a part of a file that did not parse (ADR 0046). Its `detail` names the
  *   file and the lines.
+ * - `logic-unparsed`: a module whose code holds a part that did not parse,
+ *   where the logic the check counted would make it shallow on Ousterhout's
+ *   measure, so it withholds that `MODULE_SHALLOW`: the logic of the code
+ *   that did not parse goes uncounted and could make the module deep. Its
+ *   subject is the part bound to the module, and its `detail` names each
+ *   file and the lines that did not parse (TASK-651). A wide interface needs
+ *   no whole parse and stays a finding.
  * - `expression-not-followed`: a bound or anchored symbol that may lie below a
  *   Nix expression the static reading of a flake cannot follow, such as an
  *   `import` or a list of systems that an input gives (TASK-367.21), or in a
@@ -351,6 +358,7 @@ const CodeCheckSkipSchema = z
 			"path-never-read",
 			"checkout-unavailable",
 			"symbol-unparsed",
+			"logic-unparsed",
 			"expression-not-followed",
 			"text-only",
 			"ends-overlap",
