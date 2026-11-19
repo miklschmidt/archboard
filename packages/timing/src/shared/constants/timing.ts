@@ -46,7 +46,6 @@ export {
 export { rasterMs } from "#shared/constants/raster.ts";
 export { checkMs } from "#shared/constants/checks.ts";
 export { localityDefaultSinceSeconds } from "#shared/constants/history-lens.ts";
-export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
 export {
 	recorderMs,
 	recorderPageReadyDeadline,
