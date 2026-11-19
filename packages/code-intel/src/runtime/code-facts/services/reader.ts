@@ -177,9 +177,10 @@ async function resolved(
 	const imports = read.imports.map((found) => resolver.resolve(file, found));
 	const references = read.references.map(({ through, ...reference }, index) => {
 		const target =
-			through === undefined
-				? moduleReading?.targets[index]
-				: targetOf(reference.symbol, through.local, imports[through.import]);
+			moduleReading?.targets[index] ??
+			(through === undefined
+				? undefined
+				: targetOf(reference.symbol, through.local, imports[through.import]));
 		return target === undefined ? reference : { ...reference, target };
 	});
 	return {

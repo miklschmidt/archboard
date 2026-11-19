@@ -30,7 +30,9 @@
 // `static` of a function pointer's type can be called, so it is a function.
 // The members of an `impl` of a trait whose members the language's own
 // syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
-// `Display::fmt`, are called by the language: no caller names them. An
+// `Display::fmt`, are called by the language: no caller names them, and
+// so is an item `#[wasm_bindgen]` exports to JavaScript, or a member of an
+// `impl` block it exports (TASK-646.16). An
 // associated function, which takes no `self`, and an associated constant
 // belong to the type and are named through it, as `Relay::new` is. A
 // function whose body only passes its call on names its callee's root
@@ -140,19 +142,36 @@ function opens(visibility: string): boolean {
 }
 
 /**
- * Whether an attribute right before an item names `#[macro_export]`.
+ * Whether an attribute right before an item matches, written without spaces.
  * @param node The item.
- * @returns True when it does.
+ * @param attribute The attribute's spelling.
+ * @returns True when one does.
  */
-function exported(node: Node): boolean {
+function attributed(node: Node, attribute: RegExp): boolean {
 	for (
 		let at = node.previousNamedSibling;
 		at?.type === "attribute_item";
 		at = at.previousNamedSibling
 	) {
-		if (at.text.replaceAll(/\s+/gu, "") === "#[macro_export]") return true;
+		if (attribute.test(at.text.replaceAll(/\s+/gu, ""))) return true;
 	}
 	return false;
+}
+
+/** `#[macro_export]`, which exports a macro to the whole crate. */
+const MACRO_EXPORT = /^#\[macro_export\]$/u;
+
+/** `#[wasm_bindgen]`, with or without arguments, which exports an item to JavaScript. */
+const WASM_BINDGEN = /^#\[wasm_bindgen(?:\(.*\))?\]$/u;
+
+/**
+ * What an item exported to JavaScript carries: JavaScript calls it, and no
+ * Rust caller names it.
+ * @param node The item, or the `impl` block that holds it.
+ * @returns The mark, or nothing.
+ */
+function hostCalled(node: Node): Pick<Definition, "calledByLanguage"> {
+	return attributed(node, WASM_BINDGEN) ? { calledByLanguage: true } : {};
 }
 
 /**
@@ -187,6 +206,7 @@ function definition(
 		...shape,
 		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
+		...hostCalled(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),
@@ -261,7 +281,7 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 	if (type === undefined || body === null) return;
 	const trait = node.childForFieldName("trait");
 	const ofTrait = trait !== null;
-	const called = languageCalled(trait);
+	const called = { ...languageCalled(trait), ...hostCalled(node) };
 	const holder = [...scope.prefix, type].join(".");
 	const open = scope.open && walk.types.get(holder) !== false;
 	for (const member of body.namedChildren) {
@@ -331,7 +351,7 @@ function typeMembers(node: Node, holder: string, shape: Openness, walk: Walk): v
  */
 function itemShape(node: Node, scope: Scope): Openness {
 	if (node.type === "macro_definition") {
-		const exposed = exported(node);
+		const exposed = attributed(node, MACRO_EXPORT);
 		return { visibility: exposed ? "macro_export" : "macro_rules", exposed };
 	}
 	const visibility = visibilityOf(node);

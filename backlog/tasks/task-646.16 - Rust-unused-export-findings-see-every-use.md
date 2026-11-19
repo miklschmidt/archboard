@@ -1,8 +1,9 @@
 ---
 id: TASK-646.16
 title: Rust unused-export findings see every use
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T03:12:00Z'
 updated_date: '2026-11-19T04:15:00Z'
 labels:
@@ -53,16 +54,49 @@ Follow the same section of TASK-646.05.
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A Rust name used from another crate of the checkout counts as used
-- [ ] #2 A Rust name used from a file of its crate outside the module folder counts as used
-- [ ] #3 An item exported to the host language through `#[wasm_bindgen]` counts as called by the language and gets no `EXPOSED_UNUSED`
-- [ ] #4 Where a Rust use cannot be resolved, `EXPOSED_UNUSED` on that module is information, not a warning
-- [ ] #5 Code-check tests reproduce each failing case of the audit
-- [ ] #6 On this repository, a fresh sample of 25 Rust `EXPOSED_UNUSED` warnings has no name that a file outside its module uses, tests aside
+- [x] #1 A Rust name used from another crate of the checkout counts as used
+- [x] #2 A Rust name used from a file of its crate outside the module folder counts as used
+- [x] #3 An item exported to the host language through `#[wasm_bindgen]` counts as called by the language and gets no `EXPOSED_UNUSED`
+- [x] #4 Where a Rust use cannot be resolved, `EXPOSED_UNUSED` on that module is information, not a warning
+- [x] #5 Code-check tests reproduce each failing case of the audit
+- [x] #6 On this repository, a fresh sample of 25 Rust `EXPOSED_UNUSED` warnings has no name that a file outside its module uses, tests aside
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Test-first: rust-uses.test.ts, a code-check fixture workspace, reproduces each audit case.
+2. Fact analysis, definition-site: a definition spelled as the symbol first, then where imports and re-exports lead, then a member that only ends with the name.
+3. Fact analysis, Rust: a value written alone through a use leaf that names a module reaches the value the module above offers; the cached fact reader takes a module reading's target for a use an import names.
+4. Fact analysis, Rust: #[wasm_bindgen] items and impl members are calledByLanguage; Module depth never judges such a name unused.
+5. Code check: a Rust use that leads into the module's own files and reaches no definition leaves the file unread (information); a path to a crate root reaches a #[macro_export] macro.
+6. Measure before/after on this repository and audit a fresh sample of 25.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
+Measured with this checkout's CLI (bin/archboard check code, own server): Rust EXPOSED_UNUSED warnings 1373 -> 1343, none turned to information. Fresh sample of 25 (seed 1119): 0 names used by a file outside their module, tests aside; the 7 grep hits were other items of the same name (RNode, PictureLegend in archboard-svg and TS, Projection, title_of/titleOf, hypot, normalize, inset_of/insetOf) or uses inside the module (between.phase, used only inside the archboard-paint crate). 20 of the remaining warnings are #[derive(TS)] types; TypeScript names only LegendLayout of them directly.
+
 Merge gate (orchestrator): footprint exits 1 on Cached fact reader (reader.ts lets a module reading's target win for a use that an import names, so the Rust resolver reaches the function and not the module) and code-intel (tests). No architecture change; exception recorded in the proposal history (operation task-646-16-exceptions). Rust EXPOSED_UNUSED warnings went from 1373 to 1343; a fresh 25-name sample has no false match. Most of the rest sit on vendored external crates (graphviz-pure-*, vello_encoding).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rust EXPOSED_UNUSED now sees the uses the audit found missing: 1373 warnings -> 1343 on this repository, and a fresh sample of 25 has no name a file outside its module uses.
+
+What changed:
+- Fact analysis (definition-site.ts): a definition spelled as the symbol comes first, then where the file's imports and re-exports lead, and a member whose last names match only after both. Before, the variant Item::Group hid the re-exported struct Group, and a caller's own method route hid router::route.
+- Fact analysis (rust-resolution.ts): a value written alone through a use leaf that names a module (use text::outline; outline(..)) reaches the value the module above offers (mod outline; pub use outline::outline;), as Rust's namespaces say. Fixes outline and departure.
+- Cached fact reader (reader.ts, outside the slice): a target the module reading gives a use wins over the import's, so the Rust resolver can answer for uses an import names. Other adapters give none there; test:modules passes.
+- Fact analysis (rust-definitions.ts): an item, or a member of an impl block, under #[wasm_bindgen] is calledByLanguage. Module depth (name-findings.ts, outside the slice): such a name is never judged unused, like a method or a static member.
+- Code check (module-reading.ts): a Rust use that leads into the module's own files and reaches no definition, as a function a macro defines, leaves the file unread, so EXPOSED_UNUSED is information. A path to a crate root reaches a #[macro_export] macro of the crate, wherever it is defined. Private test-import helpers moved to test-imports.ts to keep the file under 600 lines.
+- Design lens: both Rust rules.
+
+Verification: rust-uses.test.ts (cross-crate use past a same-named variant and caller method, module/function namesakes across crates and outside the module folder, exported macro, wasm_bindgen, macro-made name -> information); test:modules 5174 pass; types and lint clean.
+
+Surfaced on modules this ticket does not change: ANCHOR_MISMATCH warning on 1 relationship (archboard-render -> Legend entries): its anchor appearances used to match the struct field RenderedPicture.appearances by its last name and now resolves to the call archboard_svg::appearances, which neither end binds. EXPOSED_UNUSED warnings went down on Scene, Picture motion, archboard-renderer-wasm, archboard-router, archboard-scene, archboard-text and graphviz-pure-core; no new ones.
+
+Risks / follow-ups: types exported to TypeScript through #[derive(TS)] are still judged (20 warnings; only LegendLayout is named by TS code). Footprint exits 1: Module depth and Cached fact reader changed outside the slice, code-intel by its tests.
+<!-- SECTION:FINAL_SUMMARY:END -->
