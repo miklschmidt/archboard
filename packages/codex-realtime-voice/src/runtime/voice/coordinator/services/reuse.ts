@@ -1,5 +1,5 @@
 import type { ChildEpoch, ChildId } from "@archboard/codex-app-server/identity";
-import { CODEX_SESSION_THREAD_SOURCE } from "@archboard/codex-app-server/session";
+import { codexSessionThreadSource } from "@archboard/codex-app-server/session";
 import type { ThreadLinkClassification } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
 	CodexCoordinatorError,
@@ -11,8 +11,8 @@ import {
 	type CoordinatorReviewHashes,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import {
-	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL,
+	reviewedCoordinatorEffort,
+	reviewedCoordinatorModel,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { hashCoordinatorSettings } from "#runtime/voice/coordinator/rules/review.ts";
 import { errorMessage } from "#runtime/voice/coordinator/state/state.ts";
@@ -249,7 +249,7 @@ function classificationAllowsReuse(
 ): boolean {
 	const checks = [
 		link.state === "executable",
-		link.source === CODEX_SESSION_THREAD_SOURCE,
+		link.source === codexSessionThreadSource(),
 		link.threadId === candidate.threadId,
 		link.childId === candidate.childId,
 		link.epoch === candidate.epoch,
@@ -488,8 +488,8 @@ function effectiveSettingsMatch(
 ): boolean {
 	const effective = persistence.settings.effective;
 	const checks = [
-		effective.model === COORDINATOR_MODEL,
-		effective.effort === COORDINATOR_EFFORT,
+		effective.model === reviewedCoordinatorModel(),
+		effective.effort === reviewedCoordinatorEffort(),
 		configured.serviceTier !== "priority" || effective.serviceTier === "priority",
 	];
 	return checks.every((matched) => matched);
@@ -520,7 +520,7 @@ function recordProvesOwnership(
 		record.provenance.childId === persistence.childId,
 		record.provenance.epoch === persistence.epoch,
 		record.provenance.threadId === persistence.threadId,
-		record.provenance.threadSource === CODEX_SESSION_THREAD_SOURCE,
+		record.provenance.threadSource === codexSessionThreadSource(),
 		record.provenance.confirmedAtMs !== null,
 		record.provenance.workspaceRoot === options.workingDirectory,
 		record.provenance.instructionHash === reviewed.instructionHash,

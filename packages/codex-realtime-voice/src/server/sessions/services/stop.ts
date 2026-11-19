@@ -18,7 +18,7 @@
 import { CODEX_SESSION_MS } from "@archboard/timing";
 import type { ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import type { CoordinatorToolWorkhorse } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
-import { REMAINING_WORK_LIMIT } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
+import { boundRemainingWork } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 import type { BuiltWorkhorse } from "#server/generation/protocol/session-contract.ts";
 import type {
 	CodexWorkbenchWorkhorse,
@@ -192,7 +192,7 @@ function stopOf(
 	outcome: WorkhorseStop["outcome"],
 	remaining: readonly RemainingWork[],
 ): WorkhorseStop {
-	return { checkout, outcome, remaining: remaining.slice(0, REMAINING_WORK_LIMIT) };
+	return { checkout, outcome, remaining: boundRemainingWork(remaining) };
 }
 
 /**

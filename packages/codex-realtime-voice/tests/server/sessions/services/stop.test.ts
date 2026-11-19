@@ -16,7 +16,9 @@ import {
 	type CodexWorkbenchWorkhorse,
 } from "#server/sessions/services/workhorses.ts";
 import type { BuiltWorkhorse } from "#server/generation/protocol/session-contract.ts";
-import { REMAINING_WORK_LIMIT } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
+
+/** The most threads a stop report names: what the result schema of `stop_workhorses` holds. */
+const REMAINING_WORK_LIMIT = 100;
 
 const { identity } = createIdentityAuthorities();
 const { decoder } = identity;

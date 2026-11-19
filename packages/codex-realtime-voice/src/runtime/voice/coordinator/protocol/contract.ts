@@ -5,7 +5,6 @@ import type {
 	EpochTransaction,
 } from "#runtime/epoch/store/contract.ts";
 import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
-import type { COORDINATOR_IDENTITY } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/contracts.ts";
 import type {
 	CodexSession,
 	SessionParams,
@@ -61,8 +60,8 @@ interface CoordinatorIdentityPort {
 }
 
 interface CoordinatorConfiguredSettings {
-	readonly model: typeof COORDINATOR_IDENTITY.model;
-	readonly effort: typeof COORDINATOR_IDENTITY.effort;
+	readonly model: string;
+	readonly effort: string;
 	readonly serviceTier: "priority" | null;
 }
 

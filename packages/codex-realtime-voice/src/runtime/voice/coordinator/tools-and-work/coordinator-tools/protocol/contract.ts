@@ -28,11 +28,7 @@ import type {
 	StopWorkhorsesResult,
 } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
 import type { VoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
-import type {
-	UnknownDynamicToolResponseSchema,
-	ValidDynamicToolResponseSchema,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
-import type { z } from "zod";
+import type { ToolResponse } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
 
 const COORDINATOR_TOOLS_OWNER = "codex-coordinator-tools" as const;
 
@@ -131,9 +127,7 @@ type CoordinatorToolsServerRequest = DynamicServerRequest & {
 	readonly owner: typeof COORDINATOR_TOOLS_OWNER;
 };
 
-type DynamicToolResponse =
-	| z.infer<typeof ValidDynamicToolResponseSchema>
-	| z.infer<typeof UnknownDynamicToolResponseSchema>;
+type DynamicToolResponse = ToolResponse;
 
 type CoordinatorToolValue =
 	| InspectWorkhorseResult

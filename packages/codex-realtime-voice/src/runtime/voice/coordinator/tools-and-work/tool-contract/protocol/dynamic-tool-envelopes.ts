@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { deepFreeze } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
+
 const DYNAMIC_TOOL_REFUSAL_REASONS = Object.freeze([
 	"invalid_call",
 	"not_ready",
@@ -123,19 +125,63 @@ const UnknownDynamicToolResponseSchema = z
 		}
 	});
 
-const DynamicToolResponseSchema = ValidDynamicToolResponseSchema;
+type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;
+/** The result an `ok` envelope carries. */
+type DynamicToolValue = z.infer<typeof DynamicToolOkEnvelopeSchema>["value"];
+type ToolResponse =
+	| z.infer<typeof ValidDynamicToolResponseSchema>
+	| z.infer<typeof UnknownDynamicToolResponseSchema>;
+
+/**
+ * Read the reviewed refusal reason out of a value, such as the code a thrown error carries.
+ * @param value - Any value.
+ * @returns The refusal reason, or null when the value is not a reviewed reason.
+ */
+function refusalReasonOf(value: unknown): DynamicToolRefusalReason | null {
+	const reason = DynamicToolRefusalReasonSchema.safeParse(value);
+	return reason.success ? reason.data : null;
+}
+
+/**
+ * The envelope for an effect whose outcome the server cannot prove either way.
+ * @param operationId - The server-issued operation identity.
+ * @returns The envelope, with the one reviewed message.
+ */
+function outcomeUnknownEnvelope(operationId: string): DynamicToolEnvelope {
+	return DynamicToolOutcomeUnknownEnvelopeSchema.parse({
+		tag: "outcome_unknown",
+		operationId,
+		message: DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
+	});
+}
+
+/**
+ * Wrap an envelope as the app-server's dynamic tool response text, checked against the response
+ * schemas and frozen so it cannot change after it is built.
+ * @param envelope - The envelope to serialize.
+ * @param success - Whether the app-server should treat the call as succeeded.
+ * @returns The frozen, schema-checked response.
+ */
+function toolResponseFor(envelope: DynamicToolEnvelope, success: boolean): ToolResponse {
+	const text = JSON.stringify(DynamicToolEnvelopeSchema.parse(envelope));
+	const candidate = {
+		contentItems: [{ type: "inputText" as const, text }],
+		success,
+	};
+	return deepFreeze(
+		success
+			? ValidDynamicToolResponseSchema.parse(candidate)
+			: UnknownDynamicToolResponseSchema.parse(candidate),
+	);
+}
 
 export {
-	DYNAMIC_TOOL_REFUSAL_REASONS,
 	type DynamicToolRefusalReason,
-	DynamicToolRefusalReasonSchema,
+	type DynamicToolEnvelope,
+	type DynamicToolValue,
+	type ToolResponse,
 	OpaqueIdSchema,
-	JsonObjectSchema,
-	DynamicToolOkEnvelopeSchema,
-	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	DynamicToolOutcomeUnknownEnvelopeSchema,
-	DynamicToolEnvelopeSchema,
-	ValidDynamicToolResponseSchema,
-	UnknownDynamicToolResponseSchema,
-	DynamicToolResponseSchema,
+	refusalReasonOf,
+	outcomeUnknownEnvelope,
+	toolResponseFor,
 };
