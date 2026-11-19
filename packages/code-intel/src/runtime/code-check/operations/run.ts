@@ -14,7 +14,8 @@
 // caller names a base or asks for them, or a model's policy turns the
 // shallow-module gate on, the run also reads the modules that the branch
 // touched, working tree included (touched.ts), beside the pass; a base the
-// caller asked for that does not resolve refuses the run, as `BASE_UNRESOLVED`.
+// caller asked for that does not resolve refuses the run, as `BASE_UNRESOLVED`,
+// and stops the pass, so a mistyped base costs no whole pass.
 // The request never changes a severity.
 
 import {
@@ -234,6 +235,35 @@ function answerOf(
 }
 
 /**
+ * Run the pass with the footprints beside it. A base that the footprints refuse stops the pass,
+ * so a base that does not resolve never costs a whole pass.
+ * @param request What to read.
+ * @param read The readings.
+ * @param plans The plans the pass reads.
+ * @returns The answer, or the refusal of the base.
+ */
+async function passBeside(
+	request: CodeCheckRequest,
+	read: StatesToCheck,
+	plans: Parameters<typeof checkCode>[3],
+): Promise<CodeCheckAnswer | BaseUnresolved> {
+	const refused = new AbortController();
+	const footprints = footprintsOf(request, read.states).then((touched) => {
+		if (touched !== undefined && "code" in touched) refused.abort();
+		return touched;
+	});
+	const signal = AbortSignal.any([request.signal, refused.signal]);
+	const [code, touched] = await Promise.allSettled([
+		checkCode(request.vault, read.states, signal, plans),
+		footprints,
+	]);
+	if (touched.status === "rejected") throw touched.reason;
+	if (touched.value !== undefined && "code" in touched.value) return touched.value;
+	if (code.status === "rejected") throw code.reason;
+	return answerOf(read, code.value, touched.value);
+}
+
+/**
  * Create the code check. Its reading of behind keeps what it read, so one
  * check serves every run of a process.
  * @returns The code check.
@@ -254,12 +284,7 @@ function createCodeCheck(): CodeCheck {
 			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);
-			const [code, footprints] = await Promise.all([
-				checkCode(vault, read.states, request.signal, plans.plans),
-				footprintsOf(request, read.states),
-			]);
-			if (footprints !== undefined && "code" in footprints) return footprints;
-			return answerOf(read, code, footprints);
+			return passBeside(request, read, plans.plans);
 		},
 	};
 }
