@@ -15,8 +15,12 @@
 // the name `*`. A bare name that the file does not define leads to the one file a
 // glob of the file opens that offers it: a module offers what it defines or
 // imports, every name to the modules inside it and only what it opens with
-// `pub` to any other. A name the file defines, a name the file binds in a
-// narrower scope, and a member reached through a value lead nowhere here: the
+// `pub` to any other. A use at run time whose path ends at a module's name,
+// as the call `archboard_text::shape(..)`, names a value, and no module is
+// one: it reaches the value of that name the module above offers, as
+// `pub fn shape` or `pub use shape::shape;` beside `mod shape;`. A name the
+// file defines, a name the file binds in a narrower scope, and a member
+// reached through a value lead nowhere here: the
 // first two are the file's own reading, and only the value's type tells the
 // third. Every such use is resolved, because the module tree and the manifest
 // name the file; a name a glob of a crate outside the checkout brings in is
@@ -351,8 +355,23 @@ function createRustResolver(
 		if (ownName(first, lookup)) return { path: lookup.from, symbol: use.symbol };
 		const target = crates().resolvePath(lookup.from, use.symbol.split("."));
 		if (target === undefined) return globTarget(use, lookup);
-		const whole = target.item.length === 0;
-		return { path: target.file, symbol: whole ? "*" : target.item.join(".") };
+		return target.item.length > 0
+			? { path: target.file, symbol: target.item.join(".") }
+			: wholeTarget(use, lookup.from, target.file);
+	};
+
+	/**
+	 * Where a use that no import names leads when its path ends at a module:
+	 * at run time, to the value of that name the module above offers, else to
+	 * the whole module.
+	 * @param use The use.
+	 * @param from The file.
+	 * @param module The module's file.
+	 * @returns The target.
+	 */
+	const wholeTarget = async (use: Reference, from: string, module: string): Promise<Target> => {
+		const value = use.typeOnly ? undefined : await valueBesideModule(from, use.symbol.split("."));
+		return value ?? { path: module, symbol: "*" };
 	};
 
 	/**
@@ -405,6 +424,25 @@ function createRustResolver(
 	};
 
 	/**
+	 * The value a path names where its last name also names a module: the
+	 * value of that name the module above offers.
+	 * @param from The file the path is written in.
+	 * @param names The path's names.
+	 * @returns The value's target, or undefined where the path names no such value.
+	 */
+	const valueBesideModule = async (
+		from: string,
+		names: readonly string[],
+	): Promise<Target | undefined> => {
+		const name = names.at(-1);
+		const parent = moduleFileOf(from, names.slice(0, -1));
+		const whole = moduleFileOf(from, names) !== undefined;
+		return whole && parent !== undefined && name !== undefined
+			? offeredValue(parent, name)
+			: undefined;
+	};
+
+	/**
 	 * Where a value use of a `use` leaf that names a module leads: to the
 	 * value of that name the module above offers.
 	 * @param from The file.
@@ -418,13 +456,7 @@ function createRustResolver(
 		imports: readonly Import[],
 	): Promise<Target | undefined> => {
 		const found = valueLeaf(use, imports);
-		const names = found === undefined ? [] : pathOf(found);
-		const name = names.at(-1);
-		const parent = moduleFileOf(from, names.slice(0, -1));
-		const whole = moduleFileOf(from, names) !== undefined;
-		return whole && parent !== undefined && name !== undefined
-			? offeredValue(parent, name)
-			: undefined;
+		return found === undefined ? undefined : valueBesideModule(from, pathOf(found));
 	};
 
 	/**

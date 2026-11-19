@@ -366,7 +366,7 @@ function itemShape(node: Node, scope: Scope): Openness {
 
 /**
  * A module item: `mod name;`, whose file is another and which exposes
- * nothing itself, or an inline module and its items.
+ * nothing itself, so it only names that file, or an inline module and its items.
  * @param node The module.
  * @param path Its names.
  * @param shape Its kind, visibility and exposure.
@@ -375,7 +375,8 @@ function itemShape(node: Node, scope: Scope): Openness {
 function modItem(node: Node, path: string[], shape: Shape, walk: Walk): void {
 	const body = node.childForFieldName("body");
 	const exposed = shape.exposed && body !== null;
-	walk.found.push(definition(node, path.join("."), { ...shape, exposed }));
+	const found = definition(node, path.join("."), { ...shape, exposed });
+	walk.found.push(body === null ? { ...found, moduleFile: true } : found);
 	if (body !== null) walkItems(body.namedChildren, { prefix: path, open: shape.exposed }, walk);
 }
 
