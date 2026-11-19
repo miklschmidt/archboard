@@ -72,7 +72,8 @@ const RUST_MATH: MathSyntax = {
 	call: { type: "call_expression", callee: "function", arguments: "arguments" },
 	member: { type: "field_expression", object: "value", property: "field" },
 	math: new RegExp(`^(?:(?:(?:std|core)::)?cmp|${NUMERIC})::(?<name>${FUNCTIONS.join("|")})$`, "u"),
-	methods: new Set(FUNCTIONS),
+	// A method named `log` is as often a logger's as a number's, `log.log(x)`, so only `f64::log` is math.
+	methods: new Set(FUNCTIONS.filter((name) => name !== "log")),
 	sorted: new Set([
 		"min",
 		"max",
