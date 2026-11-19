@@ -9,7 +9,6 @@ import { describe, expect, test } from "bun:test";
 import * as RemixIcons from "@remixicon/react";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { semanticPolicySchema } from "@archboard/model/policy";
 import {
 	iconNames as diagramIconNames,
 	iconPaths as diagramIconPaths,
@@ -17,6 +16,7 @@ import {
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { paintedIn } from "#tests/runtime/support/drawn-colours.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 const components = new Map(Object.entries(RemixIcons));
 
@@ -49,7 +49,7 @@ describe("type icons", () => {
 
 	test("a card draws its type's icon exactly as the component renders it", async () => {
 		const icons = ["RiServerLine", "RiShipFill", "RiDatabase2Line"];
-		const policy = semanticPolicySchema().parse({
+		const policy = fixtureDocument("semanticPolicy", {
 			levels: ["service"],
 			nodeKinds: Object.fromEntries(
 				icons.map((icon, index) => [`kind${index}`, { name: icon, icon, color: "blue" }]),

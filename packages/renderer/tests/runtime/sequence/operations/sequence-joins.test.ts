@@ -8,11 +8,10 @@
 
 import { expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
-import { messagesOf } from "@archboard/model/flow";
+import { defaultSemanticPolicy, readFlow } from "@archboard/model-contract";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { labelPlates } from "#tests/runtime/support/drawn-text.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Every `name="number"` attribute of one start tag. */
 const NUMBER = /\s([\w-]+)="(-?[\d.]+)"/g;
@@ -186,7 +185,7 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", asyn
 	const groups = subjectGroups(rendered.svg);
 	const steps = ["s1", "s2", "s3", "s4", "s5", "s6"];
 	const touched = steps.map((id) => {
-		const step = messagesOf(content.flows[0]!.steps).find((one) => one.id === id)!;
+		const step = readFlow(content.flows[0]!.steps).messages.find((one) => one.id === id)!;
 		const line = /<path\s[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/.exec(
 			groups.find((group) => group.id === id)!.markup,
 		)![0];

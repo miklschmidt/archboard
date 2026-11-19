@@ -4,7 +4,7 @@
 // opens a coarser model, the whole this one is a part of; down a finer one, the
 // part's inside; across a model at the same level. Pure.
 
-import { drillDirection } from "@archboard/model/policy";
+import { drillDirection } from "#ui/architecture-drawing/canvas/picture/rules/drill-direction.ts";
 
 /** Which way the model a part opens lies from the model it is drawn on. */
 type DrillWay = Exclude<ReturnType<typeof drillDirection>, "elsewhere">;

@@ -1,14 +1,5 @@
 import { z } from "zod";
-import {
-	architectureModuleEditSchema,
-	architectureModuleEditResultSchema,
-	architectureClaimRequestSchema,
-	architectureClaimResultSchema,
-	architectureClaimReleaseSchema,
-	architectureClaimListSchema,
-	architectureRecoveryResultSchema,
-	type ArchitectureModelRead,
-} from "@archboard/model/contract";
+import { modelShape, type ArchitectureModelRead } from "@archboard/model-contract";
 import {
 	editArchitectureModuleOnServer,
 	claimArchitectureSubjectsOnServer,
@@ -19,7 +10,7 @@ import {
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 import { defineCommand, type OutputPolicy } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
-import { statedJson } from "#cli/commands/model/operations/input.ts";
+import { requestOf, statedJson } from "#cli/commands/model/operations/input.ts";
 
 /**
  * Keep runtime refusals intact through CLI output and exit status.
@@ -75,7 +66,7 @@ const modelClaimContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ input: z.string().optional() }) },
-	result: architectureClaimResultSchema(),
+	result: modelShape("claimResult"),
 	output: jsonAnswer(
 		"The claim: its identity, its subjects and when it ends. A refusal carries diagnostics that say what to do.",
 	),
@@ -109,7 +100,7 @@ const modelClaimContract = defineCommand({
 		await context.require("server", "model claim");
 		return presented(
 			await claimArchitectureSubjectsOnServer(
-				context.parse(architectureClaimRequestSchema(), await statedJson(input, context)),
+				context.parse(requestOf("claim"), await statedJson(input, context)),
 			),
 		);
 	},
@@ -134,7 +125,7 @@ const modelEditContract = defineCommand({
 	examples: [
 		'archboard model edit --input edit.json --doing "explaining request routing" -C /tmp/shop',
 	],
-	result: architectureModuleEditResultSchema(),
+	result: modelShape("editResult"),
 	prerequisites: ["server", "doing"],
 	refusals: [refusal("server"), refusal("doing")],
 	relationships: [
@@ -159,7 +150,7 @@ const modelEditContract = defineCommand({
 		);
 		return presented(
 			await editArchitectureModuleOnServer(
-				context.parse(architectureModuleEditSchema(), {
+				context.parse(requestOf("edit"), {
 					...request,
 					doing: statedInvocation().doing,
 				}),
@@ -175,7 +166,7 @@ const modelReleaseContract = defineCommand({
 	description:
 		"Reads `claim` and `writer` from JSON. Only the writer that holds a claim can release it.",
 	examples: ["archboard model release --input release.json -C /tmp/shop"],
-	result: architectureClaimListSchema(),
+	result: modelShape("claimList"),
 	relationships: [
 		{
 			method: "POST",
@@ -194,7 +185,7 @@ const modelReleaseContract = defineCommand({
 		await context.require("server", "model release");
 		return presented(
 			await releaseArchitectureClaimOnServer(
-				context.parse(architectureClaimReleaseSchema(), await statedJson(input, context)),
+				context.parse(requestOf("releaseClaim"), await statedJson(input, context)),
 			),
 		);
 	},
@@ -211,7 +202,7 @@ const modelClaimsContract = defineCommand({
 	examples: ["archboard model claims -C /tmp/shop"],
 	parameters: [],
 	input: { ingress: z.object({}) },
-	result: architectureClaimListSchema(),
+	result: modelShape("claimList"),
 	effects: ["read"],
 	relationships: [
 		{
@@ -242,7 +233,7 @@ const modelRecoverContract = defineCommand({
 	description:
 		"Resumes the recorded operation without creating another intent. Foreign inputs and a changed branch block replay. Keep those bytes and restore the logged context before retrying.",
 	examples: ["archboard model recover -C /tmp/shop"],
-	result: architectureRecoveryResultSchema(),
+	result: modelShape("recoveryResult"),
 	effects: ["server-state-write"],
 	relationships: [
 		{

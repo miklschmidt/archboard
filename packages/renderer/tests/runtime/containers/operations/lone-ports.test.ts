@@ -9,8 +9,7 @@
 // two lines closer than a lane without sharing one stroke.
 
 import { expect, test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import { semanticPolicySchema, defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import {
 	cornersOf,
@@ -23,12 +22,13 @@ import {
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import archboard from "#tests/runtime/support/fixtures/archboard.json";
 import readingAModel from "#tests/runtime/support/fixtures/reading-a-model.json";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The room a line's words keep from an unrelated line: archboard_layout::routes::LABEL_ROUTE_CLEARANCE. */
 const LABEL_ROUTE_CLEARANCE = 12;
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		service: { name: "Service", icon: "RiServerLine" },
@@ -75,7 +75,7 @@ function portOf(box: Box, end: DrawnPoint): readonly [string, number] {
 /** How far from its face's corners a port stands to read as meeting the face, not the corner. */
 const FACE_INSET = 12;
 
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"a port alone on a card face keeps clear of the corners (%s)",
 	async (layout) => {
 		const content = orderedFixture(archboard);
@@ -101,7 +101,7 @@ test.each(layoutEngineSchema().options)(
 	},
 );
 
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"a label keeps a label's clearance from every other line (%s)",
 	async (layout) => {
 		const content = orderedFixture(archboard);

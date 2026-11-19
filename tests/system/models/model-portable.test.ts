@@ -12,14 +12,11 @@ import { createServer, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
-import {
-	architectureExportResultSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel } from "@archboard/model-store";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { waitFor } from "../server-state/support/http.ts";
+import { parsedReply } from "../support/model-reply.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-portable-surface-"));
 const empty = {
@@ -76,7 +73,7 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 	});
 	expect(response.status).toBe(200);
 	expect(response.headers.get("cache-control")).toBe("no-store");
-	const exported = architectureExportResultSchema().parse(await response.json());
+	const exported = parsedReply("export", await response.json());
 	if (!exported.success) throw new Error(JSON.stringify(exported));
 	const file = join(source.root, "portable.json");
 	const cli = runServerCli({
@@ -113,7 +110,7 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(imported.stdout));
 	expect(addressed).toMatchObject({ path: target.vault, origin: "working-directory" });
-	const parsed = architectureModuleEditResultSchema().parse(receipt);
+	const parsed = parsedReply("edit", receipt);
 	expect(parsed.success).toBe(true);
 	await server.restart();
 	const retry = await fetch(`${server.base}/api/architecture/import`, {
@@ -122,7 +119,7 @@ test("CLI and HTTP share strict portable contracts, explicit vaults, exact retry
 		body: JSON.stringify({ ...request, vault: target.vault }),
 	});
 	expect(retry.status).toBe(200);
-	expect(architectureModuleEditResultSchema().parse(await retry.json())).toEqual(parsed);
+	expect(parsedReply("edit", await retry.json())).toEqual(parsed);
 	const stale = await fetch(`${server.base}/api/architecture/import`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -152,7 +149,8 @@ test("an accepted import remains visible as mutation work after its caller disco
 	if (server === undefined || source === undefined)
 		throw new Error("The portable server fixture is unavailable.");
 	const target = destination();
-	const exported = architectureExportResultSchema().parse(
+	const exported = parsedReply(
+		"export",
 		await (
 			await fetch(`${server.base}/api/architecture/export`, {
 				method: "POST",

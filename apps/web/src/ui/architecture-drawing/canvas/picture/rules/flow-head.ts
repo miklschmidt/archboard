@@ -14,7 +14,7 @@
 // Every number comes from the atlas the server returned with the picture: the
 // flow's frame, its columns and its rows. Nothing here reads the picture.
 
-import type { SemanticVariant } from "@archboard/model/legacy-board";
+import type { SemanticVariant } from "@archboard/model-contract";
 import { fitMargin } from "@archboard/renderer/shell-geometry";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {

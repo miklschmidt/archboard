@@ -8,6 +8,7 @@ import type {
 	OutputCase,
 	Paint,
 	PendingArtifact,
+	Reading,
 } from "#cli/contract/protocol/contract.ts";
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 import { CommanderArgvParser } from "#cli/contract/rules/argv-parser.ts";
@@ -112,15 +113,15 @@ function refusalText(error: z.ZodError): string {
 }
 
 /**
- * Validates a value against a schema, reporting a failure as a usage error so
- * the person sees what is wrong and where rather than a stack trace.
- * @param schema - The schema to validate against.
+ * Validates a value against a reading (a schema or a model operation's), reporting a failure
+ * as a usage error so the person sees what is wrong and where rather than a stack trace.
+ * @param reading - The reading to validate against.
  * @param value - The value to validate.
  * @returns The parsed value.
  * @throws {CliUsageError} Naming each problem and the path to it.
  */
-function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
-	const parsed = schema.safeParse(value);
+function parseInput<T>(reading: Reading<T>, value: unknown): T {
+	const parsed = reading.safeParse(value);
 	if (parsed.success) {
 		return parsed.data;
 	}
@@ -207,11 +208,11 @@ function createCommandContext(
 		prompt: (question, fallback) => processCommandHost.prompt(question, fallback),
 		/**
 		 * Validates a value mid-handler, refusing as a usage error.
-		 * @param schema - The schema to validate against.
+		 * @param reading - The reading to validate against.
 		 * @param value - The value to validate.
 		 * @returns The parsed value.
 		 */
-		parse: <T>(schema: z.ZodType<T>, value: unknown) => parseInput(schema, value),
+		parse: <T>(reading: Reading<T>, value: unknown) => parseInput(reading, value),
 		/**
 		 * Writes one diagnostic line to stderr.
 		 * @param message - The line, without its newline.

@@ -22,15 +22,11 @@ import {
 	sendKeylessToPane,
 } from "#server/panes/services/registry.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
-import type { panePresentRequestSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePresentation = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["presentation"]
->;
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
-type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
+type SemanticPanePresentation = NonNullable<ModelDocument<"paneContext">["presentation"]>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
+type PanePresentRequest = ModelDocument<"panePresentRequest">;
 
 /** Why a pane could not be shown the step it was asked for. */
 type PresentRefusal =

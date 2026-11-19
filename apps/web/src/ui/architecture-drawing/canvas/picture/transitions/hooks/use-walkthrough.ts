@@ -20,13 +20,9 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { VariantReading } from "#ui/architecture-drawing/canvas/picture/reads/rules/document.ts";
-import type { WalkthroughBeatSchema } from "@archboard/model/content";
-import type { z } from "zod";
-import type { VariantContent } from "@archboard/model/content";
+import type { VariantContent, WalkthroughBeat } from "@archboard/model-contract";
 
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
-
-type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** Which model and variant a pane is reading. */
 interface WalkthroughSource {

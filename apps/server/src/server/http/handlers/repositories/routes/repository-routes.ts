@@ -24,9 +24,8 @@ import path from "path";
 import type { Express, Request, Response } from "express";
 
 import { logger } from "@archboard/diagnostics/logger";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
-import { parsePaneKey } from "@archboard/model/legacy-address";
+import { readArchitectureModel } from "@archboard/model-store";
+import { parsePaneKey, type ArchitectureModelRead } from "@archboard/model-contract";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {

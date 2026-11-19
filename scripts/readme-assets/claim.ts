@@ -3,10 +3,6 @@
 
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-	architectureClaimResultSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
 
 import {
 	Terminal,
@@ -24,7 +20,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { readModel, modelResult } from "./model-authoring.ts";
+import { readModel, modelResult, parsedReply } from "./model-authoring.ts";
 
 const MODEL = "Shop";
 const SUBJECT = "Checkout API";
@@ -95,7 +91,8 @@ async function claimSubject(server: TakeServer, terminal: Terminal) {
 		}),
 	);
 	await terminal.command("archboard model claim --input claim.json");
-	const claimed = architectureClaimResultSchema().parse(
+	const claimed = parsedReply(
+		"claim",
 		modelResult(await server.cli(["model", "claim", "--input", claimFile])),
 	);
 	if (!claimed.success) throw new Error(JSON.stringify(claimed));
@@ -128,7 +125,8 @@ async function claimSubject(server: TakeServer, terminal: Terminal) {
  */
 async function editSubject(server: TakeServer, terminal: Terminal, page: Page, input: string) {
 	await terminal.command(`archboard model edit --input edit.json --doing "${REASON}"`);
-	const result = architectureModuleEditResultSchema().parse(
+	const result = parsedReply(
+		"edit",
 		modelResult(await server.cli(["model", "edit", "--input", input, "--doing", REASON])),
 	);
 	if (!result.success) throw new Error(JSON.stringify(result));

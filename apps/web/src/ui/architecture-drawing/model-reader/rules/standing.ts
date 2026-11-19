@@ -1,4 +1,4 @@
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 /**
  * Proposal standing comes from the coherent read, independently of comparison changes.

@@ -1,15 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { architectureModelReadSchema } from "@archboard/model/contract";
-import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/model/content";
 import {
 	defaultSemanticPolicy,
-	semanticPolicySchema,
-	vaultDiagnosticSchema,
+	modelShape,
+	parseDocument,
+	readModelReply,
+	type ModelReply,
 	type SemanticPolicy,
-} from "@archboard/model/policy";
-import type { SemanticVariant } from "@archboard/model/legacy-board";
+	type SemanticVariant,
+	type VaultDiagnostic,
+} from "@archboard/model-contract";
+import { inspectGroups, modelContent } from "@archboard/model-rules";
 import type {
 	EvaluationArchitecture as EvaluatedDocument,
 	InspectionAttempt,
@@ -25,15 +27,14 @@ import type {
 	InspectionRequest,
 	RenderRequest,
 } from "#runtime/evaluation/run-checks/outcomes/rules/outcomes.ts";
-type Model = Extract<z.infer<ReturnType<typeof architectureModelReadSchema>>, { success: true }>;
-type VaultDiagnostic = z.infer<ReturnType<typeof vaultDiagnosticSchema>>;
+type Model = Extract<ModelReply<"read">, { success: true }>;
 /**
  * Merge authored fixture vocabulary with the shared defaults.
  * @param policy The optional vocabulary patch.
  * @returns The complete policy.
  */
 function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
-	return semanticPolicySchema().parse({
+	return parsedPolicy({
 		...defaultSemanticPolicy(),
 		...policy,
 		nodeKinds: { ...defaultSemanticPolicy().nodeKinds, ...policy?.nodeKinds },
@@ -43,6 +44,16 @@ function fixturePolicy(policy: Fixture["policy"]): SemanticPolicy {
 		},
 		groups: { ...defaultSemanticPolicy().groups, ...policy?.groups },
 	});
+}
+/**
+ * Read a value as a vault policy, refusing it with the schema's own error.
+ * @param raw The untrusted value.
+ * @returns The policy.
+ */
+function parsedPolicy(raw: unknown): SemanticPolicy {
+	const parsed = parseDocument("semanticPolicy", raw);
+	if (!parsed.success) throw parsed.error;
+	return parsed.data;
 }
 /**
  * Write fixture vocabulary before the local author starts.
@@ -72,7 +83,7 @@ function readConfigurationText(vault: string): string {
  * @returns The validated policy.
  */
 function readPolicy(vault: string): SemanticPolicy {
-	return semanticPolicySchema().parse(Bun.YAML.parse(readConfigurationText(vault)));
+	return parsedPolicy(Bun.YAML.parse(readConfigurationText(vault)));
 }
 /**
  * Read complete canonical meaning through the same CLI that the author uses.
@@ -81,9 +92,12 @@ function readPolicy(vault: string): SemanticPolicy {
  * @returns The coherent canonical reading.
  */
 async function readModel(cli: CliContext, state?: string): Promise<Model> {
-	const model = architectureModelReadSchema().parse(
+	const reply = readModelReply(
+		"read",
 		await archboardOk(cli, ["model", "read", ...(state === undefined ? [] : ["--state", state])]),
 	);
+	if (!reply.success) throw reply.error;
+	const model = reply.data;
 	if (!model.success) throw new Error(JSON.stringify(model));
 	return model;
 }
@@ -140,7 +154,7 @@ async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument
 async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
 	const answer = await archboard(cli, ["check", "semantics"]);
 	return z
-		.object({ semantics: z.object({ diagnostics: z.array(vaultDiagnosticSchema()) }) })
+		.object({ semantics: z.object({ diagnostics: z.array(modelShape("vaultDiagnostic")) }) })
 		.parse(answer.json).semantics.diagnostics;
 }
 /**
@@ -185,7 +199,7 @@ async function inspectGroup(
 	request: InspectionRequest,
 ): Promise<InspectionAttempt> {
 	const model = await readModel(cli, request.variant);
-	const group = inspectSemanticGroup(modelContent(model), request.group);
+	const group = inspectGroups(modelContent(model), request.group);
 	return { ...request, result: group, detail: "Inspected canonical group membership." };
 }
 /**

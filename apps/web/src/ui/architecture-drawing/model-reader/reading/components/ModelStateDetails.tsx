@@ -4,7 +4,7 @@ import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorStanding.tsx";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { useModelComparison } from "#ui/architecture-drawing/model-reader/hooks/use-model-comparison.ts";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { proposalStanding } from "#ui/architecture-drawing/model-reader/rules/standing.ts";
 import { ModelReconciliation } from "#ui/architecture-drawing/model-reader/reading/components/ModelReconciliation.tsx";
 import { namedField } from "#ui/architecture-drawing/model-reader/rules/change-list.ts";

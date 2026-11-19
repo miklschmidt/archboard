@@ -1,6 +1,6 @@
 import { useMemo, useState, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { originalSource } from "#ui/architecture-drawing/model-reader/reading/rules/original-source.ts";
 
 type Inputs = NonNullable<NonNullable<Model["migrationPreview"]>["originalInputs"]>;

@@ -8,11 +8,8 @@
 // would not take.
 
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
-import { diagramGrammarSchema } from "@archboard/model/views";
-import { variantLifecycleSchema } from "@archboard/model/legacy-board";
-import { reconciliationKindSchema } from "@archboard/model/reconciliation";
-import type { ChangeKind } from "@archboard/model/comparison";
-import { semanticSubjectKindSchema } from "@archboard/model/pane-context";
+import { modelShape } from "@archboard/model-contract";
+import type { ChangeKind } from "@archboard/model-rules";
 import type {
 	SemanticArchitecture,
 	SemanticContextInput,
@@ -86,16 +83,16 @@ function wordValue<Word extends string>(
 // refuse a kind the rest of the system had started using.
 
 /** The kinds of subject a selection or a difference may name. */
-const SUBJECT_KINDS = semanticSubjectKindSchema().options;
+const SUBJECT_KINDS = modelShape("semanticSubjectKind").options;
 
 /** What kinds of disagreement a variant can be holding. */
-const ISSUE_KINDS = reconciliationKindSchema().options;
+const ISSUE_KINDS = modelShape("reconciliationKind").options;
 
 /** Where a variant can stand in a model's lifecycle. */
-const LIFECYCLES = variantLifecycleSchema().options;
+const LIFECYCLES = modelShape("variantLifecycle").options;
 
 /** The grammars a view can be drawn in. */
-const GRAMMARS = diagramGrammarSchema().options;
+const GRAMMARS = modelShape("diagramGrammar").options;
 
 /**
  * How one subject differs from the same subject in the variant it is read against.

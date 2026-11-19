@@ -48,7 +48,7 @@ function part(id: string, path: string, extra: { symbol?: string; parent?: strin
 		id,
 		name: id.slice(1),
 		kind: "module",
-		order: id.charCodeAt(1) * 10,
+		order: id.charCodeAt(1) * 10 + id.length,
 		binding: { repo: SHOP, path, ...(symbol === undefined ? {} : { symbol }) },
 		...(parent === undefined ? {} : { parent }),
 	};

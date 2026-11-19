@@ -7,8 +7,6 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { architectureCheckpointRetainSchema } from "@archboard/model/contract";
-
 import { readTalk } from "@archboard/walkthrough/recorder";
 import { talkSamplesMs, type Talk } from "@archboard/walkthrough/talk";
 
@@ -27,7 +25,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { readModel, modelResult } from "./model-authoring.ts";
+import { readModel, modelResult, parsedReply } from "./model-authoring.ts";
 
 /** The lower-left 16:9 part of a 1920x1080 recording, where the step's caption sits. */
 const CAPTION_CROP: Crop = { x: 0, y: 360, width: 1280, height: 720 };
@@ -98,7 +96,8 @@ function videoOf(spec: NarratedSpec): string {
 async function recordingCheckpoint(server: TakeServer, spec: NarratedSpec): Promise<string> {
 	if (spec.checkpoint !== undefined) return spec.checkpoint;
 	const model = await readModel(server);
-	const retained = architectureCheckpointRetainSchema().parse(
+	const retained = parsedReply(
+		"retainCheckpoint",
 		modelResult(
 			await server.cli([
 				"model",

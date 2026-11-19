@@ -5,7 +5,7 @@ import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import { parsePaneKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model-contract";
 import {
 	createServerCodexBrowserSocketSend,
 	parseTabSessionId,

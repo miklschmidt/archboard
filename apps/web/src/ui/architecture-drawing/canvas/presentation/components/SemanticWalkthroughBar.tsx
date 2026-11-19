@@ -39,7 +39,7 @@ import {
 	SidebarMeta,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSidebarParts.tsx";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
-import type { VariantContent } from "@archboard/model/content";
+import type { VariantContent } from "@archboard/model-contract";
 
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 

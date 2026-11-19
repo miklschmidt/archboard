@@ -1,9 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { mintId } from "@archboard/model/ids";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import type { SemanticNode } from "@archboard/model/content";
+import { type SemanticNode, defaultSemanticPolicy } from "@archboard/model-contract";
+import { mintId } from "@archboard/model-rules";
+import { readArchitectureModel } from "@archboard/model-store";
 /**
  * Seed authored canonical inputs for tests of generic local workbench behavior.
  * @param vault The disposable test vault.

@@ -1,18 +1,17 @@
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
-import type { z } from "zod";
-import type {
-	ArchitectureModelRead,
-	architectureModuleEditSchema,
-	ArchitectureModuleEditResult,
-	ArchitectureClaimResult,
-} from "@archboard/model/contract";
+import {
+	type ArchitectureClaimResult,
+	type ArchitectureModelRead,
+	type ArchitectureModuleEditResult,
+	type ModelRequestInput,
+	type VariantContent,
+	defaultSemanticPolicy,
+} from "@archboard/model-contract";
+import { type Model, mintId } from "@archboard/model-rules";
+import { readArchitectureModel } from "@archboard/model-store";
 import type { createJsonRequester } from "../../support/http.ts";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { mintId } from "@archboard/model/ids";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
-import type { Model, VariantContent } from "@archboard/model/content";
-import { readArchitectureModel } from "@archboard/model/store-read";
 
 type Node = Pick<
 	Model["modules"][number],
@@ -130,10 +129,7 @@ async function modelDrawn(evaluate: <T>(expression: string) => Promise<T>): Prom
 	);
 }
 
-type StructuralEdit = Extract<
-	z.input<ReturnType<typeof architectureModuleEditSchema>>,
-	{ changes: unknown }
->;
+type StructuralEdit = Extract<ModelRequestInput<"edit">, { changes: unknown }>;
 type Changes = StructuralEdit["changes"];
 /**
  * Apply a claimed structural edit through the shared public HTTP interface.

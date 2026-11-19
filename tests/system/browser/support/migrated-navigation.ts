@@ -1,5 +1,4 @@
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { migrateArchitectureModel } from "@archboard/model/store-write";
+import { migrateArchitectureModel, readArchitectureModel } from "@archboard/model-store";
 import { legacyNavigation } from "./legacy-navigation.ts";
 
 /** Prepare exact owner-authorized installation intent through the public reader. */

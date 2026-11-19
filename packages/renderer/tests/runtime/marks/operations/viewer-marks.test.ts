@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { PULSE_INK } from "#shared/protocol/generated/core/marks.ts";
 import {

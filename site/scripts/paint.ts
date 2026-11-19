@@ -17,8 +17,8 @@
 //   bun site/scripts/paint.ts
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { projectModel } from "@archboard/model/content";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { projectModel } from "@archboard/model-rules";
+import { readArchitectureModel } from "@archboard/model-store";
 import { renderArchitecture } from "@archboard/renderer/bun";
 
 const OUT = join(import.meta.dir, "../src/paintings");

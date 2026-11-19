@@ -1,4 +1,4 @@
-import type { projectModel } from "@archboard/model/content";
+import type { projectModel } from "@archboard/model-rules";
 import { openModules } from "#ui/architecture-drawing/model-reader/rules/expansion.ts";
 import {
 	reachOf,

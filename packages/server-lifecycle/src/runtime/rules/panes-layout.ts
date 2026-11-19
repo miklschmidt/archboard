@@ -5,11 +5,7 @@
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-import type { parsePaneKey } from "@archboard/model/legacy-address";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
-
-type LegacyIdentity = ReturnType<typeof parsePaneKey>;
+import type { LegacyIdentity, ModelDocument } from "@archboard/model-contract";
 
 /** A rectangle in page coordinates. */
 interface Rect {
@@ -114,7 +110,7 @@ interface PaneReport {
 	rect: Rect;
 	reading: PaneReading;
 	/** The model reading it last reported, or null when it has reported none. */
-	architecture: z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"] | null;
+	architecture: ModelDocument<"paneContext">["architecture"] | null;
 	/** When this pane last told the server about itself. */
 	at: string;
 }

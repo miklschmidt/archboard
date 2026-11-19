@@ -7,7 +7,7 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 
 import { createHash } from "node:crypto";
 import path from "node:path";
-import type { DiagramGrammar } from "@archboard/model/views";
+import type { DiagramGrammar } from "@archboard/model-contract";
 
 import {
 	exposureCounts,

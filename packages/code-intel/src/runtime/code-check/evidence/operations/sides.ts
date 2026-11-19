@@ -3,7 +3,7 @@
 // every call between them (ADR 0044, ADR 0046).
 
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
-import { messagesOf } from "@archboard/model/flow";
+import { readFlow } from "@archboard/model-contract";
 
 /** What reading the sides of a document needs. */
 interface Sides {
@@ -46,7 +46,10 @@ function sidesJoined(sides: Sides, left: string, right: string): boolean {
 	const { content } = sides.read.variant;
 	const atLeft = sideOf(sides, sideWhereTheyMeet(sides, left, right));
 	const atRight = sideOf(sides, sideWhereTheyMeet(sides, right, left));
-	const joints = [...content.edges, ...content.flows.flatMap((flow) => messagesOf(flow.steps))];
+	const joints = [
+		...content.edges,
+		...content.flows.flatMap((flow) => readFlow(flow.steps).messages),
+	];
 	return joints.some(
 		({ from, to }) =>
 			(atLeft.has(from) && atRight.has(to)) || (atLeft.has(to) && atRight.has(from)),

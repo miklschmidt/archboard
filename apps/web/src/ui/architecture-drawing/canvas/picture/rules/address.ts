@@ -24,11 +24,10 @@
 // here while two kinds of model existed, marking the ones the legacy open path
 // had to keep away from; TASK-181 left one kind, so the marker went with it.
 
-import type { OfferedView } from "@archboard/model/render-reply";
-import type { renderedVariantSchema } from "@archboard/model/render-reply";
+import type { OfferedView, ModelShape } from "@archboard/model-contract";
 import type { z } from "zod";
 
-type RenderedVariant = z.infer<ReturnType<typeof renderedVariantSchema>>;
+type RenderedVariant = z.infer<ModelShape<"renderedVariant">>;
 /** How a variant is spelled onto a model key. */
 const VARIANT_MARK = "@";
 

@@ -9,7 +9,7 @@ import { renderArchitecture, renderSemanticView } from "#runtime/bun-renderer/op
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { bodyShift } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 /**
  * How near the page's top and left edges any pin reaches, and how much room

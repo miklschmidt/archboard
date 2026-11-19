@@ -1,0 +1,12 @@
+import { z } from "zod";
+import { ArchitectureRenderRequestSchema } from "#shared/canonical-contracts/schemas/model-operations.ts";
+import { ReadingSelectionSchema } from "#shared/schemas/model-explanation.ts";
+const ArchitecturePaneReadingSchema = ArchitectureRenderRequestSchema.omit({
+	theme: true,
+	legend: true,
+}).extend({
+	...ReadingSelectionSchema.shape,
+	model: z.string().min(1).optional(),
+	beat: z.int().nonnegative().optional(),
+});
+export { ArchitecturePaneReadingSchema };

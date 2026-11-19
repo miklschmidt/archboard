@@ -2,13 +2,13 @@ import { openAbout, refreshModel, listedParts } from "./support/canonical-page.t
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { releaseArchitectureClaim } from "@archboard/model/store-write";
 import type {
 	ArchitectureCheckpointRetain,
-	ArchitectureModelRead,
 	ArchitectureClaimResult,
-} from "@archboard/model/contract";
-import type { listArchitectureCheckpoints } from "@archboard/model/store-read";
+	ArchitectureModelRead,
+} from "@archboard/model-contract";
+import type { listArchitectureCheckpoints } from "@archboard/model-store";
+import { changeArchitectureClaims } from "@archboard/model-store";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -256,7 +256,7 @@ test("current model readings refresh after external edits and reconnect with exp
 			// Losing the stream says nothing about ownership, so its last known mark stays.
 			expect(await claimVisible()).toBe(true);
 			expect(await details()).toContain("Repaired external description");
-			const released = await releaseArchitectureClaim(vault, {
+			const released = await changeArchitectureClaims(vault, "release", {
 				claim: claimId,
 				writer: "reconnecting-agent",
 			});

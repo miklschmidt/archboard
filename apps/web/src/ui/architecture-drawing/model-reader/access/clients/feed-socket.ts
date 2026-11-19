@@ -1,8 +1,8 @@
 import {
-	architectureFeedFrameSchema,
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
-} from "@archboard/model/contract";
+	readModelReply,
+} from "@archboard/model-contract";
 import { durationMs } from "@archboard/timing";
 
 /** What one vault's feed hears from the socket. */
@@ -18,7 +18,7 @@ interface FeedFollower {
  */
 function decodedFrame(data: unknown): ArchitectureFeedFrame | null {
 	try {
-		const frame = architectureFeedFrameSchema().safeParse(JSON.parse(String(data)));
+		const frame = readModelReply("feed", JSON.parse(String(data)));
 		return frame.success ? frame.data : null;
 	} catch {
 		return null;

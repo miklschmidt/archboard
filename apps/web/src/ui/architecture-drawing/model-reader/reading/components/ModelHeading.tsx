@@ -2,7 +2,7 @@ import { useCallback, useContext, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { ModelSwitch } from "#ui/architecture-drawing/model-reader/reading/components/ModelSwitch.tsx";
 import { sharedNameTouches } from "#ui/architecture-drawing/model-reader/reading/rules/draft-touches.ts";
 import { checkpointTime } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";

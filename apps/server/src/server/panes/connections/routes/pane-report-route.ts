@@ -5,7 +5,7 @@ import { tabSessionOf } from "@archboard/workbench/server";
 
 import type { Request, Response } from "express";
 
-import { parsePaneKey } from "@archboard/model/legacy-address";
+import { parsePaneKey, type ModelDocument } from "@archboard/model-contract";
 import { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import { serverUrl, statedVault } from "@archboard/workbench/host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
@@ -16,10 +16,8 @@ import {
 	semanticPaneContextFor,
 } from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
 
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
 
 /**
  * What one pane last said it was reading, when that is still about the model

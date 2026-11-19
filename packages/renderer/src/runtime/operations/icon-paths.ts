@@ -7,7 +7,7 @@
 
 import * as RemixIcons from "@remixicon/react";
 import { isValidElement, type ReactNode } from "react";
-import type { SemanticPolicy } from "@archboard/model/policy";
+import { type SemanticPolicy } from "@archboard/model-contract";
 import { iconsNamedBy } from "#shared/render/rules/policy-icons.ts";
 
 const icons = new Map<string, unknown>(Object.entries(RemixIcons));

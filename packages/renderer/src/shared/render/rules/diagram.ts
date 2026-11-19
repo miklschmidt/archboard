@@ -15,8 +15,7 @@
 // (`@archboard/timing`). So one host draws the same content, theme and policy
 // to the same bytes in any order.
 
-import { defaultTrafficSpeed } from "@archboard/model/content";
-import { defaultLayoutEngine } from "@archboard/model/render-reply";
+import { defaultLayoutEngine, parseDocument } from "@archboard/model-contract";
 import { durationMs } from "@archboard/timing";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {
@@ -34,10 +33,14 @@ const NOTHING_TO_DRAW = {
 	flowchart: "this content has no flow, so there is no flowchart to draw",
 } as const;
 
+/** The speed of traffic on an edge that states none: what the contract fills in. */
+const DEFAULT_TRAFFIC = parseDocument("edgeTraffic", {});
+if (!DEFAULT_TRAFFIC.success) throw DEFAULT_TRAFFIC.error;
+
 /** The durations and speeds every picture is drawn with. */
 const CLOCK = {
 	farViewSwapMs: durationMs("picture.farViewSwap"),
-	trafficSpeed: defaultTrafficSpeed(),
+	trafficSpeed: DEFAULT_TRAFFIC.data.speed,
 	cycleCapMs: durationMs("picture.flowCycleCap"),
 };
 

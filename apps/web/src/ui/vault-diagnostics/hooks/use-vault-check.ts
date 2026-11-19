@@ -3,10 +3,9 @@ import { useEffect, useRef } from "react";
 
 import { policyChanged } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-refresh.ts";
 import { vaultCheckQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
-import type { vaultCheckSchema } from "@archboard/model/policy";
-import type { z } from "zod";
+import type { ModelReply } from "@archboard/model-contract";
 
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 /**
  * Read the shared checker; disk edits become visible without reopening the vault.

@@ -1,7 +1,7 @@
 // The icons a picture drawn under a vault policy can name. The browser fetches
 // these before it draws, and a model snapshot carries their paths.
 
-import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model-contract";
 import { OWN_ICONS } from "#shared/protocol/generated/core/marks.ts";
 
 /**

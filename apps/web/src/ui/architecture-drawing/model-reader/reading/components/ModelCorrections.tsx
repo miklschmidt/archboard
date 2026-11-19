@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { checkpointTime } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
 

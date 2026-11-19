@@ -1,11 +1,10 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import { corridorPoints } from "#tests/runtime/support/drawn-routes.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"different relationship kinds use distinct ports and tracks while one kind shares its port (%s)",
 	async (layout) => {
 		const content = orderedFixture({

@@ -5,7 +5,6 @@
 // snapshot, and a read of any other model is a failure of the rendering rather
 // than a quiet trip to the server.
 
-import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import {
 	ReadingError,
 	type RetainedListing,
@@ -13,6 +12,7 @@ import {
 import type { Talk } from "@archboard/walkthrough/talk";
 import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { type RetainedReads } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
+import { parseDocument } from "@archboard/model-contract";
 
 /**
  * Model reads answered from a talk.
@@ -60,9 +60,9 @@ function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads 
  * @throws {ReadingError} When the retained document is invalid.
  */
 function retainedListing(talk: Talk): RetainedListing {
-	const parsed = parseLegacyBoard(talk.document);
-	if (!parsed.ok) throw new ReadingError("MODEL_UNREADABLE", parsed.problem);
-	const model = parsed.board;
+	const parsed = parseDocument("legacyBoard", talk.document);
+	if (!parsed.success) throw new ReadingError("MODEL_UNREADABLE", parsed.error);
+	const model = parsed.data;
 	return {
 		levels: [],
 		boards: [

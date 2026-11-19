@@ -12,11 +12,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
-import {
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-	type LegacyBoard,
-} from "@archboard/model/legacy-board";
+import { type LegacyBoard } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-coupling-"));
@@ -118,8 +115,8 @@ function document(): LegacyBoard {
 		})),
 		{ id: "pPy", order: (PARTS.length + 1) * 1000, name: "Payments", kind: "service" },
 	];
-	return LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	return legacyBoard({
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",

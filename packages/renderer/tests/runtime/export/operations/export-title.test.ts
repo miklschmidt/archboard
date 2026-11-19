@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { DiagramBox, DrawnPicture } from "@archboard/model/render-reply";
+import { type DiagramBox, type DrawnPicture } from "@archboard/model-contract";
 import { exported, paintedBody } from "#tests/runtime/support/export-picture.ts";
 
 // A title is drawn above an exported picture (TASK-467): the drawing moves down

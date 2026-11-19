@@ -16,7 +16,7 @@ import type { RemixiconComponentType } from "@remixicon/react";
 import { type ChangeObject, diffWords } from "diff";
 import type { JSX } from "react";
 
-import type { ChangeKind, FieldChange } from "@archboard/model/comparison";
+import type { ChangeKind, FieldChange } from "@archboard/model-rules";
 import { cn } from "@archboard/ui-kit/components";
 import {
 	CodeBlock,
@@ -28,10 +28,7 @@ import {
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSidebarParts.tsx";
 import { StandingSample } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
-import type { ReconciliationIssueSchema } from "@archboard/model/reconciliation";
-import type { z } from "zod";
-
-type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
+import type { ReconciliationIssue } from "@archboard/model-contract";
 
 /** How the selected subject stands against the variant this one is read against. */
 interface StandingProps {

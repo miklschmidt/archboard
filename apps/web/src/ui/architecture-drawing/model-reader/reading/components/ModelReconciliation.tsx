@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import {
 	modelSubjects,
 	subjectName,

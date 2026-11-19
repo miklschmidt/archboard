@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { durationMs } from "@archboard/timing";
-import type { ModelFlow } from "@archboard/model/content";
+import type { ModelFlow } from "@archboard/model-rules";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";

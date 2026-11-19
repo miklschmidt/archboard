@@ -3,7 +3,7 @@
 // or stated, and a relationship landing on a container fails the receiver rule.
 
 import { describe, expect, test } from "bun:test";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model-contract";
 import { evaluateOutcomes } from "#runtime/evaluation/run-checks/outcomes/rules/outcomes.ts";
 import { type Reading } from "#runtime/evaluation/run-checks/outcomes/rules/reading.ts";
 import { AFTER, passes, READING } from "#tests/runtime/support/reading-fixture.ts";

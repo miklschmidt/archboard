@@ -18,12 +18,9 @@ import { useCallback, useMemo, useState } from "react";
 
 import type { DrillNavigation } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-down.ts";
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePart = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
->[number];
+type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
 
 /** What the shell says about the pane's own model. */
 interface OwnReading {

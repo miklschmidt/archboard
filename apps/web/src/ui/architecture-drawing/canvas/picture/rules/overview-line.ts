@@ -2,9 +2,8 @@
 // reads it (ADR 0052). The line keeps the id of the first relationship it
 // joins, so the id alone would read as that one relationship.
 
-import type { SemanticVariant } from "@archboard/model/legacy-board";
-import type { SemanticNode } from "@archboard/model/content";
-import { overviewLines } from "@archboard/model/views";
+import type { SemanticVariant, SemanticNode } from "@archboard/model-contract";
+import { overviewLines } from "@archboard/model-rules";
 import type { EdgeSubject } from "#ui/architecture-drawing/canvas/picture/reads/rules/document.ts";
 
 /** A line as the overview draws it. */

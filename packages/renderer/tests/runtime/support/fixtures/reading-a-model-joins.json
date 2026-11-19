@@ -231,7 +231,7 @@
 					"id": "Xd4nFMUy",
 					"heading": "Restore the workspace",
 					"body": "Routing reads the address and restores it through the workspace port: application composition opens each board in its pane with the same command the navigator runs, and writes the address only once the pane reports its new board.",
-					"subjects": ["HCghQa6I", "HggZR41l", "xsn0RvSi"]
+					"subjects": ["HggZR41l", "xsn0RvSi"]
 				},
 				{
 					"id": "tHpt14lf",
@@ -243,19 +243,19 @@
 					"id": "y2YVfOOs",
 					"heading": "Carry the active context",
 					"body": "The pane socket brings a board's new version to the viewer and carries the workbench transport. The pane reports what is on screen, and opens bound code through the code target.",
-					"subjects": ["xsn0RvSi", "941UBxya", "4LDuKQvq", "6uWT4mUj"]
+					"subjects": ["xsn0RvSi", "6uWT4mUj"]
 				},
 				{
 					"id": "TVrlXIEC",
 					"heading": "Talk without setup",
 					"body": "A message, Talk or Narrate goes to the agent setup, which carries it through sign-in, Codex starting and the conversation's creation, then delivers it or starts voice for the focused pane. The voice's words appear as subtitles over that pane.",
-					"subjects": ["0x47EMoO", "zs2QxCu7", "0SRnYXnC", "0yb2VbKc"]
+					"subjects": []
 				},
 				{
 					"id": "WHOtxYjT",
 					"heading": "Record a walkthrough",
 					"body": "A page opened to record captures its own tab, asks for voice as a recording, and moves its one pane a step at a time as the voice paces it. The voice is mixed into the file, never played aloud.",
-					"subjects": ["fscW90Xt", "zs2QxCu7", "0SRnYXnC", "dtYjWvlf"]
+					"subjects": ["dtYjWvlf"]
 				}
 			]
 		}

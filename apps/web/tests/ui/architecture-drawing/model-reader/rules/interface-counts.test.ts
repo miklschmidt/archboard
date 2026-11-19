@@ -1,8 +1,8 @@
 // What each count of the interface line selects, which the picture has to be able to show.
 
 import { expect, test } from "bun:test";
-import { inspectContainer } from "@archboard/model/container-interface";
-import type { VariantContent } from "@archboard/model/content";
+import type { VariantContent } from "@archboard/model-contract";
+import { inspectContainer } from "@archboard/model-rules";
 import { interfaceCounts } from "#ui/architecture-drawing/model-reader/rules/interface-counts.ts";
 
 type Node = VariantContent["nodes"][number];

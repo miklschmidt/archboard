@@ -14,10 +14,8 @@ import {
 	ownRefs,
 	refOfBinding,
 	type OwnRef,
-	type LegacyBoard,
-	type SemanticVariant,
-} from "@archboard/model/legacy-board";
-import type { SemanticNode } from "@archboard/model/content";
+} from "#runtime/history-lens/rules/draft-ref.ts";
+import type { LegacyBoard, SemanticNode, SemanticVariant } from "@archboard/model-contract";
 
 /**
  * What a ref pinned in a repository is keyed by.

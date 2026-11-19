@@ -1,7 +1,6 @@
 import { useCallback } from "react";
-import { everyStep } from "@archboard/model/flow";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { projectModel } from "@archboard/model/content";
+import { type DiagramBox, readFlow } from "@archboard/model-contract";
+import type { projectModel } from "@archboard/model-rules";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 
@@ -11,7 +10,7 @@ import type { AcceptedScene } from "#ui/architecture-drawing/model-reader/rules/
  * @returns Canonical step identities, including nested control steps.
  */
 function projectionSteps(projection: ReturnType<typeof projectModel>) {
-	return projection.content.flows.flatMap((flow) => everyStep(flow.steps));
+	return projection.content.flows.flatMap((flow) => readFlow(flow.steps).every);
 }
 
 /**

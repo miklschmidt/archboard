@@ -1,8 +1,11 @@
 import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
-import { readLegacyInventory } from "@archboard/model/store-read";
-import { retainArchitectureCheckpoint, saveLegacyMappingPlan } from "@archboard/model/store-write";
+import type { LegacyBoard } from "@archboard/model-contract";
+import {
+	readLegacyInventory,
+	retainArchitectureCheckpoint,
+	saveLegacyMappingPlan,
+} from "@archboard/model-store";
 import { vaultIn } from "../../support/test-vault.ts";
 import { fixtureGit, initializeSource } from "./canonical-model.ts";
 

@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
 
 // A pane that shows a canonical model reports no legacy board key at all. What it shows is the model
@@ -30,9 +29,7 @@ const reading = {
  * @param architecture What the pane reported, if anything.
  * @returns The report.
  */
-function reportOf(
-	architecture: z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"],
-) {
+function reportOf(architecture: ModelDocument<"paneContext">["architecture"]) {
 	return buildPanesReport([pane], {
 		identity: () => null,
 		reading: () => null,

@@ -1,7 +1,6 @@
 // The recipe of one board render, from what the render asked and answered.
 
-import type { LegacyBoard } from "@archboard/model/legacy-board";
-import type { DrawnPicture } from "@archboard/model/render-reply";
+import { type DrawnPicture, type LegacyBoard } from "@archboard/model-contract";
 import type { LegacyRenderChoices, DrawnInput } from "#shared/render/rules/legacy-board.ts";
 import { inputFingerprint, sha256Of } from "#runtime/recipe/operations/digest.ts";
 import { RENDER_RECIPE_VERSION, type RenderRecipe } from "#runtime/recipe/operations/schema.ts";

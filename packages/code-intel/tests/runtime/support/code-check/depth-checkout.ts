@@ -4,7 +4,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import type { CodeCheckAnswer, ModuleDepth } from "#shared/protocol/code-check.ts";
 import { git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 

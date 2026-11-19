@@ -6,11 +6,7 @@
 // CLI may not send are optional here, so the action reads a release older than this checkout.
 
 import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import type { vaultCheckSchema } from "@archboard/model/policy";
-import type { z } from "zod";
-
-/** One diagnostic of the semantics check. */
-type VaultDiagnostic = z.infer<ReturnType<typeof vaultCheckSchema>>["diagnostics"][number];
+import type { VaultDiagnostic } from "@archboard/model-contract";
 
 /** One finding of the code check, with the evidence its severity rests on. */
 type CodeFinding = CodeCheckAnswer["findings"][number];

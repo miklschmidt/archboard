@@ -1,5 +1,5 @@
 //! A picture's parts and relationships as the layout reads them from the
-//! picture's own JSON (`@archboard/model/content`): what a layout places, and
+//! picture's own JSON (`projectModel` in `@archboard/model-rules`): what a layout places, and
 //! what the painter is told about each of them.
 
 use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Toggle, Traffic};

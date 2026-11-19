@@ -1,8 +1,5 @@
 import type { z } from "zod";
-import type {
-	ArchitectureModelRead,
-	architectureRenderRequestSchema,
-} from "@archboard/model/contract";
+import { type ArchitectureModelRead, type ModelShape } from "@archboard/model-contract";
 import { ArchitectureRecipeSchema } from "#runtime/recipe/operations/schema.ts";
 import { inputFingerprint, sha256Of } from "#runtime/recipe/operations/digest.ts";
 import { embedRecipeInSvg } from "#runtime/recipe/operations/svg-recipe.ts";
@@ -17,7 +14,7 @@ import { embedRecipeInSvg } from "#runtime/recipe/operations/svg-recipe.ts";
 function recordArchitectureRecipe(
 	svg: string,
 	model: Extract<ArchitectureModelRead, { success: true }>,
-	reading: z.infer<ReturnType<typeof architectureRenderRequestSchema>>,
+	reading: z.infer<ModelShape<"renderRequest">>,
 	repo: string | null,
 ): string {
 	const recipe = ArchitectureRecipeSchema.parse({

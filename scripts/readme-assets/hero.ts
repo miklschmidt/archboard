@@ -2,13 +2,8 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-	architectureModuleEditSchema,
-	architectureModelReadSchema,
-} from "@archboard/model/contract";
-
-import { messagesOf } from "@archboard/model/flow";
-import { modelContent, type Model } from "@archboard/model/content";
+import { type Model, modelContent } from "@archboard/model-rules";
+import { parseDocument, readFlow } from "@archboard/model-contract";
 
 import {
 	Terminal,
@@ -25,7 +20,7 @@ import {
 } from "./kit.ts";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { readModel, editModel, modelResult } from "./model-authoring.ts";
+import { readModel, editModel, modelResult, parsedReply } from "./model-authoring.ts";
 
 const MODEL = "Shop";
 const PROPOSAL = "Off the request path";
@@ -58,7 +53,7 @@ function matches(model: Model, kind: string, key: string): readonly { id: string
 	if (kind === "F") return content.flows.filter((flow) => flow.name === key);
 	const split = key.indexOf(":");
 	const flow = content.flows.find((one) => one.name === key.slice(0, split));
-	return messagesOf(flow?.steps ?? []).filter((step) => step.label === key.slice(split + 1));
+	return readFlow(flow?.steps ?? []).messages.filter((step) => step.label === key.slice(split + 1));
 }
 
 /**
@@ -168,7 +163,9 @@ function proposalChanges(model: Model) {
 	const template: unknown = JSON.parse(
 		readFileSync(join(import.meta.dir, "hero-change.json"), "utf8"),
 	);
-	return architectureModuleEditSchema().options[1].shape.changes.parse(filled(template, model));
+	const changes = parseDocument("editChanges", filled(template, model));
+	if (!changes.success) throw changes.error;
+	return changes.data;
 }
 
 const hero: Producer = {
@@ -215,7 +212,8 @@ const hero: Producer = {
 					},
 					INTENT,
 				);
-				const compared = architectureModelReadSchema().parse(
+				const compared = parsedReply(
+					"read",
 					modelResult(
 						await commands.cli(["model", "compare", "--state", PROPOSAL, "--against", "current"]),
 					),

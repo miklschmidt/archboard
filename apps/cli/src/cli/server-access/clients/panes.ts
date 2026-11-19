@@ -1,6 +1,6 @@
 // The panes on screen, as the CLI asks the server about them and moves them.
 
-import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
+import type { ModelShape } from "@archboard/model-contract";
 import { requestJson, statedInvocation } from "@archboard/server-lifecycle/server-client";
 import type { z } from "zod";
 
@@ -37,7 +37,7 @@ interface PaneLayoutResponse {
 type ShowModelResponse = {
 	success: true;
 	model: string;
-	reading: z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
+	reading: z.infer<ModelShape<"paneReading">>;
 	revision: unknown;
 	repository: string | null;
 	checkout: string;

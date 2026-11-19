@@ -9,9 +9,9 @@
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
+import { parseDocument, type SemanticVariant } from "@archboard/model-contract";
 
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
-import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/ui/support/canvas/fixture-orders.ts";
 import {
 	openableAt,
@@ -19,7 +19,31 @@ import {
 	tipTargetAt,
 } from "#ui/architecture-drawing/canvas/picture/clients/subject-tips.ts";
 
-const SemanticVariantSchema = LegacyBoardSchema.shape.variants.element;
+/**
+ * A variant as the contract reads it, held by the smallest board that can hold it.
+ * @param variant The variant as written.
+ * @param variant.id Its id, which the board makes current.
+ * @returns The variant the board reads.
+ */
+function readVariant(variant: { readonly id: string }): SemanticVariant {
+	const stamp = "2026-01-01T00:00:00.000Z";
+	const board = parseDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
+		kind: "semantic-board",
+		id: "board",
+		name: "Board",
+		level: "system",
+		version: 1,
+		createdAt: stamp,
+		updatedAt: stamp,
+		current: variant.id,
+		variants: [variant],
+	});
+	if (!board.success) throw new Error(board.error);
+	const [read] = board.data.variants;
+	if (read === undefined) throw new Error("The board holds no variant.");
+	return read;
+}
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -30,7 +54,7 @@ afterAll(async () => {
 });
 
 /** A variant with a card that opens a model, a container, and a labelled relationship. */
-const VARIANT = SemanticVariantSchema.parse(
+const VARIANT = readVariant(
 	withFixtureOrders({
 		id: "v1",
 		name: "as it is",
@@ -184,7 +208,7 @@ test("a double-click opens a card or a container by its header, and a lifeline h
 
 test("a joined line's tip in the overview names its drawn ends and every relationship it joins", () => {
 	// Two parts of the Server reach the Store, so the overview draws one line for e1 and e2.
-	const joined = SemanticVariantSchema.parse(
+	const joined = readVariant(
 		withFixtureOrders({
 			id: "v1",
 			name: "as it is",

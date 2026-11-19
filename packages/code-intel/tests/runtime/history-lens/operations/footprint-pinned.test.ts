@@ -11,12 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
-import {
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-	currentVariant,
-	resolveVariant,
-} from "@archboard/model/legacy-board";
+import { resolveVariant } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-pinned-"));
@@ -76,8 +72,8 @@ function part(id: string, order: number, path: string, branch: string) {
  * @returns The document.
  */
 function document(variants: readonly object[]) {
-	return LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	return legacyBoard({
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -127,7 +123,7 @@ async function read(value: ReturnType<typeof document>, proposal?: string) {
 		await lens.readVariantFootprint({
 			vault: scratch,
 			document: value,
-			against: currentVariant(value),
+			against: resolveVariant(value),
 			proposal: proposal === undefined ? undefined : resolveVariant(value, proposal),
 			base: "main",
 		}),

@@ -2,7 +2,7 @@ import { useCallback, type ComponentProps, type JSX } from "react";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Button } from "@archboard/ui-kit/components";
 import { useModelNavigation } from "#ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-model-navigation.ts";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { ModuleReferences } from "#ui/architecture-drawing/model-reader/reading/components/ModuleReferences.tsx";
 
 interface ModuleNavigationProps {

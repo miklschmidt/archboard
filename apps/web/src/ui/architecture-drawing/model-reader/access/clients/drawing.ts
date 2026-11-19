@@ -1,8 +1,7 @@
-import type { LayoutEngineName } from "@archboard/model/render-reply";
-import type { DiagramGrammar } from "@archboard/model/views";
+import type { LayoutEngineName, DiagramGrammar } from "@archboard/model-contract";
+import type { projectModel, Model } from "@archboard/model-rules";
 import { scopedDrawingKey } from "@archboard/renderer/picture";
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
-import type { projectModel, Model } from "@archboard/model/content";
 import { rendererBuild } from "virtual:archboard-renderer";
 import {
 	browserPictureStorage,

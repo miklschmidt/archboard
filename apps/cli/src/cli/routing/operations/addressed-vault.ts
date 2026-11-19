@@ -7,7 +7,7 @@
 
 import type { AnsweredVault, RegisteredVault } from "#cli/contract/protocol/schemas.ts";
 import { stateInvocation } from "@archboard/server-lifecycle/server-client";
-import { vaultsBoundTo } from "@archboard/model/store-read";
+import { vaultsBoundTo } from "#cli/routing/operations/bound-vaults.ts";
 import { findAndRegisterVault } from "@archboard/workspace/vault";
 
 /** Why a search found no vault, as the finder answers it. */

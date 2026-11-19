@@ -10,8 +10,7 @@ import { describe, expect, test } from "bun:test";
 
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramGrammar } from "@archboard/model/views";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type DiagramGrammar } from "@archboard/model-contract";
 
 const content = orderedFixture({
 	nodes: [

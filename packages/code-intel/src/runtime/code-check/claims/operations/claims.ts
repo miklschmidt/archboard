@@ -7,17 +7,18 @@
 // in the checkout, the bound code of an end or of a part inside one holds it.
 
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
-import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
-import { messagesOf } from "@archboard/model/flow";
-import type { SemanticNode } from "@archboard/model/content";
-import type { evidenceKindSchema } from "@archboard/model/policy";
+import { edgeSubjects, nodeSubject } from "@archboard/model-rules";
+import {
+	readFlow,
+	type DiagnosticSubject,
+	type ModelShape,
+	type SemanticNode,
+} from "@archboard/model-contract";
 import type { z } from "zod";
 import type { CodeFinding } from "#shared/protocol/code-check.ts";
-import type { describeSubject } from "@archboard/model/policy";
 
-type DiagnosticSubject = Parameters<typeof describeSubject>[0];
-type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
+type EvidenceKind = z.infer<ModelShape<"evidenceKind">>;
 
 /** Where a claim sits: the document, its variant, the place in the document and its subject. */
 type ClaimSite = Pick<CodeFinding, "file" | "model" | "variant" | "path"> & {
@@ -166,7 +167,7 @@ function edgeClaims(variant: ReadVariant): AnchorClaim[] {
  */
 function stepClaims(variant: ReadVariant): AnchorClaim[] {
 	return variant.read.variant.content.flows.flatMap((flow) =>
-		messagesOf(flow.steps).flatMap((step) => {
+		readFlow(flow.steps).messages.flatMap((step) => {
 			if (step.anchor === undefined) return [];
 			const name = `${flow.name}: ${variant.edgeSubject(step).name}: ${step.label}`;
 			const subject = { kind: "step" as const, id: step.id, name };

@@ -7,7 +7,7 @@ import { observedCloud, platformCloud } from "#tests/runtime/support/cloud-readi
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import phone from "../../support/wide-boards/phone-ownership.content.json";
 import cloud from "#tests/runtime/support/fixtures/branching-cloud.json";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 // Work-vault readings of Cloud Infrastructure, three versions of one document:
 // folded into columns each fit the pane better, but the steering line from

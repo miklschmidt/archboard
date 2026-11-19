@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef } from "react";
 import type { VariantReading } from "#ui/architecture-drawing/canvas/picture/reads/rules/document.ts";
 import type { OpenDown } from "#ui/architecture-drawing/canvas/picture/rules/drill-target.ts";
 import { useDrillTargetReader } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts";
-import type { SemanticNode } from "@archboard/model/content";
+import type { SemanticNode } from "@archboard/model-contract";
 
 type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 

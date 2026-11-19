@@ -2,8 +2,8 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { architectureImportRequestSchema } from "@archboard/model/contract";
-import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
+import { parseModelRequest } from "@archboard/model-contract";
+import { exportArchitectureModel, installArchitectureModel } from "@archboard/model-store";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, attempt, inOrder, run } from "./tools.ts";
@@ -47,9 +47,12 @@ async function initializeTakeRepository(holder: string, source: TrackedVault): P
  */
 async function importRequest(source: TrackedVault) {
 	if (source === "examples/web-shop") {
-		return architectureImportRequestSchema().parse(
+		const read = parseModelRequest(
+			"import",
 			JSON.parse(readFileSync(join(ROOT, source, "history.import.json"), "utf8")),
 		);
+		if (!read.success) throw read.error;
+		return read.data;
 	}
 	const exported = await exportArchitectureModel(join(ROOT, source));
 	if (!exported.success) throw new Error(JSON.stringify(exported));
@@ -71,7 +74,7 @@ async function importRequest(source: TrackedVault) {
 async function restoreFixtureHistory(source: TrackedVault, holder: string): Promise<void> {
 	const request = await importRequest(source);
 	await initializeTakeRepository(holder, source);
-	const restored = await importArchitectureModel(join(holder, ".archboard", "vault"), request);
+	const restored = await installArchitectureModel(join(holder, ".archboard", "vault"), request);
 	if (!restored.success) throw new Error(JSON.stringify(restored));
 }
 

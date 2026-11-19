@@ -2,7 +2,7 @@
 // each subject again.
 
 import { expect, test } from "bun:test";
-import { projectModel, type Model } from "@archboard/model/content";
+import { projectModel, type Model } from "@archboard/model-rules";
 
 import { SHOP } from "#tests/ui/support/model-reader/scene.ts";
 import { subjectReference } from "#ui/architecture-drawing/model-reader/reading/rules/subject-reference.ts";

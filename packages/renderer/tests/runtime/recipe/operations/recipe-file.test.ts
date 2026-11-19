@@ -8,8 +8,7 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type LegacyBoard } from "@archboard/model-contract";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
 import { embedRecipeInPng } from "#runtime/recipe/operations/png-recipe.ts";

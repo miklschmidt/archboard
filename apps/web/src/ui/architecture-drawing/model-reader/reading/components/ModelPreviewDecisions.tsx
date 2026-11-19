@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { checkpointTime } from "#ui/architecture-drawing/model-reader/rules/history-time.ts";
 
 type OriginalState = NonNullable<NonNullable<Model["migrationPreview"]>["history"]>[number];

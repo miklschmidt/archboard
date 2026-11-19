@@ -1,6 +1,6 @@
 import type { RemixiconComponentType } from "@remixicon/react";
 import { Fragment, useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import {
 	ConnectionSummary,
 	kindNames,

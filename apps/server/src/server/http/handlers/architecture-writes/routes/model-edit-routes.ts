@@ -1,64 +1,44 @@
 import type { Express, Request } from "express";
 import { z } from "zod";
-import { readArchitectureClaims } from "@archboard/model/store-read";
+import type {
+	ArchitectureModelRead,
+	ModelRequest,
+	RequestOperation,
+} from "@archboard/model-contract";
 import {
+	changeArchitectureClaims,
 	editArchitectureModule,
+	readArchitectureClaims,
 	recoverArchitectureModel,
-	claimArchitectureSubjects,
-	releaseArchitectureClaim,
-	takeBackArchitectureClaim,
-} from "@archboard/model/store-write";
-import {
-	architectureModuleEditSchema,
-	architectureClaimRequestSchema,
-	architectureClaimReleaseSchema,
-	architectureClaimTakeBackSchema,
-	type ArchitectureModelRead,
-} from "@archboard/model/contract";
+} from "@archboard/model-store";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
-const EnvelopeSchema = z.object({ vault: z.string().optional() }).catchall(z.unknown());
+import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 const VaultQuerySchema = z.object({ vault: z.string() }).strict();
 
 /**
- * Mount one thin adapter over the shared operation schema and runtime.
+ * Mount one thin adapter over the contract's request and the store's operation.
  * @param app The server application.
  * @param path The HTTP operation path.
- * @param schema The authoritative schema.
+ * @param request The request operation the body is read as.
  * @param operation The shared runtime operation.
  */
-function post<T>(
+function post<O extends RequestOperation>(
 	app: Express,
 	path: string,
-	schema: z.ZodType<T>,
+	request: O,
 	operation: (
 		vault: string,
-		input: T,
+		input: ModelRequest<O>,
 	) => Promise<{ success: true } | Extract<ArchitectureModelRead, { success: false }>>,
 ): void {
 	app.post(
 		path,
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const envelope = EnvelopeSchema.safeParse(req.body);
-			if (!envelope.success) {
-				res.status(400).json({
-					success: false,
-					code: "INVALID_REQUEST",
-					error: z.prettifyError(envelope.error),
-				});
-				return;
-			}
-			const { vault: _vault, ...input } = envelope.data;
-			const parsed = schema.safeParse(input);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
-			respond(res, await operation(vaultOfRequest(req), parsed.data));
+			const input = requestOf(res, request, req.body);
+			if (input === undefined) return;
+			respond(res, await operation(vaultOfRequest(req), input));
 		}),
 	);
 }
@@ -75,26 +55,17 @@ function validQuery(req: Request): boolean {
  * @param app The server application.
  */
 function mountArchitectureEditRoutes(app: Express): void {
-	post(app, "/api/architecture/module", architectureModuleEditSchema(), editArchitectureModule);
-	post(
-		app,
-		"/api/architecture/claims",
-		architectureClaimRequestSchema(),
-		claimArchitectureSubjects,
+	post(app, "/api/architecture/module", "edit", editArchitectureModule);
+	post(app, "/api/architecture/claims", "claim", (vault, input) =>
+		changeArchitectureClaims(vault, "claim", input),
 	);
-	post(
-		app,
-		"/api/architecture/claims/release",
-		architectureClaimReleaseSchema(),
-		releaseArchitectureClaim,
+	post(app, "/api/architecture/claims/release", "releaseClaim", (vault, input) =>
+		changeArchitectureClaims(vault, "release", input),
 	);
-	post(
-		app,
-		"/api/architecture/claims/take-back",
-		architectureClaimTakeBackSchema(),
-		takeBackArchitectureClaim,
+	post(app, "/api/architecture/claims/take-back", "takeBackClaim", (vault, input) =>
+		changeArchitectureClaims(vault, "takeBack", input),
 	);
-	post(app, "/api/architecture/recover", z.object({}).strict(), recoverArchitectureModel);
+	post(app, "/api/architecture/recover", "recover", recoverArchitectureModel);
 	app.get("/api/architecture/claims", requireVault, (req, res) => {
 		if (!validQuery(req)) {
 			res

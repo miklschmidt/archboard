@@ -51,10 +51,10 @@ import {
 	terraformModules,
 } from "#runtime/code-facts/terraform/operations/terraform-resolution.ts";
 import { lastName } from "#runtime/code-facts/operations/text-reading.ts";
-import type { evidenceKindSchema } from "@archboard/model/policy";
+import type { ModelShape } from "@archboard/model-contract";
 import type { z } from "zod";
 
-type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
+type EvidenceKind = z.infer<ModelShape<"evidenceKind">>;
 
 /** One declaration of the root module's address space. */
 interface Declaration {

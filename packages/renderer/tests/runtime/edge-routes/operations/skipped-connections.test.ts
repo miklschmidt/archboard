@@ -1,13 +1,12 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import { across, along, breadth, depth } from "#tests/runtime/support/drawn-reading.ts";
 import { routePoints, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"a proposal skip clears its chain and retains its label (%s)",
 	async (layout) => {
 		const pairs = [

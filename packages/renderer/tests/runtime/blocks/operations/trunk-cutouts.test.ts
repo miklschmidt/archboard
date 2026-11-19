@@ -13,7 +13,7 @@ import { expect, test } from "bun:test";
 
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 // One service calls three others: their routes leave it along one lane.
 const FAN_OUT = orderedFixture({

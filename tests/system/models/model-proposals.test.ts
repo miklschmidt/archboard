@@ -2,20 +2,17 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import type { ArchitectureModuleEdit } from "@archboard/model-contract";
 import {
-	type ArchitectureModuleEdit,
-	architectureModelReadSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
-import {
-	claimArchitectureSubjects,
-	releaseArchitectureClaim,
+	changeArchitectureClaims,
 	editArchitectureModule,
-} from "@archboard/model/store-write";
-import { readArchitectureModel, readArchitectureClaims } from "@archboard/model/store-read";
+	readArchitectureClaims,
+	readArchitectureModel,
+} from "@archboard/model-store";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-proposal-surface-"));
@@ -51,7 +48,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 	const current = readArchitectureModel(vault);
 	if (!current.success || !current.manifest.current) throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
-	const claimed = await claimArchitectureSubjects(vault, {
+	const claimed = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "testing proposal adapters",
@@ -81,7 +78,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 	});
 	expect(createdCli.status, createdCli.stderr).toBe(0);
 	const { vault: _address, ...receipt } = JSON.parse(createdCli.stdout);
-	const created = architectureModuleEditResultSchema().parse(receipt);
+	const created = parsedReply("edit", receipt);
 	if (!created.success) throw new Error(JSON.stringify(created));
 	const listedCli = runServerCli({
 		repoRoot,
@@ -96,7 +93,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 	const query = new URLSearchParams({ vault, state: "Queued" });
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const selected = architectureModelReadSchema().parse(await response.json());
+	const selected = parsedReply("read", await response.json());
 	expect(selected).toMatchObject({
 		success: true,
 		selectedState: { name: "Queued", lifecycle: "draft" },
@@ -130,7 +127,7 @@ test("normal CLI and server create list select and compare explicit compact draf
 		`${server.base}/api/architecture/proposals?${new URLSearchParams({ vault })}`,
 	);
 	expect(catalogue.status).toBe(200);
-	expect(architectureModelReadSchema().parse(await catalogue.json())).toMatchObject({
+	expect(parsedReply("read", await catalogue.json())).toMatchObject({
 		success: true,
 		proposals: listed.proposals,
 	});
@@ -145,9 +142,9 @@ test("CLI and HTTP preserve family standing, blocked refusal and complete settle
 		const claims = readArchitectureClaims(vault);
 		if (!claims.success) throw new Error(JSON.stringify(claims));
 		for (const value of claims.claims)
-			await releaseArchitectureClaim(vault, { claim: value.id, writer: value.writer });
+			await changeArchitectureClaims(vault, "release", { claim: value.id, writer: value.writer });
 		const target = { model: "Shop", state };
-		const result = await claimArchitectureSubjects(vault, {
+		const result = await changeArchitectureClaims(vault, "claim", {
 			target,
 			writer: "agent",
 			reason: "adapter family contract",
@@ -188,14 +185,14 @@ test("CLI and HTTP preserve family standing, blocked refusal and complete settle
 	});
 	expect(edited.status, edited.stderr).toBe(0);
 	const { vault: _address, ...rawReceipt } = JSON.parse(edited.stdout);
-	expect(architectureModuleEditResultSchema().parse(rawReceipt)).toMatchObject({
+	expect(parsedReply("edit", rawReceipt)).toMatchObject({
 		success: true,
 		reconciliation: true,
 	});
 	const query = new URLSearchParams({ vault, state: draft.id });
 	const read = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(read.status).toBe(200);
-	expect(architectureModelReadSchema().parse(await read.json())).toMatchObject({
+	expect(parsedReply("read", await read.json())).toMatchObject({
 		success: true,
 		selectedState: {
 			id: draft.id,
@@ -247,7 +244,7 @@ test("CLI and HTTP preserve family standing, blocked refusal and complete settle
 		}),
 	});
 	expect(settled.status).toBe(200);
-	expect(architectureModuleEditResultSchema().parse(await settled.json())).toMatchObject({
+	expect(parsedReply("edit", await settled.json())).toMatchObject({
 		success: true,
 		reconciliation: false,
 	});
@@ -263,9 +260,9 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 		const claims = readArchitectureClaims(vault);
 		if (!claims.success) throw new Error(JSON.stringify(claims));
 		for (const value of claims.claims)
-			await releaseArchitectureClaim(vault, { claim: value.id, writer: value.writer });
+			await changeArchitectureClaims(vault, "release", { claim: value.id, writer: value.writer });
 		const target = { model: "Shop", state };
-		const claimed = await claimArchitectureSubjects(vault, {
+		const claimed = await changeArchitectureClaims(vault, "claim", {
 			target,
 			writer: "agent",
 			reason: "adapter lifecycle contract",
@@ -296,7 +293,7 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 		}),
 	});
 	expect(shelved.status).toBe(200);
-	expect(architectureModuleEditResultSchema().parse(await shelved.json())).toMatchObject({
+	expect(parsedReply("edit", await shelved.json())).toMatchObject({
 		success: true,
 		selectedState: { id: child.id, lifecycle: "shelved" },
 	});
@@ -342,7 +339,7 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 	const adopted = runServerCli(cli);
 	expect(adopted.status, adopted.stderr).toBe(0);
 	const { vault: _vault, ...raw } = JSON.parse(adopted.stdout);
-	expect(architectureModuleEditResultSchema().parse(raw)).toMatchObject({
+	expect(parsedReply("edit", raw)).toMatchObject({
 		success: true,
 		selectedState: { id: parent.id, lifecycle: "current" },
 		checkpoint: { lifecycle: { type: "adopt", previous: { state: { id: "Current" } } } },
@@ -388,9 +385,9 @@ async function metadataEdit(
 	const claims = readArchitectureClaims(vault);
 	if (!claims.success) throw new Error(JSON.stringify(claims));
 	for (const claim of claims.claims)
-		await releaseArchitectureClaim(vault, { claim: claim.id, writer: claim.writer });
+		await changeArchitectureClaims(vault, "release", { claim: claim.id, writer: claim.writer });
 	const target = { model: model.manifest.id, state: state ?? model.manifest.current.id };
-	const claimed = await claimArchitectureSubjects(vault, {
+	const claimed = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "state selector contract",

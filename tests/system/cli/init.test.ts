@@ -14,7 +14,7 @@ import {
 import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import path from "node:path";
-import { listArchitectureCheckpoints } from "@archboard/model/store-read";
+import { listArchitectureCheckpoints } from "@archboard/model-store";
 import { createInitFixture, initFailure } from "./support/init-fixture.ts";
 import { checkoutRoot } from "./support/package-cli.ts";
 
@@ -141,7 +141,7 @@ describe("archboard init", () => {
 		});
 		expect(existsSync(join(repo, "AGENTS.md")), firstDiagnostic).toBe(false);
 		expect(existsSync(join(repo, "CLAUDE.md")), firstDiagnostic).toBe(false);
-		const retained = await listArchitectureCheckpoints(vault);
+		const retained = await listArchitectureCheckpoints(vault, "full");
 		if (!retained.success) throw new Error(JSON.stringify(retained));
 		expect(retained.checkpoints).toHaveLength(1);
 		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);
@@ -153,7 +153,7 @@ describe("archboard init", () => {
 			removedBlocks: [],
 		});
 		expect(filesBelow(repo), secondDiagnostic).toEqual(before);
-		expect(await listArchitectureCheckpoints(vault)).toEqual(retained);
+		expect(await listArchitectureCheckpoints(vault, "full")).toEqual(retained);
 	});
 
 	test("model init in a checkout without a vault makes the vault that init makes, and registers the checkout", async () => {
@@ -193,7 +193,7 @@ describe("archboard init", () => {
 			name: "initialized",
 			current: null,
 		});
-		const retained = await listArchitectureCheckpoints(vault);
+		const retained = await listArchitectureCheckpoints(vault, "full");
 		if (!retained.success) throw new Error(JSON.stringify(retained));
 		expect(retained.checkpoints).toHaveLength(1);
 		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);
@@ -216,7 +216,7 @@ describe("archboard init", () => {
 		fixture.git(repo, "config", "--unset", "gpg.ssh.program");
 		const retried = fixture.init(repo);
 		expect(existsSync(join(vault, "model.json")), initFailure(retried.spawn)).toBe(true);
-		const retained = await listArchitectureCheckpoints(vault);
+		const retained = await listArchitectureCheckpoints(vault, "full");
 		if (!retained.success) throw new Error(JSON.stringify(retained));
 		expect(retained.checkpoints).toHaveLength(1);
 		fixture.git(repo, "verify-commit", retained.checkpoints[0]!.id);

@@ -30,10 +30,9 @@ import {
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { moduleDepth } from "#runtime/module-depth/operations/module-depth.ts";
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
-import { nodeSubject } from "@archboard/model/vault-policy";
+import { describeSubject, nodeSubject } from "@archboard/model-rules";
 import type { CodeCheckSkip, CodeFinding, ModuleDepth } from "#shared/protocol/code-check.ts";
-import type { SemanticNode } from "@archboard/model/content";
-import { describeSubject } from "@archboard/model/policy";
+import type { SemanticNode } from "@archboard/model-contract";
 
 /** What judging the containers of one document needs. */
 interface InterfaceReading {

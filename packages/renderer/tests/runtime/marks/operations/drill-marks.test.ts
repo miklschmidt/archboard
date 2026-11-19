@@ -14,8 +14,12 @@
 // its ring. A frame's name drawn from far away once kept no room for the
 // frame's far mark, so a long name ran under it.
 import { expect, test } from "bun:test";
-import type { DiagramBox, LayoutEngineName } from "@archboard/model/render-reply";
-import type { DiagramGrammar } from "@archboard/model/views";
+import {
+	defaultSemanticPolicy,
+	type DiagramBox,
+	type DiagramGrammar,
+	type LayoutEngineName,
+} from "@archboard/model-contract";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import {
 	bodyShift,
@@ -25,7 +29,6 @@ import {
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { drawnSpan, drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const OPENS = { board: "elsewhere", variant: { kind: "current" } };
 

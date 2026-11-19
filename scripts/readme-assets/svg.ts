@@ -5,10 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { z } from "zod";
-import {
-	architectureRenderResultSchema,
-	type architectureRenderRequestSchema,
-} from "@archboard/model/contract";
+import { modelShape, type ModelRequestInput } from "@archboard/model-contract";
 
 import {
 	encodeThumbnail,
@@ -34,7 +31,7 @@ interface DiagramSpec {
 	readonly vault: TrackedVault;
 	/** The authored structural or flow reading; repository roots when absent. */
 	readonly reading?: Pick<
-		z.input<ReturnType<typeof architectureRenderRequestSchema>>,
+		ModelRequestInput<"render">,
 		"module" | "flow" | "grammar" | "state" | "checkpoint" | "focus"
 	>;
 	/** An index thumbnail cut from the picture: its file, its theme, and the region's width. */
@@ -47,9 +44,7 @@ interface DiagramSpec {
 }
 
 /** What `model render` answers about the picture it drew. */
-const RenderReceiptSchema = architectureRenderResultSchema()
-	.options[0].pick({ width: true, height: true })
-	.strip();
+const RenderReceiptSchema = modelShape("renderSuccess").pick({ width: true, height: true }).strip();
 
 /**
  * The code points of a text, each as a string. A face maps code points to glyphs, so a subset is

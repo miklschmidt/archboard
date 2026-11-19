@@ -1,11 +1,10 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
+	readArchitectureModel,
+} from "@archboard/model-store";
 import { captureCanonicalWalkthrough } from "../support/canonical-walkthrough.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -35,7 +34,7 @@ async function revise(vault: string, state?: string) {
 		state === undefined ? "The proposed services" : "Revised proposal";
 	const target = { model: "Shop", state: model.selectedState.id };
 	const writer = "walkthrough-fixture";
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer,
 		reason: "Refine the proposed narrative",
@@ -63,7 +62,7 @@ async function revise(vault: string, state?: string) {
 		if (!result.success || result.target.state === null) throw new Error(JSON.stringify(result));
 		return result;
 	} finally {
-		await releaseArchitectureClaim(vault, { writer, claim: claim.claim.id });
+		await changeArchitectureClaims(vault, "release", { writer, claim: claim.claim.id });
 	}
 }
 

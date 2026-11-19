@@ -1,4 +1,3 @@
-import { interfaceMeasures } from "@archboard/model/container-interface";
 import type { ModuleInterface } from "#ui/architecture-drawing/model-reader/rules/selected-subject.ts";
 import type { Wiring } from "#ui/architecture-drawing/canvas/picture/rules/connections.ts";
 
@@ -63,8 +62,8 @@ function interfaceCounts(
 	nodes: Wiring["nodes"],
 	open: ReadonlySet<string | null> = new Set(),
 ): readonly InterfaceCount[] {
-	const { container, entryPoints, hiddenParts, callers, onContainer, passThrough } = inspection;
-	const measures = interfaceMeasures(inspection);
+	const { container, entryPoints, hiddenParts, callers, onContainer, passThrough, measures } =
+		inspection;
 	const parents = new Map(nodes.map(({ id, parent }) => [id, parent]));
 	const whole = [...new Set(onContainer.map((edge) => edge.from))];
 	const callerIds = callers.map(({ node }) => node.id);

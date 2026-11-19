@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { keepTalk, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { captureCanonicalWalkthrough } from "../support/canonical-walkthrough.ts";

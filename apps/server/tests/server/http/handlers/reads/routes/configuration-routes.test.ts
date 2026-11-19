@@ -7,7 +7,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import express from "express";
-import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, readModelReply } from "@archboard/model-contract";
 import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/reads/routes/configuration-routes.ts";
 
 const scratch = mkdtempSync(join(tmpdir(), "archboard-configuration-routes-"));
@@ -64,7 +64,9 @@ test("the semantic check warns on a pass-through and unbound container and an un
 	const answer = await fetch(
 		`http://127.0.0.1:${address.port}/api/vault/check?${new URLSearchParams({ vault })}`,
 	);
-	const { diagnostics } = vaultCheckSchema().parse(await answer.json());
+	const checked = readModelReply("checkVault", await answer.json());
+	if (!checked.success) throw checked.error;
+	const { diagnostics } = checked.data;
 	expect(diagnostics.map(({ severity, code, subject }) => [severity, code, subject?.id])).toEqual([
 		["warning", "CONTAINER_PASS_THROUGH", "Shop#Box"],
 		["warning", "CONTAINER_UNBOUND", "Shop#Box"],

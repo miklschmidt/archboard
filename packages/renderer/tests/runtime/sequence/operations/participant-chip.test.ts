@@ -6,7 +6,7 @@ import { expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 const content = orderedFixture({
 	nodes: [

@@ -1,6 +1,6 @@
 import { useCallback, useContext, useRef, type JSX } from "react";
 
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { Badge } from "@archboard/ui-kit/components";
 import { ModelChoiceList } from "#ui/architecture-drawing/model-reader/reading/components/ModelChoiceList.tsx";
 import { useRevealedRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-revealed-row.ts";

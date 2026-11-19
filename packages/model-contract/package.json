@@ -1,0 +1,19 @@
+{
+	"name": "@archboard/model-contract",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The model contract: every shape the model's sides exchange and persist, read only through its parse operations, and the derived types.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#installed-icons": {
+			"browser": "./src/shared/schemas/installed-icons-browser.ts",
+			"default": "./src/shared/schemas/installed-icons.ts"
+		},
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		".": "./src/shared/api/model-contract.ts"
+	}
+}

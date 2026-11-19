@@ -3,10 +3,10 @@ import { cpSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
-import { architectureArchiveInitializationSchema } from "@archboard/model/contract";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-private-surface-"));
@@ -43,7 +43,7 @@ test("CLI and HTTP explicitly initialize the same local-only archive and preserv
 	});
 	expect(response.status).toBe(200);
 	expect(response.headers.get("cache-control")).toBe("no-store");
-	const initialized = architectureArchiveInitializationSchema().parse(await response.json());
+	const initialized = parsedReply("initializeArchive", await response.json());
 	expect(initialized).toMatchObject({ success: true });
 	const cli = runServerCli({ repoRoot, server, input: undefined, args: ["model", "archive-init"] });
 	expect(cli.status, cli.stderr).toBe(0);
@@ -51,16 +51,14 @@ test("CLI and HTTP explicitly initialize the same local-only archive and preserv
 		.record(z.string(), z.unknown())
 		.parse(JSON.parse(cli.stdout));
 	expect(addressed).toMatchObject({ path: vault, origin: "working-directory" });
-	expect(architectureArchiveInitializationSchema().parse(result)).toEqual(initialized);
+	expect(parsedReply("initializeArchive", result)).toEqual(initialized);
 	await server.restart();
 	const retried = await fetch(`${server.base}/api/architecture/archive/init`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({ vault }),
 	});
-	expect(architectureArchiveInitializationSchema().parse(await retried.json())).toEqual(
-		initialized,
-	);
+	expect(parsedReply("initializeArchive", await retried.json())).toEqual(initialized);
 	expect(existsSync(join(home, ".git"))).toBe(false);
 	const invalid = await fetch(`${server.base}/api/architecture/archive/init`, {
 		method: "POST",

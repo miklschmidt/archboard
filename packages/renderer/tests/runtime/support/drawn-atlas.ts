@@ -7,7 +7,7 @@
 // every other, and the same room right of and below the drawing. This is the
 // form those tests compare.
 
-import type { DiagramAtlas, DiagramBox } from "@archboard/model/render-reply";
+import { type DiagramAtlas, type DiagramBox } from "@archboard/model-contract";
 
 /** A drawing's subjects against one another, and the page's room right of and below them. */
 interface Arrangement {

@@ -2,15 +2,11 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import {
-	architectureModelReadSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
-import { claimArchitectureSubjects } from "@archboard/model/store-write";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { changeArchitectureClaims, readArchitectureModel } from "@archboard/model-store";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-narrative-surface-"));
@@ -44,7 +40,7 @@ test("CLI narrative authoring and HTTP playback share the public writer and reta
 	const current = readArchitectureModel(vault);
 	if (!current.success) throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state: current.selectedState!.id };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "testing narrative adapters",
@@ -81,7 +77,7 @@ test("CLI narrative authoring and HTTP playback share the public writer and reta
 	});
 	expect(createdCli.status, createdCli.stderr).toBe(0);
 	const { vault: _address, ...receipt } = JSON.parse(createdCli.stdout);
-	const created = architectureModuleEditResultSchema().parse(receipt);
+	const created = parsedReply("edit", receipt);
 	if (!created.success) throw new Error(JSON.stringify(created));
 	const query = new URLSearchParams({
 		vault,
@@ -91,7 +87,7 @@ test("CLI narrative authoring and HTTP playback share the public writer and reta
 	});
 	const response = await fetch(`${server.base}/api/architecture/model?${query}`);
 	expect(response.status).toBe(200);
-	const model = architectureModelReadSchema().parse(await response.json());
+	const model = parsedReply("read", await response.json());
 	expect(model.success && model.playback?.checkpoint).toBe(created.checkpoint.id);
 	const readCli = runServerCli({
 		repoRoot,

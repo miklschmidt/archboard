@@ -1,9 +1,7 @@
 // Captured read and drawing providers for the retained-stage UI owners.
 
 import { z } from "zod";
-import { vaultCheckSchema } from "@archboard/model/policy";
 import { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
-import { semanticRenderReplySchema } from "@archboard/model/render-reply";
 import { readRetainedFrom } from "#ui/architecture-drawing/canvas/picture/reads/clients/retained-reads.ts";
 import { takePicturesFrom } from "#ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts";
 import {
@@ -11,6 +9,7 @@ import {
 	type SemanticRenderRequest,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { withFixtureOrders } from "#tests/ui/support/canvas/fixture-orders.ts";
+import { parseDocument, readModelReply } from "@archboard/model-contract";
 
 /** What the fake server answers a request with. */
 type Reply = { readonly status: number; readonly body: unknown } | "pending";
@@ -221,7 +220,9 @@ async function capturedDrawing(request: SemanticRenderRequest) {
 	const parameters = new URLSearchParams(
 		Object.entries(fields).flatMap(([key, value]) => (value === undefined ? [] : [[key, value]])),
 	);
-	const reply = semanticRenderReplySchema().parse(await captured(`${RENDER_ROUTE}?${parameters}`));
+	const parsed = parseDocument("renderReply", await captured(`${RENDER_ROUTE}?${parameters}`));
+	if (!parsed.success) throw parsed.error;
+	const reply = parsed.data;
 	return "empty" in reply
 		? { ...reply, kind: "empty" as const }
 		: { ...reply, kind: "drawn" as const };
@@ -250,7 +251,11 @@ function supplyCapture(): void {
 		 * Read the policy captured by this fixture.
 		 * @returns The captured policy.
 		 */
-		vaultCheck: async () => vaultCheckSchema().parse(await captured(VAULT_ROUTE)),
+		vaultCheck: async () => {
+			const reply = readModelReply("checkVault", await captured(VAULT_ROUTE));
+			if (!reply.success) throw reply.error;
+			return reply.data;
+		},
 		/**
 		 * Read the fixture findings without a code pass.
 		 * @returns The findings supplied by this UI fixture.

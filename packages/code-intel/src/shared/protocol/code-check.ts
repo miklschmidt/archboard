@@ -82,7 +82,7 @@
 // logic behind each. The CLI's gate fails on either at information only on a
 // touched module.
 
-import { architectureModelReadSchema } from "@archboard/model/contract";
+import { modelShape } from "@archboard/model-contract";
 import {
 	CodeCheckSkipSchema,
 	type CodeCheckSkip,
@@ -90,14 +90,9 @@ import {
 } from "#shared/protocol/code-check-skips.ts";
 import { configurableLanguages } from "@archboard/workspace/languages";
 import { z } from "zod";
-import {
-	evidenceKindSchema,
-	semanticPolicySchema,
-	vaultDiagnosticSchema,
-} from "@archboard/model/policy";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
-const CodeCheckSubjectSchema = vaultDiagnosticSchema().shape.subject.unwrap();
+const CodeCheckSubjectSchema = modelShape("diagnosticSubject");
 
 /** One document the check read, at the variant it read, and the version it read. */
 const CodeCheckDocumentSchema = z
@@ -114,7 +109,7 @@ const CodeCheckDocumentSchema = z
  */
 const CodeEvidenceSchema = z
 	.object({
-		kind: evidenceKindSchema(),
+		kind: modelShape("evidenceKind"),
 		resolution: z.enum(["resolved", "candidate"]),
 		from: z.string().optional(),
 		to: z.string().optional(),
@@ -160,7 +155,7 @@ const DroppedPartSchema = z
  * that side's: where the value is set, or the first read of each name that
  * nothing sets.
  */
-const CodeFindingSchema = vaultDiagnosticSchema()
+const CodeFindingSchema = modelShape("vaultDiagnostic")
 	.omit({ board: true })
 	.extend({
 		model: z.string().optional(),
@@ -361,14 +356,14 @@ type ServerTypescript = z.infer<typeof ServerTypescriptSchema>;
 const CodeCheckModelSchema = z.strictObject({
 	model: z.string(),
 	state: z.string().nullable(),
-	revision: architectureModelReadSchema().options[0].shape.revision,
+	revision: modelShape("revision"),
 	/** The model's policy fails plain `archboard check` on a shallow module the branch touched. */
 	failShallowModules: z.boolean().optional(),
 	/**
 	 * The level the model's vault policy sets for each module-depth code (TASK-650), applied to the
 	 * findings already: an `off` code has no finding in the answer.
 	 */
-	rules: semanticPolicySchema().shape.codeCheck.unwrap().shape.rules,
+	rules: modelShape("codeCheckRules"),
 });
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),

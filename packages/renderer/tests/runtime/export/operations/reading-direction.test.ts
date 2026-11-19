@@ -2,13 +2,11 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // Track reads downward. Blocks also permits a rightward reading within one scope.
 
 import { describe, expect, test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, modelShape, type VariantContent } from "@archboard/model-contract";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { readingOf } from "#tests/runtime/support/drawn-reading.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * One hub with a fan of many dependents: a row of them across the page is
@@ -128,7 +126,7 @@ function pipeline(length: number, framed = false): VariantContent {
 // continues the chain at the top of a column to the right. A frame's grid folds
 // by rows, and a row can run back so that every step stays one cell long.
 test.each(
-	layoutEngineSchema().options.flatMap((layout) =>
+	modelShape("layoutEngine").options.flatMap((layout) =>
 		[false, true].map((framed) => [layout, framed] as const),
 	),
 )(

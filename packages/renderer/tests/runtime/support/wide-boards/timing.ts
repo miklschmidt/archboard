@@ -10,12 +10,15 @@
 //   bun packages/renderer/tests/runtime/support/wide-boards/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
-import { parseLegacyBoard } from "@archboard/model/legacy-board";
+import {
+	defaultLayoutEngine,
+	defaultSemanticPolicy,
+	parseDocument,
+	type SemanticPolicy,
+} from "@archboard/model-contract";
+import { checkArchitectureVault } from "@archboard/model-store";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { defaultLayoutEngine } from "@archboard/model/render-reply";
 import { orderedFixture } from "../ordered-fixture.ts";
-import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
-import { readVaultConfiguration } from "@archboard/model/vault-policy";
 
 const fixtures = import.meta.dir;
 const vault = ".archboard/vault";
@@ -33,16 +36,19 @@ for (const file of fs
 		policy: defaultSemanticPolicy(),
 	});
 }
-const { configuration: policy } = readVaultConfiguration(vault);
+const { policy } = await checkArchitectureVault(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
 	.toSorted()) {
-	const parsed = parseLegacyBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
-	if (!parsed.ok) continue;
-	const current = parsed.board.variants.find((variant) => variant.id === parsed.board.current);
+	const parsed = parseDocument(
+		"legacyBoard",
+		JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")),
+	);
+	if (!parsed.success) continue;
+	const current = parsed.data.variants.find((variant) => variant.id === parsed.data.current);
 	if (current !== undefined)
-		items.push({ name: parsed.board.name, content: current.content, policy });
+		items.push({ name: parsed.data.name, content: current.content, policy });
 }
 
 // Warm the engine and the measurement caches once, on a document measured nowhere below.

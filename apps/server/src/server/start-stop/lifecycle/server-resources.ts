@@ -1,5 +1,5 @@
 import { logger } from "@archboard/diagnostics/logger";
-import { forgetModelMemory } from "@archboard/model/lock";
+import { forgetModelMemory } from "@archboard/model-store";
 import { recordServerPid, removePidFile } from "@archboard/server-lifecycle/server-host";
 import { server } from "#server/http/listener/wiring/server-app.ts";
 import { forgetPanePresentations, forgetSemanticPaneContexts } from "@archboard/workbench/panes";

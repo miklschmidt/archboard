@@ -12,7 +12,7 @@ import { roundBridges, routePoints } from "#tests/runtime/support/drawn-routes.t
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import gradingFan from "#tests/runtime/support/fixtures/grading-fan.json";
 import sideExit from "#tests/runtime/support/fixtures/side-exit.json";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 test.each(["track"] as const)(
 	"lines to cards beside their source leave along the shared trunk without hops (%s)",

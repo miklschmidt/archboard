@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { architectureModelReadSchema } from "@archboard/model/contract";
+import { modelShape } from "@archboard/model-contract";
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import {
 	modelReadContract,
@@ -79,11 +79,7 @@ const modelInspectContract = defineCommand({
 			checkpoint: z.string().optional(),
 		}),
 	},
-	result: z.union([
-		ModuleInspectionSchema,
-		GroupInspectionSchema,
-		architectureModelReadSchema().options[1],
-	]),
+	result: z.union([ModuleInspectionSchema, GroupInspectionSchema, modelShape("refusal")]),
 	output: {
 		cases: [
 			{

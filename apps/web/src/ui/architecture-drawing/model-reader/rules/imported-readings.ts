@@ -1,4 +1,4 @@
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 
 /**

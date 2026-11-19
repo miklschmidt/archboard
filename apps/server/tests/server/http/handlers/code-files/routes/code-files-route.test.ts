@@ -16,7 +16,7 @@ import type express from "express";
 import type { z } from "zod";
 import type * as ServerModule from "#server/http/application/wiring/application.ts";
 import { codeFileSchema, codeFilesSchema } from "@archboard/code-intel/code-check";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 const REPO = "github.com/test/files";
 const ORDERS = [

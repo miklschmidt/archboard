@@ -1,19 +1,14 @@
-import { architectureMigrationRequestSchema } from "@archboard/model/contract";
+import { modelShape, type LegacyInventoryRead } from "@archboard/model-contract";
 import { modelImportContract } from "#cli/commands/model/operations/portable.ts";
 import { migrateArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { z } from "zod";
-import {
-	legacyInventoryReadSchema,
-	legacyMappingWriteSchema,
-	type LegacyInventoryRead,
-} from "@archboard/model/migration";
 import {
 	readLegacyInventoryOnServer,
 	saveLegacyMappingPlanOnServer,
 } from "#cli/server-access/clients/legacy-migration.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
-import { statedJson } from "#cli/commands/model/operations/input.ts";
+import { requestOf, statedJson } from "#cli/commands/model/operations/input.ts";
 
 /**
  * Keep inventory decisions readable without treating an unresolved choice as a failed read.
@@ -54,7 +49,7 @@ const modelInventoryContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ origin: z.string() }) },
-	result: legacyInventoryReadSchema(),
+	result: modelShape("legacyInventory"),
 	output: {
 		cases: [
 			{
@@ -159,7 +154,7 @@ const modelPlanContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model plan");
 		const request = context.parse(
-			legacyMappingWriteSchema().omit({ doing: true }),
+			modelShape("legacyMappingWrite").omit({ doing: true }),
 			await statedJson(input, context),
 		);
 		return presented(await saveLegacyMappingPlanOnServer(request));
@@ -191,7 +186,7 @@ const modelMigrateContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model migrate");
 		const result = await migrateArchitectureModelOnServer(
-			context.parse(architectureMigrationRequestSchema(), await statedJson(input, context)),
+			context.parse(requestOf("migrate"), await statedJson(input, context)),
 		);
 		return {
 			result,

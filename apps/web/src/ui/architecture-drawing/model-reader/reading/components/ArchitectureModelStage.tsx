@@ -27,7 +27,7 @@ import {
 	useQueryClient,
 	type UseQueryResult,
 } from "@tanstack/react-query";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import { shownRepository } from "@archboard/ui-kit/components";
 import {
 	ArchitectureReadError,
