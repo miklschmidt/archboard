@@ -2,8 +2,8 @@
 // file itself, or in the file an import of it names, through every
 // `export ... from` on the way. A definition spelled as the symbol comes
 // first, then where an import leads, and a member whose last names are the
-// symbol's only after both (TASK-646.16). An import path names the file it reaches, so
-// a definition found this way is resolved, not a candidate. A name the code
+// symbol's only after both (TASK-646.16). An import path names the file it
+// reaches, so a definition found this way is resolved, not a candidate. A name the code
 // reaches only through a value, such as `ledger.post()`, has no import that
 // names its file, so it has no site here: a language server resolves it
 // (TASK-367.13). A name a C or C++ file reaches through its includes leads to
