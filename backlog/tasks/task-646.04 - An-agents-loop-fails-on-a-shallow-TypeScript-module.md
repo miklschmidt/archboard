@@ -4,6 +4,7 @@ title: An agent's loop fails on a shallow TypeScript module
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:03:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -63,3 +64,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #9 A new ADR supersedes the parts of ADR 0044 and ADR 0046 that forbid verdicts, and the README no longer says that Archboard never calls a module shallow
 - [ ] #10 `CONTEXT.md` defines the new terms, and the archboard skill tells agents to run the gate in implementation loops and how to clear `EXPOSED_VALUE` and `MODULE_SHALLOW`
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on Agent CLI, Archboard server, Commands, model and code-intel (and their holders). model: the codeCheck.failShallowModules field lives in the semantic policy schema that Vault configuration and the canonical contract build on, so the planned Vault configuration change sits in model's schema. code-intel: the code-check answer contract and tests. Commands: the check help text and the gate rules file split from vault.ts for the line limit. Agent CLI and Archboard server: tests only. None changes architecture beyond the plan, so the exception is recorded in the proposal history (operation task-646-04-exceptions). Unbound files: README, CONTEXT.md, ADRs 0044, 0046 and 0082, docs/agents/boundaries.md and the archboard skill, which no module binds. New findings on unchanged modules: EXPOSED_VALUE on 25 modules (245 names), MODULE_SHALLOW information on Repositories.
+<!-- SECTION:NOTES:END -->
