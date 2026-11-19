@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T21:57:00Z'
+updated_date: '2026-11-19T22:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -62,6 +62,8 @@ Outside the slice: code-opener named-path.ts, code-intel languages.ts and code-c
 Footprint gate: exit 1, 18 modules changed outside the draft (Model catalogue, Repository queries, Shell, Code opener, Vault finder, Addressed vault, Code files route, Vault address, Repositories, Vault checkouts, Language server files, workspace, code-binding, code-intel, Prerequisites, Embeds check, Model reading, Contract definition); unbound: three tests/system browser files and interface-width-ceilings.json.
 
 Verified: build, types, lint:all, format:check, test:modules 5357 pass, test:repository 182, test:system 228, test:solo 15, browser lane 50 owners: 49 pass, opener-settings timed out once under load and passed twice alone with --focus.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit 9fb2c417fb), listed in the merge commit. Unbound: this ticket, shell-layout.test.ts, missing-server.ts, navigator-support.ts, interface-width-ceilings.json.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
