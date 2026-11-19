@@ -10,6 +10,20 @@
   "baseline": "cdcc58f886de436bce59e90b15c7ed9b4039227b",
   "changes": [
     {
+      "type": "remove",
+      "subject": "vKEsyHFk/0T9enjhi#ZWlFN4et"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/0T9enjhi#E7pOpTZi"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#EuaJBisP",
+      "field": "responsibility",
+      "value": "The workspace packages that the apps, the server and the CLI share: the model's contract, rules and store, the renderer, the workbench and their support"
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#94vxmg9V",
       "kind": "module",
@@ -33,6 +47,15 @@
       "subject": "vKEsyHFk#94vxmg9V",
       "placement": {
         "holder": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#zxEUtLI7",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-at-ref.ts"
       }
     },
     {
@@ -73,7 +96,47 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#dtYjWvlf",
       "field": "description",
-      "value": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider. picture-stage-forms.ts holds the forms that the painter reads, the presentation, the arrival and the departure, and the held presentation that a painter starting late takes: briefPainter states it in one presentation, then the picture's arrival, or a cleared departure when there is no picture. The pace is no longer theirs to hand on: the painter choice gives it to every painter."
+      "value": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider. picture-stage-forms.ts holds the forms that the painter reads, the presentation, the arrival and the departure, and the held presentation that a painter starting late takes: briefPainter states it in one presentation, then the picture's arrival, or a cleared departure when there is no picture. The pace is no longer theirs to hand on: the painter choice gives it to every painter. drill-direction.ts holds drillDirection, which only drill-way.ts reads; it left the model with the split (ADR 0086)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+      "field": "description",
+      "value": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy board content, writer, claim, rename, discard, and move routes are no longer mounted. Each model route reads its request through requestOf, which asks the contract's parseModelRequest for the request and the vault it names, and answers its INVALID_REQUEST refusal with status 400."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PACCuNBM",
+      "kind": "relationship",
+      "value": {
+        "order": 91000,
+        "kind": "call",
+        "label": "read a request and the vault it names, or its refusal",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/routes/model-response.ts",
+          "symbol": "parseModelRequest"
+        },
+        "id": "vKEsyHFk#PACCuNBM",
+        "to": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PACCuNBM",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      }
     },
     {
       "type": "assign",
@@ -95,6 +158,15 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
         "symbol": "waitUntil"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#AJGft3Pe",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/store/configuration.ts"
       }
     },
     {
@@ -121,6 +193,146 @@
       "placement": {
         "holder": "vKEsyHFk/SMjRfwN3#6uHnaygd"
       }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#V0iTeueR",
+      "kind": "module",
+      "value": {
+        "order": 6000,
+        "name": "Architecture vault check",
+        "kind": "module",
+        "responsibility": "Checks one vault: whether its configuration is valid, which policy applies, and what its model or a named state says about its own structure",
+        "description": "checkArchitectureVault answers the vault check whole, so the server's /api/vault/check route and the layout measurements call one operation. A model that cannot be read answers its refusal as errors.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/check"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#V0iTeueR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#V0iTeueR",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#eOjYVfRV",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "read the model or the named state",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/check/operations/vault-check.ts",
+          "symbol": "readArchitectureModel"
+        },
+        "id": "vKEsyHFk#eOjYVfRV",
+        "to": "vKEsyHFk#ZGONZKxj"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#eOjYVfRV",
+      "placement": {
+        "holder": "vKEsyHFk#V0iTeueR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#5fa1k81R",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "call",
+        "label": "the configuration and the policy it applies",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/check/operations/vault-check.ts",
+          "symbol": "readVaultConfiguration"
+        },
+        "id": "vKEsyHFk#5fa1k81R",
+        "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5fa1k81R",
+      "placement": {
+        "holder": "vKEsyHFk#V0iTeueR"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cxOsPb1d",
+      "kind": "module",
+      "value": {
+        "order": 7000,
+        "name": "Store documents",
+        "kind": "module",
+        "responsibility": "Reads the documents and intents the store holds through the contract, and refuses one with the schema's own error",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/store/documents.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#cxOsPb1d"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cxOsPb1d",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#4PpAKGa4",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "parse a document or an intent",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/store/documents.ts",
+          "symbol": "parseDocument"
+        },
+        "id": "vKEsyHFk#4PpAKGa4",
+        "to": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4PpAKGa4",
+      "placement": {
+        "holder": "vKEsyHFk#cxOsPb1d"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
+        "symbol": "parseDocument"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
+      "field": "to",
+      "value": "vKEsyHFk#QsBnI8Ja"
     },
     {
       "type": "assign",
@@ -166,6 +378,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#yOV8Znnv",
+      "field": "description",
+      "value": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored. A title asked for without words is named here, from the model, the view, the variant and what it is compared with, because only the model knows those names. A picture asked against a named variant reads relative to that variant and is drawn without the Planned frame, because what it adds is judged against the variant named and not against the model's lack of a current one (ADR 0031). After the drawing, the answer keeps the standing to the subjects the drawing placed and names each of them (nodes, edges, flows and steps), so the panel, a receipt and the key count only marks the picture draws. Beside the answer it names the drawn input: the drawn variant and the variant it is read against without their walkthroughs, the view's reading, the vault's presentation policy, the model's level, the Planned frame and the title, so a render recipe can fingerprint what the picture says and not the model's version or name. legacy-subjects.ts beside it holds findView, nothingBuilt and drawnSubjects, which only this answer reads; they left the model with the split (ADR 0086)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
       "field": "anchor",
       "value": {
@@ -173,6 +391,12 @@
         "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
         "symbol": "deadline"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
+      "field": "description",
+      "value": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed. rules/draft-ref.ts holds the draft refs, which only code-intel reads; they left the model with the split (ADR 0086)."
     },
     {
       "type": "assign",
@@ -191,6 +415,23 @@
       "subject": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
       "field": "description",
       "value": "Callers do not write the waiting themselves (ADR: timing owns the waiting, and one getter reads the rest). It exports nine names. waitUntil polls a probe on a named wait whose private policy keeps its bound, its cadence, whether it sleeps first, where it checks the bound, whether the bound's own moment counts and how its last sleep meets the bound. A caller may pass its own bound, an outer cap, a signal and a clock, and gets the value found or a refusal with its reason and the bound in seconds, which the caller puts in its own sentence. pause sleeps one named cadence for a loop that keeps its own decisions across passes. deadline ends a named duration from a moment, never past an optional cap; an age check compares the time now with it, and the caller keeps its own operator. durationMs is the one keyed getter, for what takes a number and is not a wait: a stylesheet, a physics constant, a timer, a library option or a message. No wait bound or cadence is readable through it except the model lock's poll, which a synchronous loop sleeps with Bun.sleepSync. painterPhasesJson, reachHopDelayMs, columnSlideSettledMs, codexRestartDelayMs and localityDefaultSinceSeconds keep their computations. The Clock port (now, and after(ms, run) that returns a cancel) is the seam a caller or a test passes; the default clock stays private and reads Date.now and setTimeout when called. A duration is named \"<owner>.<key>\" over the owner groups, which stay inside with what each pulls against. The names and policies have a published half, the Codex groups and processGroup that @archboard/codex-realtime-voice bundles, and a host half that a build under the published condition leaves out, where a host name throws by name. It stays browser-safe: no process and no node: imports."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#R3ldC44x",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/coherence/rules/decode.ts",
+        "symbol": "decodeLegacyBoard"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#R3ldC44x",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
     },
     {
       "type": "assign",
@@ -216,12 +457,139 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#bLpk2XKU",
+      "field": "description",
+      "value": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers. vault/rules/diagnostic-line.ts writes a diagnostic as one line for vault check and the code check, and names its subject through the rules' describeSubject."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jb2m0ZwA",
+      "kind": "relationship",
+      "value": {
+        "order": 91000,
+        "kind": "call",
+        "label": "describe a diagnostic's subject",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/commands/vault/rules/diagnostic-line.ts",
+          "symbol": "describeSubject"
+        },
+        "id": "vKEsyHFk#jb2m0ZwA",
+        "to": "vKEsyHFk#zJxdsk87"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jb2m0ZwA",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#bLpk2XKU"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#iFWjFhbg",
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/telemetry/src/runtime/rollup/rules/daily-usage.ts",
         "symbol": "deadline"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QsBnI8Ja",
+      "kind": "module",
+      "value": {
+        "order": 28600,
+        "name": "model-contract",
+        "kind": "package",
+        "responsibility": "The model's shapes behind parse operations: documents, requests, replies, the printed schemas, the pane keys and the model's defaults, which every side reads",
+        "description": "Layer 4, the bottom of the three model packages: contract < rules < store (ADR 0086). It exports twenty functions and no schema. parseDocument(kind, raw) reads a document of a closed set of kinds (a vault's files, the store's records, the readings a pane or a picture is handed, single values) and answers zod's safe-parse shape. parseModelRequest(operation, body) reads a request and the vault it names, and carries the INVALID_REQUEST refusal a server answers. readModelReply(operation, body, delivery) reads an answer, and an answer that came with an HTTP failure only as a refusal. describeModelSchema(name) prints the eight JSON Schemas. modelShape(key) is its one keyed getter (owner decision 18): each key is a shape that another contract composes into a schema of its own. It also holds readFlow and nestedSteps, subjectsOf, the variant lookups (resolveVariant, findVariant, variantNamed, addressedVariant), everythingView, normalizeGroupIds, defaultSemanticPolicy and defaultLayoutEngine, and the pane keys. The legacy board's shapes, its coherence check and its byte decoder are the contract's, so no package serves the legacy board alone. A browser build carries no icon names: the #installed-icons import lists every RemixIcon component under Bun and resolves to an empty list under the browser condition, because no browser reads a vault's configuration.",
+        "groups": [
+          "packages"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-contract"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QsBnI8Ja",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zJxdsk87",
+      "kind": "module",
+      "value": {
+        "order": 28800,
+        "name": "model-rules",
+        "kind": "package",
+        "responsibility": "Projects, compares and inspects a model from the contract's types, and holds no schema",
+        "description": "Layer 5, between the contract and the store (ADR 0086). Eighteen functions: projectModel and modelContent, projectFlow, moduleForest, doorEndpoints, describeSubject, nodeSubject and edgeSubjects, compareVariants and comparedWith, changeOf, inspectContainer and inspectGroups, mintId, sameSemanticValue, containersOf, overviewLines and scopedContent. It reads the contract's types and its flow and variant readers, and runs in the browser and under Bun alike.",
+        "groups": [
+          "packages"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-rules"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#zJxdsk87"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zJxdsk87",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#rZtTWSgd",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "dependency",
+        "label": "resolve the variants a drawing compares",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-rules/src/shared/compare/rules/drawing.ts",
+          "symbol": "resolveVariant"
+        },
+        "id": "vKEsyHFk#rZtTWSgd",
+        "to": "vKEsyHFk#vZUWUgyb"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#rZtTWSgd",
+      "placement": {
+        "holder": "vKEsyHFk#zJxdsk87"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+      "field": "responsibility",
+      "value": "Inventories original legacy board bytes, which the contract decodes, for explicit migration preview and cutover"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading"
       }
     },
     {
@@ -232,6 +600,190 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "durationMs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+      "field": "name",
+      "value": "model-store"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+      "field": "responsibility",
+      "value": "Reads and writes a vault under Bun: the coherent reader and durable writer, claims, proposals, the signed archive of its history, publication, migration and the vault check"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+      "field": "formerNames",
+      "value": [
+        "board",
+        "model"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+      "field": "description",
+      "value": "Layer 6, the top of the three model packages that packages/model became: contract < rules < store (ADR 0086). Twenty operations: readArchitectureModel, watchArchitectureModel, readModuleNavigation, readRetainedModule, editArchitectureModule, recoverArchitectureModel, installArchitectureModel(vault, Initialize | Import), exportArchitectureModel, initializeArchitectureArchive, migrateArchitectureModel, readLegacyInventory, saveLegacyMappingPlan, readArchitectureClaims, changeArchitectureClaims, readArchitecturePublication, changeArchitecturePublication, retainArchitectureCheckpoint, listArchitectureCheckpoints(vault, \"rows\" | \"full\"), checkArchitectureVault, which absorbs the /api/vault/check assembly, and forgetModelMemory. Its records (the checkpoint and archive records, the journal, the claims state, the publication configuration) are the contract's shapes, read through parseDocument; the store keeps its paths, its failures and every file it touches, and the filesystem half of the pane keys stays private here. The split deleted the dead vaultPathFor and listedLegacyBoard, and moved the single-caller helpers to their callers: diagnosticLine and vaultsBoundTo to the CLI, drillDirection to the web picture clients, the draft refs to code-intel's history lens, and findView, nothingBuilt and drawnSubjects to the renderer's legacy board answer."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WkplpfiH",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "mint ids, compare values and variants, name subjects",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts",
+          "symbol": "mintId"
+        },
+        "id": "vKEsyHFk#WkplpfiH",
+        "to": "vKEsyHFk#zJxdsk87"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WkplpfiH",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#b2N8FmIo",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "call",
+        "label": "resolve the variant an original names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/shared/legacy-inventory/rules/evidence.ts",
+          "symbol": "resolveVariant"
+        },
+        "id": "vKEsyHFk#b2N8FmIo",
+        "to": "vKEsyHFk#vZUWUgyb"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#b2N8FmIo",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#G8bTrBWb",
+      "kind": "relationship",
+      "value": {
+        "order": 3000,
+        "kind": "call",
+        "label": "compare two states' interfaces",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/shared/compare/rules/interfaces.ts",
+          "symbol": "inspectContainer"
+        },
+        "id": "vKEsyHFk#G8bTrBWb",
+        "to": "vKEsyHFk#DKzh4lMo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#G8bTrBWb",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#NZXdvNpk",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/tests/runtime/support/wide-boards/measure.ts",
+        "symbol": "checkArchitectureVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#NZXdvNpk",
+      "field": "to",
+      "value": "vKEsyHFk#V0iTeueR"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#vo1cE4kF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/tests/runtime/support/wide-boards/timing.ts",
+        "symbol": "checkArchitectureVault"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#vo1cE4kF",
+      "field": "to",
+      "value": "vKEsyHFk#V0iTeueR"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#xEGElQkc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
+        "symbol": "modelShape"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#xEGElQkc",
+      "field": "to",
+      "value": "vKEsyHFk#QsBnI8Ja"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cFOF2Hle",
+      "kind": "relationship",
+      "value": {
+        "order": 91000,
+        "kind": "call",
+        "label": "check the vault",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/reads/routes/configuration-routes.ts",
+          "symbol": "checkArchitectureVault"
+        },
+        "id": "vKEsyHFk#cFOF2Hle",
+        "to": "vKEsyHFk#V0iTeueR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cFOF2Hle",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#ETrslazw"
       }
     },
     {
@@ -319,6 +871,120 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
+        "symbol": "vaultsBoundTo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
+      "placement": {
+        "holder": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
+        "symbol": "listRegistry"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
+        "symbol": "isVaultLayout"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
+        "symbol": "chosenCheckouts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#LF1VUIUY",
+      "field": "kind",
+      "value": "dependency"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#LF1VUIUY",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/migration-routes.ts",
+        "symbol": "LegacyInventoryRead"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#LF1VUIUY",
+      "field": "label",
+      "value": "the inventory answer's shape"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#gCSSYsMT",
+      "field": "label",
+      "value": "changeArchitectureClaims"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#gCSSYsMT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/model-edit-routes.ts",
+        "symbol": "changeArchitectureClaims"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/HBlhIeSD#iq4BoP3P",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts",
+        "symbol": "changeArchitecturePublication"
+      }
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#6OgjwUVz",
       "kind": "relationship",
@@ -388,12 +1054,2280 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DQ99hH5l",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-blobs.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#jBpM272B",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-blobs.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#zlSipRtX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-blobs.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "field": "responsibility",
+      "value": "Inventories legacy board documents, which the contract decodes, only for explicit migration and exact retained-original readings."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "field": "description",
+      "value": "Retains the legacy inventory for explicit migration and exact originals; the decoder and the board's shapes are the contract's (ADR 0086). Legacy public authoring, ownership, moves, and automatic schema persistence retire."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#EekL5c17",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#7mTerd6Y",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#N8bivOLt",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/install-candidate.ts",
+        "symbol": "tree"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CxuFyC2b",
+      "kind": "relationship",
+      "value": {
+        "order": 96000,
+        "kind": "call",
+        "label": "vocabulary the originals name and the policy lacks",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
+          "symbol": "unknownVocabularyReferences"
+        },
+        "id": "vKEsyHFk#CxuFyC2b",
+        "to": "vKEsyHFk#V0iTeueR"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CxuFyC2b",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#7mTerd6Y"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#PvjdCCub",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
+        "symbol": "parseDocument"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#PvjdCCub",
+      "field": "to",
+      "value": "vKEsyHFk#QsBnI8Ja"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#PvjdCCub",
+      "field": "label",
+      "value": "decode a legacy board file and check checkpoint ids"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#yTYxw24a",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
+        "symbol": "writeFileAtomic"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#m8cmnXnS",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
+        "symbol": "requireDocument"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#m8cmnXnS",
+      "field": "to",
+      "value": "vKEsyHFk#cxOsPb1d"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#m8cmnXnS",
+      "field": "label",
+      "value": "read the original policy"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#AlSqD5eq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
+        "symbol": "LegacyMappingWrite"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#054drdG7",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "selectBookmark"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#mIgQpKmS",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/compose.ts",
+        "symbol": "decodeModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#9xNbt1EA",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "exactReading"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#zIB2QVeH",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/retain.ts",
+        "symbol": "archiveCommit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#88iNMHt6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#xGduus4r",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/drafts.ts",
+        "symbol": "compactChanges"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DZAdVgog",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "walkthroughOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#WTjwnArK",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
+        "symbol": "applyMigration"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#tnCVPY3T",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
+        "symbol": "applyMigration"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#rl3PMdWJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
+        "symbol": "migrateArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FngTyF3H",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/prepare-cutover.ts",
+        "symbol": "prepareCutover"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#X4APDE6a",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "parsePaneKey"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ewLuX29P",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "addressedVariant"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#O3Pczt31",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/schemas/migration.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#O3Pczt31",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#VRAAecug",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/schemas/migration.ts",
+        "symbol": "QualifiedSubjectIdSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#YvPtAKu5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/schemas/migration.ts",
+        "symbol": "LegacyBoardSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1VHRyajb",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#8Uq1mtzw",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#RnWLqued",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "tree"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#WpAdVbQ4",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "requireSubjectClaim"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#gj0AysX5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "archiveCommit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#aI4dCY36",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "checkoutContext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#I3nQ73xf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "editCandidate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#OVYGPqz9",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#5J0MoNa1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "captureReferencePins"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#WIHdjwjn",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "readCurrentModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#OkD6iLu5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "requireUnchanged"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#e0GTqv1k",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#gbyUsyjt",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "captureRevision"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#wP2zZutN",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "decodeModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#L2flrrBd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "requireSubjectClaim"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#b4Ac9wPx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#nanqex2o",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "editCandidate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#5EqQZzLi",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "editCandidate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ZcLsTS33",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "retainedReservations"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#bMnT3nY6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/candidate.ts",
+        "symbol": "walkthroughDependencies"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#c0DxX92y",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "tree"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#HuWEB6r9",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/read.ts",
+        "symbol": "decodeProposal"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#26VVxTms",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/read.ts",
+        "symbol": "proposalBaseline"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#7ArYACBc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "applyCandidateStructure"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#HQwxAHRe",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "proposalCandidate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#pOm4j7QN",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "retainBaseline"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Wb4yWBbs",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/read.ts",
+        "symbol": "decodeProposal"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#igvDGP6v",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "proposalCandidate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#OePzvDJW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "archiveContext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#KU0dnode",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/candidate.ts",
+        "symbol": "captureReferencePins"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#NmLgBfWk",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/reconcile.ts",
+        "symbol": "reconcileModels"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#UDGtsZfv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/shared/compare/rules/interfaces.ts",
+        "symbol": "inspectContainer"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#YREYrbYW",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-state.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ROJixHYk",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-state.ts",
+        "symbol": "writeFileAtomic"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#2PHWJ0zL",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-state.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#oX4usVcY",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-state.ts",
+        "symbol": "privateArchivePath"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#ov7pPg21",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#MWwtJ07I",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "readCurrentModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Unx9ZNwy",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "withModelLock"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#pwwBQjxG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "notifyArchitecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#L9qSRNoR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "archiveFailure"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#VTZKWgse",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FNRbx70t",
+      "field": "kind",
+      "value": "dependency"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FNRbx70t",
+      "field": "label",
+      "value": "the claim intent's shape"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FNRbx70t",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
+        "symbol": "ArchitectureClaimRequest"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#icqdO00L",
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/edit/operations/claims.ts",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "deadline"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#hLWF9OC5",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-watch.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#dsLuZ7fl",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-watch.ts",
+        "symbol": "onArchitectureNews"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#U1wBMUoF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-watch.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Mu9aMjws",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-watch.ts",
+        "symbol": "readArchitectureClaims"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#GnhBsOl1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-watch.ts",
+        "symbol": "watchArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#TsCise1I",
+      "field": "responsibility",
+      "value": "Translates state selection, comparison, navigation, and durable proposal intents, and reads each answer through the contract's reply operation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#TsCise1I",
+      "field": "description",
+      "value": "Translates the shared canonical model requests without interpreting patches or history. It reads each answer through readModelReply, so an answer that came with an HTTP failure is read only as a refusal, and the refusal survives to the caller. model edit --input accepts an explicit historical correction with a prior checkpoint, reason and immutable source revisions. model read, compare and proposals expose corrected logical readings and exact original checkpoints.\n\nNarrative authoring and playback use the existing model edit and read schemas, including separate source and target revisions.\n\nPreview reads translate explicit legacyAddress and bookmark selectors. Converted walkthroughs reuse the existing playback contract. The runtime resolves identity, original coverage, and unavailable references."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cJpeSllf",
+      "kind": "relationship",
+      "value": {
+        "order": 91000,
+        "kind": "call",
+        "label": "read an answer, and a failed one only as a refusal",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/server-access/clients/architecture-model.ts",
+          "symbol": "readModelReply"
+        },
+        "id": "vKEsyHFk#cJpeSllf",
+        "to": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cJpeSllf",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#TsCise1I"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#IyV7OF9L",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#W6wFcSQz",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model-operations.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#iPPIY0dg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model-operations.ts",
+        "symbol": "ArchitectureModuleSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#YyXXHRVN",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/legacy-migration.ts",
+        "symbol": "architectureResult"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#YyXXHRVN",
+      "field": "to",
+      "value": "vKEsyHFk/XppR9owz#TsCise1I"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#YyXXHRVN",
+      "field": "label",
+      "value": "read the migration answers through the contract"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#yEqHs86l",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/store/model-publication.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#cLBlxUZe",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/store/model-publication.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Tay0NoqL",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/store/model-publication.ts",
+        "symbol": "writeFileAtomic"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#6v2wIOX0",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/store/model-publication.ts",
+        "symbol": "requireDocument"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#6v2wIOX0",
+      "field": "to",
+      "value": "vKEsyHFk#cxOsPb1d"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#6v2wIOX0",
+      "field": "label",
+      "value": "read the publication destination"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#XCyLrwKb",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/store/model-publication.ts",
+        "symbol": "archiveContext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-rules/src/shared/rules/model-projection.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "placement": {
+        "holder": "vKEsyHFk#zJxdsk87"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#s1kzuMxy",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-rules/src/shared/rules/model-projection.ts",
+        "symbol": "inspectContainer"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#DKzh4lMo",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-rules/src/shared/inspect/rules/container-interface.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DKzh4lMo",
+      "placement": {
+        "holder": "vKEsyHFk#zJxdsk87"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#nqi2h0Ku",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-location.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#vD1f2SWx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-location.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#yNZEhzyc",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/flows.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#yUvd87du",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/flows.ts",
+        "symbol": "applyFlowChanges"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#O4jP5DrF",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model-flows.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#llmZ5fau",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#UHKlormM",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "applyStructure"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#erkB0gWt",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "selectedId"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Idigw8VU",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "selectedId"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#JGBxddlN",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "applyWalkthroughChanges"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#vvxDSZoQ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#aEqCF5VY",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "resolveModelReferences"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#wlWo6SPu",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "modelCodeTarget"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#gcijTSIS",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readSelectedState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#AjGkFCES",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readCheckpointModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#WdOzlOvq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "failure"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#YU9IQsiJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readMigrationPreview"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#hVCOfnrb",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-navigation.ts",
+        "symbol": "readPlayback"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Mv3r4IsX",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-references.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#bNZaCkOt",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-references.ts",
+        "symbol": "readSelectedState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#vpsNmFef",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-references.ts",
+        "symbol": "readCheckpointModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Yw4B2gp3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-references.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#QDE2xctM",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/reference-pins.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#pG0y6qDe",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/reference-pins.ts",
+        "symbol": "resolveModelReferences"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Wg3meI2l",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/reference-pins.ts",
+        "symbol": "listArchitectureCheckpoints"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#jQ671Dxs",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-code.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#RQgSYJGP",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-code.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#D5PpXrVK",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-source.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#815HRSTZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-source.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Jx4O72DO",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/shared/reconcile/rules"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FlAxCoeb",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-explanation.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#PA8QWoMK",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-explanation.ts",
+        "symbol": "readModelNavigation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#FheDJtzv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-explanation.ts",
+        "symbol": "subjectsOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#MI2LKBji",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-history-news.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#E7MfWknr",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-history-news.ts",
+        "symbol": "advanceObservation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1H1Ks46q",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-history-news.ts",
+        "symbol": "completions"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#zRILT0vc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-history-news.ts",
+        "symbol": "openObservation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#iKreIhYm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-history-news.ts",
+        "symbol": "openObservation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#8nPhZJ6C",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/playback.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#IUelf4x1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/playback.ts",
+        "symbol": "readSelectedState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#vVbPUTQy",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/playback.ts",
+        "symbol": "readCurrentModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#8yI2otaH",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/playback.ts",
+        "symbol": "historyResult"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#d8uON4nq",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/walkthroughs.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#4RcfNmFu",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/walkthroughs.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#2gFwMLTT",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#IAJ0ChHL",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "tree"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#EXqmey6d",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/store/model-portable.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#5PFwNTjm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "installJournal"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#S8zTZBw6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "archiveCommit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1SXh5OFf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "writeState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#W1fBWglm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#IyzXWhR8",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "historyResult"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#J7A3jU0T",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "notifyArchitecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#7r71xcNW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#8KIXscUH",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/portable.ts",
+        "symbol": "subjectsOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#t7OeO7ll",
+      "field": "responsibility",
+      "value": "Prints the JSON Schemas that the consumer skill names, through the model contract, with no server and no vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#t7OeO7ll",
+      "field": "description",
+      "value": "archboard model schema lists the names, and archboard model schema <name> prints one: the model manifest, a module, a flow collection, the initialization, edit, import and migration requests, and the vault configuration. The model contract prints them from its own schemas through describeModelSchema, so they match the installed program, and the site's reference reads the same operation. The skill reads them here, so a copy of the skill from GitHub, as the skills CLI installs it, needs no generated file."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#FKIzsOW2",
+      "kind": "relationship",
+      "value": {
+        "order": 1000,
+        "kind": "call",
+        "label": "print a named JSON Schema",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/commands/model/operations/schema.ts",
+          "symbol": "describeModelSchema"
+        },
+        "id": "vKEsyHFk#FKIzsOW2",
+        "to": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#FKIzsOW2",
+      "placement": {
+        "holder": "vKEsyHFk#t7OeO7ll"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ZGONZKxj",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#25PfRoN2",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts",
+        "symbol": "readCurrentModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#41Ear2yX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts",
+        "symbol": "ArchitectureModelRead"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#BADMPDPc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts",
+        "symbol": "requireDocument"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#BADMPDPc",
+      "field": "to",
+      "value": "vKEsyHFk#cxOsPb1d"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#BADMPDPc",
+      "field": "label",
+      "value": "read the vault's configuration"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#qyBfoMqw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts",
+        "symbol": "modelBoundaryFailure"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#IFI468Vn",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#SF2mgNXu",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/read/operations/model-read.ts",
+        "symbol": "readRequestedArchitecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1RhUzmyZ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1RheXFhl",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "ArchitectureCheckpoint"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#WjLC9RCr",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#2fr60kVw",
+      "field": "label",
+      "value": "read the archive's records"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#2fr60kVw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "requireDocument"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#2fr60kVw",
+      "field": "to",
+      "value": "vKEsyHFk#cxOsPb1d"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#QrFo5jjd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-location.ts",
+        "symbol": "archiveContext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#kn7RIsa6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "captureBoundSources"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#108U3Rhl",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "checkpointBlobs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#reKeqHVo",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "editArchitectureModule"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#miCieAcV",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "prepareEdit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#1CMGODuG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "installJournal"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#lDmGxPX5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "notifyArchitecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#9eRTT5wz",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "ArchitectureModuleEdit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Ei40PGJf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "editResult"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#CT2AMZDt",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#5eI7is0k",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "operationRef"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#FLjFy1AY",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#3sW3Kpz8",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "installFile"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#4BbNhYeL",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "writeState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#lihhHpxZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "prepareCheckpointAppend"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#VESQgtYF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "writeFileAtomic"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#06G2g8VM",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "editResult"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#D5n9O1JP",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#MGi2prjj",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/store/model-install.ts",
+        "symbol": "ArchiveError"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#8539szQJ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#PatiT3PG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model.ts",
+        "symbol": "codeBindingSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#DbjpaJZI",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model.ts",
+        "symbol": "ArchitectureModelSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#EyYNaZT0",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/publication.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#KCxoznsN",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/publication.ts",
+        "symbol": "publicationContext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#LfosB6s2",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/publication.ts",
+        "symbol": "git"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#A1U73QNd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/publication.ts",
+        "symbol": "readArchitectureCheckpoint"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tZ5yz21o",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#eLpodERU",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "tree"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#dhlSXT9F",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "prepareCheckpoint"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#4FIz4BRr",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "readArchitectureModel"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#RavprwX4",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "archiveCommit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#QsvpEo8K",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/initialize.ts",
+        "symbol": "initializePrivateArchive"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#QxbSLLGA",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/initialize.ts",
+        "symbol": "withModelLock"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#0HzNfqV6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "checkpointPublication"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#bWBjHjjK",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "captureReferencePins"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#HnfPersG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/operations/retain.ts",
+        "symbol": "walkthroughDependencies"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#v5jpAVBo",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/retained-reading"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#PxGHOuMG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/retained-reading/operations/result.ts",
+        "symbol": "errorMessage"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#fupHXbVx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/retained-reading/operations/result.ts",
+        "symbol": "ArchitectureModelRead"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#Zf3j7TZc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/retained-reading/operations/read.ts",
+        "symbol": "recordedSelection"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#T1wYjUBf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/retained-reading/operations/read.ts",
+        "symbol": "retainedMigrationPreview"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Rutvvekt",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/history/retained-reading/operations/read.ts",
+        "symbol": "requireCompleteArchive"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#qOrTIIKT",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/pane-context.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qOrTIIKT",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#vZUWUgyb",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/schemas/legacy-board.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vZUWUgyb",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/schemas/content.ts",
+        "symbol": "codeBindingSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9VahN2IU",
+      "field": "name",
+      "value": "Pane keys"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9VahN2IU",
+      "field": "responsibility",
+      "value": "Parses, writes and normalizes the keys that address a model and a variant, which the store's lock, server-lifecycle and the server read"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9VahN2IU",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/pane-key.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9VahN2IU",
+      "field": "formerNames",
+      "value": [
+        "Board keys",
+        "Legacy addresses"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#9VahN2IU",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#P9dwhB8m",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-news.ts"
       }
     },
     {
@@ -427,6 +3361,91 @@
         "path": "packages/process/src/runtime/processes/group-cleanup.ts",
         "symbol": "waitUntil"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#50jWlhsK",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model-snapshot.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#wPUmbllJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model-snapshot.ts",
+        "symbol": "ModelSnapshotSchema"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#53cdVjYp",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "prepareEdit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#YfqHBPuw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "editCandidate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#10U4hOmj",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
+        "symbol": "archiveCommit"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#HvSEtBsg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "writeState"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#fhSRy9Hi",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "installJournal"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#eLFZNVoJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/edit.ts",
+        "symbol": "notifyArchitecture"
+      }
     }
+  ],
+  "retiredIds": [
+    "vKEsyHFk/0T9enjhi#ZWlFN4et",
+    "vKEsyHFk/0T9enjhi#E7pOpTZi",
+    "vKEsyHFk#GIkJuXb8",
+    "vKEsyHFk#VUcbRXzp"
   ]
 }
