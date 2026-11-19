@@ -67,7 +67,10 @@ so agents in an implementation loop added exported constants and nothing failed.
   of a published entry is how a package says that callers outside the checkout
   use it; no package setting does. A test is no user. Uses of a method go
   through values, which a syntax read cannot follow, so no method is judged
-  unused, and members the language calls are never judged.
+  unused, and members the language calls are never judged. A Rust item
+  exported to the host language counts as used by it: one that
+  `#[wasm_bindgen]` exports to JavaScript (TASK-646.16), and a type that
+  derives ts-rs's `TS`, whose bindings TypeScript names (TASK-646.18).
 - **A sibling import keeps a folder export used** (TASK-646.17). A folder
   module that declares no interface, with no file that stands for it (such as
   `index.ts`, `__init__.py`, `mod.rs` or a project file) and no
@@ -79,6 +82,15 @@ so agents in an implementation loop added exported constants and nothing failed.
   and a language whose files of one module see each other without an import,
   as Go's and Swift's do, gives no such use, so the remedy there stays to stop
   exporting the name.
+- **What a sibling use keeps used stays visible** (TASK-646.18). Such a
+  module gets `INTERFACE_UNDECLARED`, information, once only its own files
+  use one of its names. It says how many of its names files outside it use,
+  and names the ones only its own files import. Declaring the interface, such
+  as with an entry file that offers what callers use, keeps the rest inside.
+- **Code the repository does not own gets no verdict** (TASK-646.18). A module
+  that the model marks `external`, or that a part marked `external` holds, as
+  a vendored crate is, keeps its counts and gets no finding on its exports and
+  no `MODULE_SHALLOW`. Nobody here refactors its interface.
 - **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
   is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
   pass-through finding. A class
