@@ -1,12 +1,9 @@
-import path from "node:path";
 import { z } from "zod";
 import {
+	checkoutOf,
 	inspectCheckout,
-	chosenCheckouts,
-	listRegistry,
 	readServers,
 	setServer,
-	languageServersSchema,
 } from "@archboard/workspace/checkouts";
 import {
 	CliUsageError,
@@ -14,14 +11,15 @@ import {
 	type CommandContext,
 } from "#cli/contract/protocol/contract.ts";
 import { commandLine, type NamedServer } from "#cli/commands/repo/rules/command-line.ts";
-import { configurableLanguages } from "@archboard/workspace/languages";
+import { workspaceShape } from "@archboard/workspace/shapes";
 
 const tail = z.array(z.string()).default([]);
+const LANGUAGES = workspaceShape("configurableLanguage").options;
 
 const RepoLanguageServerInputSchema = z.object({
 	language: z
-		.enum(configurableLanguages(), {
-			error: `repo language-server takes a language: ${configurableLanguages().join(", ")}. Use c for C, C++ and Objective-C.`,
+		.enum(LANGUAGES, {
+			error: `repo language-server takes a language: ${LANGUAGES.join(", ")}. Use c for C, C++ and Objective-C.`,
 		})
 		.optional(),
 	command: z.string().min(1).optional(),
@@ -34,7 +32,7 @@ const RepoLanguageServerInputSchema = z.object({
 type RepoLanguageServerInput = z.infer<typeof RepoLanguageServerInputSchema>;
 const ServerFileResultSchema = z.object({
 	file: z.string(),
-	servers: languageServersSchema(),
+	servers: workspaceShape("languageServers"),
 	problem: z.string().optional(),
 });
 const RepoLanguageServerResultSchema = z.object({
@@ -92,9 +90,9 @@ const repoLanguageServerContract = defineCommand({
 			kind: "positional",
 			key: "language",
 			name: "language",
-			description: `One of ${configurableLanguages()
-				.map((language) => `\`${language}\``)
-				.join(", ")}; without it, the command shows both files`,
+			description: `One of ${LANGUAGES.map((language) => `\`${language}\``).join(
+				", ",
+			)}; without it, the command shows both files`,
 		},
 		{
 			kind: "positional",
@@ -266,12 +264,24 @@ async function targetOf(
 }
 
 /**
+ * The refusal of a command path that the repository file cannot hold.
+ * @param absolute The path, outside the checkout.
+ * @returns The usage error.
+ */
+function outsideCheckout(absolute: string): CliUsageError {
+	return new CliUsageError(
+		`${absolute} is outside the checkout, and every machine reads the committed repository file. Install the server through the repository's own environment, such as its Nix flake, devenv, devbox or package manager, so that it is on the PATH, or name a script in the checkout by its path from the checkout root. To name a program of this machine only, add --global.`,
+	);
+}
+
+/**
  * Write one change into its file.
  * @param change The change.
  * @param global Whether it goes into the global file.
  * @param target The checkout, for the repository file.
  * @param context Resolves a path from the working directory.
  * @returns What the change did, as the agent reads it.
+ * @throws {CliUsageError} When the repository file would hold a path outside the checkout.
  */
 function applyChange(
 	change: RequestedChange,
@@ -280,13 +290,12 @@ function applyChange(
 	context: Pick<CommandContext, "resolvePath">,
 ): string {
 	const scope = global ? "global" : "repository";
-	const typed = change.server;
-	const root = scope === "repository" ? target?.root : undefined;
-	const server =
-		typed === undefined
-			? undefined
-			: { ...typed, command: storedCommand(typed.command, root, context.resolvePath) };
-	const written = setServer(scope, change.language, server, target?.root);
+	const written = setServer(scope, change.language, change.server, {
+		...(target === undefined ? {} : { root: target.root }),
+		cwd: context.resolvePath("."),
+	});
+	if (written.kind === "outside-checkout") throw outsideCheckout(written.absolute);
+	const server = change.server === undefined ? undefined : written.servers[change.language];
 	return changeNote(change.language, server, written.file, scope, target);
 }
 
@@ -302,35 +311,6 @@ function filesResult(
 	if (target === undefined) return { success: true, global };
 	const repository = fileResult(readServers("repository", target.root));
 	return { success: true, repo: target.repo, root: target.root, repository, global };
-}
-
-/**
- * The command as its file keeps it. A name stays a name. A path is read from
- * the working directory. The global file belongs to this machine and keeps it
- * absolute. Every machine reads the repository file, so it keeps a path inside
- * the checkout as a path from the checkout root, and refuses any other path.
- * @param command The command as typed.
- * @param root The checkout root, for the repository file.
- * @param resolvePath Resolves a path from the working directory.
- * @returns The command to store.
- * @throws {CliUsageError} When the repository file would hold a path outside the checkout.
- */
-function storedCommand(
-	command: string,
-	root: string | undefined,
-	resolvePath: (file: string) => string,
-): string {
-	if (path.basename(command) === command) return command;
-	const absolute = resolvePath(command);
-	if (root === undefined) return absolute;
-	const relative = path.relative(root, absolute);
-	const outside =
-		relative === "" || path.isAbsolute(relative) || relative.split(path.sep)[0] === "..";
-	if (outside)
-		throw new CliUsageError(
-			`${absolute} is outside the checkout, and every machine reads the committed repository file. Install the server through the repository's own environment, such as its Nix flake, devenv, devbox or package manager, so that it is on the PATH, or name a script in the checkout by its path from the checkout root. To name a program of this machine only, add --global.`,
-		);
-	return `./${relative.split(path.sep).join("/")}`;
 }
 
 /**
@@ -369,33 +349,24 @@ function fileResult(read: ReturnType<typeof readServers>): z.infer<typeof Server
 }
 
 /**
- * Why a repository cannot be named: no checkout of it is known.
- * @param repo The identity.
- * @returns The refusal.
- */
-function notRegistered(repo: string): string {
-	const known = chosenCheckouts().map((each) => each.repo);
-	const registered = known.length > 0 ? ` (registered: ${known.join(", ")})` : "";
-	return `"${repo}" is not registered on this machine${registered}. Run this in its checkout, or register the checkout with archboard repo add <dir>.`;
-}
-
-/**
  * The chosen checkout of a repository.
  * @param repo The identity.
  * @returns The identity and the root of its chosen checkout.
  * @throws {CliUsageError} When no checkout of it is chosen.
  */
 function chosenCheckoutOf(repo: string): TargetCheckout {
-	const chosen = chosenCheckouts().find((each) => each.repo === repo);
-	if (chosen === undefined) {
-		const others = listRegistry().checkouts.filter((each) => each.repo === repo);
+	const checkout = checkoutOf(repo);
+	if (checkout.kind === "chosen") return { repo, root: checkout.root };
+	if (checkout.kind === "unchosen") {
 		throw new CliUsageError(
-			others.length === 0
-				? notRegistered(repo)
-				: `No checkout of "${repo}" is chosen. Choose one with archboard repo use <dir>: ${others.map((each) => each.root).join(", ")}.`,
+			`No checkout of "${repo}" is chosen. Choose one with archboard repo use <dir>: ${checkout.roots.join(", ")}.`,
 		);
 	}
-	return { repo, root: chosen.root };
+	const known = checkout.chosenRepositories;
+	const registered = known.length > 0 ? ` (registered: ${known.join(", ")})` : "";
+	throw new CliUsageError(
+		`"${repo}" is not registered on this machine${registered}. Run this in its checkout, or register the checkout with archboard repo add <dir>.`,
+	);
 }
 
 /**

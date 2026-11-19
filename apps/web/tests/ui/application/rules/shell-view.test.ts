@@ -8,7 +8,7 @@ import {
 	type PaneRecords,
 } from "#ui/application/rules/pane-records.ts";
 import { assembleShellView } from "#ui/application/rules/shell-view.ts";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
 
 const CHECKOUT = { model: "Checkout", variant: "current" };

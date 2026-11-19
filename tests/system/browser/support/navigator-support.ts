@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { z } from "zod";
-import type { repositoryListingSchema } from "@archboard/workspace/repositories";
+import type { workspaceShape } from "@archboard/workspace/shapes";
 import type { ModelDocument } from "@archboard/model-contract";
 
 /** What these tests read of the pane report that `GET /api/panes` answers with. */
@@ -32,7 +32,9 @@ async function servedRepository(base: string): Promise<string> {
 	const response = await fetch(`${base}/api/repositories`, {
 		headers: { Origin: base, "Sec-Fetch-Site": "same-origin" },
 	});
-	const body = (await response.json()) as z.infer<ReturnType<typeof repositoryListingSchema>>;
+	const body = (await response.json()) as z.infer<
+		ReturnType<typeof workspaceShape<"repositoryListing">>
+	>;
 	const [served] = body.repositories;
 	if (served === undefined) {
 		throw new Error(`The server at ${base} lists no repository.`);

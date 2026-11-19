@@ -16,22 +16,20 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	chosenCheckouts,
+	checkoutOf,
 	declareDirectory,
-	declareIfUnknown,
 	forgetDirectory,
 	listRegistry,
-	RepoRegistryError,
-	repositoryOfVault,
-} from "#runtime/store/repo-registry.ts";
+} from "#runtime/api/checkouts.ts";
+import { placeOfVault } from "#runtime/api/vault.ts";
+import { declareIfUnknown } from "#runtime/store/repo-registry.ts";
 
 /**
- * The root of the chosen checkout of an identity.
- * @param repo The repository identity.
- * @returns Its root, or undefined when it has none.
+ * The chosen checkouts, as the registry lists them.
+ * @returns Each identity's chosen checkout.
  */
-function chosenRoot(repo: string): string | undefined {
-	return chosenCheckouts().find((each) => each.repo === repo)?.root;
+function chosenCheckouts() {
+	return listRegistry().checkouts.filter((each) => each.chosen);
 }
 
 const IDENTITY = "github.com/test/orders";
@@ -120,10 +118,10 @@ afterAll(() => {
 });
 
 test("the first known checkout of an identity is chosen, and adding another never changes the choice", async () => {
-	await declareDirectory(clone);
+	expect(await declareDirectory(clone)).toMatchObject({ kind: "checkout", registry });
 	await declareDirectory(main);
 	expect(orders().chosen).toEqual([clone]);
-	expect(chosenRoot(IDENTITY)).toBe(clone);
+	expect(checkoutOf(IDENTITY)).toEqual({ kind: "chosen", root: clone });
 	expect(chosenCheckouts().map((each) => each.root)).toEqual([clone]);
 	// Registering the chosen checkout again keeps it chosen.
 	await declareDirectory(clone);
@@ -135,7 +133,7 @@ test("use chooses a checkout, registers it when it is unknown, and says which it
 	const used = await declareDirectory(clone, { choose: true });
 	expect(used).toMatchObject({ kind: "checkout", added: true, replaced: { root: main } });
 	expect(orders().chosen).toEqual([clone]);
-	expect(chosenRoot(IDENTITY)).toBe(clone);
+	expect(checkoutOf(IDENTITY)).toEqual({ kind: "chosen", root: clone });
 	// Choosing the chosen checkout replaces nothing.
 	const again = await declareDirectory(clone, { choose: true });
 	expect(again).not.toHaveProperty("replaced");
@@ -239,7 +237,7 @@ test("a repository with no remote is named by its main checkout, and so is every
 	const chosen = await declareDirectory(side, { choose: true });
 	expect(chosen).toMatchObject({ checkout: { repo: "local", root: side, chosen: true } });
 	expect(listRegistry().checkouts.filter((each) => each.chosen)).toHaveLength(1);
-	expect(chosenRoot("local")).toBe(side);
+	expect(checkoutOf("local")).toEqual({ kind: "chosen", root: side });
 	expect(listRegistry().checkouts.map((each) => each.root)).toContain(realpathSync.native(local));
 });
 
@@ -322,8 +320,28 @@ test.each([
 	],
 ])("%s is refused and registers nothing", async (_, target, choose) => {
 	mkdirSync(join(scratch, "one", "plans", ".archboard", "vault"), { recursive: true });
-	await expect(declareDirectory(target(), { choose })).rejects.toBeInstanceOf(RepoRegistryError);
+	expect(await declareDirectory(target(), { choose })).toEqual({
+		kind: "refused",
+		message: expect.any(String),
+	});
 	expect(listRegistry()).toMatchObject({ checkouts: [], vaults: [] });
+});
+
+test("the registry lists its file and, sorted and once each, the directories that hold the vaults this machine reads", async () => {
+	expect(listRegistry()).toEqual({
+		path: registry,
+		checkouts: [],
+		vaults: [],
+		unchosen: [],
+		holders: [],
+	});
+	const plans = join(scratch, "four", "plans");
+	const gone = join(scratch, "five", "plans");
+	for (const holder of [plans, gone])
+		mkdirSync(join(holder, ".archboard", "vault"), { recursive: true });
+	for (const each of [clone, main, plans, gone]) await declareDirectory(each);
+	rmSync(join(scratch, "five"), { recursive: true });
+	expect(listRegistry().holders).toEqual([plans, clone]);
 });
 
 test("forgetting the chosen checkout leaves its identity with none chosen until use", async () => {
@@ -331,7 +349,7 @@ test("forgetting the chosen checkout leaves its identity with none chosen until 
 	const forgotten = await forgetDirectory(main);
 	expect(forgotten).toMatchObject({ kind: "checkout", unchosen: true, others: [worktree] });
 	expect(chosenCheckouts()).toEqual([]);
-	expect(chosenRoot(IDENTITY)).toBeUndefined();
+	expect(checkoutOf(IDENTITY)).toEqual({ kind: "unchosen", roots: [worktree] });
 	expect(listRegistry().unchosen).toEqual([IDENTITY]);
 	// Adding a checkout does not choose it, because the identity still has a known one.
 	await declareDirectory(clone);
@@ -415,9 +433,9 @@ test("a vault that is a symbolic link is named by the checkout whose .archboard/
 	symlinkSync(elsewhere, join(clone, ".archboard", "vault"));
 	try {
 		await declareDirectory(clone);
-		expect(repositoryOfVault(realpathSync.native(elsewhere))).toEqual({
-			name: IDENTITY,
-			root: clone,
+		expect(placeOfVault(realpathSync.native(elsewhere))).toMatchObject({
+			repository: IDENTITY,
+			checkout: clone,
 			chosen: true,
 		});
 	} finally {

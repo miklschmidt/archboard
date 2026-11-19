@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import type { Model } from "@archboard/model-rules";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import type { AgentActivityEntry, PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
 import type { ModelDocumentInput } from "@archboard/model-contract";
 

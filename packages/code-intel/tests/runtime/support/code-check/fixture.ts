@@ -4,7 +4,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { z } from "zod";
-import type { languageServersSchema } from "@archboard/workspace/checkouts";
+import type { workspaceShape } from "@archboard/workspace/shapes";
 
 /**
  * Run Git in a checkout with an owner's identity and no configuration of the machine.
@@ -86,7 +86,7 @@ function document(vault: string, name: string, variants: readonly FixtureVariant
 function register(
 	scratch: string,
 	checkouts: Readonly<Record<string, string>>,
-	servers: z.infer<ReturnType<typeof languageServersSchema>> = {},
+	servers: z.infer<ReturnType<typeof workspaceShape<"languageServers">>> = {},
 ): void {
 	write(scratch, {
 		"repos.json": JSON.stringify(

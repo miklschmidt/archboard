@@ -8,13 +8,10 @@
 import type { AnsweredVault, RegisteredVault } from "#cli/contract/protocol/schemas.ts";
 import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { vaultsBoundTo } from "#cli/routing/operations/bound-vaults.ts";
-import { findAndRegisterVault } from "@archboard/workspace/vault";
+import { findVault } from "@archboard/workspace/vault";
 
 /** Why a search found no vault, as the finder answers it. */
-type VaultNotFound = Extract<
-	Awaited<ReturnType<typeof findAndRegisterVault>>,
-	{ readonly ok: false }
->;
+type VaultNotFound = Extract<Awaited<ReturnType<typeof findVault>>, { readonly ok: false }>;
 
 /** A command found no vault; nothing was started and nothing was written. */
 class VaultNotFoundError extends Error {
@@ -93,24 +90,24 @@ async function findVaultOf(directory: string, option: string): Promise<AnsweredV
  * @throws {VaultNotFoundError} When there is no vault to address.
  */
 async function foundAndRegistered(
-	search: Omit<Parameters<typeof findAndRegisterVault>[0], "cwd">,
+	search: Omit<Parameters<typeof findVault>[0], "cwd">,
 ): Promise<AnsweredVault> {
-	const vault = await findAndRegisterVault({ ...search, cwd: process.cwd() });
+	const vault = await findVault({ ...search, cwd: process.cwd() }, { register: true });
 	if (!vault.ok) {
 		throw new VaultNotFoundError(vault);
 	}
-	const { registered, unregistered } = vault;
+	const { found, registered, unregistered } = vault;
 	if (registered !== undefined) {
 		process.stderr.write(`${registrationLine(registered)}\n`);
 	}
 	if (unregistered !== undefined) {
 		process.stderr.write(
-			`Warning: ${vault.holder} could not be registered, so the browser does not list it yet. ${unregistered}\n`,
+			`Warning: ${found.holder} could not be registered, so the browser does not list it yet. ${unregistered}\n`,
 		);
 	}
 	return {
-		path: vault.path,
-		origin: vault.origin,
+		path: found.path,
+		origin: found.origin,
 		...(registered === undefined ? {} : { registered }),
 	};
 }

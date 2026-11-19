@@ -2,13 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { CodeBinding } from "#shared/schemas/code-binding.ts";
-import {
-	checkoutHead,
-	chosenCheckouts,
-	repoIdentityAt,
-	repoRootOf,
-} from "@archboard/workspace/checkouts";
-import { checkoutsReadFrom } from "#runtime/services/vault-checkout.ts";
+import { checkoutsReadFrom, inspectCheckout } from "@archboard/workspace/checkouts";
 import {
 	resolveLocalCodeTargetsWith,
 	resolveRegisteredCheckoutWith,
@@ -17,10 +11,12 @@ import {
 	type ResolverDependencies,
 } from "#runtime/operations/binding-resolver.ts";
 
+/** What Git reports of a checkout: its root, identity, branch and commit. */
+type GitInspection = NonNullable<Awaited<ReturnType<typeof inspectCheckout>>>;
 /** What a checkout has out: the branch it is on and the commit at HEAD. */
-type CheckoutHead = Awaited<ReturnType<typeof checkoutHead>>;
+type CheckoutHead = Pick<GitInspection, "branch" | "commit">;
 /** A registered checkout, with whether its directory is still here. */
-type RegisteredRepoStatus = ReturnType<typeof chosenCheckouts>[number];
+type RegisteredRepoStatus = ReturnType<typeof checkoutsReadFrom>["checkouts"][number];
 
 interface CheckoutInspection {
 	readonly registeredRoot?: string;
@@ -42,7 +38,7 @@ export interface CheckoutSnapshot {
 	path(candidate: string): Readonly<PathInspection> | undefined;
 }
 
-type SnapshotOptions = NonNullable<Parameters<typeof repoRootOf>[1]> & {
+type SnapshotOptions = NonNullable<Parameters<typeof inspectCheckout>[1]> & {
 	/**
 	 * The vault whose bindings are resolved: its own checkout stands for its own
 	 * identity (ADR 0049). Null for a reading that belongs to no vault.
@@ -65,7 +61,7 @@ const NOTHING_OUT: Readonly<CheckoutHead> = Object.freeze({});
  * @param options - The abort signal shared by the whole snapshot.
  * @returns The repository name paired with what was found for it.
  */
-async function inspectCheckout(
+async function inspectRegistered(
 	entry: Readonly<RegisteredRepoStatus>,
 	options: SnapshotOptions,
 ): Promise<InspectedCheckout> {
@@ -74,16 +70,16 @@ async function inspectCheckout(
 		if (!fs.statSync(registeredRoot).isDirectory()) {
 			return [entry.repo, Object.freeze({})];
 		}
-		const discoveredRoot = await repoRootOf(registeredRoot, options);
-		if (!discoveredRoot) {
+		const inspected = await inspectCheckout(registeredRoot, options);
+		if (!inspected) {
 			return [entry.repo, Object.freeze({})];
 		}
+		const { root: discoveredRoot, identity, ...head } = inspected;
 		const root = fs.realpathSync.native(discoveredRoot);
-		const [identity, head] = await Promise.all([
-			repoIdentityAt(root, options),
-			checkoutHead(root, options),
-		]);
-		return [entry.repo, Object.freeze({ registeredRoot, root, identity, head })];
+		return [
+			entry.repo,
+			Object.freeze({ registeredRoot, root, identity, head: Object.freeze(head) }),
+		];
 	} catch {
 		if (options.signal?.aborted) {
 			throw new DOMException("Checkout snapshot cancelled.", "AbortError");
@@ -196,8 +192,12 @@ function rememberBindingPath(
  * @returns The frozen snapshot the resolvers read from.
  */
 export async function snapshotCheckoutAccess(options: SnapshotOptions): Promise<CheckoutSnapshot> {
-	const entries = checkoutsReadFrom(options.vault).map((entry) => Object.freeze({ ...entry }));
-	const settled = await Promise.allSettled(entries.map((entry) => inspectCheckout(entry, options)));
+	const entries = checkoutsReadFrom(options.vault).checkouts.map((entry) =>
+		Object.freeze({ ...entry }),
+	);
+	const settled = await Promise.allSettled(
+		entries.map((entry) => inspectRegistered(entry, options)),
+	);
 	const failed = settled.find(
 		(result): result is PromiseRejectedResult => result.status === "rejected",
 	);

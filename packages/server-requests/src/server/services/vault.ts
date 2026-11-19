@@ -13,8 +13,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { placeOfVault } from "@archboard/workspace/repository-listing";
-import { isVaultLayout } from "@archboard/workspace/vault";
+import { checkoutOfVault, placeOfVault, vaultIn } from "@archboard/workspace/vault";
 
 /** The query parameter of an upgrade that names the vault. */
 const VAULT_PARAMETER = "vault";
@@ -108,8 +107,9 @@ function namedVault(raw: unknown): NamedVault {
 		return { ok: false, refusal: vaultUnreadableRefusal(raw, found.why) };
 	}
 	// The server serves only a vault in the layout: a workhorse works in the directory that holds
-	// the vault (ADR 0050), and a directory in no layout has none.
-	return isVaultLayout(found.real)
+	// the vault (ADR 0050), and a directory in no layout has none. A real directory is in the layout
+	// when it is the vault of the directory that would hold it.
+	return vaultIn(checkoutOfVault(found.real)) === found.real
 		? { ok: true, vault: found.real }
 		: {
 				ok: false,

@@ -21,8 +21,9 @@ import path from "path";
 import { logger } from "@archboard/diagnostics/logger";
 import { readArchitectureModel } from "@archboard/model-store";
 import { parsePaneKey, type ArchitectureModelRead } from "@archboard/model-contract";
-import { registryPath } from "@archboard/workspace/checkouts";
-import { listRepositories, placeOfVault } from "@archboard/workspace/repository-listing";
+import { listRegistry } from "@archboard/workspace/checkouts";
+import { listRepositories } from "@archboard/workspace/repository-listing";
+import { placeOfVault } from "@archboard/workspace/vault";
 
 import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
 import { agentActivity } from "#server/panes/services/agent-activity.ts";
@@ -43,6 +44,18 @@ let followedRegistry: string | null = null;
 /** The watch of the registry file's directory, while there is one. */
 let registryWatcher: fs.FSWatcher | null = null;
 
+/** The registry file, which the server reads once and keeps until it stops watching it. */
+let registryFile: string | null = null;
+
+/**
+ * The registry file, read once.
+ * @returns Its path.
+ */
+function fileOfRegistry(): string {
+	registryFile ??= path.resolve(listRegistry().path);
+	return registryFile;
+}
+
 /**
  * The registry file as it is now, compared and never parsed: the panes follow
  * what `listRegistry` reads from it.
@@ -50,7 +63,7 @@ let registryWatcher: fs.FSWatcher | null = null;
  */
 function registryText(): string | null {
 	try {
-		return fs.readFileSync(registryPath(), "utf-8");
+		return fs.readFileSync(fileOfRegistry(), "utf-8");
 	} catch {
 		return null;
 	}
@@ -189,7 +202,7 @@ function watchRegistry(): void {
 	if (registryWatcher !== null) {
 		return;
 	}
-	const file = path.resolve(registryPath());
+	const file = fileOfRegistry();
 	followedRegistry = registryText();
 	registerReadableVaults();
 	try {
@@ -216,6 +229,7 @@ function watchRegistry(): void {
 function unwatchRegistry(): void {
 	registryWatcher?.close();
 	registryWatcher = null;
+	registryFile = null;
 }
 
 export { followRegistry, unwatchRegistry, watchRegistry };

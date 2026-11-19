@@ -10,8 +10,7 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./repositories": "./src/shared/api/repositories.ts",
-		"./languages": "./src/shared/api/languages.ts",
+		"./shapes": "./src/shared/api/shapes.ts",
 		"./language-server-setup": "./src/shared/api/language-server-setup.ts",
 		"./checkouts": "./src/runtime/api/checkouts.ts",
 		"./vault": "./src/runtime/api/vault.ts",

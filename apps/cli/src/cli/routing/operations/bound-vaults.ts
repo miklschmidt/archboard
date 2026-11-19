@@ -1,25 +1,9 @@
 // Known canonical models whose current or proposed modules bind a repository.
 // Discovery returns an explicit -C hint and never reads live legacy boards or rewrites inputs.
 
-import fs from "node:fs";
-import path from "node:path";
-import { chosenCheckouts, listRegistry } from "@archboard/workspace/checkouts";
-import { vaultDirectory, isVaultLayout, type BoundVault } from "@archboard/workspace/vault";
+import { listRegistry } from "@archboard/workspace/checkouts";
+import { vaultIn, type BoundVault } from "@archboard/workspace/vault";
 import { readArchitectureModel } from "@archboard/model-store";
-
-/**
- * The vault a known directory holds, as its real path, when the server would serve it.
- * @param holder A chosen checkout or the directory of an untracked vault.
- * @returns The vault, or undefined when it holds none.
- */
-function servedVaultOf(holder: string): string | undefined {
-	try {
-		const vault = fs.realpathSync.native(path.join(holder, vaultDirectory()));
-		return isVaultLayout(vault) && fs.statSync(vault).isDirectory() ? vault : undefined;
-	} catch {
-		return undefined;
-	}
-}
 
 /**
  * Read the canonical model and its independent proposals for bindings to a repository.
@@ -46,14 +30,10 @@ async function modelBinding(vault: string, repo: string): Promise<string | undef
  * @returns Each matching model and its vault holder, in path order.
  */
 async function vaultsBoundTo(repo: string): Promise<BoundVault[]> {
-	const holders = [
-		...chosenCheckouts().filter((each) => each.exists),
-		...listRegistry().vaults.filter((each) => each.exists),
-	].map((each) => each.root);
 	const matches = await Promise.all(
-		[...new Set(holders)].toSorted().map(async (holder) => {
-			const vault = servedVaultOf(holder);
-			if (vault === undefined) return [];
+		listRegistry().holders.map(async (holder) => {
+			const vault = vaultIn(holder);
+			if (vault === null) return [];
 			const name = await modelBinding(vault, repo);
 			return name === undefined ? [] : [{ holder, models: [name] }];
 		}),

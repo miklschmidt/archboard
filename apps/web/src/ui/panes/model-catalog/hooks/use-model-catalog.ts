@@ -6,7 +6,7 @@ import {
 	type QueryClient,
 	type UseQueryResult,
 } from "@tanstack/react-query";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import { architectureFeed } from "#ui/architecture-drawing/model-reader/access/clients/events.ts";
 import {
 	invalidateModelQueries,

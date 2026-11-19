@@ -1,7 +1,7 @@
 import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecycle/server";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { registeredRepositoryOfVault } from "@archboard/workspace/checkouts";
+import { placeOfVault } from "@archboard/workspace/vault";
 import { waitUntil } from "@archboard/timing";
 import open from "open";
 import { z } from "zod";
@@ -88,12 +88,12 @@ async function firstPane(): Promise<string | null> {
  */
 function canvasUrl(vault: string | null): string {
 	const base = browserUrl(archboardUrl());
-	const repository = vault === null ? undefined : registeredRepositoryOfVault(vault);
-	if (repository === undefined) {
+	const repository = vault === null ? null : placeOfVault(vault).repository;
+	if (repository === null) {
 		return base;
 	}
 	// The page writes `/`, `@` and `:` of a name as they are, so the address reads like its own.
-	const search = new URLSearchParams({ repoA: repository.name })
+	const search = new URLSearchParams({ repoA: repository })
 		.toString()
 		.replaceAll("%2F", "/")
 		.replaceAll("%40", "@")

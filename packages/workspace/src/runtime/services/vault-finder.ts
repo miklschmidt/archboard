@@ -18,13 +18,10 @@ import fs from "fs";
 import path from "path";
 import { repoIdentityAt, repoRootOf } from "#runtime/clients/git.ts";
 import { isDirectory } from "#runtime/store/registry-file.ts";
+import type { VaultOrigin } from "#shared/schemas/shapes.ts";
 
 /** A vault is the `.archboard/vault` of a directory (ADR 0049). */
 const VAULT_DIRECTORY = path.join(".archboard", "vault");
-
-/** How a command came to the vault it addresses. */
-const VAULT_ORIGINS = ["-C", "working-directory"] as const;
-type VaultOrigin = (typeof VAULT_ORIGINS)[number];
 
 /** Where the search starts, and what a command was given. */
 interface VaultSearch {
@@ -120,6 +117,23 @@ function vaultHolder(dir: string): string | undefined {
  */
 function isVaultLayout(vault: string): boolean {
 	return path.resolve(vault).endsWith(`${path.sep}${VAULT_DIRECTORY}`);
+}
+
+/**
+ * The vault a directory holds, when the server serves it: a `.archboard/vault`
+ * whose real directory is in the layout. A link that leads out of the layout
+ * is refused by every call, so no page opens in it. A vault named directly is
+ * one when `vaultIn(checkoutOfVault(real)) === real` for its real path.
+ * @param directory A checkout, or the directory that holds an untracked vault.
+ * @returns The vault's real path, or null when it holds none the server serves.
+ */
+function vaultIn(directory: string): string | null {
+	try {
+		const real = fs.realpathSync(path.join(directory, VAULT_DIRECTORY));
+		return isVaultLayout(real) && fs.statSync(real).isDirectory() ? real : null;
+	} catch {
+		return null;
+	}
 }
 
 /**
@@ -328,12 +342,12 @@ async function vaultFrom(
 }
 
 /**
- * Find the vault a command addresses: from `-C` when it is given, else from
+ * Locate the vault a command addresses: from `-C` when it is given, else from
  * the working directory.
  * @param search What the command was given, and where it runs.
  * @returns The vault, or why there is none.
  */
-async function findVault(search: VaultSearch): Promise<VaultFinding> {
+async function locateVault(search: VaultSearch): Promise<VaultFinding> {
 	const { option } = search;
 	if (search.directory !== null) {
 		const start = path.resolve(search.cwd, search.directory);
@@ -346,16 +360,15 @@ async function findVault(search: VaultSearch): Promise<VaultFinding> {
 
 export {
 	VAULT_DIRECTORY,
-	VAULT_ORIGINS,
 	type VaultSearch,
 	type BoundVault,
 	type FoundVault,
 	type VaultNotFound,
 	type VaultFinding,
 	checkoutOfVault,
-	findVault,
-	isVaultLayout,
+	locateVault,
 	vaultHolder,
+	vaultIn,
 };
 
 /**
@@ -364,12 +377,4 @@ export {
  */
 export function vaultDirectory(): typeof VAULT_DIRECTORY {
 	return VAULT_DIRECTORY;
-}
-
-/**
- * The value `VAULT_ORIGINS`, for callers that read it.
- * @returns The value.
- */
-export function vaultOrigins(): typeof VAULT_ORIGINS {
-	return VAULT_ORIGINS;
 }
