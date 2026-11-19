@@ -11,11 +11,11 @@ kept parts of [ADR 0074](0074-webgl2-paints-where-webgpu-does-not.md).
 
 ## Context
 
-The stage had 29 names, most of them setters the page called one by one. The page set the phases and the longest step after it
-started a painter, and a painter that missed them flew nothing. The WebAssembly painter held the
-stage's clock beside the stage and read it at ten calls. The strip canvases kept their parts in a
-wrapper that the WebAssembly painter held, and a bench and a parity script reached two counters
-of the stage that no page used.
+The stage had 29 names, most of them setters that the page called one by one. The page set the
+phases and the longest step after it started a painter, and a painter that missed them flew
+nothing. The WebAssembly painter held the stage's clock beside the stage and read it at ten
+calls. The strip canvases kept their parts in a wrapper that the WebAssembly painter held, and a
+bench and a parity script reached two counters of the stage that no page used.
 
 ## Decision
 
