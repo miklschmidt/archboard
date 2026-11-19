@@ -1,11 +1,11 @@
 ---
 id: TASK-646.15
 title: A callable made by a call counts as a function
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T01:11:00Z'
-updated_date: '2026-11-19T02:01:00Z'
+updated_date: '2026-11-19T02:04:00Z'
 labels:
   - ready-for-agent
 dependencies:
