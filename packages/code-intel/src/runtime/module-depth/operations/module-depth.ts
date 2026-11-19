@@ -10,10 +10,10 @@
 // It counts the module's exports by kind: functions, classes, each public
 // method of an exported class, values and types. A type that holds data, such
 // as a Rust struct, counts as a type unless the module gives it a public
-// method, in whichever of its files (`Definition.data`, TASK-651). A member that belongs to an
-// exported class rather than to an instance, as a C# `static` member does, is
-// read through the class's name and counts as a function or a value of its
-// own (TASK-646.11). It counts the pieces of
+// method, in whichever of its files (`Definition.data`, TASK-651). A member
+// that belongs to an exported class rather than to an instance, as a C#
+// `static` member does, is read through the class's name and counts as a
+// function or a value of its own (TASK-646.11). It counts the pieces of
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
 //
@@ -84,6 +84,11 @@ import {
 	nameFinding,
 } from "#runtime/module-depth/operations/name-findings.ts";
 import { siblingUses, undeclaredFinding } from "#runtime/module-depth/operations/sibling-uses.ts";
+import {
+	dataOnly,
+	methodOf,
+	staticMember,
+} from "#runtime/module-depth/operations/class-members.ts";
 import {
 	type ExportCounts,
 	moduleFindings,
@@ -282,81 +287,6 @@ function pathEnds(names: readonly ExposedName[]): ExposedName[] {
 }
 
 /**
- * A member's own name within a holder: `post` of `Ledger.post`, and in the C
- * family, whose names `::` qualifies, `save` of `shop::Store::save` and the
- * selector `post:by:` of `Ledger::post:by:`.
- * @param symbol The member's symbol.
- * @param holder The holder's symbol.
- * @returns The own name, or undefined when the symbol is no member of the holder's own.
- */
-function ownName(symbol: string, holder: string): string | undefined {
-	if (!symbol.startsWith(holder)) return undefined;
-	const own = /^(?:\.|::)(.+)$/u.exec(symbol.slice(holder.length))?.[1];
-	return own === undefined || /\.|::./u.test(own) ? undefined : own;
-}
-
-/**
- * Whether a member belongs to an exported class. It may be in another file
- * than its class: a C++ or Objective-C method in the pair of its class's
- * header, a Swift method in an extension.
- * @param member The member.
- * @param classes The module's exported classes.
- * @returns True when it does.
- */
-function heldBy(member: ExposedName, classes: readonly ExposedName[]): boolean {
-	const { symbol } = member.definition;
-	return classes.some((each) => ownName(symbol, each.definition.symbol) !== undefined);
-}
-
-/**
- * Whether a member is a public method of an exported class, which callers
- * call on an instance.
- * @param member The member.
- * @param classes The module's exported classes.
- * @returns True when it is.
- */
-function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean {
-	const { definition } = member;
-	return (
-		definition.kind === "function" &&
-		definition.calledByLanguage !== true &&
-		definition.static !== true &&
-		heldBy(member, classes)
-	);
-}
-
-/**
- * Whether an exported type that holds data has no public method in its
- * module, wherever a method is defined, so callers learn it as a type.
- * @param name The type.
- * @param exposed Every name its module exposes.
- * @returns True when it holds data alone.
- */
-function dataOnly(name: ExposedName, exposed: readonly ExposedName[]): boolean {
-	if (name.definition.data !== true) return false;
-	return !exposed.some(
-		({ definition }) =>
-			definition.kind === "function" &&
-			definition.calledByLanguage !== true &&
-			ownName(definition.symbol, name.definition.symbol) !== undefined,
-	);
-}
-
-/**
- * The kind of a member of an exported class that belongs to the class, not
- * to an instance, as a C# `static` member does: callers read it through the
- * class's name, as they read a top-level name, so it counts as one.
- * @param member The member.
- * @param classes The module's exported classes.
- * @returns Its kind, or undefined for any other member.
- */
-function staticKind(member: ExposedName, classes: readonly ExposedName[]): ExportKind | undefined {
-	const { definition } = member;
-	const counted = definition.static === true && definition.calledByLanguage !== true;
-	return counted && heldBy(member, classes) ? declaredKind(definition) : undefined;
-}
-
-/**
  * The module's exports by kind: the top-level names of its judged languages,
  * the public methods of their classes, and the names at the end of their
  * paths of its infrastructure.
@@ -386,8 +316,8 @@ async function countExports(
 	const classes = ofKind(top, "class");
 	const kinds = new Map(top);
 	for (const name of names.judged) {
-		const kind = kinds.has(name) ? undefined : staticKind(name, holders);
-		if (kind !== undefined) kinds.set(name, kind);
+		if (!kinds.has(name) && staticMember(name, holders))
+			kinds.set(name, declaredKind(name.definition));
 	}
 	const counted = [
 		...kinds,
@@ -549,10 +479,7 @@ function unreadFor(reading: DepthReading, name: ExposedName): string[] {
 type Whole = Omit<Parameters<typeof moduleFindings>[0], "label" | "rolledUp">;
 
 /** The findings on a module, and whether a file that did not parse withholds its shallow verdict. */
-interface Judgement {
-	readonly findings: readonly DepthFinding[];
-	readonly withheld: boolean;
-}
+type Judgement = ReturnType<typeof moduleFindings>;
 
 /**
  * The findings on a module's exports: one per name at most, the verdicts on

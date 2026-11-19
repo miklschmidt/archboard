@@ -203,17 +203,41 @@ const ENUM_BASE = /^(?:enum\.)?(?:Enum|IntEnum|StrEnum|Flag|IntFlag)$/u;
  * @returns True when it does.
  */
 function holdsData(declaration: Node): boolean {
-	const decorated = declaration.type === "decorated_definition";
-	const definition = decorated ? declaration.childForFieldName("definition") : declaration;
-	if (definition?.type !== "class_definition") return false;
-	const decorators = decorated
-		? declaration.namedChildren.filter((each) => each.type === "decorator")
-		: [];
-	const bases = definition.childForFieldName("superclasses")?.namedChildren ?? [];
-	return (
-		decorators.some((each) => DATACLASS.test(each.text)) ||
-		bases.some((each) => ENUM_BASE.test(each.text))
+	if (declaration.type === "class_definition") return enumClass(declaration);
+	if (declaration.type !== "decorated_definition") return false;
+	const definition = declaration.childForFieldName("definition");
+	return dataclass(declaration) || (definition !== null && holdsData(definition));
+}
+
+/**
+ * Whether a decorated definition is a dataclass.
+ * @param decorated The decorated definition.
+ * @returns True when a decorator makes it one.
+ */
+function dataclass(decorated: Node): boolean {
+	return decorated.namedChildren.some(
+		(each) => each.type === "decorator" && DATACLASS.test(each.text),
 	);
+}
+
+/**
+ * Whether a class is an enum: a base class makes it one.
+ * @param definition The class.
+ * @returns True when it is.
+ */
+function enumClass(definition: Node): boolean {
+	const bases = definition.childForFieldName("superclasses")?.namedChildren ?? [];
+	return bases.some((each) => ENUM_BASE.test(each.text));
+}
+
+/**
+ * What a declaration declares beside its kind: a type alias, or a class that holds data.
+ * @param declaration The declaration.
+ * @returns The mark, or nothing.
+ */
+function typeTraits(declaration: Node): Pick<Definition, "type" | "data"> {
+	if (typeAlias(declaration)) return { type: true };
+	return holdsData(declaration) ? { data: true } : {};
 }
 
 /**
@@ -234,8 +258,7 @@ function traitsOf(
 	const special =
 		classes.length > 0 && SPECIAL.test(name.text) && kindOf(declaration) === "function";
 	return {
-		...(typeAlias(declaration) ? { type: true as const } : {}),
-		...(holdsData(declaration) ? { data: true as const } : {}),
+		...typeTraits(declaration),
 		...(passes === undefined ? {} : { passes }),
 		...(special ? { calledByLanguage: true as const } : {}),
 	};

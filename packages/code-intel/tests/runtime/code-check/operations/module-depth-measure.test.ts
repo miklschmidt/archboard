@@ -26,11 +26,14 @@ function caller(module: string): string {
 /** Twenty-one exported functions with plenty of logic each. */
 const WIDE = Array.from(
 	{ length: 21 },
-	(_, index) => `export function w${index}(n: number): number {\n\treturn n * n + n - 1 + f(n) + g(n);\n}\n`,
+	(_, index) =>
+		`export function w${index}(n: number): number {\n\treturn n * n + n - 1 + f(n) + g(n);\n}\n`,
 ).join("");
 
 /** Eight public Rust functions with one piece of logic each. */
-const THIN_RUST = [..."abcdefgh"].map((name) => `pub fn ${name}(n: u32) -> u32 {\n    n + 1\n}\n`).join("");
+const THIN_RUST = [..."abcdefgh"]
+	.map((name) => `pub fn ${name}(n: u32) -> u32 {\n    n + 1\n}\n`)
+	.join("");
 
 let shop: Awaited<ReturnType<typeof depthCheckout>>;
 let answer: CodeCheckAnswer;
@@ -46,7 +49,13 @@ beforeAll(async () => {
 			"crate/Cargo.toml": '[package]\nname = "thin"\nversion = "0.1.0"\n',
 			"crate/src/lib.rs": THIN_RUST,
 		},
-		{ Thin: "src/thin", Broken: "src/broken", Caller: "src/caller", Wide: "src/wide", Crate: "crate" },
+		{
+			Thin: "src/thin",
+			Broken: "src/broken",
+			Caller: "src/caller",
+			Wide: "src/wide",
+			Crate: "crate",
+		},
 	);
 	answer = await shop.check();
 });

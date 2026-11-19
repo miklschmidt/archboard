@@ -222,6 +222,16 @@ function passesParameters(call: Node, method: Node): boolean {
 }
 
 /**
+ * What a type declaration declares: a type alone, or a type that holds data.
+ * @param node The declaration.
+ * @returns The mark, or nothing.
+ */
+function typeTraits(node: Node): Pick<Definition, "type" | "data"> {
+	if (TYPES.has(node.type)) return { type: true };
+	return DATA.has(node.type) ? { data: true } : {};
+}
+
+/**
  * What a declaration's syntax says of its depth beside its kind.
  * @param node The declaration.
  * @param name The name it declares.
@@ -235,8 +245,7 @@ function depthTraits(
 	const passes = passesTo(node);
 	const shared = modifiers.has("static") || modifiers.has("const");
 	return {
-		...(TYPES.has(node.type) ? { type: true as const } : {}),
-		...(DATA.has(node.type) ? { data: true as const } : {}),
+		...typeTraits(node),
 		...(shared ? { static: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...(calledByCSharp(node, name, modifiers) ? { calledByLanguage: true as const } : {}),

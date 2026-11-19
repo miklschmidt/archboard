@@ -113,9 +113,12 @@ beforeAll(async () => {
 			"}",
 			"",
 		].join("\n"),
-		"src/timing/mode.go": ["package timing", "", 'func (m Mode) Label() string { return "mode" }', ""].join(
-			"\n",
-		),
+		"src/timing/mode.go": [
+			"package timing",
+			"",
+			'func (m Mode) Label() string { return "mode" }',
+			"",
+		].join("\n"),
 		"src/codex/codex.go": [
 			"package codex",
 			"",
