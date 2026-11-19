@@ -5,7 +5,6 @@
 import {
 	RiArrowLeftRightLine,
 	RiBox3Line,
-	RiBracesLine,
 	RiFlowChart,
 	RiGitBranchLine,
 	RiInputMethodLine,
@@ -14,7 +13,11 @@ import {
 	RiPlayCircleLine,
 } from "@remixicon/react";
 import { useMemo, type JSX, type ReactNode } from "react";
-import { CodeExports } from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
+import {
+	CodeExports,
+	checkedModule,
+} from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { ModelAboutWalkthroughs } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutWalkthroughs.tsx";
 import {
 	aboutSection,
@@ -189,16 +192,17 @@ function interfaceSection(props: ScopePageProps): AboutPageSection | null {
 function exportsSection(props: ScopePageProps): AboutPageSection | null {
 	const { scope } = props;
 	if (scope === null || props.projection.flow !== null) return null;
-	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
-	if (module?.binding === undefined) return null;
+	const found = scopeModel(props).modules.find((entry) => entry.id === scope);
+	const module = found === undefined ? null : checkedModule(props.model, found);
+	if (module === null) return null;
 	return aboutSection(
 		"exports",
 		"Code exports",
-		RiBracesLine,
+		SECTION_ICONS.codeExports,
 		undefined,
 		<CodeExports
 			vault={props.vault}
-			module={scope}
+			module={module}
 			reading={props.code}
 			onNotice={props.onCodeTargetNotice}
 		/>,

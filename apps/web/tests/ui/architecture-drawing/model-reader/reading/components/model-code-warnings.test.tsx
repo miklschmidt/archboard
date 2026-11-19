@@ -12,7 +12,7 @@ const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query
 const { cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { ModelCodeWarnings } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx");
-const { CodeExports } =
+const { CodeExports, ModuleCodeExports } =
 	await import("#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx");
 
 type Reading = NonNullable<ComponentProps<typeof ModelCodeWarnings>["reading"]>;
@@ -85,6 +85,8 @@ test("the count of About stays for a pass with no warning, and offers nothing to
 
 const VAULT = "/work/shop/.archboard/vault";
 const GATEWAY = { kind: "node", id: "Shop#Gateway", name: "Gateway" } as const;
+/** The code the gateway is bound to. */
+const BOUND = "src/gateway/gateway.ts";
 
 /** What the last pass counted of the gateway: a function, a class with a method, a value, a type. */
 const NAMES: NonNullable<CodeCheckAnswer["depth"]>[number]["names"] = [
@@ -194,7 +196,7 @@ function showExports(reading: Reading | null): void {
 			{ client },
 			createElement(CodeExports, {
 				vault: VAULT,
-				module: GATEWAY.id,
+				module: { id: GATEWAY.id, binding: { repo: "example/shop", path: BOUND } },
 				reading,
 				onNotice: selectNothing,
 			}),
@@ -264,7 +266,10 @@ test("code exports list a module's exports by kind, each with its findings, read
 test("a module no pass measured reads no exports, and says why", () => {
 	const asked = serving();
 	showExports(pass());
-	expect(document.querySelectorAll("[data-slot='code-exports-unmeasured']")).toHaveLength(1);
+	// A module bound to a file that is no folder's entry: the words name the binding the pass passed.
+	expect(document.querySelector("[data-slot='code-exports-unmeasured']")?.textContent).toContain(
+		BOUND,
+	);
 	cleanup();
 	showExports(null);
 	expect(document.querySelectorAll("[data-slot='code-exports-unread']")).toHaveLength(1);
@@ -275,4 +280,41 @@ test("a module no pass measured reads no exports, and says why", () => {
 	});
 	expect(document.querySelectorAll("[data-slot='code-exports-skipped']")).toHaveLength(1);
 	expect(asked).toHaveLength(0);
+});
+
+/**
+ * The gateway's code exports as a section of the right panel, in a reading.
+ * @param client The query client.
+ * @param model Where the reading comes from.
+ * @returns The panel's section.
+ */
+function panelExports(
+	client: InstanceType<typeof QueryClient>,
+	model: ComponentProps<typeof ModuleCodeExports>["model"],
+) {
+	return createElement(
+		QueryClientProvider,
+		{ client },
+		createElement(ModuleCodeExports, {
+			vault: VAULT,
+			model,
+			module: { id: GATEWAY.id, binding: { repo: "example/shop", path: "src/gateway" } },
+			reading: measured(),
+			onNotice: selectNothing,
+		}),
+	);
+}
+
+test("the right panel lists a selected module's code exports, and a branch reading lists none", async () => {
+	serving();
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	clients.push(client);
+	const { rerender } = render(panelExports(client, {}));
+	await waitFor(() =>
+		expect(
+			document.querySelectorAll("[data-slot='module-code-exports'] [data-slot='code-export']"),
+		).toHaveLength(5),
+	);
+	rerender(panelExports(client, { sourceRef: "feature" }));
+	expect(document.querySelector("[data-slot='module-code-exports']")).toBeNull();
 });

@@ -10,6 +10,7 @@ import {
 	KindChip,
 	RelationshipChip,
 } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
+import { ModuleCodeExports } from "#ui/architecture-drawing/model-reader/reading/code-exports/components/CodeExports.tsx";
 import { ModelChangesWith } from "#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelCollectionDetails.tsx";
@@ -289,6 +290,13 @@ function ModuleSubject(
 					<ModuleDefinition module={module} />
 				</div>
 			</ModelPanel.Section>
+			<ModuleCodeExports
+				vault={props.vault}
+				model={source}
+				module={module}
+				reading={props.code}
+				onNotice={props.onCodeTargetNotice}
+			/>
 			<ModelHistory
 				vault={props.vault}
 				model={source}
