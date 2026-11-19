@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type { CodexSession } from "@archboard/codex-app-server/session";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
@@ -178,7 +178,7 @@ function wireEvent(
 			epoch: authorities.identity.validator.epoch,
 			requestId: null,
 		},
-		notification: decodeServerNotification({ method, params }),
+		notification: serverNotification({ method, params }),
 	};
 }
 

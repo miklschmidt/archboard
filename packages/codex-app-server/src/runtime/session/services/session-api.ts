@@ -1,4 +1,4 @@
-import type { CodexProcessLifecycle } from "#runtime/processes/process.ts";
+import type { CodexProcessLifecycle } from "#runtime/processes/process-contract.ts";
 import type {
 	TransportServerNotification,
 	TransportServerRequest,
@@ -15,7 +15,15 @@ import type { SessionResponsePayloads } from "#runtime/session/schemas/session-r
  * The child environment excludes ambient originator overrides. Ownership is
  * still proved by the current child epoch and committed operation, not this label.
  */
-export const CODEX_SESSION_THREAD_SOURCE = "vscode";
+const CODEX_SESSION_THREAD_SOURCE = "vscode";
+
+/**
+ * The source that Codex reports on every thread this session starts.
+ * @returns The thread source, `vscode`.
+ */
+export function codexSessionThreadSource(): typeof CODEX_SESSION_THREAD_SOURCE {
+	return CODEX_SESSION_THREAD_SOURCE;
+}
 
 /** The public methods of one reviewed Codex app-server session. */
 export const SESSION_METHODS = Object.freeze([
@@ -84,6 +92,16 @@ interface CodexSessionControl {
 export type ControlledCodexSession = CodexSession & {
 	readonly [CODEX_SESSION_CONTROL]: CodexSessionControl;
 };
+
+/**
+ * The control that only the owner of a session holds: it delivers the transport's events to the
+ * session and disposes of it.
+ * @param session - A session that createCodexSession made.
+ * @returns Its control.
+ */
+export function codexSessionControl(session: ControlledCodexSession): CodexSessionControl {
+	return session[CODEX_SESSION_CONTROL];
+}
 
 export interface CodexSessionOptions {
 	readonly transport: CodexTransport;

@@ -2,22 +2,16 @@ import { z } from "zod";
 
 import { normalizeCodexJsonWire } from "#shared/protocol/app-server-contract.ts";
 import {
-	CODEX_PROTOCOL_VERSION,
+	codexProtocolVersion,
 	isSupportedCodexUserAgent,
 } from "#runtime/protocol/protocol-version.ts";
 import {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	type ClientRequestParams,
 } from "#runtime/protocol/client-request-schemas.ts";
-import {
-	CLIENT_NOTIFICATION_SCHEMAS,
-	JsonRpcErrorSchema,
-	LoginAccountParamsSchema,
-	SERVER_REQUEST_SCHEMAS,
-} from "#runtime/protocol/request-schemas.ts";
+import { JsonRpcErrorSchema, SERVER_REQUEST_SCHEMAS } from "#runtime/protocol/request-schemas.ts";
 import {
 	CLIENT_NOTIFICATION_METHODS,
-	CLIENT_REQUEST_METHODS,
 	type ClientRequestMethod,
 	type ResponseMethod,
 	RESPONSE_METHODS,
@@ -31,7 +25,7 @@ import {
 import { JsonValueSchema, RequestIdSchema } from "#runtime/schemas/scalars.ts";
 import { formatIssues, normalizeIssues } from "#runtime/protocol/issue-normalization.ts";
 
-export type ProtocolDirection =
+type ProtocolDirection =
 	| "response"
 	| "client-request"
 	| "client-notification"
@@ -39,9 +33,9 @@ export type ProtocolDirection =
 	| "server-request"
 	| "json-rpc-error";
 
-export const PROTOCOL_RECOVERY_ACTION = `confirm the child runs Codex ${CODEX_PROTOCOL_VERSION}, review the incompatible payload, and reconnect the session`;
+const PROTOCOL_RECOVERY_ACTION = `confirm the child runs Codex ${codexProtocolVersion()}, review the incompatible payload, and reconnect the session`;
 
-export interface ProtocolDecodeErrorInit {
+interface ProtocolDecodeErrorInit {
 	readonly method: string;
 	readonly direction: ProtocolDirection;
 	readonly issues?: readonly unknown[];
@@ -52,7 +46,7 @@ export interface ProtocolDecodeErrorInit {
 export class ProtocolDecodeError extends Error {
 	readonly method: string;
 	readonly direction: ProtocolDirection;
-	readonly expectedVersion = CODEX_PROTOCOL_VERSION;
+	readonly expectedVersion = codexProtocolVersion();
 	readonly recoveryAction: string;
 	readonly issues: readonly unknown[];
 
@@ -66,7 +60,7 @@ export class ProtocolDecodeError extends Error {
 		const issues = init.issues ?? [];
 		const issueText = formatIssues(issues);
 		super(
-			`Codex ${CODEX_PROTOCOL_VERSION} ${init.direction} ${init.method} decode failed${
+			`Codex ${codexProtocolVersion()} ${init.direction} ${init.method} decode failed${
 				issueText ? `: ${issueText}` : ""
 			}. Recovery: ${recoveryAction}.`,
 		);
@@ -124,7 +118,7 @@ function unknownMethodError(method: string, direction: ProtocolDirection): Proto
 	return new ProtocolDecodeError({
 		method,
 		direction,
-		recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex ${CODEX_PROTOCOL_VERSION} is reviewed`,
+		recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex ${codexProtocolVersion()} is reviewed`,
 	});
 }
 
@@ -192,8 +186,8 @@ function assertSupportedUserAgent(userAgent: string): void {
 		throw new ProtocolDecodeError({
 			method: "initialize",
 			direction: "response",
-			issues: [{ path: ["userAgent"], message: `expected Codex ${CODEX_PROTOCOL_VERSION}` }],
-			recoveryAction: `stop the child, run the recorded Codex ${CODEX_PROTOCOL_VERSION} binary, and reconnect after reviewing the incompatible payload`,
+			issues: [{ path: ["userAgent"], message: `expected Codex ${codexProtocolVersion()}` }],
+			recoveryAction: `stop the child, run the recorded Codex ${codexProtocolVersion()} binary, and reconnect after reviewing the incompatible payload`,
 		});
 	}
 }
@@ -220,31 +214,6 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 	return decodeSchema(method, "response", schema, payload);
 }
 
-/**
- * Decodes login params and refuses the two ChatGPT variants the client does not implement.
- * @param value - The candidate login params.
- * @returns The decoded, supported login params.
- */
-export function decodeLoginAccountParams(value: unknown) {
-	const decoded = decodeSchema(
-		"account/login/start",
-		"client-request",
-		LoginAccountParamsSchema,
-		value,
-	);
-	if (decoded.type === "chatgptDeviceCode" || decoded.type === "chatgptAuthTokens") {
-		throw new ProtocolDecodeError({
-			method: "account/login/start",
-			direction: "client-request",
-			issues: [{ path: ["type"], message: `${decoded.type} is not supported by this client` }],
-			recoveryAction:
-				"use hosted ChatGPT login, an API key, or explicit Bedrock credentials through the visual login flow",
-		});
-	}
-	return decoded;
-}
-
-const ClientNotificationEnvelopeSchema = z.strictObject({ method: z.string() });
 const ServerRequestEnvelopeSchema = z.strictObject({
 	id: RequestIdSchema,
 	method: z.string(),
@@ -252,29 +221,7 @@ const ServerRequestEnvelopeSchema = z.strictObject({
 	params: JsonValueSchema,
 });
 
-export type DecodedClientNotification = z.infer<
-	(typeof CLIENT_NOTIFICATION_SCHEMAS)["initialized"]
->;
-
-/**
- * Decodes a notification the client is about to send.
- * @param value - The candidate notification envelope.
- * @returns The decoded notification.
- */
-export function decodeClientNotification(value: unknown): DecodedClientNotification {
-	const envelope = decodeSchema(
-		methodHint(value),
-		"client-notification",
-		ClientNotificationEnvelopeSchema,
-		value,
-	);
-	const method = envelope.method;
-	const schema = methodSchema(CLIENT_NOTIFICATION_SCHEMAS, method, "client-notification");
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- methodSchema resolved the schema by method from CLIENT_NOTIFICATION_SCHEMAS, whose keys are exactly the union's methods, so the decoded value has that method's shape by construction; TypeScript cannot express that for a string-keyed lookup
-	return decodeSchema(method, "client-notification", schema, value) as DecodedClientNotification;
-}
-
-export type ServerNotificationPayloads = {
+type ServerNotificationPayloads = {
 	[M in keyof typeof SERVER_NOTIFICATION_SCHEMAS]: z.infer<(typeof SERVER_NOTIFICATION_SCHEMAS)[M]>;
 };
 export type DecodedServerNotification = {
@@ -363,7 +310,22 @@ export function decodeServerRequest(value: unknown): DecodedServerRequest {
 	return { id: envelope.id, method, params } as DecodedServerRequest;
 }
 
-export type DecodedJsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
+/**
+ * Parses the params of a reverse request by its method's schema alone, without the capability
+ * check, so the session owner can answer a request whose capability the client disabled.
+ * @param method - The reverse method.
+ * @param params - The raw params.
+ * @returns The parsed params, or undefined when they do not fit the method's schema.
+ */
+export function parseServerRequestParams(
+	method: ServerRequestMethod,
+	params: unknown,
+): { readonly params: unknown } | undefined {
+	const parsed = SERVER_REQUEST_SCHEMAS[method].safeParse(params);
+	return parsed.success ? { params: parsed.data } : undefined;
+}
+
+type DecodedJsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
 
 /**
  * Decodes a JSON-RPC error envelope.
@@ -409,15 +371,6 @@ export function decodeResponseEnvelope<M extends ResponseMethod>(
  */
 export function isSupportedResponseMethod(method: string): method is ResponseMethod {
 	return (RESPONSE_METHODS as readonly string[]).includes(method);
-}
-
-/**
- * Narrows a method name to the requests the client may send.
- * @param method - Any method name.
- * @returns Whether the request is part of the bound contract.
- */
-export function isSupportedClientRequestMethod(method: string): method is ClientRequestMethod {
-	return (CLIENT_REQUEST_METHODS as readonly string[]).includes(method);
 }
 
 /**

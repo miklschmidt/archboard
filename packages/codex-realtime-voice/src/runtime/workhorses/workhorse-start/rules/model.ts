@@ -1,14 +1,11 @@
-import {
-	CODEX_SESSION_THREAD_SOURCE,
-	type SessionParams,
-} from "@archboard/codex-app-server/session";
+import { codexSessionThreadSource, type SessionParams } from "@archboard/codex-app-server/session";
 import type { WorkbenchThreadProfile } from "#runtime/host/protocol/instructions.ts";
 
 const WORKHORSE_OPERATION_KIND = "create_thread";
 const WORKHORSE_CLEANUP_OPERATION_KIND = "thread_delete";
 const WORKHORSE_RPC = "thread/start";
 const WORKHORSE_CLEANUP_RPC = "thread/delete";
-const WORKHORSE_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
+const WORKHORSE_THREAD_SOURCE = codexSessionThreadSource();
 
 /**
  * Build one checkout workhorse from the exact host profile.

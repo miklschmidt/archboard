@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import { parseRealtimeItemId } from "#shared/protocol/realtime-contract.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
@@ -304,11 +304,11 @@ describe("Codex realtime adapter", () => {
 		if (!start?.realtimeSessionId) {
 			throw new Error("Start request missing.");
 		}
-		const other = createIdentityAuthority();
+		const other = createIdentityAuthorities().identity;
 		h.adapter.onNotification(
 			notificationEvent(
 				h,
-				decodeServerNotification({
+				serverNotification({
 					method: "thread/realtime/sdp",
 					params: { threadId: COORDINATOR_WIRE_THREAD_ID, sdp: "wrong-child" },
 				}),

@@ -1,5 +1,5 @@
 import {
-	CODEX_SESSION_CONTROL,
+	codexSessionControl,
 	CodexSessionError,
 	CodexSessionMutationError,
 	type ControlledCodexSession,
@@ -52,7 +52,7 @@ describe("typed Codex session", () => {
 			expect(fixture.events).toEqual([]);
 			expect(fixture.transport.reverseResponses).toEqual([]);
 		} finally {
-			(fixture.session as ControlledCodexSession)[CODEX_SESSION_CONTROL].dispose();
+			codexSessionControl(fixture.session as ControlledCodexSession).dispose();
 			fixture.close();
 		}
 	});

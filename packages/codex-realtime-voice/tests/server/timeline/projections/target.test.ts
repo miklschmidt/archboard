@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type {
 	CodexSession,
 	SessionThreadTurnPageResult,
@@ -20,7 +20,7 @@ function turnCompleted(
 			epoch: authorities.identity.validator.epoch,
 			requestId: null,
 		},
-		notification: decodeServerNotification({
+		notification: serverNotification({
 			method: "turn/completed",
 			params: {
 				threadId,

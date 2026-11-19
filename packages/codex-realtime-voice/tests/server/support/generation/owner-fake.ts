@@ -1,8 +1,8 @@
 import type {
 	CodexProcess,
 	CodexProcessChild,
-	CodexProcessFailureCode,
 	CodexProcessSnapshot,
+	CodexProcessError,
 } from "@archboard/codex-app-server/process";
 import {
 	createIdentityAuthorities,
@@ -20,6 +20,8 @@ import type {
 	CodexWorkbenchOwnerOptions,
 } from "#server/owner/services/owner-state.ts";
 import { installCodexWorkbenchOwner } from "#server/generation/services/workbench.ts";
+
+type CodexProcessFailureCode = CodexProcessError["code"];
 
 function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;

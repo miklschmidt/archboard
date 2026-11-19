@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { CodexProcessError } from "#runtime/processes/process.ts";
-import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
+import { CodexProcessError } from "#runtime/processes/process-contract.ts";
+import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import { CODEX_PROCESS_MS } from "@archboard/timing";
 import {
 	driveManual,

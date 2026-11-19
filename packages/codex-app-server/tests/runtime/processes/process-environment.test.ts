@@ -3,10 +3,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-import {
-	CODEX_APP_SERVER_ARGUMENTS,
-	createCodexProcessForTesting,
-} from "#runtime/processes/process.ts";
+import { CODEX_APP_SERVER_ARGUMENTS } from "#runtime/processes/process-contract.ts";
+import { createProcessOwner } from "#runtime/processes/process-owner.ts";
 import {
 	fixture,
 	processOptions,
@@ -17,13 +15,13 @@ import {
 describe("Codex process environment", () => {
 	test("starts without host additions and excludes ambient Archboard variables", async () => {
 		const root = temporaryRoot();
-		let owner: ReturnType<typeof createCodexProcessForTesting> | undefined;
+		let owner: ReturnType<typeof createProcessOwner> | undefined;
 		try {
 			const executable = fixture(
 				root,
 				`console.log(JSON.stringify({ argv: process.argv.slice(2), home: process.env.CODEX_HOME, sqlite: process.env.CODEX_SQLITE_HOME, pwd: process.env.PWD, secret: process.env.OPENAI_API_KEY, archboard: Object.keys(process.env).filter(key => key.startsWith("ARCHBOARD_")) })); process.stdin.resume(); process.on("SIGTERM", () => process.exit(0));`,
 			);
-			const processOwner = createCodexProcessForTesting({
+			const processOwner = createProcessOwner({
 				...processOptions(root, executable),
 				dependencies: {
 					spawn(command, args, options) {
@@ -76,13 +74,13 @@ describe("Codex process environment", () => {
 
 	test("passes explicit host additions and PATH prefixes while protecting prepared storage", async () => {
 		const root = temporaryRoot();
-		let owner: ReturnType<typeof createCodexProcessForTesting> | undefined;
+		let owner: ReturnType<typeof createProcessOwner> | undefined;
 		try {
 			const executable = fixture(
 				root,
 				`console.log(JSON.stringify({ endpoint: process.env.APP_ENDPOINT, path: process.env.PATH, home: process.env.CODEX_HOME, sqlite: process.env.CODEX_SQLITE_HOME })); process.stdin.resume();`,
 			);
-			const processOwner = createCodexProcessForTesting({
+			const processOwner = createProcessOwner({
 				...processOptions(root, executable),
 				hostEnvironment: {
 					APP_ENDPOINT: "http://host.invalid",
@@ -119,7 +117,7 @@ describe("Codex process environment", () => {
 
 	test("gives the native binary of a platform package the managed variables of bin/codex.js", async () => {
 		const root = temporaryRoot();
-		let owner: ReturnType<typeof createCodexProcessForTesting> | undefined;
+		let owner: ReturnType<typeof createProcessOwner> | undefined;
 		try {
 			const packageRoot = path.join(root, "node_modules", "@openai", "codex-test");
 			const bin = path.join(packageRoot, "vendor", "triple", "bin");
@@ -127,7 +125,7 @@ describe("Codex process environment", () => {
 			const executable = path.join(bin, "codex");
 			fs.renameSync(fixture(root, `process.stdin.resume();`), executable);
 			let environment: Record<string, string | undefined> = {};
-			const processOwner = createCodexProcessForTesting({
+			const processOwner = createProcessOwner({
 				...processOptions(root, executable),
 				dependencies: {
 					spawn(command, args, options) {

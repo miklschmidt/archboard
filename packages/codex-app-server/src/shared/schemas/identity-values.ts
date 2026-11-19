@@ -477,8 +477,16 @@ function identityDomain(value: unknown): IdentityDomain {
 	return segments.domain;
 }
 
+/**
+ * The longest canonical item id, so a schema of another package bounds an item id as this one does.
+ * @returns The length, in characters.
+ */
+function canonicalItemIdMaxLength(): number {
+	return CANONICAL_ITEM_ID_MAX_LENGTH;
+}
+
 export {
-	CANONICAL_ITEM_ID_MAX_LENGTH,
+	canonicalItemIdMaxLength,
 	EPOCH_TOKEN_PATTERN,
 	WIRE_TOKEN_LIMIT,
 	type IdentityDomain,

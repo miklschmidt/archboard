@@ -1,5 +1,7 @@
 import type { ChildProcessEventMap, ChildProcessWithoutNullStreams } from "node:child_process";
 
+import { isInList } from "#runtime/protocol/wire.ts";
+
 import type {
 	ClientNotificationMethod,
 	ClientRequestMethodWithoutParams,
@@ -77,6 +79,26 @@ const SESSION_SERVER_REQUEST_METHODS = Object.freeze([
 ] as const);
 
 type SessionServerRequestMethod = (typeof SESSION_SERVER_REQUEST_METHODS)[number];
+
+/**
+ * Checks that an owner may register a dynamic dispatcher, where a registration enters.
+ * @param owner - The owner a registration names.
+ * @returns Whether it is one of the approved dynamic owners.
+ */
+function isDynamicDispatcherOwner(owner: string): owner is DynamicDispatcherOwner {
+	return isInList(DYNAMIC_DISPATCHER_OWNERS, owner);
+}
+
+/**
+ * The fixed owner of a reverse method that is published as decoded.
+ * @param method - The reverse method.
+ * @returns The approvals owner for human approvals, the session owner for session methods.
+ */
+function plainResponseOwner(method: string): "codex-approvals" | "codex-session" | undefined {
+	if (isInList(HUMAN_APPROVAL_METHODS, method)) return "codex-approvals";
+	if (isInList(SESSION_SERVER_REQUEST_METHODS, method)) return "codex-session";
+	return undefined;
+}
 
 interface DynamicDispatcherRegistration {
 	readonly owner: DynamicDispatcherOwner;
@@ -342,10 +364,9 @@ interface CodexTransportOptions {
 export {
 	type CodexTransportChild,
 	type ResponseOwner,
-	DYNAMIC_DISPATCHER_OWNERS,
-	HUMAN_APPROVAL_METHODS,
+	isDynamicDispatcherOwner,
+	plainResponseOwner,
 	type HumanApprovalMethod,
-	SESSION_SERVER_REQUEST_METHODS,
 	type DynamicDispatcherRegistration,
 	type TransportServerNotification,
 	type DynamicServerRequest,

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { CodexSession } from "@archboard/codex-app-server/session";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
@@ -52,7 +52,7 @@ function harness(overrides: HarnessOverrides = {}) {
 		});
 	};
 	const notify = (method: string, params: Record<string, unknown>, foreign = false) => {
-		const notification = decodeServerNotification({ method, params });
+		const notification = serverNotification({ method, params });
 		const authority = foreign ? createIdentityAuthorities() : value.authorities;
 		const event: TransportServerNotification = {
 			correlation: {

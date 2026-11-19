@@ -2,8 +2,6 @@ import { describe, expect, jest, test } from "bun:test";
 
 import { CodexTransportRequestError } from "#runtime/transport/clients/transport-errors.ts";
 import {
-	HUMAN_APPROVAL_METHODS,
-	SESSION_SERVER_REQUEST_METHODS,
 	type DynamicDispatcherRegistration,
 	type HumanApprovalMethod,
 	type TransportServerNotification,
@@ -216,7 +214,8 @@ describe("Codex app-server transport", () => {
 				},
 			};
 
-			for (const [index, method] of HUMAN_APPROVAL_METHODS.entries()) {
+			const humanMethods = Object.keys(humanParams) as HumanApprovalMethod[];
+			for (const [index, method] of humanMethods.entries()) {
 				sendJson(child, { id: `human-${index}`, method, params: humanParams[method] });
 				await flushStreams();
 				const request = requests.at(-1);
@@ -241,7 +240,7 @@ describe("Codex app-server transport", () => {
 									: { result: { decision: "accept" } };
 				await transport.respond(request, "codex-approvals", response);
 			}
-			expect(requests).toHaveLength(HUMAN_APPROVAL_METHODS.length);
+			expect(requests).toHaveLength(humanMethods.length);
 
 			const dynamicRoutes = [
 				{ namespace: "archboard_app", owner: "codex-dynamic-tools", manifestHash: "app-manifest" },
@@ -317,13 +316,8 @@ describe("Codex app-server transport", () => {
 				await transport.respond(request, "codex-session", { error });
 			}
 
-			const output = frames(child).slice(HUMAN_APPROVAL_METHODS.length);
+			const output = frames(child).slice(humanMethods.length);
 			expect(output.every((frame) => !Object.hasOwn(frame, "jsonrpc"))).toBeTrue();
-			expect(SESSION_SERVER_REQUEST_METHODS).toEqual([
-				"currentTime/read",
-				"account/chatgptAuthTokens/refresh",
-				"attestation/generate",
-			]);
 		} finally {
 			await close();
 		}

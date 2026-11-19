@@ -4,7 +4,7 @@ import type {
 	CodexSession,
 	SessionResponse,
 	SessionThread,
-	CODEX_SESSION_THREAD_SOURCE,
+	codexSessionThreadSource,
 } from "@archboard/codex-app-server/session";
 import type {
 	CodexThreadLinkPort,
@@ -75,7 +75,7 @@ interface WorkhorseStartFacts {
 	readonly cwd: string;
 	readonly runtimeWorkspaceRoots: readonly string[];
 	readonly historyMode: "paginated";
-	readonly source: typeof CODEX_SESSION_THREAD_SOURCE;
+	readonly source: ReturnType<typeof codexSessionThreadSource>;
 	readonly threadSource: string;
 	readonly model: string;
 	readonly modelProvider: string;
