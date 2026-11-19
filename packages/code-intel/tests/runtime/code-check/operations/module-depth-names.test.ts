@@ -419,6 +419,8 @@ test("a JavaScript, Vue or Svelte file outside that names an export makes the mo
 	write(shop, {
 		"web/widget.vue": '<script setup>\nimport { unusedHelper } from "../src/util";\n</script>\n',
 		"scripts/tool.mjs": 'console.log("no module names here");\n',
+		// A bundle that imports nothing can use no module, whatever names it writes.
+		"scripts/bundle.js": "(function () { var orphan = 1; window.probe = orphan; })();\n",
 	});
 	try {
 		const answer = await check();
@@ -426,7 +428,7 @@ test("a JavaScript, Vue or Svelte file outside that names an export makes the mo
 			name,
 			severity,
 		]);
-		// `widget.vue` names `unusedHelper`; `tool.mjs` names nothing a module exports.
+		// `widget.vue` imports and names `unusedHelper`; `tool.mjs` names nothing a module exports.
 		expect(severities).toEqual([
 			["unusedHelper", "information"],
 			["testOnly", "information"],
