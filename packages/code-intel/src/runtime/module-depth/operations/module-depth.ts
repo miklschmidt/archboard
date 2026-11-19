@@ -108,17 +108,15 @@ const GROUPS: ReadonlyMap<
  * that imports TypeScript among them: only an unread file of these can hold a
  * use of a name.
  */
-const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
-	["typescript", TYPESCRIPT_CALLER],
-	["python", PYTHON_FILE],
-	["go", GO_FILE],
-	["csharp", CSHARP_FILE],
-	["rust", RUST_FILE],
-	["swift", SWIFT_FILE],
-	["c", C_FAMILY_FILE],
-	["cpp", C_FAMILY_FILE],
-	["objc", C_FAMILY_FILE],
-]);
+const JUDGED_FILES: readonly RegExp[] = [
+	TYPESCRIPT_CALLER,
+	PYTHON_FILE,
+	GO_FILE,
+	CSHARP_FILE,
+	RUST_FILE,
+	SWIFT_FILE,
+	C_FAMILY_FILE,
+];
 
 /** A module's exports, by kind. */
 interface ExportCounts {
@@ -487,7 +485,6 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
 }
 
 /**
-/**
  * The files outside a module that the pass could not read whole and that can
  * hold a use of a name: those of the languages its parts are written in, as a
  * name's read is complete when the pass read every use in its language.
@@ -497,9 +494,7 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
  */
 function unreadFor(reading: DepthReading, name: ExposedName): string[] {
 	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
-	const files = [...JUDGED_FILES.values()].filter((file) =>
-		parts.some((part) => file.test(part.path)),
-	);
+	const files = JUDGED_FILES.filter((file) => parts.some((part) => file.test(part.path)));
 	return reading.unread.filter((file) => files.some((each) => each.test(file)));
 }
 
