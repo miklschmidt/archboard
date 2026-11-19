@@ -51,4 +51,29 @@ const ExplanationActionResultSchema = z.discriminatedUnion("success", [
 		})
 		.strict(),
 ]);
-export { ExplanationActionRequestSchema, ExplanationActionResultSchema };
+type ExplanationActionRequest = z.infer<typeof ExplanationActionRequestSchema>;
+type ExplanationActionResult = z.infer<typeof ExplanationActionResultSchema>;
+
+/**
+ * The schema of an explanation request, for a caller that parses what it receives or sends.
+ * @returns The request schema.
+ */
+function explanationActionRequestSchema(): typeof ExplanationActionRequestSchema {
+	return ExplanationActionRequestSchema;
+}
+
+/**
+ * The schema of an explanation result, for a caller that parses what it receives or sends.
+ * @returns The result schema.
+ */
+function explanationActionResultSchema(): typeof ExplanationActionResultSchema {
+	return ExplanationActionResultSchema;
+}
+
+export {
+	ExplanationActionRequestSchema,
+	ExplanationActionResultSchema,
+	explanationActionRequestSchema,
+	explanationActionResultSchema,
+};
+export type { ExplanationActionRequest, ExplanationActionResult };

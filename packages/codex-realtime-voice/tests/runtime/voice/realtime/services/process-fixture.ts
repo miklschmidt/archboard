@@ -1,7 +1,4 @@
-import {
-	CODEX_PROTOCOL_BINARY_VERSION,
-	CODEX_PROTOCOL_VERSION,
-} from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { EventEmitter } from "node:events";
 import { tmpdir } from "node:os";
@@ -12,26 +9,29 @@ import {
 	type CodexProcess,
 	type CodexProcessChild,
 } from "@archboard/codex-app-server/process";
+import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
 import {
-	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	type CodexRealtimeBinding,
-} from "@archboard/codex-realtime-voice/runtime";
+} from "#runtime/voice/realtime/services/contract.ts";
 import { createCodexSession, type CodexSession } from "@archboard/codex-app-server/session";
 import {
 	createCodexTransport,
 	type CodexTransport,
-	type CodexTransportChild,
+	type CodexTransportOptions,
 } from "@archboard/codex-app-server/transport";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
+	type ChildEpoch,
+	type ChildId,
 	type IdentityAuthority,
-	type WireRequestCorrelation,
 } from "@archboard/codex-app-server/identity";
-import type { RealtimeSemanticEvent } from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeSemanticEvent } from "#shared/protocol/realtime-contract.ts";
 
-const repoRoot = resolve(import.meta.dir, "../../../..");
+type CodexTransportChild = CodexTransportOptions["child"];
+
+const repoRoot = resolve(import.meta.dir, "../../../../../../..");
 /**
  * The record prefix this harness passes as its host, as Archboard passes its own. It is neither
  * Archboard's nor a package default, so an id under it was minted by this harness's ledger.
@@ -120,7 +120,7 @@ const response=(frame,result)=>{record({kind:"response",method:frame.method,resu
 const notification=(method,params)=>{record({kind:"notification",method,params});send({method,params});};
 const configResponse=()=>({config:{model:null,review_model:null,model_context_window:null,model_auto_compact_token_limit:null,model_auto_compact_token_limit_scope:null,model_provider:null,approval_policy:null,approvals_reviewer:null,sandbox_mode:null,sandbox_workspace_write:null,forced_chatgpt_workspace_id:null,forced_login_method:null,web_search:null,tools:null,instructions:null,developer_instructions:null,compact_prompt:null,model_reasoning_effort:null,model_reasoning_summary:null,model_verbosity:null,service_tier:null,analytics:null,apps:null,browser_use:null,computer_use:null,desktop:null,sqlite_home:process.env.CODEX_SQLITE_HOME},origins:{sqlite_home:{name:{type:"user",file:process.env.CODEX_HOME+"/config.toml",profile:null},version:"fixture"}},layers:null});
 function handle(frame){record({kind:"frame",frame});
-if(frame.method==="initialize"){response(frame,{userAgent:"Codex Desktop/${CODEX_PROTOCOL_VERSION}",codexHome:process.env.CODEX_HOME,platformFamily:"unix",platformOs:"linux"});return;}
+if(frame.method==="initialize"){response(frame,{userAgent:"Codex Desktop/${codexProtocolVersion()}",codexHome:process.env.CODEX_HOME,platformFamily:"unix",platformOs:"linux"});return;}
 if(frame.method==="initialized")return;
 if(frame.method==="configRequirements/read"){response(frame,{supportsIndependentSpeedModes:null,requirements:null});return;}
 if(frame.method==="config/read"){response(frame,configResponse());return;}
@@ -174,7 +174,7 @@ function makeNotification(
 	identity: IdentityAuthority,
 	method: string,
 	params: unknown,
-	overrides: Partial<Pick<WireRequestCorrelation, "child" | "epoch">> = {},
+	overrides: { readonly child?: ChildId; readonly epoch?: ChildEpoch } = {},
 ): Parameters<CodexRealtimeAdapter["onNotification"]>[0] {
 	return {
 		correlation: {
@@ -212,7 +212,7 @@ async function createHarness(
 			root,
 			logPath,
 			controlPath,
-			options.version ?? CODEX_PROTOCOL_BINARY_VERSION,
+			options.version ?? `codex-cli ${codexProtocolVersion()}`,
 		),
 		workingDirectory: repoRoot,
 		storage: { rootDirectory: join(root, "storage") },

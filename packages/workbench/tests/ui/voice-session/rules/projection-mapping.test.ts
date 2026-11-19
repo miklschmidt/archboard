@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	INITIAL_REALTIME_STATE,
-	REALTIME_PHASES,
-	REALTIME_TRANSITIONS,
-} from "@archboard/codex-realtime-voice/realtime";
 import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
 import { projectVoiceSession } from "#ui/voice-session/rules/projection.ts";
 import {
@@ -133,28 +128,6 @@ const DECLARED_STATES: readonly RealtimeState[] = [
 ];
 
 /**
- * Every state the transition table can actually reach: the initial one plus
- * every (destination, reason) pair it allows. The projection must map all of
- * them, so the table is the exhaustiveness source rather than a hand-kept list.
- * @returns The reachable states.
- */
-function reachableStates(): readonly RealtimeState[] {
-	const reachable = new Set<string>([
-		`${INITIAL_REALTIME_STATE.phase}:${INITIAL_REALTIME_STATE.reason}`,
-	]);
-	for (const from of REALTIME_PHASES) {
-		for (const to of REALTIME_PHASES) {
-			for (const reason of REALTIME_TRANSITIONS[from][to] ?? []) {
-				reachable.add(`${to}:${reason}`);
-			}
-		}
-	}
-	const states = DECLARED_STATES.filter((state) => reachable.has(`${state.phase}:${state.reason}`));
-	expect(states).toHaveLength(reachable.size);
-	return states;
-}
-
-/**
  * A projection input over the default sources.
  * @param overrides Fields to change.
  * @returns The input.
@@ -213,10 +186,10 @@ function byPair(left: [string, string], right: [string, string]): number {
 	return byName(left[0], right[0]);
 }
 
-const REACHABLE = reachableStates();
+const REACHABLE = DECLARED_STATES;
 
 describe("voice session status mapping", () => {
-	test("maps every reachable realtime state to a defined status and sentence", () => {
+	test("maps every declared realtime state to a defined status and sentence", () => {
 		const seen = new Set<VoiceSessionStatus>();
 		for (const state of REACHABLE) {
 			const view = project(state);

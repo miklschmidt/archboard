@@ -2,7 +2,7 @@ import type { EpochTransaction } from "#runtime/voice/protocol/extension.ts";
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 } from "#runtime/instructions/rules/authored.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import {
 	CodexDynamicToolsError,
@@ -162,7 +162,7 @@ function stage(options: StageOptions): EpochTransaction {
 			rpc: options.rpc,
 			workspaceRoot: callerWorkspace(options.caller),
 			instructionHash: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+			manifestHash: archboardAppBinding().manifestHash,
 			expected,
 		});
 	} catch (error) {

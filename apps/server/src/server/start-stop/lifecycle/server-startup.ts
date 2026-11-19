@@ -7,10 +7,10 @@ import {
 	createServerApplicationLifetime,
 } from "#server/start-stop/lifecycle/application-lifetime.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
+import { closeBrowserOwners } from "@archboard/workbench/panes";
 import { prepareCodexWorkbench, stopCodexWorkbench } from "@archboard/workbench/server";
 import { checkoutWork, mutationAdmission } from "#server/wiring/server-owners.ts";
 import {
-	closeBrowserOwners,
 	closeHttpServer,
 	forgetEngineState,
 	listen,
@@ -20,10 +20,10 @@ import {
 import {
 	findExistingLoopbackListener,
 	formatHostForUrl,
-	HOST,
 	isLoopbackGuardedHost,
+	listenAddress,
 	logHttpServerError,
-	PORT,
+	serverUrl,
 	messageOf,
 } from "@archboard/workbench/host";
 import { agentActivity } from "#server/wiring/server-owners.ts";
@@ -82,13 +82,14 @@ async function loopbackRefusal(): Promise<string | null> {
 	if (!isLoopbackGuardedHost()) {
 		return null;
 	}
-	const existingHost = await findExistingLoopbackListener(PORT);
+	const existingHost = await findExistingLoopbackListener();
 	if (!existingHost) {
 		return null;
 	}
+	const { host, port } = listenAddress();
 	const message =
-		`Refusing to start Archboard server on ${formatHostForUrl(HOST)}:${PORT}: ` +
-		`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
+		`Refusing to start Archboard server on ${formatHostForUrl(host)}:${port}: ` +
+		`${formatHostForUrl(existingHost)}:${port} is already listening. ` +
 		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
 	logger().error(message);
 	return message;
@@ -192,7 +193,7 @@ function processHandlers(
 		/** Remove the pidfile this process wrote, as the process exits. */
 		onExit: () => {
 			if (http.ownsPidFile) {
-				removePidFile(PORT);
+				removePidFile(listenAddress().port);
 			}
 		},
 		/**
@@ -349,7 +350,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Accept panes. */
 				start: () => {
 					startWebSocketServer();
-					logger().info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
+					logger().info(`WebSocket server running on ${serverUrl("ws")}`);
 				},
 				stop: closeWebSocketServer,
 			},

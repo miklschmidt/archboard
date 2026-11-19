@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { classifyCodexThreadLink } from "#runtime/workhorses/thread-link/rules/classifier.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import {
+	classifyCodexThreadLink,
 	currentEpoch,
 	loadedPage,
 	session,
@@ -26,7 +26,7 @@ async function withFixture<T>(
 	options: RealEpochOptions,
 	action: (fixture: RealEpochFixture) => Promise<T>,
 ): Promise<T> {
-	const fixture = realEpochFixture(createIdentityAuthority(), options);
+	const fixture = realEpochFixture(createIdentityAuthorities().identity, options);
 	try {
 		return await action(fixture);
 	} finally {
@@ -37,7 +37,7 @@ async function withFixture<T>(
 describe("codex thread-link authored refusal precedence", () => {
 	test("keeps stale child ahead of every lower condition", async () => {
 		await withFixture({}, async (fixture) => {
-			const replacement = createIdentityAuthority();
+			const replacement = createIdentityAuthorities().identity;
 			const row = thread(fixture.authority, "target", {
 				source: { custom: "integration" },
 				status: "systemError",

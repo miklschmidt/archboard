@@ -4,10 +4,7 @@ import { expect, test } from "bun:test";
 import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import { decodeDynamicCursor, encodeDynamicCursor } from "#runtime/dynamic-tools/rules/cursors.ts";
 import { waitForDynamicThreads } from "#runtime/dynamic-tools/settlements/services/wait.ts";
-import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-} from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import {
 	optionsFor,
 	requestFor,
@@ -27,9 +24,9 @@ async function waitCall(
 		caller: fixture.threadAuthority.caller,
 		call: {
 			callId: request.logicalCall.callId,
-			namespace: ARCHBOARD_APP_NAMESPACE.name,
+			namespace: archboardAppBinding().namespace,
 			tool: "wait_threads",
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+			manifestHash: archboardAppBinding().manifestHash,
 		},
 		classifyTarget: (threadId) => fixture.threadAuthority.classifyExactTarget({ threadId }),
 		options: fixture.options,

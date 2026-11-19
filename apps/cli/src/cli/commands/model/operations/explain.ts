@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-	ExplanationActionRequestSchema,
-	ExplanationActionResultSchema,
+	explanationActionRequestSchema,
+	explanationActionResultSchema,
 } from "@archboard/workbench/browser-contract";
 import { explainArchitectureOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
@@ -26,7 +26,7 @@ const modelExplainContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ input: z.string().optional() }) },
-	result: ExplanationActionResultSchema,
+	result: explanationActionResultSchema(),
 	output: {
 		cases: [
 			{
@@ -71,7 +71,7 @@ const modelExplainContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model explain");
 		const raw = await statedJson(input, context);
-		const request = context.parse(ExplanationActionRequestSchema, {
+		const request = context.parse(explanationActionRequestSchema(), {
 			type: "invoke",
 			...context.parse(z.record(z.string(), z.unknown()), raw),
 		});

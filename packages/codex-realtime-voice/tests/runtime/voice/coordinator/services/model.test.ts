@@ -4,8 +4,8 @@ import { describe, expect, test } from "bun:test";
 
 import type { SessionParams, SessionResponse } from "@archboard/codex-app-server/session";
 import {
-	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL,
+	reviewedCoordinatorEffort,
+	reviewedCoordinatorModel,
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 	listCoordinatorModels,
@@ -13,7 +13,7 @@ import {
 } from "#runtime/voice/coordinator/services/model.ts";
 import { type CoordinatorModel } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { type CodexCoordinatorError } from "#runtime/voice/coordinator/protocol/contract.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 
 const WORKING_DIRECTORY = "/state/codex-workbench/coordinator";
 
@@ -31,8 +31,8 @@ async function expectCoordinatorCode(
 
 function model(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
 	return {
-		id: COORDINATOR_MODEL,
-		model: COORDINATOR_MODEL,
+		id: reviewedCoordinatorModel(),
+		model: reviewedCoordinatorModel(),
 		upgrade: null,
 		upgradeInfo: null,
 		availabilityNux: null,
@@ -40,8 +40,10 @@ function model(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
 		description: "coordinator fixture",
 		modelSpecialty: null,
 		hidden: false,
-		supportedReasoningEfforts: [{ reasoningEffort: COORDINATOR_EFFORT, description: "fixture" }],
-		defaultReasoningEffort: COORDINATOR_EFFORT,
+		supportedReasoningEfforts: [
+			{ reasoningEffort: reviewedCoordinatorEffort(), description: "fixture" },
+		],
+		defaultReasoningEffort: reviewedCoordinatorEffort(),
 		inputModalities: ["text"],
 		supportsPersonality: false,
 		multiAgentVersion: null,
@@ -97,7 +99,7 @@ describe("coordinator model and literal profile", () => {
 			{ cursor: "page-2", limit: 100 },
 		]);
 		expect(models).toHaveLength(2);
-		expect(selection.model.model).toBe(COORDINATOR_MODEL);
+		expect(selection.model.model).toBe(reviewedCoordinatorModel());
 		expect(selection.configuredServiceTier).toBe("priority");
 	});
 
@@ -137,7 +139,7 @@ describe("coordinator model and literal profile", () => {
 
 		expect(JSON.stringify(params)).toBe(
 			JSON.stringify({
-				model: COORDINATOR_MODEL,
+				model: reviewedCoordinatorModel(),
 				allowProviderModelFallback: false,
 				cwd: WORKING_DIRECTORY,
 				runtimeWorkspaceRoots: [WORKING_DIRECTORY],
@@ -196,17 +198,18 @@ describe("coordinator model and literal profile", () => {
 			"experimentalRawEvents",
 		]);
 
-		const threadId = createIdentityAuthority().decoder.adoptThreadId("coordinator-thread");
+		const threadId =
+			createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator-thread");
 		expect(createCoordinatorSettingsUpdateParams(threadId, "priority")).toEqual({
 			threadId,
-			model: COORDINATOR_MODEL,
+			model: reviewedCoordinatorModel(),
 			serviceTier: "priority",
-			effort: COORDINATOR_EFFORT,
+			effort: reviewedCoordinatorEffort(),
 		});
 		expect(createCoordinatorSettingsUpdateParams(threadId, null)).toEqual({
 			threadId,
-			model: COORDINATOR_MODEL,
-			effort: COORDINATOR_EFFORT,
+			model: reviewedCoordinatorModel(),
+			effort: reviewedCoordinatorEffort(),
 		});
 	});
 });

@@ -24,7 +24,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { checkoutPath } from "@archboard/renderer/core";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { compileRelease, TARGETS, type Target } from "./compile.ts";
@@ -140,9 +140,9 @@ async function platformPackage(target: Target): Promise<string> {
 	const name = `@archboard/cli-${suffix}`;
 	const directory = directoryOf(name);
 	const compiled = await compileRelease(target, directory);
-	if (compiled.marker.codexVersion !== CODEX_PROTOCOL_VERSION) {
+	if (compiled.marker.codexVersion !== codexProtocolVersion()) {
 		refuse(
-			`package.json pins @openai/codex ${compiled.marker.codexVersion}, and the protocol is built for ${CODEX_PROTOCOL_VERSION}. Upgrade both together (docs/agents/codex-upgrades.md).`,
+			`package.json pins @openai/codex ${compiled.marker.codexVersion}, and the protocol is built for ${codexProtocolVersion()}. Upgrade both together (docs/agents/codex-upgrades.md).`,
 		);
 	}
 	writeFileSync(
@@ -167,7 +167,7 @@ async function platformPackage(target: Target): Promise<string> {
 			],
 			// The alias that @openai/codex gives its own platform binary, at the pinned version.
 			dependencies: {
-				[`@openai/codex-${suffix}`]: `npm:@openai/codex@${CODEX_PROTOCOL_VERSION}-${suffix}`,
+				[`@openai/codex-${suffix}`]: `npm:@openai/codex@${codexProtocolVersion()}-${suffix}`,
 			},
 		},
 		`# ${name}\n\nThe Archboard ${root.version} executable for ${os} on ${cpu}. Install \`archboard\` or \`@archboard/cli\`, which starts it: ${root.homepage}\n`,

@@ -3,7 +3,7 @@
 	"code-intel": 11,
 	"code-opener": 13,
 	"codex-app-server": 108,
-	"codex-realtime-voice": 83,
+	"codex-realtime-voice": 62,
 	"diagnostics": 10,
 	"model": 182,
 	"process": 13,
@@ -15,6 +15,6 @@
 	"timing": 37,
 	"ui-kit": 35,
 	"walkthrough": 21,
-	"workbench": 109,
+	"workbench": 98,
 	"workspace": 40
 }

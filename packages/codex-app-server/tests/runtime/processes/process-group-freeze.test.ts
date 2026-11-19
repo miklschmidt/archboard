@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { codexProcessMs } from "@archboard/timing";
 
-import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
+import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
 	fixture,
 	processOptions as options,

@@ -209,7 +209,6 @@ export {
 	type CodexThreadLinkClassifierOptions,
 	type ThreadLinkObservation,
 	type ExecutableThreadLink,
-	type InspectOnlyThreadLink,
 	type ThreadLink,
 	type UnboundThreadLink,
 	type ThreadLinkSnapshot,

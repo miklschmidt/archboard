@@ -9,12 +9,12 @@ import {
 } from "#runtime/voice/coordinator/protocol/contract.ts";
 import { COORDINATOR_CAPABILITY_POLICY } from "#runtime/voice/coordinator/protocol/contract.ts";
 import {
-	COORDINATOR_EFFORT,
-	COORDINATOR_MODEL,
+	reviewedCoordinatorEffort,
+	reviewedCoordinatorModel,
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { codexSessionMs } from "@archboard/timing";
 import {
 	WORKING_DIRECTORY,
@@ -79,7 +79,9 @@ describe("coordinator lifecycle", () => {
 	});
 
 	test("starts the exact capable coordinator and records effective preserved settings", async () => {
-		const fixtureValue = fixture({ staleNotificationAuthority: createIdentityAuthority() });
+		const fixtureValue = fixture({
+			staleNotificationAuthority: createIdentityAuthorities().identity,
+		});
 		const snapshot = await ready(fixtureValue);
 		const coordinatorPersistence = persistence(snapshot);
 
@@ -94,13 +96,13 @@ describe("coordinator lifecycle", () => {
 			createCoordinatorSettingsUpdateParams(coordinatorPersistence.threadId, "priority"),
 		]);
 		expect(snapshot.configured).toEqual({
-			model: COORDINATOR_MODEL,
-			effort: COORDINATOR_EFFORT,
+			model: reviewedCoordinatorModel(),
+			effort: reviewedCoordinatorEffort(),
 			serviceTier: "priority",
 		});
 		expect(snapshot.effective).toEqual({
-			model: COORDINATOR_MODEL,
-			effort: COORDINATOR_EFFORT,
+			model: reviewedCoordinatorModel(),
+			effort: reviewedCoordinatorEffort(),
 			serviceTier: "priority",
 		} satisfies CoordinatorEffectiveSettings);
 		expect(snapshot.approvalPolicy).toBe("on-request");

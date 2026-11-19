@@ -11,7 +11,7 @@ import {
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type DynamicToolCallId,
 	type IdentityAuthority,
 	type ThreadId,
@@ -21,14 +21,16 @@ import {
 	COORDINATOR_CAPABILITY_POLICY,
 	type CoordinatorSnapshot,
 } from "#runtime/voice/coordinator/protocol/contract.ts";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
 import {
 	type ApprovalBindingInput,
-	type ApprovalResponsePort,
 	type ApprovalSnapshot,
 	type CodexApprovalBroker,
+	type CodexApprovalBrokerOptions,
 } from "#runtime/approvals/services/contract.ts";
+
+type ApprovalResponsePort = CodexApprovalBrokerOptions["transport"];
 import type {
 	TransportServerRequest,
 	TransportServerNotification,
@@ -215,7 +217,7 @@ function classifierContext(
 }
 
 function makeHarness(options: HarnessOptions = {}): GateHarness {
-	const identity = createIdentityAuthority();
+	const identity = createIdentityAuthorities().identity;
 	const responses: unknown[] = [];
 	const port = {
 		responses,
@@ -417,7 +419,7 @@ function turnEvent(
 	method: "turn/started" | "turn/completed",
 ): TransportServerNotification {
 	const status = method === "turn/started" ? "inProgress" : "completed";
-	const notification = decodeServerNotification({
+	const notification = serverNotification({
 		method,
 		params: {
 			threadId: String(harness.approval.threadId),

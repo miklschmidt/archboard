@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { parseDynamicToolCallResponse } from "@archboard/workbench/runtime";
+import { parseDynamicToolCallResponse } from "./support/codex-workbench-response.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
@@ -159,7 +159,6 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 					result: { decision: "cancel" },
 				});
 				const dynamic = parseDynamicToolCallResponse(
-					"create_thread",
 					reverseResponses(fixture.logPath, "shutdown-dynamic")[0]?.frame?.result,
 				).envelope;
 				if (dynamic.tag !== "approval_required") {

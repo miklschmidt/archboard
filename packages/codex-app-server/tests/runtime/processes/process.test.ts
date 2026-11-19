@@ -2,8 +2,11 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { CODEX_PROCESS_STDERR_MAX_BYTES, CodexProcessError } from "#runtime/processes/process.ts";
-import { createCodexProcessForTesting } from "#runtime/processes/process.ts";
+import {
+	CODEX_PROCESS_STDERR_MAX_BYTES,
+	CodexProcessError,
+} from "#runtime/processes/process-contract.ts";
+import { createProcessOwner } from "#runtime/processes/process-owner.ts";
 import { codexProcessMs, codexRestartDelayMs } from "@archboard/timing";
 import {
 	fixture,
@@ -14,7 +17,7 @@ import {
 	waitForState,
 } from "#tests/runtime/support/process-support.ts";
 
-const createCodexProcess = createCodexProcessForTesting;
+const createCodexProcess = createProcessOwner;
 
 describe("Codex process owner", () => {
 	test("enters bounded backoff after an early crash and doubles only across failures", async () => {
@@ -22,7 +25,7 @@ describe("Codex process owner", () => {
 		let owner: ReturnType<typeof createCodexProcess> | undefined;
 		try {
 			const executable = fixture(root, `console.error("crash fixture"); process.exit(17);`);
-			owner = createCodexProcessForTesting(processOptions(root, executable));
+			owner = createProcessOwner(processOptions(root, executable));
 			const started = owner.start();
 			const backoff = await waitForState(owner, (state) => state === "backoff");
 			await started.catch(() => undefined);
@@ -47,7 +50,7 @@ describe("Codex process owner", () => {
 				root,
 				`process.stdin.resume(); setInterval(() => {}, ${codexProcessMs("termGrace")});`,
 			);
-			owner = createCodexProcessForTesting(processOptions(root, executable));
+			owner = createProcessOwner(processOptions(root, executable));
 			await startReady(owner);
 			const currentChild = owner.currentChild();
 			if (!currentChild) {
@@ -80,7 +83,7 @@ describe("Codex process owner", () => {
 				root,
 				`process.stderr.write("strict-"); setImmediate(() => { process.stderr.write("config rejected: extra argument\\n"); process.exit(2); });`,
 			);
-			owner = createCodexProcessForTesting({
+			owner = createProcessOwner({
 				...processOptions(root, executable),
 				stderrLimitBytes: CODEX_PROCESS_STDERR_MAX_BYTES,
 			});
@@ -163,7 +166,7 @@ describe("Codex process owner", () => {
 				root,
 				`process.stderr.write("x".repeat(${CODEX_PROCESS_STDERR_MAX_BYTES + 1024})); process.exit(17);`,
 			);
-			owner = createCodexProcessForTesting(processOptions(root, executable));
+			owner = createProcessOwner(processOptions(root, executable));
 			const started = owner.start();
 			const backoff = await waitForState(owner, (state) => state === "backoff");
 			await started.catch(() => undefined);
@@ -187,7 +190,7 @@ describe("Codex process owner", () => {
 				root,
 				`process.stderr.write("authorization=poisoned-secret"); process.exit(17);`,
 			);
-			owner = createCodexProcessForTesting(processOptions(root, executable));
+			owner = createProcessOwner(processOptions(root, executable));
 			owner.subscribe((snapshot) => published.push(JSON.stringify(snapshot)));
 			const started = owner.start();
 			const backoff = await waitForState(owner, (state) => state === "backoff");
@@ -214,7 +217,7 @@ describe("Codex process owner", () => {
 				[wrongVersion, "binary_wrong_version"],
 				[path.join(root, "missing"), "binary_missing"],
 			] as const) {
-				owner = createCodexProcessForTesting(processOptions(root, executable));
+				owner = createProcessOwner(processOptions(root, executable));
 				let failure: unknown;
 				try {
 					await owner.start();
@@ -275,7 +278,7 @@ describe("Codex process owner", () => {
 		try {
 			const executable = fixture(root, `process.stdin.resume();`);
 			const secret = "private-extra-argument";
-			owner = createCodexProcessForTesting({
+			owner = createProcessOwner({
 				...processOptions(root, executable),
 				diagnosticSecrets: [secret],
 				argv: [executable, "app-server", "--listen", secret],

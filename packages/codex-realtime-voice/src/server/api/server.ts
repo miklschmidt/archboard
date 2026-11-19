@@ -1,5 +1,4 @@
 export { createVoiceAgent } from "#server/agent/services/voice-agent.ts";
-export { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 export type {
 	VoiceAgent,
 	VoiceAgentBrowserPort,
@@ -18,9 +17,7 @@ export {
 	createServerCodexBrowserSocketOwner,
 	createServerCodexBrowserSocketSend,
 } from "#server/browser-socket/services/socket.ts";
-export type { BrowserProjectionInput } from "#server/projection/protocol/projection-contract.ts";
 
-export { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 export { liveWorkhorseCheckouts } from "#server/chat-conversations/browser-state/projections/workhorse-list.ts";
 
 export { createBrowserLeaseLedger } from "#server/lease/services/lease.ts";

@@ -1,14 +1,17 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	createCodexWaitGraph,
-	type OwnedWaitCleanupCause,
-	type WaitOwner,
-} from "#runtime/workhorses/wait-graph/state/wait-graph.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createCodexWaitGraph } from "#runtime/workhorses/wait-graph/state/wait-graph.ts";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+
+type CodexWaitGraph = ReturnType<typeof createCodexWaitGraph>;
+type WaitOwner = Parameters<CodexWaitGraph["addEdgeSet"]>[0]["owner"];
+type OwnedWaitCleanupCause = Extract<
+	Parameters<CodexWaitGraph["release"]>[0],
+	{ readonly owner: unknown }
+>["cause"];
 
 function identities() {
-	const authority = createIdentityAuthority();
+	const authority = createIdentityAuthorities().identity;
 	return {
 		child: authority.validator.childId,
 		thread: (raw: string) => authority.decoder.adoptThreadId(raw),

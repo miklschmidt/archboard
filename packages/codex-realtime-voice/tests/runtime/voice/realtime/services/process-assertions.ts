@@ -2,11 +2,15 @@ import { readFileSync } from "node:fs";
 
 import { expect } from "bun:test";
 
-import { latestState, type RealtimeHarness, waitFor } from "../fixtures/codex-realtime-process.ts";
+import {
+	latestState,
+	type RealtimeHarness,
+	waitFor,
+} from "#tests/runtime/voice/realtime/services/process-fixture.ts";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "@archboard/codex-realtime-voice/realtime";
+} from "#shared/protocol/realtime-contract.ts";
 
 function browserCorrelation(suffix = "") {
 	return {

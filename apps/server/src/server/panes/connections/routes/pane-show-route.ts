@@ -5,6 +5,8 @@ import { readArchitectureModel } from "@archboard/model/store-read";
 import { projectModel } from "@archboard/model/content";
 import { publishPaneContext } from "@archboard/workbench/server";
 import {
+	arrivedOnModel,
+	movePaneVault,
 	paneFromRequest,
 	paneResponse,
 	semanticPaneContextFor,
@@ -14,8 +16,7 @@ import {
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { logger } from "@archboard/diagnostics/logger";
-import { arrivedOnModel, noBrowserBody } from "#server/panes/connections/routes/pane-routes.ts";
-import { movePaneVault } from "#server/panes/connections/state/pane-vaults.ts";
+import { noBrowserBody } from "#server/panes/connections/routes/pane-routes.ts";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import {

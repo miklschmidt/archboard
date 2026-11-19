@@ -1,4 +1,4 @@
-import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -145,7 +145,7 @@ test("public cleanup-error takeover reaps the exact terminal group and outer ser
 	environment["ARCHBOARD_TEST_PUBLIC_CLEANUP_GRACE_MS"] = "150";
 	writePublicCodexExecutable(
 		executable,
-		`if (process.argv.includes("--version")) { console.log("${CODEX_PROTOCOL_BINARY_VERSION}"); process.exit(0); }
+		`if (process.argv.includes("--version")) { console.log("codex-cli ${codexProtocolVersion()}"); process.exit(0); }
 const { spawn } = require("node:child_process");
 const descendant = spawn(process.execPath, ["-e", "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)"], { stdio: "ignore" });
 process.on("SIGTERM", () => {});

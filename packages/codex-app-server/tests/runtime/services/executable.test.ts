@@ -13,9 +13,12 @@ import {
 	resolveCodexExecutable,
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
-import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
 import { codexSessionMs } from "@archboard/timing";
 import { installation } from "@archboard/workspace/installation";
+
+/** What the pinned Codex binary prints for `--version`. */
+const BINARY_VERSION = `codex-cli ${codexProtocolVersion()}` as const;
 
 function temporaryRoot(): string {
 	return mkdtempSync(path.join(tmpdir(), "archboard-codex-process-executable-"));
@@ -34,7 +37,7 @@ function environmentFixture(root: string, marker: string): string {
 	const executable = path.join(root, "environment-fixture");
 	writeFileSync(
 		executable,
-		`#!${process.execPath}\nif (process.argv[2] === "--version") { require("node:fs").writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ openai: process.env.OPENAI_API_KEY, aws: process.env.AWS_SECRET_ACCESS_KEY, path: process.env.PATH, home: process.env.HOME })); console.log(${JSON.stringify(CODEX_PROTOCOL_BINARY_VERSION)}); }\n`,
+		`#!${process.execPath}\nif (process.argv[2] === "--version") { require("node:fs").writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ openai: process.env.OPENAI_API_KEY, aws: process.env.AWS_SECRET_ACCESS_KEY, path: process.env.PATH, home: process.env.HOME })); console.log(${JSON.stringify(BINARY_VERSION)}); }\n`,
 		{ mode: 0o700 },
 	);
 	chmodSync(executable, 0o700);
@@ -63,7 +66,7 @@ describe("Codex executable ownership", () => {
 		);
 		expect(verifyCodexExecutable(executable)).toEqual({
 			executablePath: executable,
-			version: CODEX_PROTOCOL_BINARY_VERSION,
+			version: BINARY_VERSION,
 		});
 	});
 
@@ -105,7 +108,7 @@ describe("Codex executable ownership", () => {
 		const root = temporaryRoot();
 		try {
 			const wrongVersion = fixture(root, "codex-cli 0.150.0", "wrong-version");
-			const nonExecutable = fixture(root, CODEX_PROTOCOL_BINARY_VERSION, "non-executable");
+			const nonExecutable = fixture(root, BINARY_VERSION, "non-executable");
 			chmodSync(nonExecutable, 0o600);
 			const directory = path.join(root, "directory");
 			fs.mkdirSync(directory, { mode: 0o700 });
@@ -137,7 +140,7 @@ describe("Codex executable ownership", () => {
 		try {
 			const marker = path.join(root, "environment.json");
 			const executable = environmentFixture(root, marker);
-			expect(verifyCodexExecutable(executable).version).toBe(CODEX_PROTOCOL_BINARY_VERSION);
+			expect(verifyCodexExecutable(executable).version).toBe(BINARY_VERSION);
 			const observed = JSON.parse(readFileSync(marker, "utf8")) as Record<
 				string,
 				string | undefined
@@ -153,7 +156,7 @@ describe("Codex executable ownership", () => {
 	test("bounds hanging and oversized executable proof attempts", () => {
 		const root = temporaryRoot();
 		try {
-			const executable = fixture(root, CODEX_PROTOCOL_BINARY_VERSION, "bounded-proof");
+			const executable = fixture(root, BINARY_VERSION, "bounded-proof");
 			let observedOptions: Record<string, unknown> | undefined;
 			const hangingCandidate = ((
 				_file: string,
@@ -221,7 +224,7 @@ describe("Codex executable ownership", () => {
 			const base = fs.realpathSync(temporaryRoot());
 			try {
 				const { root, codexModules } = layout(base);
-				const packageRoot = codexPackage(codexModules, CODEX_PROTOCOL_BINARY_VERSION);
+				const packageRoot = codexPackage(codexModules, BINARY_VERSION);
 				const executable = resolveCodexExecutable({ releasedIn: root });
 				expect(executable.startsWith(packageRoot + path.sep)).toBe(true);
 				expect(nativeCodexEnvironment(executable)).toMatchObject({

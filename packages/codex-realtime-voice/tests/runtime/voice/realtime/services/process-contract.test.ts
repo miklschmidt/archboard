@@ -9,16 +9,16 @@ import {
 	waitForGenerations,
 	waitForState,
 	withHarness,
-} from "./fixtures/codex-realtime-process.ts";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { parseRealtimeItemId } from "@archboard/codex-realtime-voice/realtime";
+} from "#tests/runtime/voice/realtime/services/process-fixture.ts";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { parseRealtimeItemId } from "#shared/protocol/realtime-contract.ts";
 import {
 	browserCorrelation,
 	expectPendingOffer,
 	readRecords,
 	requestParams,
 	waitForDiagnostic,
-} from "./support/codex-realtime-assertions.ts";
+} from "#tests/runtime/voice/realtime/services/process-assertions.ts";
 
 const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
@@ -195,7 +195,7 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 				},
 			);
 			await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
-			const foreign = createIdentityAuthority();
+			const foreign = createIdentityAuthorities().identity;
 			const sendSdp = (
 				identity: typeof generation.identity,
 				threadId: string,

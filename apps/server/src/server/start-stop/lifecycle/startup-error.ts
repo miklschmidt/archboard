@@ -1,5 +1,5 @@
 import { CodexExecutableError, CodexProcessError } from "@archboard/codex-app-server/process";
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
+import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 
 /**
  * Every error inside one thrown value: itself, an aggregate's members and
@@ -58,7 +58,7 @@ function codexProcessLine(codex: CodexProcessError): string {
 	if (CODEX_INSTALL_FAILURES.has(codex.code)) {
 		return (
 			"Codex app-server exited before the Archboard server became ready. " +
-			`Run bun install to restore @openai/codex ${CODEX_PROTOCOL_VERSION}, then retry. ` +
+			`Run bun install to restore @openai/codex ${codexProtocolVersion()}, then retry. ` +
 			codex.message
 		);
 	}

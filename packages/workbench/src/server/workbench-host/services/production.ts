@@ -9,7 +9,7 @@ import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { installation } from "@archboard/workspace/installation";
 import { stateDir } from "@archboard/workspace/state-dir";
-import { PORT, serverUrl } from "#server/host/services/listener-address.ts";
+import { listenAddress, serverUrl } from "#server/host/services/listener-address.ts";
 import type { ArchboardWorkbenchServer } from "#server/generation/protocol/archboard-host.ts";
 
 /**
@@ -50,7 +50,7 @@ function prepareCoordinatorDirectory(directory: string): void {
  */
 function createWorkbenchStorage(): VoiceAgentOptions["storage"] {
 	const root = path.join(stateDir(), "codex-workbench");
-	const ownerDirectory = path.join(root, "canvases", String(PORT));
+	const ownerDirectory = path.join(root, "canvases", String(listenAddress().port));
 	mkdirSync(ownerDirectory, { recursive: true, mode: 0o700 });
 	const coordinatorDirectory = path.join(ownerDirectory, "coordinator");
 	prepareCoordinatorDirectory(coordinatorDirectory);

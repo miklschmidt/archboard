@@ -1,7 +1,7 @@
 import { expect, jest, test } from "bun:test";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { codexApprovalExpiresAt, codexApprovalMs } from "@archboard/timing";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
@@ -26,7 +26,7 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 				callId: identity.identity.decoder.adoptDynamicToolCallId("call-expiry"),
 				namespace: "archboard_app",
 				tool: "create_thread",
-				manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+				manifestHash: archboardAppBinding().manifestHash,
 				operationId,
 			},
 			effect: {

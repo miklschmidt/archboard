@@ -2,16 +2,10 @@ import { publishPaneContext } from "@archboard/workbench/server";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "@archboard/diagnostics/logger";
-import {
-	addressablePanes,
-	panesFull,
-	panesInOrder,
-	resolvePane,
-} from "@archboard/server-lifecycle/panes";
+import { panesFull, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { staleFrontend } from "@archboard/server-lifecycle/server-host";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { paneMs } from "@archboard/timing";
 import {
 	serverUrl,
 	bodyOf,
@@ -21,25 +15,24 @@ import {
 } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 import {
+	arrivedOnModel,
+	expectPaneClose,
+	expectPaneOpen,
+	onScreenPanes,
+	paneIsLive,
 	paneKeysOnScreen,
-	currentSocketsByClient,
-	notePaneOpened,
-	paneKeys,
+	paneOf,
 	paneResponse,
-	paneVaults,
-	panes,
-	pendingPaneCloses,
-	pendingPaneOpens,
+	paneVaultOf,
 	primaryPane,
+	registerPane,
 	semanticPaneContextFor,
 	sendKeylessToPane,
 	settleAfterLayout,
-	type PendingPaneClose,
-	type PendingPaneOpen,
 } from "@archboard/workbench/panes";
 import { showPaneRoute } from "#server/panes/connections/routes/pane-show-route.ts";
 import { shownConversationRoute } from "#server/panes/connections/routes/shown-conversation-route.ts";
-import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
+import { shownConversationPath } from "@archboard/workbench/browser-contract";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import { getPanesRoute } from "#server/panes/connections/routes/pane-report-route.ts";
 
@@ -151,12 +144,12 @@ function postPaneRoute(req: Request, res: Response): void {
 	// pane nothing can be sent to: the socket's listeners are attached with its
 	// authority, so a workbench request answered in that window is dropped on the
 	// floor. The tab reports again, and the next one lands.
-	const live = currentSocketsByClient.has(registration.clientId);
+	const live = paneIsLive(registration.clientId);
 	if (!live) {
 		res.json({
 			success: true,
 			registered: false,
-			paneCount: addressablePanes([...panes.values()]).length,
+			paneCount: onScreenPanes().length,
 			staleFrontend: stale,
 		});
 		return;
@@ -164,12 +157,12 @@ function postPaneRoute(req: Request, res: Response): void {
 	// A pane is in the vault the server last put it in (ADR 0050). A report naming
 	// another was sent before the pane heard of its move, which this answer can
 	// overtake, so the code says to wait for the move and report from there.
-	if (paneVaults.get(registration.clientId) !== vault) {
+	if (paneVaultOf(registration.clientId) !== vault) {
 		res.json({
 			success: true,
 			registered: false,
 			code: "PANE_MOVED",
-			paneCount: addressablePanes([...panes.values()]).length,
+			paneCount: onScreenPanes().length,
 			staleFrontend: stale,
 		});
 		return;
@@ -178,7 +171,7 @@ function postPaneRoute(req: Request, res: Response): void {
 	res.json({
 		success: true,
 		registered: true,
-		paneCount: addressablePanes([...panes.values()]).length,
+		paneCount: onScreenPanes().length,
 		staleFrontend: stale,
 	});
 }
@@ -212,7 +205,7 @@ function shownBy(pane: PaneRegistration): string {
  * @returns The refusal body.
  */
 function tooManyPanesBody(): Record<string, unknown> {
-	const onScreen = addressablePanes([...panes.values()]);
+	const onScreen = onScreenPanes();
 	const showing = panesInOrder(onScreen)
 		.map((entry) => `${entry.place} (${shownBy(entry.pane)})`)
 		.join(", ");
@@ -223,32 +216,6 @@ function tooManyPanesBody(): Record<string, unknown> {
 			"Point one of them at another reading with `browser show <name> --pane <spec>`, " +
 			"or close one first with `browser close <spec>`.",
 	};
-}
-
-/**
- * Wait for a pane the shell was asked to open, bounded by the layout timeout.
- * @returns The pending record and the promise of the pane.
- */
-function awaitPaneOpen(): { pending: PendingPaneOpen; opened: Promise<PaneRegistration> } {
-	let pending!: PendingPaneOpen;
-	const opened = new Promise<PaneRegistration>((resolve, reject) => {
-		pending = {
-			resolve,
-			reject,
-			known: new Set(panes.keys()),
-			timeout: setTimeout(() => {
-				pendingPaneOpens.delete(pending);
-				reject(
-					new Error(
-						"The browser was asked for another pane and none appeared within 10 seconds. " +
-							"The tab may be running an older build of the canvas — reload it and try again.",
-					),
-				);
-			}, paneMs("layoutTimeout")),
-		};
-		pendingPaneOpens.add(pending);
-	});
-	return { pending, opened };
 }
 
 /**
@@ -266,15 +233,14 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 		res.status(503).json(noBrowserBody("Opening a pane"));
 		return;
 	}
-	if (panesFull([...panes.values()])) {
+	if (panesFull(onScreenPanes())) {
 		res.status(409).json(tooManyPanesBody());
 		return;
 	}
 	const askedAt = new Date().toISOString();
-	const { pending, opened } = awaitPaneOpen();
+	const { opened, known, cancel } = expectPaneOpen();
 	if (!sendKeylessToPane(answering.clientId, { type: "pane_open" })) {
-		pendingPaneOpens.delete(pending);
-		clearTimeout(pending.timeout);
+		cancel();
 		res.status(503).json(noBrowserBody("Opening a pane"));
 		return;
 	}
@@ -282,12 +248,12 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 		const pane = await opened;
 		// The new pane and every pane already on screen when the split was
 		// asked for: the shell re-lays all of them side by side.
-		await settleAfterLayout(askedAt, [...pending.known, pane.clientId]);
-		const onScreen = addressablePanes([...panes.values()]).length;
+		await settleAfterLayout(askedAt, [...known, pane.clientId]);
+		const onScreen = onScreenPanes().length;
 		logger().info(`Pane opened on request: ${pane.paneId} (${onScreen} on screen)`);
 		res.json({
 			success: true,
-			...paneResponse(panes.get(pane.clientId) ?? pane),
+			...paneResponse(paneOf(pane.clientId) ?? pane),
 			paneCount: onScreen,
 			onScreen: paneKeysOnScreen(),
 		});
@@ -320,37 +286,6 @@ function closeTarget(
 		(entry) => entry.pane.clientId === target.clientId,
 	);
 	return { target, place: placed?.place ?? spec, position: placed?.position ?? 0 };
-}
-
-/**
- * Wait for a pane the shell was asked to close, bounded by the layout timeout.
- * @param clientId The pane's client id.
- * @param place How the answer names the pane.
- * @returns The pending record and the promise of the close.
- */
-function awaitPaneClose(
-	clientId: string,
-	place: string,
-): { pending: PendingPaneClose; closed: Promise<void> } {
-	let pending!: PendingPaneClose;
-	const closed = new Promise<void>((resolve, reject) => {
-		pending = {
-			clientId,
-			resolve,
-			reject,
-			timeout: setTimeout(() => {
-				pendingPaneCloses.delete(pending);
-				reject(
-					new Error(
-						`The browser was asked to close the ${place} pane and it is still there after 10 seconds. ` +
-							"The tab may be running an older build of the canvas — reload it and try again.",
-					),
-				);
-			}, paneMs("layoutTimeout")),
-		};
-		pendingPaneCloses.add(pending);
-	});
-	return { pending, closed };
 }
 
 /**
@@ -390,7 +325,7 @@ function refuseUnclosable(res: Response, count: number): boolean {
 async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	const paneSpec = bodyOf(req)["pane"];
 	const spec = typeof paneSpec === "string" ? paneSpec.trim() : "";
-	const registrations = addressablePanes([...panes.values()]);
+	const registrations = onScreenPanes();
 	if (refuseUnclosable(res, registrations.length)) {
 		return;
 	}
@@ -404,10 +339,9 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 		return;
 	}
 	const askedAt = new Date().toISOString();
-	const { pending, closed } = awaitPaneClose(target.clientId, place);
+	const { closed, cancel } = expectPaneClose(target.clientId, place);
 	if (!sendKeylessToPane(target.clientId, { type: "pane_close" })) {
-		pendingPaneCloses.delete(pending);
-		clearTimeout(pending.timeout);
+		cancel();
 		res.status(503).json(noBrowserBody("Closing a pane"));
 		return;
 	}
@@ -420,7 +354,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 				.map((entry) => entry.clientId)
 				.filter((clientId) => clientId !== target.clientId),
 		);
-		const onScreen = addressablePanes([...panes.values()]).length;
+		const onScreen = onScreenPanes().length;
 		logger().info(`Pane closed on request: ${target.paneId} (${onScreen} left on screen)`);
 		res.json({
 			success: true,
@@ -449,7 +383,7 @@ function mountPaneRoutes(app: Express): void {
 	app.post(["/api/panes/show", "/api/browser/show"], requireVault, showPaneRoute);
 	// The person's own act in the page, so only the page reaches it (ADR 0050).
 	app.post(
-		SHOWN_CONVERSATION_ROUTE,
+		shownConversationPath(),
 		createBrowserOriginGuard("mutation"),
 		requireVault,
 		shownConversationRoute,
@@ -458,19 +392,17 @@ function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
 }
 
-export { arrivedOnModel, mountPaneRoutes, noBrowserBody };
+export { mountPaneRoutes, noBrowserBody };
 
 /**
  * Register a live pane, acknowledge its arrival and publish changed focus.
  * @param registration The latest pane telemetry.
  */
 function registerLivePane(registration: PaneRegistration): void {
-	const previous = panes.get(registration.clientId);
-	panes.set(registration.clientId, registration);
 	// A pane that was asked for has arrived. Registration is the acknowledgement
 	// — see the pane layout section for why it is that and not a reply.
+	const previous = registerPane(registration);
 	if (previous === undefined) {
-		notePaneOpened(registration);
 		warnOfSharedPaneId(registration);
 	}
 	noteWhatChanged(previous, registration);
@@ -490,7 +422,7 @@ function warnOfSharedPaneId(registration: PaneRegistration): void {
 	if (registration.recording === true) {
 		return;
 	}
-	const others = addressablePanes([...panes.values()]).filter(
+	const others = onScreenPanes().filter(
 		(one) => one.paneId === registration.paneId && one.clientId !== registration.clientId,
 	);
 	if (others.length > 0) {
@@ -536,18 +468,4 @@ function focusChange(
 	registration: PaneRegistration,
 ): readonly "focus"[] {
 	return previous !== undefined && previous.focused !== registration.focused ? ["focus"] : [];
-}
-
-/**
- * A pane is on a model, so record it and tell it where that model stands.
- *
- * Registration is the pane saying what it is showing, and a pane that has just
- * arrived on a model may be arriving into one an agent already holds and is
- * part way through. Being told outright is how every
- * arrival learns it; a broadcast only reaches whoever was already there.
- * @param clientId The pane's client id.
- * @param paneKey The model it is now showing.
- */
-function arrivedOnModel(clientId: string, paneKey: string): void {
-	paneKeys.set(clientId, paneKey);
 }

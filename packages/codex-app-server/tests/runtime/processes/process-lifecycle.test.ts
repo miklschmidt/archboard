@@ -4,8 +4,8 @@ import path from "node:path";
 import type { Readable } from "node:stream";
 import { readProcessObservation } from "@archboard/process/observation";
 
-import { CodexProcessError } from "#runtime/processes/process.ts";
-import { createCodexProcessForTesting as createCodexProcess } from "#runtime/processes/process.ts";
+import { CodexProcessError } from "#runtime/processes/process-contract.ts";
+import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
 import {
 	fixture,

@@ -540,8 +540,8 @@ In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts un
 | `./controllers` | The transport, media and conversation parts under the client.                                                                                                                                                    |
 | `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                                                            |
 | `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                                                           |
-| `./realtime`    | The phases and transitions of a voice run.                                                                                                                                                                       |
-| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the realtime adapter.                                                                                                                               |
+| `./realtime`    | The phase and state types of a voice run.                                                                                                                                                                        |
+| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the wait graph.                                                                                                                                     |
 
 ## Troubleshooting
 

@@ -3,13 +3,7 @@
 
 import { z } from "zod";
 
-import {
-	CodexPatchChangeKindTypeSchema,
-	CodexThreadStatusTypeSchema,
-	CodexTokenUsageBreakdownSchema,
-	CodexTurnPlanStepStatusSchema,
-	CodexTurnStatusSchema,
-} from "@archboard/codex-app-server/contract";
+import { codexFieldSchema } from "@archboard/codex-app-server/contract";
 import {
 	BROWSER_TIMELINE_LIMITS as LIMITS,
 	refineCurrentTarget,
@@ -35,7 +29,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 		TurnIdSchema,
 	} = identity;
 	const NullableReasonSchema = optionalNullableText(512);
-	const ThreadLinkStatusSchema = CodexThreadStatusTypeSchema;
+	const ThreadLinkStatusSchema = codexFieldSchema("threadStatusType");
 	const BrowserThreadLinkSourcePresentationSchema = z.enum([
 		"standard",
 		"subagent",
@@ -99,7 +93,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 	const BrowserTimelineFileChangeSchema = z
 		.object({
 			path: boundedText(LIMITS.path),
-			kind: CodexPatchChangeKindTypeSchema,
+			kind: codexFieldSchema("patchChangeKindType"),
 			movePath: boundedText(LIMITS.path).nullable(),
 			added: LineCountSchema,
 			removed: LineCountSchema,
@@ -182,7 +176,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 					z
 						.object({
 							step: boundedText(LIMITS.planStep),
-							status: CodexTurnPlanStepStatusSchema,
+							status: codexFieldSchema("turnPlanStepStatus"),
 						})
 						.strict(),
 				)
@@ -192,7 +186,7 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 	const BrowserTimelineTurnSchema = z
 		.object({
 			turnId: TurnIdSchema,
-			status: CodexTurnStatusSchema,
+			status: codexFieldSchema("turnStatus"),
 			items: z.array(BrowserTimelineItemSchema),
 			summary: boundedText(512),
 			outputsIncluded: z.boolean(),
@@ -215,8 +209,8 @@ function createBrowserThreadSchemas(identity: IdentitySchemas, context: Identity
 	/** The thread's latest token usage, and the context window it counts against. */
 	const BrowserTimelineUsageSchema = z
 		.object({
-			total: CodexTokenUsageBreakdownSchema,
-			last: CodexTokenUsageBreakdownSchema,
+			total: codexFieldSchema("tokenUsageBreakdown"),
+			last: codexFieldSchema("tokenUsageBreakdown"),
 			modelContextWindow: z.number().nonnegative().nullable(),
 		})
 		.strict();

@@ -14,7 +14,7 @@ import {
 	type IdentityLedger,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
 import {
@@ -124,7 +124,7 @@ function notify(h: Harness, method: string, params: unknown): void {
 			epoch: h.identity.validator.epoch,
 			requestId: null,
 		},
-		notification: decodeServerNotification({ method, params }),
+		notification: serverNotification({ method, params }),
 	});
 }
 
