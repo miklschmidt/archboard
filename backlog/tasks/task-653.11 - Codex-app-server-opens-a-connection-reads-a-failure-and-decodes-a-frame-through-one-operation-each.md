@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T23:17:00Z'
+updated_date: '2026-11-19T23:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -53,6 +53,8 @@ BLOCKED on D10: 16 ui-area test files (voice tests/ui 8, workbench tests/ui 7, w
 Resumed after the advisors settled the stop (decisions.md, TASK-653.11 stop: SETTLED). A: wire-identity.ts moved to codex-realtime-voice src/shared/browser/schemas; createCodexBrowserModel() without a context is the browser's model; ui and shared tests in voice, workbench and the example brand ids through it (browserIdentities helpers); ledger refusals of foreign and stale identities moved to tests/server/dynamic-approval/schemas/identity-refusals.test.ts on a connection-backed model; session-support replaceIdentity deleted. B: encodeFrame validates, then calls a transport-supplied allocateId that checks the cap before minting; order closed, method, params, cap, mint; new adversarial test. C: criterion 6 rewritten (owner decision 22). Failures: readCodexFailure/createCodexFailure in ./failure, the seven classes off the interface with names and messages unchanged; isCodexThreadStatusType folded into its two callers; ADR 0089; CONTEXT.md Codex connection. Width ceiling 108 -> 81.
 Code check: codex-app-server 16 functions (logic 7719, was 25 names / 7622); Codex protocol 8 names used outside (logic 2074, was 34 / 1965); no finding on either. Two anchors in the vault now name symbols the code no longer uses: Generation composition -> Frame transport (createCodexTransport in voice workbench.ts; now openCodexConnection) and Inbound protocol router -> Codex protocol (decodeServerNotification in inbound-router.ts; now decodeFrame/decodeFrameBody). The vault is left unchanged for the proposal.
 Packed voice declarations, per entry, base -> branch: schemas: changed createCodexBrowserModel (context is optional); server: changed VoiceAgent, VoiceAgentBrowserPort, VoiceAgentExtensions, VoiceAgentOptions, liveWorkhorseCheckouts (CodexTransport lost replaceIdentity; SessionResponsePayloads is spelled through the response schema map). No public name removed or added.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit ea8f61e35a), listed in the merge commit. Unbound: this ticket, CONTEXT.md, ADR 0089, interface-width-ceilings.json, the server-state startup preload fixture. Open for the final pass: Codex failures reaches Codex session's private mutation error class in session-api.ts, which no part binds (RELATIONSHIP_UNDRAWN).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
