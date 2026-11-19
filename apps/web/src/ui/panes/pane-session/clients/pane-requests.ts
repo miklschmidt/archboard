@@ -2,7 +2,7 @@
 
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import type { z } from "zod";
-import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
 	SHOWN_CONVERSATION_ROUTE,
 	type ShownConversationReply,
@@ -90,7 +90,7 @@ function loadedBundle(): string | undefined {
 function showModel(
 	vault: string,
 	pane: string,
-	reading: z.input<typeof ArchitecturePaneReadingSchema>,
+	reading: z.input<ReturnType<typeof architecturePaneReadingSchema>>,
 ): Promise<Pick<PaneModelRequest, "repository"> & { readonly model?: string }> {
 	return requestJson(inVault("/api/panes/show", vault), {
 		method: "POST",

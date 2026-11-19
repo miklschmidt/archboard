@@ -1,15 +1,15 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { z } from "zod";
 import {
-	ArchitectureModelReadSchema,
-	ArchitectureModuleEditResultSchema,
+	architectureModelReadSchema,
+	architectureModuleEditResultSchema,
 } from "@archboard/model/contract";
-import { LegacyInventoryReadSchema } from "@archboard/model/migration";
+import { legacyInventoryReadSchema } from "@archboard/model/migration";
 import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
@@ -55,9 +55,9 @@ beforeAll(async () => {
 	original.name = "Shop";
 	original.variants[0].content.nodes[0].responsibility = "Accept requests";
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(join(vault, "Shop.semantic.json"), JSON.stringify(original));
-	const inventory = LegacyInventoryReadSchema.parse(
+	const inventory = legacyInventoryReadSchema().parse(
 		answer(cli(["model", "inventory", "--origin", "Shop"]).stdout),
 	);
 	if (!inventory.success) throw new Error(JSON.stringify(inventory));
@@ -74,7 +74,7 @@ afterAll(async () => {
 test("CLI and HTTP share explicit migration authority, strict authorization, exact retry, and durable event completion", async () => {
 	const base = server!.base;
 	const read = async (query: Record<string, string> = {}) =>
-		ArchitectureModelReadSchema.parse(
+		architectureModelReadSchema().parse(
 			await (
 				await fetch(`${base}/api/architecture/model?${new URLSearchParams({ vault, ...query })}`)
 			).json(),
@@ -119,11 +119,11 @@ test("CLI and HTTP share explicit migration authority, strict authorization, exa
 		body: JSON.stringify({ ...request, vault }),
 	});
 	expect(response.status).toBe(200);
-	const applied = ArchitectureModuleEditResultSchema.parse(await response.json());
+	const applied = architectureModuleEditResultSchema().parse(await response.json());
 	if (!applied.success) throw new Error(JSON.stringify(applied));
 	const retried = cli(["model", "migrate"], request);
 	expect(retried.status, retried.stderr).toBe(0);
-	expect(ArchitectureModuleEditResultSchema.parse(answer(retried.stdout))).toEqual(applied);
+	expect(architectureModuleEditResultSchema().parse(answer(retried.stdout))).toEqual(applied);
 	const refused = cli(["model", "migrate"], { ...request, doing: "Another intent" });
 	expect(refused.status).toBe(2);
 	expect(answer(refused.stdout)).toMatchObject({ code: "OPERATION_REUSED" });

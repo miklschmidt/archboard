@@ -20,18 +20,18 @@ import {
 	CodeCheckResultSchema,
 	type CodeCheckResult,
 } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
 import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 /** One finding of the code check. */
 type CodeFinding = CodeCheckResult["findings"][number];
 
 const clean: VaultCheck = {
-	policy: DEFAULT_SEMANTIC_POLICY,
+	policy: defaultSemanticPolicy(),
 	configurationValid: true,
 	configurationFile: "config.yaml",
 	fingerprint: "f",
@@ -162,7 +162,7 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const SEMANTICS_ROUTE = "/api/vault/check";
 const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
-	semantics: VaultCheckSchema.extend({ timings: CodeCheckResultSchema.shape.timings }).optional(),
+	semantics: vaultCheckSchema().extend({ timings: CodeCheckResultSchema.shape.timings }).optional(),
 	code: CodeCheckResultSchema.optional(),
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });

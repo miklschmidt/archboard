@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { corridorPoints, routesCross } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -7,7 +7,7 @@ import modelRequestPath from "#tests/runtime/support/fixtures/model-request-path
 import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
 
 /** The vocabulary of the dogfood vault the fixtures are taken from. */
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: Object.fromEntries(
 		["module", "service", "route", "external", "ui", "function", "system"].map((kind) => [

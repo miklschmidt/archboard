@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readArchitectureModel } from "@archboard/model/store-read";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import {
 	previewFixture,
 	savePreviewPlan,
@@ -50,7 +50,7 @@ test("draft conversion requires explicit exact baselines and keeps same-named pl
 			},
 		],
 	});
-	const result = ArchitectureModelReadSchema.parse(
+	const result = architectureModelReadSchema().parse(
 		await readArchitectureModel(vault, undefined, undefined, { preview: "Shop" }),
 	);
 	if (!result.success) throw new Error(JSON.stringify(result));
@@ -143,7 +143,7 @@ test("standing drafts use the retained conflict base and preserve lifecycle and 
 			},
 		],
 	});
-	const result = ArchitectureModelReadSchema.parse(
+	const result = architectureModelReadSchema().parse(
 		await readArchitectureModel(vault, undefined, undefined, {
 			preview: "Shop",
 			state: "Shop/System#Draft",

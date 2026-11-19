@@ -63,9 +63,11 @@ import {
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
 import type { WalkthroughBeatSchema } from "@archboard/model/content";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 
-type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type SemanticPanePart = NonNullable<
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
+>[number];
 type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** Inputs for a semantic pane. */

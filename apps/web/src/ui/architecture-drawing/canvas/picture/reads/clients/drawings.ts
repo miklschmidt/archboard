@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
-import { VaultCheckSchema } from "@archboard/model/policy";
+import { vaultCheckSchema } from "@archboard/model/policy";
 import { inVault } from "@archboard/server-requests";
 import { LegacyListingSchema } from "@archboard/model/legacy-listing";
 import {
@@ -17,7 +17,7 @@ import {
 type ListedLegacyBoard = z.infer<typeof LegacyListingSchema>["boards"][number];
 
 type LegacyListing = z.infer<typeof LegacyListingSchema>;
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 /** What the server remembers of a vault's code passes. */
 type RememberedFindings = z.infer<ReturnType<typeof rememberedFindingsSchema>>;
 
@@ -222,7 +222,7 @@ async function fetchVaultCheck(vault: string, signal?: AbortSignal): Promise<Vau
 	if (!response.ok) {
 		throw new Error("The vault check failed. Check the server connection and try again.");
 	}
-	return VaultCheckSchema.parse(await response.json());
+	return vaultCheckSchema().parse(await response.json());
 }
 
 /** The route the server answers the findings of the last code pass on. */

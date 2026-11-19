@@ -2,7 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ArchitectureImportRequestSchema } from "@archboard/model/contract";
+import { architectureImportRequestSchema } from "@archboard/model/contract";
 import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
@@ -47,7 +47,7 @@ async function initializeTakeRepository(holder: string, source: TrackedVault): P
  */
 async function importRequest(source: TrackedVault) {
 	if (source === "examples/web-shop") {
-		return ArchitectureImportRequestSchema.parse(
+		return architectureImportRequestSchema().parse(
 			JSON.parse(readFileSync(join(ROOT, source, "history.import.json"), "utf8")),
 		);
 	}

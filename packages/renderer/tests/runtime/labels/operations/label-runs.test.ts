@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import parentReturn from "#tests/runtime/support/fixtures/parent-return.json";
 import reservedCorner from "#tests/runtime/support/fixtures/reserved-label-corner.json";
 import reservedLane from "#tests/runtime/support/fixtures/reserved-label-lane.json";
@@ -18,7 +18,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The room a line's words keep from a card: archboard_layout::constants::LABEL_CARD_CLEARANCE. */
 const LABEL_CARD_CLEARANCE = 16;
@@ -35,7 +35,7 @@ const AIR = { blocks: PLANNED_LABEL_CARD_CLEARANCE, track: LABEL_CARD_CLEARANCE 
 const LABEL_AIR = LABEL_LABEL_CLEARANCE;
 
 test.each(
-	LayoutEngineSchema.options.flatMap((layout) =>
+	layoutEngineSchema().options.flatMap((layout) =>
 		[false, true].map((nested) => [nested, layout] as const),
 	),
 )(
@@ -58,7 +58,7 @@ test.each(
 			],
 		});
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,
@@ -105,7 +105,7 @@ test.each(
 		}
 		expect(
 			await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content,
 				theme: "light",
 				layout,
@@ -127,7 +127,7 @@ test("a long relationship's label remains within reach of its endpoints on a cle
 		],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -148,7 +148,7 @@ test("a long relationship's label remains within reach of its endpoints on a cle
 test("reserved labels keep their whole straight run when a neighboring corner rounds", async () => {
 	const content = orderedFixture(reservedCorner);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -160,7 +160,7 @@ test("reserved labels keep their whole straight run when a neighboring corner ro
 test("reserved labels follow their shared lanes without covering routes, cards or other labels", async () => {
 	const content = orderedFixture(reservedLane);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 	});
@@ -175,7 +175,7 @@ test("reserved labels follow their shared lanes without covering routes, cards o
 test("a source-owned label keeps a private run clear of cards and other labels", async () => {
 	const content = orderedFixture(oneCommandPath);
 	const drawn = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "blocks",
@@ -191,7 +191,7 @@ test("a source-owned label keeps a private run clear of cards and other labels",
 test("a row of labels moves toward its gap's middle only as far as the lines turning there leave it a lane", async () => {
 	const content = orderedFixture(archboardServer);
 	const drawn = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -207,7 +207,7 @@ test("a row of labels moves toward its gap's middle only as far as the lines tur
 test("a response from a child keeps its label on the return route", async () => {
 	const content = orderedFixture(parentReturn);
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout: "track",
@@ -217,7 +217,7 @@ test("a response from a child keeps its label on the return route", async () => 
 
 // Reduced from Diagram presentation components: a driver into the child
 // makes Graphviz rank the response label beyond both ends of the return route.
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"a driven child's response reserves a label run between its endpoints (%s)",
 	async (layout) => {
 		const content = orderedFixture({
@@ -235,7 +235,7 @@ test.each(LayoutEngineSchema.options)(
 		});
 		const drawing = await renderArchitecture({
 			content,
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			theme: "light",
 			layout,
 		});

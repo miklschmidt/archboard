@@ -16,7 +16,7 @@ import type express from "express";
 import type { z } from "zod";
 import type * as ServerModule from "#server/http/application/wiring/application.ts";
 import { codeFileSchema, codeFilesSchema } from "@archboard/code-intel/code-check";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const REPO = "github.com/test/files";
 const ORDERS = [
@@ -151,7 +151,7 @@ beforeAll(async () => {
 		]),
 	);
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(
 		join(vault, "model.json"),
 		JSON.stringify({

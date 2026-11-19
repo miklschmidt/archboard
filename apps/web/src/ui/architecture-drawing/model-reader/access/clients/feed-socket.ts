@@ -1,5 +1,5 @@
 import {
-	ArchitectureFeedFrameSchema,
+	architectureFeedFrameSchema,
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
@@ -18,7 +18,7 @@ interface FeedFollower {
  */
 function decodedFrame(data: unknown): ArchitectureFeedFrame | null {
 	try {
-		const frame = ArchitectureFeedFrameSchema.safeParse(JSON.parse(String(data)));
+		const frame = architectureFeedFrameSchema().safeParse(JSON.parse(String(data)));
 		return frame.success ? frame.data : null;
 	} catch {
 		return null;

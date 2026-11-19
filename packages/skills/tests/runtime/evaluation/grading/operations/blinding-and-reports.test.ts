@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	anonymousRunId,
 	bundleForGrader,
@@ -111,7 +111,7 @@ const RUN: CompletedRun = {
 	],
 	documents: new Map([["Flask", DOCUMENT]]),
 	snapshot: new Map(),
-	policy: DEFAULT_SEMANTIC_POLICY,
+	policy: defaultSemanticPolicy(),
 	inspections: [
 		{
 			document: "Flask",

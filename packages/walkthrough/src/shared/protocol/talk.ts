@@ -1,5 +1,5 @@
 import { canonicalReadingProblems } from "#shared/protocol/canonical.ts";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 // A talk: what the live pass of a recording heard and did, for the second pass
 // to render frame by frame (TASK-381).
 //
@@ -18,16 +18,16 @@ import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { z } from "zod";
 
 import {
-	DEFAULT_LAYOUT_ENGINE,
-	DiagramThemeSchema,
-	LayoutEngineSchema,
+	defaultLayoutEngine,
+	diagramThemeSchema,
+	layoutEngineSchema,
 } from "@archboard/model/render-reply";
 import {
 	addressedVariant,
 	type LegacyBoard,
 	parseLegacyBoard,
 } from "@archboard/model/legacy-board";
-import { VaultCheckSchema } from "@archboard/model/policy";
+import { vaultCheckSchema } from "@archboard/model/policy";
 import { RecordingLanguageSchema } from "#shared/schemas/recording-language.ts";
 
 /** What a talk's file says it is. */
@@ -138,12 +138,12 @@ const TalkSchema = z
 		/** The language the voice spoke. */
 		language: RecordingLanguageSchema,
 		/** The theme the talk is rendered in unless another is asked for. */
-		theme: DiagramThemeSchema,
+		theme: diagramThemeSchema(),
 		/**
 		 * The layout engine the talk is rendered with unless another is asked for (TASK-469). A talk
 		 * kept before it was stated was drawn with the default engine, and reads as that.
 		 */
-		layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
+		layout: layoutEngineSchema().default(defaultLayoutEngine()),
 		board: TalkBoardSchema,
 		/** The voice, beside `talk.json`: mono 16-bit PCM at the talk's sample rate. */
 		audio: z
@@ -160,9 +160,9 @@ const TalkSchema = z
 		events: z.array(TalkEventSchema),
 		/** The board's document as the Archboard server served it. */
 		document: z.unknown(),
-		architecture: ArchitectureModelReadSchema.options[0].optional(),
+		architecture: architectureModelReadSchema().options[0].optional(),
 		/** The vault's checked policy the board was drawn under. */
-		policy: VaultCheckSchema,
+		policy: vaultCheckSchema(),
 	})
 	.strict()
 	.superRefine((talk, context) => {
@@ -405,8 +405,8 @@ function voiceLevels(samples: Int16Array): number[] {
  */
 const ReplayOptionsSchema = z
 	.object({
-		theme: DiagramThemeSchema,
-		layout: LayoutEngineSchema,
+		theme: diagramThemeSchema(),
+		layout: layoutEngineSchema(),
 		levels: z.array(z.number().min(0).max(1)),
 	})
 	.strict();

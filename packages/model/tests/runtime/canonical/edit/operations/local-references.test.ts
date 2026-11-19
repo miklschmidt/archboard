@@ -7,9 +7,9 @@ import {
 	listArchitectureCheckpoints,
 } from "@archboard/model/store-read";
 import {
-	ArchitectureModuleEditResultSchema,
-	ArchitectureModelReadSchema,
-	ArchitectureCheckpointListSchema,
+	architectureModuleEditResultSchema,
+	architectureModelReadSchema,
+	architectureCheckpointListSchema,
 	type ArchitectureModuleEdit,
 } from "@archboard/model/contract";
 import { editArchitectureModule, retainArchitectureCheckpoint } from "@archboard/model/store-write";
@@ -100,15 +100,15 @@ test("a proposal pins local current separately from its own draft and preserves 
 	});
 	const retry = await editArchitectureModule(local.vault, intent);
 	expect(retry).toEqual(created);
-	expect(ArchitectureModuleEditResultSchema.parse(created)).toEqual(created);
-	expect(ArchitectureModuleEditResultSchema.parse(retry)).toEqual(created);
+	expect(architectureModuleEditResultSchema().parse(created)).toEqual(created);
+	expect(architectureModuleEditResultSchema().parse(retry)).toEqual(created);
 	expect(
-		ArchitectureModelReadSchema.parse(
+		architectureModelReadSchema().parse(
 			await readArchitectureCheckpoint(local.vault, created.checkpoint.id),
 		),
 	).toMatchObject({ success: true, checkpoint: { id: created.checkpoint.id } });
 	expect(
-		ArchitectureCheckpointListSchema.parse(await listArchitectureCheckpoints(local.vault)),
+		architectureCheckpointListSchema().parse(await listArchitectureCheckpoints(local.vault)),
 	).toMatchObject({
 		success: true,
 		checkpoints: expect.arrayContaining([expect.objectContaining({ id: created.checkpoint.id })]),
@@ -124,7 +124,7 @@ test("a proposal pins local current separately from its own draft and preserves 
 	const workerPath = join(local.vault, "worker.module.json");
 	const worker = JSON.parse(readFileSync(workerPath, "utf8"));
 	writeFileSync(workerPath, JSON.stringify({ ...worker, name: "Later worker" }));
-	const exact = ArchitectureModelReadSchema.parse(
+	const exact = architectureModelReadSchema().parse(
 		await readArchitectureModel(local.vault, "Shop#Gateway", undefined, {
 			checkpoint: created.checkpoint.id,
 			reference: 0,

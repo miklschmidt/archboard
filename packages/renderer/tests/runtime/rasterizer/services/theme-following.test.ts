@@ -20,7 +20,7 @@ import {
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/rasterizer/services/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;
@@ -55,7 +55,7 @@ let drawn: RenderedDiagram;
 
 beforeAll(async () => {
 	drawn = await renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: CONTENT,
 		theme: "auto",
 		grammar: "architecture",

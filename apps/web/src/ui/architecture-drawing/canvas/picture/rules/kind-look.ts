@@ -7,7 +7,7 @@
 // About page fetches no icon of its own, and a kind the picture does not draw
 // has no icon here and is drawn with a plain mark.
 
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 /** How a relationship kind is drawn as a chip: its words, its line colour and its dash. */
@@ -123,6 +123,6 @@ function kindLookOf(
 }
 
 /** The look before the vault's policy has arrived. */
-const DEFAULT_LOOK_POLICY = DEFAULT_SEMANTIC_POLICY;
+const DEFAULT_LOOK_POLICY = defaultSemanticPolicy();
 
 export { DEFAULT_LOOK_POLICY, kindLookOf, type KindLook };

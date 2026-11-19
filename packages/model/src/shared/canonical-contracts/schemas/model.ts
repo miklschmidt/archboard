@@ -458,3 +458,91 @@ export {
 	type ArchitectureModel,
 	type ModelDiagnostic,
 };
+
+/**
+ * The schema `ArchitectureArchiveInitializationSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureArchiveInitializationSchema(): typeof ArchitectureArchiveInitializationSchema {
+	return ArchitectureArchiveInitializationSchema;
+}
+
+/**
+ * The schema `ArchitectureModelReadSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureModelReadSchema(): typeof ArchitectureModelReadSchema {
+	return ArchitectureModelReadSchema;
+}
+
+/**
+ * The schema `ArchitecturePublicationDestinationSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architecturePublicationDestinationSchema(): typeof ArchitecturePublicationDestinationSchema {
+	return ArchitecturePublicationDestinationSchema;
+}
+
+/**
+ * The schema `ArchitecturePublicationRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architecturePublicationRequestSchema(): typeof ArchitecturePublicationRequestSchema {
+	return ArchitecturePublicationRequestSchema;
+}
+
+/**
+ * The schema `ArchitecturePublicationSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architecturePublicationSchema(): typeof ArchitecturePublicationSchema {
+	return ArchitecturePublicationSchema;
+}
+
+/**
+ * The schema `ArchitectureCheckpointRequestSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureCheckpointRequestSchema(): typeof ArchitectureCheckpointRequestSchema {
+	return ArchitectureCheckpointRequestSchema;
+}
+
+/**
+ * The schema `ArchitectureCheckpointRetainSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureCheckpointRetainSchema(): typeof ArchitectureCheckpointRetainSchema {
+	return ArchitectureCheckpointRetainSchema;
+}
+
+/**
+ * The schema `ArchitectureCheckpointListSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureCheckpointListSchema(): typeof ArchitectureCheckpointListSchema {
+	return ArchitectureCheckpointListSchema;
+}
+
+/**
+ * The schema `ArchitectureCheckpointRowsSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureCheckpointRowsSchema(): typeof ArchitectureCheckpointRowsSchema {
+	return ArchitectureCheckpointRowsSchema;
+}
+
+/**
+ * The schema `ModuleNavigationReadSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function moduleNavigationReadSchema(): typeof ModuleNavigationReadSchema {
+	return ModuleNavigationReadSchema;
+}
+
+/**
+ * The schema `ArchitectureRetainedModuleSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function architectureRetainedModuleSchema(): typeof ArchitectureRetainedModuleSchema {
+	return ArchitectureRetainedModuleSchema;
+}

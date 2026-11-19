@@ -23,3 +23,11 @@ const ModelSnapshotSchema = z.strictObject({
 });
 
 export { ModelSnapshotSchema };
+
+/**
+ * The schema `ModelSnapshotSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function modelSnapshotSchema(): typeof ModelSnapshotSchema {
+	return ModelSnapshotSchema;
+}

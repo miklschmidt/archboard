@@ -8,7 +8,7 @@ import {
 	migrateArchitectureModel,
 	saveLegacyMappingPlan,
 } from "@archboard/model/store-write";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import {
 	createOpenerFixture,
 	jsonBody,
@@ -158,7 +158,7 @@ test("code activation preserves exact original coverage and refuses conflicting 
 	const vault = join(fixture.checkout, ".archboard/vault");
 	options.vault = vault;
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	const original = JSON.parse(
 		readFileSync(resolve("examples/legacy-migration/originals/System.semantic.json"), "utf8"),
 	);

@@ -4,13 +4,13 @@ import { fileURLToPath } from "node:url";
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type { z } from "zod";
 import type { repositoryListingSchema } from "@archboard/workspace/repositories";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type PanesReport = ReturnType<typeof buildPanesReport>;
 type PanesBody = Omit<PanesReport, "panes"> & {
 	success: boolean;
 	panes: (PanesReport["panes"][number] & {
-		architecture: z.infer<typeof SemanticPaneContextSchema>["architecture"] | null;
+		architecture: z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"] | null;
 	})[];
 };
 type HealthBody = { websocket_clients: number };

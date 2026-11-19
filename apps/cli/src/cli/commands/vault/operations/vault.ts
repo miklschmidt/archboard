@@ -31,7 +31,7 @@ import {
 	CodeCheckResultSchema,
 	type CodeCheckResult,
 } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
+import { diagnosticLine, vaultCheckSchema } from "@archboard/model/policy";
 import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
 import { vaultDirectory } from "@archboard/workspace/vault";
 
@@ -153,7 +153,7 @@ function timingLine(timing: CheckTiming): string {
 }
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
-const SemanticsPartSchema = VaultCheckSchema.extend({
+const SemanticsPartSchema = vaultCheckSchema().extend({
 	timings: CodeCheckResultSchema.shape.timings,
 });
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
@@ -562,7 +562,7 @@ const semanticConfigContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ schema: z.boolean().optional() }) },
-	result: z.union([VaultCheckSchema, z.record(z.string(), z.unknown())]),
+	result: z.union([vaultCheckSchema(), z.record(z.string(), z.unknown())]),
 	output,
 	prerequisites: [],
 	effects: ["read"],

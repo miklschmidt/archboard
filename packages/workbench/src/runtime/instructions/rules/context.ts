@@ -4,10 +4,10 @@ import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
 } from "@archboard/codex-realtime-voice/runtime";
-import { DiagramGrammarSchema } from "@archboard/model/views";
-import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
-import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
-import { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
+import { diagramGrammarSchema } from "@archboard/model/views";
+import { variantLifecycleSchema } from "@archboard/model/legacy-board";
+import { reconciliationKindSchema } from "@archboard/model/reconciliation";
+import { semanticSubjectKindSchema } from "@archboard/model/pane-context";
 
 /**
  * UTF-8 byte length of a string, the unit every context size limit is written in.
@@ -60,7 +60,7 @@ const DoingSchema = boundedUtf8Text(512, "doing");
  * is no spelling here for anything that was merely drawn, because there is
  * nothing an agent could be asked to do about a lane or a label (ADR 0023).
  */
-const SubjectKindSchema = SemanticSubjectKindSchema;
+const SubjectKindSchema = semanticSubjectKindSchema();
 
 const SelectedSubjectSchema = z.strictObject({
 	kind: SubjectKindSchema,
@@ -80,7 +80,7 @@ const SelectedSubjectSchema = z.strictObject({
 const ReconciliationIssueSchema = z.strictObject({
 	subject: SubjectIdSchema,
 	what: SubjectNameSchema,
-	kind: ReconciliationKindSchema,
+	kind: reconciliationKindSchema(),
 	field: SubjectNameSchema.nullable(),
 	repair: boundedUtf8Text(512, "repair"),
 });
@@ -182,7 +182,7 @@ const ArchboardContextRawSchema = z.strictObject({
 		.strictObject({
 			id: SubjectIdSchema,
 			name: SubjectNameSchema,
-			lifecycle: VariantLifecycleSchema,
+			lifecycle: variantLifecycleSchema(),
 		})
 		.nullable(),
 	/** Which of its views, or null when the variant is read whole. */
@@ -190,7 +190,7 @@ const ArchboardContextRawSchema = z.strictObject({
 		.strictObject({
 			id: SubjectIdSchema,
 			name: SubjectNameSchema,
-			grammar: DiagramGrammarSchema,
+			grammar: diagramGrammarSchema(),
 		})
 		.nullable(),
 	/**

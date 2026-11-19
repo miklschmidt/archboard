@@ -7,7 +7,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps, type ContextType } from "react";
 import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -112,7 +112,7 @@ function mount(setup: Setup): void {
 			selectedState: STATE,
 			revision: REVISION,
 			modules: [{ binding: { repo: "example/shop", path: "src" } }],
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 		},
 		projection: {
 			complete: {
@@ -124,7 +124,7 @@ function mount(setup: Setup): void {
 		},
 		label: "What a module exposes",
 		keys: ["entryPoints", "codeExports"],
-		look: kindLookOf(DEFAULT_SEMANTIC_POLICY, new Map()),
+		look: kindLookOf(defaultSemanticPolicy(), new Map()),
 		selected: null,
 		view: { measure: "entryPoints", fewest: false, show: "all" },
 		onView: nothing,

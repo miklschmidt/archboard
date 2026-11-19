@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 
-const CaptureSchema = ArchitectureModelReadSchema.options[0].shape.explanation.unwrap();
+const CaptureSchema = architectureModelReadSchema().options[0].shape.explanation.unwrap();
 const ExplanationActionRequestSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("latest"), tabSessionId: z.string().min(1) }),
 	z.strictObject({
@@ -47,7 +47,7 @@ const ExplanationActionResultSchema = z.discriminatedUnion("success", [
 			success: z.literal(false),
 			code: z.string(),
 			error: z.string(),
-			diagnostics: ArchitectureModelReadSchema.options[1].shape.diagnostics.optional(),
+			diagnostics: architectureModelReadSchema().options[1].shape.diagnostics.optional(),
 		})
 		.strict(),
 ]);

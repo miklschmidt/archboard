@@ -18,7 +18,7 @@ import express from "express";
 import type * as ServerModule from "#server/http/application/wiring/application.ts";
 import type * as RouteModule from "#server/http/handlers/code-checks/routes/code-check-route.ts";
 import { codeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
@@ -26,7 +26,7 @@ import {
 	releaseArchitectureClaim,
 } from "@archboard/model/store-write";
 const proposals: string[] = [];
-import { VaultCheckSchema } from "@archboard/model/policy";
+import { vaultCheckSchema } from "@archboard/model/policy";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -93,7 +93,7 @@ beforeAll(async () => {
 	mkdirSync(vault, { recursive: true });
 	writeFileSync(join(checkout, "src", "a.ts"), "1\n");
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
-	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(defaultSemanticPolicy()));
 	writeFileSync(
 		join(vault, "model.json"),
 		JSON.stringify({
@@ -175,9 +175,11 @@ afterAll(() => {
 
 test("the polled semantic check stays separate from canonical code inspection", async () => {
 	const base = await listen(server.app);
-	const polled = VaultCheckSchema.passthrough().parse(
-		await (await fetch(`${base}/api/vault/check?vault=${encodeURIComponent(vault)}`)).json(),
-	);
+	const polled = vaultCheckSchema()
+		.passthrough()
+		.parse(
+			await (await fetch(`${base}/api/vault/check?vault=${encodeURIComponent(vault)}`)).json(),
+		);
 	expect(Object.keys(polled)).not.toContain("behind");
 	expect(polled.diagnostics.map((one) => one.code)).not.toContain("BINDING_SYMBOL_MISSING");
 	const answer = codeCheckAnswerSchema().parse(

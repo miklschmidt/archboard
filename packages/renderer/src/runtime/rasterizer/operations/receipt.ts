@@ -1,5 +1,5 @@
-import { ArchitectureRenderResultSchema } from "@archboard/model/contract";
-import { StandaloneThemeSchema } from "@archboard/model/render-reply";
+import { architectureRenderResultSchema } from "@archboard/model/contract";
+import { standaloneThemeSchema } from "@archboard/model/render-reply";
 // The public receipt for one semantic rasterization: the saved document picture,
 // its selectors and dimensions, and the renderer document that produced it.
 // The CLI writes this shape and evaluation tooling parses the same authority.
@@ -7,10 +7,10 @@ import { StandaloneThemeSchema } from "@archboard/model/render-reply";
 import { z } from "zod";
 
 import {
-	DiagramThemeSchema,
-	OfferedViewSchema,
-	PictureReceiptShape,
-	RenderedVariantSchema,
+	diagramThemeSchema,
+	offeredViewSchema,
+	pictureReceiptShape,
+	renderedVariantSchema,
 } from "@archboard/model/render-reply";
 
 /** The diagram page before bitmap scaling. */
@@ -30,7 +30,7 @@ const SemanticRasterReceiptSchema = z.object({
 	document: z.string(),
 	version: z.int(),
 	/** What was drawn; ids select it exactly and names are what a person types. */
-	variant: RenderedVariantSchema,
+	variant: renderedVariantSchema(),
 	/**
 	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
@@ -39,10 +39,10 @@ const SemanticRasterReceiptSchema = z.object({
 	 * with none, with the one it came from), so the receipt names the other
 	 * side; the bitmap cannot.
 	 */
-	comparedWith: RenderedVariantSchema.nullable(),
+	comparedWith: renderedVariantSchema().nullable(),
 	/** The selected view, or null when the whole variant was drawn. */
-	view: OfferedViewSchema.nullable(),
-	theme: DiagramThemeSchema,
+	view: offeredViewSchema().nullable(),
+	theme: diagramThemeSchema(),
 	file: z.string(),
 	/** Bitmap pixels. */
 	width: z.int(),
@@ -57,7 +57,7 @@ const SemanticRasterReceiptSchema = z.object({
 	 * Every node, edge, flow and step the diagram draws, and the counts of the
 	 * marks its key shows: of the whole diagram, also when a region is captured.
 	 */
-	...PictureReceiptShape,
+	...pictureReceiptShape(),
 	/** The exact renderer document and stable presentation state used for capture. */
 	source: z.object({
 		renderer: z.literal("semantic-renderer"),
@@ -68,10 +68,10 @@ const SemanticRasterReceiptSchema = z.object({
 
 export { SemanticRasterReceiptSchema };
 
-const ArchitectureRasterReceiptSchema = ArchitectureRenderResultSchema.options[0]
-	.omit({ svg: true, atlas: true })
+const ArchitectureRasterReceiptSchema = architectureRenderResultSchema()
+	.options[0].omit({ svg: true, atlas: true })
 	.extend({
-		theme: StandaloneThemeSchema,
+		theme: standaloneThemeSchema(),
 		file: z.string(),
 		scale: z.number(),
 		diagram: SemanticRasterPageSizeSchema,

@@ -24,12 +24,12 @@ import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
 import { z } from "zod";
-import { ArchitectureRenderResultSchema } from "@archboard/model/contract";
+import { architectureRenderResultSchema } from "@archboard/model/contract";
 import type { prepareContentHere } from "@archboard/renderer/browser";
 
 import {
-	DEFAULT_LAYOUT_ENGINE,
-	SemanticRenderReplySchema,
+	defaultLayoutEngine,
+	semanticRenderReplySchema,
 	type SemanticRenderReply,
 } from "@archboard/model/render-reply";
 import {
@@ -57,12 +57,12 @@ interface PictureStorage {
 }
 
 type ModelDrawing = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
-const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
-	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
+const ModelDrawingSchema = architectureRenderResultSchema()
+	.options[0].pick({ svg: true, width: true, height: true, atlas: true, placed: true })
 	.extend({
 		painting: z.string(),
-		appearances: SemanticRenderReplySchema.options[0].shape.appearances,
-		legend: SemanticRenderReplySchema.options[0].shape.legend,
+		appearances: semanticRenderReplySchema().options[0].shape.appearances,
+		legend: semanticRenderReplySchema().options[0].shape.legend,
 		readingDirection: z
 			.literal("down" satisfies NonNullable<ModelDrawing["readingDirection"]>)
 			.optional(),
@@ -209,7 +209,7 @@ function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string
 		request.variant ?? "",
 		request.view ?? "",
 		comparisonKey(request),
-		request.layout ?? DEFAULT_LAYOUT_ENGINE,
+		request.layout ?? defaultLayoutEngine(),
 		stamp.version,
 		stamp.fingerprint,
 		stamp.renderer,
@@ -229,7 +229,7 @@ async function readCachedPicture(
 	current: PictureStamp,
 ): Promise<SemanticRenderReply | undefined> {
 	try {
-		const parsed = SemanticRenderReplySchema.safeParse(
+		const parsed = semanticRenderReplySchema().safeParse(
 			await storage.get(pictureKey(request, current)),
 		);
 		return parsed.success ? parsed.data : undefined;

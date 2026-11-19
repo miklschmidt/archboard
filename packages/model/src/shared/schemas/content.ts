@@ -326,3 +326,19 @@ export {
 	subjectIds,
 	emptyContent,
 };
+
+/**
+ * The value `DEFAULT_TRAFFIC_SPEED`, for callers that read it.
+ * @returns The value.
+ */
+export function defaultTrafficSpeed(): typeof DEFAULT_TRAFFIC_SPEED {
+	return DEFAULT_TRAFFIC_SPEED;
+}
+
+/**
+ * The schema `EdgeTrafficSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function edgeTrafficSchema(): typeof EdgeTrafficSchema {
+	return EdgeTrafficSchema;
+}

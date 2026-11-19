@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
+import { architectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
 import {
-	DiagramThemeSchema,
-	LayoutEngineSchema,
-	DEFAULT_LAYOUT_ENGINE,
+	diagramThemeSchema,
+	layoutEngineSchema,
+	defaultLayoutEngine,
 } from "@archboard/model/render-reply";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
@@ -26,8 +26,8 @@ const InputSchema = z.object({
 	walkthrough: z.string(),
 	out: z.string(),
 	talk: z.string().optional(),
-	theme: DiagramThemeSchema.default("dark"),
-	layout: LayoutEngineSchema.default(DEFAULT_LAYOUT_ENGINE),
+	theme: diagramThemeSchema().default("dark"),
+	layout: layoutEngineSchema().default(defaultLayoutEngine()),
 	language: RecordingLanguageSchema.default(DEFAULT_RECORDING_LANGUAGE),
 });
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -137,7 +137,7 @@ const modelRecordContract = defineCommand({
 			spellings: ["--theme"],
 			value: "required",
 			placeholder: "theme",
-			choices: DiagramThemeSchema.options,
+			choices: diagramThemeSchema().options,
 			default: "dark",
 			description: "Which palette the recording draws in",
 		},
@@ -147,8 +147,8 @@ const modelRecordContract = defineCommand({
 			spellings: ["--layout"],
 			value: "required",
 			placeholder: "engine",
-			choices: LayoutEngineSchema.options,
-			default: DEFAULT_LAYOUT_ENGINE,
+			choices: layoutEngineSchema().options,
+			default: defaultLayoutEngine(),
 			description: "Which layout engine lays the model out",
 		},
 		{
@@ -197,7 +197,7 @@ const modelRecordContract = defineCommand({
 			model: z.string(),
 			state: z.string().nullable(),
 			checkpoint: z.string(),
-			revision: ArchitectureModelReadSchema.options[0].shape.revision,
+			revision: architectureModelReadSchema().options[0].shape.revision,
 			walkthrough: z.object({ id: z.string(), name: z.string() }),
 			steps: z.int(),
 			file: z.string(),
@@ -205,11 +205,11 @@ const modelRecordContract = defineCommand({
 			mimeType: z.string(),
 			durationMs: z.int(),
 			frames: z.int(),
-			theme: DiagramThemeSchema,
-			layout: LayoutEngineSchema,
+			theme: diagramThemeSchema(),
+			layout: layoutEngineSchema(),
 			talk: z.string(),
 		}),
-		ArchitectureModelReadSchema.options[1],
+		architectureModelReadSchema().options[1],
 	]),
 	outcomes: [
 		{

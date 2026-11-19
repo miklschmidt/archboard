@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureArchiveInitializationSchema } from "@archboard/model/contract";
+import { architectureArchiveInitializationSchema } from "@archboard/model/contract";
 import { initializeArchitectureArchiveOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
@@ -13,7 +13,7 @@ const modelArchiveInitContract = defineCommand({
 	examples: ["archboard model archive-init -C /tmp/architecture-notes"],
 	parameters: [],
 	input: { ingress: z.object({}).strict() },
-	result: ArchitectureArchiveInitializationSchema,
+	result: architectureArchiveInitializationSchema(),
 	output: {
 		cases: [
 			{

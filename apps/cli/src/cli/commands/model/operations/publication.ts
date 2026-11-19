@@ -1,8 +1,8 @@
 import { z } from "zod";
 import {
-	ArchitecturePublicationSchema,
-	ArchitecturePublicationRequestSchema,
-	ArchitecturePublicationDestinationSchema,
+	architecturePublicationSchema,
+	architecturePublicationRequestSchema,
+	architecturePublicationDestinationSchema,
 } from "@archboard/model/contract";
 import {
 	readArchitecturePublicationOnServer,
@@ -46,7 +46,7 @@ const destinationParameters: TokenParameter[] = [
  * @param result The shared runtime outcome.
  * @returns The declared JSON result and failure outcome.
  */
-function presented(result: z.infer<typeof ArchitecturePublicationSchema>) {
+function presented(result: z.infer<ReturnType<typeof architecturePublicationSchema>>) {
 	return {
 		result,
 		...(result.success
@@ -84,8 +84,8 @@ const modelPublicationContract = defineCommand({
 		"Reads durable local evidence for one exact checkpoint without contacting a remote. Ordinary source pushes never establish archive publication.",
 	examples: ["archboard model publication <checkpoint> -C /tmp/shop"],
 	parameters: [checkpointParameter],
-	input: { ingress: ArchitecturePublicationRequestSchema.pick({ checkpoint: true }) },
-	result: ArchitecturePublicationSchema,
+	input: { ingress: architecturePublicationRequestSchema().pick({ checkpoint: true }) },
+	result: architecturePublicationSchema(),
 	output: publicationOutput,
 	prerequisites: ["server"],
 	effects: ["read"],
@@ -130,7 +130,7 @@ const modelPublicationConfigureContract = defineCommand({
 		"archboard model publication-configure --remote archive --ref refs/heads/archboard-history -C /tmp/shop",
 	],
 	parameters: destinationParameters,
-	input: { ingress: ArchitecturePublicationDestinationSchema },
+	input: { ingress: architecturePublicationDestinationSchema() },
 	effects: ["server-state-write"],
 	relationships: [
 		{
@@ -163,7 +163,7 @@ const modelPublishContract = defineCommand({
 		"archboard model publish <checkpoint> --remote archive --ref refs/heads/archboard-history -C /tmp/shop",
 	],
 	parameters: [checkpointParameter, ...destinationParameters],
-	input: { ingress: ArchitecturePublicationRequestSchema },
+	input: { ingress: architecturePublicationRequestSchema() },
 	effects: ["server-state-write"],
 	relationships: [
 		{

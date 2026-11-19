@@ -75,13 +75,13 @@
 // and gives a module the model marks `external` its counts and no finding on
 // its exports.
 
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { configurableLanguages } from "@archboard/workspace/languages";
 import { z } from "zod";
-import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/policy";
+import { evidenceKindSchema, vaultDiagnosticSchema } from "@archboard/model/policy";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
-const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
+const CodeCheckSubjectSchema = vaultDiagnosticSchema().shape.subject.unwrap();
 
 /** One document the check read, at the variant it read, and the version it read. */
 const CodeCheckDocumentSchema = z
@@ -98,7 +98,7 @@ const CodeCheckDocumentSchema = z
  */
 const CodeEvidenceSchema = z
 	.object({
-		kind: EvidenceKindSchema,
+		kind: evidenceKindSchema(),
 		resolution: z.enum(["resolved", "candidate"]),
 		from: z.string().optional(),
 		to: z.string().optional(),
@@ -144,16 +144,18 @@ const DroppedPartSchema = z
  * that side's: where the value is set, or the first read of each name that
  * nothing sets.
  */
-const CodeFindingSchema = VaultDiagnosticSchema.omit({ board: true }).extend({
-	model: z.string().optional(),
-	state: z.string().nullable().optional(),
-	severity: z.enum(["warning", "information"]),
-	evidence: z.array(CodeEvidenceSchema).min(1).optional(),
-	missing: z.enum(["code", "infrastructure"]).optional(),
-	dropped: DroppedPartSchema.optional(),
-	/** The exported name that a finding of module depth judges, such as `EXPOSED_VALUE`'s value. */
-	export: z.string().optional(),
-});
+const CodeFindingSchema = vaultDiagnosticSchema()
+	.omit({ board: true })
+	.extend({
+		model: z.string().optional(),
+		state: z.string().nullable().optional(),
+		severity: z.enum(["warning", "information"]),
+		evidence: z.array(CodeEvidenceSchema).min(1).optional(),
+		missing: z.enum(["code", "infrastructure"]).optional(),
+		dropped: DroppedPartSchema.optional(),
+		/** The exported name that a finding of module depth judges, such as `EXPOSED_VALUE`'s value. */
+		export: z.string().optional(),
+	});
 
 /**
  * One export of a bound module (TASK-646.07): its name as a caller spells it,
@@ -482,7 +484,7 @@ type ServerTypescript = z.infer<typeof ServerTypescriptSchema>;
 const CodeCheckModelSchema = z.strictObject({
 	model: z.string(),
 	state: z.string().nullable(),
-	revision: ArchitectureModelReadSchema.options[0].shape.revision,
+	revision: architectureModelReadSchema().options[0].shape.revision,
 	/** The model's policy fails plain `archboard check` on a shallow module the branch touched. */
 	failShallowModules: z.boolean().optional(),
 });

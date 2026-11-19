@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 
-import { DiagramThemeSchema, LayoutEngineSchema } from "@archboard/model/render-reply";
+import { diagramThemeSchema, layoutEngineSchema } from "@archboard/model/render-reply";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { TalkFileError, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
@@ -18,13 +18,13 @@ import {
 	requireWritableDirectory,
 } from "#cli/commands/model/rules/recording-output.ts";
 
-const THEMES = DiagramThemeSchema.options;
+const THEMES = diagramThemeSchema().options;
 
 const ReplayInputSchema = z.object({
 	talk: z.string(),
 	out: z.string(),
-	theme: DiagramThemeSchema.optional(),
-	layout: LayoutEngineSchema.optional(),
+	theme: diagramThemeSchema().optional(),
+	layout: layoutEngineSchema().optional(),
 });
 
 const ReplayReceiptSchema = z.object({
@@ -41,8 +41,8 @@ const ReplayReceiptSchema = z.object({
 	mimeType: z.string(),
 	durationMs: z.int(),
 	frames: z.int(),
-	theme: DiagramThemeSchema,
-	layout: LayoutEngineSchema,
+	theme: diagramThemeSchema(),
+	layout: layoutEngineSchema(),
 });
 
 /**
@@ -133,7 +133,7 @@ const modelReplayContract = defineCommand({
 			spellings: ["--layout"],
 			value: "required",
 			placeholder: "engine",
-			choices: LayoutEngineSchema.options,
+			choices: layoutEngineSchema().options,
 			description:
 				"Which layout engine lays the model out; the engine the talk was recorded with when absent",
 		},

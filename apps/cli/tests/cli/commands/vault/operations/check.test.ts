@@ -6,16 +6,16 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
-import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 import type { describeSubject } from "@archboard/model/policy";
 
 type DiagnosticSubject = Parameters<typeof describeSubject>[0];
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
+type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
 const sharedSymbol: NonNullable<
-	z.infer<typeof VaultCheckSchema>["diagnostics"][number]["sharedSymbol"]
+	z.infer<ReturnType<typeof vaultCheckSchema>>["diagnostics"][number]["sharedSymbol"]
 > = {
 	binding: { repo: "github.com/test/orders", path: "src/ledger.ts", symbol: "post" },
 	parts: [
@@ -24,7 +24,7 @@ const sharedSymbol: NonNullable<
 	],
 };
 const check: VaultCheck = {
-	policy: DEFAULT_SEMANTIC_POLICY,
+	policy: defaultSemanticPolicy(),
 	configurationValid: true,
 	configurationFile: "config.yaml",
 	fingerprint: "f",
@@ -57,7 +57,7 @@ const check: VaultCheck = {
 	],
 };
 
-const AnswerSchema = z.object({ semantics: VaultCheckSchema });
+const AnswerSchema = z.object({ semantics: vaultCheckSchema() });
 
 const vault = makeStandInVault();
 let service = "";

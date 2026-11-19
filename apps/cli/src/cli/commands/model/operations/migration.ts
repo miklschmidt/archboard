@@ -1,10 +1,10 @@
-import { ArchitectureMigrationRequestSchema } from "@archboard/model/contract";
+import { architectureMigrationRequestSchema } from "@archboard/model/contract";
 import { modelImportContract } from "#cli/commands/model/operations/portable.ts";
 import { migrateArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { z } from "zod";
 import {
-	LegacyInventoryReadSchema,
-	LegacyMappingWriteSchema,
+	legacyInventoryReadSchema,
+	legacyMappingWriteSchema,
 	type LegacyInventoryRead,
 } from "@archboard/model/migration";
 import {
@@ -54,7 +54,7 @@ const modelInventoryContract = defineCommand({
 		},
 	],
 	input: { ingress: z.object({ origin: z.string() }) },
-	result: LegacyInventoryReadSchema,
+	result: legacyInventoryReadSchema(),
 	output: {
 		cases: [
 			{
@@ -159,7 +159,7 @@ const modelPlanContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model plan");
 		const request = context.parse(
-			LegacyMappingWriteSchema.omit({ doing: true }),
+			legacyMappingWriteSchema().omit({ doing: true }),
 			await statedJson(input, context),
 		);
 		return presented(await saveLegacyMappingPlanOnServer(request));
@@ -191,7 +191,7 @@ const modelMigrateContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model migrate");
 		const result = await migrateArchitectureModelOnServer(
-			context.parse(ArchitectureMigrationRequestSchema, await statedJson(input, context)),
+			context.parse(architectureMigrationRequestSchema(), await statedJson(input, context)),
 		);
 		return {
 			result,
