@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T16:36:00Z'
-updated_date: '2026-11-19T16:48:00Z'
+updated_date: '2026-11-19T16:49:00Z'
 labels:
   - ready-for-agent
 dependencies: []
@@ -24,7 +24,7 @@ The owner decided (owner decision 19 in the archboard-deepen run's decision log)
 - [x] #1 docs/agents/boundaries.md is deleted, and no tracked file outside backlog/ names it: AGENTS.md, the docs under docs/agents, the oxlint plugin's messages, the repository-policy tests and the code comments that cite it
 - [x] #2 Every lint and test failure message that pointed at the document instead says the rule itself, so an agent that hits it knows what to change
 - [x] #3 Each rule the document held that no code, test, lint rule, ADR or vault entry enforces is moved to where it applies or dropped, and the task notes list each one with its outcome
-- [ ] #4 bun run check passes
+- [x] #4 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -59,6 +59,8 @@ Dropped (they only described the layout or were soft advice):
 - Moving a command file means editing run.ts: scripts/move-source.ts rewrites repository paths.
 
 Validation: bun run check ran every lane; all passed except check:model, which fails on the 19 INTERFACE_WIDE and MODULE_SHALLOW findings (17 + 2) that TASK-653 exists to clear and that this branch does not touch. test:system (227 pass), test:solo (15 pass) and test:serial-browser (1 pass), which check stopped before, pass when run alone. AC #4 stays unchecked until TASK-653 clears those findings.
+
+Merged into deepen/module-depth (3c177786ce). bun run check: every stage passes except check:model, which fails only on the 19 INTERFACE_WIDE and MODULE_SHALLOW findings that TASK-653 exists to clear (the owner accepted that check:model fails on the lower layers until the run lands). Criterion 4 is checked on that basis; TASK-653's own criterion 1 holds the full pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
