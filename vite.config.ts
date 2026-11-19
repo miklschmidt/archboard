@@ -205,8 +205,7 @@ const soloTests = [
 	"packages/code-intel/tests/runtime/language-servers/processes/rust-server.test.ts",
 ];
 
-// This owner reads which files Git tracks, so it runs in the repository lane, whose cache follows
-// every tracked entry, rather than in the module lane.
+// These read which files Git tracks, so they run in the repository lane, whose cache follows them.
 const repositoryTests = [
 	"packages/skills/tests/runtime/evaluation/batch/services/skill-links.test.ts",
 ];
@@ -438,11 +437,7 @@ export default defineConfig({
 				cache: browserTestCache,
 			},
 			"test:repository": {
-				command:
-					"ARCHBOARD_TEST_TRACKED_INPUTS=" +
-					trackedInputsFingerprint +
-					" bun test --parallel tests/system/repository-policy " +
-					repositoryTests.join(" "),
+				command: `ARCHBOARD_TEST_TRACKED_INPUTS=${trackedInputsFingerprint} bun test --parallel tests/system/repository-policy ${repositoryTests.join(" ")}`,
 				cache: { ...testCache, env: [...testCache.env, "GIT_INDEX_FILE"] },
 			},
 			"test:serial-browser": {
