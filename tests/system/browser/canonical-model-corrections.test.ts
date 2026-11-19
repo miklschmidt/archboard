@@ -18,8 +18,13 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { compareCheckpoint, fixtureGit, initializeSource } from "./support/canonical-model.ts";
-import { openAbout, openModule, refreshModel } from "./support/canonical-page.ts";
+import {
+	compareCheckpoint,
+	fixtureGit,
+	initializeSource,
+	selectModule,
+} from "./support/canonical-model.ts";
+import { openAbout, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -85,22 +90,13 @@ async function visible(browser: AgentBrowserSession, selector: string): Promise<
 	);
 }
 
-/** The description of Gateway reads on its own About page, so the helper opens the module once. */
 async function description(browser: AgentBrowserSession, value: string): Promise<void> {
 	await openAbout(browser);
-	const title = `document.querySelector('[data-slot="model-about-title"] h2')?.textContent ?? ""`;
-	if (!(await browser.eval<string>(title)).toLowerCase().includes("gateway")) {
-		await openModule(browser, "Shop#Gateway");
-		await openAbout(browser);
-	}
-	await pollUntil(
-		() =>
-			browser.eval<string>(
-				`document.querySelector('[data-slot="model-about-title"]')?.textContent ?? ""`,
-			),
+	await selectModule(
+		browser,
+		"Shop#Gateway",
 		(text) => text.includes(value),
-		`the description ${value}`,
-		WAIT,
+		'[data-slot="module-description"]',
 	);
 }
 
@@ -203,13 +199,9 @@ test("historical corrections refresh the lasting reading and expose exact origin
 		await browser.eval<number>(`document.querySelectorAll('[data-correction-checkpoint]').length`),
 	).toBe(0);
 	await compareCheckpoint(browser, corrected.checkpoint.id);
-	await description(browser, "An incorrect recorded description.");
 	await openHistory(browser);
-	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-comparison-corrections"] [data-correction-checkpoint="${corrected.checkpoint.id}"]') !== null`,
-		),
-	).toBe(true);
+	await visible(browser, `[data-slot="model-comparison-corrections"] ${row}`);
+	await description(browser, "An incorrect recorded description.");
 	await browser.run(["back"]);
 	await visible(
 		browser,
