@@ -6,7 +6,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#StrSdB9p",
       "name": "A page connects its socket",
-      "summary": "Accepts a pane's socket only from the page's own origin and for a vault the server can read. If the vault is gone, the pane lands in its repository's chosen checkout.",
+      "summary": "Accepts a pane's socket only from the page's own origin and for a vault the server can read. If the named vault is unreadable, the upgrade falls back to its repository's chosen vault when that is readable, and otherwise refuses the upgrade.",
       "participants": [
         "vKEsyHFk/yejBBUFY#xsn0RvSi",
         "vKEsyHFk/Oi6SBIAM#X07YebBP",
@@ -104,24 +104,24 @@
                           "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
                           "from": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
                           "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                          "label": "the vault of its repository's chosen checkout",
+                          "label": "look up the named vault's home",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
                             "path": "packages/workbench/src/server/request/services/vault.ts",
-                            "symbol": "placeOfVault"
+                            "symbol": "placeInstead"
                           }
                         },
                         {
                           "id": "vKEsyHFk/Oi6SBIAM#iV6tUF2l",
                           "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
                           "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-                          "label": "a vault to put it in, or none",
+                          "label": "candidate home path",
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/workbench/src/server/request/services/vault.ts",
-                            "symbol": "placeInstead"
+                            "path": "packages/workspace/src/server/projections/repository-listing.ts",
+                            "symbol": "placeOfVault"
                           }
                         }
                       ]
