@@ -361,15 +361,11 @@ fn leg_of(piece: &Piece, core: f64, span: f64, motion: Motion) -> PulseLeg {
     } = *piece;
     let to = segment.to();
     let zero = Point { x: 0.0, y: 0.0 };
-    let start = tangent_of(piece, false).unwrap_or(zero);
-    let end = tangent_of(piece, true).unwrap_or(zero);
+    let leaving = tangent_of(piece, false).unwrap_or(zero);
+    let arriving = tangent_of(piece, true).unwrap_or(zero);
     let height = core + GLOW[0].0 + 2.0 * sag_of(from, &segment) + 2.0 * BAR_ROOM;
     let (bar, motion) = match motion {
-        Motion::Steady {
-            speed,
-            spacing: _,
-            phase,
-        } => (
+        Motion::Steady { speed, phase, .. } => (
             Bar {
                 from: -span - 1.0,
                 width: length + 2.0 * span + 2.0,
@@ -414,12 +410,12 @@ fn leg_of(piece: &Piece, core: f64, span: f64, motion: Motion) -> PulseLeg {
         turn: libm::atan2(to.y - from.y, to.x - from.x),
         stretch: js::hypot(to.x - from.x, to.y - from.y) / length,
         lead: Point {
-            x: from.x - start.x * OVERLAP,
-            y: from.y - start.y * OVERLAP,
+            x: from.x - leaving.x * OVERLAP,
+            y: from.y - leaving.y * OVERLAP,
         },
         trail: Point {
-            x: to.x + end.x * OVERLAP,
-            y: to.y + end.y * OVERLAP,
+            x: to.x + arriving.x * OVERLAP,
+            y: to.y + arriving.y * OVERLAP,
         },
         room: room_of(from, &segment, core),
         bar,
