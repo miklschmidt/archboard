@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:00:00Z'
+updated_date: '2026-11-19T01:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -91,3 +91,24 @@ Evidence:
 - Found and fixed: the working-tree footprint copied the index without its time, so Git skipped its racy-entry recheck and a same-size edit in the same second looked unchanged (flaky; stable 6/6 after the fix).
 - Lanes: test:modules 5135 pass, test:repository 174 pass, type-check, lint:policy, lint:tests, format:check clean.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The code check now measures each bound TypeScript module from its code and an agent's loop can fail on a shallow module that its branch touched.
+
+What changed:
+- Fact analysis: TypeScript definitions mark types (interface, type alias, enum); the TypeScript query counts pieces of logic (calls, operators, conditions, loops).
+- Module depth (new, packages/code-intel/src/runtime/module-depth): counts exports by kind (functions, classes, public methods, values, types) and logic (plus hidden values); EXPOSED_VALUE (warning, export named, remedies ordered by reader count, a getter clears it); MODULE_SHALLOW (information) when every non-type export has a finding. It takes its own input and never imports Code check.
+- Code check: answer gains depth, touched (base, modules, unread) and models[].failShallowModules. Touched modules come from the History lens footprint up to the working tree, read when the caller names a base or asks, or a model's policy turns the gate on. An asked base that does not resolve is BASE_UNRESOLVED. Severities never depend on the request.
+- History lens: default-base lookup exported; the working-tree reading keeps the index's time, so a same-size edit in the same second is no longer missed (was a flaky miss).
+- Policy: optional codeCheck.failShallowModules.
+- Route forwards base and touched. CLI: --fail-shallow-modules and --base on check, check all, check code; per-model gate promotes MODULE_SHALLOW on touched modules to a warning; BASE_UNRESOLVED (exit 2) for an unresolved base or a gated module whose range was unread.
+- Docs: ADR 0082 (supersedes the verdict bans of ADR 0044/0046), README, CONTEXT.md, archboard skill.
+
+Verification: module-depth, route and check-parts tests; test:modules 5135 pass, test:repository 174 pass, test:system pass (two files failed in the full run from my own mid-run Backlog edit and a realtime-voice timeout; both pass alone); type-check, lint, format clean.
+
+Surfaced on this repository, on modules this ticket does not change: EXPOSED_VALUE on 25 modules (245 names), MODULE_SHALLOW on 1 (Repositories). TASK-646.14 clears them.
+
+Risks / follow-ups: compound React components made by Object.assign(Root, {...}) (ui-kit Alert, Dialog, ...) and zod schemas count as exposed values under the owner's rule; the owner may want callables made by a call treated as functions. ADR number 0082 avoids two unmerged 0080 ADRs on other branches.
+<!-- SECTION:FINAL_SUMMARY:END -->
