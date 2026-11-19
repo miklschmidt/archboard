@@ -155,7 +155,9 @@ async function gatewayDetails(browser: AgentBrowserSession): Promise<string> {
 }
 
 async function selectState(browser: AgentBrowserSession, id: string): Promise<void> {
-	await browser.run(["click", '[data-slot="model-reading-selector"]']);
+	// The comparison control can mount beside the chooser as a new state arrives and shift it, so
+	// the chooser is pressed where it is, not where it was when a pointer click was aimed.
+	await browser.eval(`document.querySelector('[data-slot="model-reading-selector"]').click()`);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
