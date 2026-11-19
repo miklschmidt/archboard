@@ -3,7 +3,7 @@
 // It starts in the root of a project, a checkout or a package in one, and is
 // told that root is its one workspace, so it finds the project there itself.
 // The client asks it only for definitions, for the outline of a file and for
-// the semantic tokens of a file, and never asks it to build or to run a
+// the semantic tokens of a line, and never asks it to build or to run a
 // command. It starts with the options its
 // language's row names, is told the project's settings, such as the Python
 // environment, when it asks for its configuration, and before the first
@@ -64,10 +64,11 @@ interface Server {
 	/** The outline of a file: what it declares, and where; rejects when the server fails. */
 	readonly outline: (file: string) => Promise<OutlineSymbol[]>;
 	/**
-	 * The semantic tokens of a file: the type it gives each name, none from a
-	 * server that gives no tokens; rejects when the server fails.
+	 * The semantic tokens of a line of a file, from 0: the type it gives each
+	 * name, none from a server that gives no tokens of a range; rejects when
+	 * the server fails.
 	 */
-	readonly tokens: (file: string) => Promise<SemanticToken[]>;
+	readonly tokens: (file: string, line: number) => Promise<SemanticToken[]>;
 	/** Stop it, and return once its process has ended. */
 	readonly stop: (graceful: boolean) => Promise<void>;
 	/** Wall time spent starting, answering and stopping, excluding idle time. */
@@ -156,7 +157,7 @@ function initializeParams(start: ServerStart): object {
 			textDocument: {
 				documentSymbol: { hierarchicalDocumentSymbolSupport: true },
 				semanticTokens: {
-					requests: { full: true },
+					requests: { range: true },
 					tokenTypes: TOKEN_TYPES,
 					tokenModifiers: [],
 					formats: ["relative"],
@@ -358,16 +359,22 @@ async function startServer(start: ServerStart): Promise<Server> {
 				return outlineOf(await connection.request("textDocument/documentSymbol", params, bounds));
 			}),
 		/**
-		 * The semantic tokens of a file.
+		 * The semantic tokens of a line of a file.
 		 * @param file The file, absolute.
+		 * @param line The line, from 0.
 		 * @returns Its tokens.
 		 */
-		tokens: (file) =>
+		tokens: (file, line) =>
 			clock.measure(async () => {
 				if (legend.length === 0) return [];
 				await open(file);
-				const params = { textDocument: { uri: pathToFileURL(file).href } };
-				const answer = await connection.request("textDocument/semanticTokens/full", params, bounds);
+				const range = { start: { line, character: 0 }, end: { line: line + 1, character: 0 } };
+				const params = { textDocument: { uri: pathToFileURL(file).href }, range };
+				const answer = await connection.request(
+					"textDocument/semanticTokens/range",
+					params,
+					bounds,
+				);
 				return tokensOf(answer, legend);
 			}),
 		stop,

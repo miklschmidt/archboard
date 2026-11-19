@@ -237,17 +237,18 @@ class Session {
 
 	/**
 	 * The type a server's semantic tokens give the name a file writes on a
-	 * line, from the tokens of the file, asked once for each file in the pass.
+	 * line, from the tokens of the line, asked once for each line in the pass.
 	 * @param question The file, the line and the name.
 	 * @returns The type, or undefined when no server answered or no token stands there.
 	 */
 	async tokenType(question: DefinitionQuestion): Promise<string | undefined> {
 		const target = await this.#target(question);
 		if (target === undefined) return undefined;
-		let tokens = this.#tokens.get(target.file);
+		const key = `${target.file}\0${target.position.line}`;
+		let tokens = this.#tokens.get(key);
 		if (tokens === undefined) {
-			tokens = this.#tokensOf(target.running, target.file);
-			this.#tokens.set(target.file, tokens);
+			tokens = this.#tokensOf(target);
+			this.#tokens.set(key, tokens);
 		}
 		return tokenTypeAt(await tokens, target.position);
 	}
@@ -331,16 +332,15 @@ class Session {
 	}
 
 	/**
-	 * Ask a server for the semantic tokens of a file.
-	 * @param running The server of the file.
-	 * @param file The file, absolute.
+	 * Ask a server for the semantic tokens of the line a question stands on.
+	 * @param target The server, the file and the position.
 	 * @returns The tokens, none when the server failed.
 	 */
-	async #tokensOf(running: Running, file: string): Promise<readonly SemanticToken[]> {
+	async #tokensOf(target: Target): Promise<readonly SemanticToken[]> {
 		try {
-			return await running.server.tokens(file);
+			return await target.running.server.tokens(target.file, target.position.line);
 		} catch (error) {
-			this.#failed(running, error);
+			this.#failed(target.running, error);
 			return [];
 		}
 	}

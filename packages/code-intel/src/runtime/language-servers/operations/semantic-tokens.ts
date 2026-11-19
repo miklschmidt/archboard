@@ -1,14 +1,17 @@
 // What a server's semantic tokens say a name in a file is (TASK-646.15).
 //
-// A server types each name of a file, `textDocument/semanticTokens/full`, as
+// A server types each name of a range of a file,
+// `textDocument/semanticTokens/range`, as
 // one of the token types it lists in its legend. The type comes from the
 // checker, not from the syntax: TypeScript gives `function` to a constant
 // whose value can be called, as `const buttonClass = cva(...)` is, `class` to
 // one that can be constructed, and `variable` to any other. The client names
 // the token types of the protocol; the server answers with the index of each
-// in the legend it returns from `initialize`. The answer lists the tokens in
-// order, five numbers each: the line and the start, each relative to the token
-// before, the length, the type and the modifiers.
+// in the legend it returns from `initialize`. A range of one line is all the
+// check asks, since typing every name of a whole file costs a server many
+// times more. The answer lists the tokens in order, five numbers each: the
+// line and the start, each relative to the token before and the first to the
+// start of the file, the length, the type and the modifiers.
 
 import { z } from "zod";
 import type { Position } from "#runtime/language-servers/processes/server.ts";
@@ -46,11 +49,14 @@ interface SemanticToken extends Position {
 	readonly type: string;
 }
 
-/** The legend of an `initialize` answer, which is all of it the client reads. */
+/** The legend of an `initialize` answer, and whether the server types a range. */
 const InitializeResultSchema = z.object({
 	capabilities: z.object({
 		semanticTokensProvider: z
-			.object({ legend: z.object({ tokenTypes: z.array(z.string()) }) })
+			.object({
+				legend: z.object({ tokenTypes: z.array(z.string()) }),
+				range: z.union([z.boolean(), z.object({})]).optional(),
+			})
 			.optional(),
 	}),
 });
@@ -61,7 +67,7 @@ const TOKEN_WIDTH = 5;
 /** One count of a token. */
 const Count = z.int().nonnegative();
 
-/** An answer to `textDocument/semanticTokens/full`, as the five numbers of each token. */
+/** An answer to `textDocument/semanticTokens/range`, as the five numbers of each token. */
 const SemanticTokensSchema = z
 	.object({ data: z.array(Count) })
 	.transform(({ data }) =>
@@ -84,7 +90,7 @@ function legendOf(result: unknown): readonly string[] {
 }
 
 /**
- * The tokens of an answer to `textDocument/semanticTokens/full`. An answer of
+ * The tokens of an answer to `textDocument/semanticTokens/range`. An answer of
  * another shape gives none.
  * @param result The answer.
  * @param legend The server's token types, by index.
