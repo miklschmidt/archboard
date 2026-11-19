@@ -41,12 +41,40 @@ const SERVERS: Readonly<Record<ConfigurableLanguage, { server: string; install: 
 	},
 };
 
+/** One language without its server, and the server that it needs, in Markdown. */
+interface NeededServer {
+	readonly language: ConfigurableLanguage;
+	readonly server: string;
+}
+
+/** What setting up the language servers of a checkout takes. */
+interface LanguageServerSetup {
+	/** Each language without its server, and the server that it needs, as a person reads it. */
+	readonly needs: readonly NeededServer[];
+	/** The brief, as the agent's prompt. */
+	readonly brief: string;
+}
+
+/**
+ * What setting up the language servers of a checkout takes: the server each missing language
+ * needs, and the brief for the agent that sets them up.
+ * @param missing The languages that lack a server. Without them, the agent finds them itself.
+ * @returns The servers they need, and the brief.
+ */
+function languageServerSetup(missing?: readonly ConfigurableLanguage[]): LanguageServerSetup {
+	const needs = (missing ?? []).map((language) => ({
+		language,
+		server: SERVERS[language].server,
+	}));
+	return { needs, brief: briefOf(missing) };
+}
+
 /**
  * The brief for an agent that sets up the language servers of a checkout.
  * @param missing The languages that lack a server. Without them, the agent finds them itself.
  * @returns The brief, as the agent's prompt.
  */
-function languageServerSetupBrief(missing?: readonly ConfigurableLanguage[]): string {
+function briefOf(missing?: readonly ConfigurableLanguage[]): string {
 	const find =
 		missing === undefined
 			? [
@@ -72,4 +100,4 @@ function languageServerSetupBrief(missing?: readonly ConfigurableLanguage[]): st
 	].join("\n");
 }
 
-export { languageServerSetupBrief };
+export { languageServerSetup };

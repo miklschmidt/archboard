@@ -1,9 +1,11 @@
 ---
 id: TASK-646.09
 title: Fix with Codex sets up a missing language server
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T01:58:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -56,3 +58,14 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 Fix with Codex starts the setup in the conversation of the checkout that misses the server, with the shared brief
 - [ ] #3 The Codex text workbench browser test covers the routing to the right checkout
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. workspace: the setup brief's one export, languageServerSetup(missing?), answers both the server each missing language needs and the brief (the package stays at its 40-name interface ceiling). init uses its brief, unchanged text.
+2. Model reading: a context through which the Application frame gives Measures the server a language needs and the fix action (Measures draws no relationship to workspace).
+3. Measures: the code foot names, per checkout, each language with no server and the server it needs, with Fix with Codex.
+4. Application frame: Fix with Codex finds the chosen checkout of the repository the skip names, shows that checkout's conversation (the existing fix-asked-for path) and asks with the brief for those languages; a refused or unknown checkout raises a notice instead of asking elsewhere.
+5. Tests: brief unit test, Measures component test, and one case in the Codex text workbench browser test that routes the fix to the other checkout.
+6. Look at it in both themes, audit the site, archboard check, footprint gate.
+<!-- SECTION:PLAN:END -->
