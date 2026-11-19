@@ -194,6 +194,9 @@ test("preview module code opens through the existing local opener", async () => 
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await visible(browser, '[data-slot="module-open-code"]:enabled');
+	expect(
+		await browser.eval<boolean>(`document.querySelector('[data-slot="module-history"]') === null`),
+	).toBe(true);
 	await browser.run(["click", '[data-slot="module-open-code"]']);
 	await pollUntil(
 		async () => existsSync(capture),

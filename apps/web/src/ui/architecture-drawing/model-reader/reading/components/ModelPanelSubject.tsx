@@ -34,6 +34,7 @@ import type { useModelCodeFindings } from "#ui/architecture-drawing/model-reader
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import { usePeekRow } from "#ui/architecture-drawing/model-reader/reading/hooks/use-peek-row.ts";
 import { toggleOf } from "#ui/architecture-drawing/model-reader/rules/expansion.ts";
+import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 import { pictureReach } from "#ui/architecture-drawing/model-reader/reading/rules/picture-reach.ts";
 import {
 	linesOf,
@@ -286,12 +287,12 @@ function ModuleSubject(
 }
 
 /**
- * The history of a module's code, for a module that is bound to code.
+ * The history of a module's code, when the reading can show it.
  * @param props The module, the model that defines it, and the way to select a part of its history.
- * @returns The section, or nothing for a module with no code.
+ * @returns The section for a bound module in a reading of the local vault.
  */
 function ModuleHistory(props: ComponentProps<typeof ModelHistory>): JSX.Element | null {
-	if (props.module.binding === undefined) return null;
+	if (props.module.binding === undefined || !readsVaultOnDisk(props.model)) return null;
 	return (
 		<ModelPanel.Section title="Code history" slot="module-history" list={false}>
 			<ModelHistory {...props} />
