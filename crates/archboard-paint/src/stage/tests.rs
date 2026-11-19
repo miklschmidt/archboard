@@ -5,8 +5,10 @@ use crate::between::{Heading, PHASES};
 use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::passage::Side;
-use crate::presentation::{Camera, FarLine, Light, Presentation, Shine, Timed};
-use crate::testing::{Op, Record, boxed, frame, painting, showing, stage, subject_group};
+use crate::presentation::{Camera, Light, Presentation, Shine};
+use crate::testing::{
+    Op, Record, boxed, camera, far_line, frame, painting, showing, stage, subject_group,
+};
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Group, Item, Purpose, Role, Subject, SubjectKind};
 
@@ -61,26 +63,10 @@ fn camera_x(stage: &mut Stage, now: f64) -> f64 {
     frame(stage, now).0.ops[1].at.x
 }
 
-/// The page moving the camera from a moment, over a time.
-fn camera(to: Camera, ms: f64, at: f64) -> Presentation {
-    Presentation {
-        camera: Some(Timed { to, ms, at }),
-        ..Presentation::default()
-    }
-}
-
 /// The page lighting the picture.
 fn lit(light: Light) -> Presentation {
     Presentation {
         light: Some(light),
-        ..Presentation::default()
-    }
-}
-
-/// The page saying where the far view begins.
-fn far_line(scale: f64, ms: f64) -> Presentation {
-    Presentation {
-        far_line: Some(FarLine { scale, ms }),
         ..Presentation::default()
     }
 }

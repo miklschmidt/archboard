@@ -6,7 +6,7 @@ use super::{MOST_KEPT, Parts};
 use crate::canvas::{Canvas, Ink, PartKey};
 use crate::cpu::CpuCanvas;
 use crate::palette::Theme;
-use crate::presentation::{Camera, Presentation, Timed};
+use crate::presentation::Camera;
 use crate::stage::{Arrival, Pace, Stage, Surface};
 use crate::testing::Record;
 use archboard_scene::paint::paint;
@@ -66,15 +66,8 @@ const CAMERAS: [Camera; 5] = [
 ];
 
 /// Move the camera of a stage at a moment.
-fn look(stage: &mut Stage, camera: Camera, now: f64) {
-    stage.present(Presentation {
-        camera: Some(Timed {
-            to: camera,
-            ms: 0.0,
-            at: now,
-        }),
-        ..Presentation::default()
-    });
+fn look(stage: &mut Stage, to: Camera, now: f64) {
+    stage.present(crate::testing::camera(to, 0.0, now));
 }
 
 #[test]

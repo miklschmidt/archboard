@@ -15,6 +15,7 @@ use peniko::Color;
 use crate::between::PHASES;
 use crate::canvas::{Canvas, Ink, Layer, Lens};
 use crate::palette::Theme;
+use crate::presentation::{Camera, FarLine, Presentation, Timed};
 use crate::stage::{Arrival, Motion, Pace, Stage, Surface};
 
 /// A 400 by 400 white page that draws this body and has no icons.
@@ -201,4 +202,20 @@ pub(crate) fn frame(stage: &mut Stage, now: f64) -> (Record, Motion) {
     let mut record = Record::default();
     let motion = stage.draw(Surface::Direct(&mut record), now);
     (record, motion)
+}
+
+/// The page moving the camera from a moment, over a time.
+pub(crate) fn camera(to: Camera, ms: f64, at: f64) -> Presentation {
+    Presentation {
+        camera: Some(Timed { to, ms, at }),
+        ..Presentation::default()
+    }
+}
+
+/// The page saying where the far view begins.
+pub(crate) fn far_line(scale: f64, ms: f64) -> Presentation {
+    Presentation {
+        far_line: Some(FarLine { scale, ms }),
+        ..Presentation::default()
+    }
 }

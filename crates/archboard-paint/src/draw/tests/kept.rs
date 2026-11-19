@@ -9,7 +9,7 @@ use kurbo::{Affine, BezPath};
 
 use super::{marked, places, plate, route, stage_of, subject};
 use crate::canvas::{Canvas, Ink, Layer, PartKey};
-use crate::presentation::{Camera, Marks, Presentation, Timed};
+use crate::presentation::{Camera, Marks};
 use crate::stage::{Stage, Surface};
 use crate::testing::{Op, Record, subject_group};
 
@@ -74,14 +74,7 @@ fn what_a_canvas_kept_lands_under_a_moved_camera_where_it_lands_drawn_afresh() {
         y: 7.0,
         scale: 2.0,
     };
-    let moved = |at| Presentation {
-        camera: Some(Timed {
-            to: camera,
-            ms: 0.0,
-            at,
-        }),
-        ..Presentation::default()
-    };
+    let moved = |at| crate::testing::camera(camera, 0.0, at);
     let mut stage = stage_of(card_with_words());
     let mut keeping = Keeping::default();
     stage.draw(Surface::Direct(&mut keeping), 0.0);

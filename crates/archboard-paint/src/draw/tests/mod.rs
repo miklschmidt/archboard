@@ -15,11 +15,9 @@ use kurbo::Vec2;
 use crate::between::PHASES;
 use crate::flight::DiveWay;
 use crate::palette::Theme;
-use crate::presentation::{
-    Camera, FarLine, Hovered, Light, LineSweep, Marks, Presentation, Recede, Shine, Timed,
-};
+use crate::presentation::{Camera, Hovered, Light, LineSweep, Marks, Presentation, Recede, Shine};
 use crate::stage::{Arrival, Motion, Pace, Stage};
-use crate::testing::{Op, boxed, filled, painting, shape, stroke, subject_group, traced};
+use crate::testing::{Op, boxed, far_line, filled, painting, shape, stroke, subject_group, traced};
 
 mod kept;
 
@@ -144,14 +142,6 @@ fn warned(subjects: &[&str]) -> Presentation {
 fn marked(marks: Marks) -> Presentation {
     Presentation {
         marks: Some(marks),
-        ..Presentation::default()
-    }
-}
-
-/// The page saying where the far view begins.
-fn far_line(scale: f64, ms: f64) -> Presentation {
-    Presentation {
-        far_line: Some(FarLine { scale, ms }),
         ..Presentation::default()
     }
 }
@@ -463,14 +453,7 @@ fn a_frame_stamped_before_a_change_shows_the_change() {
         y: 0.0,
         scale: 1.0,
     };
-    stage.present(Presentation {
-        camera: Some(Timed {
-            to: camera,
-            ms: 0.0,
-            at: 1000.0,
-        }),
-        ..Presentation::default()
-    });
+    stage.present(crate::testing::camera(camera, 0.0, 1000.0));
     let stale = places(&frame(&mut stage, 990.0).0);
     assert_eq!(stale, places(&frame(&mut stage, 2000.0).0));
 }

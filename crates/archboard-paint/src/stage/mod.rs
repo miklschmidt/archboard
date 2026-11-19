@@ -10,15 +10,15 @@ mod frame;
 mod interrupted;
 mod lens;
 mod lighting;
+mod present;
+mod said;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
-use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
-use serde::Deserialize;
 
 use crate::between::{Entrance, Heading, Phases};
 use crate::canvas::Canvas;
@@ -29,13 +29,11 @@ use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::parts::Parts;
 use crate::pick::Targets;
-use crate::presentation::{
-    Camera, FarLine, Hovered, Light, LineSweep, Marks, Presentation, Seen, Timed,
-};
-use crate::sweep::{Sweep, Timing};
-use crate::timing::{EASE_OUT, Fade, SWAP};
+use crate::presentation::{Camera, FarLine, Seen};
+use crate::timing::{Fade, SWAP};
 use crate::warnings::Warnings;
 use lighting::Lighting;
+pub use said::{Arrival, Departure, Motion, Pace, Surface};
 
 /// The camera, on its way to where it was told to go.
 #[derive(Clone, Copy, Debug)]
@@ -55,107 +53,6 @@ struct Shown {
     picture: Picture,
     near: Option<Targets>,
     far: Option<Targets>,
-}
-
-/// How a stage keeps time: at which points of a move each of its parts
-/// happens, and how long one step of its clock can be, in milliseconds. A stage
-/// with no phases flies nothing, and with no longest step its clock loses no
-/// stall.
-#[derive(Clone, Copy, Debug, Default, Deserialize)]
-#[serde(default, rename_all = "camelCase")]
-pub struct Pace {
-    /// At which points of a move each of its parts happens.
-    pub phases: Option<Phases>,
-    /// How much of a stall one step of the stage's clock can take.
-    pub longest_step: Option<f64>,
-}
-
-/// How a picture comes onto the stage. The page decides it (ADR 0071).
-#[derive(Clone, Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
-pub enum Arrival {
-    /// In place of what stands there, with nothing of the last one left moving.
-    /// The sparks of a picture that bloomed inside a card run on over it.
-    Cut,
-    /// Carried from what shows now, over a time in milliseconds. `shift` says
-    /// how far the cards the two pictures share moved, in the picture's units.
-    /// A stage with nothing to carry shows the picture.
-    Carried {
-        /// How far the shared cards moved.
-        shift: (f64, f64),
-        /// How long the carry takes.
-        ms: f64,
-    },
-    /// Part by part, what is left of the last one finishing over it where it
-    /// was last seen, moved with its pane by `moved` canvas pixels.
-    Entered {
-        /// Where the reader went, when the last picture was never sent on its way.
-        heading: Option<Heading>,
-        /// How long the entrance takes, in milliseconds.
-        ms: f64,
-        /// How far the pane moved, in canvas pixels.
-        moved: (f64, f64),
-        /// The moment of the page's clock it starts, in milliseconds.
-        at: f64,
-    },
-    /// Inside the card the camera flies into or out of, with the fades of the
-    /// flight. The picture on the stage stays until the page shows this one.
-    Into {
-        /// Where the picture stands inside the card, in the outer picture's units.
-        frame: Rect,
-        /// Whether the flight goes into the card or back out of it.
-        way: DiveWay,
-        /// The card, by subject id.
-        card: String,
-        /// How long the flight takes, in milliseconds.
-        ms: f64,
-        /// The moment of the page's clock it starts, in milliseconds.
-        at: f64,
-    },
-}
-
-/// What becomes of a picture already on the stage.
-#[derive(Clone, Copy, Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
-pub enum Departure {
-    /// It goes on its way out while the next is drawn. A picture that a passage
-    /// is still bringing in finishes coming in first.
-    Leaving {
-        /// Where the reader went.
-        heading: Heading,
-        /// How long it takes to leave, in milliseconds.
-        ms: f64,
-        /// The moment of the page's clock it starts, in milliseconds.
-        at: f64,
-    },
-    /// It stays: the reader came back before anything else arrived.
-    Stayed,
-    /// It comes off the stage, and nothing takes its place.
-    Cleared,
-    /// The picture inside a card comes out of it, and the flight's fades with it.
-    OutOfCard,
-}
-
-/// What a frame is drawn on.
-#[derive(Debug)]
-pub enum Surface<'a, C> {
-    /// A canvas drawn as the walk asks, whole. One that keeps parts keeps them itself.
-    Direct(&'a mut C),
-    /// A canvas that cuts each path into strips where it lands (ADR 0074): the
-    /// stage keeps for the next frame the parts it drew, and leaves out what
-    /// lands off the canvas.
-    Strips(&'a mut C),
-}
-
-/// What the frames after this one show.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Motion {
-    /// Nothing moves: the next frame looks as this one does.
-    Still,
-    /// Only the traffic moves.
-    TrafficAlone,
-    /// The picture or how it is seen moves.
-    Moving,
 }
 
 /// One canvas's picture and all that a frame of it needs.
@@ -235,98 +132,6 @@ impl Stage {
             looks: 0,
             settled: false,
             drawn: false,
-        }
-    }
-
-    /// Take what the page says about how the picture is seen. A value it
-    /// states replaces the last, and a value it leaves out stays. Each timed
-    /// value starts at its own moment.
-    pub fn present(&mut self, said: Presentation) {
-        let Presentation {
-            theme,
-            size,
-            traffic_shown,
-            heads,
-            warnings,
-            marks,
-            hovered,
-            camera,
-            far_line,
-            awaited,
-            light,
-            sweep,
-        } = said;
-        self.restyle(theme, size, traffic_shown);
-        self.remark(heads, warnings, marks, hovered);
-        self.retime(camera, far_line, awaited, light, sweep);
-    }
-
-    /// Take the theme, the size of the canvas and whether traffic runs.
-    fn restyle(&mut self, theme: Option<Theme>, size: Option<(f64, f64)>, traffic: Option<bool>) {
-        if let Some(theme) = theme {
-            self.palette = Palette::of(theme);
-            self.looks += 1;
-        }
-        if let Some(size) = size {
-            self.size = size;
-            self.parts.resize(size);
-        }
-        if let Some(shown) = traffic {
-            self.traffic.show(shown);
-        }
-    }
-
-    /// Take what is marked on the picture: the held heads, the warnings, the
-    /// marks and the control under the pointer.
-    fn remark(
-        &mut self,
-        heads: Option<HashMap<String, f64>>,
-        warnings: Option<HashSet<String>>,
-        marks: Option<Marks>,
-        hovered: Option<Hovered>,
-    ) {
-        if let Some(heads) = heads {
-            self.seen.heads = heads;
-            self.forget_targets();
-        }
-        if let Some(warned) = warnings {
-            self.warned = warned;
-            self.find_warnings();
-        }
-        if let Some(marks) = marks {
-            self.seen.selected = marks.selected;
-            self.seen.whole = marks.whole;
-            self.forget_targets();
-        }
-        if let Some(hovered) = hovered {
-            self.seen.hovered_toggle = hovered.toggle;
-        }
-    }
-
-    /// Take the values that change over a time, each from its own moment.
-    fn retime(
-        &mut self,
-        camera: Option<Timed<Camera>>,
-        far_line: Option<FarLine>,
-        awaited: Option<Timed<bool>>,
-        light: Option<Light>,
-        sweep: Option<LineSweep>,
-    ) {
-        if let Some(camera) = camera {
-            self.set_camera(camera);
-        }
-        if let Some(line) = far_line {
-            self.far_line = line;
-        }
-        if let Some(awaited) = awaited {
-            self.set_awaited(awaited);
-        }
-        if let Some(light) = light {
-            self.now = self.clock.at(light.at);
-            self.lighting.set(&light, self.now);
-        }
-        if let Some(sweep) = sweep {
-            self.sweep(&sweep);
         }
     }
 
@@ -468,18 +273,6 @@ impl Stage {
         self.find_warnings();
     }
 
-    /// Move the picture on the canvas, over a time in milliseconds.
-    fn set_camera(&mut self, Timed { to: camera, ms, at }: Timed<Camera>) {
-        let now = self.clock.at(at);
-        self.now = now;
-        let move_to = |fade: &Fade, to: f64| fade.toward(to, now, 0.0, ms, EASE_OUT);
-        self.glide = Glide {
-            x: move_to(&self.glide.x, camera.x),
-            y: move_to(&self.glide.y, camera.y),
-            scale: move_to(&self.glide.scale, camera.scale),
-        };
-    }
-
     /// Start the swap between the views when the camera crosses the far line,
     /// wherever it is going. A picture that is only now coming in has nothing to
     /// swap from.
@@ -503,15 +296,6 @@ impl Stage {
         }
     }
 
-    /// Drop what the pointer could land on, because the order or the place of
-    /// the parts changed. The next pick finds it again.
-    fn forget_targets(&mut self) {
-        if let Some(shown) = &mut self.shown {
-            shown.near = None;
-            shown.far = None;
-        }
-    }
-
     /// Find where the warnings stand in the picture on the stage.
     fn find_warnings(&mut self) {
         self.seen.warnings = match &self.shown {
@@ -520,44 +304,6 @@ impl Stage {
             }
             _ => Warnings::default(),
         };
-    }
-
-    /// Draw on the lines of the relationships that light, in place of any sweep
-    /// that runs. A sweep with no delays only takes the last away, and names
-    /// no moment.
-    fn sweep(&mut self, sweep: &LineSweep) {
-        if sweep.delays.is_empty() {
-            self.seen.sweep = None;
-            return;
-        }
-        let now = self.clock.at(sweep.at);
-        self.now = now;
-        let timing = Timing {
-            shortest: sweep.shortest_ms,
-            longest: sweep.longest_ms,
-            now,
-        };
-        self.seen.sweep = self
-            .shown
-            .as_ref()
-            .and_then(|shown| Sweep::of(&shown.picture.scene, &sweep.delays, timing));
-    }
-
-    /// Say whether the next picture is on its way, and how long the picture on
-    /// the stage takes to step back for it or to step forward again. It starts a
-    /// flight at the reader's click, while the next picture is still being drawn.
-    fn set_awaited(
-        &mut self,
-        Timed {
-            to: awaited,
-            ms,
-            at,
-        }: Timed<bool>,
-    ) {
-        let now = self.clock.at(at);
-        self.now = now;
-        let goal = if awaited { 1.0 } else { 0.0 };
-        self.awaited = self.awaited.toward(goal, now, 0.0, ms, EASE_OUT);
     }
 
     /// Start a flight's clock, and tell it where the last picture stands.
