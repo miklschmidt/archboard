@@ -344,7 +344,9 @@ test("every canvas reads no export names, and the exports of one module are read
 		depth: [depthOf("gateway", 2), depthOf("ledger", 400)],
 	};
 	const { base, passes } = await serverWith([answer]);
-	await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+	// The answer of the pass, which `archboard check` prints on every run, leaves the names out too.
+	const checked = await (await fetch(`${base}/api/vault/code-check?${named()}`)).json();
+	expect(JSON.stringify(checked)).not.toContain("run0");
 
 	const all = await fetch(`${base}/api/vault/code-findings?${named()}`);
 	expect(JSON.stringify(await all.json())).not.toContain("run0");

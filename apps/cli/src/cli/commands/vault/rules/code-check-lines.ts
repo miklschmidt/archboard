@@ -3,17 +3,17 @@
 // check skipped, one line for each reason with a count, and how far each document
 // is behind its code, per document and per part (ADR 0045, ADR 0046).
 
-import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import type { CodeCheckResult } from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/model/policy";
 
 /** How far one document is behind its code. */
-type ModelBehind = CodeCheckAnswer["behind"][number];
+type ModelBehind = CodeCheckResult["behind"][number];
 
 /** One subject the code check skipped, and why. */
-type CodeCheckSkip = CodeCheckAnswer["skipped"][number];
+type CodeCheckSkip = CodeCheckResult["skipped"][number];
 
 /** One finding of the code check. */
-type CodeFinding = CodeCheckAnswer["findings"][number];
+type CodeFinding = CodeCheckResult["findings"][number];
 
 /**
  * Count entries by a key, in the order each key first appears.
@@ -151,7 +151,7 @@ function skippedLines(skipped: readonly CodeCheckSkip[]): string[] {
  * @param answer The code check's answer.
  * @returns The lines.
  */
-function codeCheckLines(answer: CodeCheckAnswer | undefined): string[] {
+function codeCheckLines(answer: CodeCheckResult | undefined): string[] {
 	if (answer === undefined) return [];
 	return [
 		...answer.findings.flatMap(findingLines),

@@ -16,7 +16,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { CodeCheckResultSchema, type CodeCheckResult } from "@archboard/code-intel/code-check";
 import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/model/policy";
 import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
@@ -25,7 +25,7 @@ import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vau
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** One finding of the code check. */
-type CodeFinding = CodeCheckAnswer["findings"][number];
+type CodeFinding = CodeCheckResult["findings"][number];
 
 const clean: VaultCheck = {
 	policy: DEFAULT_SEMANTIC_POLICY,
@@ -45,7 +45,7 @@ const warned: VaultCheck = {
 		},
 	],
 };
-const codeCheck = CodeCheckAnswerSchema.parse(codeCheckFixture);
+const codeCheck = CodeCheckResultSchema.parse(codeCheckFixture);
 
 const vault = makeStandInVault();
 let service = "";
@@ -159,8 +159,8 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const SEMANTICS_ROUTE = "/api/vault/check";
 const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
-	semantics: VaultCheckSchema.extend({ timings: CodeCheckAnswerSchema.shape.timings }).optional(),
-	code: CodeCheckAnswerSchema.optional(),
+	semantics: VaultCheckSchema.extend({ timings: CodeCheckResultSchema.shape.timings }).optional(),
+	code: CodeCheckResultSchema.optional(),
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });
 /** The embeds part of a vault in no Git checkout: no file of it can be an embed. */
@@ -492,7 +492,7 @@ function shallow(id: string): CodeFinding {
 }
 
 /** An answer with two shallow modules, one of which the branch touched, and the model's policy. */
-function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckAnswer {
+function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
 	return {
 		...codeCheck,
 		models: [

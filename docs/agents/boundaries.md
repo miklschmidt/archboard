@@ -400,14 +400,15 @@ on a URL. The request options, the reply guards `isRecord` and `trustReply` stay
 The tenth is `code-intel` (`@archboard/code-intel`). It compares canonical architectural claims with source evidence.
 It owns checkout code facts and the code inspection algorithms. It also holds the history lens
 over Git and the language servers that resolve a name. It adopts the `api/` role for `shared/` and `runtime/` and exposes 5
-subpaths with 11 names, where code outside imported 7 module paths. It imports `model`,
+subpaths with 13 names, where code outside imported 7 module paths. It imports `model`,
 `code-binding`, `workspace`, `diagnostics` and `timing`. The 2 files of
 `shared/api/` are safe for the browser, with no Node import: the canvas imports them. The 3 files of
 `runtime/api/` are Node-bound and run only in Bun.
 
-- `./code-check` is the answer of the code check, the answer of the route that remembers it, and
-  the answers of the code browser's two routes (ADR 0080): `CodeCheckAnswer` with its schema,
-  `RememberedFindingsSchema`, `CodeFilesSchema` and `CodeFileSchema`. A reader of a schema
+- `./code-check` is the answer of the code check, the answer of the route that runs it, the answer
+  of the route that remembers it, and the answers of the code browser's two routes (ADR 0080):
+  `CodeCheckAnswer` with its schema, `CodeCheckResult` with its schema, which leaves out the names
+  of each module's exports, `RememberedFindingsSchema`, `CodeFilesSchema` and `CodeFileSchema`. A reader of a schema
   without a type derives the type with `z.infer`. The schemas are in
   `shared/protocol/code-check.ts` and `code-files.ts`. `./history` is the answers of the locality and footprint routes,
   the start of a period and `HistoryRefusalCode`, the codes a history reading refuses with, from

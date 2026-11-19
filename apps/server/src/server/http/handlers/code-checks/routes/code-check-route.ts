@@ -34,8 +34,9 @@
 // `GET /api/vault/code-exports?model=<model>[&state=<state>]&revision=<digest>&module=<module>`
 // answers how the last pass over that exact reading measured one module, with the names of its
 // exports, as the `depth` of a code-check answer that holds that module alone, from the same memory
-// (TASK-646.08). The findings answer leaves the names out, because every canvas reads it and only
-// the About page of one module shows them. No remembered pass of that version that measured the
+// (TASK-646.08). The findings answer and the code check's own answer leave the names out, because
+// every canvas reads the one, `archboard check` prints the other on every run, and only the About
+// page of one module shows them. No remembered pass of that version that measured the
 // module is a 404.
 
 import type { Express, Request, Response } from "express";
@@ -48,6 +49,7 @@ import {
 import { callerGone } from "#server/http/middleware/caller-gone.ts";
 import { checkoutWork, codeCheck } from "#server/wiring/server-owners.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
+import type { CodeCheckAnswer, CodeCheckResult } from "@archboard/code-intel/code-check";
 
 /** What the route needs, which the Archboard server supplies and a test can replace. */
 interface CodeCheckRouteDependencies {
@@ -99,6 +101,19 @@ function plansOf(request: Request): string[] {
 }
 
 /**
+ * A pass's answer as the route gives it: each measured module without the names of its exports,
+ * which the memory keeps for `GET /api/vault/code-exports` (TASK-646.08).
+ * @param answer The pass's answer.
+ * @returns The answer without the names.
+ */
+function withoutNames(answer: CodeCheckAnswer): CodeCheckResult {
+	const { depth, ...rest } = answer;
+	return depth === undefined
+		? rest
+		: { ...rest, depth: depth.map(({ names: _names, ...counts }) => counts) };
+}
+
+/**
  * Answer one request with a code check run as checkout work.
  * @param dependencies How the pass runs.
  * @param request The request.
@@ -139,7 +154,7 @@ async function answerCodeCheck(
 			},
 		);
 		if (callerGone(request, response)) return;
-		if ("states" in answer) response.json({ success: true, ...answer });
+		if ("states" in answer) response.json({ success: true, ...withoutNames(answer) });
 		else response.status(422).json({ success: false, ...answer });
 	} catch (error) {
 		if (!callerGone(request, response)) {

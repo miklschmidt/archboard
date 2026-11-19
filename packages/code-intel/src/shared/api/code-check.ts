@@ -1,5 +1,9 @@
 // The answer of the code check, as the browser, the server and the command line read it: the findings, the evidence behind them, what the check skipped, how far each document is behind its code and the timings, and what the server remembers of a reading. A reader names a part by its place in an answer, such as `CodeCheckAnswer["findings"][number]`. Browser-safe: no Node import.
-export { CodeCheckAnswerSchema, RememberedFindingsSchema } from "#shared/protocol/code-check.ts";
-export type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
+export {
+	CodeCheckAnswerSchema,
+	CodeCheckResultSchema,
+	RememberedFindingsSchema,
+} from "#shared/protocol/code-check.ts";
+export type { CodeCheckAnswer, CodeCheckResult } from "#shared/protocol/code-check.ts";
 // The answers of the code browser's routes (TASK-648): the files of a checkout, and one whole file with the modules that own it.
 export { CodeFileSchema, CodeFilesSchema } from "#shared/protocol/code-files.ts";

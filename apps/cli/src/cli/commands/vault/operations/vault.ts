@@ -27,13 +27,13 @@ import {
 import { checkEmbeds } from "#cli/commands/vault/embeds/operations/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
-import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
+import { CodeCheckResultSchema, type CodeCheckResult } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
 import { jsonSchema } from "#cli/commands/model/operations/schema.ts";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /** How long one check took. */
-type CheckTiming = CodeCheckAnswer["timings"][number];
+type CheckTiming = CodeCheckResult["timings"][number];
 
 const output = {
 	cases: [
@@ -73,7 +73,7 @@ type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
 async function codeCheckOnServer(
 	reading: CodeCheckInput,
 	signal: AbortSignal,
-): Promise<CodeCheckAnswer> {
+): Promise<CodeCheckResult> {
 	const asked = new URLSearchParams(reading.state === undefined ? [] : [["state", reading.state]]);
 	if (reading.everyDraft === true) asked.append("every-draft", "true");
 	for (const plan of reading.plan ?? []) asked.append("plan", path.resolve(plan));
@@ -81,7 +81,7 @@ async function codeCheckOnServer(
 	const query = asked.toString() === "" ? "" : `?${asked}`;
 	const answer = await requestJson<unknown>(`/api/vault/code-check${query}`, { signal });
 	return gateShallowModules(
-		CodeCheckAnswerSchema.parse(answer),
+		CodeCheckResultSchema.parse(answer),
 		reading.failShallowModules === true,
 	);
 }
@@ -151,7 +151,7 @@ function timingLine(timing: CheckTiming): string {
 
 /** The semantics check's part of the answer: the vault check and the time it took. */
 const SemanticsPartSchema = VaultCheckSchema.extend({
-	timings: CodeCheckAnswerSchema.shape.timings,
+	timings: CodeCheckResultSchema.shape.timings,
 });
 type SemanticsPart = z.output<typeof SemanticsPartSchema>;
 
@@ -161,7 +161,7 @@ type SemanticsPart = z.output<typeof SemanticsPartSchema>;
  */
 const CheckAnswerSchema = z.object({
 	semantics: SemanticsPartSchema.optional(),
-	code: CodeCheckAnswerSchema.optional(),
+	code: CodeCheckResultSchema.optional(),
 	embeds: EmbedsPartSchema.optional(),
 	/**
 	 * The checks that read a vault and did not run, and why: the command ran in
