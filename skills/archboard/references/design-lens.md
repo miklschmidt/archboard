@@ -122,10 +122,12 @@ Source refs stay local. The command retains no source history.
 
 ## Module depth
 
-The code check measures each bound TypeScript module from its code. Unlike the reads above, it gives verdicts, as findings.
+The code check measures each bound TypeScript, Swift, C, C++ and Objective-C module from its code. Unlike the reads above, it gives verdicts, as findings.
 It also counts the exports of a bound Terraform module, Nix flake and Helm chart by kind, and judges none of them: a variable, an output or a value is there for callers. Terraform keeps its own `VARIABLE_PASSED_THROUGH` and `MODULE_SHALLOW`.
 `depth` lists each module's exports by kind (`functions`, `classes`, `methods`, `values`, `types`) and `logic`, the calls, operators, conditions, loops and hidden values behind them.
 The counts are evidence. Never turn them into a score.
+A type is what declares nothing a caller runs: a TypeScript interface, alias or enum; a C or C++ struct, union or enum with no methods, a typedef or an alias; a Swift protocol, alias or enum with no methods; an Objective-C protocol.
+A C function macro is a function, and a Swift struct is a class.
 
 `archboard check code --fail-shallow-modules` judges the modules that the branch touched since its base, uncommitted changes included.
 `--base <ref>` names the base. Without it, the default base decides.
@@ -175,7 +177,7 @@ Clear each finding at its seam. Never silence one.
   Stop exporting it. If files of the module use it, keep it out of the module's root files.
   It is a warning only after a complete read: every file outside the module parsed, every relative import resolved, no whole-module import.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
-  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls, such as a constructor or `toString`, are never judged.
+  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
 

@@ -36,7 +36,9 @@
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
-// the kind of each export: TypeScript.
+// the kind of each export: TypeScript, Swift, C, C++ and Objective-C
+// (TASK-646.12). Their grammars mark the members the language calls, such as
+// a C++ destructor or Swift's `hash(into:)`.
 //
 // It counts the exports of a Terraform module, a Nix flake and a Helm chart
 // by kind too, and judges none of them (TASK-646.13): a caller sets a
