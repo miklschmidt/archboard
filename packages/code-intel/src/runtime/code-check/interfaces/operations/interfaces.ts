@@ -7,7 +7,7 @@
 // module the container binds exposes: a bound directory, or the file that
 // stands for one, such as `index.ts`. Code facts say what a module exposes,
 // by the rule of its language. A container bound to another file or to a
-// symbol names no module, and is not judged. A part with no parts of its own
+// symbol names no module, and is skipped as `binding-not-a-module`. A part with no parts of its own
 // that binds a module is judged too, for what its module exposes, and a part
 // that binds the module of a part that holds it is judged with that part
 // (TASK-646.01).
@@ -453,7 +453,8 @@ function heldModule(
  * @param container The part.
  * @param code The part's code.
  * @param skipped What the document does not judge, which gains the part
- * when no language the check reads has its module's root files.
+ * when its binding names no module, or no language the check reads has its
+ * module's root files.
  * @returns It, or undefined when its binding names no module, a part that
  * holds it binds the same module, or the module is unknown.
  */
@@ -464,7 +465,12 @@ async function judgedContainer(
 	skipped: CodeCheckSkip[],
 ): Promise<Judged | undefined> {
 	const directory = moduleDirectory(code);
-	if (directory === undefined || heldModule(reading, container, code, directory)) return undefined;
+	if (directory === undefined) {
+		const skip = { reason: "binding-not-a-module", repo: code.checkout.repo } as const;
+		skipped.push(containerSkip(reading, container, { ...skip, detail: bindingWords(code) }));
+		return undefined;
+	}
+	if (heldModule(reading, container, code, directory)) return undefined;
 	const module = await moduleReading(reading, code.checkout, directory);
 	if (module === undefined) {
 		const detail =
@@ -480,6 +486,16 @@ async function judgedContainer(
 	const { checkout } = code;
 	const external = isExternal(reading, container);
 	return { reading, container, module, checkout, owners: ownersOf(parts), external };
+}
+
+/**
+ * A binding that names no module: its file, or its symbol in its file.
+ * @param code The part's code.
+ * @returns The binding, in words.
+ */
+function bindingWords(code: ReadPart): string {
+	const { grain } = code;
+	return grain.kind === "symbol" ? `${grain.definition.symbol} in ${grain.file}` : boundPath(code);
 }
 
 /** The kind of a part that stands for code the repository does not own (ADR 0029). */

@@ -224,7 +224,7 @@ function MeasureFoot(props: {
 			<p data-slot="model-measures-key" className="text-body text-muted-foreground">
 				{props.history
 					? "0 is none. A dash was not read, and says why on hover."
-					: "0 is none. A blank has no count: a module with no parts has no interface, and the code check measures only modules bound to a folder or to its entry file. A dash was not judged, and says why on hover."}
+					: "0 is none. A blank has no count: a module with no parts has no interface, and the code check measures only bound modules. A dash was not judged, and says why on hover."}
 			</p>
 		</div>
 	);

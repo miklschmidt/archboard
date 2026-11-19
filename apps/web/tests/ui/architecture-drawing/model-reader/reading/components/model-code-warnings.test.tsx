@@ -85,7 +85,7 @@ test("the count of About stays for a pass with no warning, and offers nothing to
 
 const VAULT = "/work/shop/.archboard/vault";
 const GATEWAY = { kind: "node", id: "Shop#Gateway", name: "Gateway" } as const;
-/** The code the gateway is bound to. */
+/** A file the gateway could be bound to, which stands for no folder. */
 const BOUND = "src/gateway/gateway.ts";
 
 /** What the last pass counted of the gateway: a function, a class with a method, a value, a type. */
@@ -196,7 +196,7 @@ function showExports(reading: Reading | null): void {
 			{ client },
 			createElement(CodeExports, {
 				vault: VAULT,
-				module: { id: GATEWAY.id, binding: { repo: "example/shop", path: BOUND } },
+				module: GATEWAY.id,
 				reading,
 				onNotice: selectNothing,
 			}),
@@ -266,8 +266,22 @@ test("code exports list a module's exports by kind, each with its findings, read
 test("a module no pass measured reads no exports, and says why", () => {
 	const asked = serving();
 	showExports(pass());
-	// A module bound to a file that is no folder's entry: the words name the binding the pass passed.
-	expect(document.querySelector("[data-slot='code-exports-unmeasured']")?.textContent).toContain(
+	expect(document.querySelectorAll("[data-slot='code-exports-unmeasured']")).toHaveLength(1);
+	cleanup();
+	// A module bound to a file that stands for no folder: the words name the binding the pass skipped.
+	showExports({
+		...pass(),
+		skipped: [
+			{
+				reason: "binding-not-a-module",
+				model: "Shop",
+				state: "Current",
+				subject: GATEWAY,
+				detail: BOUND,
+			},
+		],
+	});
+	expect(document.querySelector("[data-slot='code-exports-skipped']")?.textContent).toContain(
 		BOUND,
 	);
 	cleanup();

@@ -203,6 +203,10 @@ test("a symbol found only in code that did not parse is skipped, and text-only n
 	]);
 	expect(skips.toSorted()).toEqual(
 		[
+			// A part bound to a symbol, or to a file that stands for no folder, names no module to measure.
+			["binding-not-a-module", "pA", "audit in src/billing/charge.ts"],
+			["binding-not-a-module", "pB", "charge in src/billing/charge.ts"],
+			["binding-not-a-module", "pL", "src/shared/log.ts"],
 			["symbol-unparsed", "pK", "src/web/broken.ts:2"],
 			["symbol-unparsed", "e9", "src/web/broken.ts:2"],
 			["text-only", MART, expect.stringContaining(".md")],

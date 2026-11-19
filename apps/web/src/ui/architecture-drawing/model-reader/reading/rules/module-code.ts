@@ -24,6 +24,8 @@ type ModuleCode =
 			/** Why, as a key: the skip's reason, or `unjudged` for a module no rule reads. */
 			readonly reason: string;
 			readonly words: string;
+			/** What the skip names, such as the binding of a module bound to a file or a symbol. */
+			readonly detail?: string;
 	  };
 
 /** The names of the languages a pass reads, as a reader spells them. */
@@ -42,6 +44,7 @@ const LANGUAGE_NAMES: Readonly<Record<string, string>> = {
 const NOT_JUDGED: Readonly<Partial<Record<Skip["reason"], string>>> = {
 	unbound: "no code binding",
 	"exposure-unknown": "no root file in a language the check reads",
+	"binding-not-a-module": "bound to a file or a symbol, not to a folder",
 	"repository-unregistered": "repository not registered here",
 	"checkout-unavailable": "checkout could not be read",
 	"ref-not-checked-out": "its ref is not checked out",
@@ -138,7 +141,8 @@ function findingsBySubject(findings: Remembered["findings"]): ReadonlyMap<string
  */
 function skippedModule(skip: Skip): ModuleCode {
 	const words = NOT_JUDGED[skip.reason] ?? skip.reason.replaceAll("-", " ");
-	return { kind: "skipped", reason: skip.reason, words };
+	const { reason, detail } = skip;
+	return { kind: "skipped", reason, words, ...(detail === undefined ? {} : { detail }) };
 }
 
 /**
