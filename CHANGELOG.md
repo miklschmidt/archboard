@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.0](https://github.com/miklschmidt/archboard/compare/v0.5.0...v0.6.0) (2026-11-19)
+
+
+### Features
+
+* **web:** browse a checkout's files in the navigator and read one beside the picture ([#138](https://github.com/miklschmidt/archboard/issues/138)) ([d4947be](https://github.com/miklschmidt/archboard/commit/d4947be8d0daac67d7ab3eb8a7ab008cbd1704a8))
+* **web:** keep the right panel beside About, with About's outline on top ([#137](https://github.com/miklschmidt/archboard/issues/137)) ([675d6ca](https://github.com/miklschmidt/archboard/commit/675d6ca5c0a14cde964e1544ecb62fe522f53a3a))
+* **web:** part the comparison interface, resize the navigator and section the panels ([#136](https://github.com/miklschmidt/archboard/issues/136)) ([3c88b1d](https://github.com/miklschmidt/archboard/commit/3c88b1d0247ab0cd802a4c92f88fa762ec1d1744))
+
+
+### Bug Fixes
+
+* **cli:** remove the hand-maintained CLI command audit ([#132](https://github.com/miklschmidt/archboard/issues/132)) ([e9be3a0](https://github.com/miklschmidt/archboard/commit/e9be3a0e9b8aad94427652a668fd736b3befb9b1))
+* **reader:** a hidden relationship kind takes the cards that drew only its lines off the picture ([#134](https://github.com/miklschmidt/archboard/issues/134)) ([2e21988](https://github.com/miklschmidt/archboard/commit/2e21988830b5a4f599f549383d0ceb6390eaa69a))
+
 ## [0.5.0](https://github.com/miklschmidt/archboard/compare/v0.4.1...v0.5.0) (2026-11-18)
 
 
