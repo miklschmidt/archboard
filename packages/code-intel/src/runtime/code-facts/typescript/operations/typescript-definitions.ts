@@ -132,21 +132,34 @@ const WRAPPERS = new Set(["as_expression", "satisfies_expression", "parenthesize
 /** A name, or a chain of names through `.`, that another declaration may define. */
 const NAMED = /^[\p{L}\p{N}_$]+(?:\.[\p{L}\p{N}_$]+)*$/u;
 
+/** The calls that return their first argument: with more members on it, or frozen. */
+const RETURNS_FIRST = new Set(["Object.assign", "Object.freeze"]);
+
 /**
- * The first argument of a call to `Object.assign`, which the call returns
- * with more members on it.
+ * The function a call names, as the file spells it.
+ * @param expression The expression.
+ * @returns The callee, or undefined for an expression that is no call.
+ */
+function calleeOf(expression: Node): string | undefined {
+	return expression.type === "call_expression"
+		? expression.childForFieldName("function")?.text
+		: undefined;
+}
+
+/**
+ * The first argument of a call to `Object.assign` or `Object.freeze`, which
+ * the call returns, with more members on it or frozen.
  * @param expression The expression.
  * @returns The argument, or undefined for another expression.
  */
 function assignedOnto(expression: Node): Node | undefined {
-	if (expression.type !== "call_expression") return undefined;
-	if (expression.childForFieldName("function")?.text !== "Object.assign") return undefined;
+	if (!RETURNS_FIRST.has(calleeOf(expression) ?? "")) return undefined;
 	return expression.childForFieldName("arguments")?.namedChildren[0] ?? undefined;
 }
 
 /**
  * What a declaration holds, through what keeps a value what it is: `as`,
- * `satisfies`, parentheses, and `Object.assign` onto it.
+ * `satisfies`, parentheses, `Object.assign` onto it and `Object.freeze`.
  * @param declaration The declaration or expression.
  * @returns The innermost expression, or the declaration itself when it holds none.
  */
@@ -177,6 +190,17 @@ function aliasOf(declaration: Node): string | undefined {
 	const held = heldValue(declaration);
 	const named = held.type === "identifier" || held.type === "member_expression";
 	return held !== declaration && named && NAMED.test(held.text) ? held.text : undefined;
+}
+
+/**
+ * The mark of a declaration that holds what a call returns, as `const
+ * buttonClass = cva(...)` does: a tagged template, as `styled.div` writes, is
+ * a call too.
+ * @param declaration The declaration.
+ * @returns The mark, or nothing.
+ */
+function madeByCall(declaration: Node): Pick<Definition, "madeByCall"> {
+	return heldValue(declaration).type === "call_expression" ? { madeByCall: true } : {};
 }
 
 /**
@@ -344,8 +368,8 @@ const CALLED_BY_LANGUAGE = new Set([
 
 /**
  * What a declaration's syntax says beside its kind: that it declares a type,
- * the call it only passes on, the name whose value it holds, and that the
- * language calls it.
+ * the call it only passes on, the name whose value it holds, that a call
+ * made it, and that the language calls it.
  * @param name The declared name.
  * @param declaration The declaration.
  * @returns Those that hold.
@@ -353,7 +377,7 @@ const CALLED_BY_LANGUAGE = new Set([
 function traitsOf(
 	name: Node,
 	declaration: Node,
-): Pick<Definition, "type" | "passes" | "aliases" | "calledByLanguage"> {
+): Pick<Definition, "type" | "passes" | "aliases" | "madeByCall" | "calledByLanguage"> {
 	const passes = passesTo(declaration);
 	const aliases = aliasOf(declaration);
 	const called = declaration.type === "method_definition" && CALLED_BY_LANGUAGE.has(name.text);
@@ -361,6 +385,7 @@ function traitsOf(
 		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...(aliases === undefined ? {} : { aliases }),
+		...madeByCall(declaration),
 		...(called ? { calledByLanguage: true as const } : {}),
 	};
 }

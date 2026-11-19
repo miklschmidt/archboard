@@ -45,7 +45,10 @@ so agents in an implementation loop added exported constants and nothing failed.
   server types as callable, such as the helper that `cva(...)` returns, is a
   function. A value that a call makes and that cannot be called stays a value:
   an exported zod schema is one. A contract module keeps its schemas inside
-  and exports a parse function and the types derived from them.
+  and exports a parse function and the types derived from them. Where no
+  language server types a value that a call makes, nothing tells whether it
+  can be called, so its `EXPOSED_VALUE` is information and no
+  `MODULE_SHALLOW` rests on it: a missing server never makes a warning.
 - **Each exported name gets at most one finding** (TASK-646.05).
   `EXPOSED_UNUSED` comes first, because its remedy removes the name. A
   function or method that only passes its call on is `CODE_PASS_THROUGH`,
