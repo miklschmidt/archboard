@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { codexApprovalMs } from "@archboard/timing";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import {
 	CHECKOUT_ROOT,
@@ -136,7 +135,7 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		expect(response.success).toBe(true);
 		expect(
 			approval.settled[0]!.request.expiresAtMs - approval.settled[0]!.request.createdAtMs,
-		).toBe(codexApprovalMs("expiry"));
+		).toBe(90_000);
 		expect(approval.settled[0]?.decision).toMatchObject({
 			outcome: "expired",
 			cause: "deadline_reached",

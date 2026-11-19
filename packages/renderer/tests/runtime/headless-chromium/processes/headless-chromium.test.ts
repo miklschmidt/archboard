@@ -9,7 +9,6 @@ import {
 	type HeadlessChromium,
 } from "#runtime/headless-chromium/processes/launch.ts";
 import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
-import { rasterMs } from "@archboard/timing";
 
 // The module is held to what its callers build on: flags of their own reach
 // Chromium, a window's page is exactly the size asked for, events reach
@@ -40,8 +39,8 @@ function launch(extraArgs: readonly string[] = []): Promise<HeadlessChromium> {
 	return launchHeadlessChromium({
 		chromiumPath: CHROMIUM_PATH,
 		extraArgs,
-		startupTimeoutMs: rasterMs("startupTimeout"),
-		cleanupTimeoutMs: rasterMs("cleanup"),
+		startupTimeoutMs: 30_000,
+		cleanupTimeoutMs: 1000,
 	});
 }
 
@@ -64,7 +63,7 @@ let page: DevTools;
 
 beforeAll(async () => {
 	chromium = await launch(["--screen-info={2560x1600}"]);
-	page = await chromium.openPage(rasterMs("chromiumCall"));
+	page = await chromium.openPage(10_000);
 });
 
 afterAll(async () => {
@@ -76,16 +75,12 @@ describe("a window", () => {
 		const { targetId, page: windowPage } = await chromium.openWindow(
 			"data:text/html,<title>sized</title>",
 			{ width: 1920, height: 1080 },
-			rasterMs("chromiumCall"),
+			10_000,
 		);
 		expect(targetId).not.toBe("");
 		expect(await windowPage.evaluate("[innerWidth, innerHeight]")).toEqual([1920, 1080]);
 		// A window the screen cannot hold is refused rather than captured cut off.
-		const oversize = chromium.openWindow(
-			"about:blank",
-			{ width: 3000, height: 1000 },
-			rasterMs("chromiumCall"),
-		);
+		const oversize = chromium.openWindow("about:blank", { width: 3000, height: 1000 }, 10_000);
 		await expect(oversize).rejects.toBeInstanceOf(HeadlessChromiumError);
 		await expect(oversize).rejects.toMatchObject({ code: "failed" });
 	});
@@ -98,7 +93,7 @@ describe("a page", () => {
 		// A frozen Chromium answers nothing, as a wedged or cold one may not.
 		process.kill(-chromium.pid, "SIGSTOP");
 		try {
-			const opening = chromium.openPage(rasterMs("chromiumCall"), controller.signal);
+			const opening = chromium.openPage(10_000, controller.signal);
 			controller.abort(reason);
 			// It settles on the cancellation, not on the page's own deadline.
 			await expect(opening).rejects.toBe(reason);
@@ -148,7 +143,7 @@ describe("a page Blob", () => {
 			const file = join(directory, "blob.bin");
 			// A file left longer than the Blob, as a crashed earlier run could leave, keeps no tail.
 			writeFileSync(file, new Uint8Array(size + 4096));
-			const read = await page.readBlobTo(objectId as string, file, rasterMs("chromiumCall"));
+			const read = await page.readBlobTo(objectId as string, file, 10_000);
 			expect(read.bytes).toBe(size);
 			const expected = Uint8Array.from({ length: size }, (_, i) => (i * 31) % 251);
 			expect(Buffer.from(readFileSync(file)).equals(Buffer.from(expected))).toBe(true);
@@ -175,8 +170,8 @@ describe("ownership", () => {
 	test("no executable is unavailable, with nothing left to clean", async () => {
 		const refused = launchHeadlessChromium({
 			chromiumPath: "",
-			startupTimeoutMs: rasterMs("startupTimeout"),
-			cleanupTimeoutMs: rasterMs("cleanup"),
+			startupTimeoutMs: 30_000,
+			cleanupTimeoutMs: 1000,
 		});
 		await expect(refused).rejects.toMatchObject({
 			code: "unavailable",

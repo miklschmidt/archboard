@@ -2,7 +2,7 @@
 //! apart they fly, and what one pulse looks like; and the pulse train, the
 //! numbers of those pulses that every painter draws. The scene answers where a
 //! piece's bar stands at a moment; each painter spells the numbers and runs the
-//! clock (ADR 0083).
+//! clock (ADR 0084).
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;

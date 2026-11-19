@@ -1,7 +1,7 @@
 import { realpathSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { codexContextFreshUntil } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import { cloneAndFreeze } from "#runtime/host/rules/immutability.ts";
 import { captureExecutionContext } from "#runtime/host/turn-input/rules/context.ts";
 import { canonicalJson } from "#runtime/host/turn-input/rules/canonical-json.ts";
@@ -297,7 +297,7 @@ function createDefaultWorkbenchHost(
 		return cloneAndFreeze({
 			text,
 			capturedAtMs,
-			freshUntilMs: codexContextFreshUntil(capturedAtMs),
+			freshUntilMs: deadline("codexRealtime.contextFreshness", capturedAtMs),
 		});
 	};
 	/**

@@ -1,3 +1,5 @@
+// How long overlapping operations took, without counting the time idle between them.
+
 /**
  * Measure overlapping operations once, without counting time idle between them.
  * @returns The operation wrapper and elapsed wall time.

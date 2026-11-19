@@ -12,7 +12,6 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { presentationMs } from "@archboard/timing";
 import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {
 	chooseVariantInShell,
@@ -455,13 +454,13 @@ test("a reader who did not ask for reduced motion is glided to the step, and it 
 		serving();
 		mountStage();
 		await presenting();
-		frames.run(presentationMs("step") + 200);
+		frames.run(900 + 200);
 		await settle();
 		goTo(1);
 		await settle();
 		// Still on its way: the step has not finished arriving.
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
-		frames.run(presentationMs("step") + 200);
+		frames.run(900 + 200);
 		await settle();
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
 		expectCamera(cameraNow(), N1_IN_VIEW);

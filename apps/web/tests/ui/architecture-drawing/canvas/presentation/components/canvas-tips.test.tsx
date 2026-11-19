@@ -3,7 +3,6 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, spyOn, test } from "bun:test";
 
-import { exploringMs } from "@archboard/timing";
 import { takeFrames } from "#tests/ui/support/canvas/camera-probes.ts";
 import { viewport } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { group, served } from "#tests/ui/support/canvas/wiring-fixture.tsx";
@@ -72,7 +71,7 @@ test("a tip stays open while the camera is asked for the view it already shows",
 		act(() => {
 			fireEvent.keyDown(viewport(), { key: "0" });
 		});
-		frames.run(exploringMs("cameraFit"));
+		frames.run(520);
 		expect(tipPlace().querySelector("[data-slot='semantic-subject-tip']")).not.toBeNull();
 	} finally {
 		frames.restore();

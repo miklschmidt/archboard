@@ -22,7 +22,7 @@ import {
 } from "#cli/contract/protocol/shared-options.ts";
 import { stateInvocation } from "@archboard/server-lifecycle/server-client";
 import { packageVersion } from "#cli/routing/store/package-version.ts";
-import { gitMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { CommandRoutes, RouteOwner } from "#cli/routing/protocol/route.ts";
 import { helpText, usageLine } from "#cli/routing/rules/help.ts";
 import { dispatchedCommand } from "#cli/routing/rules/dispatch.ts";
@@ -82,7 +82,7 @@ async function runInterruptibleCommand(
 		forceTimer = setTimeout(() => {
 			remove();
 			process.kill(process.pid, signal);
-		}, gitMs("cliInterruptCleanup"));
+		}, durationMs("git.cliInterruptCleanup"));
 	};
 	process.on("SIGINT", interrupt);
 	process.on("SIGTERM", interrupt);

@@ -16,7 +16,6 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
-import { voiceMs } from "@archboard/timing";
 import { PaneSubtitles } from "#ui/application/components/PaneSubtitles.tsx";
 import type { VoiceFeed } from "#ui/application/rules/subtitled-transcript.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
@@ -306,7 +305,7 @@ test("turning subtitles off takes the box away once it has left", () => {
 			true,
 		);
 		act(() => {
-			clock.advanceTo(voiceMs("boxOut"));
+			clock.advanceTo(240);
 		});
 		expect(boxed()).toBe(false);
 		// No plain subtitles come in its place: subtitles are off.

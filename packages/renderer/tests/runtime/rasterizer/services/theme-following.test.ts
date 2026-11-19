@@ -12,7 +12,6 @@ import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { VariantContentSchema } from "@archboard/model/content";
 import { themeColor } from "#runtime/theme/store/source.ts";
-import { rasterMs } from "@archboard/timing";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/rasterizer/services/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
@@ -61,11 +60,11 @@ beforeAll(async () => {
 	chromium = await launchHeadlessChromium({
 		chromiumPath: discoveredChromiumPath(),
 		extraArgs: ["--disable-gpu", "--hide-scrollbars", "--force-color-profile=srgb"],
-		startupTimeoutMs: rasterMs("startupTimeout"),
-		cleanupTimeoutMs: rasterMs("cleanup"),
+		startupTimeoutMs: 30_000,
+		cleanupTimeoutMs: 1000,
 		tempRootPrefix: "archboard-theme-following-",
 	});
-	page = await chromium.openPage(rasterMs("startupTimeout"));
+	page = await chromium.openPage(30_000);
 	const file = join(chromium.tempRoot, "auto.svg");
 	writeFileSync(file, drawn.svg, "utf8");
 	const size = `width:${drawn.width}px;height:${drawn.height}px`;
@@ -86,9 +85,9 @@ beforeAll(async () => {
 			deviceScaleFactor: 1,
 			mobile: false,
 		},
-		rasterMs("jobTimeout"),
+		10_000,
 	);
-	await page.call("Page.navigate", { url: pathToFileURL(html).href }, rasterMs("jobTimeout"));
+	await page.call("Page.navigate", { url: pathToFileURL(html).href }, 10_000);
 });
 
 afterAll(async () => {
@@ -104,7 +103,7 @@ async function shotsUnder(scheme: "light" | "dark"): Promise<Map<string, Map<str
 	await page.call(
 		"Emulation.setEmulatedMedia",
 		{ features: [{ name: "prefers-color-scheme", value: scheme }] },
-		rasterMs("jobTimeout"),
+		10_000,
 	);
 	await page.evaluate(
 		`(async () => {
@@ -113,7 +112,7 @@ async function shotsUnder(scheme: "light" | "dark"): Promise<Map<string, Map<str
 			await document.fonts.ready;
 			await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
 		})()`,
-		{ timeoutMs: rasterMs("jobTimeout") },
+		{ timeoutMs: 10_000 },
 	);
 	const shots = new Map<string, Map<string, number>>();
 	for (const [index, placement] of PLACEMENTS.entries()) {
@@ -124,7 +123,7 @@ async function shotsUnder(scheme: "light" | "dark"): Promise<Map<string, Map<str
 				clip: { x: 0, y: index * drawn.height, width: drawn.width, height: drawn.height, scale: 1 },
 				fromSurface: true,
 			},
-			rasterMs("jobTimeout"),
+			10_000,
 		);
 		const data = (shot as { data: string }).data;
 		shots.set(placement, pngRgbCounts(Uint8Array.from(Buffer.from(data, "base64"))));

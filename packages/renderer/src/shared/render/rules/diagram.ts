@@ -17,7 +17,7 @@
 
 import { defaultTrafficSpeed } from "@archboard/model/content";
 import { defaultLayoutEngine } from "@archboard/model/render-reply";
-import { pictureMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {
 	SemanticRenderError,
@@ -36,9 +36,9 @@ const NOTHING_TO_DRAW = {
 
 /** The durations and speeds every picture is drawn with. */
 const CLOCK = {
-	farViewSwapMs: pictureMs("farViewSwap"),
+	farViewSwapMs: durationMs("picture.farViewSwap"),
 	trafficSpeed: defaultTrafficSpeed(),
-	cycleCapMs: pictureMs("flowCycleCap"),
+	cycleCapMs: durationMs("picture.flowCycleCap"),
 };
 
 /**

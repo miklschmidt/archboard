@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { exploringMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { ModelFlow } from "@archboard/model/content";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
@@ -117,7 +117,7 @@ function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean
 	}, [structural, ids, focus, setFocus]);
 	const fit = useCallback((): boolean => {
 		if (picture === undefined) return false;
-		const duration = reducedMotion ? 0 : exploringMs("cameraFit");
+		const duration = reducedMotion ? 0 : durationMs("exploring.cameraFit");
 		camera.glide({ kind: "whole", content: picture }, duration);
 		return true;
 	}, [picture, camera, reducedMotion]);

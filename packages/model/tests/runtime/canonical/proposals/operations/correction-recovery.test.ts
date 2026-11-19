@@ -1,5 +1,4 @@
 import { afterEach, expect, test } from "bun:test";
-import { modelLockMs } from "@archboard/timing";
 import { readArchitectureModel, listArchitectureCheckpoints } from "@archboard/model/store-read";
 import { editArchitectureModule, recoverArchitectureModel } from "@archboard/model/store-write";
 import { fixture, disposeFixtures, git } from "#tests/runtime/canonical/edit/operations/fixture.ts";
@@ -42,7 +41,7 @@ test("an archive-only correction recovers after durable installation and retains
 	};
 	const { exitCode, output } = await writeInProcess(root, vault, intent, "installed");
 	expect(exitCode, output).toBe(86);
-	Date.now = () => now() + modelLockMs("lease");
+	Date.now = () => now() + 3000;
 	expect(readArchitectureModel(vault)).toMatchObject({
 		success: false,
 		code: "RECOVERY_REQUIRED",

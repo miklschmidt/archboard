@@ -5,7 +5,7 @@
 // voice hear it through the tab's one ordered callback queue, only while voice is live.
 
 import { z } from "zod";
-import { codexContextFreshUntil } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import { EXECUTION_CONTEXT_KEYS } from "#runtime/host/turn-input/rules/context.ts";
 import { BROWSER_VOICE_CONTEXT_TOPIC_MAX_UTF8_BYTES } from "#shared/browser/schemas/vocabulary.ts";
 import type {
@@ -157,7 +157,7 @@ function parseChange(change: ContextChange): Announced {
 		change,
 		author: change.author ?? null,
 		capturedAtMs,
-		freshUntilMs: codexContextFreshUntil(capturedAtMs),
+		freshUntilMs: deadline("codexRealtime.contextFreshness", capturedAtMs),
 	};
 }
 

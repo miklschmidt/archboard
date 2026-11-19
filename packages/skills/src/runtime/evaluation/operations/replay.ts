@@ -9,7 +9,7 @@ import path from "node:path";
 import { z } from "zod";
 import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 import { diagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
-import { skillEvalMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { talkMsSamples, talkClock, framesOf, type Talk } from "@archboard/walkthrough/talk";
 import { keepTalk, readTalk, recordingContainerOf } from "@archboard/walkthrough/recorder";
 import {
@@ -92,7 +92,7 @@ function talkOfFixture(
 	if (walkthrough === undefined) {
 		throw new Error(`the fixture's talk: no walkthrough "${fixture.walkthrough}" to present`);
 	}
-	const step = talkMsSamples(skillEvalMs("talkStep"));
+	const step = talkMsSamples(durationMs("skillEval.talkStep"));
 	const samples = step * walkthrough.beats.length;
 	const events: Talk["events"] = [
 		{ kind: "drawn", at: 0, version: document.version },

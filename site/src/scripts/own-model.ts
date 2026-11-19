@@ -7,7 +7,7 @@
 // whole on the CPU. Its traffic keeps a frame running while it is in view, so traffic runs only on
 // WebGPU, where such a frame costs the page little. With reduced motion, the picture stands whole.
 
-import { pictureMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import own from "../paintings/own.json";
 import paintingUrl from "../paintings/own.painting.json?url";
@@ -35,7 +35,7 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 		const enters = () => started.kind !== "cpu" && !motion.matches;
 		const flows = () => started.kind === "gpu" && !motion.matches;
 		painter.setPhases(PHASES);
-		painter.setLongestStep(pictureMs("longestStep"));
+		painter.setLongestStep(durationMs("picture.longestStep"));
 		painter.setFarLine(0, 0);
 		painter.setTrafficShown(flows());
 
@@ -93,7 +93,8 @@ export async function paintOwnModel(picture: HTMLElement): Promise<void> {
 			if (shown || (enters() && box.bottom > window.innerHeight)) return;
 			shown = true;
 			window.removeEventListener("scroll", check);
-			if (enters()) painter.enter(painting, "null", pictureMs("entry"), 0, 0, performance.now());
+			if (enters())
+				painter.enter(painting, "null", durationMs("picture.entry"), 0, 0, performance.now());
 			else painter.show(painting);
 			wake();
 		};

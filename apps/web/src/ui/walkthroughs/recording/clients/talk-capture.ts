@@ -7,12 +7,12 @@
 // the graph's clock are one count. An event is stamped with the graph's clock
 // when it happens, which is at most one render callback from the sound heard
 // then, well under one frame of video. What the voice says is the exception: the
-// browser holds the voice for `recordingMs("voiceBuffer")` before it plays it, and
+// browser holds the voice for `"recording.voiceBuffer"` before it plays it, and
 // the words are not held, so a line is stamped that much after it arrives, when
 // its sound is heard. Nothing here draws or captures a picture: the picture is
 // rendered from the talk afterwards, frame by frame.
 
-import { recordingMs } from "@archboard/timing";
+import { durationMs, waitUntil, type Clock } from "@archboard/timing";
 import type { publishRecordingPage } from "@archboard/walkthrough/recording";
 import { talkClock, talkMsSamples } from "@archboard/walkthrough/talk";
 
@@ -29,7 +29,7 @@ declare function registerProcessor(name: string, processor: typeof AudioWorkletP
 declare const currentFrame: number;
 
 /** How long after a line arrives its sound is heard, in samples: what the browser buffers of the voice. */
-const VOICE_BUFFER_SAMPLES = Math.round(talkMsSamples(recordingMs("voiceBuffer")));
+const VOICE_BUFFER_SAMPLES = Math.round(talkMsSamples(durationMs("recording.voiceBuffer")));
 
 /** The name the tap is registered by in the audio worklet. */
 const TAP = "archboard-talk-tap";
@@ -129,14 +129,28 @@ function wavOf(samples: Int16Array): Blob {
 }
 
 /**
- * One turn of the browser's event loop.
- * @returns Once it has turned.
+ * The page's monotonic clock, so a change of the system clock never cuts the wait for the tap
+ * short or stretches it.
  */
-async function turn(): Promise<void> {
-	await new Promise<void>((resolve) => {
-		setTimeout(resolve, 0);
-	});
-}
+const TAP_CLOCK: Clock = Object.freeze({
+	/**
+	 * The time now.
+	 * @returns Milliseconds on the monotonic clock.
+	 */
+	now: () => performance.now(),
+	/**
+	 * Run once after a delay.
+	 * @param ms The delay.
+	 * @param run What to run.
+	 * @returns Cancels it.
+	 */
+	after: (ms: number, run: () => void) => {
+		const timer = setTimeout(run, ms);
+		return () => {
+			clearTimeout(timer);
+		};
+	},
+});
 
 /** A talk being kept, from the voice's first word to the end of its last step. */
 class TalkCapture {
@@ -319,13 +333,14 @@ class TalkCapture {
 	 * @returns Once it has, or once waiting longer would not help.
 	 */
 	async #drained(until: number): Promise<void> {
-		const deadline = performance.now() + recordingMs("tapDrain");
-		while (performance.now() < deadline) {
-			const last = this.#blocks.at(-1);
-			if (last !== undefined && last.frame + last.pcm.length >= until) return;
-			// oxlint-disable-next-line no-await-in-loop -- the tap's messages arrive between turns
-			await turn();
-		}
+		await waitUntil(
+			"recording.tapDrain",
+			() => {
+				const last = this.#blocks.at(-1);
+				return last !== undefined && last.frame + last.pcm.length >= until ? true : undefined;
+			},
+			{ clock: TAP_CLOCK },
+		);
 	}
 
 	/**

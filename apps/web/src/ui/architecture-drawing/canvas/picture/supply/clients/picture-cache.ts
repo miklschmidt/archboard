@@ -20,7 +20,7 @@
 // window, cleared site data) or never answer, so every read and write here
 // survives that and simply draws again.
 
-import { pictureMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
 import { z } from "zod";
@@ -109,7 +109,7 @@ async function forgetOldDrawings(storage: PictureStorage, kept: string): Promise
 function withinStoreWait<T>(work: Promise<T>): Promise<T | undefined> {
 	return new Promise((resolve, reject) => {
 		const clock = frameClock();
-		const timer = clock.after(pictureMs("storeWait"), () => resolve(undefined));
+		const timer = clock.after(durationMs("picture.storeWait"), () => resolve(undefined));
 		void work.then(resolve, reject).finally(() => clock.cancelAfter(timer));
 	});
 }

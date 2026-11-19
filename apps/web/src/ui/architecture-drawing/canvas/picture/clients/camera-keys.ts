@@ -1,4 +1,4 @@
-import { exploringMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	PAN_STEP,
@@ -42,7 +42,7 @@ function moveCameraByKey(
 		return true;
 	}
 	if (key === "0") {
-		camera.glide({ kind: "whole", content }, reducedMotion ? 0 : exploringMs("cameraFit"));
+		camera.glide({ kind: "whole", content }, reducedMotion ? 0 : durationMs("exploring.cameraFit"));
 		return true;
 	}
 	return false;

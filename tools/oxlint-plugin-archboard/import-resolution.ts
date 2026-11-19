@@ -217,20 +217,26 @@ function readManifestField(context: ImportContext, ownerRoot: string, field: str
 }
 
 /**
- * The `imports` entries of an owner: the key and the file path it maps to.
+ * The `imports` entries of an owner: the key and the file path it maps to. An entry that names
+ * a file per condition maps to its `default` file, the one the repository itself runs; a build
+ * under another condition, such as `published`, swaps the file out of the graph it bundles.
  * @param context The rule context supplying the working directory.
  * @param ownerRoot The owner's repository path.
  * @returns The entries, none when the owner declares no `imports`.
- * @throws {Error} When an entry is anything but a file path.
+ * @throws {Error} When an entry is neither a file path nor conditions with a `default` file path.
  */
 function subpathImports(context: ImportContext, ownerRoot: string): Array<[string, string]> {
 	const declared = readManifestField(context, ownerRoot, "imports");
 	if (typeof declared !== "object" || declared === null) {
 		return [];
 	}
-	return Object.entries(declared).map(([key, target]) => {
+	return Object.entries(declared).map(([key, entry]) => {
+		const target =
+			typeof entry === "object" && entry !== null ? Reflect.get(entry, "default") : entry;
 		if (typeof target !== "string") {
-			throw new Error(`${ownerRoot}/package.json: imports "${key}" must be a file path`);
+			throw new Error(
+				`${ownerRoot}/package.json: imports "${key}" must be a file path or conditions with a default file path`,
+			);
 		}
 		return [key, target];
 	});

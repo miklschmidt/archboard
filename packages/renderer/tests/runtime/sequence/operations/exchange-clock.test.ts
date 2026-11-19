@@ -2,7 +2,6 @@
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
 import { defaultTrafficSpeed } from "@archboard/model/content";
-import { pictureMs } from "@archboard/timing";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { messageBeams, slidingSpeedOf } from "#tests/runtime/support/drawn-traffic.ts";
 import {
@@ -125,7 +124,7 @@ describe("an exchange is told on one clock", () => {
 			svg,
 			steps.map(({ id }) => id),
 		);
-		expect(told[0]!.cycle).toBeLessThanOrEqual(pictureMs("flowCycleCap") / 1000 + 0.001);
+		expect(told[0]!.cycle).toBeLessThanOrEqual(16_000 / 1000 + 0.001);
 		for (const { speed } of told) expect(speed).toBeGreaterThan(FLOWN);
 	});
 });

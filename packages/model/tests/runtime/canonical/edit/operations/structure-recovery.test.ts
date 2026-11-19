@@ -6,7 +6,6 @@ import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
-import { modelLockMs } from "@archboard/timing";
 import {
 	readArchitectureModel,
 	readArchitectureCheckpoint,
@@ -76,7 +75,7 @@ test.each(["remove-and-add", "flow-repair"])(
 		const output = new Response(child.stdout).text();
 		const errors = new Response(child.stderr).text();
 		expect(await child.exited, `${await output} ${await errors}`).toBe(86);
-		Date.now = () => actualNow() + modelLockMs("lease");
+		Date.now = () => actualNow() + 3000;
 		const blocked = readArchitectureModel(vault);
 		expect(blocked).toMatchObject({
 			success: false,

@@ -7,17 +7,31 @@
 // loads and React's commits all run on the browser's own time, and this is
 // where the stepped clock waits for them.
 
-import { replayMs } from "@archboard/timing";
+import { waitUntil, type Clock } from "@archboard/timing";
 
 /**
- * One turn of the browser's event loop.
- * @returns Once it has turned.
+ * The page's monotonic clock, so a change of the system clock never cuts the wait for a frame
+ * short or stretches it.
  */
-async function turn(): Promise<void> {
-	await new Promise<void>((resolve) => {
-		setTimeout(resolve, 0);
-	});
-}
+const FRAME_CLOCK: Clock = Object.freeze({
+	/**
+	 * The time now.
+	 * @returns Milliseconds on the monotonic clock.
+	 */
+	now: () => performance.now(),
+	/**
+	 * Run once after a delay.
+	 * @param ms The delay.
+	 * @param run What to run.
+	 * @returns Cancels it.
+	 */
+	after: (ms: number, run: () => void) => {
+		const timer = setTimeout(run, ms);
+		return () => {
+			clearTimeout(timer);
+		};
+	},
+});
 
 /** Watches a page for the moment a frame of it is ready. */
 class FrameReadiness {
@@ -41,18 +55,23 @@ class FrameReadiness {
 	 * @throws {Error} Naming what was pending when it is not ready in time.
 	 */
 	async until(pending: () => string | null, frame: number): Promise<void> {
-		const deadline = performance.now() + replayMs("frameReady");
-		let quiet = 0;
-		let seen = this.#changes;
-		while (quiet < 2) {
-			// oxlint-disable-next-line no-await-in-loop -- each look waits for the fonts the last one may have started loading
-			const waiting = await waitingFor(pending);
-			quiet = waiting === null && this.#changes === seen ? quiet + 1 : 0;
-			seen = this.#changes;
-			if (performance.now() > deadline) throw notReady(frame, waiting);
-			// oxlint-disable-next-line no-await-in-loop -- the page is looked at again only after the browser has had a turn
-			await turn();
-		}
+		const look: { quiet: number; seen: number; waiting: string | null } = {
+			quiet: 0,
+			seen: this.#changes,
+			waiting: null,
+		};
+		const ready = await waitUntil(
+			"replay.frameReady",
+			async () => {
+				if (look.quiet >= 2) return true;
+				look.waiting = await waitingFor(pending);
+				look.quiet = look.waiting === null && this.#changes === look.seen ? look.quiet + 1 : 0;
+				look.seen = this.#changes;
+				return undefined;
+			},
+			{ clock: FRAME_CLOCK },
+		);
+		if (!ready.ok) throw notReady(frame, look.waiting, ready.boundSeconds);
 	}
 }
 
@@ -70,11 +89,12 @@ async function waitingFor(pending: () => string | null): Promise<string | null> 
  * Why a frame was not ready in time.
  * @param frame The frame.
  * @param waiting What it waited for, or null when only the page kept changing.
+ * @param seconds How long it was waited on.
  * @returns The refusal.
  */
-function notReady(frame: number, waiting: string | null): Error {
+function notReady(frame: number, waiting: string | null, seconds: number): Error {
 	return new Error(
-		`Frame ${frame} was not ready within ${replayMs("frameReady") / 1000} s: it waited for ${waiting ?? "the page to stop changing"}.`,
+		`Frame ${frame} was not ready within ${seconds} s: it waited for ${waiting ?? "the page to stop changing"}.`,
 	);
 }
 

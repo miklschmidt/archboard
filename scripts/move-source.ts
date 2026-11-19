@@ -76,7 +76,7 @@ const ALIASED = /\.(?:[cm]?tsx?|css)$/u;
 const TEXT = /\.(?:md|jsonc?|ya?ml|toml|txt|nix|sh)$/u;
 /** The config and doc files whose repository paths follow a move (doc-003, section 3). */
 const LISTED =
-	/^(?:vite\.config\.ts|\.oxlintrc(?:\.tests)?\.jsonc|components\.json|package\.json|docs\/readme\/assets\.json|docs\/agents\/(?:boundaries|frontend|test-suite)\.md|(?:packages|apps)\/[^/]+\/README\.md)$/u;
+	/^(?:vite\.config\.ts|\.oxlintrc(?:\.tests)?\.jsonc|components\.json|package\.json|docs\/readme\/assets\.json|(?:packages|apps)\/[^/]+\/README\.md)$/u;
 /** What no move rewrites: records of the past and the vault, which the CLI writes. */
 const EXCLUDED = /^(?:backlog\/|docs\/adr\/|\.archboard\/|node_modules\/)/u;
 

@@ -274,24 +274,6 @@ const PICTURE_LOOKUP = Object.freeze({
 });
 
 /**
- * One duration of a picture.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function pictureMs(key: keyof typeof PICTURE_LOOKUP): number {
-	return PICTURE_LOOKUP[key];
-}
-
-/**
- * One duration of a presented walkthrough.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function presentationMs(key: keyof typeof PRESENTATION_MS): number {
-	return PRESENTATION_MS[key];
-}
-
-/**
  * At which points of a move each of its parts happens, and how long the
  * entrance, the exit and the shutter take, as a painter reads them.
  * @returns The phases, as JSON.
@@ -306,4 +288,4 @@ function painterPhasesJson(): string {
 	});
 }
 
-export { pictureMs, presentationMs, painterPhasesJson };
+export { painterPhasesJson, PICTURE_LOOKUP, PRESENTATION_MS };

@@ -1,19 +1,10 @@
 import type { CodexWorkbenchDomainScope as CodexWorkbenchComponents } from "#runtime/voice/protocol/extension.ts";
 import type { DynamicWaitEvent } from "#runtime/dynamic-tools/protocol/lifecycle-contract.ts";
-import { codexSessionMs } from "@archboard/timing";
+import { waitUntil } from "@archboard/timing";
 import type { ArchboardWorkbenchServer } from "#server/workbench-host/services/production.ts";
 
 type WaitInput = Parameters<ArchboardWorkbenchServer["waitForTargets"]>[0];
 type TargetThreadId = WaitInput["owner"]["sortedTargetThreadIds"][number];
-
-/**
- * Pause for a bounded poll interval.
- * @param ms How long.
- * @returns Resolves after the pause.
- */
-function sleepFor(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 /**
  * Whether one target thread has an approval waiting for a person.
@@ -97,22 +88,17 @@ async function waitForTargetsWith(
 	workbench: CodexWorkbenchComponents,
 	input: WaitInput,
 ): Promise<DynamicWaitEvent> {
-	const deadline = Date.now() + input.timeoutMs;
-	do {
-		if (input.signal.aborted) {
-			throw Object.assign(new Error("The dynamic wait was cancelled."), { code: "cancellation" });
-		}
-		// oxlint-disable-next-line no-await-in-loop -- each poll must see the previous one's answer before waiting again
-		const observed = await observeTargetsOnce(workbench, input);
-		if (observed !== null) {
-			return observed;
-		}
-		const remaining = deadline - Date.now();
-		if (remaining > 0) {
-			// oxlint-disable-next-line no-await-in-loop -- the poll interval is the pause between sequential observations
-			await sleepFor(Math.min(remaining, codexSessionMs("waitTargetPoll")));
-		}
-	} while (Date.now() < deadline);
+	const found = await waitUntil(
+		"codexSession.waitTargets",
+		async () => {
+			if (input.signal.aborted) {
+				throw Object.assign(new Error("The dynamic wait was cancelled."), { code: "cancellation" });
+			}
+			return (await observeTargetsOnce(workbench, input)) ?? undefined;
+		},
+		{ boundMs: input.timeoutMs },
+	);
+	if (found.ok) return found.value;
 	return {
 		event: "timeout",
 		threadId: null,

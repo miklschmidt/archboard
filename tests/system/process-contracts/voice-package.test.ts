@@ -1,6 +1,7 @@
 // The npm build of @archboard/codex-realtime-voice works outside this repository: a Bun project
 // installs the packed tarball, type-checks a file that imports every public entry together with
-// the README's checked code blocks, and imports the server entry.
+// the README's checked code blocks, and runs the server's start and stop and the browser client's
+// reconnect. Every duration the packed code names resolves in timing's published build.
 import { expect, test } from "bun:test";
 import {
 	mkdtempSync,
@@ -93,11 +94,99 @@ function archboardConceptsInPackedPackage(): string[] {
 	);
 }
 
+/**
+ * Every name the packed JavaScript hands to timing: a duration, such as `"codexRealtime.stop"`,
+ * or a wait, which `waitUntil` takes.
+ * @returns The names, each once, a wait marked by a leading `wait:`.
+ */
+function timingNamesInPackedCode(): string[] {
+	const call = /\b(durationMs|deadline|waitUntil|pause)(?:\$\d+)?\(\s*"([a-zA-Z]+\.[a-zA-Z]+)"/g;
+	const names = readdirSync(path.join(packed, "dist"))
+		.filter((file) => file.endsWith(".mjs"))
+		.flatMap((file) =>
+			[...readFileSync(path.join(packed, "dist", file), "utf8").matchAll(call)].map(
+				([, operation, name]) => `${operation === "waitUntil" ? "wait:" : ""}${name ?? ""}`,
+			),
+		);
+	return [...new Set(names)].toSorted();
+}
+
+/**
+ * Read each name once through timing built under the `published` condition, which the pack builds
+ * with. A name that only the host's half of timing carries throws there.
+ * @param names The names, as {@link timingNamesInPackedCode} returns them.
+ * @returns One line for each name read.
+ */
+function readInPublishedTiming(names: readonly string[]): string[] {
+	const script = `import { deadline, waitUntil } from "@archboard/timing";
+for (const name of ${JSON.stringify(names)}) {
+	if (name.startsWith("wait:")) console.log(name, (await waitUntil(name.slice(5), () => true)).ok);
+	else console.log(name, deadline(name, 0));
+}`;
+	const output = run(
+		["bun", "--conditions", "published", "-e", script],
+		path.join(root, "packages/codex-realtime-voice"),
+	);
+	return output.split("\n").filter(Boolean);
+}
+
+/**
+ * What timing's published build says when it is asked for a duration only the host's half carries.
+ * @returns Its error output.
+ */
+function hostNameInPublishedTiming(): string {
+	const result = Bun.spawnSync(
+		[
+			"bun",
+			"--conditions",
+			"published",
+			"-e",
+			'import { durationMs } from "@archboard/timing"; durationMs("pane.report");',
+		],
+		{ cwd: path.join(root, "packages/codex-realtime-voice"), stdout: "pipe", stderr: "pipe" },
+	);
+	expect(result.exitCode).not.toBe(0);
+	return result.stderr.toString();
+}
+
+/** A consumer's server and page: a start against a Codex that exits, a stop, and a lost socket. */
+const EXERCISE = `import { chmodSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
+import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
+
+const executablePath = path.join(import.meta.dir, "codex");
+writeFileSync(executablePath, '#!/bin/sh\\n[ "$1" = --version ] && echo "codex-cli 0.166.0" && exit 0\\nexit 1\\n');
+chmodSync(executablePath, 0o755);
+const agent = createVoiceAgent({
+	storage: { directory: path.join(import.meta.dir, "state") },
+	codex: { executablePath },
+	checkouts: [import.meta.dir],
+	instructions: { coordinator: "Coordinate.", workhorse: "Work." },
+	onFatal: () => undefined,
+});
+const handlers = agent.bunHandlers({ path: "/voice", fetch: () => new Response("") });
+const server = Bun.serve({ hostname: "127.0.0.1", port: 0, ...handlers });
+const start = await agent.start().then(() => "started", () => "refused");
+Object.assign(globalThis, { location: { href: server.url.href } });
+const client = createVoiceClient({ socketPath: "/voice" });
+await client.connect();
+await agent.shutdown();
+await server.stop(true);
+await Bun.sleep(100);
+console.log(start, client.snapshot().connection);
+client.dispose();
+`;
+
 test("an outside Bun project installs the packed package, uses every public entry and the README's code", () => {
 	const project = realpathSync(mkdtempSync(path.join(tmpdir(), "codex-realtime-voice-consumer-")));
 	try {
 		run(["bun", "run", "pack:voice"], root);
 		expect(archboardConceptsInPackedPackage()).toEqual([]);
+		const names = timingNamesInPackedCode();
+		expect(names).toContain("codexRealtime.clientReconnect");
+		expect(readInPublishedTiming(names)).toHaveLength(names.length);
+		expect(hostNameInPublishedTiming()).toContain('no duration named "pane.report"');
 		const manifest = JSON.parse(readFileSync(path.join(packed, "package.json"), "utf8")) as {
 			name: string;
 			exports: Record<string, unknown>;
@@ -171,6 +260,9 @@ test("an outside Bun project installs the packed package, uses every public entr
 			project,
 		);
 		expect(imported.trim()).toBe("function");
+
+		writeFileSync(path.join(project, "exercise.ts"), EXERCISE);
+		expect(run(["bun", "exercise.ts"], project).trim()).toBe("refused reconnecting");
 	} finally {
 		rmSync(project, { recursive: true, force: true });
 	}

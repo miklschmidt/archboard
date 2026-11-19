@@ -30,7 +30,7 @@ import {
 	type RefObject,
 } from "react";
 
-import { presentationMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { PresentationFoot } from "#ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx";
 import { PresentationKeys } from "#ui/architecture-drawing/canvas/presentation/components/PresentationKeys.tsx";
 import { PresentationRail } from "#ui/architecture-drawing/canvas/presentation/components/PresentationRail.tsx";
@@ -46,8 +46,8 @@ type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 /** The paces the stylesheet eases the box in by, and hands a step to the next by (app.css, `semantic-presentation`). */
 const BOX_STYLE: CSSProperties = {
-	"--presentation-box-in-ms": `${presentationMs("boxIn")}ms`,
-	"--presentation-step-ms": `${presentationMs("boxStep")}ms`,
+	"--presentation-box-in-ms": `${durationMs("presentation.boxIn")}ms`,
+	"--presentation-step-ms": `${durationMs("presentation.boxStep")}ms`,
 };
 
 /** Inputs for a presented walkthrough. */

@@ -12,7 +12,7 @@
 // was drawn, what it is still doing and how long the frame was, to the camera as
 // it is drawn next. Whoever drives it owns the clock (`use-camera-motion`).
 
-import { exploringMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	ZOOM_STEP,
 	clampScale,
@@ -188,7 +188,7 @@ interface Stepped {
  * @returns The camera to draw, and what it is still doing.
  */
 function stepMotion(camera: Camera, motion: Motion, dt: number): Stepped {
-	const share = 1 - Math.exp(-dt / exploringMs("cameraEase"));
+	const share = 1 - Math.exp(-dt / durationMs("exploring.cameraEase"));
 	const eased = easeStep(motion.ease, share);
 	const zoomed = zoomStep(camera, motion.zoom, eased.move, share);
 	const resting = zoomed.zoom === null && eased.left === null;

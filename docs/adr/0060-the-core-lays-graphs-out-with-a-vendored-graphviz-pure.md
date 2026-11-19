@@ -74,7 +74,7 @@ answers it with a slow software routine: 15.6% of a layout in the spike. The
 core defines the `fma` symbol with an exact, fast emulation
 (`crates/archboard-graphviz/src/fma.rs`). Naming that symbol is the one site
 of unsafe code in archboard's crates, so `unsafe_code` is `deny` with one
-`expect` there (`docs/agents/strict-analysis-rust.md`).
+`expect` there.
 
 ## Consequences
 
