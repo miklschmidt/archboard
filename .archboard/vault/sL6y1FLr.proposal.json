@@ -118,6 +118,156 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#ARvUOMo8",
+      "kind": "module",
+      "value": {
+        "order": 15,
+        "name": "Codex connection",
+        "kind": "module",
+        "responsibility": "Opens one Codex child's connection, its epoch, identity authorities and transport, and opens sessions on it",
+        "description": "TASK-653.11, ./connection. openCodexConnection({ child, recordPrefix }) returns a plain-data CodexConnection (child, epoch, identity, transport) with no function-valued member: a fresh child and epoch from the record prefix, the authorities that name identities in them, and the transport over the child's stdio. A child that already exited yields a closed transport, so the host registers its dynamic dispatchers after open and only while the transport is open, and no namespace TypeError is thrown. openCodexSession(connection, options) returns { session, control }; the caller owns the control, which delivers the transport's notifications and server requests to the session and disposes of it. One connection belongs to one child and one epoch; the process that yields the children stays apart (ADR 0089).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/connection"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#ARvUOMo8"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ARvUOMo8",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WiFrPqkM",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "call",
+        "label": "the transport over the child's stdio",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/connection/services/connection.ts",
+          "symbol": "createCodexTransport"
+        },
+        "id": "vKEsyHFk#WiFrPqkM",
+        "to": "vKEsyHFk#Q2Jc26oO"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WiFrPqkM",
+      "placement": {
+        "holder": "vKEsyHFk#ARvUOMo8"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#qqULqekg",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "call",
+        "label": "open a session on the connection",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/connection/services/connection.ts",
+          "symbol": "createCodexSession"
+        },
+        "id": "vKEsyHFk#qqULqekg",
+        "to": "vKEsyHFk#W7H379Zc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#qqULqekg",
+      "placement": {
+        "holder": "vKEsyHFk#ARvUOMo8"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#9WRvXbgc",
+      "kind": "module",
+      "value": {
+        "order": 16,
+        "name": "Codex failures",
+        "kind": "module",
+        "responsibility": "Reads what went wrong in Codex from a thrown value, and makes the error Codex would throw for a failure a caller states",
+        "description": "TASK-653.11, ./failure. readCodexFailure(error) returns a CodexFailure: a mutation with its method and outcome, a refused write, a remote error with its method and JSON-RPC code, a process failure with its code and whether it is terminal, an executable failure or an identity refusal with its code, each with the error's message; anything else is null. It reads only the value it is given and walks no cause or aggregate member: a mutation failure is caused by a transport error, so a walk would change answers. createCodexFailure(spec, cause?) makes the error for the mutation, process, refused-write and remote kinds with the message the spec states, and reads back as its spec. The seven error classes that callers tested with instanceof are private and keep their names and messages (ADR 0089).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/failures"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#9WRvXbgc",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Y5RRhS9k",
+      "kind": "relationship",
+      "value": {
+        "order": 10,
+        "kind": "dependency",
+        "label": "the process failure it reads and makes",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/failures/rules/failures.ts",
+          "symbol": "CodexProcessError"
+        },
+        "id": "vKEsyHFk#Y5RRhS9k",
+        "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Y5RRhS9k",
+      "placement": {
+        "holder": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#kaCP8FDl",
+      "kind": "relationship",
+      "value": {
+        "order": 20,
+        "kind": "dependency",
+        "label": "the transport failures it reads and makes",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-app-server/src/runtime/failures/rules/failures.ts",
+          "symbol": "CodexTransportRemoteError"
+        },
+        "id": "vKEsyHFk#kaCP8FDl",
+        "to": "vKEsyHFk#Q2Jc26oO"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#kaCP8FDl",
+      "placement": {
+        "holder": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#zxEUtLI7",
       "field": "binding",
@@ -303,6 +453,40 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#skyIeErO",
+      "field": "responsibility",
+      "value": "Starts the private child, opens a Codex connection to each child as it arrives, and builds each generation's object graph over that connection"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#skyIeErO",
+      "field": "description",
+      "value": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess, a kernel factory and a generation factory. TASK-653.11: the voice kernel is the Codex connection. The kernel factory opens it with openCodexConnection({ child, recordPrefix }) and registers the dynamic dispatchers only while its transport is open; the generation input carries the connection, and the factories open the session on it with openCodexSession. The factories (generation/factories.ts) build the components in the order they depend on each other, the gateway last. codex-workbench-session-factories.ts builds one tab session's owners when the tab sessions open it. A child's exit drops every tab session, and nothing is resumed."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+      "field": "label",
+      "value": "open a connection to each child as it arrives"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/workbench.ts",
+        "symbol": "openCodexConnection"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
+      "field": "to",
+      "value": "vKEsyHFk#ARvUOMo8"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#zAZwER1T",
       "field": "anchor",
       "value": {
@@ -356,6 +540,12 @@
       "placement": {
         "holder": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#9diqPrFw",
+      "field": "description",
+      "value": "TASK-653.11: createCodexProcess is the owner itself; the wrapper in process.ts is gone, and the owner's options let tests replace the spawn, the file system and the clock. Its failures are read through readCodexFailure as kind process, with their code and whether they are terminal. The host names the storage. Archboard names one Archboard-only CODEX_HOME and SQLite home under the state directory, which serve every server on the machine, so one sign-in serves them all; each server keeps its own owner lock and epoch ledger under its port. Its config.toml gets the auto-review defaults it lacks (approvals_reviewer auto_review, workspace-write sandbox with network access) and keeps whatever Codex or a person set; a config naming another SQLite home, or not TOML, is refused. The child runs in the coordinator's directory under the server's state directory, which is no checkout and holds no vault, only a link to the server's archboard skill: the coordinator thread works there, so a command it runs without -C is refused, while each workhorse thread works in its own checkout. The child's environment is a short allow-list plus what the host adds. Archboard adds the server's own URL, with auto-start off, and the server's bin directory first on PATH: a thread's archboard is the server's own source in whichever checkout the thread works in, and it never starts another server. On shutdown, stdin closes first. The owner waits within a short EOF grace, then reaps every remaining group within the composed deadline. A release's native Codex binary gets the variables that Codex's own launcher would set."
     },
     {
       "type": "assign",
@@ -944,6 +1134,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+      "field": "description",
+      "value": "The session performs the handshake and owns request identity serialization, response adoption, reverse requests, and failure classification. Coordinator and workhorse callers share this same implementation boundary. TASK-653.11: callers open it with openCodexSession on a Codex connection and get { session, control }; createCodexSession and codexSessionControl leave the interface, and a mutation failure is read as kind mutation through readCodexFailure."
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#cxOsPb1d",
       "kind": "module",
@@ -1167,6 +1363,34 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+      "field": "description",
+      "value": "TASK-653.11: decodes each line with decodeFrame, checks the pending capacity, then decodes the body with decodeFrameBody, which returns a result. It keeps its state and every issue text; one transport test sends a frame that breaks several rules and asserts which refusal wins."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+      "field": "label",
+      "value": "decode each frame, then its body after the capacity check"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/transport/operations/inbound-router.ts",
+        "symbol": "decodeFrame"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+      "field": "description",
+      "value": "TASK-653.11: the transport decodes and encodes frames only through decodeFrame, decodeFrameBody and encodeFrame, and frame-lines.ts makes the transport error for a frame the encoder refused. A client request is refused in its old order: closed, method, params, then the pending-request cap, and only then is an id minted, so a malformed request on a full queue gets the usage refusal and mints nothing."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
       "field": "responsibility",
       "value": "Adapts local panes, context, tools, and narration to the voice agent, mounts the workbench's routes, and prepares and stops the workbench with the server"
@@ -1217,6 +1441,12 @@
         "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
         "symbol": "resolveVault"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
+      "field": "description",
+      "value": "TASK-653.11: 8 names used outside it. decodeFrame(line) reads a line's envelope evidence only and returns the inbound frame; decodeFrameBody(frame, method?) decodes a notification's, request's or response's body as a result, not a throw; encodeFrame(frame, maximumBytes) returns the encoded line or its refusal reason (unencodable, too-large). The session reads decodeClientRequestParams, decodeResponse, ProtocolDecodeError and isClientRequestMethodWithoutParams; the executable and the release build read codexProtocolVersion. It no longer depends on the transport: the wire's errors are the transport's to make from a refusal."
     },
     {
       "type": "assign",
@@ -1451,6 +1681,31 @@
       "subject": "vKEsyHFk/yejBBUFY#6uWT4mUj",
       "field": "description",
       "value": "A JSON request is one call, requestJson: a method and payload, with the reply trusted as the endpoint's contract and a refusal thrown in the server's own words. A reply that must match a schema is another, strictReply. Every call to a model names its vault through inVault. ReplySchema stays private; a caller that names it derives it from strictReply (TASK-653.09)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CtMqkVpA",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "a failed mutation's outcome, else outcome_unknown",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/rules/operation-errors.ts",
+          "symbol": "readCodexFailure"
+        },
+        "id": "vKEsyHFk#CtMqkVpA",
+        "to": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CtMqkVpA",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#tlC2W839"
+      }
     },
     {
       "type": "assign",
@@ -2208,6 +2463,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+      "field": "responsibility",
+      "value": "Owns the private Codex child and what each child brings: the process, its Codex connection and the session on it, the ledger of which generation owns a thread, and unloading idle threads"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
+      "field": "description",
+      "value": "TASK-653.11: the voice kernel is the CodexConnection, so the generation contract, its lifecycle and each generation hold the connection in place of a separate identity ledger, authorities and transport, and the factories open the session on it with openCodexSession."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#Y3nWPghd",
       "field": "anchor",
       "value": {
@@ -2489,6 +2756,12 @@
         "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
         "symbol": "waitUntil"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#vEVm326r",
+      "field": "description",
+      "value": "TASK-653.11: 16 functions, and no class, across eight entries. ./connection: openCodexConnection, openCodexSession. ./failure: readCodexFailure, createCodexFailure. ./process: createCodexProcess (it absorbs createProcessOwner, whose options let tests replace the spawn, the file system and the clock), resolveCodexExecutable. ./session: isQueuedSubmission, parseCodexServerResponse, parseSupportedLoginAccountParams, codexSessionThreadSource. ./contract: codexPendingReverseRequestLimit, codexFieldSchema (thread status callers parse its threadStatusType field in place of isCodexThreadStatusType), createCodexCommandExecutionApprovalDecisionSchema. ./identity: logicalToolCallKey, canonicalItemIdMaxLength. ./protocol: codexProtocolVersion. ./transport hands out types only. The seven error classes, createCodexTransport, createCodexSession, codexSessionControl and the identity ledger and authority factories are private: callers open a connection and read a failure. The process stays apart from the connection, because one process yields many children and a connection belongs to one child and epoch (ADR 0089)."
     },
     {
       "type": "assign",
@@ -2804,9 +3077,40 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+      "field": "description",
+      "value": "Its npm build bundles codex-app-server, process, timing and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses. TASK-653.11: the wire identity context lives in the shared browser area (shared/browser/schemas/wire-identity.ts), and createCodexBrowserModel() with no argument uses it, so browser-side code and the voice, workbench and example ui tests build and brand identities through the browser's own model; the explicit-context overload stays. Its packed declarations lose CodexTransport's replaceIdentity and respell SessionResponsePayloads, which the migration table records (owner decision 22)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
       "field": "description",
       "value": "The resources record the pidfile once the listener runs and release it at stop. Nothing tracks whether this process owns the file, because the release compares the bytes."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#FCvpt6SV",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "read each cause it walks for the startup sentence",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/start-stop/lifecycle/startup-error.ts",
+          "symbol": "readCodexFailure"
+        },
+        "id": "vKEsyHFk#FCvpt6SV",
+        "to": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#FCvpt6SV",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#Wcng1nxx"
+      }
     },
     {
       "type": "assign",
@@ -2997,6 +3301,31 @@
       "subject": "vKEsyHFk/HBlhIeSD#CugxYaZL",
       "field": "to",
       "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6y4kR6Zd",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "the failure of a process that turned terminal",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/server/owner/services/owner-state.ts",
+          "symbol": "createCodexFailure"
+        },
+        "id": "vKEsyHFk#6y4kR6Zd",
+        "to": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6y4kR6Zd",
+      "placement": {
+        "holder": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      }
     },
     {
       "type": "assign",
@@ -4437,6 +4766,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#bEaZPJ6O",
+      "kind": "relationship",
+      "value": {
+        "order": 90,
+        "kind": "call",
+        "label": "a mutation's outcome, else its own not_delivered default",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutation-staging.ts",
+          "symbol": "readCodexFailure"
+        },
+        "id": "vKEsyHFk#bEaZPJ6O",
+        "to": "vKEsyHFk#9WRvXbgc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bEaZPJ6O",
+      "placement": {
+        "holder": "vKEsyHFk#iPnxvJWp"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#QDE2xctM",
       "field": "binding",
@@ -4805,6 +5159,12 @@
       "placement": {
         "holder": "vKEsyHFk#t7OeO7ll"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#W7H379Zc",
+      "field": "description",
+      "value": "TASK-653.11: private; openCodexSession calls it with the connection's transport and identity authority and listener ownership composition, and it returns the session and the control the caller owns."
     },
     {
       "type": "assign",
@@ -5579,6 +5939,12 @@
         "path": "packages/process/src/runtime/processes/group-cleanup.ts",
         "symbol": "waitUntil"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Q2Jc26oO",
+      "field": "description",
+      "value": "TASK-653.11: createCodexTransport is private; openCodexConnection opens it over the child's stdio with the connection's identity authority. It writes each frame through encodeFrame and turns a refusal into its write error (a usage error for a value with no JSON form, else frame-too-large). replaceIdentity, its dead call and the ?? fallbacks are gone from CodexTransport (owner decision 22). Its error classes stay inside, under their names and messages, and callers read them through readCodexFailure."
     },
     {
       "type": "assign",
