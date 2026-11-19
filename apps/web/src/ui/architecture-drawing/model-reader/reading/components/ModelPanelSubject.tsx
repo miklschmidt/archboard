@@ -59,8 +59,8 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly flowHead: ReactNode;
 	/** Expand a door or collapse a frame. */
 	readonly onToggle: (id: string) => boolean;
-	/** What the interface line of a module does. */
-	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow">;
+	/** Show what the interface count describes on its module's picture. */
+	readonly onShowInterface: ComponentProps<typeof ModelInterfaceLine>["onShow"];
 	/** How the kinds look, with the icons the picture draws them with. */
 	readonly look: KindLook;
 }
@@ -251,7 +251,11 @@ function ModuleSubject(
 	return (
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
-			<ModelInterfaceLine {...props.line} inspection={inspection} projection={projection} />
+			<ModelInterfaceLine
+				onShow={props.onShowInterface}
+				inspection={inspection}
+				projection={projection}
+			/>
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} />
 			<ModelChangesWith
 				vault={props.vault}

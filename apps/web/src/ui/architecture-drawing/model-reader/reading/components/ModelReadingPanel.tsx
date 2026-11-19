@@ -172,7 +172,6 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 		},
 		[about, onDiagram, showHere],
 	);
-	const line = useMemo(() => ({ onShow: showInterface }), [showInterface]);
 	const subject = {
 		vault: reader.vault,
 		paneId: props.paneId,
@@ -189,7 +188,7 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 		pathOf,
 		context,
 		flowHead,
-		line,
+		onShowInterface: showInterface,
 		look,
 	};
 	const top = useOutlineTop(about, props.outlineSlot);
@@ -208,7 +207,7 @@ function ModelReadingPanel(props: ReadingPanelProps): JSX.Element {
 						flowHead={flowHead}
 					>
 						<ModelInterfaceLine
-							{...line}
+							onShow={showInterface}
 							onAbout={onAbout}
 							inspection={projection.inspection}
 							projection={projection}
