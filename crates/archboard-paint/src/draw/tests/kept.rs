@@ -7,11 +7,11 @@ use archboard_scene::paint::design::card_title_font;
 use archboard_scene::scene::{Colour, Group, Item, Role, Slot, SubjectKind, Text, Transform};
 use kurbo::{Affine, BezPath};
 
-use super::{Op, Record, places, plate, route, stage_of, subject};
-use crate::canvas::{Canvas, Ink, PartKey};
+use super::{marked, places, plate, route, stage_of, subject};
+use crate::canvas::{Canvas, Ink, Layer, PartKey};
 use crate::presentation::{Camera, Marks};
-use crate::stage::Stage;
-use crate::testing::subject_group;
+use crate::stage::{Stage, Surface};
+use crate::testing::{Op, Record, subject_group};
 
 /// A canvas that keeps each part as what was drawn of it, and draws it again
 /// under the transform it is asked for.
@@ -32,9 +32,7 @@ impl Canvas for Keeping {
     fn stroke(&mut self, path: &BezPath, stroke: &kurbo::Stroke, ink: &Ink) {
         self.record.stroke(path, stroke, ink);
     }
-    fn push(&mut self, _: Option<(&BezPath, bool)>, _: f32) {}
-    fn push_cut(&mut self) {}
-    fn push_keep(&mut self) {}
+    fn push(&mut self, _: Layer<'_>) {}
     fn pop(&mut self) {}
     fn again(&mut self, key: PartKey, transform: Affine) -> bool {
         let Some(part) = self.parts.get(&key) else {
@@ -76,24 +74,25 @@ fn what_a_canvas_kept_lands_under_a_moved_camera_where_it_lands_drawn_afresh() {
         y: 7.0,
         scale: 2.0,
     };
+    let moved = |at| crate::testing::camera(camera, 0.0, at);
     let mut stage = stage_of(card_with_words());
     let mut keeping = Keeping::default();
-    stage.draw(&mut keeping, 0.0);
+    stage.draw(Surface::Direct(&mut keeping), 0.0);
     let kept = keeping.parts.len();
     assert!(kept > 0);
-    stage.set_camera(camera, 0.0, 1.0);
+    stage.present(moved(1.0));
     keeping.record.ops.clear();
-    stage.draw(&mut keeping, 1.0);
+    stage.draw(Surface::Direct(&mut keeping), 1.0);
     assert_eq!(keeping.parts.len(), kept);
     let mut fresh = stage_of(card_with_words());
-    fresh.set_camera(camera, 0.0, 0.0);
+    fresh.present(moved(0.0));
     assert_eq!(places(&keeping.record.ops), places(&fresh_ops(&mut fresh)));
 }
 
 /// What a stage draws on a canvas that keeps nothing.
 fn fresh_ops(stage: &mut Stage) -> Vec<Op> {
     let mut record = Record::default();
-    stage.draw(&mut record, 0.0);
+    stage.draw(Surface::Direct(&mut record), 0.0);
     record.ops
 }
 
@@ -106,17 +105,17 @@ fn a_canvas_draws_a_new_look_afresh() {
     );
     let mut stage = stage_of(vec![Item::Group(lit)]);
     let mut keeping = Keeping::default();
-    stage.draw(&mut keeping, 0.0);
-    stage.draw(&mut keeping, 1.0);
+    stage.draw(Surface::Direct(&mut keeping), 0.0);
+    stage.draw(Surface::Direct(&mut keeping), 1.0);
     keeping.record.ops.clear();
-    stage.draw(&mut keeping, 2.0);
+    stage.draw(Surface::Direct(&mut keeping), 2.0);
     let plain = keeping.record.ops.len();
-    stage.set_marks(Marks {
+    stage.present(marked(Marks {
         selected: HashSet::from(["e".to_owned()]),
         ..Marks::default()
-    });
+    }));
     keeping.record.ops.clear();
-    stage.draw(&mut keeping, 3.0);
+    stage.draw(Surface::Direct(&mut keeping), 3.0);
     assert!(keeping.record.ops.len() > plain);
 }
 
@@ -134,7 +133,7 @@ fn a_planned_frame_and_its_inset_keep_different_parts() {
     let mut keeping = Keeping::default();
     for now in 1..=3 {
         keeping.record.ops.clear();
-        stage.draw(&mut keeping, f64::from(now));
+        stage.draw(Surface::Direct(&mut keeping), f64::from(now));
         assert_eq!(places(&keeping.record.ops), expected);
     }
 }

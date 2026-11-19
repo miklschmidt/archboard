@@ -5,7 +5,7 @@ use kurbo::{Affine, BezPath};
 use peniko::{BlendMode, Compose, Fill, Mix};
 use vello_cpu::{Pixmap, RenderContext, Resources};
 
-use crate::canvas::{Canvas, Ink};
+use crate::canvas::{Canvas, Ink, Layer};
 
 /// A canvas that rasterizes on this thread.
 #[derive(Debug)]
@@ -25,20 +25,12 @@ impl CpuCanvas {
         }
     }
 
-    /// How wide the canvas is, in pixels.
-    pub fn width(&self) -> u32 {
-        u32::from(self.pixmap.width())
-    }
-
-    /// Forget the last frame.
-    pub fn begin(&mut self) {
-        self.context.reset();
-    }
-
-    /// Rasterize the frame, and answer its pixels, four premultiplied bytes each.
-    pub fn finish(&mut self) -> &[u8] {
+    /// Rasterize what was drawn since the last frame, and answer its pixels,
+    /// four premultiplied bytes each, row by row. The next frame starts empty.
+    pub fn pixels(&mut self) -> &[u8] {
         self.context.flush();
         self.context.render(&mut self.pixmap, &mut self.resources);
+        self.context.reset();
         self.pixmap.data_as_u8_slice()
     }
 
@@ -78,23 +70,30 @@ impl Canvas for CpuCanvas {
         self.context.stroke_path(path);
     }
 
-    fn push(&mut self, clip: Option<(&BezPath, bool)>, opacity: f32) {
-        self.context.set_fill_rule(match clip {
-            Some((_, true)) => Fill::EvenOdd,
-            _ => Fill::NonZero,
-        });
-        self.context
-            .push_layer(clip.map(|(path, _)| path), None, Some(opacity), None, None);
-    }
-
-    fn push_cut(&mut self) {
-        let cut = BlendMode::new(Mix::Normal, Compose::DestOut);
-        self.context.push_layer(None, Some(cut), None, None, None);
-    }
-
-    fn push_keep(&mut self) {
-        let keep = BlendMode::new(Mix::Normal, Compose::DestIn);
-        self.context.push_layer(None, Some(keep), None, None, None);
+    fn push(&mut self, layer: Layer<'_>) {
+        match layer {
+            Layer::Over { clip, opacity } => {
+                self.context.set_fill_rule(match clip {
+                    Some((_, true)) => Fill::EvenOdd,
+                    _ => Fill::NonZero,
+                });
+                self.context.push_layer(
+                    clip.map(|(path, _)| path),
+                    None,
+                    Some(opacity),
+                    None,
+                    None,
+                );
+            }
+            Layer::Cut => {
+                let cut = BlendMode::new(Mix::Normal, Compose::DestOut);
+                self.context.push_layer(None, Some(cut), None, None, None);
+            }
+            Layer::Keep => {
+                let keep = BlendMode::new(Mix::Normal, Compose::DestIn);
+                self.context.push_layer(None, Some(keep), None, None, None);
+            }
+        }
     }
 
     fn pop(&mut self) {

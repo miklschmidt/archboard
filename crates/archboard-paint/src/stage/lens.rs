@@ -232,7 +232,7 @@ impl Stage {
             Some(ghost) => (&ghost.picture.scene, ghost.camera, axis.left(place)),
             None => (
                 &self.shown.as_ref()?.picture.scene,
-                self.presentation.camera,
+                self.seen.camera,
                 if leaves {
                     axis.left(place)
                 } else {
@@ -257,7 +257,7 @@ impl Stage {
     /// then a picture on its way out.
     pub(super) fn lens_at(&self, now: f64) -> Option<(Lens, Color)> {
         let scene = &self.shown.as_ref()?.picture.scene;
-        let camera = self.presentation.camera;
+        let camera = self.seen.camera;
         let height = self.size.1;
         let flying = self.dive.as_ref().filter(|dive| !dive.ended(now));
         // A tray that stays on stays in focus: it is what the eye holds on to.

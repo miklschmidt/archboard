@@ -13,16 +13,20 @@ import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import { HeldInk } from "#ui/architecture-drawing/canvas/picture/clients/picture-ink.ts";
 import {
+	arrive,
 	briefPainter,
+	depart,
 	fitPainter,
-	headingJson,
-	marksJson,
+	headingOf,
+	marksOf,
+	present,
 	sizeCanvas,
 	type Held,
 	type StageCamera,
 	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type StagePresentation,
 	type PainterFailure,
 	type PictureHand,
 	type StageShift,
@@ -122,7 +126,7 @@ class PictureStage {
 	 */
 	show(painting: string | undefined): void {
 		this.#take(painting, (painter, taken) => {
-			painter.show(taken);
+			arrive(painter, taken, { kind: "cut" });
 		});
 	}
 
@@ -133,7 +137,8 @@ class PictureStage {
 	 */
 	carry(painting: string | undefined, shift: StageShift): void {
 		this.#take(painting, (painter, taken) => {
-			painter.carry(taken, shift.x, shift.y, durationMs("picture.transition"));
+			const ms = durationMs("picture.transition");
+			arrive(painter, taken, { kind: "carried", shift: [shift.x, shift.y], ms });
 		});
 	}
 
@@ -152,11 +157,17 @@ class PictureStage {
 		 * @param painter The painter.
 		 * @param taken The picture's painting.
 		 */
-		const arrive: PictureHand = (painter, taken) => {
-			painter.enter(taken, headingJson(heading), entryMs, x, y, frameClock().now());
+		const enter: PictureHand = (painter, taken) => {
+			arrive(painter, taken, {
+				kind: "entered",
+				heading: heading === null ? null : headingOf(heading),
+				ms: entryMs,
+				moved: [x, y],
+				at: frameClock().now(),
+			});
 		};
-		this.#take(painting, arrive);
-		if (this.#started === null && painting !== undefined && painting !== "") this.#ink.hold(arrive);
+		this.#take(painting, enter);
+		if (this.#started === null && painting !== undefined && painting !== "") this.#ink.hold(enter);
 	}
 
 	/**
@@ -167,14 +178,14 @@ class PictureStage {
 	leave(heading: Departure, reducedMotion: boolean): void {
 		const ms = reducedMotion ? 0 : durationMs("picture.exit");
 		this.#tell((painter) => {
-			painter.leave(headingJson(heading), ms, frameClock().now());
+			depart(painter, { kind: "leaving", heading: headingOf(heading), ms, at: frameClock().now() });
 		});
 	}
 
 	/** Bring back a picture the reader returned to before anything else arrived. */
 	stay(): void {
 		this.#tell((painter) => {
-			painter.stay();
+			depart(painter, { kind: "stayed" });
 		});
 	}
 
@@ -187,14 +198,14 @@ class PictureStage {
 	dive(painting: string | undefined, dive: StageDive, ms: number): void {
 		if (painting === undefined) return;
 		this.#tell((painter) => {
-			painter.dive(painting, JSON.stringify(dive), ms, frameClock().now());
+			arrive(painter, painting, { kind: "into", ...dive, ms, at: frameClock().now() });
 		});
 	}
 
 	/** Take the model inside a card away. */
 	endDive(): void {
 		this.#tell((painter) => {
-			painter.endDive();
+			depart(painter, { kind: "outOfCard" });
 		});
 	}
 
@@ -204,9 +215,7 @@ class PictureStage {
 	 */
 	setTrafficShown(shown: boolean): void {
 		this.#held.trafficShown = shown;
-		this.#tell((painter) => {
-			painter.setTrafficShown(shown);
-		});
+		this.#present({ trafficShown: shown });
 	}
 
 	/**
@@ -215,9 +224,7 @@ class PictureStage {
 	 */
 	setHeads(heads: Readonly<Record<string, number>>): void {
 		this.#held.heads = heads;
-		this.#tell((painter) => {
-			painter.setHeads(JSON.stringify(heads));
-		});
+		this.#present({ heads });
 	}
 
 	/**
@@ -226,9 +233,7 @@ class PictureStage {
 	 */
 	setWarnings(warned: ReadonlySet<string>): void {
 		this.#held.warned = warned;
-		this.#tell((painter) => {
-			painter.setWarnings(JSON.stringify([...warned]));
-		});
+		this.#present({ warnings: [...warned] });
 	}
 
 	/**
@@ -238,16 +243,13 @@ class PictureStage {
 	 * @param longest The longest a sweep takes, in milliseconds.
 	 */
 	sweep(delays: Readonly<Record<string, number>>, shortest: number, longest: number): void {
-		this.#tell((painter) => {
-			painter.sweep(JSON.stringify(delays), shortest, longest, frameClock().now());
-		});
+		const at = frameClock().now();
+		this.#present({ sweep: { delays, shortestMs: shortest, longestMs: longest, at } });
 	}
 
 	/** Take the sweep away. */
 	clearSweep(): void {
-		this.#tell((painter) => {
-			painter.clearSweep();
-		});
+		this.sweep({}, 0, 0);
 	}
 
 	/**
@@ -283,9 +285,7 @@ class PictureStage {
 	 */
 	setAwaited(awaited: boolean, ms: number): void {
 		this.#held.awaited = awaited;
-		this.#tell((painter) => {
-			painter.setAwaited(awaited, ms, frameClock().now());
-		});
+		this.#present({ awaited: { to: awaited, ms, at: frameClock().now() } });
 	}
 
 	/**
@@ -296,9 +296,7 @@ class PictureStage {
 	setFarLine(scale: number, ms: number): void {
 		this.#held.farLine = { scale: scale * (window.devicePixelRatio || 1), ms };
 		const line = this.#held.farLine;
-		this.#tell((painter) => {
-			painter.setFarLine(line.scale, line.ms);
-		});
+		this.#present({ farLine: line });
 	}
 
 	/**
@@ -307,9 +305,7 @@ class PictureStage {
 	 */
 	setMarks(marks: StageMarks): void {
 		this.#held.marks = marks;
-		this.#tell((painter) => {
-			painter.setMarks(marksJson(marks));
-		});
+		this.#present({ marks: marksOf(marks) });
 	}
 
 	/**
@@ -318,9 +314,7 @@ class PictureStage {
 	 */
 	setLight(light: StageLight): void {
 		this.#held.light = light;
-		this.#tell((painter) => {
-			painter.setLight(JSON.stringify(light), frameClock().now());
-		});
+		this.#present({ light: { ...light, at: frameClock().now() } });
 	}
 
 	/**
@@ -381,6 +375,16 @@ class PictureStage {
 	}
 
 	/**
+	 * Tell the painter at work how the picture is seen, and draw what it changed.
+	 * @param said What changed.
+	 */
+	#present(said: StagePresentation): void {
+		this.#tell((painter) => {
+			present(painter, said);
+		});
+	}
+
+	/**
 	 * Hold a picture, start the painter for it, and hand it over.
 	 * @param painting The picture's painting, or nothing when it has none.
 	 * @param hand How the painter takes it, once one is at work.
@@ -391,7 +395,7 @@ class PictureStage {
 		this.#ink.show();
 		if (taken === undefined) {
 			this.#tell((painter) => {
-				painter.clear();
+				depart(painter, { kind: "cleared" });
 			});
 			this.#canvas.style.visibility = "hidden";
 			this.#ink.restore();
@@ -412,9 +416,7 @@ class PictureStage {
 
 	/** Give the painter the page's theme. */
 	readonly #themeChanged = (): void => {
-		this.#tell((painter) => {
-			painter.setTheme(pageIsDark());
-		});
+		this.#present({ theme: pageIsDark() ? "dark" : "light" });
 	};
 
 	/**
@@ -469,7 +471,8 @@ class PictureStage {
 		const began = clock.now();
 		try {
 			fitPainter(this.#started);
-			if (this.#started.painter.frame(now)) this.#nextFrame(now, clock.now() - began);
+			const motion = this.#started.painter.frame(now);
+			if (motion !== "still") this.#nextFrame(motion, clock.now() - began);
 		} catch (cause) {
 			this.#replacePainter(cause);
 			return;
@@ -482,13 +485,12 @@ class PictureStage {
 	 * Ask for the next frame. Traffic on a painter that cuts its strips on this thread, on WebGL2
 	 * or on the CPU, rests as long as its last frame took, which leaves a reader half of the
 	 * thread. A recording's clock stands still, so nothing rests there.
-	 * @param now The last frame's time.
+	 * @param motion What moves after the last frame.
 	 * @param cost How long the last frame took.
 	 */
-	#nextFrame(now: number, cost: number): void {
-		const started = this.#started;
-		const strips = started !== null && started.kind !== "gpu";
-		if (strips && cost > 0 && started.painter.trafficAlone(now)) {
+	#nextFrame(motion: ReturnType<Painter["frame"]>, cost: number): void {
+		const strips = this.#started !== null && this.#started.kind !== "gpu";
+		if (strips && cost > 0 && motion === "trafficAlone") {
 			if (this.#rest !== null) frameClock().cancelAfter(this.#rest);
 			this.#rest = frameClock().after(cost, () => {
 				this.#rest = null;
@@ -532,9 +534,7 @@ class PictureStage {
 	#lightControl(subject: string | null): void {
 		if (subject === this.#hoveredControl) return;
 		this.#hoveredControl = subject;
-		this.#tell((painter) => {
-			painter.setHoveredToggle(subject ?? undefined);
-		});
+		this.#present({ hovered: { toggle: subject } });
 	}
 
 	/**

@@ -4,7 +4,7 @@ use archboard_scene::scene::{Cap, Colour, Group, Mask, Paint, Shape};
 use kurbo::Shape as _;
 
 use super::{BOX_TOLERANCE, Inside, Walk, opacity_of};
-use crate::canvas::{Canvas, Ink};
+use crate::canvas::{Canvas, Ink, Layer};
 use crate::path::{outline_of, rect_of, stroke_of};
 
 /// A mask shape that cuts: the white ground of a mask lets everything through.
@@ -37,11 +37,13 @@ impl<C: Canvas> Walk<'_, C> {
     ) {
         let bounds = rect_of(&mask.bounds).to_path(BOX_TOLERANCE);
         self.canvas.set_transform(held.transform);
-        self.canvas
-            .push(Some((&bounds, false)), opacity_of(opacity));
+        self.canvas.push(Layer::Over {
+            clip: Some((&bounds, false)),
+            opacity: opacity_of(opacity),
+        });
         self.inner(group, held);
         self.canvas.set_transform(held.transform);
-        self.canvas.push_cut();
+        self.canvas.push(Layer::Cut);
         let black = |opacity: Option<f64>| {
             #[expect(clippy::cast_possible_truncation, reason = "a colour's alpha is f32")]
             let alpha = opacity.unwrap_or(1.0) as f32;

@@ -15,8 +15,8 @@ const HOVER_LIGHT: f64 = 0.2;
 impl<C: Canvas> Walk<'_, C> {
     /// Draw the lines that are being drawn on.
     pub(super) fn sweep(&mut self, inside: Inside) {
-        let presentation = self.presentation;
-        let Some(sweep) = &presentation.sweep else {
+        let seen = self.seen;
+        let Some(sweep) = &seen.sweep else {
             return;
         };
         self.canvas.set_transform(inside.transform);
@@ -31,7 +31,7 @@ impl<C: Canvas> Walk<'_, C> {
     /// Draw the warning of each line among some items that has no words, in a
     /// group of words made for it, which stands with the line.
     pub(super) fn bare_marks(&mut self, items: &[Item], inside: Inside) {
-        let warnings = &self.presentation.warnings;
+        let warnings = &self.seen.warnings;
         for item in items {
             let Item::Group(line) = item else {
                 continue;
@@ -51,7 +51,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Draw the warnings that stand in a group.
     pub(super) fn marks(&mut self, group: &Group, held: Inside) {
-        let warnings = &self.presentation.warnings;
+        let warnings = &self.seen.warnings;
         for at in warnings.held_in(group) {
             self.warning(*at, held);
         }
@@ -63,7 +63,7 @@ impl<C: Canvas> Walk<'_, C> {
             transform: held.transform * Affine::translate((at.x, at.y)),
             ..held
         };
-        self.items(self.presentation.warnings.glyph(), moved);
+        self.items(self.seen.warnings.glyph(), moved);
     }
 
     /// Draw a control under the pointer: the light it keeps hidden shows.

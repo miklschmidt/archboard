@@ -1,11 +1,11 @@
 //! The painter a page holds: one stage, and the surface its frames land on.
 
-use std::collections::{HashMap, HashSet};
-
-use archboard_paint::{Camera, CpuCanvas, DiveWay, Keeper, Light, Marks, Stage, StageClock, Theme};
-use archboard_scene::geometry::Rect;
+use archboard_paint::{
+    Arrival, Camera, Canvas, CpuCanvas, Departure, Ink, Layer, Motion, Pace, Presentation, Stage,
+    Surface, Theme, Timed,
+};
 use archboard_scene::scene::Painting;
-use serde::Deserialize;
+use kurbo::{Affine, BezPath};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{Clamped, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
@@ -18,17 +18,55 @@ enum Target {
     Gpu(Box<GpuTarget>),
     WebGl(Box<WebGlTarget>),
     Cpu {
-        canvas: Box<Keeper<CpuCanvas>>,
+        canvas: Box<CpuCanvas>,
+        /// How wide the canvas is, in pixels.
+        width: u32,
         context: CanvasRenderingContext2d,
     },
 }
 
-/// A flight between a picture and the picture inside its card, as a page states it.
-#[derive(Deserialize)]
-struct DiveFlight {
-    way: DiveWay,
-    card: String,
-    frame: Rect,
+/// What the frames after a frame show, as a page reads it.
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug)]
+pub enum FrameMotion {
+    /// Nothing moves: the next frame looks as this one does.
+    Still = "still",
+    /// Only the traffic moves.
+    TrafficAlone = "trafficAlone",
+    /// The picture or how it is seen moves.
+    Moving = "moving",
+}
+
+impl From<Motion> for FrameMotion {
+    fn from(motion: Motion) -> FrameMotion {
+        match motion {
+            Motion::Still => FrameMotion::Still,
+            Motion::TrafficAlone => FrameMotion::TrafficAlone,
+            Motion::Moving => FrameMotion::Moving,
+        }
+    }
+}
+
+/// A canvas that only counts what a frame draws, for a measurement to name its picture.
+#[derive(Default)]
+struct Count {
+    fills: u32,
+    strokes: u32,
+    layers: u32,
+}
+
+impl Canvas for Count {
+    fn set_transform(&mut self, _: Affine) {}
+    fn fill(&mut self, _: &BezPath, _: &Ink, _: bool) {
+        self.fills += 1;
+    }
+    fn stroke(&mut self, _: &BezPath, _: &kurbo::Stroke, _: &Ink) {
+        self.strokes += 1;
+    }
+    fn push(&mut self, _: Layer<'_>) {
+        self.layers += 1;
+    }
+    fn pop(&mut self) {}
 }
 
 /// A theme by whether it is dark.
@@ -50,6 +88,13 @@ fn refused(error: &JsValue) -> JsError {
     JsError::new(&format!("{error:?}"))
 }
 
+/// A stage of a canvas's size, its pace read from JSON.
+fn stage_of(dark: bool, size: (u32, u32), pace: &str) -> Result<Stage, JsError> {
+    let pace: Pace = serde_json::from_str(pace).map_err(unread)?;
+    let size = (f64::from(size.0), f64::from(size.1));
+    Ok(Stage::new(theme_of(dark), size, pace))
+}
+
 /// One canvas's painter.
 #[wasm_bindgen]
 #[expect(
@@ -58,7 +103,6 @@ fn refused(error: &JsValue) -> JsError {
 )]
 pub struct Painter {
     stage: Stage,
-    clock: StageClock,
     target: Target,
     /// How long the last frame took to draw on its canvas and to render, in
     /// milliseconds.
@@ -84,29 +128,29 @@ impl Painter {
         warm(stopped).await
     }
 
-    /// Start Vello on WebGPU on a canvas, with the GPU of this page.
+    /// Start Vello on WebGPU on a canvas, with the GPU of this page. `pace`
+    /// says in JSON how the stage keeps time: `{"phases", "longestStep"}`.
     ///
     /// # Errors
     ///
-    /// The surface refused. A canvas that took a WebGPU context takes no other,
-    /// so the page falls back on a new canvas.
-    pub fn gpu(canvas: HtmlCanvasElement, dark: bool) -> Result<Painter, JsError> {
-        let size = (f64::from(canvas.width()), f64::from(canvas.height()));
+    /// The pace does not read, or the surface refused. A canvas that took a
+    /// WebGPU context takes no other, so the page falls back on a new canvas.
+    pub fn gpu(canvas: HtmlCanvasElement, dark: bool, pace: &str) -> Result<Painter, JsError> {
+        let stage = stage_of(dark, (canvas.width(), canvas.height()), pace)?;
         let target = GpuTarget::start(canvas)?;
         Ok(Painter {
-            stage: Stage::new(theme_of(dark), size),
-            clock: StageClock::default(),
+            stage,
             target: Target::Gpu(Box::new(target)),
             times: [0.0; 2],
         })
     }
 
-    /// Start Vello on the CPU on a canvas.
+    /// Start Vello on the CPU on a canvas, its stage keeping a pace in JSON.
     ///
     /// # Errors
     ///
-    /// The canvas gave no 2D context.
-    pub fn cpu(canvas: &HtmlCanvasElement, dark: bool) -> Result<Painter, JsError> {
+    /// The pace does not read, or the canvas gave no 2D context.
+    pub fn cpu(canvas: &HtmlCanvasElement, dark: bool, pace: &str) -> Result<Painter, JsError> {
         let context = canvas
             .get_context("2d")
             .ok()
@@ -115,33 +159,29 @@ impl Painter {
             .ok_or_else(|| JsError::new("The canvas gave no 2D context."))?;
         let (width, height) = (canvas.width(), canvas.height());
         Ok(Painter {
-            stage: Stage::new(theme_of(dark), (f64::from(width), f64::from(height))),
-            clock: StageClock::default(),
+            stage: stage_of(dark, (width, height), pace)?,
             target: Target::Cpu {
-                canvas: Box::new(Keeper::new(
-                    cpu_canvas(width, height),
-                    (f64::from(width), f64::from(height)),
-                )),
+                canvas: Box::new(cpu_canvas(width, height)),
+                width,
                 context,
             },
             times: [0.0; 2],
         })
     }
 
-    /// Start Vello GPU on WebGL2 on a canvas.
+    /// Start Vello GPU on WebGL2 on a canvas, its stage keeping a pace in JSON.
     ///
     /// # Errors
     ///
-    /// The canvas gave no WebGL2 context, only one with a major performance
-    /// caveat, or one that draws in software, or its shaders did not build. A
-    /// canvas that took a WebGL2 context takes no 2D one, so the page falls back
-    /// on a new canvas.
-    pub fn webgl(canvas: &HtmlCanvasElement, dark: bool) -> Result<Painter, JsError> {
-        let size = (f64::from(canvas.width()), f64::from(canvas.height()));
+    /// The pace does not read, or the canvas gave no WebGL2 context, only one
+    /// with a major performance caveat, or one that draws in software, or its
+    /// shaders did not build. A canvas that took a WebGL2 context takes no 2D
+    /// one, so the page falls back on a new canvas.
+    pub fn webgl(canvas: &HtmlCanvasElement, dark: bool, pace: &str) -> Result<Painter, JsError> {
+        let stage = stage_of(dark, (canvas.width(), canvas.height()), pace)?;
         let target = WebGlTarget::start(canvas)?;
         Ok(Painter {
-            stage: Stage::new(theme_of(dark), size),
-            clock: StageClock::default(),
+            stage,
             target: Target::WebGl(Box::new(target)),
             times: [0.0; 2],
         })
@@ -156,258 +196,63 @@ impl Painter {
     }
 
     /// What a frame of a moment draws, as fills, strokes and layers, for a
-    /// measurement to name its picture.
+    /// measurement to name its picture. It draws whole, as a canvas that keeps
+    /// no parts would.
     #[wasm_bindgen(js_name = countFrame)]
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "a frame holds far fewer than 2^32 shapes"
-    )]
     pub fn count_frame(&mut self, now: f64) -> Vec<u32> {
-        let mut count = archboard_paint::Count::default();
-        let now = self.clock.at(now);
-        self.stage.draw(&mut count, now);
-        vec![
-            count.fills as u32,
-            count.strokes as u32,
-            count.layers as u32,
-        ]
+        let mut count = Count::default();
+        self.stage.draw(Surface::Direct(&mut count), now);
+        vec![count.fills, count.strokes, count.layers]
     }
 
-    /// Put a picture on the stage.
+    /// Say how the picture is seen, as JSON: each value stated replaces the
+    /// last, and a value left out stays. A timed value names the moment of the
+    /// page's clock it starts at.
     ///
     /// # Errors
     ///
-    /// The painting does not read as one.
-    pub fn show(&mut self, painting: &str) -> Result<(), JsError> {
-        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
-        self.stage.show(painting);
+    /// The presentation does not read as one.
+    pub fn present(&mut self, said: &str) -> Result<(), JsError> {
+        let said: Presentation = serde_json::from_str(said).map_err(unread)?;
+        self.stage.present(said);
         Ok(())
     }
 
-    /// Say at which points of a move each of its parts happens, as JSON.
-    ///
-    /// # Errors
-    ///
-    /// The phases do not read as phases.
-    #[wasm_bindgen(js_name = setPhases)]
-    pub fn set_phases(&mut self, phases: &str) -> Result<(), JsError> {
-        self.stage
-            .set_phases(serde_json::from_str(phases).map_err(unread)?);
-        Ok(())
-    }
-
-    /// Carry the picture on the stage into the next.
-    ///
-    /// # Errors
-    ///
-    /// The painting does not read as one.
-    pub fn carry(
-        &mut self,
-        painting: &str,
-        shift_x: f64,
-        shift_y: f64,
-        ms: f64,
-    ) -> Result<(), JsError> {
-        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
-        self.stage.carry(painting, (shift_x, shift_y), ms);
-        Ok(())
-    }
-
-    /// Bring a picture in part by part, what is left of the last one finishing
-    /// over it, moved with its pane by a distance in canvas pixels.
-    ///
-    /// # Errors
-    ///
-    /// The painting does not read as one.
-    pub fn enter(
-        &mut self,
-        painting: &str,
-        heading: &str,
-        ms: f64,
-        moved_x: f64,
-        moved_y: f64,
-        now: f64,
-    ) -> Result<(), JsError> {
-        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
-        let heading = serde_json::from_str(heading).map_err(unread)?;
-        let now = self.clock.at(now);
-        self.stage
-            .enter(painting, heading, ms, (moved_x, moved_y), now);
-        Ok(())
-    }
-
-    /// Send the picture on its way out, a heading in JSON.
-    ///
-    /// # Errors
-    ///
-    /// The heading does not read as one.
-    pub fn leave(&mut self, heading: &str, ms: f64, now: f64) -> Result<(), JsError> {
-        let heading = serde_json::from_str(heading).map_err(unread)?;
-        self.stage.leave(heading, ms, self.clock.at(now));
-        Ok(())
-    }
-
-    /// Bring back a picture the reader returned to.
-    pub fn stay(&mut self) {
-        self.stage.stay();
-    }
-
-    /// Put a picture inside its card and start the flight's fades. `flight` names
-    /// `{"way","card","frame"}` in JSON.
-    ///
-    /// # Errors
-    ///
-    /// The painting or the flight does not read.
-    pub fn dive(&mut self, painting: &str, flight: &str, ms: f64, now: f64) -> Result<(), JsError> {
-        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
-        let flight: DiveFlight = serde_json::from_str(flight).map_err(unread)?;
-        let now = self.clock.at(now);
-        self.stage
-            .dive(painting, flight.frame, (flight.way, flight.card), ms, now);
-        Ok(())
-    }
-
-    /// Take the picture inside a card away.
-    #[wasm_bindgen(js_name = endDive)]
-    pub fn end_dive(&mut self) {
-        self.stage.end_dive();
-    }
-
-    /// Take the picture off the stage.
-    pub fn clear(&mut self) {
-        self.stage.clear();
-    }
-
-    /// Change the theme.
-    #[wasm_bindgen(js_name = setTheme)]
-    pub fn set_theme(&mut self, dark: bool) {
-        self.stage.set_theme(theme_of(dark));
-    }
-
-    /// Move the picture on the canvas, in canvas pixels, over a time in milliseconds.
+    /// Move the picture on the canvas, in canvas pixels, over a time in
+    /// milliseconds from a moment of the page's clock. A glide states it every
+    /// frame, so it goes as numbers and not as JSON.
     #[wasm_bindgen(js_name = setCamera)]
-    pub fn set_camera(&mut self, x: f64, y: f64, scale: f64, ms: f64, now: f64) {
-        let now = self.clock.at(now);
-        self.stage.set_camera(Camera { x, y, scale }, ms, now);
+    pub fn set_camera(&mut self, x: f64, y: f64, scale: f64, ms: f64, at: f64) {
+        self.stage.present(Presentation {
+            camera: Some(Timed {
+                to: Camera { x, y, scale },
+                ms,
+                at,
+            }),
+            ..Presentation::default()
+        });
     }
 
-    /// Say at which scale of the camera the far view begins, in canvas pixels to
-    /// a unit, and how long a swap takes in milliseconds. A picture with no far
-    /// view has its line at 0.
-    #[wasm_bindgen(js_name = setFarLine)]
-    pub fn set_far_line(&mut self, scale: f64, ms: f64) {
-        self.stage.set_far_line(scale, ms);
-    }
-
-    /// Say whether the next picture is on its way, and how long the picture on
-    /// the stage takes to step back for it or to step forward again.
-    #[wasm_bindgen(js_name = setAwaited)]
-    pub fn set_awaited(&mut self, awaited: bool, ms: f64, now: f64) {
-        let now = self.clock.at(now);
-        self.stage.set_awaited(awaited, ms, now);
-    }
-
-    /// Say what is marked on the picture, as JSON.
+    /// Bring a picture onto the stage: its painting, and how it arrives, both as JSON.
     ///
     /// # Errors
     ///
-    /// The marks do not read as marks.
-    #[wasm_bindgen(js_name = setMarks)]
-    pub fn set_marks(&mut self, marks: &str) -> Result<(), JsError> {
-        let marks: Marks = serde_json::from_str(marks).map_err(unread)?;
-        self.stage.set_marks(marks);
+    /// The painting or the arrival does not read.
+    pub fn arrive(&mut self, painting: &str, arrival: &str) -> Result<(), JsError> {
+        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
+        let arrival: Arrival = serde_json::from_str(arrival).map_err(unread)?;
+        self.stage.arrive(painting, arrival);
         Ok(())
     }
 
-    /// Hold the flow heads down from where the picture drew them, as JSON: an
-    /// object of drops in the picture's units, by flow id. A flow the object
-    /// does not name stays where the picture drew it.
+    /// Say what becomes of the picture on the stage, as JSON.
     ///
     /// # Errors
     ///
-    /// The heads do not read as an object of numbers.
-    #[wasm_bindgen(js_name = setHeads)]
-    pub fn set_heads(&mut self, heads: &str) -> Result<(), JsError> {
-        let heads: HashMap<String, f64> = serde_json::from_str(heads).map_err(unread)?;
-        self.stage.set_heads(heads);
-        Ok(())
-    }
-
-    /// Name the subject whose control the pointer rests on, or none.
-    #[wasm_bindgen(js_name = setHoveredToggle)]
-    #[expect(
-        clippy::needless_pass_by_value,
-        reason = "wasm-bindgen takes an optional string by value, and not by reference"
-    )]
-    pub fn set_hovered_toggle(&mut self, subject: Option<String>) {
-        self.stage.set_hovered_toggle(subject.as_deref());
-    }
-
-    /// Say which subjects the code check warns about, as JSON: an array of ids.
-    ///
-    /// # Errors
-    ///
-    /// The warnings do not read as an array of ids.
-    #[wasm_bindgen(js_name = setWarnings)]
-    pub fn set_warnings(&mut self, warned: &str) -> Result<(), JsError> {
-        let warned: HashSet<String> = serde_json::from_str(warned).map_err(unread)?;
-        self.stage.set_warnings(warned);
-        Ok(())
-    }
-
-    /// Show the traffic, or hide it for a person who asked for no motion.
-    #[wasm_bindgen(js_name = setTrafficShown)]
-    pub fn set_traffic_shown(&mut self, shown: bool) {
-        self.stage.set_traffic_shown(shown);
-    }
-
-    /// Stand the traffic's clock at a time in seconds.
-    #[wasm_bindgen(js_name = setPictureTime)]
-    pub fn set_picture_time(&mut self, seconds: f64) {
-        self.stage.set_picture_time(seconds);
-    }
-
-    /// Where the traffic's clock stands, in seconds.
-    #[wasm_bindgen(js_name = pictureTime)]
-    pub fn picture_time(&self) -> f64 {
-        self.stage.picture_time()
-    }
-
-    /// Draw on the lines of the relationships that light, as JSON: an object of
-    /// delays in milliseconds, by relationship id. A line takes its length over
-    /// a speed, between the shortest and the longest time in milliseconds.
-    ///
-    /// # Errors
-    ///
-    /// The delays do not read as an object of numbers.
-    pub fn sweep(
-        &mut self,
-        delays: &str,
-        shortest: f64,
-        longest: f64,
-        now: f64,
-    ) -> Result<(), JsError> {
-        let delays: HashMap<String, f64> = serde_json::from_str(delays).map_err(unread)?;
-        let now = self.clock.at(now);
-        self.stage.sweep(&delays, shortest, longest, now);
-        Ok(())
-    }
-
-    /// Take the sweep away.
-    #[wasm_bindgen(js_name = clearSweep)]
-    pub fn clear_sweep(&mut self) {
-        self.stage.clear_sweep();
-    }
-
-    /// Light the picture, as JSON.
-    ///
-    /// # Errors
-    ///
-    /// The light does not read as light.
-    #[wasm_bindgen(js_name = setLight)]
-    pub fn set_light(&mut self, light: &str, now: f64) -> Result<(), JsError> {
-        let light: Light = serde_json::from_str(light).map_err(unread)?;
-        self.stage.set_light(&light, self.clock.at(now));
+    /// The departure does not read as one.
+    pub fn depart(&mut self, departure: &str) -> Result<(), JsError> {
+        let departure: Departure = serde_json::from_str(departure).map_err(unread)?;
+        self.stage.depart(departure);
         Ok(())
     }
 
@@ -417,70 +262,64 @@ impl Painter {
         self.stage.pick(x, y)
     }
 
-    /// Say how much of a stall the stage's time can take, in milliseconds.
-    #[wasm_bindgen(js_name = setLongestStep)]
-    pub fn set_longest_step(&mut self, ms: f64) {
-        self.clock.set_longest(ms);
-    }
-
     /// Change the size of the canvas, in pixels.
     pub fn resize(&mut self, width: u32, height: u32) {
-        self.stage.set_size((f64::from(width), f64::from(height)));
+        self.stage.present(Presentation {
+            size: Some((f64::from(width), f64::from(height))),
+            ..Presentation::default()
+        });
         match &mut self.target {
             Target::Gpu(target) => target.resize(width, height),
             Target::WebGl(target) => target.resize(width, height),
-            Target::Cpu { canvas, .. } => canvas.replace(
-                cpu_canvas(width, height),
-                (f64::from(width), f64::from(height)),
-            ),
+            Target::Cpu {
+                canvas,
+                width: wide,
+                ..
+            } => {
+                **canvas = cpu_canvas(width, height);
+                *wide = width;
+            }
         }
     }
 
-    /// Whether traffic is all that moves at a moment.
-    #[wasm_bindgen(js_name = trafficAlone)]
-    #[must_use]
-    pub fn traffic_alone(&mut self, now: f64) -> bool {
-        self.stage.traffic_alone(self.clock.at(now))
-    }
-
-    /// Draw the frame of a moment, in milliseconds, and say whether the next
-    /// moment will look different.
+    /// Draw the frame of a moment of the page's clock, in milliseconds, and
+    /// say what moves after it.
     ///
     /// # Errors
     ///
     /// The surface refused the frame.
-    pub fn frame(&mut self, now: f64) -> Result<bool, JsError> {
-        let now = self.clock.at(now);
+    pub fn frame(&mut self, now: f64) -> Result<FrameMotion, JsError> {
         let started = clock_now();
-        let (changing, drawn) = match &mut self.target {
+        let (motion, drawn) = match &mut self.target {
             Target::Gpu(target) => {
-                let changing = self.stage.draw(target.begin(), now);
+                let motion = self.stage.draw(Surface::Direct(target.begin()), now);
                 let drawn = clock_now();
                 target.finish()?;
-                (changing, drawn)
+                (motion, drawn)
             }
             Target::WebGl(target) => {
-                let changing = self.stage.draw(target.begin(), now);
+                let motion = self.stage.draw(Surface::Strips(target.begin()), now);
                 let drawn = clock_now();
                 target.finish()?;
-                (changing, drawn)
+                (motion, drawn)
             }
-            Target::Cpu { canvas, context } => {
-                canvas.canvas().begin();
-                let changing = self.stage.draw(&mut **canvas, now);
+            Target::Cpu {
+                canvas,
+                width,
+                context,
+            } => {
+                let motion = self.stage.draw(Surface::Strips(&mut **canvas), now);
                 let drawn = clock_now();
-                let pixels = canvas.canvas();
-                let width = pixels.width();
-                let image = ImageData::new_with_u8_clamped_array(Clamped(pixels.finish()), width)
+                let image = ImageData::new_with_u8_clamped_array(Clamped(canvas.pixels()), *width)
                     .map_err(|error| refused(&error))?;
                 context
                     .put_image_data(&image, 0.0, 0.0)
                     .map_err(|error| refused(&error))?;
-                (changing, drawn)
+                (motion, drawn)
             }
         };
         self.times = [drawn - started, clock_now() - drawn];
-        Ok(changing)
+        Ok(motion.into())
     }
 }
 

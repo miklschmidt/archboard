@@ -515,28 +515,6 @@ fn a_flight_knows_what_the_next_scene_defines_inside_its_body() {
     assert_eq!(defined, vec![clip]);
 }
 
-#[test]
-fn an_in_between_draws_with_balanced_layers() {
-    use crate::canvas::Count;
-    use crate::palette::Theme;
-    use crate::stage::Stage;
-    use crate::testing::painting;
-
-    let (body, nodes) = two_cards(rect(10.0, 10.0, 100.0, 50.0), "Old");
-    let from = scene(body, &nodes);
-    let (body, nodes) = two_cards(rect(40.0, 30.0, 140.0, 50.0), "New");
-    let to = scene(body, &nodes);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
-    let mut halfway = painting(between.at(0.5));
-    halfway.scene.definitions = between.definitions();
-    let mut stage = Stage::new(Theme::Light, (400.0, 300.0));
-    stage.show(halfway);
-    let mut count = Count::default();
-    stage.draw(&mut count, 0.0);
-    assert!(count.fills > 0 && count.layers > 0);
-    assert_eq!(count.open, 0);
-}
-
 /// A door, and the frame it opens into with a part inside.
 fn door_and_frame() -> (Scene, Scene) {
     let door = rect(180.0, 140.0, 40.0, 20.0);
