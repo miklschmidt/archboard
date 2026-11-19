@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-19T19:16:00Z'
+updated_date: '2026-11-19T19:26:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -68,6 +68,8 @@ Gates: check code --fail-shallow-modules --base deepen/module-depth has no findi
 Not done: the pulse-train cache measurement (D12) was not run; no cache was added.
 
 Shape details within the settled design: the light carries its moment as Light.at; the hovered control is Presentation.hovered {toggle} (one level of Option, clippy option_option); a LineSweep with no delays clears and reads no clock, as clearSweep read none; present applies untimed values first and the timed ones in the order camera, awaited, light, sweep. The stage's page-facing types live in stage/said.rs and the presentation handling in stage/present.rs, because the repository keeps Rust files under 600 lines. The 4 interrupted tests drive the new operations and still compare CPU rasters byte for byte, which is their claim; the 23 stage tests read frames on Record. JSON has no infinity, so paint-parity states its always-far line as Number.MAX_VALUE.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit 99401d803e): Canvas drawing and Scene picking changed only by the Presentation -> Seen rename and push(Layer::Over); Browser's changed files all lie in Picture clients and Picture stage, which the proposal names (the gate does not credit the parent). Unbound files: this ticket, CONTEXT.md, ADR 0085, scripts/paint-parity.ts, scripts/painter-bench.ts, the site's painter callers (painter-phases.ts deleted).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
