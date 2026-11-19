@@ -1,11 +1,11 @@
 ---
 id: TASK-646.17
 title: A sibling use keeps a folder export used
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T04:13:00Z'
-updated_date: '2026-11-19T04:29:00Z'
+updated_date: '2026-11-19T04:30:00Z'
 labels:
   - ready-for-agent
 dependencies:
