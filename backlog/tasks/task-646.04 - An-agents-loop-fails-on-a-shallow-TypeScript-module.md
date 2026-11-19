@@ -1,11 +1,11 @@
 ---
 id: TASK-646.04
 title: An agent's loop fails on a shallow TypeScript module
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T00:02:00Z'
-updated_date: '2026-11-19T01:03:00Z'
+updated_date: '2026-11-19T01:06:00Z'
 labels:
   - ready-for-agent
 dependencies:
