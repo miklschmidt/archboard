@@ -139,24 +139,19 @@ function liveEpochOf(options: ThreadLinkBindingAuthorityOptions): ThreadLinkCurr
 
 /**
  * Refuses to adopt an executable link whose child epoch is no longer the live one.
- * @param options The authority, or null for a binding store with no epoch authority.
+ * @param options The authority.
  * @param linkKey The link key.
  * @param revision The binding revision being replaced.
  * @param next The link offered.
  */
 function assertLiveEpoch(
-	options: ThreadLinkBindingAuthorityOptions | null,
+	options: ThreadLinkBindingAuthorityOptions,
 	linkKey: string,
 	revision: number,
 	next: ThreadLinkSnapshot,
 ): void {
 	if (next.state !== "executable") {
 		return;
-	}
-	if (options === null) {
-		throw invalidInput(
-			"An executable thread link requires a live epoch authority; use createCodexThreadLink.",
-		);
 	}
 	const current = liveEpochOf(options);
 	if (current === null || next.childId !== current.childId || next.epoch !== current.epoch) {
@@ -229,14 +224,14 @@ function authoritativeProofOf(
 /**
  * Re-proves an executable link against the live durable authority at the moment of adoption,
  * so a proof that was valid when classified cannot be adopted after the epoch moved.
- * @param options The authority, or null for a binding store with no epoch authority.
+ * @param options The authority.
  * @param linkKey The link key.
  * @param revision The binding revision being replaced.
  * @param link The executable link.
  * @param classification The classification the link came from.
  */
 function assertAuthoritativeProof(
-	options: ThreadLinkBindingAuthorityOptions | null,
+	options: ThreadLinkBindingAuthorityOptions,
 	linkKey: string,
 	revision: number,
 	link: ThreadLink,
@@ -244,11 +239,6 @@ function assertAuthoritativeProof(
 ): void {
 	if (link.state !== "executable") {
 		return;
-	}
-	if (options === null) {
-		throw invalidInput(
-			"An executable thread link requires a classifier result with a live durable epoch proof.",
-		);
 	}
 	const proof = authoritativeProofOf(classification);
 	try {
@@ -314,13 +304,14 @@ function assertExpectationHolds(
 }
 
 /**
- * Creates the binding store, one binding per link key: one compare-and-swap boundary through which every link
- * change passes, with executable links additionally re-proved against the live epoch.
- * @param options The epoch authority, or null for a store that refuses executable links.
+ * Creates the binding controller, one binding per link key: one compare-and-swap boundary through
+ * which every link change passes, with executable links additionally re-proved against the live
+ * epoch, which can adopt them through classification.
+ * @param options The epoch authority.
  * @returns The controller.
  */
-function createBindingController(
-	options: ThreadLinkBindingAuthorityOptions | null,
+function createCodexThreadLinkBindingController(
+	options: ThreadLinkBindingAuthorityOptions,
 ): ThreadLinkBindingController {
 	const bindings = new Map<string, ThreadLinkBindingSnapshot>();
 
@@ -416,35 +407,4 @@ function createBindingController(
 	});
 }
 
-/**
- * Creates the binding controller used with a live epoch authority, which can adopt executable
- * links through classification.
- * @param options The epoch authority.
- * @returns The controller.
- */
-function createCodexThreadLinkBindingController(
-	options: ThreadLinkBindingAuthorityOptions,
-): ThreadLinkBindingController {
-	return createBindingController(options);
-}
-
-/**
- * Creates a standalone binding store with no epoch authority, which therefore refuses every
- * executable link.
- * @returns The store.
- */
-function createCodexThreadLinkBinding(): ThreadLinkBindingStore {
-	const controller = createBindingController(null);
-	return Object.freeze({
-		snapshot: controller.snapshot,
-		read: controller.read,
-		compareAndSwap: controller.compareAndSwap,
-		clear: controller.clear,
-	});
-}
-
-export {
-	createCodexThreadLinkBindingController,
-	createCodexThreadLinkBinding,
-	sameThreadLinkIdentity,
-};
+export { createCodexThreadLinkBindingController, sameThreadLinkIdentity };

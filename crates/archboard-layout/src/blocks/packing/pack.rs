@@ -547,7 +547,10 @@ impl<'t> PackLayout<'t> {
                 .map(|(_, one)| one.y + one.height);
             let points = inner_points(self.block, &self.lines);
             let body = max(boxes.chain(points.iter().map(|point| point.y)));
-            js_max(foot, body + super::super::place::insets_of(self.block).side)
+            js_max(
+                foot,
+                body + super::super::legacy::insets_of(self.block).side,
+            )
         } else {
             foot + self.insets.bottom
         };

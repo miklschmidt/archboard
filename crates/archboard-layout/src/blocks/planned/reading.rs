@@ -1,6 +1,6 @@
 //! Compare complete routes by clear approaches, crossings, bends and travel.
 
-use archboard_scene::paint::design::LANDING_ROOM;
+use crate::constants::LANDING_ROOM;
 
 use crate::{
     blocks::assembly::PlacedLine,

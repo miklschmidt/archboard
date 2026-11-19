@@ -3,7 +3,9 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::drawing::{Node, Painted, ReadingDirection, TextRole};
+use crate::drawing::{
+    DrawingEdge, DrawingNode, EdgeFacts, NodeFacts, Painted, ReadingDirection, TextRole,
+};
 use crate::measure::{FarCard, far_scale_for};
 use crate::request::{
     ArchitecturePicture, PaintRequest, Picture, Relief, SequencePicture, Standing,
@@ -50,8 +52,13 @@ mod traffic;
 mod tray;
 
 pub use junctions::junction_boxes;
-pub use legend::{Applied, Drawn, PictureLegend, picture_legend};
-pub use marks::{ViewerMarks, viewer_marks};
+pub use legend::{Applied, Drawn, picture_legend};
+pub use marks::viewer_marks;
+
+/// One card or frame as the painter reads it.
+type Node = DrawingNode<NodeFacts>;
+/// One line as the painter reads it.
+type Edge = DrawingEdge<EdgeFacts>;
 
 /// What every part of one picture is painted with.
 #[derive(Debug)]

@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { projectModel, projectFlow } from "@archboard/model/content";
 import { renderArchitecture } from "@archboard/renderer/bun";
@@ -39,8 +39,8 @@ interface Drawing {
 const vault = process.argv[2] ?? ".archboard/vault";
 const out = process.argv[3] ?? mkdtempSync(join(tmpdir(), "archboard-engine-gallery-"));
 const engines = z
-	.array(LayoutEngineSchema)
-	.parse(process.argv[4]?.split(",") ?? LayoutEngineSchema.options);
+	.array(layoutEngineSchema())
+	.parse(process.argv[4]?.split(",") ?? layoutEngineSchema().options);
 mkdirSync(out, { recursive: true });
 
 /**

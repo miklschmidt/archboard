@@ -1,6 +1,7 @@
+import type { WorkbenchVoiceInput } from "#runtime/host/protocol/context-source.ts";
 import { afterEach, describe, expect, test } from "bun:test";
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import { parseRealtimeItemId } from "#shared/protocol/realtime-contract.ts";
 import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
@@ -84,6 +85,68 @@ describe("Codex realtime adapter", () => {
 		const h2 = harness();
 		await started(h2);
 		expect(h2.session.starts[0]?.realtimeSessionId).not.toBe(start.realtimeSessionId);
+	});
+
+	test("queues presentation speech until startup and sends it only to the voice session", async () => {
+		const listeners = new Set<(input: WorkbenchVoiceInput) => void>();
+		const h = harness(undefined, {
+			start: () => ({
+				prompt: "Present this walkthrough.",
+				suppressCoordinatorSpeech: true,
+				delegationAckFiller: false,
+			}),
+			subscribe: (_narrative, listener) => {
+				listeners.add(listener);
+				return () => {
+					listeners.delete(listener);
+				};
+			},
+		});
+		const browser = correlation();
+		const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" }, { walkthrough: "w1" });
+		try {
+			await Promise.resolve();
+			expect(listeners.size).toBe(1);
+			for (const listener of listeners) listener({ channel: "speech", text: "First step." });
+			await Bun.sleep(0);
+			expect(h.session.speeches).toEqual([]);
+			const start = h.session.starts[0]!;
+			expect(start).toMatchObject({
+				prompt: "Present this walkthrough.",
+				delegationAckFiller: false,
+				initialItems: [],
+			});
+			expect(start.realtimeStartInstructions).toContain("suppresses spoken coordinator replies");
+			notify(h, "thread/realtime/sdp", {
+				threadId: COORDINATOR_WIRE_THREAD_ID,
+				sdp: "answer-sdp",
+			});
+			notify(h, "thread/realtime/started", {
+				threadId: COORDINATOR_WIRE_THREAD_ID,
+				realtimeSessionId: start.realtimeSessionId,
+				version: "v3",
+			});
+			await answer;
+			await Bun.sleep(0);
+			expect(h.session.speeches).toEqual([
+				{ threadId: h.coordinatorThreadId, text: "First step." },
+			]);
+			for (const listener of listeners) {
+				listener({ channel: "speech", text: "Second step." });
+				listener({ channel: "speech", text: "The walkthrough closed." });
+			}
+			await Bun.sleep(0);
+			expect(h.session.speeches).toEqual([
+				{ threadId: h.coordinatorThreadId, text: "First step." },
+				{ threadId: h.coordinatorThreadId, text: "Second step." },
+				{ threadId: h.coordinatorThreadId, text: "The walkthrough closed." },
+			]);
+			expect(h.session.texts).toEqual([]);
+			await h.adapter.stop(browser);
+			expect(listeners.size).toBe(0);
+		} finally {
+			h.adapter.dispose();
+		}
 	});
 
 	test("reduces only item-scoped transcript events and diagnoses rejected paths", async () => {
@@ -304,11 +367,11 @@ describe("Codex realtime adapter", () => {
 		if (!start?.realtimeSessionId) {
 			throw new Error("Start request missing.");
 		}
-		const other = createIdentityAuthority();
+		const other = createIdentityAuthorities().identity;
 		h.adapter.onNotification(
 			notificationEvent(
 				h,
-				decodeServerNotification({
+				serverNotification({
 					method: "thread/realtime/sdp",
 					params: { threadId: COORDINATOR_WIRE_THREAD_ID, sdp: "wrong-child" },
 				}),

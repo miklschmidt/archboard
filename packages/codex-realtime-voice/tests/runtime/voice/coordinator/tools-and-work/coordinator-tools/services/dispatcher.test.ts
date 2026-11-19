@@ -2,19 +2,9 @@ import { TEST_TOOLS } from "#tests/runtime/support/toolset.ts";
 import { describe, expect, test } from "bun:test";
 
 import {
-	VOICE_TOOL_NAMES,
-	WORKHORSE_TOOL_NAMES,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
-import {
-	DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE,
-	DynamicToolResponseSchema,
-	UnknownDynamicToolResponseSchema,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
-import {
 	approvalRequiredResponse,
 	okResponse,
 	outcomeUnknownResponse,
-	parseResponseText,
 	refusedResponse,
 } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/response.ts";
 import {
@@ -42,13 +32,19 @@ function envelope(response: DynamicToolResponse): Record<string, unknown> {
 	return responseEnvelope(response);
 }
 
+/** One inputText item of canonical JSON, and a refusal when the call itself failed. */
 function validateResponse(response: DynamicToolResponse): void {
-	if (response.success) {
-		DynamicToolResponseSchema.parse(response);
-	} else {
-		UnknownDynamicToolResponseSchema.parse(response);
+	expect(response.contentItems).toHaveLength(1);
+	const [item] = response.contentItems;
+	expect(item.type).toBe("inputText");
+	expect(JSON.stringify(JSON.parse(item.text))).toBe(item.text);
+	if (!response.success) {
+		expect(envelope(response)["tag"]).toBe("refused");
 	}
 }
+
+const DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE =
+	"The request may have taken effect. Inspect authoritative state before another mutation.";
 
 describe("coordinator dynamic-tool dispatcher", () => {
 	test("publishes the two reviewed dispatcher registrations", () => {
@@ -64,8 +60,6 @@ describe("coordinator dynamic-tool dispatcher", () => {
 				manifestHash: TEST_TOOLS.voice.sha256,
 			},
 		]);
-		expect(WORKHORSE_TOOL_NAMES).toHaveLength(5);
-		expect(VOICE_TOOL_NAMES).toEqual(["resolve_spoken_approval"]);
 	});
 
 	test("routes every workhorse tool through its matching operation port", async () => {
@@ -275,7 +269,6 @@ describe("coordinator dynamic-tool dispatcher", () => {
 			validateResponse(response);
 			expect(response.contentItems).toHaveLength(1);
 			expect(response.contentItems[0]?.type).toBe("inputText");
-			expect(parseResponseText(response)).toEqual(response);
 			expect(Object.isFrozen(response)).toBe(true);
 		}
 		expect(ok.success).toBe(true);

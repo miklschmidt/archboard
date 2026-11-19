@@ -1,10 +1,10 @@
-// A Git command and the process group it runs in, and the cadence every owner
-// of a killed process group observes it at until it is gone.
+// A Git command and the process group it runs in.
 
 import { durations } from "#shared/constants/durations.ts";
+import { processGroupPollMs } from "#shared/constants/process-groups.ts";
 
-/** Observation cadence while proving a killed process group is absent. */
-const PROCESS_GROUP_OBSERVATION_POLL_MS = 10;
+/** Grace for a terminated Git group to disappear: see `GIT_MS.groupCleanup`. */
+const GROUP_CLEANUP_MS = 3000;
 
 /** One Git command: its bound, and the end of its detached process group. */
 const GIT_MS = durations({
@@ -25,18 +25,35 @@ const GIT_MS = durations({
 	 * barrier). Three seconds stays below GIT_MS.command, so failed
 	 * cleanup is still diagnosed before the command timeout would be.
 	 */
-	groupCleanup: 3000,
+	groupCleanup: GROUP_CLEANUP_MS,
 	/** Git process cleanup uses the shared process-group observation cadence. */
-	groupPoll: PROCESS_GROUP_OBSERVATION_POLL_MS,
+	groupPoll: processGroupPollMs(),
+	/**
+	 * Outer grace before an interrupted CLI restores the signal's default action.
+	 * Git may spend one cleanup grace terminating and cancelling its leader and
+	 * pipes, then another proving the detached group is absent. A third grace is
+	 * reserved for that settled failure to cross the command runner before the CLI
+	 * re-signals itself; the outer owner must never pre-empt either inner proof.
+	 */
+	cliInterruptCleanup: 3 * GROUP_CLEANUP_MS,
 });
 
 /**
- * Outer grace before an interrupted CLI restores the signal's default action.
- * Git may spend one cleanup grace terminating and cancelling its leader and
- * pipes, then another proving the detached group is absent. A third grace is
- * reserved for that settled failure to cross the command runner before the CLI
- * re-signals itself; the outer owner must never pre-empt either inner proof.
+ * One duration of a Git command and its process group.
+ * @param key Which one.
+ * @returns It, in milliseconds.
  */
-const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_MS.groupCleanup;
+function gitMs(key: keyof typeof GIT_MS): number {
+	return GIT_MS[key];
+}
 
-export { PROCESS_GROUP_OBSERVATION_POLL_MS, GIT_MS, CLI_INTERRUPT_CLEANUP_MS };
+/**
+ * When a Git group terminated now must have disappeared.
+ * @param nowMs The current time, in milliseconds.
+ * @returns The deadline, in milliseconds on the same clock.
+ */
+function gitGroupCleanupDeadline(nowMs: number): number {
+	return nowMs + GIT_MS.groupCleanup;
+}
+
+export { gitMs, gitGroupCleanupDeadline };

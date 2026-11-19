@@ -2,7 +2,7 @@
 
 use super::graph::Graph;
 use super::solving::{Solver, Unsolved};
-use crate::blocks::place::{BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_PLANNED};
+use crate::blocks::place::{nesting_option, told_drawing};
 use archboard_scene::geometry::{Point, Rect};
 use indexmap::IndexMap;
 use serde::Deserialize;
@@ -61,9 +61,8 @@ pub(crate) async fn placed_blocks<S: Solver>(
     graph: &Graph,
     inline: bool,
 ) -> Result<Placed, String> {
-    let nesting = if inline { "inline" } else { "blocks" };
     let reply = solver
-        .solve(graph.with_options(&[(BLOCKS_NESTING, nesting.to_owned())]))
+        .solve(graph.with_options(&[nesting_option(inline)]))
         .await
         .map_err(|error| match error {
             Unsolved::Failed(words) => words,
@@ -71,13 +70,10 @@ pub(crate) async fn placed_blocks<S: Solver>(
         })?;
     let Told { mut options } = serde_json::from_str(&reply)
         .map_err(|error| format!("A solve's answer is unreadable: {error}"))?;
-    let placed = options
-        .swap_remove(BLOCKS_PLACED)
+    let (placed, planned) = told_drawing(&mut options)
         .ok_or_else(|| "A solve asked for a drawing answered none.".to_owned())?;
     let mut placed: Placed = serde_json::from_str(&placed)
         .map_err(|error| format!("A solve's drawing is unreadable: {error}"))?;
-    placed.planned = options
-        .get(BLOCKS_PLANNED)
-        .is_some_and(|value| value == "true");
+    placed.planned = planned;
     Ok(placed)
 }

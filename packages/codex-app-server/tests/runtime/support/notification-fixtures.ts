@@ -385,4 +385,9 @@ function notificationFixture(method: ServerNotificationMethod): unknown {
 	return serverNotificationFixtures[method];
 }
 
-export { notificationFixture, serverNotificationFixtures };
+/** Every server notification the client decodes: the fixtures cover each, by type. */
+const SERVER_NOTIFICATION_METHODS = Object.keys(
+	serverNotificationFixtures,
+) as ServerNotificationMethod[];
+
+export { notificationFixture, SERVER_NOTIFICATION_METHODS, serverNotificationFixtures };

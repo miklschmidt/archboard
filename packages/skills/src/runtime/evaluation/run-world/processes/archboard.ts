@@ -2,7 +2,7 @@
 // answer. The harness lays fixtures and reads outcomes through the same
 // commands an agent uses, so what the checks read is what the CLI says.
 
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { skillEvalMs } from "@archboard/timing";
 import { runProcess } from "#runtime/evaluation/processes/process.ts";
 
 /** What one call answered. */
@@ -57,7 +57,7 @@ async function archboard(
 		cwd: context.cwd,
 		env: context.env,
 		stdin,
-		timeoutMs: SKILL_EVAL_MS.cli,
+		timeoutMs: skillEvalMs("cli"),
 		signal: context.signal,
 	});
 	return {

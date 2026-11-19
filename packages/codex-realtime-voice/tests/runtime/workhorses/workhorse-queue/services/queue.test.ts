@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { WORKHORSE_QUEUE_OPERATIONS } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import {
 	CodexSessionMutationError,
 	binding,
@@ -15,14 +14,6 @@ import {
 describe("Codex workhorse queue contract", () => {
 	test("exposes exactly the six authored operations and no revision field", () => {
 		const fixtureValue = fixture();
-		expect(WORKHORSE_QUEUE_OPERATIONS).toEqual([
-			"list",
-			"add",
-			"update",
-			"delete",
-			"reorder",
-			"start",
-		]);
 		expect(Object.keys(fixtureValue.queue)).toEqual([
 			"list",
 			"add",

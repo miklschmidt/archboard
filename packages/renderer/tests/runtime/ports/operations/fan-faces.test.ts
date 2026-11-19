@@ -12,13 +12,13 @@ import { roundBridges, routePoints } from "#tests/runtime/support/drawn-routes.t
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import gradingFan from "#tests/runtime/support/fixtures/grading-fan.json";
 import sideExit from "#tests/runtime/support/fixtures/side-exit.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 test.each(["track"] as const)(
 	"lines to cards beside their source leave along the shared trunk without hops (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: orderedFixture(sideExit),
 			theme: "light",
 			layout,
@@ -35,7 +35,7 @@ test.each(["track"] as const)(
 	async (layout) => {
 		const content = orderedFixture(gradingFan);
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
 			layout,

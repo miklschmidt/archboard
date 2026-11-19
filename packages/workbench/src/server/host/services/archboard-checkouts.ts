@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { checkoutOfVault, isVaultLayout, VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { checkoutOfVault, isVaultLayout, vaultDirectory } from "@archboard/workspace/vault";
 
 /**
  * Whether a path is a directory now.
@@ -33,7 +33,7 @@ function checkoutNamedBy(named: string): string | null {
 	}
 	// A directory names the checkout of the vault it holds, as the server serves that vault: through
 	// a link, the vault's own real path decides, so a pane in it and a call naming it agree.
-	const held = path.join(real, VAULT_DIRECTORY);
+	const held = path.join(real, vaultDirectory());
 	const vault = isDirectory(held) ? fs.realpathSync.native(held) : real;
 	return isVaultLayout(vault) && isDirectory(vault) ? checkoutOfVault(vault) : null;
 }

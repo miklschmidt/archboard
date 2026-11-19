@@ -1,16 +1,16 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
 import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { serverLifecycleMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,
 } from "#server/start-stop/lifecycle/application-lifetime.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
+import { closeBrowserOwners } from "@archboard/workbench/panes";
 import { prepareCodexWorkbench, stopCodexWorkbench } from "@archboard/workbench/server";
 import { checkoutWork, mutationAdmission } from "#server/wiring/server-owners.ts";
 import {
-	closeBrowserOwners,
 	closeHttpServer,
 	forgetEngineState,
 	listen,
@@ -20,10 +20,10 @@ import {
 import {
 	findExistingLoopbackListener,
 	formatHostForUrl,
-	HOST,
 	isLoopbackGuardedHost,
+	listenAddress,
 	logHttpServerError,
-	PORT,
+	serverUrl,
 	messageOf,
 } from "@archboard/workbench/host";
 import { agentActivity } from "#server/wiring/server-owners.ts";
@@ -66,7 +66,7 @@ function isRecoverableServerStopError(error: unknown): boolean {
 function reportServerStopError(error: unknown): void {
 	const message = `Archboard server shutdown refused or failed: ${messageOf(error)}`;
 	if (isRecoverableServerStopError(error)) {
-		logger.error(message);
+		logger().error(message);
 	} else {
 		process.stderr.write(message + "\n");
 		process.exitCode = 1;
@@ -82,15 +82,16 @@ async function loopbackRefusal(): Promise<string | null> {
 	if (!isLoopbackGuardedHost()) {
 		return null;
 	}
-	const existingHost = await findExistingLoopbackListener(PORT);
+	const existingHost = await findExistingLoopbackListener();
 	if (!existingHost) {
 		return null;
 	}
+	const { host, port } = listenAddress();
 	const message =
-		`Refusing to start Archboard server on ${formatHostForUrl(HOST)}:${PORT}: ` +
-		`${formatHostForUrl(existingHost)}:${PORT} is already listening. ` +
+		`Refusing to start Archboard server on ${formatHostForUrl(host)}:${port}: ` +
+		`${formatHostForUrl(existingHost)}:${port} is already listening. ` +
 		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
-	logger.error(message);
+	logger().error(message);
 	return message;
 }
 
@@ -177,7 +178,7 @@ function processHandlers(
 	 * @param signal The signal.
 	 */
 	const shutdown = (signal: NodeJS.Signals): void => {
-		logger.info(`Received ${signal}, shutting down Archboard server`);
+		logger().info(`Received ${signal}, shutting down Archboard server`);
 		void stopServerAfterSignal(signal);
 	};
 	return {
@@ -192,7 +193,7 @@ function processHandlers(
 		/** Remove the pidfile this process wrote, as the process exits. */
 		onExit: () => {
 			if (http.ownsPidFile) {
-				removePidFile(PORT);
+				removePidFile(listenAddress().port);
 			}
 		},
 		/**
@@ -229,7 +230,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 		 * @param error What startup threw.
 		 */
 		onStartupFailure: (error) => {
-			logger.error(serverStartupFailureMessage(error));
+			logger().error(serverStartupFailureMessage(error));
 		},
 		/** Stop admitting work and drain what is running. */
 		quiesce: async () => {
@@ -253,9 +254,9 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				return;
 			}
 			if (action === "force") {
-				logger.warn(`Archboard server lifetime forcing stop: ${resource}`);
+				logger().warn(`Archboard server lifetime forcing stop: ${resource}`);
 			} else {
-				logger.debug(`Archboard server lifetime ${action}: ${resource}`);
+				logger().debug(`Archboard server lifetime ${action}: ${resource}`);
 			}
 		},
 		resources: [
@@ -337,7 +338,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				 * @returns Resolves once the port is released.
 				 */
 				stop: () => stopListening(http),
-				stopGraceMs: SERVER_LIFECYCLE_MS.httpStopGrace,
+				stopGraceMs: serverLifecycleMs("httpStopGrace"),
 				/** Drop every connection and close. */
 				forceStop: async () => {
 					server.closeAllConnections();
@@ -349,7 +350,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Accept panes. */
 				start: () => {
 					startWebSocketServer();
-					logger.info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
+					logger().info(`WebSocket server running on ${serverUrl("ws")}`);
 				},
 				stop: closeWebSocketServer,
 			},

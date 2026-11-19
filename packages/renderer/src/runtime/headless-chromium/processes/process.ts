@@ -11,7 +11,7 @@ import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 } from "@archboard/process/codex-group";
-import { PROCESS_GROUP_OBSERVATION_POLL_MS } from "@archboard/timing";
+import { processGroupPollMs } from "@archboard/timing";
 
 import { isJsonRecord } from "#runtime/headless-chromium/clients/devtools.ts";
 
@@ -195,7 +195,7 @@ function pollUntil<T>(
 				} else if (Date.now() > deadline) {
 					rejectPoll(new Error(failure));
 				} else {
-					setTimeout(() => void tick(), PROCESS_GROUP_OBSERVATION_POLL_MS);
+					setTimeout(() => void tick(), processGroupPollMs());
 				}
 			} catch (error) {
 				rejectPoll(error);

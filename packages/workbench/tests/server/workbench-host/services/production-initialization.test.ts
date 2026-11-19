@@ -9,7 +9,7 @@ import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { installation } from "@archboard/workspace/installation";
-import { DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
+import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
 import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "#tests/server/support/generation/production-state.ts";
 import { createServerVoiceAgentOptions } from "#server/workbench-host/services/production.ts";
@@ -37,7 +37,7 @@ describe("production Codex storage", () => {
 			const owner = join(
 				workbench,
 				"canvases",
-				process.env["PORT"] || new URL(DEFAULT_ARCHBOARD_URL).port,
+				process.env["PORT"] || new URL(defaultArchboardUrl()).port,
 			);
 			expect({
 				rootDirectory: value.storage.directory,

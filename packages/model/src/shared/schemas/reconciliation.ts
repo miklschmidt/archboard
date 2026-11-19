@@ -163,3 +163,11 @@ export {
 	type ReconciliationIssue,
 	type ToldStanding,
 };
+
+/**
+ * The schema `ReconciliationKindSchema`, for callers that parse it or build on it.
+ * @returns The schema.
+ */
+export function reconciliationKindSchema(): typeof ReconciliationKindSchema {
+	return ReconciliationKindSchema;
+}

@@ -1,6 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/model/policy";
+import { semanticPolicySchema } from "@archboard/model/policy";
 import { themeColor } from "#runtime/theme/store/source.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
@@ -79,7 +79,7 @@ function lineStroke(markup: string): string {
 	)![1]!;
 }
 
-const policy = SemanticPolicySchema.parse({
+const policy = semanticPolicySchema().parse({
 	levels: ["service"],
 	nodeKinds: {
 		azure: { name: "Azure", icon: "RiCloudLine", color: "blue" },
@@ -108,7 +108,7 @@ test("the cards of a group stand together on the document", async () => {
 	}));
 	const drawn = await renderArchitecture({
 		content: orderedFixture({ nodes }),
-		policy: SemanticPolicySchema.parse({
+		policy: semanticPolicySchema().parse({
 			...policy,
 			groups: {
 				first: { name: "First", color: "green" },
@@ -125,7 +125,7 @@ test("the cards of a group stand together on the document", async () => {
 });
 
 describe("a group shows as a tag, and a card's face stays neutral", () => {
-	const grouped = SemanticPolicySchema.parse({
+	const grouped = semanticPolicySchema().parse({
 		...policy,
 		groups: { core: { name: "Core", color: "green" }, shell: { name: "Shell", color: "orange" } },
 	});

@@ -8,12 +8,12 @@
 // model reads no model and no part: the answer has the text alone, with no definitions or owners.
 
 import type { z } from "zod";
-import type { CodeFileSchema } from "@archboard/code-intel/code-check";
+import type { codeFileSchema } from "@archboard/code-intel/code-check";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { codeCheck } from "#server/wiring/server-owners.ts";
 import { quoteFile, type Quoted } from "#server/http/handlers/code-files/operations/quoted-file.ts";
 
-type CodeFile = z.infer<typeof CodeFileSchema>;
+type CodeFile = z.infer<ReturnType<typeof codeFileSchema>>;
 type CodeFileDefinition = Extract<CodeFile["source"], { status: "quoted" }>["definitions"][number];
 
 /** What to read. */

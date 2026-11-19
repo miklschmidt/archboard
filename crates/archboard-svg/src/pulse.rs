@@ -5,14 +5,14 @@
 //! message's pulse crosses its line once in every turn of the shared clock.
 
 use archboard_scene::geometry::{Segment, round_coord};
-use archboard_scene::js::{self, within};
+use archboard_scene::js;
 use archboard_scene::scene::traffic::{
-    PULSE_FRONT as FRONT, PULSE_HEAD as HEAD, PULSE_MASK_ROOM as MASK_ROOM, PULSE_TAIL as TAIL,
-    pulse_breadth,
+    body_stops, longest_tail, pulse_breadth, pulse_reach, pulse_span, pulse_tail, train_shift,
+    turn_entry, turn_moment, turn_slide, with_light_room,
 };
 use archboard_scene::scene::{Motion, PulseLook, TrafficMark};
 
-use crate::colour::css;
+use crate::css::css;
 use crate::legs::{Leg, leg_path, legs_of};
 use crate::xml::{Attributes, close, coord, empty, open};
 
@@ -24,16 +24,10 @@ pub(crate) const PULSE_CLASS: &str = "ab-pulse";
 /// layer of the glow is, and how much light it lets through.
 const GLOW: [(f64, f64); 4] = [(6.0, 0.07), (3.4, 0.2), (1.3, 0.5), (0.0, 0.9)];
 const HALO_OVER: f64 = 1.0;
-const FILL: f64 = 0.8;
 const TAIL_CURVE: f64 = 2.3;
 const TAIL_LIGHT: f64 = 0.6;
 const TAIL_STEPS: u32 = 9;
 const BAR_ROOM: f64 = 1.0;
-
-/// How long a pulse's tail is where pulses are `room` apart.
-fn tail_for(room: f64) -> f64 {
-    js::js_max(0.0, js::js_min(TAIL, room * FILL - HEAD - FRONT))
-}
 
 /// How high a bar must be to cover its piece's mask.
 fn bar_height(leg: &Leg, core: f64) -> f64 {
@@ -42,7 +36,7 @@ fn bar_height(leg: &Leg, core: f64) -> f64 {
 
 /// The box the light of a piece stays inside, spelt as the markup spells it.
 fn box_of(leg: &Leg, core: f64) -> [String; 4] {
-    let reach = f64::midpoint(core, GLOW[0].0) + MASK_ROOM;
+    let reach = with_light_room(f64::midpoint(core, GLOW[0].0));
     let mut points = vec![leg.from, leg.segment.to()];
     if let Segment::Cubic { first, second, .. } = leg.segment {
         points.push(first);
@@ -127,7 +121,7 @@ fn mask_of(leg: &Leg, core: f64) -> Defined {
 
 /// The gradient a pulse is painted with, along one axis, its front at the far end.
 fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined {
-    let reach = FRONT + HEAD + tail;
+    let reach = pulse_reach(tail);
     let head = css(&look.head);
     let hot = css(&look.hot);
     let stop = |behind: f64, colour: &str, light: f64| {
@@ -151,10 +145,9 @@ fn gradient_of(look: &PulseLook, span: f64, tail: f64, repeat: bool) -> Defined 
             ));
         }
     }
-    stops.push_str(&stop(FRONT + HEAD, &head, TAIL_LIGHT));
-    stops.push_str(&stop(FRONT + HEAD * 0.45, &hot, 0.9));
-    stops.push_str(&stop(FRONT, &hot, 1.0));
-    stops.push_str(&stop(0.0, &hot, 0.0));
+    for (behind, is_hot, light) in body_stops(TAIL_LIGHT) {
+        stops.push_str(&stop(behind, if is_hot { &hot } else { &head }, light));
+    }
     let markup = format!(
         "gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"{}\" y2=\"0\"{}>{stops}",
         js::fixed_number(span, 4),
@@ -253,7 +246,7 @@ fn steady_pulses(
 ) {
     let period = round_coord(spacing);
     let core = pulse_breadth(look.line_width);
-    let gradient = gradient_of(look, period, tail_for(period), true);
+    let gradient = gradient_of(look, period, pulse_tail(period), true);
     let mut motion = Attributes::new();
     motion
         .set("attributeName", "transform")
@@ -274,7 +267,7 @@ fn steady_pulses(
                     mask: &mask.id,
                     clip: &clip.id,
                     gradient: &gradient.id,
-                    shift: within(phase - leg.along + FRONT, period) - period,
+                    shift: train_shift(phase, leg.along, period),
                     from: -period - 1.0,
                     width: leg.length + 2.0 * period + 2.0,
                     height: bar_height(leg, core),
@@ -289,11 +282,12 @@ fn steady_pulses(
 
 /// How a message's bar slides along one piece of its route.
 fn slide_of(leg: &Leg, speed: f64, cycle: f64, start: f64) -> Attributes {
-    let span = FRONT + HEAD + TAIL;
-    let slide_at = |time: f64| (time - start) * speed - leg.along + FRONT - span;
-    let moment_of = |slide: f64| start + (slide + leg.along - FRONT + span) / speed;
-    let from = js::js_max(0.0, moment_of(-span - 1.0));
-    let to = js::js_min(cycle, moment_of(leg.length + 1.0));
+    let slide_at = |time: f64| turn_slide(time, start, speed, leg.along);
+    let from = js::js_max(0.0, turn_entry(start, speed, leg.along));
+    let to = js::js_min(
+        cycle,
+        turn_moment(leg.length + 1.0, start, speed, leg.along),
+    );
     let slides = [slide_at(from), slide_at(from), slide_at(to), slide_at(to)];
     let values = slides
         .iter()
@@ -329,8 +323,8 @@ fn turn_pulse(
     out: &mut String,
 ) {
     let core = pulse_breadth(look.line_width);
-    let span = FRONT + HEAD + TAIL;
-    let gradient = gradient_of(look, span, TAIL, false);
+    let span = pulse_span();
+    let gradient = gradient_of(look, span, longest_tail(), false);
     let pieces: Vec<(Defined, Defined, String)> = legs
         .iter()
         .map(|leg| {

@@ -2,7 +2,7 @@
 
 import { existsSync } from "node:fs";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
+import { serverLifecycleMs } from "@archboard/timing";
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { type HealthStatus } from "#runtime/clients/server-client.ts";
 import { foreignServiceError } from "#runtime/clients/server-client-transport.ts";
@@ -55,7 +55,7 @@ function stuckOwnerError(port: number, pid: number): Error {
  * recorded process still runs after the wait.
  */
 async function awaitPidFileGone(port: number, pid: number): Promise<StopResult | undefined> {
-	const deadline = Date.now() + SERVER_LIFECYCLE_MS.stopPidfileWait;
+	const deadline = Date.now() + serverLifecycleMs("stopPidfileWait");
 	for (;;) {
 		if (removePidFileIfOwnerGone(port)) {
 			return {
@@ -69,7 +69,7 @@ async function awaitPidFileGone(port: number, pid: number): Promise<StopResult |
 		}
 		if (Date.now() >= deadline) return undefined;
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the pidfile
-		await new Promise((resolve) => setTimeout(resolve, SERVER_LIFECYCLE_MS.stopPidfilePoll));
+		await new Promise((resolve) => setTimeout(resolve, serverLifecycleMs("stopPidfilePoll")));
 	}
 }
 
@@ -116,7 +116,7 @@ function verifiedServerPid(health: HealthStatus): number | null {
  * @returns The stop result once `/health` stops answering.
  */
 async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
-	const deadline = Date.now() + SERVER_LIFECYCLE_MS.stopConfirm;
+	const deadline = Date.now() + serverLifecycleMs("stopConfirm");
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
 		const postSignalHealth = await healthOrNull();
@@ -125,10 +125,10 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, SERVER_LIFECYCLE_MS.stopProbePoll));
+		await new Promise((resolve) => setTimeout(resolve, serverLifecycleMs("stopProbePoll")));
 	}
 	throw new Error(
-		`Archboard server (pid ${pid}) did not stop within ${SERVER_LIFECYCLE_MS.stopConfirm / 1000}s.`,
+		`Archboard server (pid ${pid}) did not stop within ${serverLifecycleMs("stopConfirm") / 1000}s.`,
 	);
 }
 

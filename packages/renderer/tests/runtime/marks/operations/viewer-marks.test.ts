@@ -7,7 +7,7 @@
 
 import { expect, test } from "bun:test";
 
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { PULSE_INK } from "#shared/protocol/generated/core/marks.ts";
 import {
@@ -44,7 +44,7 @@ function unplaced(markup: string): string {
 test("a pane draws the pins, warnings, inks and heads the picture draws", async () => {
 	const drawn = await renderArchitecture({
 		content: CONTENT,
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		standing: { a: "added", b: "unchanged", ab: "unchanged" },
 		unsettled: ["b"],
 	});

@@ -1,33 +1,28 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	CLIENT_NOTIFICATION_METHODS,
-	RESPONSE_METHODS,
-	SERVER_NOTIFICATION_METHODS,
-	SERVER_REQUEST_METHODS,
-} from "#runtime/protocol/protocol-methods.ts";
-import { CODEX_PROTOCOL_VERSION } from "#runtime/protocol/protocol-version.ts";
+import { RESPONSE_METHODS } from "#runtime/protocol/protocol-methods.ts";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
 import {
 	FunctionCallOutputContentItemSchema,
 	UserInputSchema,
 } from "#runtime/schemas/core-schemas.ts";
 import {
 	ProtocolDecodeError,
-	decodeClientNotification,
+	decodeClientRequestParams,
 	decodeJsonRpcError,
-	decodeLoginAccountParams,
 	decodeResponse,
 	decodeResponseEnvelope,
 	decodeServerNotification,
 	decodeServerRequest,
 } from "#runtime/protocol/protocol-decoder.ts";
 import {
-	clientNotificationFixtures,
 	responseFixtures,
+	SERVER_REQUEST_METHODS,
 	serverRequestFixtures,
 } from "#tests/runtime/support/protocol-fixtures.ts";
 import {
 	notificationFixture,
+	SERVER_NOTIFICATION_METHODS,
 	serverNotificationFixtures,
 } from "#tests/runtime/support/notification-fixtures.ts";
 describe("image references", () => {
@@ -90,14 +85,6 @@ describe("public notification boundary", () => {
 		});
 	}
 
-	for (const method of CLIENT_NOTIFICATION_METHODS) {
-		test(`decodes client ${method}`, () => {
-			expect(decodeClientNotification(clientNotificationFixtures[method]) as unknown).toEqual(
-				clientNotificationFixtures[method],
-			);
-		});
-	}
-
 	test("accepts notifications from older servers without emittedAtMs", () => {
 		expect(
 			decodeServerNotification({
@@ -151,7 +138,7 @@ describe("fail-closed diagnostics", () => {
 		expect(thrown).toMatchObject({
 			method: "thread/future",
 			direction: "response",
-			expectedVersion: CODEX_PROTOCOL_VERSION,
+			expectedVersion: codexProtocolVersion(),
 		});
 		expect((thrown as Error).message).toContain("Recovery:");
 	});
@@ -171,9 +158,6 @@ describe("fail-closed diagnostics", () => {
 	});
 
 	test("rejects extra fields on every public envelope boundary", () => {
-		expect(() => decodeClientNotification({ method: "initialized", extra: true })).toThrow(
-			ProtocolDecodeError,
-		);
 		expect(() =>
 			decodeServerNotification({
 				method: "thread/realtime/closed",
@@ -362,23 +346,13 @@ describe("fail-closed diagnostics", () => {
 		).toThrow(ProtocolDecodeError);
 	});
 
-	test("refuses unsupported login variants with a recovery action", () => {
-		let thrown: unknown;
-		try {
-			decodeLoginAccountParams({ type: "chatgptDeviceCode" });
-		} catch (error) {
-			thrown = error;
-		}
-		expect(thrown).toBeInstanceOf(ProtocolDecodeError);
-		expect(thrown).toMatchObject({ method: "account/login/start", direction: "client-request" });
-		expect((thrown as Error).message).toContain("visual login flow");
-	});
-
 	test("does not let a reserved JSON key supply inherited login fields", () => {
 		const payload = JSON.parse('{"__proto__":{"type":"apiKey","apiKey":"inherited-secret"}}');
 
 		expect(Object.hasOwn(payload, "__proto__")).toBeTrue();
-		expect(() => decodeLoginAccountParams(payload)).toThrow(ProtocolDecodeError);
+		expect(() => decodeClientRequestParams("account/login/start", payload)).toThrow(
+			ProtocolDecodeError,
+		);
 	});
 
 	for (const method of ["attestation/generate", "account/chatgptAuthTokens/refresh"] as const) {
@@ -390,9 +364,6 @@ describe("fail-closed diagnostics", () => {
 	}
 
 	test("rejects unknown methods in every envelope direction", () => {
-		expect(() => decodeClientNotification({ method: "future/notification" })).toThrow(
-			ProtocolDecodeError,
-		);
 		expect(() => decodeServerNotification({ method: "future/notification", params: {} })).toThrow(
 			ProtocolDecodeError,
 		);

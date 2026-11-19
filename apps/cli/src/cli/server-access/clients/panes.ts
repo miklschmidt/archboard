@@ -36,7 +36,7 @@ type ShowModelResponse = {
 	success: true;
 	model: string;
 	reading: import("zod").infer<
-		typeof import("@archboard/model/pane-context").ArchitecturePaneReadingSchema
+		ReturnType<typeof import("@archboard/model/pane-context").architecturePaneReadingSchema>
 	>;
 	revision: unknown;
 	repository: string | null;

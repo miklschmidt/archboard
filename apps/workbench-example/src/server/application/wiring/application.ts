@@ -1,7 +1,8 @@
 import { statSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { createVoiceAgent, resolveCodexExecutable } from "@archboard/codex-realtime-voice/server";
+import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
+import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
 import type { ExampleOptions } from "#server/startup/rules/options.ts";
 import { WORKBENCH_SOCKET_PATH, type ExampleConfiguration } from "#shared/protocol/application.ts";
 

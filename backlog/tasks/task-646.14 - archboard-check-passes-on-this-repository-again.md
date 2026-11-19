@@ -1,10 +1,10 @@
 ---
 id: TASK-646.14
 title: archboard check passes on this repository again
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-19T00:03:00Z'
-updated_date: '2026-11-19T04:22:00Z'
+updated_date: '2026-11-19T12:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -80,4 +80,6 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 Owner decision (2026-11-19): exported zod schemas count as values, so EXPOSED_VALUE applies to them. The cleanup includes about 90 schemas in the contract packages: hide each behind a function and export the derived types. Callables made by a call stop counting as values after TASK-646.15.
 
 From TASK-646.16: the relationship archboard-render -> Legend entries has an anchor `appearances` that now resolves to archboard_svg::appearances, which neither end binds (ANCHOR_MISMATCH). Repair the anchor in Current.
+
+All batches merged on refactor/module-depth-cleanup (PR #139): 860 warnings to 0, the shallow-module gate on in the vault configuration, renderer output identical (0 of 1084 drawings differ), sol-loop 4 rounds approved.
 <!-- SECTION:NOTES:END -->

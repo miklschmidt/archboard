@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { architectureModelReadSchema } from "@archboard/model/contract";
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import {
 	modelReadContract,
@@ -7,7 +7,7 @@ import {
 	unavailableOutcome,
 } from "#cli/commands/model/operations/read.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import {
 	GroupInspectionSchema,
 	ModuleInspectionSchema,
@@ -82,7 +82,7 @@ const modelInspectContract = defineCommand({
 	result: z.union([
 		ModuleInspectionSchema,
 		GroupInspectionSchema,
-		ArchitectureModelReadSchema.options[1],
+		architectureModelReadSchema().options[1],
 	]),
 	output: {
 		cases: [
@@ -102,7 +102,7 @@ const modelInspectContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal, unknownGroupRefusal],
+	refusals: [refusal("server"), unknownGroupRefusal],
 	outcomes: [unavailableOutcome],
 	relationships: [
 		{

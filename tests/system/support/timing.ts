@@ -144,7 +144,7 @@ const TEST_PANE_MESSAGE_POLL_MS = 20;
  * These panes acknowledge callbacks directly and never render, so a frame
  * that has not arrived in two seconds is missing. It is long enough for a
  * server that waits on a pane's geometry to give up first: it pulls against
- * `PANE_MS.settleCap` (1.5 s), which this value must stay above.
+ * `paneMs("settleCap")` (1.5 s), which this value must stay above.
  */
 const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 
@@ -152,7 +152,7 @@ const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
  * Outer bound for one cross-process lock-watch delivery, from the completed
  * ownership change in one server to the matching model_lock frame on the pane
  * of the other. This owner is about that delivery, so it does wait for the
- * product's one-second lock sweep (`MODEL_LOCK_MS.watch`) to fire: a second server
+ * product's one-second lock sweep (`modelLockMs("watch")`) to fire: a second server
  * learns of a lock file only by looking at it, and the sweep interval has no
  * test override.
  * The bound is a test number, three seconds: one sweep, then slack for timer
@@ -165,7 +165,7 @@ const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3000;
  * How long the cross-process lock owner waits after a pane takes a claim back
  * through one server, so that the server holding the claim has refused a
  * renewal and recorded the loss. This owner is about that discovery, so it does
- * wait for the product's one-second lease renewal (`MODEL_LOCK_MS.renew`) to fire: the
+ * wait for the product's one-second lease renewal (`modelLockMs("renew")`) to fire: the
  * claiming server learns of the take-back only when that renewal is refused,
  * and the interval has no test override. It is a test number, 1.5 seconds: one
  * renewal, then slack for timer phase and a stressed host. A call to that
@@ -198,12 +198,6 @@ const TEST_BROWSER_CONDITION_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 1500;
  */
 const TEST_BROWSER_STEP_WAIT = { timeoutMs: TEST_PATIENCE_FACTOR * 10_000 } as const;
 
-/** Polls fake-opener lifecycle evidence within its 2s operation bound. */
-const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
-
-/** Aggregate Bun case, not an operation cap/SLA: 20s avoids the hosted 5s cancellation path while keeping a finite bound. */
-const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
-
 export {
 	TEST_RECORDING_CASE_MS,
 	TEST_RECORDING_CLI_MS,
@@ -230,6 +224,4 @@ export {
 	TEST_BROWSER_CONDITION_TIMEOUT_MS,
 	TEST_BROWSER_STEP_WAIT,
 	TEST_BROWSER_POLL_MS,
-	TEST_OPENER_LIFECYCLE,
-	TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
 };

@@ -46,7 +46,7 @@ import type {
 	LocalityPeriod,
 } from "#shared/protocol/locality.ts";
 import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import { LOCALITY_DEFAULT_PERIOD_MS } from "@archboard/timing";
+import { localityDefaultSinceSeconds } from "@archboard/timing";
 
 /** How many answers the server keeps: the documents that somebody selects parts on. */
 const KEPT_ANSWERS = 32;
@@ -119,7 +119,7 @@ async function walkPeriod(
 	);
 	const sinceSeconds =
 		since === undefined
-			? untilSeconds - Math.floor(LOCALITY_DEFAULT_PERIOD_MS / 1000)
+			? localityDefaultSinceSeconds(untilSeconds)
 			: Math.floor(since.getTime() / 1000);
 	// `--max-age` takes the seconds as they are. Git's date parser reads
 	// `--since=@<seconds>` as a time only from 100000000 (1973) on, and a start

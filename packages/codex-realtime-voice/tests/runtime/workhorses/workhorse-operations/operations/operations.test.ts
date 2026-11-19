@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthority } from "@archboard/codex-app-server/identity";
+import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { type WorkhorseOperationEvent } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import {
 	notification,
@@ -125,7 +125,7 @@ describe("codex workhorse operation authority and correlation", () => {
 					if (event.type !== "accepted") {
 						return;
 					}
-					const replacementIdentity = createIdentityAuthority();
+					const replacementIdentity = createIdentityAuthorities().identity;
 					const childId =
 						change === "child"
 							? replacementIdentity.validator.childId

@@ -20,7 +20,7 @@ import { cliContractRegistry, runCli } from "#cli/routing/operations/run.ts";
 import { commanderTree } from "#cli/routing/rules/help.ts";
 import { type CommandRoute } from "#cli/routing/protocol/route.ts";
 import { applyCliBootstrap, isHelpInvocation } from "#cli/routing/operations/bootstrap.ts";
-import { SHARED_OPTION_KEYS, sharedOptionsFor } from "#cli/contract/protocol/shared-options.ts";
+import { sharedOptionKeys, sharedOptionsFor } from "#cli/contract/protocol/shared-options.ts";
 import { statedInvocation } from "@archboard/server-lifecycle/server-client";
 
 const registry = cliContractRegistry();
@@ -201,13 +201,13 @@ test("the root help lists every top-level command and the shared options", async
 	for (const name of Object.keys(routes)) {
 		expect(text).toContain(name);
 	}
-	const read = (key: (typeof SHARED_OPTION_KEYS)[number]) =>
+	const read = (key: ReturnType<typeof sharedOptionKeys>[number]) =>
 		registry.some((entry) => entry.contract.shared.includes(key));
-	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS.filter(read))) {
+	for (const option of sharedOptionsFor(sharedOptionKeys().filter(read))) {
 		expect(text).toContain(option.spellings[0]);
 	}
 	// An option that no command reads is refused everywhere, so the root help must not offer it.
-	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS.filter((key) => !read(key)))) {
+	for (const option of sharedOptionsFor(sharedOptionKeys().filter((key) => !read(key)))) {
 		expect(text).not.toContain(option.spellings[0]);
 	}
 	expect(process.exitCode).toBe(0);
@@ -217,7 +217,7 @@ test("help routing skips shared option values without mistaking them for command
 	for (const entry of registry) {
 		const child = registry.find((candidate) => candidate.parent === entry.name);
 		if (child === undefined) continue;
-		for (const option of sharedOptionsFor(SHARED_OPTION_KEYS)) {
+		for (const option of sharedOptionsFor(sharedOptionKeys())) {
 			if (option.value === "none") continue;
 			for (const [argv, path] of [
 				[
@@ -289,7 +289,7 @@ test("a namespace menu includes options accepted by its bare default", async () 
 test("a shared option the command does not read is refused before anything runs", async () => {
 	for (const entry of registry) {
 		const unread = sharedOptionsFor(
-			SHARED_OPTION_KEYS.filter((key) => !entry.contract.shared.includes(key)),
+			sharedOptionKeys().filter((key) => !entry.contract.shared.includes(key)),
 		);
 		for (const option of unread) {
 			stdout.mockClear();

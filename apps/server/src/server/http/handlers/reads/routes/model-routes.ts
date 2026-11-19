@@ -15,7 +15,7 @@ import {
 	retainArchitectureCheckpoint,
 	initializeArchitectureArchive,
 } from "@archboard/model/store-write";
-import { ArchitectureCheckpointRequestSchema } from "@archboard/model/contract";
+import { architectureCheckpointRequestSchema } from "@archboard/model/contract";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/http/handlers/architecture-writes/routes/model-edit-routes.ts";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
@@ -87,7 +87,7 @@ const ModuleQuerySchema = z
 const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
 const ListQuerySchema = z.object({ vault: z.string() }).strict();
 const RetainedModuleQuerySchema = ListQuerySchema.extend({ module: z.string().min(1) }).strict();
-const RetainBodySchema = ArchitectureCheckpointRequestSchema.safeExtend({
+const RetainBodySchema = architectureCheckpointRequestSchema().safeExtend({
 	vault: z.string().optional(),
 });
 /**

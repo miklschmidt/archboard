@@ -5,7 +5,7 @@
 import type { ReactNode } from "react";
 import type { z } from "zod";
 import type { Model } from "@archboard/model/content";
-import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
@@ -18,7 +18,10 @@ type ThemeChoice = "light" | "dark";
 type NavigatorMode = "architecture" | "code";
 
 /** What a pane opens of a model, when it opens more than its roots. */
-type PaneOpening = Omit<z.input<typeof ArchitecturePaneReadingSchema>, "model" | "beat">;
+type PaneOpening = Omit<
+	z.input<ReturnType<typeof architecturePaneReadingSchema>>,
+	"model" | "beat"
+>;
 
 /** One pane: what it reports about itself, who holds its model, and its mounted stage. */
 interface ShellPane {

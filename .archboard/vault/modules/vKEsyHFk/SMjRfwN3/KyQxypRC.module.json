@@ -58,6 +58,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
       "to": "vKEsyHFk/SMjRfwN3#ShT7QadJ"
+    },
+    {
+      "order": 15000,
+      "kind": "dependency",
+      "label": "raster job, start-up and cleanup durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "symbol": "rasterMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#zAZwER1T"
     }
   ]
 }

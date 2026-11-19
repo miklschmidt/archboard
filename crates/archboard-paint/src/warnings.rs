@@ -20,7 +20,7 @@ use crate::sweep::is_route;
 /// Where the warnings stand, found in one scene. A group is named by where it
 /// is in memory, so a scene must not move while its warnings stand.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Warnings {
+pub(crate) struct Warnings {
     /// The marks of a warning, centred on the origin.
     glyph: Vec<Item>,
     /// The groups that hold marks, and where in them the marks stand.

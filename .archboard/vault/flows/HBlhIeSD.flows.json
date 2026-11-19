@@ -220,6 +220,7 @@
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
         "vKEsyHFk/HBlhIeSD#nLp2hILd",
         "vKEsyHFk/HBlhIeSD#KLt72lWa",
+        "vKEsyHFk#CgXCbunb",
         "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw"
       ],
@@ -378,7 +379,7 @@
                             {
                               "id": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                              "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                              "to": "vKEsyHFk#CgXCbunb",
                               "label": "move the pane out, with its model",
                               "kind": "sync",
                               "anchor": {

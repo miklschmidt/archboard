@@ -1,4 +1,4 @@
-import type { WorkbenchVoiceInput } from "#runtime/host/protocol/context-source.ts";
+import type { WorkbenchVoicePolicy } from "#runtime/host/protocol/context-source.ts";
 import { createTestVoicePolicy } from "#tests/runtime/support/host.ts";
 import { expect } from "bun:test";
 import {
@@ -7,16 +7,16 @@ import {
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";
 import {
-	createIdentityAuthority,
+	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type ItemId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
 import {
-	decodeServerNotification,
-	type DecodedServerNotification,
-} from "@archboard/codex-app-server/protocol";
+	serverNotification,
+	type ServerNotification,
+} from "#tests/runtime/support/server-notification.ts";
 import type { SessionParams } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
@@ -123,11 +123,9 @@ function harness(
 		read: startBrief,
 		subscribe: () => () => {},
 	},
-	presentationChanges?: {
-		readonly subscribe: (listener: (change: WorkbenchVoiceInput) => void) => () => void;
-	},
+	voice: WorkbenchVoicePolicy = createTestVoicePolicy(),
 ): Harness {
-	const identity = createIdentityAuthority();
+	const identity = createIdentityAuthorities().identity;
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [LINKED_WIRE_THREAD_ID, COORDINATOR_WIRE_THREAD_ID, "other-thread"],
 	});
@@ -150,7 +148,7 @@ function harness(
 		session: session.port,
 		identity,
 		coordinatorContext,
-		voice: createTestVoicePolicy(presentationChanges?.subscribe),
+		voice,
 		currentBinding: () => bindingState.binding,
 	});
 	recordReducerCheckedEvents(adapter, events, transitionFailures);
@@ -182,7 +180,7 @@ function startBrief(): string {
 
 function notificationEvent(
 	h: Harness,
-	notification: DecodedServerNotification,
+	notification: ServerNotification,
 	identity: { child: ChildId; epoch: ChildEpoch } = h,
 ): TransportServerNotification {
 	return {
@@ -192,7 +190,7 @@ function notificationEvent(
 }
 
 function notify(h: Harness, method: string, params: unknown): void {
-	h.adapter.onNotification(notificationEvent(h, decodeServerNotification({ method, params })));
+	h.adapter.onNotification(notificationEvent(h, serverNotification({ method, params })));
 }
 
 function correlation(suffix = "") {

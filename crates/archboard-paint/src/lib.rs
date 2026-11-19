@@ -3,23 +3,34 @@
 //! it Vello on WebGPU and Vello GPU on WebGL2, and `cpu` gives it Vello on the
 //! CPU. `parts` keeps for both strip canvases what the GPU canvas keeps.
 
-pub mod between;
-pub mod canvas;
-pub mod clock;
-pub mod cpu;
+mod between;
+mod canvas;
+mod clock;
+mod cpu;
 mod definitions;
-pub mod draw;
-pub mod flight;
-pub mod outlines;
-pub mod palette;
-pub mod parts;
-pub mod passage;
+mod draw;
+mod flight;
+mod outlines;
+mod palette;
+mod parts;
+mod passage;
 mod path;
 mod pick;
-pub mod presentation;
+mod presentation;
 mod raise;
-pub mod stage;
-pub mod sweep;
-pub mod timing;
+mod stage;
+mod sweep;
+#[cfg(test)]
+mod testing;
+mod timing;
 mod traffic;
-pub mod warnings;
+mod warnings;
+
+pub use canvas::{Canvas, Count, Ink, Lens, PartKey};
+pub use clock::StageClock;
+pub use cpu::CpuCanvas;
+pub use flight::DiveWay;
+pub use palette::Theme;
+pub use parts::Keeper;
+pub use presentation::{Camera, Light, Marks};
+pub use stage::Stage;

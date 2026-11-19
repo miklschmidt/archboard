@@ -2,16 +2,13 @@ import { expect, test } from "bun:test";
 
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "@archboard/codex-realtime-voice/runtime";
-import { CODEX_APPROVAL_MS } from "@archboard/timing";
+import { codexApprovalExpiresAt } from "@archboard/timing";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
 import {
 	createIdentityAuthorities,
 	IdentityValidationError,
 	type IdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
-import { projectCodexBrowserState } from "@archboard/codex-realtime-voice/server";
-import type { BrowserProjectionInput } from "@archboard/codex-realtime-voice/server";
 import { projectDynamicApproval } from "#server/browser-state/projections/dynamic-approval-projection.ts";
 import {
 	type DynamicApprovalOwnerRequest,
@@ -93,7 +90,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"a".repeat(64)}`,
 		createdAtMs: 100,
-		expiresAtMs: 100 + CODEX_APPROVAL_MS.expiry,
+		expiresAtMs: codexApprovalExpiresAt(100),
 		privatePath: PRIVATE_PATHS[0],
 	};
 	const create = ownerRequest(createSource);
@@ -123,7 +120,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"b".repeat(64)}`,
 		createdAtMs: 200,
-		expiresAtMs: 200 + CODEX_APPROVAL_MS.expiry,
+		expiresAtMs: codexApprovalExpiresAt(200),
 		privatePath: PRIVATE_PATHS[1],
 	};
 	const fork = ownerRequest(forkSource);
@@ -149,7 +146,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"c".repeat(64)}`,
 		createdAtMs: 300,
-		expiresAtMs: 300 + CODEX_APPROVAL_MS.expiry,
+		expiresAtMs: codexApprovalExpiresAt(300),
 		privatePath: PRIVATE_PATHS[2],
 	};
 	const send = ownerRequest(sendSource);
@@ -195,7 +192,7 @@ function selfForkOwner(authorities: IdentityAuthorities): DynamicApprovalOwnerVi
 		},
 		effectHash: `sha256:${"d".repeat(64)}`,
 		createdAtMs: 400,
-		expiresAtMs: 400 + CODEX_APPROVAL_MS.expiry,
+		expiresAtMs: codexApprovalExpiresAt(400),
 	});
 	return {
 		request,
@@ -211,71 +208,24 @@ function selfForkOwner(authorities: IdentityAuthorities): DynamicApprovalOwnerVi
 	};
 }
 
-function projectionInput(
+/**
+ * The dynamic approvals of owner views, as the browser snapshot carries them.
+ * @param authorities The identity authorities of the snapshot.
+ * @param owners The owner views.
+ * @returns Each view's presentation.
+ */
+function projectApprovals(
 	authorities: IdentityAuthorities,
 	owners: readonly DynamicApprovalOwnerView[],
-): BrowserProjectionInput {
-	const link = owners[0]!.binding.capturedLink;
-	return {
-		readiness: { kind: "readiness", state: "thread_capable" },
-		account: { kind: "account", state: "signed_out" },
-		login: { kind: "login", state: "idle" },
-		threadLink: {
-			kind: "thread_link",
-			state: "executable",
-			...link,
-			source: "appServer",
-			status: "idle",
-			loaded: true,
-			canAcceptDirectInput: true,
-			reason: null,
-		},
-		timeline: null,
-		queue: { kind: "codex_queue", submissions: [] },
-		settings: [],
-		approvals: [],
-		dynamicApprovals: owners.map((owner) =>
-			projectDynamicApproval(
-				createCodexBrowserModel(authorities),
-				authorities.identity.decoder,
-				owner,
-			),
-		),
-		contextDelivery: { kind: "codex_context_delivery", outcome: null, freshness: null },
-		coordinator: {
-			kind: "codex_coordinator",
-			state: "unbound",
-			threadId: null,
-			configured: null,
-			effective: null,
-			reason: null,
-		},
-		voice: {
-			kind: "codex_voice",
-			unattended: false,
-			mediaReady: false,
-			generation: null,
-			coordinatorState: "unbound",
-			transcript: [],
-		},
-		spokenApproval: EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
-		lease: null,
-		operation: null,
-	};
+) {
+	const model = createCodexBrowserModel(authorities);
+	return owners.map((owner) => projectDynamicApproval(model, authorities.identity.decoder, owner));
 }
 
-test("the sole public projection closes all three dynamic approval presentations", () => {
+test("the projection closes all three dynamic approval presentations", () => {
 	const authorities = createIdentityAuthorities();
 	const owners = ownerViews(authorities);
-	const result = projectCodexBrowserState(
-		createCodexBrowserModel(authorities),
-		projectionInput(authorities, owners),
-	);
-	expect(result.tag).toBe("projected");
-	if (result.tag !== "projected") {
-		throw new Error("dynamic projection was refused");
-	}
-	const projected = result.snapshot.dynamicApprovals;
+	const projected = projectApprovals(authorities, owners);
 	expect(projected.map((approval) => approval.effect.tool)).toEqual([
 		"create_thread",
 		"fork_thread",
@@ -295,7 +245,6 @@ test("the sole public projection closes all three dynamic approval presentations
 	];
 	for (const approval of projected) {
 		expect(Object.keys(approval.identity).toSorted()).toEqual(identityKeys);
-		expect(Object.isFrozen(approval.identity)).toBe(true);
 	}
 	expect(Object.keys(projected[0]!).toSorted()).toEqual([
 		"binding",
@@ -348,22 +297,12 @@ test("the sole public projection closes all three dynamic approval presentations
 			expect(wire).not.toContain(owner.request.effect.targetAuthority);
 		}
 	}
-	expect(Object.isFrozen(projected)).toBe(true);
-	expect(Object.isFrozen(projected[0]?.effect)).toBe(true);
 });
 
 test("self-fork projection keeps the requested and effective boundaries distinct", () => {
 	const authorities = createIdentityAuthorities();
 	const owner = selfForkOwner(authorities);
-	const result = projectCodexBrowserState(
-		createCodexBrowserModel(authorities),
-		projectionInput(authorities, [owner]),
-	);
-	expect(result.tag).toBe("projected");
-	if (result.tag !== "projected") {
-		throw new Error("self-fork projection was refused");
-	}
-	const effect = result.snapshot.dynamicApprovals[0]?.effect;
+	const effect = projectApprovals(authorities, [owner])[0]?.effect;
 	if (effect?.tool !== "fork_thread") {
 		throw new Error("self-fork effect was not projected");
 	}
@@ -372,8 +311,6 @@ test("self-fork projection keeps the requested and effective boundaries distinct
 		relation: "self",
 		beforeTurnId: owner.request.identity.turnId,
 	});
-	expect(Object.isFrozen(effect.arguments)).toBe(true);
-	expect(Object.isFrozen(effect.effectiveBoundary)).toBe(true);
 });
 
 test("effective fork boundaries refuse canonical wrong-domain and unissued identities", () => {

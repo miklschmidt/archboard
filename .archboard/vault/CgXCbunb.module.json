@@ -1,0 +1,32 @@
+{
+  "order": 4300,
+  "name": "Pane vault moves",
+  "kind": "module",
+  "responsibility": "Moves a pane into another vault, re-keying its sockets and registration and forgetting what it said it was reading",
+  "description": "It tells nobody that a pane moved: which conversation the tab's agent dock shows stays as it is, because only the person's own act in the page changes that.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/panes/services/pane-vaults.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#CgXCbunb",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "re-key the pane's sockets and registration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-vaults.ts",
+        "symbol": "paneVaults"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "id": "vKEsyHFk#3SaNwlJk"
+    }
+  ]
+}

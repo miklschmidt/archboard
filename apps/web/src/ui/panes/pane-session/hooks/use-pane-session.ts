@@ -14,10 +14,12 @@ import {
 } from "#ui/panes/pane-session/rules/session-contracts.ts";
 import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbench-port.ts";
 import type { LegacyIdentity } from "#ui/panes/pane-session/rules/session-types.ts";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
+type SemanticPanePart = NonNullable<
+	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
+>[number];
 
 /**
  * A client id for one pane: the pane, plus enough randomness that two tabs

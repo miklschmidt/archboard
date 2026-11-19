@@ -17,7 +17,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
-import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
+import { shownConversationPath } from "@archboard/workbench/browser-contract";
 import { productionServer } from "./support/production-server.ts";
 
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
@@ -120,7 +120,7 @@ test("the page's activation changes the conversation every pane of a tab shows, 
 		const page: Record<string, string> = { Origin: server.base, "Sec-Fetch-Site": "same-origin" };
 		const activate = (clientId: string, checkout?: string, vault = fixture.vault, headers = page) =>
 			request<{ success?: boolean; shown?: string; changed?: boolean; code?: string }>(
-				SHOWN_CONVERSATION_ROUTE,
+				shownConversationPath(),
 				{
 					method: "POST",
 					doing: false,

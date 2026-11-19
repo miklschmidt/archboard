@@ -3,11 +3,12 @@ import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-import {
-	CODEX_PROTOCOL_BINARY_VERSION,
-	CODEX_PROTOCOL_VERSION,
-} from "#runtime/protocol/protocol-version.ts";
-import { CODEX_SESSION_MS } from "@archboard/timing";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
+import { codexSessionMs } from "@archboard/timing";
+
+const CODEX_PROTOCOL_VERSION = codexProtocolVersion();
+/** What the pinned Codex binary prints for `--version`. */
+const CODEX_PROTOCOL_BINARY_VERSION = `codex-cli ${CODEX_PROTOCOL_VERSION}` as const;
 
 const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
 const VERIFICATION_ENVIRONMENT_KEYS = [
@@ -35,7 +36,7 @@ type CodexExecutableFailureCode =
 	| "wrong_version"
 	| "outside_checkout";
 
-/** Which Codex executable `resolveCodexExecutable` proves. */
+/** Which Codex executable to find and prove. */
 interface CodexExecutableOptions {
 	/** An absolute path to prove in place of the installed `@openai/codex` package. */
 	readonly executablePath?: string;
@@ -320,7 +321,7 @@ function reportedVersion(executablePath: string, execute: typeof execFileSync): 
 			encoding: "utf8",
 			env: verificationEnvironment(),
 			maxBuffer: CODEX_EXECUTABLE_PROOF_MAX_BYTES,
-			timeout: CODEX_SESSION_MS.requestSettlement,
+			timeout: codexSessionMs("requestSettlement"),
 			killSignal: "SIGKILL",
 			stdio: ["ignore", "pipe", "pipe"],
 			windowsHide: true,

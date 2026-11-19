@@ -1,9 +1,5 @@
-import { CODEX_PROTOCOL_VERSION } from "#runtime/protocol/protocol-version.ts";
-import type {
-	ClientNotificationMethod,
-	ResponseMethod,
-	ServerRequestMethod,
-} from "#runtime/protocol/protocol-methods.ts";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
+import type { ResponseMethod, ServerRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 
 const threadItemFixture = {
 	type: "userMessage",
@@ -43,7 +39,7 @@ const threadFixture = {
 	status: { type: "idle" },
 	path: null,
 	cwd: "/tmp/archboard",
-	cliVersion: CODEX_PROTOCOL_VERSION,
+	cliVersion: codexProtocolVersion(),
 	source: "appServer",
 	canAcceptDirectInput: true,
 	threadSource: "archboard",
@@ -135,7 +131,7 @@ const threadStartResponseFixture = {
 
 const responseFixtures: Record<ResponseMethod, unknown> = {
 	initialize: {
-		userAgent: `Codex Desktop/${CODEX_PROTOCOL_VERSION}`,
+		userAgent: `Codex Desktop/${codexProtocolVersion()}`,
 		codexHome: "/tmp/codex",
 		platformFamily: "unix",
 		platformOs: "linux",
@@ -267,9 +263,8 @@ const serverRequestFixtures: Record<ServerRequestMethod, unknown> = {
 	},
 };
 
-const clientNotificationFixtures: Record<ClientNotificationMethod, unknown> = {
-	initialized: { method: "initialized" },
-};
+/** Every reverse request the server may send: the fixtures cover each, by type. */
+const SERVER_REQUEST_METHODS = Object.keys(serverRequestFixtures) as ServerRequestMethod[];
 
 export {
 	threadItemFixture,
@@ -279,6 +274,6 @@ export {
 	modelFixture,
 	queuedSubmissionFixture,
 	responseFixtures,
+	SERVER_REQUEST_METHODS,
 	serverRequestFixtures,
-	clientNotificationFixtures,
 };

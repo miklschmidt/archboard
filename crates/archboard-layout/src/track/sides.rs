@@ -5,7 +5,9 @@
 //! container's members. Each wall is pulled in to one inset from the
 //! outermost thing its container holds.
 
-use crate::constants::{ARCHITECTURE_HEADER_PADDING, CONTAINER_INSET, REGION_INSET};
+use archboard_scene::paint::design::header_width_for;
+
+use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{abs, js_max, js_min, max, min, sorted_by};
 use crate::geometry::{Point, Rect};
 use crate::track::chains::{LANE, REGION_CLEARANCE};
@@ -215,7 +217,7 @@ pub(crate) fn fit_sides(
         .map(|frame| {
             let title = scene.titles[frame.id.as_str()];
             let words = scene.words[&title];
-            let narrowest = words + ARCHITECTURE_HEADER_PADDING;
+            let narrowest = header_width_for(words);
             let heading = scene.moved_id(title, left);
             // A frame laid out as the region round it keeps the region's inset too.
             let inset = CONTAINER_INSET + scene.frames[frame.id.as_str()].below.unwrap_or(0.0);

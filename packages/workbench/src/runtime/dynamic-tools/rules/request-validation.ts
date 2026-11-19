@@ -1,7 +1,8 @@
 import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-	GeneralThreadToolNameSchema,
+	isArchboardAppManifestHash,
+	isArchboardAppNamespace,
+	isGeneralThreadToolName,
+	isReviewedCatalogue,
 } from "#runtime/thread-tools/protocol/manifest.ts";
 import { parseToolArguments } from "#runtime/thread-tools/protocol/arguments.ts";
 import type { ToolArguments } from "#runtime/thread-tools/protocol/arguments.ts";
@@ -85,8 +86,7 @@ function dynamicError(
  * @param catalogue Catalogue option supplied by the server, if any.
  */
 function exactCatalogue(catalogue: unknown): void {
-	const candidate = catalogue ?? ARCHBOARD_APP_NAMESPACE;
-	if (JSON.stringify(candidate) !== JSON.stringify(ARCHBOARD_APP_NAMESPACE)) {
+	if (!isReviewedCatalogue(catalogue)) {
 		throw dynamicError("invalid_call", "The archboard_app catalogue is not the reviewed manifest.");
 	}
 }
@@ -191,13 +191,13 @@ function assertWireOwnership(envelope: ExactEnvelope): void {
  */
 function assertReviewedManifest(envelope: ExactEnvelope): void {
 	const { params, logicalCall } = envelope;
-	if (params["namespace"] !== ARCHBOARD_APP_NAMESPACE.name) {
+	if (!isArchboardAppNamespace(params["namespace"])) {
 		throw dynamicError("invalid_call", "The dynamic call namespace is not archboard_app.");
 	}
-	if (logicalCall["namespace"] !== ARCHBOARD_APP_NAMESPACE.name) {
+	if (!isArchboardAppNamespace(logicalCall["namespace"])) {
 		throw dynamicError("invalid_call", "The logical call namespace is not archboard_app.");
 	}
-	if (logicalCall["manifestHash"] !== ARCHBOARD_APP_MANIFEST_SHA256) {
+	if (!isArchboardAppManifestHash(logicalCall["manifestHash"])) {
 		throw dynamicError("invalid_call", "The dynamic call manifest hash is not the reviewed hash.");
 	}
 	if (logicalCall["tool"] !== params["tool"]) {
@@ -255,11 +255,10 @@ function assertLogicalCorrelation(envelope: ExactEnvelope): void {
  * @returns The tool name.
  */
 function reviewedToolName(tool: unknown): DynamicToolName {
-	const parsedName = GeneralThreadToolNameSchema.safeParse(tool);
-	if (!parsedName.success) {
+	if (!isGeneralThreadToolName(tool)) {
 		throw dynamicError("unsupported", `The archboard_app tool ${String(tool)} is unsupported.`);
 	}
-	return parsedName.data;
+	return tool;
 }
 
 /**

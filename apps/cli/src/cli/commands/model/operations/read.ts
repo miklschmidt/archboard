@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
+import { architectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-import { serverRefusal } from "#cli/contract/protocol/refusals.ts";
+import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { describedComparison } from "#cli/commands/model/rules/compared-interfaces.ts";
 
 const unavailableOutcome = {
@@ -183,7 +183,7 @@ const modelReadContract = defineCommand({
 			model: z.string().optional(),
 		}),
 	},
-	result: ArchitectureModelReadSchema,
+	result: architectureModelReadSchema(),
 	output: {
 		cases: [
 			{
@@ -201,7 +201,7 @@ const modelReadContract = defineCommand({
 	},
 	prerequisites: ["server"],
 	effects: ["read"],
-	refusals: [serverRefusal],
+	refusals: [refusal("server")],
 	outcomes: [unavailableOutcome],
 	relationships: [
 		{

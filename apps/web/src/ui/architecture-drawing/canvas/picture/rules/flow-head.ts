@@ -15,7 +15,7 @@
 // flow's frame, its columns and its rows. Nothing here reads the picture.
 
 import type { SemanticVariant } from "@archboard/model/legacy-board";
-import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
+import { fitMargin } from "@archboard/renderer/shell-geometry";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {
 	unionRect,
@@ -92,7 +92,7 @@ function flowRows(atlas: SemanticAtlas, flow: string): FlowRows | null {
  * @returns The distance, in the drawing's own units.
  */
 function headDrop(rows: FlowRows, camera: Camera): number {
-	const top = (FIT_MARGIN - camera.y) / camera.scale;
+	const top = (fitMargin() - camera.y) / camera.scale;
 	const reach = rows.rowTops.at(-1)! - rows.rowTops[0]!;
 	return Math.min(Math.max(0, top - rows.headTop), reach);
 }

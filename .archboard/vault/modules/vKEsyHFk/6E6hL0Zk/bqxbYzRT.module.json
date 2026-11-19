@@ -27,5 +27,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "place a pane whose vault is gone",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/request/services/vault.ts",
+        "symbol": "placeOfVault"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+      "id": "vKEsyHFk#KBBwvHf9"
+    }
+  ]
 }

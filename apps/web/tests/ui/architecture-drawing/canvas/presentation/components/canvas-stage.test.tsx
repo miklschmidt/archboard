@@ -21,7 +21,7 @@ import {
 	viewport,
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { calls } from "#tests/ui/support/canvas/recording-stage.ts";
-import { EXPLORING_MS } from "@archboard/timing";
+import { exploringMs } from "@archboard/timing";
 import {
 	cameraNow,
 	diagramPointUnder,
@@ -78,11 +78,11 @@ test("a drawn model is fitted to the pane, and `0` puts it back", async () => {
 		act(() => {
 			fireEvent.keyDown(viewport(), { key: "0" });
 		});
-		frames.run(EXPLORING_MS.cameraFit / 2);
+		frames.run(exploringMs("cameraFit") / 2);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
 		expect(cameraNow()).not.toEqual(fit);
 		expect(calls("setCamera").at(-1)?.[0]).toEqual(cameraNow());
-		frames.run(EXPLORING_MS.cameraFit);
+		frames.run(exploringMs("cameraFit"));
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
 		expect(cameraNow()).toEqual(fit);
 	} finally {
@@ -150,7 +150,7 @@ test("a wheel over the diagram zooms about the pointer, by how far it turned", a
 		const [midX, midY] = diagramPointUnder(cameraNow(), pointer);
 		expect(midX).toBeCloseTo(wasX, 6);
 		expect(midY).toBeCloseTo(wasY, 6);
-		frames.run(EXPLORING_MS.cameraEase * 20);
+		frames.run(exploringMs("cameraEase") * 20);
 		const after = cameraNow();
 		// One notch of a mouse wheel is the step a key zooms by.
 		expect(after.scale).toBeCloseTo(before.scale * 1.1, 6);
@@ -162,7 +162,7 @@ test("a wheel over the diagram zooms about the pointer, by how far it turned", a
 		act(() => {
 			stage.dispatchEvent(wheelAt(-50, pointer));
 		});
-		frames.run(EXPLORING_MS.cameraEase * 20);
+		frames.run(exploringMs("cameraEase") * 20);
 		expect(cameraNow().scale).toBeCloseTo(after.scale * Math.sqrt(1.1), 6);
 	} finally {
 		frames.restore();
@@ -217,7 +217,7 @@ test("a camera at rest asks for no more frames", async () => {
 			viewport().dispatchEvent(wheelAt(-100, [200, 150]));
 		});
 		expect(frames.asked()).toBeGreaterThan(0);
-		frames.run(EXPLORING_MS.cameraEase * 20);
+		frames.run(exploringMs("cameraEase") * 20);
 		const asked = frames.asked();
 		frames.run(1000);
 		expect(frames.asked()).toBe(asked);
@@ -424,11 +424,11 @@ test("a picture seen from far away is told so through a pan, and told again when
 			act(() => {
 				fireEvent.keyDown(viewport(), { key: "+" });
 			});
-		frames.run(EXPLORING_MS.cameraEase * 3);
+		frames.run(exploringMs("cameraEase") * 3);
 		expect(cameraNow().scale).toBeGreaterThan(0.75);
 		expect(surface().classList.contains("is-far")).toBe(true);
 		expect(surface().classList.contains("will-change-transform")).toBe(true);
-		frames.run(EXPLORING_MS.cameraEase * 20);
+		frames.run(exploringMs("cameraEase") * 20);
 	} finally {
 		frames.restore();
 	}

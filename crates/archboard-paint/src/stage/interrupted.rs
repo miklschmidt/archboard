@@ -3,9 +3,9 @@
 use super::Stage;
 use crate::between::{Heading, PHASES};
 use crate::cpu::CpuCanvas;
-use crate::draw::tests::painting;
 use crate::palette::Theme;
 use crate::passage::Side;
+use crate::testing::painting;
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
     Group, Item, PathStep, Purpose, Role, Shape, Stroke, Subject, SubjectKind, Token,

@@ -8,7 +8,7 @@ import fs from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { z } from "zod";
-import { SKILL_EVAL_MS } from "@archboard/timing";
+import { skillEvalMs } from "@archboard/timing";
 import type { RunPaths } from "#runtime/evaluation/run-world/processes/isolation.ts";
 import { ownProcess, pause, settlesWithin } from "#runtime/evaluation/processes/process.ts";
 
@@ -49,7 +49,7 @@ async function freePort(): Promise<number> {
 async function healthPid(url: string): Promise<number | null> {
 	try {
 		const response = await fetch(`${url}/health`, {
-			signal: AbortSignal.timeout(SKILL_EVAL_MS.healthRequest),
+			signal: AbortSignal.timeout(skillEvalMs("healthRequest")),
 		});
 		const parsed = HealthSchema.safeParse(await response.json());
 		return parsed.success ? parsed.data.pid : null;
@@ -71,7 +71,7 @@ async function awaitHealthy(
 	log: string,
 	signal = new AbortController().signal,
 ): Promise<void> {
-	const deadline = Date.now() + SKILL_EVAL_MS.serverStartup;
+	const deadline = Date.now() + skillEvalMs("serverStartup");
 	while (Date.now() < deadline) {
 		signal.throwIfAborted();
 		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
@@ -85,10 +85,10 @@ async function awaitHealthy(
 		signal.throwIfAborted();
 		if (pid === child.pid) return;
 		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		await pause(SKILL_EVAL_MS.healthPoll);
+		await pause(skillEvalMs("healthPoll"));
 	}
 	throw new Error(
-		`the evaluation server did not answer /health within ${SKILL_EVAL_MS.serverStartup}ms; see ${log}`,
+		`the evaluation server did not answer /health within ${skillEvalMs("serverStartup")}ms; see ${log}`,
 	);
 }
 
@@ -128,7 +128,7 @@ async function startServer(
 		// Spawn duplicates the descriptor; the parent never owns the child's copy.
 		fs.closeSync(log);
 	}
-	const owner = await ownProcess(child, SKILL_EVAL_MS.serverShutdown);
+	const owner = await ownProcess(child, skillEvalMs("serverShutdown"));
 	try {
 		await awaitHealthy(child, url, paths.serverLog, signal);
 		return { url, port, pid: child.pid, stop: owner.stop };

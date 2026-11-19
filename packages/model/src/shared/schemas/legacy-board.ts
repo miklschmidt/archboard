@@ -29,7 +29,7 @@ import { SemanticViewSchema } from "#shared/schemas/views.ts";
 import { VariantContentSchema } from "#shared/schemas/content.ts";
 import { VariantStandingSchema } from "#shared/schemas/reconciliation.ts";
 import { VariantLifecycleSchema } from "#shared/schemas/vocabulary.ts";
-import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
+import { documentReferenceSchema } from "@archboard/code-binding/bindings";
 
 /**
  * The contract version of the document itself. A reader that does not
@@ -86,7 +86,7 @@ const FIRST_BOARD_VERSION = 1;
 const FormerNamesSchema = z.array(DisplayNameSchema).min(1);
 
 /** A variant's document references, as the board holds them: one at least, or none stored. */
-const DocumentsSchema = z.array(DocumentReferenceSchema).min(1);
+const DocumentsSchema = z.array(documentReferenceSchema()).min(1);
 
 /**
  * A file in a repository, named from the repository's root: forward slashes,

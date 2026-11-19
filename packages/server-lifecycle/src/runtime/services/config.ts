@@ -1,12 +1,12 @@
 import dotenv from "dotenv";
-import { browserUrl, DEFAULT_ARCHBOARD_URL } from "@archboard/workspace/source-checkout";
+import { browserUrl, defaultArchboardUrl } from "@archboard/workspace/source-checkout";
 
 // Load environment variables once for every entry point (CLI and Archboard server)
 dotenv.config({ quiet: true });
 
 // The Archboard server the CLI talks to, and where an auto-started one listens:
 // this checkout's own port unless a set ARCHBOARD_URL or --url names another.
-const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || DEFAULT_ARCHBOARD_URL;
+const ARCHBOARD_URL = process.env["ARCHBOARD_URL"] || defaultArchboardUrl();
 
 // The same server as a person or a browser addresses it (ADR 0076). The CLI connects to
 // ARCHBOARD_URL; whatever it shows or opens uses this.
@@ -37,4 +37,18 @@ function removedEnvironmentMessage(): string | null {
 	return null;
 }
 
-export { ARCHBOARD_BROWSER_URL, ARCHBOARD_URL, removedEnvironmentMessage, ARCHBOARD_NO_AUTOSTART };
+/**
+ * The Archboard server the CLI talks to.
+ * @returns Its URL.
+ */
+function archboardUrl(): string {
+	return ARCHBOARD_URL;
+}
+
+export {
+	ARCHBOARD_BROWSER_URL,
+	ARCHBOARD_URL,
+	archboardUrl,
+	removedEnvironmentMessage,
+	ARCHBOARD_NO_AUTOSTART,
+};

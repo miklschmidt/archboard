@@ -4,7 +4,7 @@ use crate::drawing::{MeasuredNode, TextRole, TextRun};
 use crate::js;
 use crate::measure::cards::CardWords;
 use crate::measure::{truncate, width};
-use crate::paint::design::{
+use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_TITLE_FONT,
     FLOW_HEADING, FLOW_HEADING_WITH_NOTE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE,
     TAB_PADDING, TAB_SHOULDER,

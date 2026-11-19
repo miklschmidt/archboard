@@ -62,7 +62,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/code-opener/src/server/projections/github-link.ts",
-        "symbol": "CodeBindingSchema"
+        "symbol": "codeBindingSchema"
       },
       "id": "vKEsyHFk/vKEsyHFk#rzta8x5j",
       "to": "vKEsyHFk#NVlMWCWO"

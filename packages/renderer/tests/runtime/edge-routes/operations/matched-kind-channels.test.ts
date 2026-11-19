@@ -1,12 +1,12 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The gateway lanes that reproduce the live comparison's shared channels. */
 const CHANNEL_EDGE_IDS = [
@@ -60,7 +60,7 @@ test("routes leaving one gateway in one direction may share a run", async () => 
 	// The shared trunk this engine draws here is what the overdrawn-run
 	// measure below must see, so a zero from it means no run is shared.
 	const plain = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: channelContent,
 		theme: "dark",
 		layout: SHARING,
@@ -68,11 +68,11 @@ test("routes leaving one gateway in one direction may share a run", async () => 
 	expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
 });
 
-test.each(LayoutEngineSchema.options)(
+test.each(layoutEngineSchema().options)(
 	"opposing same-kind channels do not share an overdrawn run (%s)",
 	async (layout) => {
 		const plain = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: channelContent,
 			theme: "dark",
 			layout,
@@ -101,7 +101,7 @@ for (const [left, right] of [
 ] as const) {
 	test(`different comparison standings use distinct same-kind channels (${left}/${right})`, async () => {
 		const drawing = await renderArchitecture({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: channelContent,
 			theme: "dark",
 			layout: SHARING,
@@ -125,11 +125,11 @@ const DIFFERENCES: Record<string, (edge: Edge) => void> = {
 
 // Each engine keeps the complete treatment of a shared channel.
 for (const [name, change] of Object.entries(DIFFERENCES)) {
-	test.each(LayoutEngineSchema.options)(
+	test.each(layoutEngineSchema().options)(
 		`different ${name} uses distinct same-kind channels (%s)`,
 		async (layout) => {
 			const drawing = await renderArchitecture({
-				policy: DEFAULT_SEMANTIC_POLICY,
+				policy: defaultSemanticPolicy(),
 				content: outgoingDiffering(change),
 				theme: "dark",
 				layout,

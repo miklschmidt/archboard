@@ -96,37 +96,14 @@ type SteerWorkhorseInput = z.infer<typeof SteerWorkhorseInputSchema>;
 type StopWorkhorsesInput = z.infer<typeof StopWorkhorsesInputSchema>;
 type ResolveSpokenApprovalInput = z.infer<typeof ResolveSpokenApprovalInputSchema>;
 
-const WORKHORSE_TOOL_INPUT_SCHEMAS = Object.freeze({
-	inspect_workhorse: InspectWorkhorseInputSchema,
-	delegate_to_workhorse: DelegateToWorkhorseInputSchema,
-	manage_workhorse_queue: ManageWorkhorseQueueInputSchema,
-	steer_workhorse: SteerWorkhorseInputSchema,
-	stop_workhorses: StopWorkhorsesInputSchema,
-} satisfies Record<WorkhorseToolName, z.ZodTypeAny>);
-
-const VOICE_TOOL_INPUT_SCHEMAS = Object.freeze({
-	resolve_spoken_approval: ResolveSpokenApprovalInputSchema,
-} satisfies Record<VoiceToolName, z.ZodTypeAny>);
-
-/**
- * Validates the arguments the coordinator passed to one workhorse tool.
- * @param toolName - The workhorse tool being called.
- * @param input - The raw tool arguments.
- * @returns The validated arguments.
- */
-function parseWorkhorseToolInput(toolName: WorkhorseToolName, input: unknown): unknown {
-	return WORKHORSE_TOOL_INPUT_SCHEMAS[toolName].parse(input);
-}
-
-/**
- * Validates the arguments the coordinator passed to one voice tool.
- * @param toolName - The voice tool being called.
- * @param input - The raw tool arguments.
- * @returns The validated arguments.
- */
-function parseVoiceToolInput(toolName: VoiceToolName, input: unknown): unknown {
-	return VOICE_TOOL_INPUT_SCHEMAS[toolName].parse(input);
-}
+/** One parsed tool input, tagged with the tool so its shape is known wherever it travels. */
+type ParsedToolInput =
+	| { readonly tool: "inspect_workhorse"; readonly input: InspectWorkhorseInput }
+	| { readonly tool: "delegate_to_workhorse"; readonly input: DelegateToWorkhorseInput }
+	| { readonly tool: "manage_workhorse_queue"; readonly input: ManageWorkhorseQueueInput }
+	| { readonly tool: "steer_workhorse"; readonly input: SteerWorkhorseInput }
+	| { readonly tool: "stop_workhorses"; readonly input: StopWorkhorsesInput }
+	| { readonly tool: "resolve_spoken_approval"; readonly input: ResolveSpokenApprovalInput };
 
 /**
  * Narrows a tool name to the workhorse namespace.
@@ -147,18 +124,39 @@ function isVoiceToolName(toolName: CoordinatorToolName): toolName is VoiceToolNa
 }
 
 /**
+ * Validates the arguments of a workhorse tool against that tool's own closed schema.
+ * @param toolName - The workhorse tool being called.
+ * @param input - The raw tool arguments.
+ * @returns The tagged, typed arguments.
+ */
+function parseWorkhorseToolInput(toolName: WorkhorseToolName, input: unknown): ParsedToolInput {
+	switch (toolName) {
+		case "inspect_workhorse":
+			return { tool: toolName, input: InspectWorkhorseInputSchema.parse(input) };
+		case "delegate_to_workhorse":
+			return { tool: toolName, input: DelegateToWorkhorseInputSchema.parse(input) };
+		case "manage_workhorse_queue":
+			return { tool: toolName, input: ManageWorkhorseQueueInputSchema.parse(input) };
+		case "steer_workhorse":
+			return { tool: toolName, input: SteerWorkhorseInputSchema.parse(input) };
+		default:
+			return { tool: toolName, input: StopWorkhorsesInputSchema.parse(input) };
+	}
+}
+
+/**
  * Validates tool arguments against the schema of the namespace the call arrived in, refusing
  * a tool name the namespace does not declare even when another namespace does.
  * @param role - The role of the namespace the call was made through.
  * @param toolName - The tool being called.
  * @param input - The raw tool arguments.
- * @returns The validated arguments.
+ * @returns The tagged, typed arguments.
  */
 function parseCoordinatorToolInput(
 	role: CoordinatorNamespaceRole,
 	toolName: CoordinatorToolName,
 	input: unknown,
-): unknown {
+): ParsedToolInput {
 	if (role === "workhorse") {
 		if (!isWorkhorseToolName(toolName)) {
 			throw new TypeError(`The ${role} namespace does not declare ${toolName}.`);
@@ -168,31 +166,29 @@ function parseCoordinatorToolInput(
 	if (!isVoiceToolName(toolName)) {
 		throw new TypeError(`The ${role} namespace does not declare ${toolName}.`);
 	}
-	return parseVoiceToolInput(toolName, input);
+	return { tool: toolName, input: ResolveSpokenApprovalInputSchema.parse(input) };
+}
+
+/**
+ * Reads the closed input of `resolve_spoken_approval`: only a verdict.
+ * @param input - The raw tool arguments.
+ * @returns The input when it has exactly an accept or decline verdict, otherwise null.
+ */
+function parseResolveSpokenApprovalInput(input: unknown): ResolveSpokenApprovalInput | null {
+	const parsed = ResolveSpokenApprovalInputSchema.safeParse(input);
+	return parsed.success ? parsed.data : null;
 }
 
 export {
-	InspectWorkhorseInputSchema,
-	DelegateToWorkhorseInputSchema,
 	QueueOperationSchema,
 	QueueSubmissionIdSchema,
-	QueueListInputSchema,
-	QueueAddInputSchema,
-	QueueUpdateInputSchema,
-	QueueDeleteInputSchema,
-	QueueReorderInputSchema,
-	QueueStartInputSchema,
-	ManageWorkhorseQueueInputSchema,
-	SteerWorkhorseInputSchema,
-	StopWorkhorsesInputSchema,
-	ResolveSpokenApprovalInputSchema,
 	type InspectWorkhorseInput,
 	type DelegateToWorkhorseInput,
 	type ManageWorkhorseQueueInput,
 	type SteerWorkhorseInput,
 	type StopWorkhorsesInput,
 	type ResolveSpokenApprovalInput,
-	WORKHORSE_TOOL_INPUT_SCHEMAS,
-	VOICE_TOOL_INPUT_SCHEMAS,
+	type ParsedToolInput,
 	parseCoordinatorToolInput,
+	parseResolveSpokenApprovalInput,
 };

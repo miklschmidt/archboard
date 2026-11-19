@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { decodeServerNotification } from "@archboard/codex-app-server/protocol";
+import { serverNotification } from "#tests/server/support/server-notification.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "#runtime/thread-tools/protocol/manifest.ts";
+import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
@@ -18,7 +18,7 @@ import {
 } from "#tests/server/support/generation/terminal-fixture.ts";
 
 function terminalItem(threadId: string, turnId: string, callId: string) {
-	return decodeServerNotification({
+	return serverNotification({
 		method: "item/completed",
 		params: {
 			threadId,
@@ -44,7 +44,7 @@ function terminalTurn(
 	turnId: string,
 	status: "completed" | "interrupted" = "interrupted",
 ) {
-	return decodeServerNotification({
+	return serverNotification({
 		method: "turn/completed",
 		params: {
 			threadId,
@@ -72,7 +72,7 @@ function event(
 }
 
 function unrelated(threadId: string) {
-	return decodeServerNotification({
+	return serverNotification({
 		method: "thread/realtime/closed",
 		params: { threadId, reason: null },
 	});
@@ -92,7 +92,7 @@ describe("Codex terminal notification correlation", () => {
 				callId: h.call,
 				namespace: "archboard_app",
 				tool: "create_thread",
-				manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+				manifestHash: archboardAppBinding().manifestHash,
 				operationId,
 			},
 			effect: {
@@ -289,7 +289,7 @@ describe("Codex terminal notification correlation", () => {
 				callId: h.call,
 				namespace: "archboard_app",
 				tool: "create_thread",
-				manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
+				manifestHash: archboardAppBinding().manifestHash,
 				operationId,
 			},
 			effect: {

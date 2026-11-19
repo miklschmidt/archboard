@@ -7,7 +7,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { GIT_MS } from "@archboard/timing";
+import { gitMs } from "@archboard/timing";
 import { existingDir, repoIdentityFor } from "#runtime/clients/git.ts";
 import { GitCommandError } from "@archboard/process/git";
 
@@ -33,7 +33,7 @@ function startedGit(cwd: string, args: readonly string[]) {
 			stderr: "ignore",
 			// A reading must not take the index lock that `git status` refreshes.
 			env: { ...process.env, GIT_OPTIONAL_LOCKS: "0" },
-			timeout: GIT_MS.command,
+			timeout: gitMs("command"),
 		});
 	} catch (error) {
 		throw new GitCommandError("spawn", `Could not start Git: ${String(error)}`);

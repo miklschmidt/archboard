@@ -1,4 +1,4 @@
-import { createDynamicFixture } from "#tests/shared/support/dynamic-approval.ts";
+import { approvalFor, createDynamicFixture } from "#tests/shared/support/dynamic-approval.ts";
 import { expect, test } from "bun:test";
 
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
@@ -478,7 +478,9 @@ test("settings projection closes loose nested records and refuses secrets", () =
 
 test("browser projection parses and freezes final host approvals without retaining host objects", () => {
 	const fixture = createDynamicFixture();
-	const hostApproval = structuredClone(fixture.pending);
+	const fork = fixture.requests.find((request) => request.effect.tool === "fork_thread")!;
+	const approval = approvalFor(fork, "pending", null, null, null);
+	const hostApproval = structuredClone(approval);
 	const result = projectCodexBrowserState(fixture.model, {
 		...projectionInput(fixture.authorities),
 		dynamicApprovals: [hostApproval],
@@ -487,9 +489,12 @@ test("browser projection parses and freezes final host approvals without retaini
 	if (result.tag !== "projected") throw new Error("host approval projection was refused");
 	expect(result.snapshot.dynamicApprovals).toEqual([hostApproval]);
 	expect(result.snapshot.dynamicApprovals[0]).not.toBe(hostApproval);
+	const projected = result.snapshot.dynamicApprovals[0]!;
 	hostApproval.effect.visualSummary = "changed after projection";
-	expect(result.snapshot.dynamicApprovals[0]?.effect.visualSummary).toBe(
-		fixture.pending.effect.visualSummary,
-	);
-	expect(Object.isFrozen(result.snapshot.dynamicApprovals[0]?.effect)).toBe(true);
+	expect(projected.effect.visualSummary).toBe(approval.effect.visualSummary);
+	expect(Object.isFrozen(result.snapshot.dynamicApprovals)).toBe(true);
+	expect(Object.isFrozen(projected.identity)).toBe(true);
+	expect(Object.isFrozen(projected.effect)).toBe(true);
+	expect(Object.isFrozen(projected.effect.arguments)).toBe(true);
+	expect(Object.isFrozen(projected.effect.effectiveBoundary)).toBe(true);
 });

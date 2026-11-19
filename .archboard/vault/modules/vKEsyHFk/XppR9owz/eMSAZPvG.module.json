@@ -97,6 +97,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#qXImR60k",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 59000,
+      "kind": "dependency",
+      "label": "server start and stop durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "serverLifecycleMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#a2fjUiQD"
     }
   ]
 }

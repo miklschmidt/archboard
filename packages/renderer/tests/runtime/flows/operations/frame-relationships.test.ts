@@ -1,9 +1,9 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const BASE = {
 	nodes: [
@@ -26,7 +26,7 @@ const RELATIONSHIPS = [
 ] as const;
 
 test.each(
-	LayoutEngineSchema.options.flatMap((layout) =>
+	layoutEngineSchema().options.flatMap((layout) =>
 		RELATIONSHIPS.map(([name, relationship]) => [name, layout, relationship] as const),
 	),
 )("a frame draws a relationship %s (%s)", async (_, layout, relationship) => {
@@ -39,7 +39,7 @@ test.each(
 		edges: [...before.edges, { id: "e9", from: "pane", to: "extra", kind: "call" }],
 	});
 	const drawing = await renderArchitecture({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
 		layout,

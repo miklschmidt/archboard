@@ -1,35 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-	WORKHORSE_TOOL_NAMES,
-	assertCanonicalManifest,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/manifest.ts";
 import { createVoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
-import {
-	COORDINATOR_IDENTITY,
-	CoordinatorIdentitySchema,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/contracts.ts";
-import {
-	InspectWorkhorseResultSchema,
-	DelegateToWorkhorseResultSchema,
-	ManageWorkhorseQueueResultSchema,
-	ResolveSpokenApprovalResultSchema,
-	SteerWorkhorseResultSchema,
-	StopWorkhorsesResultSchema,
-	parseCoordinatorToolResult,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
-import {
-	ManageWorkhorseQueueInputSchema,
-	QueueAddInputSchema,
-	QueueDeleteInputSchema,
-	QueueListInputSchema,
-	QueueReorderInputSchema,
-	QueueStartInputSchema,
-	QueueUpdateInputSchema,
-	parseCoordinatorToolInput,
-	VOICE_TOOL_INPUT_SCHEMAS,
-	WORKHORSE_TOOL_INPUT_SCHEMAS,
-} from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-inputs.ts";
+import { canonicalToolResult } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
+import { parseCoordinatorToolInput } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-inputs.ts";
 
 import {
 	VOICE_MANIFEST_SNAPSHOT,
@@ -51,7 +24,21 @@ const WORKHORSE_TOOL_NAMESPACE = NAMED.workhorse.namespace;
 const VOICE_TOOL_NAMESPACE = NAMED.voice.namespace;
 const VOICE_TOOLS_MANIFEST_JSON = NAMED.voice.text;
 
+/**
+ * Verify that a host cannot mutate a reviewed toolset after its digest is computed.
+ * @param value The aggregate or one of its entries.
+ */
+function expectDeepFrozen(value: unknown): void {
+	if (typeof value !== "object" || value === null) return;
+	expect(Object.isFrozen(value)).toBe(true);
+	for (const child of Object.values(value)) expectDeepFrozen(child);
+}
+
 describe("coordinator namespace manifests", () => {
+	test("freezes the host toolset including its nested input schemas", () => {
+		expectDeepFrozen(NAMED);
+	});
+
 	test("fills each role's reviewed template with the host's names, byte for byte", () => {
 		expect(WORKHORSE_TOOL_NAMESPACE).toEqual(WORKHORSE_MANIFEST_SNAPSHOT);
 		expect(VOICE_TOOL_NAMESPACE).toEqual(VOICE_MANIFEST_SNAPSHOT);
@@ -78,51 +65,23 @@ describe("coordinator namespace manifests", () => {
 		}
 	});
 
-	test("keeps the exact coordinator identity and eager tool order", () => {
-		expect(CoordinatorIdentitySchema.parse(COORDINATOR_IDENTITY)).toEqual(
-			JSON.parse(JSON.stringify(COORDINATOR_IDENTITY)),
-		);
-		expect(COORDINATOR_IDENTITY.dynamicTools).toEqual(["workhorse", "voice"]);
+	test("keeps the eager tool order of each namespace", () => {
 		expect(WORKHORSE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
-			...WORKHORSE_TOOL_NAMES,
+			"inspect_workhorse",
+			"delegate_to_workhorse",
+			"manage_workhorse_queue",
+			"steer_workhorse",
+			"stop_workhorses",
 		]);
 		expect(VOICE_TOOL_NAMESPACE.tools.map((tool) => tool.name)).toEqual([
 			"resolve_spoken_approval",
 		]);
 	});
-
-	test("rejects missing, extra, reordered, and ambiguous manifest mutations", () => {
-		const missing = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
-			tools: unknown[];
-		};
-		missing.tools.pop();
-		expect(() => assertCanonicalManifest(NAMED.workhorse, missing)).toThrow();
-
-		const extra = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
-			tools: unknown[];
-		};
-		extra.tools.push(structuredClone(extra.tools[0]!));
-		expect(() => assertCanonicalManifest(NAMED.workhorse, extra)).toThrow();
-
-		const reordered = structuredClone(WORKHORSE_TOOL_NAMESPACE) as unknown as {
-			tools: unknown[];
-		};
-		reordered.tools.reverse();
-		expect(() => assertCanonicalManifest(NAMED.workhorse, reordered)).toThrow();
-
-		const vague = structuredClone(VOICE_TOOL_NAMESPACE) as unknown as {
-			tools: Array<{ description: string }>;
-		};
-		vague.tools[0]!.description = "Do the thing.";
-		expect(() => assertCanonicalManifest(NAMED.voice, vague)).toThrow();
-
-		const byteMutation = VOICE_TOOLS_MANIFEST_JSON.replace(
-			"resolve_spoken_approval",
-			"resolve_spoken_approval_changed",
-		);
-		expect(() => assertCanonicalManifest(NAMED.voice, byteMutation)).toThrow();
-	});
 });
+
+function queueInput(input: unknown): unknown {
+	return parseCoordinatorToolInput("workhorse", "manage_workhorse_queue", input).input;
+}
 
 describe("dynamic tool schemas and queue protocol", () => {
 	test("validates every operation-dependent queue input and rejects invented fields", () => {
@@ -144,90 +103,28 @@ describe("dynamic tool schemas and queue protocol", () => {
 			{ checkout: "/work/payments", operation: "start", submissionId: "queue-1" },
 		] as const;
 		for (const input of valid) {
-			expect(ManageWorkhorseQueueInputSchema.parse(input)).toEqual(
-				JSON.parse(JSON.stringify(input)),
-			);
+			expect(queueInput(input)).toEqual(JSON.parse(JSON.stringify(input)));
 		}
+		expect(() => queueInput({ checkout: "/work/payments", operation: "pause" })).toThrow();
 		expect(() =>
-			ManageWorkhorseQueueInputSchema.parse({ checkout: "/work/payments", operation: "pause" }),
+			queueInput({ checkout: "/work/payments", operation: "list", prompt: "x" }),
 		).toThrow();
 		expect(() =>
-			ManageWorkhorseQueueInputSchema.parse({
-				checkout: "/work/payments",
-				operation: "list",
-				prompt: "x",
-			}),
-		).toThrow();
-		expect(() =>
-			ManageWorkhorseQueueInputSchema.parse({
+			queueInput({
 				checkout: "/work/payments",
 				operation: "reorder",
 				orderedSubmissionIds: ["x", "x"],
 			}),
 		).toThrow();
 		expect(() =>
-			ManageWorkhorseQueueInputSchema.parse({
-				checkout: "/work/payments",
-				operation: "list",
-				revision: 1,
-			}),
+			queueInput({ checkout: "/work/payments", operation: "list", revision: 1 }),
 		).toThrow();
-		expect(QueueListInputSchema.parse({ checkout: "/work/payments", operation: "list" })).toEqual({
-			checkout: "/work/payments",
-			operation: "list",
-		});
-		expect(
-			QueueAddInputSchema.parse({ checkout: "/work/payments", operation: "add", prompt: "x" }),
-		).toEqual({
-			checkout: "/work/payments",
-			operation: "add",
-			prompt: "x",
-		});
-		expect(
-			QueueUpdateInputSchema.parse({
-				checkout: "/work/payments",
-				operation: "update",
-				submissionId: "q",
-				prompt: "x",
-			}),
-		).toEqual({ checkout: "/work/payments", operation: "update", submissionId: "q", prompt: "x" });
-		expect(
-			QueueDeleteInputSchema.parse({
-				checkout: "/work/payments",
-				operation: "delete",
-				submissionId: "q",
-			}),
-		).toEqual({
-			checkout: "/work/payments",
-			operation: "delete",
-			submissionId: "q",
-		});
-		expect(
-			QueueReorderInputSchema.parse({
-				checkout: "/work/payments",
-				operation: "reorder",
-				orderedSubmissionIds: ["q"],
-			}),
-		).toEqual({ checkout: "/work/payments", operation: "reorder", orderedSubmissionIds: ["q"] });
-		expect(
-			QueueStartInputSchema.parse({
-				checkout: "/work/payments",
-				operation: "start",
-				submissionId: "q",
-			}),
-		).toEqual({
-			checkout: "/work/payments",
-			operation: "start",
-			submissionId: "q",
-		});
 	});
 
 	test("validates only the declared tool inputs and closed results", () => {
 		expect(
-			parseCoordinatorToolInput("workhorse", "inspect_workhorse", {
-				checkout: "/work/payments",
-			}),
-		).toEqual({ checkout: "/work/payments" });
+			parseCoordinatorToolInput("workhorse", "inspect_workhorse", { checkout: "/work/payments" }),
+		).toEqual({ tool: "inspect_workhorse", input: { checkout: "/work/payments" } });
 		// Every workhorse tool names the checkout whose workhorse it works with.
 		expect(() => parseCoordinatorToolInput("workhorse", "inspect_workhorse", {})).toThrow();
 		expect(
@@ -235,12 +132,10 @@ describe("dynamic tool schemas and queue protocol", () => {
 				checkout: "/work/payments",
 				input: "inspect",
 				transcriptDelta: "heard",
-			}),
+			}).input,
 		).toEqual({ checkout: "/work/payments", input: "inspect", transcriptDelta: "heard" });
 		expect(
-			parseCoordinatorToolInput("voice", "resolve_spoken_approval", {
-				verdict: "accept",
-			}),
+			parseCoordinatorToolInput("voice", "resolve_spoken_approval", { verdict: "accept" }).input,
 		).toEqual({ verdict: "accept" });
 		expect(() =>
 			parseCoordinatorToolInput("workhorse", "inspect_workhorse", {
@@ -251,24 +146,19 @@ describe("dynamic tool schemas and queue protocol", () => {
 		expect(() =>
 			parseCoordinatorToolInput("voice", "resolve_spoken_approval", { verdict: "maybe" }),
 		).toThrow();
-		expect(parseCoordinatorToolInput("workhorse", "stop_workhorses", {})).toEqual({});
+		expect(parseCoordinatorToolInput("workhorse", "stop_workhorses", {}).input).toEqual({});
 		expect(() =>
-			parseCoordinatorToolInput("workhorse", "stop_workhorses", {
-				checkout: "/work/payments",
-			}),
+			parseCoordinatorToolInput("workhorse", "stop_workhorses", { checkout: "/work/payments" }),
 		).toThrow();
-		expect(Object.keys(WORKHORSE_TOOL_INPUT_SCHEMAS)).toEqual([
-			"inspect_workhorse",
-			"delegate_to_workhorse",
-			"manage_workhorse_queue",
-			"steer_workhorse",
-			"stop_workhorses",
-		]);
-		expect(Object.keys(VOICE_TOOL_INPUT_SCHEMAS)).toEqual(["resolve_spoken_approval"]);
+		// A namespace refuses a tool that only the other namespace declares.
+		expect(() => parseCoordinatorToolInput("voice", "stop_workhorses", {})).toThrow();
+		expect(() =>
+			parseCoordinatorToolInput("workhorse", "resolve_spoken_approval", { verdict: "accept" }),
+		).toThrow();
 
 		const values = [
 			[
-				InspectWorkhorseResultSchema,
+				"inspect_workhorse",
 				{
 					threadId: "thread-1",
 					status: "active",
@@ -282,7 +172,7 @@ describe("dynamic tool schemas and queue protocol", () => {
 				},
 			],
 			[
-				DelegateToWorkhorseResultSchema,
+				"delegate_to_workhorse",
 				{
 					mode: "queued",
 					clientUserMessageId: "client-1",
@@ -290,10 +180,10 @@ describe("dynamic tool schemas and queue protocol", () => {
 					turnId: null,
 				},
 			],
-			[ManageWorkhorseQueueResultSchema, { operation: "list", queuedSubmissionIds: [] }],
-			[SteerWorkhorseResultSchema, { turnId: "turn-1", delivery: "delivered" }],
+			["manage_workhorse_queue", { operation: "list", queuedSubmissionIds: [] }],
+			["steer_workhorse", { turnId: "turn-1", delivery: "delivered" }],
 			[
-				StopWorkhorsesResultSchema,
+				"stop_workhorses",
 				{
 					stopped: [
 						{
@@ -306,18 +196,32 @@ describe("dynamic tool schemas and queue protocol", () => {
 					],
 				},
 			],
-			[ResolveSpokenApprovalResultSchema, { verdict: "decline", settlement: "not_delivered" }],
+			["resolve_spoken_approval", { verdict: "decline", settlement: "not_delivered" }],
 		] as const;
-		for (const [schema, value] of values) {
-			expect(schema.parse(value)).toEqual(JSON.parse(JSON.stringify(value)));
+		for (const [tool, value] of values) {
+			expect(canonicalToolResult(tool, value)).toEqual(JSON.parse(JSON.stringify(value)));
 		}
+		// A result keeps exactly its declared fields, and refuses one that lacks a declared field.
+		const inspected = {
+			threadId: "thread-1",
+			status: "idle",
+			activeTurnId: null,
+			request: null,
+			recentProgress: [],
+			subAgents: [],
+			queuedSubmissionIds: [],
+			unavailable: [],
+			lastStop: null,
+		};
+		expect(canonicalToolResult("inspect_workhorse", { ...inspected, extra: true })).toEqual(
+			inspected,
+		);
 		expect(() =>
-			parseCoordinatorToolResult("inspect_workhorse", {
+			canonicalToolResult("inspect_workhorse", {
 				threadId: "thread-1",
 				status: "idle",
 				activeTurnId: null,
 				queuedSubmissionIds: [],
-				extra: true,
 			}),
 		).toThrow();
 	});

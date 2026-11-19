@@ -290,7 +290,7 @@ A recording keeps the CPU painter by the normal rule. Chrome 155 with `--disable
 
 ### Failure while it draws
 
-A WebGPU painter that fails at work gets one more try with the full order. A second failure within `PICTURE_MS.gpuRetry` sends the canvas to WebGL2.
+A WebGPU painter that fails at work gets one more try with the full order. A second failure within `pictureMs("gpuRetry")` sends the canvas to WebGL2.
 A WebGL2 painter that fails in a frame gives way to the CPU painter.
 The `vello_gpu` documentation warns that its methods can fail with no error after a context loss. So the page listens for `webglcontextlost` itself, and it moves to the CPU painter.
 Each replacement takes a fresh canvas.

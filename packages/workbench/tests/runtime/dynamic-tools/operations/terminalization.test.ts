@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parseDynamicToolCallResponse } from "#runtime/thread-tools/protocol/results.ts";
+import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import {
 	FakeApproval,

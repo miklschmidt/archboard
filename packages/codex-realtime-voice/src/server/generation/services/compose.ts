@@ -1,4 +1,4 @@
-import { CODEX_SESSION_CONTROL } from "@archboard/codex-app-server/session";
+import { codexSessionControl } from "@archboard/codex-app-server/session";
 import {
 	createCodexWorkbenchGenerationLifecycle,
 	type CodexWorkbenchComponents,
@@ -80,7 +80,7 @@ function constructComponents(
 	}
 	const session = factories.session(created);
 	created.session = session;
-	cleanups.push(() => session[CODEX_SESSION_CONTROL].dispose());
+	cleanups.push(() => codexSessionControl(session).dispose());
 	const threadLink = factories.threadLink(created);
 	created.threadLink = threadLink;
 	const approvals = factories.approvals(created);

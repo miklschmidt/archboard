@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
+import { vaultDirectory } from "@archboard/workspace/vault";
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
 import type { CommandContext } from "#cli/contract/protocol/contract.ts";
 import { findVaultOf } from "#cli/routing/operations/addressed-vault.ts";
@@ -122,7 +122,7 @@ function removeOldBlocks(repo: string): string[] {
  * @throws {CliUsageError} When the vault cannot be made.
  */
 async function makeOrFindVault(repo: string, context: CommandContext): Promise<void> {
-	const vault = path.join(repo, VAULT_DIRECTORY);
+	const vault = path.join(repo, vaultDirectory());
 	if (fs.existsSync(vault) && fs.readdirSync(vault).length > 0) {
 		await findVaultOf(repo, "--repo");
 		context.diagnostic(`Found the architecture of this repository in ${vault}`);
@@ -151,7 +151,7 @@ async function makeOrFindVault(repo: string, context: CommandContext): Promise<v
 async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	const { context } = options;
 	const repo = checkoutRootOf(options.repoSpec ? expandHome(options.repoSpec) : process.cwd());
-	const vault = path.join(repo, VAULT_DIRECTORY);
+	const vault = path.join(repo, vaultDirectory());
 	const vaultCreated = !fs.existsSync(vault);
 	await makeOrFindVault(repo, context);
 	const removedBlocks = removeOldBlocks(repo);
@@ -164,7 +164,7 @@ async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	}
 	if (vaultIgnored) {
 		context.diagnostic(
-			`Git ignores ${VAULT_DIRECTORY}, so the architecture stays on this machine. Remove that rule to commit them with your code.`,
+			`Git ignores ${vaultDirectory()}, so the architecture stays on this machine. Remove that rule to commit them with your code.`,
 		);
 	}
 	return { repo, vault, vaultCreated, vaultIgnored, removedBlocks };

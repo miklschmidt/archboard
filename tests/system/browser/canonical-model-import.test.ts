@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -34,7 +34,7 @@ test("imported planning models remain readable through exact history and compari
 	);
 	writeFileSync(
 		join(sourceVault, ".archboard/config.yaml"),
-		Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY),
+		Bun.YAML.stringify(defaultSemanticPolicy()),
 	);
 	initializeSource(source);
 	fixtureGit(source, "config", "commit.gpgsign", "false");

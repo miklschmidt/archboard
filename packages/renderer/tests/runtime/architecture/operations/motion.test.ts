@@ -16,7 +16,7 @@ import {
 	solo,
 	variant,
 } from "#tests/runtime/support/pulse-fixtures.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * The picture of one relationship with some traffic between the sample's parts.
@@ -25,7 +25,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
  */
 function drawnWith(busy: Record<string, number>) {
 	return renderSemanticView({
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		content: variant({
 			nodes: SAMPLE.nodes,
 			edges: [{ id: "busy", from: "api", to: "store", kind: "call", traffic: busy }],
@@ -57,7 +57,7 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 
 	test("removed edges retain their line but never draw traffic", async () => {
 		const rendered = await renderSemanticView({
-			policy: DEFAULT_SEMANTIC_POLICY,
+			policy: defaultSemanticPolicy(),
 			content: SAMPLE,
 			grammar: "architecture",
 			theme: "light",

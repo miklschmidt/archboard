@@ -10,7 +10,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { keepTalk, renderTalk } from "@archboard/walkthrough/recorder";
 
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";
@@ -92,7 +92,7 @@ const talkParts: Omit<Parameters<typeof keepTalk>[0], "voice" | "directory"> = {
 	},
 	document: MODEL,
 	policy: {
-		policy: DEFAULT_SEMANTIC_POLICY,
+		policy: defaultSemanticPolicy(),
 		configurationValid: true,
 		configurationFile: "config.yaml",
 		fingerprint: "f1",

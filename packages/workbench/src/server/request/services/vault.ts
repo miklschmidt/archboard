@@ -14,6 +14,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
+import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { isVaultLayout } from "@archboard/workspace/vault";
 import { bodyOf, queryString } from "#server/request/services/request-fields.ts";
 
@@ -170,4 +171,36 @@ function vaultOfRequest(req: Request): string {
 	return vault;
 }
 
-export { VAULT_PARAMETER, namedVault, requireVault, statedVault, vaultOfRequest, type NamedVault };
+/**
+ * A readable vault for a pane whose own vault cannot be read.
+ * @param raw The absolute vault the pane named.
+ * @returns The vault it is put in, or null when there is none to put it in.
+ */
+function placeInstead(raw: string): NamedVault | null {
+	const home = namedVault(placeOfVault(path.resolve(raw)).home);
+	return home.ok ? home : null;
+}
+
+/**
+ * The vault an upgrade puts its pane in, or why it can put the pane in none.
+ *
+ * A socket names the vault its pane was in, and that vault can be gone, as a
+ * removed worktree is, when the pane comes back. An upgrade is where the server
+ * places a pane, and the server is the one that moves a pane between vaults
+ * (ADR 0050), so such a pane is put in the vault of its repository's chosen
+ * checkout while the registry still knows the checkout. Its first message says
+ * where it is. Otherwise the upgrade is refused, as one that names no vault is:
+ * no other repository takes the pane in, and a reload offers the chooser.
+ * @param url The upgrade request's URL, whose `?vault=` names the vault.
+ * @returns The canonical vault, or the refusal.
+ */
+function vaultOfUpgrade(url: string | undefined): NamedVault {
+	const raw = new URL(url ?? "/", "http://localhost").searchParams.get(VAULT_PARAMETER);
+	const named = namedVault(raw);
+	if (named.ok || raw === null || !path.isAbsolute(raw)) {
+		return named;
+	}
+	return placeInstead(raw) ?? named;
+}
+
+export { namedVault, requireVault, statedVault, vaultOfRequest, vaultOfUpgrade };

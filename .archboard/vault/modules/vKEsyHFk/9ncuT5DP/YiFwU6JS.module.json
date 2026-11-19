@@ -69,6 +69,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
       "to": "vKEsyHFk#sZUpSKaS"
+    },
+    {
+      "order": 88000,
+      "kind": "call",
+      "label": "resolve and verify Codex if no executable path is given",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "to": "vKEsyHFk#06cbjPhn",
+      "id": "vKEsyHFk#0U4c1hjN"
     }
   ]
 }

@@ -29,15 +29,15 @@
     {
       "order": 13000,
       "kind": "call",
-      "label": "record the pane; send it a model",
+      "label": "record the pane; wait for one the shell opens or closes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "panes"
+        "symbol": "registerPane"
       },
       "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+      "to": "vKEsyHFk#r2iFMYJk"
     },
     {
       "order": 22000,
@@ -155,6 +155,19 @@
       },
       "id": "vKEsyHFk#vTfr79yF",
       "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "label": "the panes on screen; ask the answering pane to open one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "sendKeylessToPane"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "id": "vKEsyHFk#lncCBP74"
     }
   ]
 }

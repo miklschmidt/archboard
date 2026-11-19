@@ -3,7 +3,7 @@
 // names a file that Git ignores. It lists names and reads no file.
 
 import type { z } from "zod";
-import type { CodeFilesSchema } from "@archboard/code-intel/code-check";
+import type { codeFilesSchema } from "@archboard/code-intel/code-check";
 import {
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
@@ -12,7 +12,7 @@ import {
 import { git } from "@archboard/process/git";
 import { neverQuoted } from "#server/http/handlers/code-files/operations/quoted-file.ts";
 
-type CodeFiles = z.infer<typeof CodeFilesSchema>;
+type CodeFiles = z.infer<ReturnType<typeof codeFilesSchema>>;
 
 /**
  * The most a listing reads from Git: the names of a checkout with hundreds of thousands of files.

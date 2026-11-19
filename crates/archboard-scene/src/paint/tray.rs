@@ -11,7 +11,6 @@
 
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, point, shape};
-use crate::paint::design::{BAND_RADIUS, TRAY_LIP, TRAY_WALL};
 use crate::paint::flowchart_shapes::ring;
 use crate::paint::palette::Palette;
 use crate::paint::polygon::Polygon;
@@ -23,6 +22,7 @@ use crate::scene::{
     Colour, Definition, Gradient, GradientForm, GradientId, Paint, PathStep, Pointer, Purpose,
     Shape, Stroke,
 };
+use crate::sizes::{BAND_RADIUS, TRAY_LIP, TRAY_WALL};
 
 /// How a tray looks: its floor, its tab and the line round it.
 #[derive(Clone, Debug, PartialEq)]

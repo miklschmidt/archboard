@@ -7,7 +7,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { MODEL_CACHE_MS } from "@archboard/timing";
+import { modelCacheMs } from "@archboard/timing";
 import {
 	runCodeCheck,
 	type CodeCheckReading,
@@ -160,7 +160,7 @@ function vaultCheckQuery(vault: string) {
 		 * @returns The checked policy and diagnostics.
 		 */
 		queryFn: (context) => retainedReads().vaultCheck(vault, context.signal),
-		staleTime: MODEL_CACHE_MS.vaultCheck,
+		staleTime: modelCacheMs("vaultCheck"),
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,
@@ -192,8 +192,8 @@ function codeFindingsQuery(vault: string) {
 		 * @returns The readings.
 		 */
 		queryFn: (context) => retainedReads().codeFindings(vault, context.signal),
-		staleTime: MODEL_CACHE_MS.vaultCheck,
-		refetchInterval: MODEL_CACHE_MS.vaultCheck,
+		staleTime: modelCacheMs("vaultCheck"),
+		refetchInterval: modelCacheMs("vaultCheck"),
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,

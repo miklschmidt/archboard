@@ -1,16 +1,16 @@
-import { CODEX_PROTOCOL_BINARY_VERSION } from "#runtime/protocol/protocol-version.ts";
+import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
 import fs from "node:fs";
 import { chmodSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { CODEX_APP_SERVER_ARGUMENTS } from "#runtime/processes/process.ts";
+import { CODEX_APP_SERVER_ARGUMENTS } from "#runtime/processes/process-contract.ts";
 import type {
 	CodexProcess,
 	CodexProcessSnapshot,
 	CodexProcessState,
-} from "#runtime/processes/process.ts";
-import type { CodexProcessTestOptions } from "#runtime/processes/process.ts";
+} from "#runtime/processes/process-contract.ts";
+import type { CodexProcessTestOptions } from "#runtime/processes/process-contract.ts";
 
 function temporaryRoot(): string {
 	return mkdtempSync(path.join(tmpdir(), "archboard-codex-process-test-"));
@@ -23,7 +23,7 @@ function removeRoot(root: string): void {
 function fixture(
 	root: string,
 	body: string,
-	version: string = CODEX_PROTOCOL_BINARY_VERSION,
+	version: string = `codex-cli ${codexProtocolVersion()}`,
 ): string {
 	const executable = path.join(root, "codex-fixture");
 	writeFileSync(

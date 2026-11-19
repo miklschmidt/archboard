@@ -45,6 +45,19 @@
       "emphasis": "normal",
       "id": "vKEsyHFk#9izxe3Ys",
       "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
+      "order": 10400,
+      "kind": "dependency",
+      "label": "how close two agents' use counts as overlap",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/telemetry/src/runtime/rollup/rules/daily-usage.ts",
+        "symbol": "telemetryMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#iFWjFhbg"
     }
   ]
 }

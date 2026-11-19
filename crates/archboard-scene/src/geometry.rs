@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::js;
+use crate::route::point_on_segment;
+pub use crate::route::segment_length;
+use crate::sizes::EPSILON;
 
 /// A position in the diagram's own units.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
@@ -73,19 +76,6 @@ impl Curve {
     }
 }
 
-/// The page a picture is drawn on, and how far its content had to move onto it.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Canvas {
-    /// The page's width, in diagram units.
-    pub width: f64,
-    /// The page's height, in diagram units.
-    pub height: f64,
-    /// How far the content moved right to clear the margin, in whole units.
-    pub shift_x: f64,
-    /// How far the content moved down to clear the margin, in whole units.
-    pub shift_y: f64,
-}
-
 /// A coordinate to two decimal places, negative zero flattened: every
 /// coordinate the renderer writes goes through here.
 pub fn round_coord(value: f64) -> f64 {
@@ -124,27 +114,6 @@ pub fn union(boxes: impl IntoIterator<Item = Rect>) -> Option<Rect> {
     })
 }
 
-/// A canvas big enough for everything that was drawn, never smaller than the
-/// size the layout asked for, and the whole-unit shift the drawing needs.
-pub fn canvas_for(laid_width: f64, laid_height: f64, drawn: Option<Rect>, margin: f64) -> Canvas {
-    let Some(drawn) = drawn else {
-        return Canvas {
-            width: laid_width,
-            height: laid_height,
-            shift_x: 0.0,
-            shift_y: 0.0,
-        };
-    };
-    let shift_x = js::js_max(0.0, margin - drawn.x).ceil();
-    let shift_y = js::js_max(0.0, margin - drawn.y).ceil();
-    Canvas {
-        width: (js::js_max(laid_width, drawn.x + drawn.width + margin) + shift_x).ceil(),
-        height: (js::js_max(laid_height, drawn.y + drawn.height + margin) + shift_y).ceil(),
-        shift_x,
-        shift_y,
-    }
-}
-
 /// Where one segment of a route starts.
 pub fn segment_start(curve: &Curve, index: usize) -> Point {
     if index == 0 {
@@ -181,37 +150,8 @@ pub fn reversed(curve: &Curve) -> Curve {
     }
 }
 
-/// The point a fraction of the way along one segment.
-pub fn point_on_segment(from: Point, segment: &Segment, t: f64) -> Point {
-    match segment {
-        Segment::Line { to } => Point {
-            x: from.x + (to.x - from.x) * t,
-            y: from.y + (to.y - from.y) * t,
-        },
-        Segment::Cubic { first, second, to } => {
-            let inverse = 1.0 - t;
-            let weights = [
-                js::powi(inverse, 3),
-                3.0 * js::powi(inverse, 2) * t,
-                3.0 * inverse * js::powi(t, 2),
-                js::powi(t, 3),
-            ];
-            let points = [from, *first, *second, *to];
-            let mut x = 0.0;
-            let mut y = 0.0;
-            for (point, weight) in points.iter().zip(weights) {
-                x += point.x * weight;
-            }
-            for (point, weight) in points.iter().zip(weights) {
-                y += point.y * weight;
-            }
-            Point { x, y }
-        }
-    }
-}
-
 /// The point a fraction of the way along a route, by its segments.
-pub fn point_at(curve: &Curve, t: f64) -> Point {
+fn point_at(curve: &Curve, t: f64) -> Point {
     let count = curve.segments.len();
     let scaled = js::js_min(js::js_max(t, 0.0), 1.0) * count as f64;
     let index = js::js_min(scaled.floor(), count as f64 - 1.0);
@@ -299,12 +239,20 @@ pub fn curve_bounds(curve: &Curve) -> Rect {
     }
 }
 
-/// How close two points must be to be one, and the least a turn may move.
-pub const EPSILON: f64 = 0.01;
 /// How far a cubic's control points stand toward its corner, per unit of radius.
 const KAPPA: f64 = 0.5523;
 /// The radius of every bend a route takes.
-pub const BEND_RADIUS: f64 = 8.0;
+const BEND_RADIUS: f64 = 8.0;
+
+/// The radius of every bend a route takes, which a layout keeps room for.
+pub const fn bend_radius() -> f64 {
+    BEND_RADIUS
+}
+
+/// How close two points must be to be one, and the least a turn may move.
+pub const fn route_tolerance() -> f64 {
+    EPSILON
+}
 
 /// Waypoints without repeats and without points that run straight on.
 fn simplify(points: &[Point]) -> Vec<Point> {

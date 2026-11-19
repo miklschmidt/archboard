@@ -6,15 +6,15 @@ use crate::drawing::{DiagramFont, Emphasis};
 use crate::geometry::Point;
 use crate::paint::appearance::semantic_ink;
 use crate::paint::colour::{Share, tinted};
-use crate::paint::design::{
-    CARD_NOTE_FONT, CARD_TITLE_FONT, LINE_STRENGTH_DARK, LINE_STRENGTH_LIGHT, NOTE_SIZE,
-    PART_NOTE_SIZE, PART_TITLE_SIZE, PILL_FONT, PILL_TEXT_SIZE,
-};
-use crate::paint::design::{HERO_LINE_WIDTH, LINE_WIDTH};
 use crate::paint::palette::Palette;
 use crate::paint::standing::ink_of;
 use crate::request::{Arrowhead, Dash, LineAppearance, Standing};
 use crate::scene::{Colour, Head, HeadInk, MarkerId, Paint, Shape, Stroke, Text};
+use crate::sizes::{
+    CARD_NOTE_FONT, CARD_TITLE_FONT, LINE_STRENGTH_DARK, LINE_STRENGTH_LIGHT, NOTE_SIZE,
+    PART_NOTE_SIZE, PART_TITLE_SIZE, PILL_FONT, PILL_TEXT_SIZE,
+};
+use crate::sizes::{HERO_LINE_WIDTH, LINE_WIDTH};
 
 /// Every weight, loudest first.
 pub(super) const WEIGHTS: [Emphasis; 3] = [Emphasis::Hero, Emphasis::Normal, Emphasis::Muted];
@@ -27,7 +27,7 @@ pub(super) fn stroke_width(weight: Emphasis) -> f64 {
     }
 }
 
-pub(super) use crate::paint::design::RAIL_GAP;
+pub(super) use crate::sizes::RAIL_GAP;
 
 /// How long an arrowhead of each weight is, from its base to its tip.
 pub(super) const HEAD_LENGTH: f64 = 11.0;

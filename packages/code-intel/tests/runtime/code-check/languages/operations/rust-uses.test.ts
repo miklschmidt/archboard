@@ -19,7 +19,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import { git as fixtureGit, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
@@ -203,7 +203,7 @@ beforeAll(async () => {
 			name: "Shop",
 			current: { id: "Built", name: "Built" },
 		}),
-		".archboard/config.yaml": Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY),
+		".archboard/config.yaml": Bun.YAML.stringify(defaultSemanticPolicy()),
 	});
 	module("Scene", "crates/scene/src/scene", 10);
 	module("Text", "crates/text", 20);

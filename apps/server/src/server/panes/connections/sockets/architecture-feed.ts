@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "http";
 import { WebSocket, type RawData } from "ws";
 import {
-	ArchitectureFeedRequestSchema,
+	architectureFeedRequestSchema,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
 import { watchArchitectureModel } from "@archboard/model/store-read";
@@ -24,7 +24,7 @@ function isArchitectureFeed(req: IncomingMessage): boolean {
  */
 function feedRequest(raw: RawData) {
 	try {
-		const parsed = ArchitectureFeedRequestSchema.safeParse(JSON.parse(frameText(raw)));
+		const parsed = architectureFeedRequestSchema().safeParse(JSON.parse(frameText(raw)));
 		return parsed.success ? parsed.data : null;
 	} catch {
 		return null;

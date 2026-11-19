@@ -1,8 +1,8 @@
 import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecycle/server";
-import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
-import { registeredRepositoryOfVault } from "@archboard/workspace/checkouts";
+import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { browserUrl } from "@archboard/workspace/source-checkout";
-import { PANE_MS } from "@archboard/timing";
+import { registeredRepositoryOfVault } from "@archboard/workspace/checkouts";
+import { paneMs } from "@archboard/timing";
 import open from "open";
 import { z } from "zod";
 import type { RuntimePrerequisite } from "#cli/contract/protocol/contract.ts";
@@ -27,7 +27,7 @@ export async function requirePrerequisite(
 	}
 	if ((await connectedBrowsers()) === 0) {
 		throw browserRequired(
-			`${description} requires the canvas to be open in a browser. Open ${browserUrl(ARCHBOARD_URL)} and retry.`,
+			`${description} requires the canvas to be open in a browser. Open ${browserUrl(archboardUrl())} and retry.`,
 		);
 	}
 }
@@ -59,10 +59,10 @@ export async function openCanvas(
 		const reason = error instanceof Error ? error.message : String(error);
 		throw browserRequired(`${needs}, and the default browser did not start: ${reason}. ${retry}`);
 	});
-	const pane = await paneArrives(Date.now() + PANE_MS.browserConnect);
+	const pane = await paneArrives(Date.now() + paneMs("browserConnect"));
 	if (pane === null) {
 		throw browserRequired(
-			`${description} opened ${url} in the default browser, and no pane connected within ${PANE_MS.browserConnect / 1000} seconds. ${retry}`,
+			`${description} opened ${url} in the default browser, and no pane connected within ${paneMs("browserConnect") / 1000} seconds. ${retry}`,
 		);
 	}
 	return pane;
@@ -76,7 +76,7 @@ export async function openCanvas(
 async function paneArrives(deadline: number): Promise<string | null> {
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the server
-		await new Promise((resolve) => setTimeout(resolve, PANE_MS.browserConnectPoll));
+		await new Promise((resolve) => setTimeout(resolve, paneMs("browserConnectPoll")));
 		// oxlint-disable-next-line no-await-in-loop -- each look depends on the wait before it
 		const pane = await firstPane();
 		if (pane !== null) return pane;
@@ -103,7 +103,7 @@ async function firstPane(): Promise<string | null> {
  * @returns The address.
  */
 function canvasUrl(vault: string | null): string {
-	const base = browserUrl(ARCHBOARD_URL);
+	const base = browserUrl(archboardUrl());
 	const repository = vault === null ? undefined : registeredRepositoryOfVault(vault);
 	if (repository === undefined) {
 		return base;

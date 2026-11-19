@@ -1,240 +1,245 @@
-//! The sizes, faces and icons the painter draws with. The core's sequence and
-//! flowchart layout (`archboard-flows`) and its picture layout
-//! (`archboard-layout`) read them from here.
+//! The sizes, faces and icons of the painter that the core's sequence and
+//! flowchart layout (`archboard-flows`), its picture layout
+//! (`archboard-layout`) and the frontends that paint a scene read: each a
+//! function, so the sheet itself stays the crate's own.
 
-use crate::drawing::{DiagramFont, FontFamily};
+use crate::drawing::DiagramFont;
+use crate::sizes::{
+    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_NOTE_FONT,
+    CARD_PADDING_X, CARD_RADIUS, CARD_TITLE_FONT, DIAGRAM_MARGIN, DRILL_MARK_ROOM, FAR_SCALE,
+    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
+    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, ICON_CHIP_GAP, ICON_CHIP_SIZE, LINE_WIDTH,
+    MESSAGE_LINE_STEP, NOTE_SIZE, PILL_FONT, PILL_HEIGHT, PILL_TEXT_SIZE, RAIL_GAP, RAILS,
+    SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
+    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER, TITLE_SIZE,
+};
 
-pub use super::icons::{FALLBACK_ICON, FLOW_ICON, OWN_ICONS};
 pub use super::sequence_messages::arrow_standoff;
-pub use super::shadow::SHADOW_REACH;
+
+/// The line widths a far view draws wider: a line of normal weight, of hero
+/// weight, and a double line's rails.
+const FAR_WIDENED: [f64; 3] = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS];
 
 /// A card's name, and a container's or a flow's on its tab.
-pub const CARD_TITLE_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 500,
-};
-/// What a card, a container or a flow is responsible for.
-pub const CARD_NOTE_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 400,
-};
-/// Where a card's code lives.
-pub const CARD_PATH_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Mono,
-    weight: 400,
-};
-/// What a connection carries: small, technical, and on a plate.
-pub const PILL_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 500,
-};
+pub const fn card_title_font() -> DiagramFont {
+    CARD_TITLE_FONT
+}
 
-/// The corner radius of a container's tray and of a flow's frame.
-pub(crate) const BAND_RADIUS: f64 = 10.0;
-/// The size of a measured part's name: a card's, and a container's or a flow's on its tab.
-pub(crate) const PART_TITLE_SIZE: f64 = 14.0;
-/// A parent name is slightly stronger within a normal card-sized header.
-pub(crate) const PARENT_TITLE_SIZE: f64 = 15.0;
-/// The parent icon keeps the same chip with a slightly larger glyph.
-pub(crate) const PARENT_ICON_SIZE: f64 = 20.0;
-/// The room one line of such a name takes.
-pub const PART_TITLE_LINE: f64 = 20.0;
-/// The size of a measured part's responsibility, set on the same card or tab.
-pub(crate) const PART_NOTE_SIZE: f64 = 11.0;
-/// The room one line of such a responsibility takes.
-pub const PART_NOTE_LINE: f64 = 17.0;
-/// The size of a measured part's code path. A reader at the far view's edge reads it at 9 px.
-pub(crate) const PART_PATH_SIZE: f64 = 10.5;
-/// The room a code path's line takes.
-pub const PART_PATH_LINE: f64 = 16.0;
-/// The room between a card's words and the code path at its foot.
-pub(crate) const PART_PATH_GAP: f64 = 6.0;
-/// How tall a capital stands, per unit of a part's name.
-pub(crate) const NAME_CAP: f64 = 0.707;
-/// The height of a line of a sequence note, as a multiple of its text size.
-pub const TEXT_LINE_HEIGHT: f64 = 1.35;
-/// How strong a line is on each ground.
-pub(crate) const LINE_STRENGTH_LIGHT: f64 = 1.0;
-/// The same share on the dark ground: four fifths, which keeps every colour's line above the floor for a mark (APCA Lc 30).
-pub(crate) const LINE_STRENGTH_DARK: f64 = 0.8;
-/// How round a card's corner is to the layout, which keeps a line's port clear of it.
-pub const CARD_RADIUS: f64 = 6.0;
-/// The corner radius of a slab: a card's face.
-pub(crate) const SLAB_RADIUS: f64 = 8.0;
-/// How tall a card's front edge shows.
-pub(crate) const CARD_THICKNESS: f64 = 4.0;
-/// How far the lit lip of a tray shows below its floor.
-pub(crate) const TRAY_LIP: f64 = 2.0;
-/// How tall a well shows its top wall.
-pub(crate) const TRAY_WALL: f64 = 6.0;
-/// How far a container's words stand in from the outer edge of its box.
-const HEADER_SLAB_INSET: f64 = 8.0;
-/// How tall a type chip's front edge shows.
-pub(crate) const CHIP_THICKNESS: f64 = 1.5;
-/// How tall a label plate's front edge shows.
-pub(crate) const PILL_THICKNESS: f64 = 2.0;
-/// The side of a type chip's square.
-pub const ICON_CHIP_SIZE: f64 = 24.0;
-/// The room between a sequence card's chip and its words.
-pub const ICON_CHIP_GAP: f64 = 10.0;
-/// The corner radius of a type chip.
-pub(crate) const ICON_CHIP_RADIUS: f64 = 5.0;
-/// The size of a sequence card's name before it is fitted to the room it has.
-pub const TITLE_SIZE: f64 = 13.0;
-/// The size of a note: a sequence card's responsibility and a step's note.
-pub const NOTE_SIZE: f64 = 9.5;
-/// How tall a message label's plate is for one line of words.
-pub const PILL_HEIGHT: f64 = 15.0;
-/// The room between a message label's plate and its words, on the left and the right.
-pub const PILL_PADDING_X: f64 = 8.0;
-/// The size of the words on a label plate.
-pub const PILL_TEXT_SIZE: f64 = 9.0;
-/// The size of words in a flowchart's diamonds, loops and terminals.
-pub const SHAPE_TEXT_SIZE: f64 = 11.0;
-/// The room one line of a flowchart shape's words takes.
-pub const SHAPE_TEXT_LINE: f64 = 14.0;
-/// The letter of a flowchart's jump marker: Onest Bold, which reads at a glance.
-pub(crate) const JUMP_FONT: DiagramFont = DiagramFont {
-    family: FontFamily::Sans,
-    weight: 700,
-};
-/// The size of a jump marker's letter.
-pub(crate) const JUMP_TEXT_SIZE: f64 = 16.0;
-/// The corner radius of a label plate.
-pub(crate) const PILL_RADIUS: f64 = 4.0;
+/// What a card, a container or a flow is responsible for.
+pub const fn card_note_font() -> DiagramFont {
+    CARD_NOTE_FONT
+}
+
+/// What a connection carries: small, technical, and on a plate.
+pub const fn pill_font() -> DiagramFont {
+    PILL_FONT
+}
 
 /// The space around the final drawing.
-pub const DIAGRAM_MARGIN: f64 = 20.0;
-/// The extra space a planned picture's page adds around the drawing to hold its frame.
-pub(crate) const PLANNED_FRAME_MARGIN: f64 = 16.0;
-/// The distance from the page edge to a planned picture's dashed frame.
-pub(crate) const PLANNED_FRAME_INSET: f64 = 8.0;
-/// How tall a door stands, and how round its corners are.
-pub const DOOR_HEIGHT: f64 = 34.0;
-pub(crate) const DOOR_RADIUS: f64 = 8.0;
-/// The room inside a door, on either side of its words.
-pub(crate) const DOOR_PADDING: f64 = 10.0;
-/// A door's icon when the picture is seen near, and from far away.
-pub(crate) const DOOR_ICON: f64 = 18.0;
-pub(crate) const DOOR_FAR_ICON: f64 = 22.0;
-/// How far in from a door's right end its arrow stands.
-pub(crate) const DOOR_ARROW_INSET: f64 = 18.0;
-/// The room a door keeps past its name for its arrow.
-pub(crate) const DOOR_ARROW_ROOM: f64 = 34.0;
-/// The room a control takes at the right end of a door or a frame's tab.
-pub(crate) const TOGGLE_ROOM: f64 = 32.0;
+pub const fn diagram_margin() -> f64 {
+    DIAGRAM_MARGIN
+}
 
-/// How tall a frame's edge tab stands: the room its far name and path take on one line.
-pub const TAB_HEIGHT: f64 = 36.0;
+/// The length of a drawing with a diagram margin at both ends.
+pub fn with_diagram_margins(length: f64) -> f64 {
+    length + 2.0 * DIAGRAM_MARGIN
+}
+
+/// How round a card's corner is to the layout, which keeps a line's port clear of it.
+pub const fn card_radius() -> f64 {
+    CARD_RADIUS
+}
+
+/// The width of a frame's edge tab on a frame of some width: the tab stops
+/// short of the frame's right edge by its foot and the frame's corner.
+pub fn tab_width(frame_width: f64) -> f64 {
+    frame_width - TAB_SHOULDER
+}
+
 /// The room inside a frame's edge tab, on either side of its words.
-pub const TAB_PADDING: f64 = 12.0;
-/// A tab's chip when the picture is seen near, and from far away.
-pub(crate) const TAB_CHIP: f64 = 22.0;
-pub(crate) const TAB_FAR_CHIP: f64 = 26.0;
-/// The room between a tab's chip and its name.
-pub(crate) const TAB_ICON_GAP: f64 = 8.0;
-/// The room between a tab's name and its code path.
-pub(crate) const TAB_PATH_GAP: f64 = 14.0;
-/// The widest a tab's words are set from far away, past which a path keeps its tail.
-pub(crate) const TAB_MOST: f64 = 620.0;
-/// A tab's name and path from far away: 12 px and 9 px at the lowest scale a reading lands at.
-pub(crate) const TAB_FAR_NAME: f64 = 20.0;
-pub(crate) const TAB_FAR_PATH: f64 = 15.0;
-/// The largest name a tab holds from far away, and how far its baseline drops per unit of it.
-pub(crate) const TAB_FAR_MOST: f64 = 28.0;
-pub(crate) const TAB_FAR_DROP: f64 = 0.35;
-/// The room a frame keeps to the right of its tab: the tab's foot, then the frame's corner.
-pub const TAB_SHOULDER: f64 = 2.0 * BAND_RADIUS;
+pub const fn tab_padding() -> f64 {
+    TAB_PADDING
+}
 
-/// The words on a group's tag, near: what its size, its room and its height scale from.
-pub(crate) const TAG_FONT: DiagramFont = PILL_FONT;
-pub(crate) const TAG_SIZE: f64 = 10.0;
-/// The room inside a tag, on either side of its words.
-pub(crate) const TAG_PADDING: f64 = 7.0;
-pub(crate) const TAG_HEIGHT: f64 = 17.0;
-pub(crate) const TAG_RADIUS: f64 = 5.0;
-/// The room between two tags in a row.
-pub(crate) const TAG_GAP: f64 = 4.0;
-/// The side of a group's mark on a far card, near: a tag's words would crowd its box.
-pub(crate) const FAR_TAG: f64 = 8.0;
-/// How far a tag stands from a card's top and right edges.
-pub(crate) const TAG_INSET: f64 = 12.0;
-/// The room a tag keeps from the end of a name beside it.
-pub(crate) const TAG_BESIDE: f64 = 8.0;
+/// The room a container's words have in a header of some width: its words
+/// stand in from both sides of its box.
+pub fn header_words_width(header_width: f64) -> f64 {
+    header_width - ARCHITECTURE_HEADER_PADDING
+}
 
-/// The width of the one viewport the shell supports.
-pub const SHELL_WIDTH: f64 = 1920.0;
-/// The left column of the shell (`NAVIGATOR_WIDTH` of shell-geometry.ts).
-pub const NAVIGATOR_WIDTH: f64 = 280.0;
-/// The line between the left column and the panes.
-pub const HANDLE_WIDTH: f64 = 1.0;
-/// The right panel beside the picture of a reading.
-const RIGHT_PANEL_WIDTH: f64 = 360.0;
-/// The breathing room a fit leaves on either side of a picture.
-pub const FIT_MARGIN: f64 = 24.0;
-/// The room a picture lands in on the one screen the shell supports: the pane
-/// beside the right panel at 1920 by 1080, less the camera's margin.
-pub const LANDING_ROOM: (f64, f64) = (
-    SHELL_WIDTH - NAVIGATOR_WIDTH - HANDLE_WIDTH - RIGHT_PANEL_WIDTH - 2.0 * FIT_MARGIN,
-    955.0,
-);
-/// How much larger everything a far view sets larger stands: a far card's words
-/// and every line with its arrowhead.
-pub const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
-/// How thick a line of normal weight is drawn.
-pub const LINE_WIDTH: f64 = 1.4;
-/// How thick a line of hero weight is drawn.
-pub const HERO_LINE_WIDTH: f64 = 2.2;
-/// How wide a double line's rails stand, side to side.
-pub const RAILS: f64 = 3.6;
-/// The gap a double line's rails leave down its middle.
-pub const RAIL_GAP: f64 = 1.2;
+/// The narrowest a container's header is that holds words of some width.
+pub fn header_width_for(words_width: f64) -> f64 {
+    words_width + ARCHITECTURE_HEADER_PADDING
+}
+
 /// The room between an architecture card's edge and its chip and words.
-pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
-/// The room between an architecture card's chip and its words.
-pub(crate) const ARCHITECTURE_ICON_GAP: f64 = 12.0;
-/// The room between a part's name and its responsibility under it.
-pub const ARCHITECTURE_NOTE_GAP: f64 = 2.0;
-/// The kind of a flowchart's frame, which holds a flow.
-pub const FLOW_KIND: &str = "flow";
+pub const fn architecture_card_padding() -> f64 {
+    ARCHITECTURE_CARD_PADDING
+}
+
 /// How tall a flow's heading stands in its tab.
-pub const FLOW_HEADING: f64 = PART_TITLE_LINE;
+pub const fn flow_heading() -> f64 {
+    FLOW_HEADING
+}
+
 /// How tall a flow's heading stands in its tab with its summary.
-pub const FLOW_HEADING_WITH_NOTE: f64 = PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_LINE;
-/// How far a container's words stand in from the sides of its box.
-pub const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
-/// The room inside a relationship's label plate, on the left and the right of its words.
-pub(crate) const ARCHITECTURE_LABEL_PADDING_X: f64 = 10.0;
-/// The room inside a relationship's label plate, above and below its words.
-pub(crate) const ARCHITECTURE_LABEL_PADDING_Y: f64 = 8.0;
+pub const fn flow_heading_with_note() -> f64 {
+    FLOW_HEADING_WITH_NOTE
+}
+
+/// The kind of a flowchart's frame, which holds a flow.
+pub const fn flow_kind() -> &'static str {
+    FLOW_KIND
+}
+
+/// Whether a node's kind is that of a flowchart's frame.
+pub fn is_flow_kind(kind: &str) -> bool {
+    kind == FLOW_KIND
+}
+
+/// The side of a type chip's square.
+pub const fn icon_chip_size() -> f64 {
+    ICON_CHIP_SIZE
+}
+
+/// The room between a sequence card's chip and its words.
+pub const fn icon_chip_gap() -> f64 {
+    ICON_CHIP_GAP
+}
 
 /// The room inside a sequence card either side of its words.
-pub const CARD_PADDING_X: f64 = 13.0;
-/// The room a drill-down mark takes beside a card's words.
-pub use super::drill_mark::DRILL_MARK_ROOM;
+pub const fn card_padding_x() -> f64 {
+    CARD_PADDING_X
+}
+
+/// What a part keeps clear beside its name for a drill-down mark.
+pub const fn drill_mark_room() -> f64 {
+    DRILL_MARK_ROOM
+}
+
+/// The size of a sequence card's name before it is fitted to the room it has.
+pub const fn title_size() -> f64 {
+    TITLE_SIZE
+}
+
+/// The size of a note: a sequence card's responsibility and a step's note.
+pub const fn note_size() -> f64 {
+    NOTE_SIZE
+}
+
+/// How tall a message label's plate is for one line of words.
+pub const fn pill_height() -> f64 {
+    PILL_HEIGHT
+}
+
+/// The size of the words on a label plate.
+pub const fn pill_text_size() -> f64 {
+    PILL_TEXT_SIZE
+}
+
+/// The size of words in a flowchart's diamonds, loops and terminals.
+pub const fn shape_text_size() -> f64 {
+    SHAPE_TEXT_SIZE
+}
+
+/// The room one line of a flowchart shape's words takes.
+pub const fn shape_text_line() -> f64 {
+    SHAPE_TEXT_LINE
+}
+
 /// Half the width of a sequence's activation bar, and how far it holds arrows
 /// off the lifeline.
-pub const ACTIVATION_HALF_WIDTH: f64 = 6.0;
-/// How far right a self-message reaches, how far it drops before turning
-/// back, and the radius of its two bends.
-pub const SELF_LOOP_REACH: f64 = 52.0;
+pub const fn activation_half_width() -> f64 {
+    ACTIVATION_HALF_WIDTH
+}
+
+/// How far right a self-message reaches.
+pub const fn self_loop_reach() -> f64 {
+    SELF_LOOP_REACH
+}
+
 /// How far a self-message drops before it turns back.
-pub const SELF_LOOP_DROP: f64 = 8.0;
+pub const fn self_loop_drop() -> f64 {
+    SELF_LOOP_DROP
+}
+
 /// The radius of the two bends of a self-message.
-pub const SELF_LOOP_CORNER: f64 = 8.0;
+pub const fn self_loop_corner() -> f64 {
+    SELF_LOOP_CORNER
+}
+
 /// The step from one line of a wrapped message label to the next.
-pub const MESSAGE_LINE_STEP: f64 = 12.0;
-/// How far a step's note holds its words in from its plate's edges.
-pub const STEP_NOTE_PADDING_X: f64 = 4.0;
+pub const fn message_line_step() -> f64 {
+    MESSAGE_LINE_STEP
+}
+
+/// How far a step's note holds its words in from its plate's sides.
+pub const fn step_note_padding_x() -> f64 {
+    STEP_NOTE_PADDING_X
+}
+
 /// How far a step's note holds its words in from the top of its plate.
-pub const STEP_NOTE_PADDING_Y: f64 = 2.0;
-/// A decision's or loop's frame: the row its operator tab and words stand
-/// on, the row an alternative's label stands on, the room between its sides
-/// and the ink it holds, and the padding of the tab around its operator.
-pub const FRAME_HEAD_HEIGHT: f64 = 18.0;
+pub const fn step_note_padding_y() -> f64 {
+    STEP_NOTE_PADDING_Y
+}
+
+/// The row a decision's or loop's operator tab and words stand on.
+pub const fn frame_head_height() -> f64 {
+    FRAME_HEAD_HEIGHT
+}
+
 /// The height of the row an alternative's label stands on.
-pub const FRAME_GUARD_HEIGHT: f64 = 16.0;
-/// The room between a frame's sides and the ink it holds.
-pub const FRAME_PAD: f64 = 10.0;
-/// The padding of a frame's tab around its operator.
-pub const FRAME_TAB_PADDING: f64 = 6.0;
+pub const fn frame_guard_height() -> f64 {
+    FRAME_GUARD_HEIGHT
+}
+
+/// The room between a decision's or loop's sides and the ink it holds.
+pub const fn frame_pad() -> f64 {
+    FRAME_PAD
+}
+
+/// The padding of a decision's or loop's tab around its operator.
+pub const fn frame_tab_padding() -> f64 {
+    FRAME_TAB_PADDING
+}
+
+/// How far a card's shadow reaches past its face.
+pub const fn shadow_reach() -> f64 {
+    super::shadow::SHADOW_REACH
+}
+
+/// The gap a double line's rails leave down its middle.
+pub const fn rail_gap() -> f64 {
+    RAIL_GAP
+}
+
+/// Whether a far view draws a line of this stroke width wider.
+pub fn widens_far(width: f64) -> bool {
+    FAR_WIDENED.contains(&width)
+}
+
+/// How much wider a far view draws a line it widens, `far` of the way from
+/// the near view (0) to the far view (1).
+pub fn far_line_scale(far: f64) -> f64 {
+    1.0 + (FAR_SCALE - 1.0) * far
+}
+
+/// Each line width a far view widens, with the width it draws it at there.
+pub fn far_line_widths() -> [(f64, f64); 3] {
+    FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
+}
+
+/// The icon a part without a known icon is drawn with.
+pub const fn fallback_icon() -> &'static str {
+    super::icons::FALLBACK_ICON
+}
+
+/// The icon of a flow's frame.
+pub const fn flow_icon() -> &'static str {
+    super::icons::FLOW_ICON
+}
+
+/// Every icon a picture can draw, whatever its policy says.
+pub const fn own_icons() -> [&'static str; 2] {
+    super::icons::OWN_ICONS
+}

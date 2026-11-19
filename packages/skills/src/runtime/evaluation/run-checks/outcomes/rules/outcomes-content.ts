@@ -3,7 +3,7 @@
 // and nothing else, and says what it found either way.
 
 import {
-	EdgeTrafficSchema,
+	edgeTrafficSchema,
 	effectiveTraffic,
 	type SemanticNode,
 	type VariantContent,
@@ -374,7 +374,7 @@ const nodeDrillDown: Check = (check, content) =>
  */
 function wantedTraffic(spec: OutcomeCheck["traffic"]): ReturnType<typeof effectiveTraffic> {
 	if (spec === "off" || spec === undefined) return undefined;
-	return effectiveTraffic(EdgeTrafficSchema.parse(spec === "default" ? {} : spec));
+	return effectiveTraffic(edgeTrafficSchema().parse(spec === "default" ? {} : spec));
 }
 
 /**

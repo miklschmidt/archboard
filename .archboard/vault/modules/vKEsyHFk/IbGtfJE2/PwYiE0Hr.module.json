@@ -105,6 +105,19 @@
       },
       "id": "vKEsyHFk#7IJFtNQk",
       "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    },
+    {
+      "order": 71000,
+      "kind": "dependency",
+      "label": "how long a grader may run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-run.ts",
+        "symbol": "skillEvalMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#EX4mlIeV"
     }
   ]
 }

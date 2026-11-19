@@ -2,7 +2,7 @@
 // that the painter brings the picture in. A painter that takes longer finds the
 // SVG standing, a correct model.
 
-import { PICTURE_MS } from "@archboard/timing";
+import { pictureMs } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type {
 	PictureHand,
@@ -43,7 +43,7 @@ class HeldInk {
 		this.arrive = arrive;
 		if (this.#timer !== null) return;
 		this.#surface.setAttribute(INK_WAITS_ATTRIBUTE, "");
-		this.#timer = frameClock().after(PICTURE_MS.painterGrace, this.show);
+		this.#timer = frameClock().after(pictureMs("painterGrace"), this.show);
 	}
 
 	/**

@@ -7,11 +7,11 @@ import {
 	type ReadingReply,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { createStaleBuildNotice } from "#ui/panes/pane-session/state/stale-build.ts";
-import { PANE_MS } from "@archboard/timing";
-import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
+import { paneMs } from "@archboard/timing";
+import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
+type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
 
 beforeEach(() => {
 	jest.useFakeTimers();
@@ -23,7 +23,7 @@ afterEach(() => {
 
 /** Advance the debounce and drain the send and rejection promises. */
 async function settled(): Promise<void> {
-	jest.advanceTimersByTime(PANE_MS.selectionDebounce);
+	jest.advanceTimersByTime(paneMs("selectionDebounce"));
 	await Promise.resolve();
 	await Promise.resolve();
 }
