@@ -10,8 +10,8 @@
 // `worker` the same math on the getter `jitter_ms`. `worker` and `relay`
 // compare and mask `DEADLINE`, which is no math. Only `worker` reads `LIMIT`,
 // and only its tests read `UNUSED`. `ledger` exports a trait, a type alias,
-// an enum, a function pointer, a type that passes calls on and one that
-// implements the trait and `Drop`.
+// an enum, a function pointer, a type with an associated constant that passes
+// calls on, and one that implements the trait and `Drop`.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -90,6 +90,7 @@ beforeAll(async () => {
 			"    let relay = crate::ledger::Relay::new(Box::new(crate::ledger::Account));",
 			"    let _ = (crate::ledger::HANDLER)(amount) + crate::ledger::post(amount);",
 			"    let _: Option<&Durations> = None;",
+			"    let _ = crate::ledger::Relay::RETRIES;",
 			"    relay.send(1) && port.send(2) && crate::ledger::Kind::Debit.is_debit()",
 			"}",
 			"",
@@ -146,6 +147,7 @@ beforeAll(async () => {
 			"    target: Box<dyn Port>,",
 			"}",
 			"impl Relay {",
+			"    pub const RETRIES: u32 = 3;",
 			"    pub fn new(target: Box<dyn Port>) -> Self {",
 			"        Relay { target }",
 			"    }",
@@ -237,7 +239,7 @@ function findingsOn(name: string) {
 		.map((each) => [each.export, each.code, each.severity]);
 }
 
-test("a Rust module's exports are counted by kind: a struct and an enum are classes with their public methods, a trait and a type alias are types, and a function pointer is a function", () => {
+test("a Rust module's exports are counted by kind: a struct and an enum are classes with their public methods and associated items, a trait and a type alias are types, and a function pointer is a function", () => {
 	const ledger = depthOf("Ledger");
 	expect(ledger?.languages).toEqual(["rust"]);
 	expect(ledger?.unjudged).toEqual([]);
@@ -250,7 +252,9 @@ test("a Rust module's exports are counted by kind: a struct and an enum are clas
 		["Account", "class"],
 		["post", "function"],
 		["Kind.is_debit", "method"],
-		["Relay.new", "method"],
+		// Read through the type's name, an associated item is an export of its own.
+		["Relay.RETRIES", "value"],
+		["Relay.new", "function"],
 		["Relay.send", "method"],
 		// A trait's method on the type that implements it; `drop`, which the language calls, is no export.
 		["Account.send", "method"],
@@ -296,6 +300,7 @@ test("Rust uses and the math around them judge each export, whatever the spellin
 test("a Rust function or method that only passes its call on is a pass-through, and a trait's implementation and the members the language calls get no finding", () => {
 	expect(findingsOn("Ledger")).toEqual([
 		["post", "CODE_PASS_THROUGH", "information"],
+		["Relay.RETRIES", "EXPOSED_VALUE", "warning"],
 		["Relay.send", "CODE_PASS_THROUGH", "information"],
 	]);
 });

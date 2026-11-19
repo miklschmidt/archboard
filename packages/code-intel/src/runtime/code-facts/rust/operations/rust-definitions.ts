@@ -30,7 +30,9 @@
 // `static` of a function pointer's type can be called, so it is a function.
 // The members of an `impl` of a trait whose members the language's own
 // syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
-// `Display::fmt`, are called by the language: no caller names them. A
+// `Display::fmt`, are called by the language: no caller names them. An
+// associated function, which takes no `self`, and an associated constant
+// belong to the type and are named through it, as `Relay::new` is. A
 // function whose body only passes its call on names its callee's root
 // (rust-pass-through.ts).
 
@@ -266,8 +268,24 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 		const item = namedItem(member);
 		if (item === undefined) continue;
 		const shape = { kind: item.kind, ...implShape(member, ofTrait, open) };
-		walk.found.push({ ...definition(member, `${holder}.${item.name}`, shape), ...called });
+		const own = { ...called, ...associated(member) };
+		walk.found.push({ ...definition(member, `${holder}.${item.name}`, shape), ...own });
 	}
+}
+
+/**
+ * What a member of an `impl` block carries when it belongs to the type, not
+ * to a value of it: an associated function, which takes no `self`, or an
+ * associated constant. Callers name it through the type, as `Relay::new`.
+ * @param member The member.
+ * @returns The mark, or nothing.
+ */
+function associated(member: Node): Pick<Definition, "static"> {
+	if (member.type === "const_item") return { static: true };
+	const parameters = member.childForFieldName("parameters")?.namedChildren ?? [];
+	const typeOwn =
+		member.type === "function_item" && !parameters.some((each) => each.type === "self_parameter");
+	return typeOwn ? { static: true } : {};
 }
 
 /**
