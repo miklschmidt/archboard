@@ -319,10 +319,10 @@ describe("the entry", () => {
 			"origin/main",
 		]);
 		expect(fetchedBase(flagged.checkout)).toBe(true);
-		// So does the vault's configuration.
+		// So does the vault's configuration, in the one-line form that archboard writes it.
 		const configured = run(
 			{ GITHUB_BASE_REF: "main", ARCHBOARD_INPUT_CHECKS: "code" },
-			"levels: [system]\ncodeCheck:\n  failShallowModules: true\n",
+			Bun.YAML.stringify({ levels: ["system"], codeCheck: { failShallowModules: true } }),
 		);
 		expect(configured.args).toEqual(["check", "code", "--base", "origin/main"]);
 		expect(fetchedBase(configured.checkout)).toBe(true);
