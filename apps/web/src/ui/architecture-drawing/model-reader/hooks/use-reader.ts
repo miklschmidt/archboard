@@ -132,7 +132,7 @@ function useReader(inputs: ReaderInputs) {
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const claimed = useClaimedSubjects(inputs.vault, model, location.checkpoint);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPage(opened);
+	const places = useReaderPage(shown.projection.opened);
 	const history = useHistoryDialog();
 	const flowReadings = useFlowReadings({
 		model,
