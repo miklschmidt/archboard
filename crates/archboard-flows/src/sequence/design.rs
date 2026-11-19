@@ -9,22 +9,16 @@ use archboard_scene::paint::design;
 
 pub(super) use archboard_scene::paint::design::arrow_standoff;
 
-pub(super) const CARD_TITLE_FONT: DiagramFont = design::card_title_font();
-pub(super) const CARD_NOTE_FONT: DiagramFont = design::card_note_font();
 pub(super) const PILL_FONT: DiagramFont = design::pill_font();
 pub(super) const ACTIVATION_HALF_WIDTH: f64 = design::activation_half_width();
 pub(super) const ARCHITECTURE_CARD_PADDING: f64 = design::architecture_card_padding();
-pub(super) const CARD_PADDING_X: f64 = design::card_padding_x();
 pub(super) const DIAGRAM_MARGIN: f64 = design::diagram_margin();
-pub(super) const DRILL_MARK_ROOM: f64 = design::drill_mark_room();
 pub(super) const FLOW_HEADING: f64 = design::flow_heading();
 pub(super) const FLOW_HEADING_WITH_NOTE: f64 = design::flow_heading_with_note();
 pub(super) const FRAME_GUARD_HEIGHT: f64 = design::frame_guard_height();
 pub(super) const FRAME_HEAD_HEIGHT: f64 = design::frame_head_height();
 pub(super) const FRAME_PAD: f64 = design::frame_pad();
 pub(super) const FRAME_TAB_PADDING: f64 = design::frame_tab_padding();
-pub(super) const ICON_CHIP_GAP: f64 = design::icon_chip_gap();
-pub(super) const ICON_CHIP_SIZE: f64 = design::icon_chip_size();
 pub(super) const MESSAGE_LINE_STEP: f64 = design::message_line_step();
 pub(super) const NOTE_SIZE: f64 = design::note_size();
 pub(super) const PILL_HEIGHT: f64 = design::pill_height();
@@ -32,11 +26,9 @@ pub(super) const PILL_TEXT_SIZE: f64 = design::pill_text_size();
 pub(super) const SELF_LOOP_CORNER: f64 = design::self_loop_corner();
 pub(super) const SELF_LOOP_DROP: f64 = design::self_loop_drop();
 pub(super) const SELF_LOOP_REACH: f64 = design::self_loop_reach();
-pub(super) const SHADOW_REACH: f64 = design::shadow_reach();
 pub(super) const STEP_NOTE_PADDING_X: f64 = design::step_note_padding_x();
 pub(super) const STEP_NOTE_PADDING_Y: f64 = design::step_note_padding_y();
 pub(super) const TAB_PADDING: f64 = design::tab_padding();
-pub(super) const TITLE_SIZE: f64 = design::title_size();
 
 /// The height of a line of a sequence note, as a multiple of its text size.
 pub(super) const TEXT_LINE_HEIGHT: f64 = 1.35;
@@ -48,16 +40,6 @@ pub(super) const NEST_INSET: f64 = 18.0;
 /// The room under a container's last row.
 pub(super) const CONTAINER_BOTTOM_PAD: f64 = 14.0;
 
-/// A participant card's height, and its height with a responsibility.
-pub(super) const CARD_HEIGHT: f64 = 46.0;
-pub(super) const CARD_HEIGHT_WITH_NOTE: f64 = 58.0;
-/// Below this a participant's title starts a size down, to keep its room.
-pub(super) const ICON_MIN_CARD_WIDTH: f64 = 190.0;
-pub(super) const TITLE_SIZE_SMALL: f64 = 11.5;
-/// How a participant's title that overruns its shared column gives way:
-/// half a point at a time, to a floor, before the column widens.
-pub(super) const TITLE_SIZE_MIN: f64 = 10.5;
-pub(super) const TITLE_SIZE_STEP: f64 = 0.5;
 /// Bounds for the uniform participant-column width. The maximum keeps one
 /// long name from widening every column; longer names fit their card's text.
 pub(super) const COLUMN_MIN_WIDTH: f64 = 112.0;
@@ -69,8 +51,6 @@ pub(super) const COLUMN_MAX_WIDTH: f64 = 192.0;
 /// page four times wider than it was tall.
 pub(super) const COLUMN_GAP: f64 = 16.0;
 
-/// The card's full shadow reach, plus air for the selected lifeline's stroke.
-pub(super) const LIFELINE_GAP: f64 = SHADOW_REACH + 1.0;
 /// How far the first message sits below the lifeline of the tallest card.
 pub(super) const FIRST_MESSAGE_DROP: f64 = 36.0;
 /// The vertical step from one message to the next, and from one self-message.

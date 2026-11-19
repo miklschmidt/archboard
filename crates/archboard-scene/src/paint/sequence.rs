@@ -14,7 +14,6 @@ use crate::paint::sequence_frames::{paint_fragment, paint_frame};
 use crate::paint::sequence_messages::{
     Crossing, exchange_clock, paint_step, paint_step_words, row_tint, step_ride,
 };
-use crate::paint::shadow::SHADOW_REACH;
 use crate::paint::slab::{Lift, SlabLook, boxed, ghost_face, shadow_under, slab};
 use crate::paint::standing::{
     PIN_INSET, Standings, Unsettled, ghost_opacity, marked_box, standing_pin_at, subject,
@@ -27,12 +26,14 @@ use crate::request::{
 use crate::scene::{
     Atlas, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
 };
-use crate::sizes::{ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, PILL_RADIUS, SLAB_RADIUS};
+use crate::sizes::{
+    ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, LIFELINE_GAP, PILL_RADIUS, SHADOW_REACH, SLAB_RADIUS,
+};
 
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;
 const LIFELINE_DASH: [f64; 2] = [3.0, 5.0];
-const LIFELINE_DASH_OFFSET: f64 = SHADOW_REACH + 1.0 - 6.0;
+const LIFELINE_DASH_OFFSET: f64 = LIFELINE_GAP - 6.0;
 const HEAD_REACH: f64 = 64.0;
 const LIT_LIFELINE_WIDTH: f64 = 1.5;
 const NEUTRAL_BAR: Share = Share {

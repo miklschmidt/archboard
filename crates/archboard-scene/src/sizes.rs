@@ -1,6 +1,6 @@
 //! The sizes and faces the painter draws with and the measurer measures with:
-//! one sheet, private to the crate. Other crates read what they need through
-//! `paint::design`.
+//! one sheet, private to the crate. Another crate learns a part's size from a
+//! measure, never from the sheet (ADR 0088).
 
 use crate::drawing::{DiagramFont, FontFamily};
 
@@ -190,6 +190,20 @@ pub(crate) const ARCHITECTURE_LABEL_PADDING_Y: f64 = 8.0;
 
 /// The room inside a sequence card either side of its words.
 pub(crate) const CARD_PADDING_X: f64 = 13.0;
+/// A sequence card's height, and its height with a responsibility of one line.
+pub(crate) const CARD_HEIGHT: f64 = 46.0;
+pub(crate) const CARD_HEIGHT_WITH_NOTE: f64 = 58.0;
+/// Where a sequence card's name and its responsibility's first line sit, from
+/// the card's top, when it carries a responsibility.
+pub(crate) const TITLE_BASELINE_WITH_NOTE: f64 = 23.0;
+pub(crate) const NOTE_BASELINE: f64 = 39.0;
+/// The height of a line of a sequence note, as a multiple of its text size.
+pub(crate) const TEXT_LINE_HEIGHT: f64 = 1.35;
+/// The farthest a card's shadow reaches below its foot.
+pub(crate) const SHADOW_REACH: f64 = 12.0;
+/// How far under a sequence card its lifeline starts: the card's full shadow,
+/// plus air for the selected lifeline's stroke.
+pub(crate) const LIFELINE_GAP: f64 = SHADOW_REACH + 1.0;
 /// The radius of a drill-down mark's ring.
 pub(crate) const DRILL_MARK_RADIUS: f64 = 6.5;
 /// What a part keeps clear beside its name for a drill-down mark.

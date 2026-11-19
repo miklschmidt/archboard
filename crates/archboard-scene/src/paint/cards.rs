@@ -18,16 +18,14 @@ use crate::request::{NodeAppearance, SequenceCard, Standing};
 use crate::scene::{Group, Purpose, Role, Shape, SubjectKind};
 use crate::sizes::{
     ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_PADDING_X, CARD_TITLE_FONT, ICON_CHIP_GAP,
-    ICON_CHIP_SIZE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, SLAB_RADIUS,
+    ICON_CHIP_SIZE, NOTE_BASELINE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE,
+    SLAB_RADIUS, TITLE_BASELINE_WITH_NOTE,
 };
 
 /// How far outside its subject a selection ring sits.
 pub(super) const HALO_INSET: f64 = 3.0;
 pub(super) const HALO_WIDTH: f64 = 2.0;
 
-/// Where a card's name sits when it carries a responsibility under it.
-const TITLE_BASELINE_WITH_NOTE: f64 = 23.0;
-const NOTE_BASELINE: f64 = 39.0;
 /// How far below a baseline the same text's optical centre is.
 const OPTICAL_CENTRE: f64 = 0.34;
 

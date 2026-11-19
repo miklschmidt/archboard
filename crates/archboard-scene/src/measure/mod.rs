@@ -104,20 +104,3 @@ fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
     let from = folder.unwrap_or(0);
     format!("{ELLIPSIS}{}", tail[from..].iter().collect::<String>())
 }
-
-/// The size a title is set at: the largest step, at or below the size it
-/// earned, where the whole title fits its run, and never below the floor.
-pub fn fitted_size(
-    label: &str,
-    font: DiagramFont,
-    earned: f64,
-    budget: f64,
-    floor: f64,
-    step: f64,
-) -> f64 {
-    let mut size = earned;
-    while size > floor && width(label, font, size) > budget {
-        size = js::js_max(floor, size - step);
-    }
-    size
-}

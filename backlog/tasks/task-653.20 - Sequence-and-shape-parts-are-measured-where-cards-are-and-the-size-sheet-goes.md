@@ -1,10 +1,11 @@
 ---
 id: TASK-653.20
 title: Sequence and shape parts are measured where cards are, and the size sheet goes
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-19T17:34:00Z'
+updated_date: '2026-11-19T20:47:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -39,6 +40,15 @@ Candidate 5 of the archboard-deepen run, fourth on the Rust track. Painting (cra
 - [ ] #6 One test per measure states the agreement it exists for, and one archboard-flows test lays out and paints a small sequence and checks every card's words inside its text run and every message's ink inside its row
 - [ ] #7 One short ADR: a layout learns a part's size from the measurer, never the painter's sizes; the sheet stays private to the crate of measurer and painter; the rejected routes with their reasons
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Baselines: WASM corpus (render-corpus, 1084), native renders of the captured requests (1084, equal to WASM), CPU frames near/mid-swap/far of the 542 light paintings, types.ts and marks.ts.
+2. Counting spike with todo!() bodies: Painting 17, Measured text 16; a file module is not measured, so Flow part measures is the folder flow_parts/ (mod.rs root); a pub(crate) item at its root counts, so the guard speller sits in sequence_picture.rs.
+3. Commits, each proved by native and WASM hashes, generated files and CPU frames: cards; messages (plates, ends, bar, self loop); notes; fragments; flow tab; shape words; far-line scale; core Purpose (then paint-parity); icon names; size sheet removed with residuals re-exported from their files.
+4. Seam tests per measure plus one flows layout-and-paint test; ADR; gates; ticket notes.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 

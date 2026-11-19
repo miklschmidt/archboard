@@ -12,6 +12,7 @@
 
 pub mod drawing;
 mod ecma;
+mod flow_parts;
 pub mod geometry;
 pub mod js;
 mod measure;
@@ -23,7 +24,8 @@ pub mod scene;
 mod sequence_picture;
 mod sizes;
 
+pub use flow_parts::{ColumnLimits, HeadCard, HeadCards, sequence_cards};
 pub use measure::{
-    CardWords, fitted_size, measure_flow_frame, measure_label, measure_node, message_lines,
-    narrow_label, note_lines, width,
+    CardWords, measure_flow_frame, measure_label, measure_node, message_lines, narrow_label,
+    note_lines, width,
 };

@@ -5,13 +5,12 @@
 
 use crate::drawing::DiagramFont;
 use crate::sizes::{
-    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_NOTE_FONT,
-    CARD_PADDING_X, CARD_RADIUS, CARD_TITLE_FONT, DIAGRAM_MARGIN, DRILL_MARK_ROOM, FAR_SCALE,
-    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
-    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, ICON_CHIP_GAP, ICON_CHIP_SIZE, LINE_WIDTH,
+    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_RADIUS,
+    DIAGRAM_MARGIN, FAR_SCALE, FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT,
+    FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, LINE_WIDTH,
     MESSAGE_LINE_STEP, NOTE_SIZE, PILL_FONT, PILL_HEIGHT, PILL_TEXT_SIZE, RAIL_GAP, RAILS,
     SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER, TITLE_SIZE,
+    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER,
 };
 
 pub use super::sequence_messages::arrow_standoff;
@@ -19,16 +18,6 @@ pub use super::sequence_messages::arrow_standoff;
 /// The line widths a far view draws wider: a line of normal weight, of hero
 /// weight, and a double line's rails.
 const FAR_WIDENED: [f64; 3] = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS];
-
-/// A card's name, and a container's or a flow's on its tab.
-pub const fn card_title_font() -> DiagramFont {
-    CARD_TITLE_FONT
-}
-
-/// What a card, a container or a flow is responsible for.
-pub const fn card_note_font() -> DiagramFont {
-    CARD_NOTE_FONT
-}
 
 /// What a connection carries: small, technical, and on a plate.
 pub const fn pill_font() -> DiagramFont {
@@ -95,31 +84,6 @@ pub const fn flow_kind() -> &'static str {
 /// Whether a node's kind is that of a flowchart's frame.
 pub fn is_flow_kind(kind: &str) -> bool {
     kind == FLOW_KIND
-}
-
-/// The side of a type chip's square.
-pub const fn icon_chip_size() -> f64 {
-    ICON_CHIP_SIZE
-}
-
-/// The room between a sequence card's chip and its words.
-pub const fn icon_chip_gap() -> f64 {
-    ICON_CHIP_GAP
-}
-
-/// The room inside a sequence card either side of its words.
-pub const fn card_padding_x() -> f64 {
-    CARD_PADDING_X
-}
-
-/// What a part keeps clear beside its name for a drill-down mark.
-pub const fn drill_mark_room() -> f64 {
-    DRILL_MARK_ROOM
-}
-
-/// The size of a sequence card's name before it is fitted to the room it has.
-pub const fn title_size() -> f64 {
-    TITLE_SIZE
 }
 
 /// The size of a note: a sequence card's responsibility and a step's note.
@@ -201,11 +165,6 @@ pub const fn frame_pad() -> f64 {
 /// The padding of a decision's or loop's tab around its operator.
 pub const fn frame_tab_padding() -> f64 {
     FRAME_TAB_PADDING
-}
-
-/// How far a card's shadow reaches past its face.
-pub const fn shadow_reach() -> f64 {
-    super::shadow::SHADOW_REACH
 }
 
 /// The gap a double line's rails leave down its middle.
