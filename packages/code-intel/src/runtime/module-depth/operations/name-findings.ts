@@ -42,10 +42,7 @@ import {
 	readersOf,
 	usesOf,
 } from "#runtime/module-depth/operations/depth-reading.ts";
-import { type SiblingUse, usedBySibling } from "#runtime/module-depth/operations/sibling-uses.ts";
-
-/** A module as the per-name rules judge it: with the uses of its names by its own files. */
-type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
+import { type JudgedReading, userOf } from "#runtime/module-depth/operations/sibling-uses.ts";
 
 /** The kind of one export: a public method of an exported class is a `method`. */
 type NameKind = "function" | "class" | "value" | "type" | "method";
@@ -75,11 +72,7 @@ function unreadWhy(unread: readonly string[]): string[] {
  * @returns The finding, or undefined when a file uses it.
  */
 function unused(reading: JudgedReading, name: ExposedName): DepthFinding | undefined {
-	// A name can have parts in several files, as a C# partial class does: a use of any part is a use.
-	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
-	const { directory } = reading.exposure;
-	const outside = parts.some((part) => usesOf(directory, part, reading.uses).length > 0);
-	if (outside || parts.some((part) => usedBySibling(part, reading.siblings))) return undefined;
+	if (userOf(reading, name) !== undefined) return undefined;
 	const unseen = reading.unseen(name);
 	const why = [
 		...unreadWhy(reading.unread),

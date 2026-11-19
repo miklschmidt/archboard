@@ -34,6 +34,7 @@
 // - `EXPOSED_UNUSED`, information: names the module exposes that no file
 //   outside it uses, as code or as a type, in a language Module depth does
 //   not judge yet. Module depth judges the names of the others one by one.
+//   A module the model marks `external` gets neither (TASK-646.18).
 //
 // - Module depth (module-depth.ts, TASK-646.04, TASK-646.05): each judged
 //   module's exports counted by kind, the logic behind them, one finding per
@@ -345,7 +346,7 @@ async function judgeContainer(
 	if (judged === undefined) return;
 	outcome.findings.push(...testImportFindings(judged));
 	const depthNames = await measureDepth(judged, outcome);
-	const unused = unusedFinding(judged, depthNames);
+	const unused = judged.external ? undefined : unusedFinding(judged, depthNames);
 	if (unused !== undefined) outcome.findings.push(unused);
 	outcome.findings.push(...terraformFindings(reading.read, container, judged.module.terraform));
 	const inspection = inspectContainer(reading.read.variant.content, container);
@@ -476,7 +477,25 @@ async function judgedContainer(
 	const parts = [...reading.codes.values()].filter(
 		(each): each is ReadPart => each.status === "read" && each.checkout.root === code.checkout.root,
 	);
-	return { reading, container, module, checkout: code.checkout, owners: ownersOf(parts) };
+	const { checkout } = code;
+	const external = isExternal(reading, container);
+	return { reading, container, module, checkout, owners: ownersOf(parts), external };
+}
+
+/** The kind of a part that stands for code the repository does not own (ADR 0029). */
+const EXTERNAL_KIND = "external";
+
+/**
+ * Whether the model marks a part, or a part that holds it, `external`.
+ * @param reading The document.
+ * @param container The part.
+ * @returns True when it does.
+ */
+function isExternal(reading: InterfaceReading, container: SemanticNode): boolean {
+	const chain = reading.lineages.get(container.id) ?? new Set([container.id]);
+	return reading.read.variant.content.nodes.some(
+		(node) => chain.has(node.id) && node.kind === EXTERNAL_KIND,
+	);
 }
 
 /**

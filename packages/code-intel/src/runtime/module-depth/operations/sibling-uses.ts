@@ -9,6 +9,10 @@
 // language whose files of one module see each other without an import, as
 // Go's and Swift's do, gives no such use: an exported name only they use
 // stays unused, and the remedy there is to stop exporting it.
+//
+// What a sibling use keeps used stays visible (TASK-646.18, decision 17):
+// such a module gets `INTERFACE_UNDECLARED`, information, which says how many
+// of its names files outside it use and how many only its own files import.
 
 import {
 	type ExposedName,
@@ -16,7 +20,12 @@ import {
 	within,
 } from "#runtime/code-facts/modules/operations/module-exposure.ts";
 import { definitionSite } from "#runtime/code-facts/operations/definition-site.ts";
-import { type DepthReading, reaches } from "#runtime/module-depth/operations/depth-reading.ts";
+import {
+	type DepthFinding,
+	type DepthReading,
+	reaches,
+	usesOf,
+} from "#runtime/module-depth/operations/depth-reading.ts";
 
 /** A use of a module's name by one of its own files. */
 interface SiblingUse {
@@ -108,14 +117,58 @@ async function siblingUses(reading: DepthReading): Promise<SiblingUse[]> {
 	return uses;
 }
 
+/** How many of the names only a module's own files import its finding names. */
+const NAMED_INSIDE = 5;
+
+/** A module as the per-name rules judge it: with the uses of its names by its own files. */
+type JudgedReading = DepthReading & { readonly siblings: readonly SiblingUse[] };
+
 /**
- * Whether another file of the module uses an exposed name.
+ * Who uses an exported name: a file outside the module, else only another of
+ * its files, through an import. A name can have parts in several files, as a
+ * C# partial class does: a use of any part is a use.
+ * @param reading The module.
  * @param name The name.
- * @param uses The module's uses by its own files.
- * @returns True when one does.
+ * @returns Who uses it, or undefined when no file does.
  */
-function usedBySibling(name: ExposedName, uses: readonly SiblingUse[]): boolean {
-	return uses.some((use) => use.file !== name.path && reaches(name, use));
+function userOf(reading: JudgedReading, name: ExposedName): "outside" | "sibling" | undefined {
+	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
+	const { directory } = reading.exposure;
+	if (parts.some((part) => usesOf(directory, part, reading.uses).length > 0)) return "outside";
+	const sibling = parts.some((part) =>
+		reading.siblings.some((use) => use.file !== part.path && reaches(part, use)),
+	);
+	return sibling ? "sibling" : undefined;
 }
 
-export { type SiblingUse, siblingUses, usedBySibling };
+/**
+ * The finding on a module that declares no interface, where only its own
+ * files use some of its names: how many of its names files outside it use,
+ * and the first of those only its own files import.
+ * @param reading The module.
+ * @param names Its exported names, methods aside.
+ * @returns The finding, or undefined when no name is used only by its own files.
+ */
+function undeclaredFinding(
+	reading: JudgedReading,
+	names: readonly ExposedName[],
+): DepthFinding | undefined {
+	const users = names.map((name) => [name.name, userOf(reading, name)] as const);
+	const inside = users.flatMap(([name, user]) => (user === "sibling" ? [name] : []));
+	if (inside.length === 0) return undefined;
+	const outside = users.filter(([, user]) => user === "outside").length;
+	const more = inside.length > NAMED_INSIDE ? `, and ${inside.length - NAMED_INSIDE} more` : "";
+	const named = `${inside.slice(0, NAMED_INSIDE).join(", ")}${more}`;
+	return {
+		severity: "information",
+		code: "INTERFACE_UNDECLARED",
+		message:
+			`${reading.label} declares no interface, so each export of its files is open to every ` +
+			`folder. Files outside it use ${outside} of its ${names.length} exported names, and only ` +
+			`its own files import ${inside.length}: ${named}. Declare its interface, as an ` +
+			"entry file such as index.ts does, with what callers use, and the names only its own " +
+			"files need stay inside.",
+	};
+}
+
+export { type JudgedReading, type SiblingUse, siblingUses, undeclaredFinding, userOf };

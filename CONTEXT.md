@@ -829,6 +829,10 @@ _Avoid_: duplicate export, barrel leak
 An exported name that no file outside its module uses, as code or as a type, and, in a folder module that declares no interface, no other file of the module imports: `EXPOSED_UNUSED`. It is a warning only after a complete read, when the model draws no caller of it whose code the check does not read; otherwise information. A test is no user.
 _Avoid_: dead code (no export reaches hidden code), unreferenced symbol
 
+**Undeclared interface**:
+A folder module that declares no interface, with no file that stands for it (such as `index.ts`) and no `package.json` `exports`, where some exported names are used only by another of its files: `INTERFACE_UNDECLARED`, information. It says how many of its names files outside it use, and how many only its own files import, naming the first five.
+_Avoid_: missing barrel, missing index
+
 **Shallow module**:
 A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding: `MODULE_SHALLOW`, information in the answer.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)

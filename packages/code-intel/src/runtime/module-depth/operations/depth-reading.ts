@@ -60,6 +60,12 @@ interface DepthReading {
 	readonly tokenType: (name: ExposedName) => Promise<string | undefined>;
 	/** The module as a sentence names it, such as `module "Timing"`. */
 	readonly label: string;
+	/**
+	 * Whether the model marks the module, or a part that holds it, `external`:
+	 * code the repository does not own, as a vendored crate is. Its exports
+	 * are counted and never judged.
+	 */
+	readonly external: boolean;
 }
 
 /** A finding of module depth, before the code check places it on a part. */

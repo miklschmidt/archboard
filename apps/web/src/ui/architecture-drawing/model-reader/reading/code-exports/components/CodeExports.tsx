@@ -226,7 +226,7 @@ function ExportsBody(
 }
 
 /**
- * The roll-up of a shallow module, over its exports.
+ * The findings on the exports as a whole: the roll-up of a shallow module, and an undeclared interface.
  * @param props The findings.
  * @param props.findings The findings.
  * @returns Each with its chip and its words.

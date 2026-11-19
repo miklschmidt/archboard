@@ -181,11 +181,16 @@ Clear each finding at its seam. Never silence one.
   In a folder module that declares no interface (no file that stands for it, such as `index.ts`, and no `package.json` `exports`), a name that another of its files imports counts as used. A Go or Swift file sees its package's or target's names without an import, so there an exported name only the module uses stays a finding: stop exporting it.
   It is a warning only after a complete read of the files outside the module in its language: each file parsed where it names the module's names, every relative import resolved, no whole-module import. A Rust `use crate::timing;` or `mod timing;` names each use it makes, so it leaves the read complete. A Rust use that leads into the module but reaches no name the check can find, such as a function a macro defines, leaves it incomplete.
   A caller outside this checkout, such as the users of a published package, or a framework that loads a route or a story by its file, makes it information once you draw that caller in the model.
-  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a Python `__repr__`, a Go `String`, what a Rust `impl Drop` or `impl Display` defines, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`. A Rust item that `#[wasm_bindgen]` exports to JavaScript is never judged unused.
+  Methods are not judged unused, because their uses go through values, so an implementation used through its interface counts as used. Members the language calls are never counted or judged: a constructor, `toString`, a Python `__repr__`, a Go `String`, what a Rust `impl Drop` or `impl Display` defines, a C++ destructor or operator, a Swift initializer, `hash(into:)` or `encode(to:)`, an Objective-C initializer, `dealloc` or `description`. A Rust item that `#[wasm_bindgen]` exports to JavaScript, or a type that derives ts-rs's `TS` for TypeScript, is never judged unused.
+- `INTERFACE_UNDECLARED` (information): a folder module that declares no interface, where some names are used only by another of its files, which keeps them from `EXPOSED_UNUSED`.
+  It says how many of its names files outside it use, and how many only its own files import, naming the first five.
+  Declare the interface, such as an `index.ts` that offers what callers use, and the rest stays inside.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
   If nothing is left to hide, merge the module into its callers.
 
 Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, because its remedy removes the name.
+
+A module that the model marks `external`, code the repository does not own such as a vendored crate, keeps its counts and gets none of these findings.
 
 A language can force a constant. No exemption exists, so use the seam that replaces it:
 

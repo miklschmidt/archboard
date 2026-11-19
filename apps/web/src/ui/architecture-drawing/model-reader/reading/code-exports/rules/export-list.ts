@@ -1,8 +1,9 @@
 // The code exports of one module, as its About page lists them (TASK-646.08): by kind, in the order
 // the module exports them, each with the findings of the pass on that name. A public method is
 // named `Class.method`, and it stands under its class. A file is named from the module's own
-// directory. The roll-up of a shallow module stands over the list; the module's other findings are
-// about the map, not its exports, and stand under Code and evidence.
+// directory. The findings on the module's exports as a whole stand over the list: the roll-up of a
+// shallow module, and the names only its own files use where it declares no interface. The module's
+// other findings are about the map, not its exports, and stand under Code and evidence.
 
 import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
@@ -28,6 +29,9 @@ interface ExportKind {
 	readonly exports: readonly ListedExport[];
 }
 
+/** The findings on a module's exports as a whole, which stand over its list. */
+const MODULE_CODES: ReadonlySet<string> = new Set(["MODULE_SHALLOW", "INTERFACE_UNDECLARED"]);
+
 /** The kinds, in the order the page lists them, with the name of each list. */
 const KINDS: readonly (readonly [Name["kind"], string])[] = [
 	["function", "Functions"],
@@ -48,13 +52,13 @@ function methodOf(name: string): { readonly owner: string; readonly shown: strin
 }
 
 /**
- * The exports of a module by kind, each with its findings, and the roll-up of a shallow module.
+ * The exports of a module by kind, each with its findings, and the findings on them as a whole.
  * @param names The exports the pass counted.
  * @param findings The findings of the pass.
  * @param module The module, by its identity and its directory in its repository.
  * @param module.id Its identity.
  * @param module.directory Its directory.
- * @returns Each kind that has an export, and the module's roll-up, if it has one.
+ * @returns Each kind that has an export, and the module's findings on its exports as a whole.
  */
 function exportList(
 	names: readonly Name[],
@@ -82,7 +86,7 @@ function exportList(
 			.filter((entry) => entry.kind === kind)
 			.toSorted((a, b) => owners.indexOf(a.owner) - owners.indexOf(b.owner)),
 	})).filter((entry) => entry.exports.length > 0);
-	return { kinds, rollUp: mine.filter((finding) => finding.code === "MODULE_SHALLOW") };
+	return { kinds, rollUp: mine.filter((finding) => MODULE_CODES.has(finding.code)) };
 }
 
 /**
