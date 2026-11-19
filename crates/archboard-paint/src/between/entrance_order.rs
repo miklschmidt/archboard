@@ -1,10 +1,11 @@
 //! What an entrance brings in when, so that nothing stands before what holds it.
 
-use archboard_scene::scene::{Group, Item, Purpose, Role, Scene, Shape, Subject, SubjectKind};
+use archboard_scene::scene::{Group, Item, Purpose, Role, Scene, Subject, SubjectKind};
 
 use super::testing::{PHASES, card, drawing, label, line, rect, scene, shadow};
 use super::tests::solid;
 use super::{Entrance, Handover};
+use crate::testing::{boxed, subject_group};
 
 /// A picture of three cards one under another, a line from the first to the
 /// second, the line's label, and the shadow of a flow's start.
@@ -41,7 +42,10 @@ fn cast_picture() -> Scene {
         let Item::Group(group) = shadow() else {
             unreachable!("a shadow is a group");
         };
-        Item::Group(group.standing_with(vec![owner.to_owned()]))
+        Item::Group(Group {
+            members: vec![owner.to_owned()],
+            ..group
+        })
     };
     scene(
         vec![Item::Group(Group::new(
@@ -162,12 +166,16 @@ fn an_entrance_draws_the_lines_after_the_cards_and_each_label_as_its_line_reache
 
 /// A participant's column: its bar stands in the middle of the picture, and its card at the top.
 fn column() -> Scene {
-    let bar = Shape::rect(Purpose::Halo, rect(195.0, 80.0, 10.0, 80.0), None);
-    let lifeline = Group::new(Role::Lifeline, vec![Item::Shape(bar)]).drawing(Subject {
-        kind: SubjectKind::Node,
-        id: "p".to_owned(),
-        standing: None,
-    });
+    let bar = boxed(Purpose::Halo, rect(195.0, 80.0, 10.0, 80.0), None);
+    let lifeline = subject_group(
+        Role::Lifeline,
+        vec![Item::Shape(bar)],
+        Subject {
+            kind: SubjectKind::Node,
+            id: "p".to_owned(),
+            standing: None,
+        },
+    );
     let body = vec![
         Item::Group(lifeline),
         card("near", rect(160.0, 100.0, 20.0, 20.0), &[]),

@@ -197,10 +197,11 @@ mod tests {
     use super::Warnings;
     use archboard_scene::geometry::{Point, Rect};
     use archboard_scene::scene::{
-        Atlas, Colour, Group, Item, PathStep, Purpose, Role, Scene, Shape, Stroke, Subject,
-        SubjectKind, Token,
+        Atlas, Colour, Group, Item, PathStep, Purpose, Role, Scene, Subject, SubjectKind, Token,
     };
     use std::collections::HashSet;
+
+    use crate::testing::{boxed, stroke, subject_group, traced};
 
     fn subject(kind: SubjectKind, id: &str) -> Subject {
         Subject {
@@ -217,11 +218,11 @@ mod tests {
             width: 100.0,
             height: 40.0,
         };
-        Group::new(
+        subject_group(
             Role::Shape,
-            vec![Item::Shape(Shape::rect(Purpose::Plate, rect, None))],
+            vec![Item::Shape(boxed(Purpose::Plate, rect, None))],
+            subject(SubjectKind::Node, "a"),
         )
-        .drawing(subject(SubjectKind::Node, "a"))
     }
 
     fn line() -> Group {
@@ -232,15 +233,15 @@ mod tests {
             PathStep::Line { to: at(10.0, 50.0) },
             PathStep::Line { to: at(40.0, 50.0) },
         ];
-        Group::new(
+        subject_group(
             Role::Line(None),
-            vec![Item::Shape(
-                Shape::path(Purpose::Line, steps)
-                    .unfilled()
-                    .stroked(Stroke::new(Token::Border, 1.0)),
-            )],
+            vec![Item::Shape(traced(
+                Purpose::Line,
+                steps,
+                stroke(Token::Border, 1.0),
+            ))],
+            subject(SubjectKind::Edge, "e"),
         )
-        .drawing(subject(SubjectKind::Edge, "e"))
     }
 
     fn scene(groups: Vec<Group>) -> Scene {

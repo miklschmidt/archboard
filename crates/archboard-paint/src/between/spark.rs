@@ -6,7 +6,7 @@
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
-    Cap, Colour, Geometry, Group, Item, Paint, Purpose, Role, Shape, Stroke, Token,
+    Cap, Colour, Geometry, Group, Item, Paint, Role, Shape, Stroke, Token,
 };
 use kurbo::{ParamCurve as _, ParamCurveArclen as _, ParamCurveNearest as _};
 
@@ -16,6 +16,7 @@ use super::ease::{ease_out, phase};
 use super::found::{Form, Found, largest_rect};
 use super::line::{end_of, in_flight};
 use super::morph::{length, route_of};
+use super::open::outline;
 use super::phases::Transition;
 use super::plan::Mover;
 use crate::path::outline_of;
@@ -213,10 +214,19 @@ pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> 
                 width: card.width + RIM_ROOM * 2.0,
                 height: card.height + RIM_ROOM * 2.0,
             };
-            let mut shape = Shape::rect(Purpose::Plate, edge, Some(RIM_CORNER))
-                .unfilled()
-                .stroked(Stroke::new(sparked(&paint, RIM_TOWARD_TEXT), 1.0));
-            shape.members = vec![id.to_owned()];
+            let stroke = Stroke {
+                paint: sparked(&paint, RIM_TOWARD_TEXT),
+                width: Some(1.0),
+                opacity: None,
+                cap: None,
+                join: None,
+                dashes: Vec::new(),
+                dash_offset: None,
+            };
+            let shape = Shape {
+                members: vec![id.to_owned()],
+                ..outline(edge, RIM_CORNER, stroke)
+            };
             let (landed, edge) = along_outline(&shape.geometry, point);
             Some(Mover::Rim(Box::new(Rim {
                 shape,
@@ -346,30 +356,33 @@ impl DrawOn {
 #[cfg(test)]
 mod tests {
     use archboard_scene::geometry::{Point, Rect};
-    use archboard_scene::scene::{
-        Geometry, Group, Item, Purpose, Role, Shape, Stroke, Subject, SubjectKind, Token,
-    };
+    use archboard_scene::scene::{Geometry, Item, Purpose, Role, Subject, SubjectKind, Token};
 
     use super::super::found::found;
     use super::super::plan::Mover;
     use super::super::testing::{card, line, rect, scene};
-    use super::{RIM_CLOSES, RIM_SPAN, Rim, along_outline, rims};
+    use super::{RIM_CLOSES, RIM_SPAN, Rim, along_outline, outline, rims};
+    use crate::testing::{boxed, shape, stroke, subject_group};
 
     #[test]
     fn a_line_that_lands_on_a_lifeline_lights_no_rim_round_the_column() {
         let column = rect(0.0, 0.0, 100.0, 400.0);
-        let stem = Shape::new(
+        let stem = shape(
             Purpose::Line,
             Geometry::Line {
                 from: Point { x: 50.0, y: 60.0 },
                 to: Point { x: 50.0, y: 400.0 },
             },
         );
-        let lifeline = Group::new(Role::Lifeline, vec![Item::Shape(stem)]).drawing(Subject {
-            id: "actor".to_owned(),
-            kind: SubjectKind::Node,
-            standing: None,
-        });
+        let lifeline = subject_group(
+            Role::Lifeline,
+            vec![Item::Shape(stem)],
+            Subject {
+                id: "actor".to_owned(),
+                kind: SubjectKind::Node,
+                standing: None,
+            },
+        );
         let body = vec![
             Item::Group(lifeline),
             line("m", &[(300.0, 200.0), (50.0, 200.0)]),
@@ -381,12 +394,16 @@ mod tests {
 
     #[test]
     fn a_line_inside_a_decision_lights_no_rim_round_its_frame() {
-        let outline = Shape::rect(Purpose::Box, rect(0.0, 0.0, 400.0, 300.0), None);
-        let decision = Group::new(Role::Fragment, vec![Item::Shape(outline)]).drawing(Subject {
-            id: "alt".to_owned(),
-            kind: SubjectKind::Step,
-            standing: None,
-        });
+        let frame = boxed(Purpose::Box, rect(0.0, 0.0, 400.0, 300.0), None);
+        let decision = subject_group(
+            Role::Fragment,
+            vec![Item::Shape(frame)],
+            Subject {
+                id: "alt".to_owned(),
+                kind: SubjectKind::Step,
+                standing: None,
+            },
+        );
         let body = vec![
             Item::Group(decision),
             line("m", &[(300.0, 150.0), (50.0, 150.0)]),
@@ -446,9 +463,7 @@ mod tests {
             width: 100.0,
             height: 50.0,
         };
-        let shape = Shape::rect(Purpose::Plate, card, Some(6.0))
-            .unfilled()
-            .stroked(Stroke::new(Token::DiagramText, 1.0));
+        let shape = outline(card, 6.0, stroke(Token::DiagramText, 1.0));
         let (landed, edge) = along_outline(&shape.geometry, Point { x: 100.0, y: 25.0 });
         let start = 0.5;
         let rim = Rim {

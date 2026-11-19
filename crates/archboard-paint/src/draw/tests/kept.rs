@@ -11,6 +11,7 @@ use super::{Op, Record, places, plate, route, stage_of, subject};
 use crate::canvas::{Canvas, Ink, PartKey};
 use crate::presentation::{Camera, Marks};
 use crate::stage::Stage;
+use crate::testing::subject_group;
 
 /// A canvas that keeps each part as what was drawn of it, and draws it again
 /// under the transform it is asked for.
@@ -98,7 +99,11 @@ fn fresh_ops(stage: &mut Stage) -> Vec<Op> {
 
 #[test]
 fn a_canvas_draws_a_new_look_afresh() {
-    let lit = Group::new(Role::Line(None), route(0.0)).drawing(subject(SubjectKind::Edge, "e"));
+    let lit = subject_group(
+        Role::Line(None),
+        route(0.0),
+        subject(SubjectKind::Edge, "e"),
+    );
     let mut stage = stage_of(vec![Item::Group(lit)]);
     let mut keeping = Keeping::default();
     stage.draw(&mut keeping, 0.0);
@@ -119,10 +124,10 @@ fn a_canvas_draws_a_new_look_afresh() {
 fn a_planned_frame_and_its_inset_keep_different_parts() {
     let body = vec![
         Item::Group(Group::new(Role::Slot(Slot::PlannedFrame), vec![plate(1.0)])),
-        Item::Group(
-            Group::new(Role::Inset, vec![plate(2.0), plate(3.0)])
-                .moved(Transform::translate(20.0, 10.0)),
-        ),
+        Item::Group(Group {
+            transform: Some(Transform::translate(20.0, 10.0)),
+            ..Group::new(Role::Inset, vec![plate(2.0), plate(3.0)])
+        }),
     ];
     let mut stage = stage_of(body);
     let expected = places(&fresh_ops(&mut stage));

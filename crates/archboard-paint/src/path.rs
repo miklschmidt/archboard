@@ -214,6 +214,8 @@ mod tests {
     use archboard_scene::geometry::{Point, Rect};
     use archboard_scene::scene::{Cap, Geometry, PathStep, Stroke, Token};
 
+    use crate::testing::stroke;
+
     fn at(x: f64, y: f64) -> Point {
         Point { x, y }
     }
@@ -262,7 +264,11 @@ mod tests {
 
     #[test]
     fn a_stroke_keeps_its_ends_and_scales_its_width() {
-        let drawn = stroke_of(&Stroke::new(Token::Border, 2.0).capped(Cap::Round), 1.5);
+        let round = Stroke {
+            cap: Some(Cap::Round),
+            ..stroke(Token::Border, 2.0)
+        };
+        let drawn = stroke_of(&round, 1.5);
         assert_eq!(drawn.width, 3.0);
         assert_eq!(drawn.start_cap, kurbo::Cap::Round);
     }

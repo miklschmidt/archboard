@@ -77,34 +77,6 @@ impl Text {
             words: words.to_owned(),
         }
     }
-
-    /// The run moved so its middle across stands on its point.
-    #[must_use]
-    pub fn centred(self) -> Text {
-        Text {
-            at: Point {
-                x: self.at.x - self.width / 2.0,
-                ..self.at
-            },
-            ..self
-        }
-    }
-
-    /// The run moved so its middle down stands on its point: halfway between
-    /// how far its face reaches above the baseline and below it.
-    #[must_use]
-    pub fn central(self) -> Text {
-        let extent = measure::face(self.font).extent();
-        let rise =
-            (extent.ascent - extent.descent) / 2.0 * self.size / f64::from(extent.units_per_em);
-        Text {
-            at: Point {
-                y: self.at.y + rise,
-                ..self.at
-            },
-            ..self
-        }
-    }
 }
 
 /// A Remix Icon, by the name it is exported under, drawn from its own 24-unit

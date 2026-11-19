@@ -7,9 +7,9 @@ use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::passage::{Plane, Side};
 use crate::presentation::{Camera, Light, Shine};
-use crate::testing::painting;
+use crate::testing::{boxed, painting, subject_group};
 use archboard_scene::geometry::Rect;
-use archboard_scene::scene::{Group, Item, Purpose, Role, Shape, Subject, SubjectKind};
+use archboard_scene::scene::{Item, Purpose, Role, Subject, SubjectKind};
 use std::collections::HashMap;
 
 fn stage() -> Stage {
@@ -24,14 +24,16 @@ fn tray() -> Vec<Item> {
         width: 40.0,
         height: 40.0,
     };
-    let plate = Shape::rect(Purpose::Plate, body, None);
-    vec![Item::Group(
-        Group::new(Role::Frame(None), vec![Item::Shape(plate)]).drawing(Subject {
+    let plate = boxed(Purpose::Plate, body, None);
+    vec![Item::Group(subject_group(
+        Role::Frame(None),
+        vec![Item::Shape(plate)],
+        Subject {
             kind: SubjectKind::Region,
             id: "r".to_owned(),
             standing: None,
-        }),
-    )]
+        },
+    ))]
 }
 
 #[test]

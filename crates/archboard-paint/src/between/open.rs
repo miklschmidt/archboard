@@ -11,7 +11,7 @@ use std::collections::HashMap;
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
-    Geometry, Group, Item, Purpose, Role, Shape, Stroke, Token, Transform, Viewport,
+    Geometry, Group, Item, Paint, Purpose, Role, Shape, Stroke, Token, Transform, Viewport,
 };
 
 use super::ease::{carried, ease_out, phase};
@@ -271,16 +271,36 @@ impl Opening {
 pub(super) fn edge(area: Rect, solid: f64) -> Item {
     let layer = |(width, most): (f64, f64)| {
         let stroke = Stroke {
+            paint: Token::DiagramText.into(),
+            width: Some(width),
             opacity: Some(most * solid),
-            ..Stroke::new(Token::DiagramText, width)
+            cap: None,
+            join: None,
+            dashes: Vec::new(),
+            dash_offset: None,
         };
-        Item::Shape(
-            Shape::rect(Purpose::Plate, area, Some(EDGE_CORNER))
-                .unfilled()
-                .stroked(stroke),
-        )
+        Item::Shape(outline(area, EDGE_CORNER, stroke))
     };
     Item::Group(Group::new(Role::Marks, EDGE.map(layer).to_vec()))
+}
+
+/// A box drawn as its outline alone, its corners rounded, in a stroke.
+pub(super) fn outline(area: Rect, corner: f64, stroke: Stroke) -> Shape {
+    Shape {
+        purpose: Purpose::Plate,
+        geometry: Geometry::Rect {
+            rect: area,
+            radius: Some(corner),
+        },
+        fill: Some(Paint::None),
+        fill_opacity: None,
+        stroke: Some(stroke),
+        pointer: None,
+        clip: None,
+        marker: None,
+        start_marker: None,
+        members: Vec::new(),
+    }
 }
 
 #[cfg(test)]

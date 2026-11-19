@@ -5,40 +5,33 @@ use crate::between::{Heading, PHASES};
 use crate::cpu::CpuCanvas;
 use crate::palette::Theme;
 use crate::passage::Side;
-use crate::testing::painting;
+use crate::testing::{filled, painting, stroke, subject_group, traced};
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{
-    Group, Item, PathStep, Purpose, Role, Shape, Stroke, Subject, SubjectKind, Token,
-};
+use archboard_scene::scene::{Item, PathStep, Purpose, Role, Subject, SubjectKind, Token};
 
 fn card(id: &str, x: f64) -> Item {
-    Item::Group(
-        Group::new(
-            Role::Frame(None),
-            vec![Item::Shape(
-                Shape::rect(
-                    Purpose::Plate,
-                    Rect {
-                        x,
-                        y: 30.0,
-                        width: 20.0,
-                        height: 20.0,
-                    },
-                    None,
-                )
-                .filled(Token::DiagramText),
-            )],
-        )
-        .drawing(Subject {
+    Item::Group(subject_group(
+        Role::Frame(None),
+        vec![Item::Shape(filled(
+            Purpose::Plate,
+            Rect {
+                x,
+                y: 30.0,
+                width: 20.0,
+                height: 20.0,
+            },
+            Token::DiagramText,
+        ))],
+        Subject {
             id: id.to_owned(),
             kind: SubjectKind::Node,
             standing: None,
-        }),
-    )
+        },
+    ))
 }
 
 fn picture() -> Vec<Item> {
-    let line = Shape::path(
+    let line = traced(
         Purpose::Line,
         vec![
             PathStep::Move {
@@ -48,18 +41,19 @@ fn picture() -> Vec<Item> {
                 to: Point { x: 150.0, y: 40.0 },
             },
         ],
-    )
-    .unfilled()
-    .stroked(Stroke::new(Token::DiagramText, 2.0));
+        stroke(Token::DiagramText, 2.0),
+    );
     vec![
         card("old", 150.0),
-        Item::Group(
-            Group::new(Role::Line(None), vec![Item::Shape(line)]).drawing(Subject {
+        Item::Group(subject_group(
+            Role::Line(None),
+            vec![Item::Shape(line)],
+            Subject {
                 id: "line".to_owned(),
                 kind: SubjectKind::Edge,
                 standing: None,
-            }),
-        ),
+            },
+        )),
     ]
 }
 

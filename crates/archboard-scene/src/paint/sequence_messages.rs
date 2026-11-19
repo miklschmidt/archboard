@@ -16,7 +16,7 @@ use crate::paint::styles::{
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
-use crate::scene::traffic::{pulse_span, with_light_room};
+use crate::scene::turn_distance;
 use crate::scene::{
     Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke,
     SubjectKind, TrafficMark,
@@ -183,8 +183,7 @@ pub(super) struct Crossing {
 
 /// The clock for a drawing whose turns cross lines of some lengths, in order.
 pub(super) fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
-    let distance =
-        lengths.iter().fold(0.0, |sum, length| sum + length) + with_light_room(pulse_span());
+    let distance = turn_distance(lengths);
     let speed = js::js_max(
         clock.traffic_speed * PULSE_PACE,
         distance / (clock.cycle_cap_ms / 1000.0),

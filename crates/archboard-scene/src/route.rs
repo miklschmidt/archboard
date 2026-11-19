@@ -8,7 +8,7 @@ use crate::js;
 const CHORDS: u32 = 16;
 
 /// How long one segment is along its ink.
-pub fn segment_length(from: Point, segment: &Segment) -> f64 {
+pub(crate) fn segment_length(from: Point, segment: &Segment) -> f64 {
     if let Segment::Line { to } = segment {
         return js::hypot(to.x - from.x, to.y - from.y);
     }

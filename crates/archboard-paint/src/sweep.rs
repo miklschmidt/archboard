@@ -258,10 +258,11 @@ mod tests {
     use super::{Sweep, Timing};
     use archboard_scene::geometry::Point;
     use archboard_scene::scene::{
-        Atlas, Colour, Group, Item, PathStep, Purpose, Role, Scene, Shape, Stroke, Subject,
-        SubjectKind, Token,
+        Atlas, Colour, Item, PathStep, Purpose, Role, Scene, Subject, SubjectKind, Token,
     };
     use std::collections::HashMap;
+
+    use crate::testing::{stroke, subject_group, traced};
 
     fn route(purpose: Purpose) -> Item {
         let steps = vec![
@@ -272,25 +273,19 @@ mod tests {
                 to: Point { x: 240.0, y: 0.0 },
             },
         ];
-        Item::Shape(
-            Shape::path(purpose, steps)
-                .unfilled()
-                .stroked(Stroke::new(Token::Border, 1.2)),
-        )
+        Item::Shape(traced(purpose, steps, stroke(Token::Border, 1.2)))
     }
 
     fn edge(id: &str) -> Item {
-        Item::Group(
-            Group::new(
-                Role::Line(None),
-                vec![route(Purpose::Halo), route(Purpose::Line)],
-            )
-            .drawing(Subject {
+        Item::Group(subject_group(
+            Role::Line(None),
+            vec![route(Purpose::Halo), route(Purpose::Line)],
+            Subject {
                 kind: SubjectKind::Edge,
                 id: id.to_owned(),
                 standing: None,
-            }),
-        )
+            },
+        ))
     }
 
     fn scene(body: Vec<Item>) -> Scene {

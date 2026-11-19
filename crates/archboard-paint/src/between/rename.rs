@@ -75,6 +75,8 @@ mod tests {
         Atlas, Clip, ClipId, Colour, Definition, Group, Item, Mask, MaskId, Role, Scene, Shape,
     };
 
+    use crate::testing::boxed;
+
     fn rect() -> Rect {
         Rect {
             x: 0.0,
@@ -86,8 +88,10 @@ mod tests {
 
     #[test]
     fn a_renamed_scene_refers_to_the_names_it_defines() {
-        let mut clipped = Shape::rect(archboard_scene::scene::Purpose::Plate, rect(), None);
-        clipped.clip = Some(ClipId { card: "a".into() });
+        let clipped = Shape {
+            clip: Some(ClipId { card: "a".into() }),
+            ..boxed(archboard_scene::scene::Purpose::Plate, rect(), None)
+        };
         let mut group = Group::new(Role::Marks, vec![Item::Shape(clipped)]);
         group.mask = Some(MaskId { line: "a".into() });
         let mut scene = Scene {

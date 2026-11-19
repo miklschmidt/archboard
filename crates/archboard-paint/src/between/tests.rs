@@ -424,7 +424,10 @@ fn a_shadow_rides_under_the_card_that_casts_it() {
         let Item::Group(group) = shadow() else {
             unreachable!("a shadow is a group");
         };
-        Item::Group(group.standing_with(vec!["a".to_owned()]))
+        Item::Group(Group {
+            members: vec!["a".to_owned()],
+            ..group
+        })
     };
     let (here, there) = (
         rect(10.0, 10.0, 100.0, 50.0),
