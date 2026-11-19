@@ -8,9 +8,9 @@ import fs from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { z } from "zod";
-import { durationMs, skillEvalMs } from "@archboard/timing";
+import { durationMs, waitUntil } from "@archboard/timing";
 import type { RunPaths } from "#runtime/evaluation/run-world/processes/isolation.ts";
-import { ownProcess, pause, settlesWithin } from "#runtime/evaluation/processes/process.ts";
+import { ownProcess, settlesWithin } from "#runtime/evaluation/processes/process.ts";
 
 /** A running server. */
 interface OwnedServer {
@@ -71,25 +71,22 @@ async function awaitHealthy(
 	log: string,
 	signal = new AbortController().signal,
 ): Promise<void> {
-	const deadline = Date.now() + skillEvalMs("serverStartup");
-	while (Date.now() < deadline) {
+	const healthy = await waitUntil("skillEval.serverStartup", async () => {
 		signal.throwIfAborted();
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
 		if (await settlesWithin(child.exited, 0)) {
 			throw new Error(
 				`the evaluation server died before answering /health (exit ${child.exitCode ?? child.signalCode}); see ${log}`,
 			);
 		}
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
 		const pid = await healthPid(url);
 		signal.throwIfAborted();
-		if (pid === child.pid) return;
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		await pause(skillEvalMs("healthPoll"));
+		return pid === child.pid ? true : undefined;
+	});
+	if (!healthy.ok) {
+		throw new Error(
+			`the evaluation server did not answer /health within ${healthy.boundSeconds * 1000}ms; see ${log}`,
+		);
 	}
-	throw new Error(
-		`the evaluation server did not answer /health within ${skillEvalMs("serverStartup")}ms; see ${log}`,
-	);
 }
 
 /**
