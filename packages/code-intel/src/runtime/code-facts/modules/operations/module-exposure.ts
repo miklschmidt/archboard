@@ -502,8 +502,10 @@ async function passedExposed(search: Search, facts: SyntaxFacts): Promise<Expose
 }
 
 /**
- * The module a bound path names: a directory, or the file that stands for
- * the directory that holds it, such as an `index.ts` or an `__init__.py`.
+ * The module a bound path names: a directory, or the entry file that stands
+ * for the directory that holds it, such as an `index.ts`, an `__init__.py` or
+ * a chart's `Chart.yaml`. Any other file, a Compose file or a plain manifest
+ * among them, names no module.
  * @param bound The path, relative to its checkout.
  * @param kind Whether it is a file or a directory.
  * @returns The module's directory, or undefined when the path names no module.
@@ -512,8 +514,7 @@ function moduleOf(bound: string, kind: "file" | "directory"): string | undefined
 	if (kind === "directory") return bound;
 	const slash = bound.lastIndexOf("/");
 	const name = bound.slice(slash + 1);
-	const entry = RULES.some((rule) => rule.entry(name)) || /\.ya?ml$/u.test(name);
-	return entry ? bound.slice(0, Math.max(slash, 0)) : undefined;
+	return RULES.some((rule) => rule.entry(name)) ? bound.slice(0, Math.max(slash, 0)) : undefined;
 }
 
 /**
