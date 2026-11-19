@@ -4,6 +4,7 @@ title: Fix with Codex sets up a missing language server
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:02:00Z'
+updated_date: '2026-11-19T02:25:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -56,3 +57,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #2 Fix with Codex starts the setup in the conversation of the checkout that misses the server, with the shared brief
 - [ ] #3 The Codex text workbench browser test covers the routing to the right checkout
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on workspace (the private rules file behind the brief), Model reading (Measures files beside ModelMeasures.tsx), Canonical model reader (the language-server-fix context file), Application composition (checkoutOf and the failure notice), Browser (tests) and their holders. All serve the planned Application frame to brief path; no architecture change. Exception recorded in the proposal history (operation task-646-09-exceptions). Unbound: DESIGN.md and the site's install page.
+<!-- SECTION:NOTES:END -->
