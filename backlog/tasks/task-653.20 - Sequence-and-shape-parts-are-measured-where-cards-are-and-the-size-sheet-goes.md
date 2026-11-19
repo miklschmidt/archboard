@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-19T22:44:00Z'
+updated_date: '2026-11-19T23:56:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -72,6 +72,8 @@ Outside the slice: archboard-layout (9 files, import path paint::design::X -> pa
 Gates (nix develop, after merging deepen/module-depth at 2bb9ddd5e0): build, cargo test --workspace, cargo clippy --workspace --all-targets -D warnings, types, lint:all, format:check, format:core pass; test:modules 5357 pass, test:repository 182 pass, test:system 228 pass. Site: paint and diagrams redrawn (diagrams differ only in the step ids the import mints, reverted), site build passes with 18 pages' links resolving; agent-browser audit of the hero window, the zoom demo (ring on Inventory service) and the sequence tab: painted and drawn as before.
 
 Footprint --fail-outside exits 1: 16 modules changed outside the draft sL6y1FLr (Design constants, Canvas drawing, Layout engines, Sequence layout, Measured text, Sequence painter, Slab surfaces, Block layout, Export frame, renderer, Flowchart, Edge tab, archboard-scene, archboard-layout, archboard-flows, archboard-render); ADR 0088 and this ticket unbound. Vault anchors that now point at gone code: Flowchart -> Design constants and Sequence layout -> Measured text (card.rs), Sequence layout -> Design constants (ends_for), the Draw a sequence step's anchor (card.rs), and Design constants' binding (paint/design.rs).
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit 39699a8e15), listed in the merge commit. Open for TASK-653.21 and the final pass: Painting and Measured text carry RELATIONSHIP_UNDRAWN (seven callers use answers in Painting's own files; Measured text called from Painting's build.rs), which needs a part of Painting; the draft's semantic check shows 23 errors, none from this slice.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
