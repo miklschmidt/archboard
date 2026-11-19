@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // The broad corpus protects meaning and clearance, independent of a layout
 // engine's choice of ranks, shared ports and route shapes. Numeric comparisons
-// are reported by docs/design/wide-board-layout-fixtures/measure.ts.
+// are reported by packages/renderer/tests/runtime/support/wide-boards/measure.ts.
 
 import { expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
@@ -11,9 +11,9 @@ import { defaultSemanticPolicy } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import first from "../../../../../../docs/design/wide-board-layout-fixtures/flask-map-1.content.json";
-import third from "../../../../../../docs/design/wide-board-layout-fixtures/flask-map-3.content.json";
-import systemMap from "../../../../../../docs/design/wide-board-layout-fixtures/system-map.content.json";
+import first from "../../support/wide-boards/flask-map-1.content.json";
+import third from "../../support/wide-boards/flask-map-3.content.json";
+import systemMap from "../../support/wide-boards/system-map.content.json";
 
 // Fit, route length, bends and shared corridors remain measured by the corpus
 // script and recorded in the adoption report. They do not impose one engine's

@@ -7,17 +7,17 @@
 // render early in a run can land on workers the engine has not warmed yet.
 //
 // Run from the repository root:
-//   bun docs/design/wide-board-layout-fixtures/timing.ts [runs]
+//   bun packages/renderer/tests/runtime/support/wide-boards/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { defaultLayoutEngine } from "@archboard/model/render-reply";
-import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
+import { orderedFixture } from "../ordered-fixture.ts";
 import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
 
-const fixtures = "docs/design/wide-board-layout-fixtures";
+const fixtures = import.meta.dir;
 const vault = ".archboard/vault";
 const runs = Number(process.argv[2] ?? 5);
 console.log(`Layout: ${defaultLayoutEngine()}`);

@@ -6,8 +6,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-19T15:40:57.676Z",
   "predecessor": "LzXvT7U7",
-  "predecessorRevision": "28ed35da1f2437b7f5cfd359d99e84040dd19af918db8ed6e34ace9566fd2801",
-  "baseline": "75bb2953842c637050341983680ef59bbf26f8c1",
+  "predecessorRevision": "9a21a78a7c4eb3703d3e496744004c52f9eb0fb392e0db599c1bce11604599b7",
+  "baseline": "37c121b87b81c3a6033feb7c21a450c5942e2580",
   "changes": [
     {
       "type": "add",

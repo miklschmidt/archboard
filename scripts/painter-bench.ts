@@ -1,4 +1,4 @@
-// Time the painters on one picture of a corpus (docs/design/painter-webgl-fallback.md).
+// Time the painters on one picture of a corpus.
 // A page paints the picture under a moving camera for a number of frames and
 // reports the gap between frames, the time of each frame, and how much of it
 // drew on the canvas and how much rendered. A strip canvas cuts its strips

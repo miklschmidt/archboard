@@ -74,5 +74,4 @@ but describe the symptom rather than the mechanism: "a label multiplied on
 every round trip until the edge collapsed" rather than the name of the function
 that did it. Task ids are durable and worth citing; source locations are not.
 
-Measurements belong in a design document under `docs/design/`, which is dated,
-disposable and expected to age. An ADR is neither.
+Measurements age, so they belong in the Backlog task that took them, not in an ADR.
