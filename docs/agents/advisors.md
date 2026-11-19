@@ -6,10 +6,10 @@ Each advisor answers alone first, and then it sees the other advisor's answer.
 
 The two advisors in this repository:
 
-| Advisor | Provider | Model |
-|---|---|---|
-| Astra | Codex | The latest Codex Astra model, for example `gpt-6.2-astra` |
-| Fable | Claude | The latest Claude Fable model, for example `claude-fable-5-2` |
+| Advisor | Provider | Model                                                         |
+| ------- | -------- | ------------------------------------------------------------- |
+| Astra   | Codex    | The latest Codex Astra model, for example `gpt-6.2-astra`     |
+| Fable   | Claude   | The latest Claude Fable model, for example `claude-fable-5-2` |
 
 Pick the latest model of each family that the harness lists.
 Use each model's default reasoning effort.
