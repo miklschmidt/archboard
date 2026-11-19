@@ -263,7 +263,7 @@ Each section keeps its row on screen in view with `useRevealedRow`: the tree its
 `plate` is a ringed plane in the ground's tone.
 A count is `Badge` with `variant="count"` and `size="technical"`.
 
-Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `columnMs("popoverIn")` and `popoverOut` on the root element when the page starts.
+Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `columnMs("popoverIn")` and `columnMs("popoverOut")` on the root element when the page starts.
 
 Every scrollbar takes its look from one rule in the base layer of `app.css`, the Quiet Scrollbar Rule in DESIGN.md. Do not style or hide a scrollbar in a component. `scrollbar-gutter` stays free, because it reserves room and changes no look.
 
