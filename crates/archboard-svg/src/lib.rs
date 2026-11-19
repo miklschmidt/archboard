@@ -11,7 +11,6 @@ mod definitions;
 mod glyphs;
 mod groups;
 mod legend;
-mod legs;
 mod path;
 mod pulse;
 mod shapes;
