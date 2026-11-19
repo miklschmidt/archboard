@@ -66,6 +66,8 @@ interface Judged {
 	readonly module: ModuleReading;
 	readonly checkout: RepoCheckout;
 	readonly owners: Owners;
+	/** Whether the module is code the repository does not own, whose exports get no verdict. */
+	readonly external: boolean;
 }
 
 /**
@@ -184,6 +186,7 @@ async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<
 				symbol: name.definition.symbol,
 			}),
 		label: describeSubject(subject),
+		external: judged.external,
 	});
 	outcome.findings.push(...depth.findings.map((finding) => ({ ...site, ...finding })));
 	const { exports, logic } = depth;

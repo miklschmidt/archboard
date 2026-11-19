@@ -18,6 +18,10 @@
 // which no file uses, and `probe`, which only a test inside the module uses.
 // `vendor` declares its interface in `package.json` exports, and `gate` in
 // an index file: a name only another of their files uses stays unused.
+//
+// `thirdparty` is code the repository does not own: the model marks its
+// module `Outside` `external`. Its `wrap` only passes its call on, and its type `Spare` is
+// unused, yet it gets no verdict.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
@@ -50,14 +54,21 @@ function git(...args: string[]): void {
  * @param order Its order.
  * @param path Its bound path; none leaves it unbound.
  * @param calls The modules it calls.
+ * @param kind Its kind.
  */
-function module(id: string, order: number, path?: string, calls: readonly string[] = []): void {
+function module(
+	id: string,
+	order: number,
+	path?: string,
+	calls: readonly string[] = [],
+	kind = "module",
+): void {
 	write(vault, {
 		[`${id}.module.json`]: JSON.stringify({
 			schemaVersion: 1,
 			id: `Shop#${id}`,
 			name: id,
-			kind: "module",
+			kind,
 			order,
 			...(path === undefined ? {} : { binding: { repo: SHOP, path } }),
 			outgoing: calls.map((to, index) => ({
@@ -141,8 +152,19 @@ beforeAll(async () => {
 		].join("\n"),
 		"src/sdk/index.ts":
 			"export function publish(value: number): number {\n\treturn value + 1;\n}\n",
+		"src/thirdparty/index.ts": [
+			"function inner(value: number): number {",
+			"\treturn value + 9;",
+			"}",
+			"export function wrap(value: number): number {",
+			"\treturn inner(value);",
+			"}",
+			"export type Spare = number;",
+			"",
+		].join("\n"),
 		"src/server/main.ts": [
 			'import { put, Relay } from "../relay";',
+			'import { wrap } from "../thirdparty";',
 			'import { format, save, twice } from "../kit";',
 			'import { used } from "../util";',
 			'import { HttpPort, type Port } from "../port";',
@@ -151,7 +173,7 @@ beforeAll(async () => {
 			"\tnew Relay({ send: (id) => void sink.send(id) }).send(format(twice(1)));",
 			'\tawait put("a");',
 			'\tawait save("b");',
-			"\treturn String(used(2));",
+			"\treturn String(used(wrap(2)));",
 			"}",
 			"void main();",
 			"",
@@ -215,6 +237,7 @@ beforeAll(async () => {
 	module("Ledger", 91, "src/ledger");
 	module("Vendor", 92, "src/vendor");
 	module("Gate", 93, "src/gate");
+	module("Outside", 94, "src/thirdparty", [], "external");
 	// A consumer outside the checkout, as the users of a published package are.
 	module("Consumer", 100, undefined, ["Sdk"]);
 	git("add", "-A");
@@ -312,7 +335,26 @@ const DEPTH = new Set([
 	"EXPOSED_VALUE",
 	"CODE_PASS_THROUGH",
 	"MODULE_SHALLOW",
+	"INTERFACE_UNDECLARED",
 ]);
+
+test("a folder module with no declared interface says how many of its names files outside it use", async () => {
+	const answer = await check();
+	expect(judged(answer, "INTERFACE_UNDECLARED")).toEqual([["Ledger", undefined, "information"]]);
+	const [finding] = answer.findings.filter((each) => each.code === "INTERFACE_UNDECLARED");
+	// `seal` is used outside, `freeze` only by `epoch.ts` beside it; `orphan` and `probe` by none.
+	expect(finding?.message).toContain("Files outside it use 1 of its 4 exported names");
+	expect(finding?.message).toContain("only its own files import 1: freeze");
+});
+
+test("a module of kind external keeps its counts and gets no verdict", async () => {
+	const answer = await check();
+	const outside = answer.findings.filter((each) => each.subject?.name === "Outside");
+	expect(outside.filter((each) => DEPTH.has(each.code))).toEqual([]);
+	const depth = answer.depth?.find((each) => each.subject.name === "Outside");
+	expect(depth?.exports).toEqual({ functions: 1, classes: 0, methods: 0, values: 0, types: 1 });
+	expect(depth?.names.map((each) => each.name)).toEqual(["wrap", "Spare"]);
+});
 
 test("one finding per name, grouped by module", async () => {
 	const answer = await check();

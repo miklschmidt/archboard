@@ -8,7 +8,8 @@
 // which `svg` calls from a method of its own named `route`. In the crate
 // `paint`, files outside the folder of the module `between` call `departure`,
 // a function of the module's file of the same name, and `frame_of`. The crate
-// `wasm` exports functions to JavaScript through `#[wasm_bindgen]`. `svg` calls
+// `wasm` exports functions to JavaScript through `#[wasm_bindgen]`, and types
+// to TypeScript through ts-rs's `#[derive(TS)]`. `svg` calls
 // `hidden::made`, which a macro of `hidden` defines, so the check cannot tell
 // which name of `hidden` it uses.
 
@@ -142,7 +143,17 @@ beforeAll(async () => {
 		"crates/wasm/Cargo.toml": manifest("wasm"),
 		"crates/wasm/src/lib.rs": [
 			"use wasm_bindgen::prelude::*;",
+			"use ts_rs::TS;",
 			"pub mod layout;",
+			"#[derive(Clone, Debug, PartialEq, TS)]",
+			"#[ts(export)]",
+			"pub struct Legend {",
+			"    pub rows: u32,",
+			"}",
+			"#[derive(ts_rs::TS)]",
+			"pub enum Mode {",
+			"    Light,",
+			"}",
 			"#[wasm_bindgen(js_name = sourceHash)]",
 			"pub fn source_hash() -> u32 {",
 			"    7",
@@ -230,7 +241,7 @@ test("a call of a Rust function that shares its name with its module reaches the
 	expect(unusedOn("Motion")).toEqual([]);
 });
 
-test("an item exported to JavaScript through #[wasm_bindgen] is called by the language", () => {
+test("an item exported to JavaScript through #[wasm_bindgen], or to TypeScript through #[derive(TS)], is used by the host language", () => {
 	expect(unusedOn("Wasm")).toEqual([["helper", "warning"]]);
 });
 

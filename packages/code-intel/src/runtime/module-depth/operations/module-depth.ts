@@ -27,7 +27,10 @@
 // `EXPOSED_UNUSED`, `REEXPORT_PASS_THROUGH`, `EXPOSED_VALUE`,
 // `EXPOSED_VALUE_COMPUTED` (computed-math.ts) or `CODE_PASS_THROUGH`. In a
 // module that declares no interface, another of its files that imports a name
-// keeps it used (sibling-uses.ts). Members the language calls itself, a constructor or a
+// keeps it used, and `INTERFACE_UNDECLARED`, information, says how many of its
+// names files outside it use (sibling-uses.ts). A module the model marks
+// `external`, code the repository does not own, is counted and never judged
+// (TASK-646.18). Members the language calls itself, a constructor or a
 // `toString`, are no export a caller names: each adapter marks them
 // (`Definition.calledByLanguage`), and they are neither counted nor judged. A method's uses run through values, which a syntax read cannot
 // follow, so no method is judged unused, and an implementation used through
@@ -74,7 +77,7 @@ import {
 	nameFinding,
 	SHALLOW_CODES,
 } from "#runtime/module-depth/operations/name-findings.ts";
-import { siblingUses } from "#runtime/module-depth/operations/sibling-uses.ts";
+import { siblingUses, undeclaredFinding } from "#runtime/module-depth/operations/sibling-uses.ts";
 import type { ModuleExport } from "#shared/protocol/code-check.ts";
 
 /**
@@ -483,26 +486,45 @@ function rolledUp(reading: DepthReading, name: ExposedName, kind: NameKind): boo
 }
 
 /**
- * Measure one bound module from its code, and judge its exports.
+ * The findings on a module's exports: one per name at most, the roll-up of a
+ * shallow module, and the names only its own files use where it declares no
+ * interface.
+ * @param reading The module.
+ * @param names The counted names.
+ * @param judged Each judged export with its kind, in the order the module exports them.
+ * @returns The findings, grouped.
+ */
+async function depthFindings(
+	reading: DepthReading,
+	names: CountedNames,
+	judged: readonly (readonly [ExposedName, NameKind])[],
+): Promise<DepthFinding[]> {
+	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
+	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
+	const judging = { ...reading, unread, siblings: await siblingUses(reading) };
+	const findings: DepthFinding[] = [];
+	const rollUp = new Map<string, boolean>();
+	for (const [name, kind] of judged) {
+		// oxlint-disable-next-line no-await-in-loop -- one name at a time keeps the findings in export order
+		const finding = await nameFinding(judging, name, kind);
+		if (finding !== undefined) findings.push(finding);
+		if (rolledUp(reading, name, kind))
+			rollUp.set(name.name, finding !== undefined && SHALLOW_CODES.has(finding.code));
+	}
+	const exported = judged.flatMap(([name, kind]) => (kind === "method" ? [] : [name]));
+	const module = [shallow(reading, rollUp), undeclaredFinding(judging, exported)];
+	return [...findings, ...module.filter((each) => each !== undefined)];
+}
+
+/**
+ * Measure one bound module from its code, and judge its exports, unless the
+ * module is code the repository does not own.
  * @param reading What the code check read of the module.
  * @returns The counts, the findings, and the names it judged.
  */
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
 	const { counts, judged, listed } = await countExports(reading, names);
-	const files = names.languages.flatMap((language) => JUDGED_FILES.get(language) ?? []);
-	const unread = reading.unread.filter((file) => files.some((each) => each.test(file)));
-	const siblings = await siblingUses(reading);
-	const findings: DepthFinding[] = [];
-	const rollUp = new Map<string, boolean>();
-	for (const [name, kind] of judged) {
-		// oxlint-disable-next-line no-await-in-loop -- one name at a time keeps the findings in export order
-		const finding = await nameFinding({ ...reading, unread, siblings }, name, kind);
-		if (finding !== undefined) findings.push(finding);
-		if (rolledUp(reading, name, kind))
-			rollUp.set(name.name, finding !== undefined && SHALLOW_CODES.has(finding.code));
-	}
-	const shallowFinding = shallow(reading, rollUp);
 	return {
 		languages: names.languages,
 		unjudged: names.unjudged,
@@ -510,7 +532,7 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 		listed,
 		exports: counts,
 		logic: await logicOf(reading),
-		findings: shallowFinding === undefined ? findings : [...findings, shallowFinding],
+		findings: reading.external ? [] : await depthFindings(reading, names, judged),
 	};
 }
 

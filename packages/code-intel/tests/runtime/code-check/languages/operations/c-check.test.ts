@@ -227,7 +227,8 @@ test("anchors, binding symbols and the relationships between parts bound to C an
 			// The ledger's header only declares the audit, and its source defines none of it.
 			"RELATIONSHIP_UNDRAWN pL information",
 			"CALLER_UNDRAWN pR warning",
-			// The notifier, which no file outside `src` calls, and the read is complete.
+			// `src` has no include directory, and only `mail.c` beside it uses the notifier.
+			"INTERFACE_UNDECLARED pK information",
 		].toSorted(),
 	);
 	// Nothing was read as text.

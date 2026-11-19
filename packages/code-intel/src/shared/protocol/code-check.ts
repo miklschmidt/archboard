@@ -68,6 +68,10 @@
 // languages keep the one `EXPOSED_UNUSED` on the container. TASK-646.06 makes
 // it `EXPOSED_VALUE_COMPUTED`, a warning, on an exported value or getter on
 // which two or more modules write the same math, with each line as evidence.
+// TASK-646.18 adds `INTERFACE_UNDECLARED`, information, on a folder module
+// that declares no interface where only its own files use some of its names,
+// and gives a module the model marks `external` its counts and no finding on
+// its exports.
 
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";

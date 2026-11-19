@@ -32,7 +32,8 @@
 // syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
 // `Display::fmt`, are called by the language: no caller names them, and
 // so is an item `#[wasm_bindgen]` exports to JavaScript, or a member of an
-// `impl` block it exports (TASK-646.16). An
+// `impl` block it exports (TASK-646.16), and a type that derives ts-rs's `TS`,
+// which the bindings it writes name in TypeScript (TASK-646.18). An
 // associated function, which takes no `self`, and an associated constant
 // belong to the type and are named through it, as `Relay::new` is. A
 // function whose body only passes its call on names its callee's root
@@ -164,14 +165,19 @@ const MACRO_EXPORT = /^#\[macro_export\]$/u;
 /** `#[wasm_bindgen]`, with or without arguments, which exports an item to JavaScript. */
 const WASM_BINDGEN = /^#\[wasm_bindgen(?:\(.*\))?\]$/u;
 
+/** A `#[derive(...)]` that lists ts-rs's `TS`, which exports a type to TypeScript. */
+const DERIVE_TS = /^#\[derive\((?:.*,)?(?:ts_rs::)?TS(?:,.*)?\)\]$/u;
+
 /**
- * What an item exported to JavaScript carries: JavaScript calls it, and no
- * Rust caller names it.
+ * What an item exported to the host language carries, to JavaScript by
+ * `#[wasm_bindgen]` or to TypeScript by ts-rs: the host uses it, and no Rust
+ * caller needs to name it.
  * @param node The item, or the `impl` block that holds it.
  * @returns The mark, or nothing.
  */
 function hostCalled(node: Node): Pick<Definition, "calledByLanguage"> {
-	return attributed(node, WASM_BINDGEN) ? { calledByLanguage: true } : {};
+	const exported = attributed(node, WASM_BINDGEN) || attributed(node, DERIVE_TS);
+	return exported ? { calledByLanguage: true } : {};
 }
 
 /**
