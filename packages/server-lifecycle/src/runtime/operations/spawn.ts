@@ -15,7 +15,7 @@ import {
 import { readPidFile, removePidFile } from "#runtime/store/pidfile.ts";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
-import { serverLifecycleMs } from "@archboard/timing";
+import { waitUntil } from "@archboard/timing";
 import { SERVER_STARTUP_TERMINAL_FD_ENV } from "#runtime/protocol/server-startup-terminal.ts";
 import { readProcessObservation } from "@archboard/process/observation";
 import {
@@ -350,44 +350,59 @@ function startFailureOf(spawned: SpawnedServer, deferred: DeferredFailure): Erro
 }
 
 /**
+ * One look at whether the spawned server identifies itself, or at whatever stopped it.
+ * @param spawned The spawned server.
+ * @param deferred Where a concurrent-owner refusal is kept for the bound.
+ * @returns The server URL once it answers as itself, the failure acted on, or undefined to look again.
+ */
+async function readinessOf(
+	spawned: SpawnedServer,
+	deferred: DeferredFailure,
+): Promise<Reached | undefined> {
+	const health = await healthOrNull().catch((error: unknown) =>
+		error instanceof OtherSourceError ? error : null,
+	);
+	if (health instanceof OtherSourceError) {
+		// A server of another checkout's source took the port first, so this one cannot listen.
+		return cleanupFailedStart(spawned, health);
+	}
+	if (isServerHealth(health)) {
+		markServerIdentityVerified();
+		spawned.protocol.destroy();
+		spawned.child.unref();
+		process.stderr.write(
+			`Archboard server running at ${ARCHBOARD_BROWSER_URL}. Open it in a browser only for live canvas work and capture.\n`,
+		);
+		return { url: ARCHBOARD_BROWSER_URL, spawned: true };
+	}
+	const failure = startFailureOf(spawned, deferred);
+	return failure === null ? undefined : cleanupFailedStart(spawned, failure);
+}
+
+/**
  * Poll `/health` until the spawned server identifies itself, or fail with
  * whatever stopped it.
  * @param spawned The spawned server.
- * @param timeoutMs How long readiness may take.
+ * @param timeoutMs How long readiness may take, when not the start's own bound.
  * @returns The server URL once it answers as itself.
  */
-async function awaitServerReadiness(spawned: SpawnedServer, timeoutMs: number): Promise<Reached> {
-	const deadline = Date.now() + timeoutMs;
+async function awaitServerReadiness(
+	spawned: SpawnedServer,
+	timeoutMs: number | undefined,
+): Promise<Reached> {
 	const deferred: DeferredFailure = { failure: null };
-	while (Date.now() < deadline) {
-		// oxlint-disable-next-line no-await-in-loop -- readiness is one probe after another until the deadline
-		const health = await healthOrNull().catch((error: unknown) =>
-			error instanceof OtherSourceError ? error : null,
-		);
-		if (health instanceof OtherSourceError) {
-			// A server of another checkout's source took the port first, so this one cannot listen.
-			return cleanupFailedStart(spawned, health);
-		}
-		if (isServerHealth(health)) {
-			markServerIdentityVerified();
-			spawned.protocol.destroy();
-			spawned.child.unref();
-			process.stderr.write(
-				`Archboard server running at ${ARCHBOARD_BROWSER_URL}. Open it in a browser only for live canvas work and capture.\n`,
-			);
-			return { url: ARCHBOARD_BROWSER_URL, spawned: true };
-		}
-		const failure = startFailureOf(spawned, deferred);
-		if (failure !== null) {
-			return cleanupFailedStart(spawned, failure);
-		}
-		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, 250));
-	}
+	const ready = await waitUntil(
+		"serverLifecycle.startupReadiness",
+		() => readinessOf(spawned, deferred),
+		timeoutMs === undefined ? {} : { boundMs: timeoutMs },
+	);
+	if (ready.ok) return ready.value;
 	return cleanupFailedStart(
 		spawned,
 		deferred.failure ??
-			unreachableError(`auto-started server did not become healthy within ${timeoutMs}ms`),
+			unreachableError(
+				`auto-started server did not become healthy within ${Math.round(ready.boundSeconds * 1000)}ms`,
+			),
 	);
 }
 
@@ -419,7 +434,6 @@ async function ensureServerRunning(options: EnsureOptions = {}): Promise<EnsureR
  * @returns The server URL and whether this call started the server.
  */
 async function reachOrStartServer(options: EnsureOptions): Promise<Reached> {
-	const timeoutMs = options.timeoutMs ?? serverLifecycleMs("startupReadiness");
 	const existing = await healthOrNull();
 	if (existing) {
 		if (!isServerHealth(existing)) {
@@ -432,7 +446,7 @@ async function reachOrStartServer(options: EnsureOptions): Promise<Reached> {
 	refuseUnlessAutoStartAllowed(options.force === true);
 	const spawned = spawnServer();
 	logger().info(`Auto-starting Archboard server (pid ${spawned.pid}) at ${ARCHBOARD_URL}`);
-	return awaitServerReadiness(spawned, timeoutMs);
+	return awaitServerReadiness(spawned, options.timeoutMs);
 }
 
 export { type EnsureResult, ensureServerRunning, refuseUnstartableServer };
