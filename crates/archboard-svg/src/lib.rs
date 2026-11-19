@@ -40,16 +40,6 @@ use shapes::HALO_CLASS;
 use write::Writer;
 use xml::{Attributes, coord, empty, escape_xml};
 
-/// Why a document could not be written.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DocumentError(pub String);
-
-impl std::fmt::Display for DocumentError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
-
 const FAR_VIEW_CLASS: &str = "is-far";
 /// What selects a relationship's group of lines.
 const LINE_GROUP: &str = "[data-line-dash]";
@@ -152,12 +142,10 @@ fn token_value(
     document: &DocumentRequest,
     theme: StandaloneTheme,
     name: &str,
-) -> Result<String, DocumentError> {
+) -> Result<String, String> {
     let colors = document.theme_colors.as_ref().ok_or_else(|| {
-        DocumentError(
-            "This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme."
-                .to_owned(),
-        )
+        "This renderer host has no theme colours: it draws pictures for its own page, which take the page's colours. Ask the Archboard server for a picture in a theme."
+            .to_owned()
     })?;
     let color = |theme: StandaloneTheme| {
         let (table, word) = match theme {
@@ -165,7 +153,7 @@ fn token_value(
             _ => (&colors.light, "light"),
         };
         table.get(name).cloned().ok_or_else(|| {
-            DocumentError(format!("Missing {word} theme color {name}. Define it in packages/renderer/assets/theme.css."))
+            format!("Missing {word} theme color {name}. Define it in packages/renderer/assets/theme.css.")
         })
     };
     if theme != StandaloneTheme::Auto {
@@ -186,7 +174,7 @@ fn standing_alone(
     document: &DocumentRequest,
     theme: StandaloneTheme,
     painted: &str,
-) -> Result<String, DocumentError> {
+) -> Result<String, String> {
     let names = properties_of(painted);
     let scheme = match theme {
         StandaloneTheme::Auto => "light dark",
@@ -210,7 +198,7 @@ pub fn document(
     scene: &Scene,
     document: &DocumentRequest,
     icons: &BTreeMap<String, Vec<String>>,
-) -> Result<String, DocumentError> {
+) -> Result<String, String> {
     let names = Names::of(scene);
     let writer = Writer {
         names: &names,

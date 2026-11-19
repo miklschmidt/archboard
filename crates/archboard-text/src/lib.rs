@@ -12,10 +12,10 @@ mod outline;
 mod paragraph;
 mod shape;
 
-pub use faces::{Extent, Face};
+pub use faces::Face;
 pub use outline::{Segment, outline};
-pub use paragraph::{Line, Paragraph};
-pub use shape::{Glyph, Shaped, shape, width};
+pub use paragraph::Paragraph;
+pub use shape::{shape, width};
 
 #[cfg(test)]
 mod tests;

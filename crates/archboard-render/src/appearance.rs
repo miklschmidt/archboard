@@ -27,7 +27,7 @@ pub(crate) fn tags_of(node: &Node, policy: &Policy) -> Vec<GroupTag> {
 
 /// Which way the picture a part opens lies, from the part's kind, which is the
 /// level of that picture, against the level of the picture drawn.
-pub fn drill_direction(kind: &str, here: Option<&str>, levels: &[String]) -> DrillDirection {
+pub(crate) fn drill_direction(kind: &str, here: Option<&str>, levels: &[String]) -> DrillDirection {
     let level = |name: &str| levels.iter().position(|level| level == name);
     match (level(kind), here.and_then(level)) {
         (Some(there), Some(at)) if there == at => DrillDirection::Across,

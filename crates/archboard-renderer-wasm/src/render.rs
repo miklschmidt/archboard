@@ -7,18 +7,14 @@
 //! picture draws.
 
 use std::collections::BTreeMap;
-use std::future::Future;
-use std::pin::Pin;
 use std::rc::Rc;
-use std::task::{Context, Poll};
 
-use archboard_layout::{Solver, Unsolved};
-use archboard_render::request::RenderRequest;
+use archboard_layout::Solver;
+use archboard_render::RenderRequest;
 use archboard_render::{Host, Renderer};
 use wasm_bindgen::prelude::*;
-use wasm_bindgen_futures::JsFuture;
 
-use crate::layout::said;
+use crate::solving::{AbortSignal, Solving, said};
 
 #[wasm_bindgen(typescript_custom_section)]
 const RENDER_HOST: &str = r#"
@@ -56,92 +52,6 @@ extern "C" {
     /// Read the host's map, including getters, within the exception boundary.
     #[wasm_bindgen(catch, js_namespace = Object, js_name = entries)]
     fn icon_entries(value: &JsValue) -> Result<js_sys::Array, JsValue>;
-
-    /// What calls a solve off.
-    #[derive(Clone)]
-    type AbortController;
-
-    #[wasm_bindgen(constructor)]
-    fn new() -> AbortController;
-
-    #[wasm_bindgen(method, getter)]
-    fn signal(this: &AbortController) -> AbortSignal;
-
-    #[wasm_bindgen(method)]
-    fn abort(this: &AbortController);
-
-    /// The signal a solve is called off by.
-    pub(crate) type AbortSignal;
-
-    #[wasm_bindgen(method, getter)]
-    fn aborted(this: &AbortSignal) -> bool;
-
-    #[wasm_bindgen(method, getter)]
-    fn reason(this: &AbortSignal) -> JsValue;
-}
-
-/// One solve the host runs. Dropping it before it answers calls it off.
-pub struct Solving {
-    answer: JsFuture,
-    calling: AbortController,
-    signal: AbortSignal,
-    answered: bool,
-}
-
-impl std::fmt::Debug for Solving {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("Solving")
-            .field("answered", &self.answered)
-            .finish_non_exhaustive()
-    }
-}
-
-impl Future for Solving {
-    type Output = Result<String, Unsolved>;
-
-    fn poll(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
-        let answer = Pin::new(&mut self.answer).poll(context);
-        answer.map(|answer| {
-            self.answered = true;
-            let answer = answer.map_err(|error| {
-                if self.signal.aborted() && js_sys::Object::is(&error, &self.signal.reason()) {
-                    Unsolved::CalledOff
-                } else {
-                    Unsolved::Failed(said(&error, "A solve"))
-                }
-            })?;
-            answer
-                .as_string()
-                .ok_or_else(|| Unsolved::Failed("A solve answered no JSON".to_owned()))
-        })
-    }
-}
-
-impl Solving {
-    /// A solve the host was asked for, with the signal that calls it off.
-    pub(crate) fn asked(ask: impl FnOnce(&AbortSignal) -> Result<JsValue, JsValue>) -> Self {
-        let calling = AbortController::new();
-        let signal = calling.signal();
-        let answer = ask(&signal).map_or_else(
-            |error| js_sys::Promise::reject(&error),
-            |value| js_sys::Promise::resolve(&value),
-        );
-        Solving {
-            answer: JsFuture::from(answer),
-            calling,
-            signal,
-            answered: false,
-        }
-    }
-}
-
-impl Drop for Solving {
-    fn drop(&mut self) {
-        if !self.answered {
-            self.calling.abort();
-        }
-    }
 }
 
 impl Solver for RenderHost {

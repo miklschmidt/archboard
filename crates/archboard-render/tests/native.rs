@@ -18,7 +18,7 @@ use std::task::{Context, Poll, Waker};
 
 use archboard_graphviz::InCore;
 use archboard_layout::{Solver, Unsolved, lay_out_picture};
-use archboard_render::request::RenderRequest;
+use archboard_render::RenderRequest;
 use archboard_render::{Host, Rendered, Renderer};
 use serde::Deserialize;
 

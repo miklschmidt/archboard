@@ -36,7 +36,7 @@ fn the_critical_graphs_get_the_answers_they_got_before() {
         serde_json::from_str(&fs::read_to_string(path).expect("the fixture is there"))
             .expect("the fixture reads");
     for one in &answered {
-        let answer = archboard_graphviz::render(&one.graph).expect("Graphviz lays it out");
+        let answer = super::render(&one.graph).expect("Graphviz lays it out");
         assert!(
             fnv1a(&answer) == one.answer_fnv1a,
             "{} is answered otherwise",

@@ -31,9 +31,9 @@ fn each_graph_is_answered_as_viz_js_answered_it_whatever_was_laid_out_before() {
         serde_json::from_str(&fs::read_to_string(path).expect("the fixture is there"))
             .expect("the fixture reads");
     for one in answered.iter().chain(&answered) {
-        let answer = archboard_graphviz::render(&one.graph).expect("Graphviz lays it out");
+        let answer = super::render(&one.graph).expect("Graphviz lays it out");
         assert!(answer == one.answer, "{} is answered otherwise", one.drawn);
-        let geometry = archboard_graphviz::InCore
+        let geometry = crate::InCore
             .render(&one.graph)
             .expect("the layout gets its geometry");
         assert_eq!(consumed(&geometry), consumed(&one.answer), "{}", one.drawn);
