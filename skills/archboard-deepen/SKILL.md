@@ -17,7 +17,8 @@ A finding names a smell and its principle, never its fix. The design is yours an
 
 ## The owner
 
-Interrupt the owner only for a decision that reverses one the owner already made: an ADR, the vault's `codeCheck.rules`, an adopted or confirmed proposal, a rule in `AGENTS.md` or `CLAUDE.md`, or an instruction in this conversation.
+Interrupt the owner only for a decision that reverses one the owner already made: the vault's `codeCheck.rules`, an adopted or confirmed proposal, a rule in `AGENTS.md` or `CLAUDE.md`, or an instruction in this conversation.
+An ADR may change when both advisors agree, each with its reason, that the change improves the codebase: the ticket that changes the code amends the ADR and states that reason.
 The docs those files point to, such as `docs/agents/`, are context for agents, not rules: agents wrote them under other circumstances. Where one describes or prescribes the code's structure, judge the design on depth alone, and rewrite the doc in the ticket that changes the code.
 Then put the question and the advisors' answers to the owner, park the ticket that depends on it, and continue with the rest.
 
