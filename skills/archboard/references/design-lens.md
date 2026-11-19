@@ -138,6 +138,18 @@ Clear each finding at its seam. Never silence one.
   With one reader, move the value into that reader and stop exporting it.
   With several, move what they compute from it into the module, behind a function such as `restartDelayMs(attempt)`.
   Where a caller needs the value itself, export a function that returns it.
+  An export that can be called is a function, even when a call makes it: a compound component made by `Object.assign(Root, { Item })`, or the helper that `cva(...)` returns.
+  The check follows the name that `Object.assign` extends, and asks the language server whether any other value can be called.
+  A schema cannot be called, so it is a value. A contract module keeps its schemas inside and exports a parse function and the types derived from them:
+
+  ```ts
+  const UserSchema = z.object({ name: z.string() });
+  export type User = z.infer<typeof UserSchema>;
+  export function parseUser(input: unknown): User {
+  	return UserSchema.parse(input);
+  }
+  ```
+
 - `CODE_PASS_THROUGH` (information): a function or public method only passes its call on with its own parameters.
   Give it a decision of its own, such as a default, a check or a translation, or let callers call the code it passes to.
   A function that calls a value its own file keeps hidden, such as `parse(input)` over a hidden schema, is the module deciding and has no finding.

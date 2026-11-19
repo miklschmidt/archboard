@@ -37,6 +37,13 @@ so agents in an implementation loop added exported constants and nothing failed.
   function that returns the value, a getter, is an interface and clears it.
   Later rules join it: pass-throughs, unused exports, and math that callers
   repeat on one export.
+- **An export that can be called is a function, even when a call makes it**
+  (TASK-646.15). A compound component made by `Object.assign(Root, {...})` is
+  what `Root` is, wherever `Root` is defined, and an export that the language
+  server types as callable, such as the helper that `cva(...)` returns, is a
+  function. A value that a call makes and that cannot be called stays a value:
+  an exported zod schema is one. A contract module keeps its schemas inside
+  and exports a parse function and the types derived from them.
 - **Each exported name gets at most one finding** (TASK-646.05).
   `EXPOSED_UNUSED` comes first, because its remedy removes the name. A
   function or method that only passes its call on is `CODE_PASS_THROUGH`,

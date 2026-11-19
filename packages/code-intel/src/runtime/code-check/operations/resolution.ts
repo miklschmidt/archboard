@@ -28,6 +28,10 @@
 // pair, as an include leads (definition-site.ts), and where the pair defines
 // nothing of the name the use stays as code facts read it.
 //
+// The pass also asks what type a server gives a name a file declares, from
+// its semantic tokens, so Module depth can tell an exported value that
+// can be called from one that cannot (TASK-646.15).
+//
 // One pass opens one resolution. Its servers start on their first question,
 // and closing it stops every one, killing them at once when the pass was
 // cancelled, and only then answers. It says once for each checkout and language
@@ -69,6 +73,17 @@ type Resolve = (
 	file: string,
 	use: Pick<Reference, "line" | "symbol" | "kind">,
 ) => Promise<UseResolution>;
+
+/**
+ * The type a pass's servers give the name that a file of a checkout writes on
+ * a line, such as `function`, `class` or `variable`, from its semantic
+ * tokens; none where no server answered.
+ */
+type TokenType = (
+	checkout: ReadCheckout,
+	file: string,
+	name: Pick<Reference, "line" | "symbol">,
+) => Promise<string | undefined>;
 
 /** The answer of a use no server resolved. */
 const UNKNOWN: UseResolution = { status: "unknown" };
@@ -168,6 +183,7 @@ async function siteAt(
 /** The resolution of one pass. */
 interface PassResolution {
 	readonly resolve: Resolve;
+	readonly tokenType: TokenType;
 	/** Stop every server; then the skips of what could not be asked, by checkout. */
 	readonly close: () => Promise<CodeCheckSkip[]>;
 	readonly timings: () => CheckTiming[];
@@ -252,6 +268,15 @@ function openResolution(
 	return {
 		resolve: resolverOf(session, facts),
 		/**
+		 * The type the servers give a name a file declares.
+		 * @param checkout The checkout.
+		 * @param file The file, relative to the checkout.
+		 * @param name The line and the name.
+		 * @returns The type, or undefined.
+		 */
+		tokenType: (checkout, file, name) =>
+			session.tokenType({ root: checkout.root, file, line: name.line, symbol: name.symbol }),
+		/**
 		 * Timings of the servers, with repository identities instead of machine roots.
 		 * @returns Timings in server start order.
 		 */
@@ -274,4 +299,4 @@ function openResolution(
 	};
 }
 
-export { type Resolve, openResolution };
+export { type Resolve, type TokenType, openResolution };

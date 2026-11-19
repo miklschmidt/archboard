@@ -126,19 +126,57 @@ function declaredKind(declaration: Node): Definition["kind"] | undefined {
 	return CLASSES.has(declaration.type) ? "class" : undefined;
 }
 
+/** Expressions that hold a value and keep it what it is. */
+const WRAPPERS = new Set(["as_expression", "satisfies_expression", "parenthesized_expression"]);
+
+/** A name, or a chain of names through `.`, that another declaration may define. */
+const NAMED = /^[\p{L}\p{N}_$]+(?:\.[\p{L}\p{N}_$]+)*$/u;
+
 /**
- * The kind of a declaration or a literal assigned through an expression wrapper.
+ * The first argument of a call to `Object.assign`, which the call returns
+ * with more members on it.
+ * @param expression The expression.
+ * @returns The argument, or undefined for another expression.
+ */
+function assignedOnto(expression: Node): Node | undefined {
+	if (expression.type !== "call_expression") return undefined;
+	if (expression.childForFieldName("function")?.text !== "Object.assign") return undefined;
+	return expression.childForFieldName("arguments")?.namedChildren[0] ?? undefined;
+}
+
+/**
+ * What a declaration holds, through what keeps a value what it is: `as`,
+ * `satisfies`, parentheses, and `Object.assign` onto it.
  * @param declaration The declaration or expression.
+ * @returns The innermost expression, or the declaration itself when it holds none.
+ */
+function heldValue(declaration: Node): Node {
+	if (declaredKind(declaration) !== undefined) return declaration;
+	const value = WRAPPERS.has(declaration.type)
+		? declaration.namedChildren[0]
+		: (declaration.childForFieldName("value") ?? assignedOnto(declaration));
+	return value == null ? declaration : heldValue(value);
+}
+
+/**
+ * The kind of a declaration, or of the literal it holds.
+ * @param declaration The declaration.
  * @returns Its kind.
  */
 function kindOf(declaration: Node): Definition["kind"] {
-	const kind = declaredKind(declaration);
-	if (kind !== undefined) return kind;
-	const wrapper = ["as_expression", "satisfies_expression", "parenthesized_expression"].includes(
-		declaration.type,
-	);
-	const value = wrapper ? declaration.namedChildren[0] : declaration.childForFieldName("value");
-	return value == null ? "value" : kindOf(value);
+	return declaredKind(heldValue(declaration)) ?? "value";
+}
+
+/**
+ * The name whose value a declaration holds, as `const Dialog =
+ * Object.assign(DialogRoot, {...})` holds `DialogRoot`'s.
+ * @param declaration The declaration.
+ * @returns The name as the file spells it, or undefined when it holds another expression.
+ */
+function aliasOf(declaration: Node): string | undefined {
+	const held = heldValue(declaration);
+	const named = held.type === "identifier" || held.type === "member_expression";
+	return held !== declaration && named && NAMED.test(held.text) ? held.text : undefined;
 }
 
 /**
@@ -296,6 +334,22 @@ function visibilityOf(
 }
 
 /**
+ * What a declaration's syntax says beside its kind: that it declares a type,
+ * the call it only passes on, and the name whose value it holds.
+ * @param declaration The declaration.
+ * @returns Those that hold.
+ */
+function traitsOf(declaration: Node): Pick<Definition, "type" | "passes" | "aliases"> {
+	const passes = passesTo(declaration);
+	const aliases = aliasOf(declaration);
+	return {
+		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
+		...(passes === undefined ? {} : { passes }),
+		...(aliases === undefined ? {} : { aliases }),
+	};
+}
+
+/**
  * The definition one captured name declares, where it is at module level.
  * @param name The captured name.
  * @param context The file's unparsed code and exported names.
@@ -312,7 +366,6 @@ function definitionOf(
 	const { visibility, own } = visibilityOf(name, declaration, context.exported);
 	const exposed = own && holderExposed(declaration, exposure);
 	exposure.set(declaration.id, exposed);
-	const passes = passesTo(declaration);
 	return {
 		symbol: qualifiedSymbol(name, declaration),
 		kind: kindOf(declaration),
@@ -321,8 +374,7 @@ function definitionOf(
 		source: sourceRange(sourceOf(declaration)),
 		visibility,
 		exposed,
-		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
-		...(passes === undefined ? {} : { passes }),
+		...traitsOf(declaration),
 	};
 }
 
