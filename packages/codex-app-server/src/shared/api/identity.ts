@@ -8,10 +8,7 @@ export type {
 	OperationAuthority,
 	TrustedIdentityDecoder,
 } from "#shared/schemas/identity-capabilities.ts";
-export {
-	canonicalItemIdMaxLength,
-	IdentityValidationError,
-} from "#shared/schemas/identity-values.ts";
+export { canonicalItemIdMaxLength } from "#shared/schemas/identity-values.ts";
 export type {
 	AnyIdentity,
 	ApprovalId,

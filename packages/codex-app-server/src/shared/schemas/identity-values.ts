@@ -507,6 +507,7 @@ export {
 	type OperationId,
 	type AnyIdentity,
 	type CodexIdentity,
+	type IdentityValidationCode,
 	IdentityValidationError,
 	fail,
 	requireToken,

@@ -1,7 +1,7 @@
 import { domainScope } from "#server/generation/services/domain.ts";
 import type { CodexWorkbenchStorage } from "#server/generation/protocol/host.ts";
 import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
-import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
@@ -74,7 +74,7 @@ async function readAccountOrNull(
 	try {
 		return await session.accountRead();
 	} catch (error) {
-		if (error instanceof CodexTransportRemoteError) return null;
+		if (readCodexFailure(error)?.kind === "remote") return null;
 		throw error;
 	}
 }

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
 import {
-	CodexSessionMutationError,
 	binding,
 	deferred,
 	fixture,
@@ -339,11 +339,12 @@ describe("Codex workhorse queue contract", () => {
 	test("returns a fresh list for a lost mutation and never retries it", async () => {
 		const fixtureValue = fixture();
 		const added = submission(fixtureValue.identity, "queue-lost", "lost", "client-lost");
-		fixtureValue.session.nextAddError = new CodexSessionMutationError(
-			"thread/queue/add",
-			"outcome_unknown",
-			"the response was lost",
-		);
+		fixtureValue.session.nextAddError = createCodexFailure({
+			kind: "mutation",
+			method: "thread/queue/add",
+			outcome: "outcome_unknown",
+			message: "the response was lost",
+		});
 		fixtureValue.session.state = [added];
 
 		const result = await fixtureValue.queue.add({ operationId: "lost-operation", prompt: "lost" });
@@ -363,11 +364,12 @@ describe("Codex workhorse queue contract", () => {
 		const fixtureValue = fixture();
 		const existing = submission(fixtureValue.identity, "queue-existing", "existing");
 		fixtureValue.session.state = [existing];
-		fixtureValue.session.nextAddError = new CodexSessionMutationError(
-			"thread/queue/add",
-			"not_delivered",
-			"the request was rejected before delivery",
-		);
+		fixtureValue.session.nextAddError = createCodexFailure({
+			kind: "mutation",
+			method: "thread/queue/add",
+			outcome: "not_delivered",
+			message: "the request was rejected before delivery",
+		});
 
 		const result = await fixtureValue.queue.add({
 			operationId: "rejected-operation",
@@ -443,11 +445,12 @@ describe("Codex workhorse queue contract", () => {
 		const fixtureValue = fixture();
 		const target = submission(fixtureValue.identity, "queue-start", "start me");
 		fixtureValue.session.state = [target];
-		fixtureValue.session.nextStartError = new CodexSessionMutationError(
-			"thread/queue/start",
-			"outcome_unknown",
-			"response lost",
-		);
+		fixtureValue.session.nextStartError = createCodexFailure({
+			kind: "mutation",
+			method: "thread/queue/start",
+			outcome: "outcome_unknown",
+			message: "response lost",
+		});
 
 		const result = await fixtureValue.queue.start({
 			operationId: "start-operation",

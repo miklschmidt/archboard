@@ -21,10 +21,7 @@ export type {
 	SessionThreadTurnPageResult,
 	SessionTurn,
 } from "#runtime/session/schemas/session-responses.ts";
-export {
-	codexSessionThreadSource,
-	CodexSessionMutationError,
-} from "#runtime/session/services/session-api.ts";
+export { codexSessionThreadSource } from "#runtime/session/services/session-api.ts";
 export type {
 	CodexSession,
 	CodexSessionOptions,

@@ -387,6 +387,7 @@ function resolveCodexExecutable(options: CodexExecutableOptions = {}): string {
 export {
 	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
 	type VerifiedCodexExecutable,
+	type CodexExecutableFailureCode,
 	CodexExecutableError,
 	requireCheckoutLocal,
 	nativeCodexEnvironment,

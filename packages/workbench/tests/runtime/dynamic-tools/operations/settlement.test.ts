@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import {
@@ -102,11 +102,12 @@ describe("codex dynamic confirmed-effect settlement", () => {
 	test("keeps a lost outer response outcome_unknown when local marking fails", async () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller);
-		fixture.session.threadStartResult = new CodexSessionMutationError(
-			"thread/start",
-			"outcome_unknown",
-			"thread response was lost",
-		);
+		fixture.session.threadStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "thread/start",
+			outcome: "outcome_unknown",
+			message: "thread response was lost",
+		});
 		fixture.epoch.unknownError = new Error("unknown marker failed");
 
 		const response = await createCodexDynamicTools(fixture.options).dispatch(
@@ -124,11 +125,12 @@ describe("codex dynamic confirmed-effect settlement", () => {
 		const fixture = optionsFor(authorities, caller);
 		const created = thread(authorities, "unknown-initial-thread");
 		fixture.session.threadStartResult = threadStartResult(created);
-		fixture.session.turnStartResult = new CodexSessionMutationError(
-			"turn/start",
-			"outcome_unknown",
-			"initial response was lost",
-		);
+		fixture.session.turnStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "turn/start",
+			outcome: "outcome_unknown",
+			message: "initial response was lost",
+		});
 		fixture.epoch.unknownError = new Error("initial unknown marker failed");
 
 		const response = await createCodexDynamicTools(fixture.options).dispatch(
@@ -152,11 +154,12 @@ describe("codex dynamic confirmed-effect settlement", () => {
 		const { authorities, caller, otherTarget } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller);
 		fixture.threadAuthority.targets.set(otherTarget.wireThreadId, otherTarget);
-		fixture.session.turnStartResult = new CodexSessionMutationError(
-			"turn/start",
-			"not_delivered",
-			"send was rejected",
-		);
+		fixture.session.turnStartResult = createCodexFailure({
+			kind: "mutation",
+			method: "turn/start",
+			outcome: "not_delivered",
+			message: "send was rejected",
+		});
 		fixture.epoch.rollbackError = new Error("rollback failed");
 
 		const response = await createCodexDynamicTools(fixture.options).dispatch(

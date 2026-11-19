@@ -1,9 +1,9 @@
 import {
-	CodexProcessError,
 	type CodexProcess,
 	type CodexProcessChild,
 	type CodexProcessSnapshot,
 } from "@archboard/codex-app-server/process";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import type { CodexConnection } from "@archboard/codex-app-server/connection";
 import type { CodexTransport } from "@archboard/codex-app-server/transport";
 import type { CodexWorkbenchGateway } from "#server/chat-conversations/gateway/protocol/contract.ts";
@@ -187,7 +187,8 @@ function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error
 	if (current.state !== "terminal_failure") {
 		return null;
 	}
-	return new CodexProcessError({
+	return createCodexFailure({
+		kind: "process",
 		code: current.failure?.code ?? "shutdown_failed",
 		terminal: true,
 		message:

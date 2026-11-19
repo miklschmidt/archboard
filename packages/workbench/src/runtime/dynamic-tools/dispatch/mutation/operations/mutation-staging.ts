@@ -1,6 +1,6 @@
 import type { EpochTransaction } from "#runtime/voice/protocol/extension.ts";
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 } from "#runtime/instructions/rules/authored.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import type { OperationId, ThreadId, TurnId } from "@archboard/codex-app-server/identity";
@@ -206,8 +206,9 @@ function epochError(error: unknown, message: string): CodexDynamicToolsError {
  * @returns The outcome.
  */
 function remoteOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
-	if (error instanceof CodexSessionMutationError) {
-		return error.outcome;
+	const failure = readCodexFailure(error);
+	if (failure?.kind === "mutation") {
+		return failure.outcome;
 	}
 	if (typeof error !== "object" || error === null) {
 		return "not_delivered";

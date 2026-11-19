@@ -3,10 +3,8 @@ import { expect, test } from "bun:test";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
-import {
-	IdentityValidationError,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectDynamicApproval } from "#server/browser-state/projections/dynamic-approval-projection.ts";
 import {
@@ -333,11 +331,7 @@ test("effective fork boundaries refuse canonical wrong-domain and unissued ident
 			authorities.identity.decoder.parseTurnId(boundary.value);
 			throw new Error("invalid boundary unexpectedly parsed");
 		} catch (error) {
-			expect(error).toBeInstanceOf(IdentityValidationError);
-			if (!(error instanceof IdentityValidationError)) {
-				throw error;
-			}
-			expect(error.code).toBe(boundary.code);
+			expect(readCodexFailure(error)).toMatchObject({ kind: "identity", code: boundary.code });
 		}
 		if (owner.request.effect.tool !== "fork_thread") {
 			throw new Error("other-fork fixture changed tools");
@@ -353,8 +347,12 @@ test("effective fork boundaries refuse canonical wrong-domain and unissued ident
 				},
 			},
 		};
-		expect(() => projectDynamicApproval(model, authorities.identity.decoder, invalidOwner)).toThrow(
-			IdentityValidationError,
-		);
+		let refused: unknown;
+		try {
+			projectDynamicApproval(model, authorities.identity.decoder, invalidOwner);
+		} catch (error) {
+			refused = error;
+		}
+		expect(readCodexFailure(refused)).toMatchObject({ kind: "identity", code: boundary.code });
 	}
 });

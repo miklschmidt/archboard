@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
 import { CodexEpochError } from "#runtime/epoch/store/contract.ts";
-import { type ThreadInjectItemsParams } from "#runtime/host/turn-input/rules/bodies.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { type ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { ThreadInjectItemsParams } from "#runtime/host/turn-input/rules/bodies.ts";
+import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	createHarness,
@@ -329,11 +329,12 @@ describe("codex thread context delivery", () => {
 	test("keeps a known session rejection as not_delivered", async () => {
 		const harness = createHarness();
 		harness.setSessionBehavior(async () => {
-			throw new CodexSessionMutationError(
-				"thread/inject_items",
-				"not_delivered",
-				"rejected before delivery",
-			);
+			throw createCodexFailure({
+				kind: "mutation",
+				method: "thread/inject_items",
+				outcome: "not_delivered",
+				message: "rejected before delivery",
+			});
 		});
 
 		const result = await harness.delivery.deliver(harness.events());

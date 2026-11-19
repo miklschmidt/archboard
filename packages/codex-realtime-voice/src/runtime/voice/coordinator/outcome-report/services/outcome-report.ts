@@ -23,7 +23,8 @@ import type {
 	WorkbenchExecutionContext,
 	WorkbenchContextCodec,
 } from "#runtime/host/protocol/context.ts";
-import { CodexSessionMutationError, type CodexSession } from "@archboard/codex-app-server/session";
+import type { CodexSession } from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 
 /** What the port needs of the workbench around it. */
 interface OutcomeReportParts {
@@ -104,7 +105,8 @@ function createOutcomeReportPort(parts: OutcomeReportParts): CoordinatorCallback
 			try {
 				await parts.session.turnStart({ ...params, threadId });
 			} catch (error) {
-				return error instanceof CodexSessionMutationError && error.outcome === "not_delivered"
+				const failure = readCodexFailure(error);
+				return failure?.kind === "mutation" && failure.outcome === "not_delivered"
 					? { attempted: true, outcome: "not_delivered", reason: "session_rejected" }
 					: { attempted: true, outcome: "outcome_unknown", reason: "response_lost" };
 			}

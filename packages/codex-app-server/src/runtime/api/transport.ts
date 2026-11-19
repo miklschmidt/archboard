@@ -1,9 +1,4 @@
-// The stdio transport: its options and child, the requests it routes and its error classes.
-export {
-	CodexTransportOwnershipError,
-	CodexTransportRemoteError,
-	CodexTransportUsageError,
-} from "#runtime/transport/clients/transport-errors.ts";
+// The stdio transport: the requests it routes and the reverse requests it publishes.
 export type {
 	CodexTransport,
 	DynamicServerRequest,

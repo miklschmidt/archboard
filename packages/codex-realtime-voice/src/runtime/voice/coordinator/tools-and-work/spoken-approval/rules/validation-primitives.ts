@@ -4,7 +4,7 @@ import type {
 } from "#runtime/approvals/services/contract.ts";
 import type { DynamicToolRefusalReason } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/dynamic-tool-envelopes.ts";
 import type { SpokenApprovalFallbackReason } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
-import { IdentityValidationError } from "@archboard/codex-app-server/identity";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type {
 	RealtimeCorrelation,
 	RealtimeTranscriptRecord,
@@ -146,15 +146,16 @@ function failure(
  * @returns The failure.
  */
 function failureForIdentity(error: unknown): CallValidationFailure {
-	if (error instanceof IdentityValidationError) {
-		if (error.code === "wrong-child") {
+	const identity = readCodexFailure(error);
+	if (identity?.kind === "identity") {
+		if (identity.code === "wrong-child") {
 			return failure(
 				"stale_realtime_session",
 				"stale_child",
 				"The spoken approval belongs to another Codex child.",
 			);
 		}
-		if (error.code === "stale-epoch") {
+		if (identity.code === "stale-epoch") {
 			return failure(
 				"stale_state",
 				"prior_epoch",

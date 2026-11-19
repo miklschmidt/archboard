@@ -13,12 +13,11 @@ import {
 	type IdentityAuthority,
 } from "@archboard/codex-app-server/identity";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import {
 	type HumanApprovalMethod,
 	type ReverseResponse,
 	type TransportServerRequest,
-	CodexTransportOwnershipError,
-	CodexTransportUsageError,
 } from "@archboard/codex-app-server/transport";
 
 export interface CapturedResponse {
@@ -69,9 +68,19 @@ export class FakeApprovalPort implements ApprovalResponsePort {
 				this.deferredSettlement = { resolve, reject };
 			});
 		if (this.mode === "ownership_error")
-			return Promise.reject(new CodexTransportOwnershipError("the response owner is invalid"));
+			return Promise.reject(
+				createCodexFailure({
+					kind: "refused_write",
+					message: "Codex reverse-request ownership error: the response owner is invalid",
+				}),
+			);
 		if (this.mode === "usage_error")
-			return Promise.reject(new CodexTransportUsageError("the response payload is invalid"));
+			return Promise.reject(
+				createCodexFailure({
+					kind: "refused_write",
+					message: "Invalid Codex transport operation: the response payload is invalid",
+				}),
+			);
 		if (this.mode === "generic_error") return Promise.reject(new Error("ambiguous write failure"));
 		return Promise.reject({ accepted: true, reason: "write-error" });
 	}

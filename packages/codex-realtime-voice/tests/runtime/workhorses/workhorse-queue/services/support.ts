@@ -1,7 +1,4 @@
-import {
-	CodexSessionMutationError,
-	type SessionResponsePayloads,
-} from "@archboard/codex-app-server/session";
+import type { SessionResponsePayloads } from "@archboard/codex-app-server/session";
 import { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
 import { createCodexWorkhorseQueue } from "#runtime/workhorses/workhorse-queue/services/queue.ts";
 import {
@@ -255,5 +252,4 @@ export {
 	flush,
 	rejected,
 	deferred,
-	CodexSessionMutationError,
 };

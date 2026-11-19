@@ -1,11 +1,12 @@
 import { expect, test } from "bun:test";
 
-import { CodexProcessError } from "@archboard/codex-app-server/process";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { codexProtocolVersion } from "@archboard/codex-app-server/protocol";
 import { serverStartupFailureMessage } from "#server/start-stop/lifecycle/startup-error.ts";
 
 test("classifies process-group ownership refusal without install recovery", () => {
-	const failure = new CodexProcessError({
+	const failure = createCodexFailure({
+		kind: "process",
 		code: "process_group_unavailable",
 		terminal: true,
 		message:
@@ -19,7 +20,8 @@ test("classifies process-group ownership refusal without install recovery", () =
 });
 
 test("retains install recovery for a true child spawn failure", () => {
-	const failure = new CodexProcessError({
+	const failure = createCodexFailure({
+		kind: "process",
 		code: "spawn_failed",
 		terminal: true,
 		message: "Could not spawn the exact Codex app-server child.",
@@ -28,4 +30,19 @@ test("retains install recovery for a true child spawn failure", () => {
 	const message = serverStartupFailureMessage(failure);
 	expect(message).toContain(`@openai/codex ${codexProtocolVersion()}`);
 	expect(message).toContain("Could not spawn the exact Codex app-server child");
+});
+
+test("finds the Codex failure inside an aggregate's causes and names it with the same sentence", () => {
+	const failure = createCodexFailure({
+		kind: "process",
+		code: "spawn_failed",
+		terminal: true,
+		message: "Could not spawn the exact Codex app-server child.",
+	});
+	const wrapped = new AggregateError(
+		[new Error("unrelated cleanup failure"), new Error("startup failed", { cause: failure })],
+		"Archboard server startup failed.",
+	);
+
+	expect(serverStartupFailureMessage(wrapped)).toBe(serverStartupFailureMessage(failure));
 });

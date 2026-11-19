@@ -1,8 +1,8 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { describe, expect, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { type EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
+import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
 import {
 	type CoordinatorPersistedState,
 	type CoordinatorSnapshot,
@@ -307,11 +307,12 @@ describe("coordinator replacement for a new voice session", () => {
 		const first = await ready(fixtureValue);
 		const kept = persistence(first);
 		fixtureValue.session.nextThread("coordinator-thread-2");
-		fixtureValue.session.startError = new CodexSessionMutationError(
-			"thread/start",
-			"outcome_unknown",
-			"fixture settlement timeout",
-		);
+		fixtureValue.session.startError = createCodexFailure({
+			kind: "mutation",
+			method: "thread/start",
+			outcome: "outcome_unknown",
+			message: "fixture settlement timeout",
+		});
 
 		await expect(
 			fixtureValue.coordinator.replace({

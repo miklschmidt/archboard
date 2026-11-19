@@ -1,4 +1,5 @@
 import { createTestVoicePolicy } from "#tests/runtime/support/host.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { afterEach, describe, expect, test } from "bun:test";
 import {
 	parseRealtimeCorrelationId,
@@ -8,7 +9,7 @@ import {
 import { type ChildEpoch, type ChildId, type ThreadId } from "@archboard/codex-app-server/identity";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { serverNotification } from "#tests/runtime/support/server-notification.ts";
-import { CodexSessionMutationError, type SessionParams } from "@archboard/codex-app-server/session";
+import type { SessionParams } from "@archboard/codex-app-server/session";
 import { createCodexRealtimeAdapter } from "#runtime/voice/realtime/services/adapter.ts";
 import {
 	type CodexRealtimeAdapter,
@@ -363,7 +364,12 @@ describe("Codex realtime adapter races", () => {
 				h.stop.resolve({});
 			} else {
 				h.stop.reject(
-					new CodexSessionMutationError("thread/realtime/stop", "outcome_unknown", "late"),
+					createCodexFailure({
+						kind: "mutation",
+						method: "thread/realtime/stop",
+						outcome: "outcome_unknown",
+						message: "late",
+					}),
 				);
 			}
 			expect(await outcome).toMatchObject({ outcome: "outcome_unknown", reason: "response_lost" });
