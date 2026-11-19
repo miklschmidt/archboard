@@ -1,9 +1,11 @@
 ---
 id: TASK-646.11
 title: Python, Go and C# modules get every module-depth rule
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T00:03:00Z'
+updated_date: '2026-11-19T02:29:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,3 +57,16 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #3 Members that each language calls are not judged
 - [ ] #4 Each language's tests assert only what its grammar decides
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Fact analysis: Definition gains calledByLanguage (each adapter marks the members its language calls; TypeScript moves its five names out of Module depth) and static (C# static and const members).
+2. A language-neutral math-shape engine (code-facts/operations/math-shapes.ts) driven by a per-language syntax table; Python, Go and C# give ParsedFacts.computations through it. TypeScript keeps typescript-math.ts (migration is a follow-up).
+3. Python: @logic captures, Definition.type (type alias statements, X: TypeAlias), Definition.passes, computations around uses of imported names; dunders called by the language.
+4. Go: @logic, Definition.type (interfaces, aliases, named non-struct types without methods in their file; struct and named types with methods are classes), passes, computations around package-qualified uses; String/Error/GoString/Format called by the language.
+5. C#: @logic, Definition.type (interface, enum, delegate), static members (static/const fields, static properties, a property with a body is a getter function), passes, computations around run-time chains; constructors, finalizers and override ToString/Equals/GetHashCode called by the language.
+6. Module depth (small, shared): python, go and csharp judged; a static member of an exported class counts as a top-level export of its kind, and is never judged EXPOSED_UNUSED; members marked calledByLanguage are neither counted nor judged.
+7. Tests: one fixture test per language under code-check/languages asserting export kinds, logic, uses, passes and the math around uses.
+8. archboard check, gate run, footprint, finalization.
+<!-- SECTION:PLAN:END -->
