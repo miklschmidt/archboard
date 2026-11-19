@@ -249,6 +249,11 @@ pub const fn bend_radius() -> f64 {
     BEND_RADIUS
 }
 
+/// How close two points must be to be one, and the least a turn may move.
+pub const fn route_tolerance() -> f64 {
+    EPSILON
+}
+
 /// Waypoints without repeats and without points that run straight on.
 fn simplify(points: &[Point]) -> Vec<Point> {
     let mut kept: Vec<Point> = Vec::new();
