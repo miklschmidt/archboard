@@ -1,11 +1,11 @@
 ---
 id: TASK-646.16
 title: Rust unused-export findings see every use
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T03:12:00Z'
-updated_date: '2026-11-19T04:15:00Z'
+updated_date: '2026-11-19T04:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
