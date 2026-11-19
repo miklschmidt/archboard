@@ -69,6 +69,19 @@ interface Definition {
 	 */
 	readonly aliases?: string;
 	/**
+	 * The language calls it itself, and no caller names it: a constructor, a
+	 * `toString`, a Python special method such as `__repr__`, a Go `String`.
+	 * Each adapter names its own (TASK-646.11); module depth neither counts
+	 * nor judges it.
+	 */
+	readonly calledByLanguage?: true;
+	/**
+	 * It belongs to its type, not to an instance, so callers read it through
+	 * the type's name: a C# `static` or `const` member. C# names it; module
+	 * depth counts it as an export of its own (TASK-646.11).
+	 */
+	readonly static?: true;
+	/**
 	 * The directory whose code an infrastructure declaration runs, as its file
 	 * writes it, relative to the file's own directory: the build context of a
 	 * compose service, or, where that context is the compose file's own

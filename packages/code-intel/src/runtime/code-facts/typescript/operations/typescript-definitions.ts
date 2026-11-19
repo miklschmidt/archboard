@@ -333,19 +333,35 @@ function visibilityOf(
 	return { visibility, own: visibility.startsWith("export") };
 }
 
+/** The methods JavaScript calls itself, which no caller names. */
+const CALLED_BY_LANGUAGE = new Set([
+	"constructor",
+	"toString",
+	"toLocaleString",
+	"valueOf",
+	"toJSON",
+]);
+
 /**
  * What a declaration's syntax says beside its kind: that it declares a type,
- * the call it only passes on, and the name whose value it holds.
+ * the call it only passes on, the name whose value it holds, and that the
+ * language calls it.
+ * @param name The declared name.
  * @param declaration The declaration.
  * @returns Those that hold.
  */
-function traitsOf(declaration: Node): Pick<Definition, "type" | "passes" | "aliases"> {
+function traitsOf(
+	name: Node,
+	declaration: Node,
+): Pick<Definition, "type" | "passes" | "aliases" | "calledByLanguage"> {
 	const passes = passesTo(declaration);
 	const aliases = aliasOf(declaration);
+	const called = declaration.type === "method_definition" && CALLED_BY_LANGUAGE.has(name.text);
 	return {
 		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...(aliases === undefined ? {} : { aliases }),
+		...(called ? { calledByLanguage: true as const } : {}),
 	};
 }
 
@@ -374,7 +390,7 @@ function definitionOf(
 		source: sourceRange(sourceOf(declaration)),
 		visibility,
 		exposed,
-		...traitsOf(declaration),
+		...traitsOf(name, declaration),
 	};
 }
 

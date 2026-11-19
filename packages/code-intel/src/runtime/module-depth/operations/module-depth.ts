@@ -87,15 +87,6 @@ const JUDGED_FILES: ReadonlyMap<SyntaxFacts["adapter"], RegExp> = new Map([
 	["typescript", TYPESCRIPT_FILE],
 ]);
 
-/** The members a language calls itself, which no caller names. */
-const CALLED_BY_LANGUAGE: ReadonlySet<string> = new Set([
-	"constructor",
-	"toString",
-	"toLocaleString",
-	"valueOf",
-	"toJSON",
-]);
-
 /** A module's exports, by kind. */
 interface ExportCounts {
 	readonly functions: number;
@@ -261,10 +252,9 @@ function pathEnds(names: readonly ExposedName[]): ExposedName[] {
 function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean {
 	const { symbol } = member.definition;
 	const holder = symbol.slice(0, Math.max(symbol.lastIndexOf("."), 0));
-	const called = CALLED_BY_LANGUAGE.has(symbol.slice(holder.length + 1));
 	return (
 		member.definition.kind === "function" &&
-		!called &&
+		member.definition.calledByLanguage !== true &&
 		classes.some((each) => each.path === member.path && each.definition.symbol === holder)
 	);
 }
