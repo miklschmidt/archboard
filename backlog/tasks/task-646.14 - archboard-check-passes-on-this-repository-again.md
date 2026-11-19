@@ -4,6 +4,7 @@ title: archboard check passes on this repository again
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:03:00Z'
+updated_date: '2026-11-19T01:11:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -14,6 +15,7 @@ dependencies:
   - TASK-646.11
   - TASK-646.12
   - TASK-646.13
+  - TASK-646.15
 parent_task_id: TASK-646
 type: feature
 ordinal: 1100000
@@ -68,3 +70,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #4 The vault policy of this repository turns the shallow-module gate on
 - [ ] #5 The pull request is the top layer of the TASK-646 stack
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner decision (2026-11-19): exported zod schemas count as values, so EXPOSED_VALUE applies to them. The cleanup includes about 90 schemas in the contract packages: hide each behind a function and export the derived types. Callables made by a call stop counting as values after TASK-646.15.
+<!-- SECTION:NOTES:END -->
