@@ -1,6 +1,6 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
-import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
+import { releaseServerPid, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
 import { durationMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
@@ -133,15 +133,13 @@ interface ProcessHandlers {
 
 /**
  * The process-level handlers for one lifetime: signals stop it, an HTTP
- * runtime error stops it and fails the process, exit removes the pidfile.
+ * runtime error stops it and fails the process, exit releases the pidfile.
  * @param lifetimeOf How to reach the lifetime once it exists.
- * @param http The HTTP ownership.
  * @param terminal The startup terminal reporter.
  * @returns The handlers.
  */
 function processHandlers(
 	lifetimeOf: () => ServerLifetime,
-	http: HttpOwnership,
 	terminal: StartupTerminal,
 ): ProcessHandlers {
 	let runtimeServerStop: Promise<void> | null = null;
@@ -190,11 +188,9 @@ function processHandlers(
 		onInterrupt: () => {
 			shutdown("SIGINT");
 		},
-		/** Remove the pidfile this process wrote, as the process exits. */
+		/** Release the pidfile this process recorded, as the process exits. */
 		onExit: () => {
-			if (http.ownsPidFile) {
-				removePidFile(listenAddress().port);
-			}
+			releaseServerPid(listenAddress().port);
 		},
 		/**
 		 * Stop the server after an HTTP error while it was running, once.
@@ -393,14 +389,10 @@ async function startServer(): Promise<void> {
 		terminal.report(refusal);
 		throw new Error(refusal);
 	}
-	// Only the process that actually wrote the pidfile may remove it —
-	// a concurrent-start loser exiting on EADDRINUSE must not delete the
-	// winner's pidfile.
 	const http: HttpOwnership = {
 		phase: "idle",
 		startPromise: null,
 		errorListener: null,
-		ownsPidFile: false,
 		closePromise: null,
 	};
 	let lifetime: ServerLifetime | null = null;
@@ -414,7 +406,7 @@ async function startServer(): Promise<void> {
 		}
 		return lifetime;
 	};
-	lifetime = buildLifetime(http, processHandlers(lifetimeOf, http, terminal));
+	lifetime = buildLifetime(http, processHandlers(lifetimeOf, terminal));
 	serverLifetime = lifetime;
 	cleanupProven = lifetime.cleanupProven;
 	try {

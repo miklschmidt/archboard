@@ -10,7 +10,7 @@ import {
 	pidFilePath,
 	pidFileRecordsStartTime,
 	readPidFile,
-	removePidFile,
+	removePidFileOf,
 	removePidFileIfOwnerGone,
 } from "#runtime/store/pidfile.ts";
 import {
@@ -109,7 +109,7 @@ function verifiedServerPid(health: HealthStatus): number | null {
 /**
  * Wait for a signalled server to stop answering. Stop never waits for work: every write the
  * server accepted is on disk before it was answered.
- * @param port The server port, whose pidfile is removed on success.
+ * @param port The server port, whose pidfile is removed on success while it records that pid.
  * @param pid The pid that was signalled.
  * @returns The stop result once `/health` stops answering.
  */
@@ -118,7 +118,7 @@ async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
 		(await healthOrNull()) ? undefined : true,
 	);
 	if (stopped.ok) {
-		removePidFile(port);
+		removePidFileOf(port, pid);
 		return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 	}
 	throw new Error(`Archboard server (pid ${pid}) did not stop within ${stopped.boundSeconds}s.`);

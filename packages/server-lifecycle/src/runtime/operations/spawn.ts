@@ -12,7 +12,7 @@ import {
 	markServerIdentityVerified,
 	OtherSourceError,
 } from "#runtime/clients/server-client-transport.ts";
-import { readPidFile, removePidFile } from "#runtime/store/pidfile.ts";
+import { readPidFile, removePidFileOf } from "#runtime/store/pidfile.ts";
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
 import { createCodexProcessGroupOperations } from "@archboard/process/codex-group";
 import { waitUntil } from "@archboard/timing";
@@ -292,9 +292,7 @@ async function cleanupFailedStart(spawned: SpawnedServer, failure: Error): Promi
 		);
 	});
 	protocol.destroy();
-	if (readPidFile(serverPort()) === pid) {
-		removePidFile(serverPort());
-	}
+	removePidFileOf(serverPort(), pid);
 	if (cleanup.cleanup !== "proven") {
 		throw startupRefusal(
 			`${failure.message} ${cleanup.reason} Inspect server pid ${String(pid)}${cleanup.group === null ? "" : ` and Codex group ${cleanup.group.pgid}`} before retrying.`,
