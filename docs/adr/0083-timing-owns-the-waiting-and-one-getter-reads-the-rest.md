@@ -48,6 +48,17 @@ met the bound, and none of that could be tested without its caller.
   The workhorse stop and the Codex process-group cleanup take this port; the frame clock and the
   pane deadline clock keep their own shapes.
 - **The owner groups stay inside**, each key with what it pulls against, named `"<owner>.<key>"`.
+- **The tables have a published half and a host half.** One table of every name would put
+  Archboard's durations, names and reasons into `@archboard/codex-realtime-voice`, which bundles
+  timing together with `codex-app-server` and `process`. So the names and the wait and pause
+  policies are written in two halves under `src/shared/tables/rules/`: the published half holds the
+  Codex groups and `processGroup` with the waits and pauses the published code reaches, and the
+  host half holds the rest. Both read the same owner groups, so one edit reaches both. timing's
+  `package.json` maps `#host-tables` under the `published` condition to an empty module, and
+  `scripts/pack-codex-realtime-voice.ts` builds with that condition. Types resolve the default, so
+  callers see every name. In a published build a host name throws with its name, and the types
+  hold each published policy to published durations. No Git key is published: the packed code
+  reaches no Git command.
 
 ## Considered and rejected
 
@@ -71,3 +82,10 @@ met the bound, and none of that could be tested without its caller.
 - Caller tests that advanced fake time by a getter use literals.
 - A new wait adds a policy, not a loop; a new readable name needs a numeric consumer that is not a
   wait.
+- A duration, wait or pause that the published packages reach belongs in the published half. The
+  packed-consumer test reads every name the packed code passes to timing through the published
+  build, and fails on a name only the host half carries.
+
+Also rejected for the published package: moving the Codex groups into `codex-realtime-voice` or
+`codex-app-server`, which would write the wait mechanism again or export it twice, and a second
+entry such as `@archboard/timing/codex`, which is a second keyed getter.

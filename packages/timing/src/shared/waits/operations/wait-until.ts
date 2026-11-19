@@ -1,8 +1,9 @@
 // Polling until something is there, written once for every wait.
 
-import { durationOf } from "#shared/durations/rules/names.ts";
+import { durationOf, type DurationName } from "#shared/durations/rules/names.ts";
 import { sleep, SYSTEM_CLOCK, type Clock } from "#shared/waits/clients/clock.ts";
-import { WAITS, type WaitName, type WaitPolicy } from "#shared/waits/rules/policies.ts";
+import type { WaitPolicy } from "#shared/tables/rules/shape.ts";
+import { waitPolicy, type WaitName } from "#shared/waits/rules/policies.ts";
 
 /** What a wait may be told beyond its name. */
 interface WaitOptions {
@@ -31,7 +32,7 @@ type Refusal = "bound" | "aborted";
 
 /** One wait as it runs. */
 interface Run {
-	readonly policy: WaitPolicy;
+	readonly policy: WaitPolicy<DurationName>;
 	readonly clock: Clock;
 	readonly signal: AbortSignal | undefined;
 	/** When it ends, on its clock. */
@@ -46,7 +47,7 @@ interface Run {
  * @returns The run.
  */
 function startRun(wait: WaitName, options: WaitOptions): Run {
-	const policy: WaitPolicy = WAITS[wait];
+	const policy = waitPolicy(wait);
 	const clock = options.clock ?? SYSTEM_CLOCK;
 	const startedAt = clock.now();
 	const named = policy.bound === undefined ? Number.POSITIVE_INFINITY : durationOf(policy.bound);
@@ -77,7 +78,7 @@ function past(run: Run): boolean {
  * @param look How many looks came before this one.
  * @returns True when it does.
  */
-function checksBefore(policy: WaitPolicy, look: number): boolean {
+function checksBefore(policy: WaitPolicy<DurationName>, look: number): boolean {
 	return policy.check === "beforeProbe" && (look > 0 || policy.firstProbeFree !== true);
 }
 

@@ -1,8 +1,8 @@
 // The durations a caller reads as a plain number, because what takes it is not
 // a wait: a stylesheet, a physics constant, a timer, a library's option, or the
 // words of a message. A wait's bound or cadence is not among them; the wait
-// reads it itself (ADR 0083). The one exception is the model lock's poll, which
-// the registry lock sleeps with `Bun.sleepSync`, a sleep this browser-safe
+// reads it itself (ADR 0083). The one exception is one poll cadence that a
+// synchronous loop sleeps with `Bun.sleepSync`, a sleep this browser-safe
 // package cannot make.
 
 import { durationOf, type DurationName } from "#shared/durations/rules/names.ts";

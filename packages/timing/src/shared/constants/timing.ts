@@ -1,15 +1,15 @@
-// Every duration in Archboard, grouped by the subsystem that owns it, and the
-// waiting that callers would otherwise write around them.
+// Every duration, grouped by the subsystem that owns it, and the waiting that
+// callers would otherwise write around them.
 //
 // A duration used to sit next to the code that consumed it. Read one at a time
 // they all look independent, and they are not. So they live here, with what pulls against what written
 // beside them, and the reasons are the point: the next person to halve one of
 // these should not have to discover by accident what else they halved.
 //
-// Each owner has one frozen group, such as `MODEL_LOCK_MS` or `CODEX_PROCESS_MS`,
-// in a file of its own beside this one, and the group stays inside. A duration
-// is named by its owner and its key, such as `"pane.report"`. Callers do not do
-// the waiting themselves (ADR 0083):
+// Each owner has one frozen group, such as `CODEX_PROCESS_MS`, in a file of its
+// own beside this one, and the group stays inside. A duration is named by its
+// owner and its key, such as `"codexRealtime.stop"`. Callers do not do the
+// waiting themselves (ADR 0083):
 //
 // - `waitUntil` polls a probe on a named wait, which keeps that wait's bound,
 //   cadence and how it meets its bound.
@@ -23,11 +23,15 @@
 // Where callers would compute from a duration, the owner's file holds that
 // computation as one function, such as `codexRestartDelayMs`, and callers call it.
 //
-// This module is imported by the pane, the server, the CLI and the checks, so
-// it stays free of `process`, `node:` imports and anything a browser does not
-// have. Where a value can be overridden from the environment, the default is
-// here and the override stays at the point of use, in the process that has an
-// environment to read.
+// The names and the policies live in two halves (`tables/`): the published half
+// that published packages reach, and the host half, which a build under the
+// `published` condition leaves out. There, a name of the host half throws.
+//
+// This module is imported by browser code as well as by processes, so it stays
+// free of `process`, `node:` imports and anything a browser does not have. Where
+// a value can be overridden from the environment, the default is here and the
+// override stays at the point of use, in the process that has an environment to
+// read.
 
 export { waitUntil } from "#shared/waits/operations/wait-until.ts";
 export { pause } from "#shared/waits/operations/pause.ts";

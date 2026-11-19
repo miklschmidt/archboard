@@ -2,7 +2,7 @@
 
 import { durationOf } from "#shared/durations/rules/names.ts";
 import { sleep, SYSTEM_CLOCK, type Clock } from "#shared/waits/clients/clock.ts";
-import { PAUSES, type CadenceName, type PausePolicy } from "#shared/waits/rules/policies.ts";
+import { pausePolicy, type CadenceName } from "#shared/waits/rules/policies.ts";
 
 /** What a pause may be told beyond its name. */
 interface PauseOptions {
@@ -24,7 +24,7 @@ interface PauseOptions {
 function pauseMs(name: CadenceName, clock: Clock, untilMs: number | undefined): number | null {
 	const cadence = durationOf(name);
 	if (untilMs === undefined) return cadence;
-	const policy: PausePolicy = PAUSES[name];
+	const policy = pausePolicy(name);
 	const left = untilMs - clock.now();
 	const ms = Math.min(cadence, Math.max(policy.floorMs ?? Number.NEGATIVE_INFINITY, left));
 	return ms > 0 ? ms : null;
