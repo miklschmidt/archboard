@@ -3,7 +3,7 @@
 // subjects a picture placed, named. Each has this render as its one reader.
 
 import {
-	EVERYTHING_VIEW,
+	everythingView,
 	readFlow,
 	type DrawnSubjects,
 	type LegacyBoard,
@@ -24,8 +24,9 @@ import {
  * @returns The view, or undefined when nothing on this legacy board answers to it.
  */
 function findView(model: Pick<LegacyBoard, "views">, asked: string): SemanticView | undefined {
-	if (asked === EVERYTHING_VIEW.id) {
-		return EVERYTHING_VIEW;
+	const everything = everythingView();
+	if (asked === everything.id) {
+		return everything;
 	}
 	return (
 		model.views.find((view) => view.id === asked) ?? model.views.find((view) => view.name === asked)

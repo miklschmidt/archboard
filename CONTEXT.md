@@ -14,7 +14,7 @@ _Avoid_: board, document, drawing, diagram, whiteboard, sketch
 
 **Model contract**:
 The shapes that every side of a model exchanges and keeps: its files, its requests and answers, and the records the store writes beside them.
-A caller reads them only through the contract's parse operations, and builds its own contract from the shapes it hands out (ADR 0085).
+A caller reads them only through the contract's parse operations, and builds its own contract from the shapes it hands out (ADR 0086).
 _Avoid_: schema, wire format, protocol
 
 **Manifest**:

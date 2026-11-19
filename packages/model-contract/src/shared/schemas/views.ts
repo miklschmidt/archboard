@@ -234,11 +234,20 @@ const EVERYTHING_VIEW: SemanticView = Object.freeze({
 	scope: Object.freeze({ kind: "all" }),
 });
 
+/**
+ * The reading of every part and relationship, as a view: what a reader offers and finds under the name "Everything".
+ * @returns The one frozen view.
+ */
+function everythingView(): SemanticView {
+	return EVERYTHING_VIEW;
+}
+
 /** The names no authored view can take, because a reading nobody authors answers to them. */
 const RESERVED_VIEW_NAMES: readonly string[] = Object.freeze(["Overview", EVERYTHING_VIEW.name]);
 
 export {
 	EVERYTHING_VIEW,
+	everythingView,
 	RESERVED_VIEW_NAMES,
 	alternativesOf,
 	FlowMessageSchema,

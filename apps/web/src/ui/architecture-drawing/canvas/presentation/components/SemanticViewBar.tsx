@@ -29,7 +29,7 @@ import {
 	SidebarChoices,
 	SidebarLabel,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSidebarParts.tsx";
-import { EVERYTHING_VIEW } from "@archboard/model-contract";
+import { everythingView } from "@archboard/model-contract";
 
 /** Inputs for the view bar. */
 interface SemanticViewBarProps {
@@ -54,10 +54,11 @@ const OVERVIEW: SemanticOfferedView = Object.freeze({
 });
 
 /** Every part and every relationship, offered as the view of that name. */
+const EVERYTHING_READING = everythingView();
 const EVERYTHING: SemanticOfferedView = Object.freeze({
-	id: EVERYTHING_VIEW.id,
-	name: EVERYTHING_VIEW.name,
-	grammar: EVERYTHING_VIEW.grammar,
+	id: EVERYTHING_READING.id,
+	name: EVERYTHING_READING.name,
+	grammar: EVERYTHING_READING.grammar,
 });
 
 /** One view's choice. */

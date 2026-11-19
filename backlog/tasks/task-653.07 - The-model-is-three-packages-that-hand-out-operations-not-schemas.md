@@ -4,7 +4,7 @@ title: The model is three packages that hand out operations, not schemas
 status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T19:20:00Z'
+updated_date: '2026-11-19T19:35:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -50,10 +50,10 @@ Design amended after the first build stopped: read 'Candidate 11, model: AMENDED
 
 ## Built (branch deepen/653-07-model)
 
-Design followed: the "Candidate 11, model: AMENDED again after the second stop" entry (it supersedes the widths in AC #2-#4): contract 20, rules 18, store 20. Code check (old model node pointed at each package in turn, uncommitted, reverted): no INTERFACE_WIDE or MODULE_SHALLOW; contract 19 functions + 1 value, logic 2662; rules 18 functions, logic 1088; store 20 functions, logic 8699.
+Design followed: the "Candidate 11, model: AMENDED again after the second stop" entry (it supersedes the widths in AC #2-#4): contract 20, rules 18, store 20. Code check (old model node pointed at each package in turn, uncommitted, reverted): no warning or error on any of the three (no INTERFACE_WIDE, MODULE_SHALLOW, EXPOSED_VALUE or EXPOSED_UNUSED); contract 20 functions, logic 2662; rules 18 functions, logic 1088; store 20 functions, logic 8699.
 
 - Layers: model-contract 4 < model-rules 5 < model-store 6; every package above moved up two (apps 10). Ceilings: model-contract 96, model-rules 27, model-store 20 (all names incl. types; the old model was 182).
-- Contract: schemas private; parseDocument (45 kinds: 36 one-schema kinds, 6 store records in store-documents.ts, 3 checked kinds legacyBoard, legacyBoardFile, variantContent), parseModelRequest (18 operations, each reads its body the way its route did), readModelReply (26 operations; "failed" delivery reads only a refusal), describeModelSchema, modelShape (44 keys), plus readFlow, nestedSteps, subjectsOf, normalizeGroupIds, resolveVariant (absorbs currentVariant), addressedVariant, findVariant, variantNamed, EVERYTHING_VIEW, pane keys, defaults.
+- Contract: schemas private; parseDocument (45 kinds: 36 one-schema kinds, 6 store records in store-documents.ts, 3 checked kinds legacyBoard, legacyBoardFile, variantContent), parseModelRequest (18 operations, each reads its body the way its route did), readModelReply (26 operations; "failed" delivery reads only a refusal), describeModelSchema, modelShape (44 keys), plus readFlow, nestedSteps, subjectsOf, normalizeGroupIds, resolveVariant (absorbs currentVariant), addressedVariant, findVariant, variantNamed, everythingView() (the frozen Everything view; an exported value would be EXPOSED_VALUE), pane keys, defaults.
 - Seam tests: packages/model-contract/tests/shared/protocol/model-protocol.test.ts (refusal preservation at readModelReply, vault envelope at parseModelRequest).
 - Byte diffs against model-before/: the eight `archboard model schema` prints and command-contract-proof.{json,md} identical.
 
@@ -73,6 +73,9 @@ apps/cli (diagnosticLine and vaultsBoundTo moved in), apps/server (routes read t
 4. Fixtures that only the bare legacy-board/content schema accepted were made coherent (renderer, code-intel, rules tests), since tests now read through parseDocument with the integrity rules.
 5. paletteColor shape key has test-only consumers (two renderer palette-coverage tests).
 6. Store re-checks of a request through parseModelRequest drop a `vault` key instead of refusing it, and a non-object input to an envelope operation fails with the envelope's text; callers' types exclude both.
+
+## ADR
+ADR 0086 (renumbered from 0085, which the Painter stage took on deepen/module-depth).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

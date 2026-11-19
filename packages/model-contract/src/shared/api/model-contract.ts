@@ -70,7 +70,7 @@ export {
 	type SemanticVariant,
 } from "#shared/schemas/legacy-board.ts";
 export {
-	EVERYTHING_VIEW,
+	everythingView,
 	type FlowDecision,
 	type FlowLoop,
 	type FlowStep,
