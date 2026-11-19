@@ -2,7 +2,7 @@
 // cancellation, and never leave one behind. Every spawn goes through here so
 // there is one answer to what a timed-out or cancelled process looks like.
 
-import { durationMs, processGroupPollMs } from "@archboard/timing";
+import { durationMs, waitUntil } from "@archboard/timing";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
@@ -30,17 +30,6 @@ interface ProcessResult {
 	readonly timedOut: boolean;
 	readonly cancelled: boolean;
 	readonly durationMs: number;
-}
-
-/**
- * Waits for a delay.
- * @param ms The delay.
- * @returns A promise resolved after the delay.
- */
-async function pause(ms: number): Promise<void> {
-	await new Promise<void>((resolve) => {
-		setTimeout(resolve, ms);
-	});
 }
 
 /**
@@ -72,13 +61,12 @@ const groups = createCodexProcessGroupOperations();
  * @returns Whether every group member stopped.
  */
 async function groupSettled(identity: CodexProcessGroupIdentity, ms: number): Promise<boolean> {
-	const deadline = Date.now() + ms;
-	while (groups.inspect(identity) !== "quiescent") {
-		if (Date.now() >= deadline) return false;
-		// oxlint-disable-next-line no-await-in-loop -- each group observation decides whether another poll is needed
-		await pause(Math.min(processGroupPollMs(), deadline - Date.now()));
-	}
-	return true;
+	const settled = await waitUntil(
+		"skillEval.groupSettle",
+		() => (groups.inspect(identity) === "quiescent" ? true : undefined),
+		{ boundMs: ms },
+	);
+	return settled.ok;
 }
 
 /**
@@ -267,4 +255,4 @@ async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 	}
 }
 
-export { ownProcess, pause, runProcess, sequentially, settlesWithin, type ProcessResult };
+export { ownProcess, runProcess, sequentially, settlesWithin, type ProcessResult };
