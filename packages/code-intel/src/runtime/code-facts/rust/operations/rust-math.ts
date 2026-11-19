@@ -167,17 +167,51 @@ function wrapped(node: Node): Node | undefined {
  */
 function mathCall(call: Node): MathCall | undefined {
 	const callee = call.type === "call_expression" ? call.childForFieldName("function") : null;
-	const passed = call.childForFieldName("arguments")?.namedChildren ?? [];
-	if (callee?.type === "field_expression") {
-		const name = callee.childForFieldName("field")?.text ?? "";
-		const receiver = callee.childForFieldName("value");
-		return MATH.has(name) && receiver !== null ? { name, operands: [receiver, ...passed] } : undefined;
-	}
-	if (callee?.type !== "scoped_identifier") return undefined;
-	const name = callee.childForFieldName("name")?.text ?? "";
-	const owner = callee.childForFieldName("path")?.text.replaceAll(/\s/gu, "") ?? "";
-	return MATH.has(name) && OWNERS.test(owner) ? { name, operands: passed } : undefined;
+	if (callee === null) return undefined;
+	return CALLEES[callee.type]?.(callee, call.childForFieldName("arguments")?.namedChildren ?? []);
 }
+
+/**
+ * The text of a node's field, without white space.
+ * @param node The node.
+ * @param name The field.
+ * @returns The text, `""` where the node has no such field.
+ */
+function fieldText(node: Node, name: string): string {
+	return node.childForFieldName(name)?.text.replaceAll(/\s/gu, "") ?? "";
+}
+
+/**
+ * The numeric function a method call runs, as `a.min(b)` runs `min`.
+ * @param callee The method, through `.` from its receiver.
+ * @param passed The arguments.
+ * @returns The function and its operands, the receiver first, or undefined for another method.
+ */
+function methodMath(callee: Node, passed: readonly Node[]): MathCall | undefined {
+	const name = fieldText(callee, "field");
+	const receiver = callee.childForFieldName("value");
+	return MATH.has(name) && receiver !== null
+		? { name, operands: [receiver, ...passed] }
+		: undefined;
+}
+
+/**
+ * The numeric function a path calls through a numeric type or `cmp`, as `u64::pow` does.
+ * @param callee The path.
+ * @param passed The arguments.
+ * @returns The function and its operands, or undefined for another path.
+ */
+function pathMath(callee: Node, passed: readonly Node[]): MathCall | undefined {
+	const name = fieldText(callee, "name");
+	return MATH.has(name) && OWNERS.test(fieldText(callee, "path"))
+		? { name, operands: [...passed] }
+		: undefined;
+}
+
+/** How each kind of callee names the numeric function it calls. */
+const CALLEES: Readonly<
+	Record<string, (callee: Node, passed: readonly Node[]) => MathCall | undefined>
+> = { field_expression: methodMath, scoped_identifier: pathMath };
 
 /**
  * The operator of an arithmetic expression on numbers.
@@ -185,11 +219,20 @@ function mathCall(call: Node): MathCall | undefined {
  * @returns The operator, or undefined.
  */
 function arithmetic(node: Node): string | undefined {
-	if (node.type !== "binary_expression") return undefined;
-	const operator = node.childForFieldName("operator")?.type ?? "";
-	if (!BINDING.has(operator)) return undefined;
-	const joins = sidesOf(node).some((side) => TEXT.has(unwrapped(side).type));
-	return operator === "+" && joins ? undefined : operator;
+	const operator =
+		node.type === "binary_expression" ? node.childForFieldName("operator")?.type : undefined;
+	if (operator === undefined || !BINDING.has(operator)) return undefined;
+	return joinsText(node, operator) ? undefined : operator;
+}
+
+/**
+ * Whether a binary expression's `+` joins strings: it has text on a side.
+ * @param node The expression.
+ * @param operator Its operator.
+ * @returns True when it does.
+ */
+function joinsText(node: Node, operator: string): boolean {
+	return operator === "+" && sidesOf(node).some((side) => TEXT.has(unwrapped(side).type));
 }
 
 /**
@@ -221,11 +264,30 @@ function signed(node: Node): boolean {
 function mathParent(node: Node): Node | undefined {
 	const parent = node.parent;
 	if (parent === null) return undefined;
-	if (wrapped(parent)?.id === node.id || arithmetic(parent) !== undefined || signed(parent)) {
-		return parent;
-	}
-	const call = parent.type === "arguments" ? parent.parent : methodCall(parent, node);
-	return call !== null && call !== undefined && mathCall(call) !== undefined ? call : undefined;
+	return operation(parent, node) ? parent : mathCallOf(parent, node);
+}
+
+/**
+ * Whether syntax keeps math going around an expression it holds:
+ * parentheses, a cast, arithmetic or a sign.
+ * @param parent The syntax.
+ * @param node The expression.
+ * @returns True when it does.
+ */
+function operation(parent: Node, node: Node): boolean {
+	return wrapped(parent)?.id === node.id || arithmetic(parent) !== undefined || signed(parent);
+}
+
+/**
+ * The call of a numeric function that an expression is an argument or the receiver of.
+ * @param parent The syntax that holds the expression.
+ * @param node The expression.
+ * @returns The call, or undefined.
+ */
+function mathCallOf(parent: Node, node: Node): Node | undefined {
+	const call =
+		parent.type === "arguments" ? (parent.parent ?? undefined) : methodCall(parent, node);
+	return call !== undefined && mathCall(call) !== undefined ? call : undefined;
 }
 
 /**
@@ -361,13 +423,24 @@ function shapeOf(node: Node, focus: Focus): Shape {
 function chainOf(node: Node, symbol: string): PathUse {
 	let chain = { node, symbol };
 	for (let parent = node.parent; parent !== null; parent = chain.node.parent) {
-		const field = parent.childForFieldName("field")?.text;
-		const plain = methodCall(parent, chain.node) === undefined;
-		if (parent.type !== "field_expression" || !holds(parent, "value", chain.node) || !plain) break;
+		const field = fieldOf(parent, chain.node);
 		if (field === undefined) break;
 		chain = { node: parent, symbol: `${chain.symbol}.${field}` };
 	}
 	return chain;
+}
+
+/**
+ * The field a `.` reads of an expression, a method aside.
+ * @param parent The syntax that holds the expression.
+ * @param node The expression.
+ * @returns The field's name, or undefined when the syntax reads no field of it.
+ */
+function fieldOf(parent: Node, node: Node): string | undefined {
+	if (parent.type !== "field_expression" || !holds(parent, "value", node)) return undefined;
+	return methodCall(parent, node) === undefined
+		? parent.childForFieldName("field")?.text
+		: undefined;
 }
 
 /**
@@ -383,7 +456,15 @@ function readsOn(parent: Node, operand: Node): boolean {
 		return holds(parent, "function", operand) && emptyCall(parent);
 	}
 	if (parent.type !== "field_expression" || !holds(parent, "value", operand)) return false;
-	const call = methodCall(parent, operand);
+	return getter(methodCall(parent, operand));
+}
+
+/**
+ * Whether a `.` reads a field, or calls a method that passes nothing and is no numeric function.
+ * @param call The method call the `.` makes, or undefined where it reads a field.
+ * @returns True when it does.
+ */
+function getter(call: Node | undefined): boolean {
 	return call === undefined || (emptyCall(call) && mathCall(call) === undefined);
 }
 
@@ -438,14 +519,23 @@ function computed(symbol: string, operand: Node, text: string): Computation | un
  * @returns The declaration and the variable, or undefined.
  */
 function letOf(operand: Node): { readonly declaration: Node; readonly local: Node } | undefined {
-	let held = operand;
-	while (held.parent !== null && wrapped(held.parent)?.id === held.id) held = held.parent;
+	const held = outermost(operand);
 	const declaration = held.parent;
-	const local = declaration?.childForFieldName("pattern");
-	if (declaration?.type !== "let_declaration" || !holds(declaration, "value", held)) {
-		return undefined;
-	}
-	return local?.type === "identifier" ? { declaration, local } : undefined;
+	if (declaration === null || !holds(declaration, "value", held)) return undefined;
+	const local = declaration.childForFieldName("pattern");
+	const binds = declaration.type === "let_declaration" && local?.type === "identifier";
+	return binds ? { declaration, local } : undefined;
+}
+
+/**
+ * The outermost parentheses or cast around an expression.
+ * @param node The expression.
+ * @returns The syntax, or the expression where none holds it.
+ */
+function outermost(node: Node): Node {
+	let held = node;
+	while (held.parent !== null && wrapped(held.parent)?.id === held.id) held = held.parent;
+	return held;
 }
 
 /**

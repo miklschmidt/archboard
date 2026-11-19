@@ -446,10 +446,12 @@ function modulesOf(
  */
 function pathUses(written: readonly WrittenUse[], bound: readonly Node[]): PathUse[] {
 	const paths = new Map<number, PathUse>();
-	for (const use of outsideUses(written, bound)) {
-		const known = paths.get(use.node.id);
-		if (use.typeOnly || (known !== undefined && known.symbol.length >= use.symbol.length)) continue;
-		paths.set(use.node.id, { node: use.node, symbol: use.symbol });
+	for (const each of outsideUses(written, bound)) {
+		const known = paths.get(each.node.id);
+		if (each.typeOnly || (known !== undefined && known.symbol.length >= each.symbol.length)) {
+			continue;
+		}
+		paths.set(each.node.id, { node: each.node, symbol: each.symbol });
 	}
 	return [...paths.values()];
 }

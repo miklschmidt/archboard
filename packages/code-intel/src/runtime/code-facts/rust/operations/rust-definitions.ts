@@ -239,6 +239,15 @@ function implShape(member: Node, ofTrait: boolean, open: boolean): Openness {
 }
 
 /**
+ * What the members of an `impl` block of a trait carry when the language calls them.
+ * @param trait The trait the block implements, if any.
+ * @returns The mark, or nothing.
+ */
+function languageCalled(trait: Node | null): Pick<Definition, "languageCalls"> {
+	return LANGUAGE_TRAITS.has(typeName(trait) ?? "") ? { languageCalls: true } : {};
+}
+
+/**
  * The members of an `impl` block, spelled under its type.
  * @param node The block.
  * @param scope Where it is.
@@ -250,7 +259,7 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 	if (type === undefined || body === null) return;
 	const trait = node.childForFieldName("trait");
 	const ofTrait = trait !== null;
-	const called = LANGUAGE_TRAITS.has(typeName(trait) ?? "") ? { languageCalls: true as const } : {};
+	const called = languageCalled(trait);
 	const holder = [...scope.prefix, type].join(".");
 	const open = scope.open && walk.types.get(holder) !== false;
 	for (const member of body.namedChildren) {

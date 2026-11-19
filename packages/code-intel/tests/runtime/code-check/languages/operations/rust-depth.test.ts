@@ -18,7 +18,6 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import type * as CodeCheckRun from "#runtime/api/code-check-run.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import { git as fixtureGit, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 

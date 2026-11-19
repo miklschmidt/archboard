@@ -24,8 +24,15 @@ const UNWRAPPED = new Set([
 	"parenthesized_expression",
 ]);
 
-/** The nodes a callee's path or chain is made of. */
-const PATHS = new Set(["scoped_identifier", "generic_function", "field_expression"]);
+/** The names a callee's path or chain can start from. */
+const ROOTS = new Set(["identifier", "self"]);
+
+/** The nodes a callee's path or chain is made of, and the field that leads to its root. */
+const TOWARD_ROOT: Readonly<Record<string, string>> = {
+	scoped_identifier: "path",
+	generic_function: "function",
+	field_expression: "value",
+};
 
 /**
  * The named children of a node that are no comment.
@@ -74,12 +81,9 @@ function bodyExpression(fn: Node): Node | undefined {
  */
 function calleeRoot(callee: Node | null): string | undefined {
 	if (callee === null) return undefined;
-	if (callee.type === "identifier" || callee.type === "self") return callee.text;
-	if (!PATHS.has(callee.type)) return undefined;
-	const inner = callee.childForFieldName(
-		callee.type === "field_expression" ? "value" : callee.type === "generic_function" ? "function" : "path",
-	);
-	return calleeRoot(inner);
+	if (ROOTS.has(callee.type)) return callee.text;
+	const toward = TOWARD_ROOT[callee.type];
+	return toward === undefined ? undefined : calleeRoot(callee.childForFieldName(toward));
 }
 
 /**
@@ -89,8 +93,21 @@ function calleeRoot(callee: Node | null): string | undefined {
  * @returns True when it does.
  */
 function passed(argument: Node, parameters: ReadonlySet<string>): boolean {
-	const name = argument.type === "reference_expression" ? argument.childForFieldName("value") : argument;
-	return (name?.type === "identifier" || name?.type === "self") && parameters.has(name.text);
+	const name =
+		argument.type === "reference_expression" ? argument.childForFieldName("value") : argument;
+	return name !== null && ROOTS.has(name.type) && parameters.has(name.text);
+}
+
+/**
+ * Whether a call hands on every argument straight from a parameter, and one at least.
+ * @param call The call.
+ * @param parameters The parameters.
+ * @returns True when it does.
+ */
+function passesParameters(call: Node, parameters: ReadonlySet<string>): boolean {
+	const list = call.childForFieldName("arguments");
+	const args = list === null ? [] : codeOf(list);
+	return args.length > 0 && args.every((each) => passed(each, parameters));
 }
 
 /**
@@ -102,11 +119,9 @@ function passed(argument: Node, parameters: ReadonlySet<string>): boolean {
 function passesTo(fn: Node): string | undefined {
 	if (fn.type !== "function_item") return undefined;
 	const call = bodyExpression(fn);
-	if (call?.type !== "call_expression") return undefined;
-	const parameters = parametersOf(fn);
-	const list = call.childForFieldName("arguments");
-	const args = list === null ? [] : codeOf(list);
-	if (args.length === 0 || !args.every((each) => passed(each, parameters))) return undefined;
+	if (call?.type !== "call_expression" || !passesParameters(call, parametersOf(fn))) {
+		return undefined;
+	}
 	return calleeRoot(call.childForFieldName("function"));
 }
 
