@@ -77,7 +77,8 @@ so agents in an implementation loop added exported constants and nothing failed.
   that another of its files imports counts as used. The rule holds in every
   judged language: a module with a declared interface keeps the rule above,
   and a language whose files of one module see each other without an import,
-  as Go's do, gives no such use, so the remedy there stays to unexport it.
+  as Go's and Swift's do, gives no such use, so the remedy there stays to stop
+  exporting the name.
 - **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
   is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
   pass-through finding. A class

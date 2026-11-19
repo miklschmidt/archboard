@@ -7,7 +7,8 @@
 // module can import it, and cannot hide that name from other folders. So in
 // such a module, a name another of its files imports counts as used. A
 // language whose files of one module see each other without an import, as
-// Go's do, gives no such use: an exported name only they use stays unused.
+// Go's and Swift's do, gives no such use: an exported name only they use
+// stays unused, and the remedy there is to stop exporting it.
 
 import {
 	type ExposedName,
@@ -73,8 +74,14 @@ async function usesIn(reading: DepthReading, file: string): Promise<SiblingUse[]
 	const read = await reading.facts.read(reading.checkout, file);
 	if (read === undefined || read.adapter === "text") return [];
 	const { directory } = reading.exposure;
+	// Only a use through an import that names the other file: a Swift file sees its target's names without one.
+	const named = new Set(read.imports.flatMap(({ resolved }) => resolved ?? []));
 	const imported = read.references.filter(
-		({ via, target }) => via === "code" && target !== undefined && within(directory, target.path),
+		({ via, target }) =>
+			via === "code" &&
+			target !== undefined &&
+			within(directory, target.path) &&
+			named.has(target.path),
 	);
 	const uses: SiblingUse[] = [];
 	for (const { symbol } of imported) {
