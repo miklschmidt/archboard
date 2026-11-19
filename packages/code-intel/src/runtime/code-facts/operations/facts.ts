@@ -56,12 +56,23 @@ interface Definition {
 	/**
 	 * It declares a type and nothing a caller runs or reads: a TypeScript
 	 * interface, type alias or enum; a C or C++ struct, union or enum with no
-	 * function among its members, a typedef or an alias; a Swift protocol,
-	 * alias or enum with no method; an Objective-C protocol. The code check
+	 * function among its members, a typedef or an alias; a Swift protocol or
+	 * alias; an Objective-C protocol. The code check
 	 * counts it as an exported type and never judges it, so an exported union
 	 * or enum keeps the compiler's exhaustive checks (TASK-646.04, TASK-646.12).
 	 */
 	readonly type?: true;
+	/**
+	 * It declares a type that holds data, which may also have methods: a Rust
+	 * struct, enum or union, a Go named type other than an interface, a C#
+	 * struct or record, a Swift struct or enum, or a Python dataclass or enum.
+	 * Its methods may be in another file, as a Rust `impl`, a Go method and a
+	 * Swift extension can be, so module depth decides: with no public method
+	 * in its module it counts as a type, else as a class with its methods
+	 * (TASK-651). A C or C++ type is decided in its file, where a class
+	 * declares every member function (`type`).
+	 */
+	readonly data?: true;
 	/**
 	 * It only passes its call on: its body is one call that hands every
 	 * argument straight from its parameters, and this names the callee's root,

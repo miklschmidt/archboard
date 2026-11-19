@@ -2,7 +2,7 @@
 // judges its exports (TASK-646.04): it counts the exports by kind and the
 // pieces of logic behind them, warns of an exported value that outside code
 // reads, and names a module whose every value export carries such a finding
-// shallow, as information. It marks the modules that the branch touched,
+// shallow, a warning. It marks the modules that the branch touched,
 // working tree included, when it is asked or the model's policy turns the gate
 // on, and its severities never depend on who asks.
 //
@@ -42,13 +42,13 @@ function git(...args: string[]): void {
 
 /**
  * Write the vault's policy.
- * @param gate Whether the policy turns the shallow-module gate on.
+ * @param codeCheck The policy's code check, if it sets one.
  */
-function policy(gate: boolean): void {
+function policy(codeCheck?: object): void {
 	write(vault, {
 		".archboard/config.yaml": Bun.YAML.stringify({
 			...defaultSemanticPolicy(),
-			...(gate ? { codeCheck: { failShallowModules: true } } : {}),
+			...(codeCheck === undefined ? {} : { codeCheck }),
 		}),
 	});
 }
@@ -148,7 +148,7 @@ beforeAll(async () => {
 			current: { id: "Built", name: "Built" },
 		}),
 	});
-	policy(false);
+	policy();
 	module("Server", "src/server", 10);
 	module("Worker", "src/worker", 20);
 	module("Timing", "src/timing", 30);
@@ -296,9 +296,9 @@ test("the remedies of an exposed value follow its readers: one reader takes it, 
 	expect(idle?.message).not.toBe(retry?.message?.replaceAll("RETRY_MS", "IDLE_MS"));
 });
 
-test("a module whose every export that is not a type carries a per-name finding is shallow, as information", async () => {
+test("a module whose every export that is not a type carries a per-name finding is shallow, a warning", async () => {
 	const answer = await check();
-	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "information"]]);
+	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "warning"]]);
 });
 
 /**
@@ -376,13 +376,31 @@ test("a named base that does not resolve is a refusal, never a pass", async () =
 });
 
 test("the model's policy turns the gate on, so the answer marks the touched modules unasked", async () => {
-	policy(true);
+	policy({ failShallowModules: true });
 	try {
 		const answer = await check();
 		expect(answer.models?.[0]?.failShallowModules).toBe(true);
 		expect(answer.touched?.[0]?.modules).toContain("Shop#Timing");
-		expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "information"]]);
+		expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "warning"]]);
 	} finally {
-		policy(false);
+		policy();
+	}
+});
+
+test("the vault's rules lower or remove a module-depth code after the roll-up, so a module stays shallow", async () => {
+	policy({ rules: { EXPOSED_VALUE: "off", EXPOSED_UNUSED: "information" } });
+	try {
+		const answer = await check();
+		expect(answer.models?.[0]?.rules).toEqual({
+			EXPOSED_VALUE: "off",
+			EXPOSED_UNUSED: "information",
+		});
+		expect(judged(answer, "EXPOSED_VALUE")).toEqual([]);
+		expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "warning"]]);
+		// FIXTURE, which only a test reads, is unused after a complete read: a warning without the rule.
+		expect(judged(answer, "EXPOSED_UNUSED")).toContainEqual(["Config", "FIXTURE", "information"]);
+		expect(judged(answer, "EXPOSED_UNUSED").some(([, , level]) => level === "warning")).toBe(false);
+	} finally {
+		policy();
 	}
 });

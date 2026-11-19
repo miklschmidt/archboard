@@ -26,7 +26,9 @@
 // declare the type.
 //
 // For module depth (TASK-646.10): a trait, a type alias and an associated
-// type declare a type and nothing a caller runs or reads. A `const` or
+// type declare a type and nothing a caller runs or reads. A struct, an enum
+// and a union hold data, and are types unless their module gives them a
+// public method (`Definition.data`, TASK-651). A `const` or
 // `static` of a function pointer's type can be called, so it is a function.
 // The members of an `impl` of a trait whose members the language's own
 // syntax calls, as a scope's end calls `Drop::drop` and `{}` calls
@@ -52,6 +54,9 @@ interface Scope {
 
 /** The items that declare a type and nothing a caller runs or reads. */
 const TYPE_ITEMS = new Set(["trait_item", "type_item", "associated_type"]);
+
+/** The items that declare a type that holds data, and may have methods in an `impl` anywhere in their crate. */
+const DATA_ITEMS = new Set(["struct_item", "enum_item", "union_item"]);
 
 /**
  * The traits whose members the language's syntax calls: the end of a scope,
@@ -211,6 +216,7 @@ function definition(
 		symbol,
 		...shape,
 		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
+		...(DATA_ITEMS.has(node.type) ? { data: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...hostCalled(node),
 		start: node.startPosition.row + 1,

@@ -6,9 +6,9 @@
 // fails it. Behind is information (ADR 0045), so a model many commits behind
 // never does. `--state`, `--every-draft` and `--plan` name what the code
 // check reads, and only `check`, `check all` and `check embeds` take `--fix`.
-// `--fail-shallow-modules`, or a model's policy, makes `MODULE_SHALLOW` on a
-// module the branch touched a warning, and `--base` names the base
-// (TASK-646.04).
+// `--fail-shallow-modules`, or a model's policy, makes an information
+// `MODULE_SHALLOW` or `INTERFACE_WIDE` on a module the branch touched a
+// warning (debt mode), and `--base` names the base (TASK-646.04, TASK-651).
 // Only the Archboard server is a stand-in.
 
 import { afterAll, expect, spyOn, test } from "bun:test";
@@ -478,14 +478,15 @@ test("check embeds passes on a checkout with no embed, and every command that ra
 });
 
 /**
- * A shallow module's finding, as the code check answers it: information.
+ * A shallow module's finding, as the code check answers it where a vault rule lowers it: information.
  * @param id The module's id.
+ * @param code The finding's code.
  * @returns The finding.
  */
-function shallow(id: string): CodeFinding {
+function shallow(id: string, code = "MODULE_SHALLOW"): CodeFinding {
 	return {
 		severity: "information",
-		code: "MODULE_SHALLOW",
+		code,
 		file: "modules/timing.module.json",
 		model: "Orders",
 		state: "Built",
@@ -520,7 +521,11 @@ function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
 			exports: { functions: 0, classes: 0, methods: 0, values: 2, types: 0 },
 			logic: 0,
 		})),
-		findings: [shallow("Orders#Timing"), shallow("Orders#Clock")],
+		findings: [
+			shallow("Orders#Timing"),
+			shallow("Orders#Clock"),
+			shallow("Orders#Timing", "INTERFACE_WIDE"),
+		],
 		touched: [
 			{ model: "Orders", state: "Built", base: "main", modules: ["Orders#Timing"], unread },
 		],
@@ -528,16 +533,24 @@ function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
 }
 
 /**
- * The severity each shallow module ends with in a command's answer.
+ * The severity each finding on a module ends with in a command's answer.
  * @param stdout The command's answer.
- * @returns Each module's id and severity.
+ * @returns Each finding's code, its module's id and its severity.
  */
 function shallowSeverities(stdout: string) {
 	return (PartsSchema.parse(JSON.parse(stdout)).code?.findings ?? []).map((each) => [
+		each.code,
 		each.subject?.id,
 		each.severity,
 	]);
 }
+
+/** The findings of `shallowAnswer`, with the gate on: only those on the touched module fail. */
+const GATED = [
+	["MODULE_SHALLOW", "Orders#Timing", "warning"],
+	["MODULE_SHALLOW", "Orders#Clock", "information"],
+	["INTERFACE_WIDE", "Orders#Timing", "warning"],
+];
 
 test("--fail-shallow-modules asks for the touched modules and fails on a shallow one the branch touched, not on older ones", async () => {
 	plain = clean;
@@ -546,17 +559,13 @@ test("--fail-shallow-modules asks for the touched modules and fails on a shallow
 		expect((await run(["check", "code"])).exited).toBe(0);
 		expect((await run(["check", "code", "--fail-shallow-modules"])).exited).toBe(1);
 		for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
-			expect(shallowSeverities((await run(argv)).stdout)).toEqual([
-				["Orders#Timing", "information"],
-				["Orders#Clock", "information"],
-			]);
+			expect(shallowSeverities((await run(argv)).stdout)).toEqual(
+				GATED.map(([code, id]) => [code, id, "information"]),
+			);
 			asked.length = 0;
 			const gated = await run([...argv, "--fail-shallow-modules"]);
 			expect(new URL(`http://host${asked.at(-1) ?? ""}`).searchParams.get("touched")).toBe("true");
-			expect(shallowSeverities(gated.stdout)).toEqual([
-				["Orders#Timing", "warning"],
-				["Orders#Clock", "information"],
-			]);
+			expect(shallowSeverities(gated.stdout)).toEqual(GATED);
 		}
 	} finally {
 		answered = codeCheck;
@@ -572,10 +581,7 @@ test("the model's policy turns the same gate on without the flag", async () => {
 		// The measured modules pass through without the names of their exports.
 		const depth = PartsSchema.parse(JSON.parse(gated.stdout)).code?.depth ?? [];
 		expect(depth.map((module) => module.subject.id)).toEqual(["Orders#Timing", "Orders#Clock"]);
-		expect(shallowSeverities(gated.stdout)).toEqual([
-			["Orders#Timing", "warning"],
-			["Orders#Clock", "information"],
-		]);
+		expect(shallowSeverities(gated.stdout)).toEqual(GATED);
 	} finally {
 		answered = codeCheck;
 	}
@@ -592,6 +598,35 @@ test("--base names the base, and a base that does not resolve, or a gated module
 		answered = shallowAnswer(true, ["Orders#Clock"]);
 		const unread = await run(["check", "code"]);
 		expect(unread.exited).toBe(2);
+	} finally {
+		answered = codeCheck;
+	}
+});
+
+/**
+ * `shallowAnswer` under the vault's rules.
+ * @param rules The rules.
+ * @returns The answer.
+ */
+function ruledAnswer(rules: NonNullable<NonNullable<CodeCheckResult["models"]>[number]["rules"]>) {
+	const answer = shallowAnswer(false);
+	return { ...answer, models: answer.models?.map((each) => ({ ...each, rules })) };
+}
+
+test("a vault rule that turns a gated code off refuses --fail-shallow-modules, information beside it is debt mode, and the codes a rule turns off print on one line", async () => {
+	plain = clean;
+	try {
+		for (const code of ["MODULE_SHALLOW", "INTERFACE_WIDE"] as const) {
+			answered = ruledAnswer({ [code]: "off" });
+			expect((await run(["check", "code", "--fail-shallow-modules"])).exited).toBe(2);
+		}
+		answered = ruledAnswer({ MODULE_SHALLOW: "information", CODE_PASS_THROUGH: "off" });
+		expect((await run(["check", "code", "--fail-shallow-modules"])).exited).toBe(1);
+		const ruled = await run(["check", "code"]);
+		expect(ruled.exited).toBe(0);
+		expect(
+			ruled.stderr.split("\n").filter((line) => line.includes("CODE_PASS_THROUGH")),
+		).toHaveLength(1);
 	} finally {
 		answered = codeCheck;
 	}

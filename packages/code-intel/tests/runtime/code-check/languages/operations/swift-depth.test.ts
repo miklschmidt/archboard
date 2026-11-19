@@ -3,8 +3,8 @@
 // and the math a caller writes around a use. The rules themselves are the
 // TypeScript tests'; these assert what the Swift grammar decides.
 //
-// The target `Timing` exports two values, an enum, a protocol, an alias, a
-// struct, a class with an initializer, a deinitializer, `hash(into:)`,
+// The target `Timing` exports two values, an enum with a method in an
+// extension in another file, a protocol, an alias, a struct with no method, a class with an initializer, a deinitializer, `hash(into:)`,
 // a method that only passes its call on and one that decides, a getter, a
 // function that decides, one nobody calls, and one that constructs a class
 // from its parameter, which passes nothing on. `Codex` and `Relay` write the
@@ -62,6 +62,12 @@ beforeAll(async () => {
 				"public func make(_ base: Int) -> Timer { Timer(base: base) }",
 				"",
 			].join("\n"),
+			"Sources/Timing/Mode+Label.swift": [
+				"extension Mode {",
+				'    public func label() -> String { "mode" }',
+				"}",
+				"",
+			].join("\n"),
 			"Sources/Codex/Codex.swift": [
 				"import Timing",
 				"public func delay(_ attempt: Int) -> Int {",
@@ -94,16 +100,17 @@ afterAll(() => {
 	shop.remove();
 });
 
-test("a Swift target's exports count by kind: an enum, a protocol and an alias are types, a struct is a class, and a class counts its methods but its initializer and hash(into:)", () => {
+test("a Swift target's exports count by kind: a protocol, an alias and a struct or an enum with no method are types, an enum with a method in an extension is a class, and a class counts its methods but its initializer and hash(into:)", () => {
 	const timing = depthByModule(answer).get("Timing");
 	expect(timing?.languages).toEqual(["swift"]);
-	expect(timing?.exports).toEqual({ functions: 4, classes: 2, methods: 2, values: 2, types: 3 });
+	expect(timing?.exports).toEqual({ functions: 4, classes: 2, methods: 3, values: 2, types: 3 });
 	expect(timing?.names.map(({ name, kind }) => `${name} ${kind}`).toSorted()).toEqual(
 		[
 			"Clock type",
 			"Millis type",
-			"Mode type",
-			"Point class",
+			"Mode class",
+			"Mode.label method",
+			"Point type",
 			"Timer class",
 			"Timer.fire method",
 			"Timer.fireLater method",
@@ -130,6 +137,8 @@ test("every module-depth rule reads the Swift grammar's facts: repeated math thr
 			"jitter EXPOSED_VALUE_COMPUTED warning",
 			"Timer.fire CODE_PASS_THROUGH information",
 			"unused EXPOSED_UNUSED warning",
+			// Ten names hide eight pieces of logic.
+			"(module) MODULE_SHALLOW warning",
 		].toSorted(),
 	);
 	const lines = answer.findings

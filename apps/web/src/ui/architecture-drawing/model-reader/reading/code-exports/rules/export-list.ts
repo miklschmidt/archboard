@@ -30,7 +30,11 @@ interface ExportKind {
 }
 
 /** The findings on a module's exports as a whole, which stand over its list. */
-const MODULE_CODES: ReadonlySet<string> = new Set(["MODULE_SHALLOW", "INTERFACE_UNDECLARED"]);
+const MODULE_CODES: ReadonlySet<string> = new Set([
+	"MODULE_SHALLOW",
+	"INTERFACE_WIDE",
+	"INTERFACE_UNDECLARED",
+]);
 
 /** The kinds, in the order the page lists them, with the name of each list. */
 const KINDS: readonly (readonly [Name["kind"], string])[] = [

@@ -85,6 +85,17 @@ The job summary lists up to {reference.facts.summaryRows} findings, evidence for
 | [`fail-on: never`](../reference/actions/#check-fail-on)   | The findings show, and the job never fails on them.                                                         |
 | [`allow-codes`](../reference/actions/#check-allow-codes)  | These codes show and never fail the job, such as [`CALLER_UNDRAWN`](../reference/findings/#caller-undrawn). |
 
+The vault decides the level of each module-depth code, such as [`EXPOSED_VALUE`](../reference/findings/#exposed-value), for the CLI, Measures and the Action alike. If you upgrade and write no rules, the new module-depth warnings fail the job, [`INTERFACE_WIDE`](../reference/findings/#interface-wide) and [`MODULE_SHALLOW`](../reference/findings/#module-shallow) on every module among them. [Debt mode](../gate/#fail-on-a-shallow-module) fails them only on the modules that a pull request touches. To lower one for the whole repository, set its rule in the vault's configuration. A code set to information keeps its findings and never fails the job, and one set to off removes them from the job summary and the annotations:
+
+```yaml title=".archboard/vault/.archboard/config.yaml"
+codeCheck:
+  rules:
+    EXPOSED_VALUE: information
+    CODE_PASS_THROUGH: "off"
+```
+
+[The gate](../gate/#set-the-level-of-a-module-depth-rule) lists the eight codes and what a rule can and cannot change. Use [`allow-codes`](../reference/actions/#check-allow-codes) for a code that only this job lets pass.
+
 A check that cannot run fails the job in every case: a usage error, a refusal, an unreachable server, or a checkout without a vault when the checks read one. With [`checks: embeds`](../reference/actions/#check-checks) the Action needs no vault.
 
 ## The plan on the pull request
@@ -193,7 +204,7 @@ It exits <Exit command="model footprint" outcome="outside" /> when the branch ch
 
 If the vault's repository holds the ticket branch, the command reads that branch's draft. Otherwise, it reads the draft on disk.
 
-The `archboard-plan` skill runs this gate in the integration worktree with `--model-at checkout` before each ticket merge. It edits the draft there, so the ticket branch does not hold those edits.
+The `archboard-plan` skill runs this gate in the integration worktree with `--model-at checkout` before each ticket merge. It edits the draft there, so the ticket branch does not hold those edits. The `archboard-deepen` skill runs the same gate before it merges each ticket of a redesign.
 
 A module counts as changed only when its bound code differs between the merge base and the head. A change that a later commit undoes does not count. In a stack that merges instead of rebasing, a change that a lower layer also made, and that a merge brings in, does not count either. Each changed module lists the commits that changed it.
 

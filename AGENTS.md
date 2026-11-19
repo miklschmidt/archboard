@@ -11,6 +11,7 @@ Where things are written down:
 - Domain language: [CONTEXT.md](CONTEXT.md). Module layout and import rules:
   [docs/agents/boundaries.md](docs/agents/boundaries.md)
 - Changing frontend code: [docs/agents/frontend.md](docs/agents/frontend.md)
+- The advisors that stand in for the owner at design gates: [docs/agents/advisors.md](docs/agents/advisors.md)
 - Decisions: [docs/adr/](docs/adr/). Read the ADR before you touch what it decides.
 - Measured investigations: [docs/design/](docs/design/). The visual authority of the UI is
   [DESIGN.md](DESIGN.md).
@@ -50,6 +51,7 @@ site before you finish. [The site's README](site/README.md#audit-the-site) gives
 Track authored inputs, including the canonical model in `.archboard/vault`.
 Keep cheaply reproducible output ignored unless it matches an exception below.
 Build output, caches, and generated bindings stay ignored.
+Put the run outputs of agents and tools, such as reports and their pictures, in `artifacts/`, which Git ignores.
 
 Keep these exceptions tracked:
 

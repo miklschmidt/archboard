@@ -40,6 +40,12 @@ beside the test.
 A ceiling goes down when a package gets narrower.
 A ceiling never goes up to make room for a name: design a deeper operation instead.
 
+This width is not the width of `INTERFACE_WIDE` in the code check
+([ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md), TASK-651).
+The ceiling test counts every exported name of a package, its types included.
+The code check counts the exported functions, classes, public methods and values of each bound
+module, and counts no type.
+
 ## Considered options
 
 The rule of TASK-500.14 alone lets an interface follow caller demand.

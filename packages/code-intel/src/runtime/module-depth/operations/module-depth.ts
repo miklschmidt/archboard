@@ -8,10 +8,12 @@
 // reads nothing twice.
 //
 // It counts the module's exports by kind: functions, classes, each public
-// method of an exported class, values and types. A member that belongs to an
-// exported class rather than to an instance, as a C# `static` member does, is
-// read through the class's name and counts as a function or a value of its
-// own (TASK-646.11). It counts the pieces of
+// method of an exported class, values and types. A type that holds data, such
+// as a Rust struct, counts as a type unless the module gives it a public
+// method, in whichever of its files (`Definition.data`, TASK-651). A member
+// that belongs to an exported class rather than to an instance, as a C#
+// `static` member does, is read through the class's name and counts as a
+// function or a value of its own (TASK-646.11). It counts the pieces of
 // logic behind them as evidence: the calls, operators, conditions and loops of
 // the module's files, and the values it keeps hidden. No count is a verdict.
 //
@@ -36,11 +38,15 @@
 // follow, so no method is judged unused, and an implementation used through
 // its interface counts as used.
 //
-// `MODULE_SHALLOW`, information, rolls them up: every export that is not a
-// type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its
-// public methods. Types are no verdict's concern, so an exported union or enum
-// keeps the compiler's exhaustive checks. The answer never makes it a
-// warning: the CLI does, for the modules a branch touched (ADR 0082).
+// The module as a whole gets `INTERFACE_WIDE` and `MODULE_SHALLOW`, warnings
+// (module-measure.ts, TASK-651). The roll-up is one ground of `MODULE_SHALLOW`:
+// every export that is not a type carries `EXPOSED_VALUE`,
+// `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its public
+// methods. Types are no verdict's concern, so an exported union or enum keeps
+// the compiler's exhaustive checks. The other grounds read the counts, and only
+// where every exported name is in a judged language. The measured shallow
+// ground also needs every code file of one parsed whole; where code that did
+// not parse withholds it, the module names that code (`withheldBy`).
 //
 // The findings come grouped: one module's, in the order it exports the names,
 // then its roll-up. It judges the names of the languages whose adapter names
@@ -78,6 +84,15 @@ import {
 	nameFinding,
 } from "#runtime/module-depth/operations/name-findings.ts";
 import { siblingUses, undeclaredFinding } from "#runtime/module-depth/operations/sibling-uses.ts";
+import {
+	dataOnly,
+	methodOf,
+	staticMember,
+} from "#runtime/module-depth/operations/class-members.ts";
+import {
+	type ExportCounts,
+	moduleFindings,
+} from "#runtime/module-depth/operations/module-measure.ts";
 import type { ModuleExport } from "#shared/protocol/code-check.ts";
 
 /**
@@ -118,15 +133,6 @@ const JUDGED_FILES: readonly RegExp[] = [
 	C_FAMILY_FILE,
 ];
 
-/** A module's exports, by kind. */
-interface ExportCounts {
-	readonly functions: number;
-	readonly classes: number;
-	readonly methods: number;
-	readonly values: number;
-	readonly types: number;
-}
-
 /** What judging one module gives. */
 interface Depth {
 	/** The languages whose exports were counted and judged. */
@@ -140,6 +146,12 @@ interface Depth {
 	readonly exports: ExportCounts;
 	readonly logic: number;
 	readonly findings: readonly DepthFinding[];
+	/**
+	 * The parts of the module's code that did not parse, where they withhold
+	 * the measured `MODULE_SHALLOW`: the logic counted would make the module
+	 * shallow, and the code that did not parse could make it deep.
+	 */
+	readonly withheldBy: readonly string[];
 }
 
 /** The kind of one top-level export. */
@@ -275,64 +287,6 @@ function pathEnds(names: readonly ExposedName[]): ExposedName[] {
 }
 
 /**
- * A member's own name within a holder: `post` of `Ledger.post`, and in the C
- * family, whose names `::` qualifies, `save` of `shop::Store::save` and the
- * selector `post:by:` of `Ledger::post:by:`.
- * @param symbol The member's symbol.
- * @param holder The holder's symbol.
- * @returns The own name, or undefined when the symbol is no member of the holder's own.
- */
-function ownName(symbol: string, holder: string): string | undefined {
-	if (!symbol.startsWith(holder)) return undefined;
-	const own = /^(?:\.|::)(.+)$/u.exec(symbol.slice(holder.length))?.[1];
-	return own === undefined || /\.|::./u.test(own) ? undefined : own;
-}
-
-/**
- * Whether a member belongs to an exported class. It may be in another file
- * than its class: a C++ or Objective-C method in the pair of its class's
- * header, a Swift method in an extension.
- * @param member The member.
- * @param classes The module's exported classes.
- * @returns True when it does.
- */
-function heldBy(member: ExposedName, classes: readonly ExposedName[]): boolean {
-	const { symbol } = member.definition;
-	return classes.some((each) => ownName(symbol, each.definition.symbol) !== undefined);
-}
-
-/**
- * Whether a member is a public method of an exported class, which callers
- * call on an instance.
- * @param member The member.
- * @param classes The module's exported classes.
- * @returns True when it is.
- */
-function methodOf(member: ExposedName, classes: readonly ExposedName[]): boolean {
-	const { definition } = member;
-	return (
-		definition.kind === "function" &&
-		definition.calledByLanguage !== true &&
-		definition.static !== true &&
-		heldBy(member, classes)
-	);
-}
-
-/**
- * The kind of a member of an exported class that belongs to the class, not
- * to an instance, as a C# `static` member does: callers read it through the
- * class's name, as they read a top-level name, so it counts as one.
- * @param member The member.
- * @param classes The module's exported classes.
- * @returns Its kind, or undefined for any other member.
- */
-function staticKind(member: ExposedName, classes: readonly ExposedName[]): ExportKind | undefined {
-	const { definition } = member;
-	const counted = definition.static === true && definition.calledByLanguage !== true;
-	return counted && heldBy(member, classes) ? declaredKind(definition) : undefined;
-}
-
-/**
  * The module's exports by kind: the top-level names of its judged languages,
  * the public methods of their classes, and the names at the end of their
  * paths of its infrastructure.
@@ -349,16 +303,21 @@ async function countExports(
 	readonly judged: readonly (readonly [ExposedName, NameKind])[];
 	readonly listed: readonly ModuleExport[];
 }> {
-	const top: (readonly [ExposedName, ExportKind])[] = [];
+	const declared: (readonly [ExposedName, ExportKind])[] = [];
 	for (const name of names.judged.filter((each) => topLevel(each, names.judged))) {
 		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
-		top.push([name, await kindOf(reading, name)]);
+		declared.push([name, await kindOf(reading, name)]);
 	}
+	const holders = ofKind(declared, "class");
+	const top = declared.map(([name, kind]): readonly [ExposedName, ExportKind] => [
+		name,
+		kind === "class" && dataOnly(name, names.judged) ? "type" : kind,
+	]);
 	const classes = ofKind(top, "class");
 	const kinds = new Map(top);
 	for (const name of names.judged) {
-		const kind = kinds.has(name) ? undefined : staticKind(name, classes);
-		if (kind !== undefined) kinds.set(name, kind);
+		if (!kinds.has(name) && staticMember(name, holders))
+			kinds.set(name, declaredKind(name.definition));
 	}
 	const counted = [
 		...kinds,
@@ -421,54 +380,72 @@ function memberOfFile(symbol: string, symbols: ReadonlySet<string>): boolean {
 	return at > 0 && symbols.has(symbol.slice(0, at));
 }
 
-/**
- * The pieces of logic in the module's files of a judged language: what each
- * file's adapter counts, and each value it keeps hidden at module level.
- * @param reading The module.
- * @returns The count.
- */
-async function logicOf(reading: DepthReading): Promise<number> {
-	let logic = 0;
-	for (const file of reading.files) {
-		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
-		const read = await reading.facts.read(reading.checkout, file);
-		if (read === undefined || read.adapter === "text" || GROUPS.get(read.adapter) !== "judged") {
-			continue;
-		}
-		const symbols = new Set(read.definitions.map((each) => each.symbol));
-		const hidden = read.definitions.filter(
-			(each) =>
-				!each.exposed &&
-				each.kind === "value" &&
-				each.type !== true &&
-				(each.static === true || !memberOfFile(each.symbol, symbols)),
-		);
-		logic += (read.logic ?? 0) + hidden.length;
-	}
-	return logic;
+/** The logic of a module's code, and the code that did not parse. */
+interface Logic {
+	readonly logic: number;
+	/** Each part of a file that did not parse, as `path:line` or `path:start-end`. */
+	readonly unparsed: readonly string[];
 }
 
 /**
- * The finding on a module whose every export that is not a type hands its
- * insides to its callers.
+ * The pieces of logic in the module's code files of a judged language: what
+ * each file's adapter counts, and each value it keeps hidden at module level.
+ * A file its adapter gives no count, a manifest such as a `Cargo.toml`, holds
+ * no logic.
  * @param reading The module.
- * @param judged Each export that answers for the roll-up, and whether it does.
- * @returns The finding, or undefined when one does not or the module exports none.
+ * @returns The count, and the parts of its code that did not parse.
  */
-function shallow(
-	reading: DepthReading,
-	judged: ReadonlyMap<string, boolean>,
-): DepthFinding | undefined {
-	const names = [...judged.keys()];
-	if (names.length === 0 || [...judged.values()].some((each) => !each)) return undefined;
-	return {
-		severity: "information",
-		code: "MODULE_SHALLOW",
-		message:
-			`${reading.label} is shallow: each of its ${names.length} exports that is not a type has a ` +
-			`finding of its own (${names.join(", ")}), so it hands its insides to its callers. Clear ` +
-			"those findings, and the module hides what it owns.",
-	};
+async function logicOf(reading: DepthReading): Promise<Logic> {
+	let logic = 0;
+	const unparsed: string[] = [];
+	for (const file of reading.files) {
+		// oxlint-disable-next-line no-await-in-loop -- one file at a time; the pass caches each one
+		const read = await judgedFile(reading, file);
+		if (read?.logic === undefined) continue;
+		for (const { start, end } of read.unparsed) {
+			unparsed.push(`${file}:${start === end ? start : `${start}-${end}`}`);
+		}
+		logic += read.logic + hiddenValues(read.definitions);
+	}
+	return { logic, unparsed };
+}
+
+/**
+ * The facts of one of the module's files, where a judged language's adapter reads it.
+ * @param reading The module.
+ * @param file The file.
+ * @returns Its facts, or undefined for a file of another adapter or one the pass may not read.
+ */
+async function judgedFile(reading: DepthReading, file: string): Promise<SyntaxFacts | undefined> {
+	const read = await reading.facts.read(reading.checkout, file);
+	if (read === undefined || read.adapter === "text") return undefined;
+	return GROUPS.get(read.adapter) === "judged" ? read : undefined;
+}
+
+/**
+ * The values a file keeps hidden at module level, each a piece of logic.
+ * @param definitions The file's definitions.
+ * @returns How many there are.
+ */
+function hiddenValues(definitions: readonly Definition[]): number {
+	const symbols = new Set(definitions.map((each) => each.symbol));
+	return definitions.filter(
+		(each) =>
+			!each.exposed &&
+			each.kind === "value" &&
+			each.type !== true &&
+			(each.static === true || !memberOfFile(each.symbol, symbols)),
+	).length;
+}
+
+/**
+ * The exports that answer for the roll-up, when each of them hands the module's insides to its callers.
+ * @param rollUp Each export that answers for the roll-up, and whether it does.
+ * @returns Their names, or undefined when one does not or the module exports none.
+ */
+function everyOne(rollUp: ReadonlyMap<string, boolean>): string[] | undefined {
+	const shallow = rollUp.size > 0 && [...rollUp.values()].every(Boolean);
+	return shallow ? [...rollUp.keys()] : undefined;
 }
 
 /**
@@ -498,18 +475,26 @@ function unreadFor(reading: DepthReading, name: ExposedName): string[] {
 	return reading.unread.filter((file) => files.some((each) => each.test(file)));
 }
 
+/** What the verdicts on a module as a whole read, beside its names. */
+type Whole = Omit<Parameters<typeof moduleFindings>[0], "label" | "rolledUp">;
+
+/** The findings on a module, and whether a file that did not parse withholds its shallow verdict. */
+type Judgement = ReturnType<typeof moduleFindings>;
+
 /**
- * The findings on a module's exports: one per name at most, the roll-up of a
- * shallow module, and the names only its own files use where it declares no
- * interface.
+ * The findings on a module's exports: one per name at most, the verdicts on
+ * the module as a whole, and the names only its own files use where it
+ * declares no interface.
  * @param reading The module.
  * @param judged Each judged export with its kind, in the order the module exports them.
- * @returns The findings, grouped.
+ * @param whole Its counts, and whether they stand on a complete reading.
+ * @returns The findings, grouped, and whether a file that did not parse withholds the shallow verdict.
  */
 async function depthFindings(
 	reading: DepthReading,
 	judged: readonly (readonly [ExposedName, NameKind])[],
-): Promise<DepthFinding[]> {
+	whole: Whole,
+): Promise<Judgement> {
 	const judging = { ...reading, siblings: await siblingUses(reading) };
 	const findings: DepthFinding[] = [];
 	const rollUp = new Map<string, boolean>();
@@ -520,9 +505,13 @@ async function depthFindings(
 		if (finding !== undefined) findings.push(finding);
 		if (rolledUp(reading, name, kind)) rollUp.set(name.name, handsInsides(finding));
 	}
+	const module = moduleFindings({ ...whole, label: reading.label, rolledUp: everyOne(rollUp) });
 	const exported = judged.flatMap(([name, kind]) => (kind === "method" ? [] : [name]));
-	const module = [shallow(reading, rollUp), undeclaredFinding(judging, exported)];
-	return [...findings, ...module.filter((each) => each !== undefined)];
+	const undeclared = undeclaredFinding(judging, exported);
+	return {
+		findings: [...findings, ...module.findings, ...(undeclared === undefined ? [] : [undeclared])],
+		withheld: module.withheld,
+	};
 }
 
 /**
@@ -534,14 +523,21 @@ async function depthFindings(
 async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const names = await countedNames(reading);
 	const { counts, judged, listed } = await countExports(reading, names);
+	const { logic, unparsed } = await logicOf(reading);
+	const supported = names.unjudged.length === 0 && names.infrastructure.length === 0;
+	const whole = { exports: counts, logic, supported, complete: unparsed.length === 0 };
+	const judgement = reading.external
+		? { findings: [], withheld: false }
+		: await depthFindings(reading, judged, whole);
 	return {
 		languages: names.languages,
 		unjudged: names.unjudged,
 		names: judged.map(([name]) => name.name),
 		listed,
 		exports: counts,
-		logic: await logicOf(reading),
-		findings: reading.external ? [] : await depthFindings(reading, judged),
+		logic,
+		findings: judgement.findings,
+		withheldBy: judgement.withheld ? unparsed : [],
 	};
 }
 

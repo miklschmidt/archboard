@@ -130,10 +130,14 @@ The counts are evidence. Never turn them into a score.
 A type is what declares nothing a caller runs: a TypeScript interface, alias or enum; a Python type alias; a Go interface or named type without methods in its file; a C# interface, enum or delegate; a C or C++ struct, union or enum with no methods, a typedef or an alias; a Swift protocol, alias or enum with no methods; an Objective-C protocol.
 A C function macro is a function, and a Swift struct is a class.
 
-`archboard check code --fail-shallow-modules` makes `MODULE_SHALLOW` a warning on the modules that the branch touched since its base, uncommitted changes included.
+`INTERFACE_WIDE` and `MODULE_SHALLOW` judge the module as a whole, and are warnings on every module.
+A vault that sets them to `information` with `codeCheck.rules` is in debt mode: `archboard check code --fail-shallow-modules` makes them warnings on the modules that the branch touched since its base, uncommitted changes included.
 The per-name warnings below fail the check on every module, as every warning does.
 `--base <ref>` names the base. Without it, the default base decides.
 A vault policy with `codeCheck: { failShallowModules: true }` turns the gate on for plain `archboard check`.
+The vault policy's `codeCheck.rules` sets a module-depth code to `information` or `off` for the whole repository, and a code without a rule keeps its built-in level.
+A rule is the repository owner's decision, so leave the rules as they are and clear the finding at its seam.
+A finding whose message says the vault policy set it, and the line `code check: off by vault policy:`, come from those rules.
 `BASE_UNRESOLVED` means the check could not read the branch. Name a base that resolves; never treat it as a pass.
 
 Clear each finding at its seam. Never silence one.
@@ -185,12 +189,21 @@ Clear each finding at its seam. Never silence one.
 - `INTERFACE_UNDECLARED` (information): a folder module that declares no interface, where some names are used only by another of its files, which keeps them from `EXPOSED_UNUSED`.
   It says how many of its names files outside it use, and how many only its own files import, naming the first five.
   Declare the interface with what callers use, in an entry file (`index.ts`, `__init__.py` or `mod.rs`) or in the package's `exports` in `package.json`, and the rest stays inside.
-- `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding. A class stands for its public methods. Clear those findings, and it clears.
-  If nothing is left to hide, merge the module into its callers.
+- `INTERFACE_WIDE`: callers must learn more than 20 names of the module: its exported functions, classes, public methods and values, getters included. Exported types do not count.
+- `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding, or the module has at least 8 such names with fewer than 4 pieces of logic behind each. A class stands for its public methods.
+  The message gives the evidence of each ground. A getter over a constant narrows nothing.
+
+Neither module finding names a fix. Reason one out from three principles:
+
+- Narrow interface: a module offers the few operations its callers need. Each name is one more thing every caller must learn, so a name that serves one caller's step belongs in that caller, or behind an operation that does the whole job.
+- Deep module: a module hides much logic behind few names. When callers put the module's pieces together, that assembly is the module's own logic: move it in, and the pieces become private. When nothing is left to hide, the module is a layer its callers do not need.
+- Test at the seams: the tests call the interface that callers use, not the pieces behind it. A seam that tests reach through private names is in the wrong place. When the interface narrows, the tests of the moved assembly move with it.
+
+The counts make a module finding only when every name the module exposes is in a language whose exports the check judges, and each file in such a language parsed whole.
 
 Each exported name gets at most one finding. `EXPOSED_UNUSED` comes first, because its remedy removes the name.
 
-A module that the model marks `external`, code the repository does not own such as a vendored crate, keeps its counts and gets none of these findings.
+A module that the model marks `external`, code the repository does not own such as a vendored crate, keeps its counts and gets none of these findings, on its names or on the module.
 
 A language can force a constant. No exemption exists, so use the seam that replaces it:
 
@@ -201,6 +214,7 @@ A language can force a constant. No exemption exists, so use the seam that repla
 - A compile-time condition such as `#if`: move the condition into the module.
 
 Exported types count for no verdict, so an exported union or enum keeps the compiler's exhaustive checks.
+To redesign the modules that `INTERFACE_WIDE` or `MODULE_SHALLOW` name, with advisors in place of a human gate, load the `archboard-deepen` skill.
 
 ## Integrate with improve-codebase-architecture
 

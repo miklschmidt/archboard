@@ -27,11 +27,12 @@ so agents in an implementation loop added exported constants and nothing failed.
 ## Decision
 
 - **The code check measures each bound module from its code, and gives verdicts
-  as named findings.** It never gives a score or a ratio. A count is evidence.
+  as named findings.** It never gives a score. A count is evidence, and two
+  fixed thresholds on the counts make findings (TASK-651).
 - **It counts the exports by kind:** functions, classes, values and types. Each
   public method of an exported class counts as its own export, so a wide class
   cannot hide. It counts the pieces of logic behind them: calls, operators,
-  conditions, loops and hidden values. No gate reads that count.
+  conditions, loops and hidden values.
 - **It judges each exported name.** `EXPOSED_VALUE` is a warning on an exported
   value that code outside the module reads, and a value that a call makes, such
   as `durations({...})`, is one. Its remedies follow the readers: one reader
@@ -101,25 +102,78 @@ so agents in an implementation loop added exported constants and nothing failed.
   that the model marks `external`, or that a part marked `external` holds, as
   a vendored crate is, keeps its counts and gets no finding on its exports and
   no `MODULE_SHALLOW`. Nobody here refactors its interface.
-- **`MODULE_SHALLOW` rolls them up.** It names a module whose every export that
-  is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
-  pass-through finding. A class
-  stands for its public methods. Types count for no verdict, so an
-  exported union or enum keeps the compiler's exhaustive checks. An enum counts
-  as a type.
+- **The width of a module is what its callers must learn** (TASK-651): its
+  exported functions, classes, public methods and values, getters included.
+  Exported types count zero, so an exported union or enum keeps the
+  compiler's exhaustive checks. An enum counts as a type. So does a type that
+  holds data and has no public method in its module, wherever its methods
+  are defined (the owner, 2026-11-19): a Rust struct, enum or union, a Go
+  struct or other named type, a C# struct or record, a Swift struct or enum,
+  a Python dataclass or enum, and a C or C++ struct, union or class with no
+  member function. With a method it is a class, and each public method
+  counts. A TypeScript class stays a class. This width differs
+  from the interface width of
+  [ADR 0058](0058-an-interface-is-the-few-operations-its-callers-need.md),
+  which counts types.
+- **`INTERFACE_WIDE` is a warning on a width above 20**, on every module kind
+  alike. Its message gives the counts by kind and the principle: a narrow
+  interface is the few operations callers need.
+- **`MODULE_SHALLOW` is a warning on a shallow module, once, with the evidence
+  of each ground that holds.** One ground rolls up the names: every export
+  that is not a type carries `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a
+  pass-through finding, and a class stands for its public methods. The other
+  ground is Ousterhout's measure: a width of at least 8 with fewer than 4
+  pieces of logic behind each name. Its message gives the principle: a deep
+  module hides much logic behind few names.
+- **Neither message prescribes a fix.** An agent reasons the fix out from the
+  principles of narrow interfaces, deep modules and testing at the seams,
+  which the archboard skill states.
+- **The measured grounds need a reading the counts can stand on.** Every name
+  the module exposes is in a language whose adapter names each export's kind.
+  Otherwise the module gets neither `INTERFACE_WIDE` nor the measured ground
+  of `MODULE_SHALLOW`, and an `external` module gets no verdict at all. The
+  width needs no whole parse, because the exposure reader names the exports,
+  so a file that did not parse keeps `INTERFACE_WIDE`. The measured ground of
+  `MODULE_SHALLOW` also needs every code file parsed whole, because logic in
+  code that did not parse goes uncounted. A manifest such as a `Cargo.toml`
+  holds no logic and changes nothing. Where the logic counted would make the
+  module shallow and a file did not parse, the check withholds the verdict
+  and says so with the skip `logic-unparsed`, which names each file and its
+  lines, so a module never passes silently. Where the logic counted already
+  makes the module deep, the code that did not parse cannot change that, and
+  nothing is said.
 - **No exemption for values a language forces to be constants.** The archboard
   skill teaches the seam that replaces each one.
-- **The answer's severities never depend on the caller.** `MODULE_SHALLOW` is
-  information in the answer. The server remembers every finished pass for the
-  panes, so a flag that changed the answer would make Measures show whatever the
-  last caller asked for.
+- **The answer's severities never depend on the caller.** The server
+  remembers every finished pass for the panes, so a flag that changed the
+  answer would make Measures show whatever the last caller asked for.
 - **The CLI owns the gate.** `archboard check --fail-shallow-modules`, or a vault
-  policy that sets `codeCheck.failShallowModules`, makes `MODULE_SHALLOW` a
-  warning on the modules that the branch touched, so the existing exit rule
-  fails. The branch is read from its base up to the working tree, uncommitted
+  policy that sets `codeCheck.failShallowModules`, makes an information
+  `MODULE_SHALLOW` or `INTERFACE_WIDE` a warning on the modules that the branch
+  touched, so the existing exit rule fails. Both codes are warnings without a
+  rule, so the gate is debt mode (TASK-651): a vault sets them to information,
+  and the gate fails only the modules that a branch touched. The branch is read from its base up to the working tree, uncommitted
   changes included (TASK-646.02). `--base` names the base, and the default-base
   lookup decides without it. A base that does not resolve is a refusal, never a
   pass, and so is a gated module whose range the check could not read.
+- **The vault sets the level of each module-depth rule** (TASK-650). The
+  vault policy's `codeCheck.rules` maps the module-depth codes, eight with
+  `INTERFACE_WIDE`, to
+  `information`, which caps a finding's level and says that the vault policy
+  set it, or `off`, which removes its findings, counts, Measures entries and
+  annotations. The answer's `models[]` entry carries the rules, and the CLI
+  prints one line that names the codes that are off. A rule only lowers, so
+  an incomplete read that made a finding information never becomes a warning,
+  and `failShallowModules` stays the only promotion. The run applies the rules
+  to each reading once `MODULE_SHALLOW` is derived, so a rule never changes
+  which modules are shallow, and the rules belong to the vault, so no
+  severity depends on the caller. Another code or level is an invalid
+  configuration, and so is `off` on `MODULE_SHALLOW` or `INTERFACE_WIDE`
+  beside `failShallowModules: true` (TASK-651). Beside `--fail-shallow-modules`
+  it is the refusal `SHALLOW_RULE_CONFLICT`. A vault without rules keeps every built-in
+  level, so upgrading adopts the new warnings. No rule is scoped to a path or
+  a module, since the model's `external` mark covers code that a repository
+  does not own, and no CLI flag or Action input sets one.
 - **A rule judges a language only where its adapter names the kind of each
   export.** TypeScript, Python, Go, C#, Rust, Swift, C, C++ and Objective-C
   have such adapters. Terraform, Nix flakes and Helm charts get counts and no
@@ -128,12 +182,23 @@ so agents in an implementation loop added exported constants and nothing failed.
 
 ## Considered and rejected
 
-- A depth score, or a ratio of logic to interface. A small narrow module is a
-  good module, and a ratio rewards padding the implementation.
-- Failing on every shallow module on every run. Old debt would block every
-  change, so the gate fails only on the modules that the branch touched. The
-  per-name warnings still fail the check on every module, as every warning
-  does.
+- A depth score. A small narrow module is a good module. TASK-646 also
+  rejected a ratio of logic to interface, because a ratio rewards padding the
+  implementation. TASK-651 changed that: every per-name rule passed on this
+  repository while `model` exposed 140 callable names and `timing` hid 126
+  pieces of logic behind 37 functions, because the rules judged what each
+  export is and never how many there are. A getter for a constant cleared
+  `EXPOSED_VALUE` and narrowed nothing. The owner decided to fail on
+  Ousterhout's measure. The minimum width of 8 keeps a small narrow module
+  clean, and the fixed thresholds give no score to pad toward.
+- Configurable thresholds, thresholds per module kind, counting types,
+  estimating parameters from source text, exemptions per module, and
+  generated fixes (TASK-651).
+- Failing on every shallow module on every run, as TASK-646 decided against:
+  old debt would block every change. TASK-651 reversed this. Both module
+  codes now fail on every module by default, and a vault that is not ready
+  sets them to information and keeps the gate for the modules that a branch
+  touched.
 - A flag that changes the answer. The panes read the remembered answer, and two
   callers would see two answers to one pass.
 - Exempting constants that a language forces, such as case labels. Each has a

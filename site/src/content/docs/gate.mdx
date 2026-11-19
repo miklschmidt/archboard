@@ -64,18 +64,27 @@ There are two fixes, and the finding says both. If the call is intended, the age
 
 ## Fail on a shallow module
 
-The code check also judges how deep each bound module is. An exported value that code outside the module reads is [`EXPOSED_VALUE`](../reference/findings/#exposed-value), a warning on any module. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) names a module whose every export that is not a type has a finding like it, or passes its call on. It is information, so an old shallow module never blocks your change. To fail on a shallow module that your branch touched, uncommitted changes included, add the flag:
+The code check also judges how deep each bound module is. A deep module hides much logic behind few names. An exported value that code outside the module reads is [`EXPOSED_VALUE`](../reference/findings/#exposed-value), a warning on any module.
+
+Two warnings judge each module as a whole. Its width is the number of names that callers must learn: its exported functions, classes, public methods and values. Exported types do not count. [`INTERFACE_WIDE`](../reference/findings/#interface-wide) names a module whose width is above 20. [`MODULE_SHALLOW`](../reference/findings/#module-shallow) names a module whose every export that is not a type has a finding like an exposed value, or a module with a width of at least 8 and fewer than 4 pieces of logic behind each name. The thresholds are fixed.
+
+Both codes fail the check on every module. If your repository is not ready for that, use debt mode. Set both codes to information, and fail only on the modules that a branch touched, uncommitted changes included:
+
+```yaml title=".archboard/vault/.archboard/config.yaml"
+codeCheck:
+  failShallowModules: true
+  rules:
+    INTERFACE_WIDE: information
+    MODULE_SHALLOW: information
+```
+
+With `failShallowModules: true`, every plain `archboard check` runs the gate, in a hook and in CI too. The flag runs it for one command:
 
 ```bash
 archboard check --fail-shallow-modules --base main
 ```
 
-Without `--base`, the default base decides: where `origin/HEAD` points, else `main`. A base that does not resolve exits <Exit refusal="BASE_UNRESOLVED" />, never `0`. To run the gate on every plain `archboard check`, in a hook and in CI too, turn it on in the vault's configuration:
-
-```yaml title=".archboard/vault/.archboard/config.yaml"
-codeCheck:
-  failShallowModules: true
-```
+Without `--base`, the default base decides: where `origin/HEAD` points, else `main`. A base that does not resolve exits <Exit refusal="BASE_UNRESOLVED" />, never `0`.
 
 A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request, the [check Action](../reference/actions/) needs neither: when the gate can be on, by the flag in its [`args`](../reference/actions/#check-args), by the configuration, or because the args check drafts, which keep the setting each was made with, it fetches the pull request's base branch, with the whole history when the checkout is shallow, and passes it as `--base origin/<base branch>`. With the gate off, it fetches nothing. A `--base` in the args wins. On a push, name the base there, and give `actions/checkout` the history with `fetch-depth: 0`:
 
@@ -85,6 +94,23 @@ A CI checkout may have no `main` branch and no `origin/HEAD`. On a pull request,
     version: "{{version}}"
     args: --base origin/main
 ```
+
+## Set the level of a module-depth rule
+
+The code check reports eight module-depth codes: [`EXPOSED_VALUE`](../reference/findings/#exposed-value), [`EXPOSED_VALUE_COMPUTED`](../reference/findings/#exposed-value-computed), [`CODE_PASS_THROUGH`](../reference/findings/#code-pass-through), [`REEXPORT_PASS_THROUGH`](../reference/findings/#reexport-pass-through), [`EXPOSED_UNUSED`](../reference/findings/#exposed-unused), [`INTERFACE_UNDECLARED`](../reference/findings/#interface-undeclared), [`INTERFACE_WIDE`](../reference/findings/#interface-wide) and [`MODULE_SHALLOW`](../reference/findings/#module-shallow). Several are warnings, so they fail the check. If you upgrade and write no rules, your repository gets these warnings, and the check fails on them.
+
+To lower a code for the whole repository, set its level in the vault's configuration:
+
+```yaml title=".archboard/vault/.archboard/config.yaml"
+codeCheck:
+  rules:
+    EXPOSED_VALUE: information
+    CODE_PASS_THROUGH: "off"
+```
+
+A code set to information stays in the answer, and its warnings become information, which never fails the check. Its message says that the vault policy set it. A code set to off has no findings at all: no line, no count, nothing in Measures and no annotation. The check prints one line that names the codes that are off, for example `code check: off by vault policy: CODE_PASS_THROUGH`. A code without a rule keeps its built-in level.
+
+A rule can only lower a code. The check derives shallow modules before it applies the rules, so a rule that turns off exposed values does not change which modules are shallow. Another code, or another level such as warning, makes the configuration invalid, and the semantics check names the entry. A rule that turns off the shallow-module code or the wide-interface code beside `failShallowModules: true` is invalid too, because the gate fails on them. Beside `--fail-shallow-modules`, the check refuses with <Exit refusal="SHALLOW_RULE_CONFLICT" />.
 
 ## In a Git hook
 
