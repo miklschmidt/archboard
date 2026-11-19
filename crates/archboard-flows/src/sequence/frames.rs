@@ -14,13 +14,12 @@
 use std::collections::HashMap;
 
 use archboard_scene::geometry::{Rect, covering, union};
-use archboard_scene::js;
 use archboard_scene::request::FrameOperator;
+use archboard_scene::{activation_span, js};
 
 use crate::sequence::design::PILL_FONT;
 use crate::sequence::design::{
-    ACTIVATION_HALF_WIDTH, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, NEST_INSET,
-    PILL_TEXT_SIZE,
+    FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, NEST_INSET, PILL_TEXT_SIZE,
 };
 use crate::sequence::layout::{ActiveAt, FrameRows, FrameStep, PlacedFrame, PlacedStep};
 use crate::sequence::messages::drawn;
@@ -54,8 +53,9 @@ fn own_width(rows: &FrameRows<'_>, tab_width: f64, words: &str) -> f64 {
 /// What one message claims across a frame: its ink, and the lifelines it runs
 /// between with the bars on them, so a frame's side never lies on a bar.
 fn ink_of(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> Rect {
-    let left = js::js_min(placed.from_x, placed.to_x) - ACTIVATION_HALF_WIDTH;
-    let width = (placed.to_x - placed.from_x).abs() + ACTIVATION_HALF_WIDTH * 2.0;
+    let bar = activation_span(js::js_min(placed.from_x, placed.to_x));
+    let left = bar.x;
+    let width = (placed.to_x - placed.from_x).abs() + bar.width;
     covering(
         drawn(placed, active).bounds,
         Rect {

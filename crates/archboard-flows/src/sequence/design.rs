@@ -7,10 +7,7 @@
 use archboard_scene::drawing::DiagramFont;
 use archboard_scene::paint::design;
 
-pub(super) use archboard_scene::paint::design::arrow_standoff;
-
 pub(super) const PILL_FONT: DiagramFont = design::pill_font();
-pub(super) const ACTIVATION_HALF_WIDTH: f64 = design::activation_half_width();
 pub(super) const ARCHITECTURE_CARD_PADDING: f64 = design::architecture_card_padding();
 pub(super) const DIAGRAM_MARGIN: f64 = design::diagram_margin();
 pub(super) const FLOW_HEADING: f64 = design::flow_heading();
@@ -19,21 +16,14 @@ pub(super) const FRAME_GUARD_HEIGHT: f64 = design::frame_guard_height();
 pub(super) const FRAME_HEAD_HEIGHT: f64 = design::frame_head_height();
 pub(super) const FRAME_PAD: f64 = design::frame_pad();
 pub(super) const FRAME_TAB_PADDING: f64 = design::frame_tab_padding();
-pub(super) const MESSAGE_LINE_STEP: f64 = design::message_line_step();
 pub(super) const NOTE_SIZE: f64 = design::note_size();
-pub(super) const PILL_HEIGHT: f64 = design::pill_height();
 pub(super) const PILL_TEXT_SIZE: f64 = design::pill_text_size();
-pub(super) const SELF_LOOP_CORNER: f64 = design::self_loop_corner();
-pub(super) const SELF_LOOP_DROP: f64 = design::self_loop_drop();
-pub(super) const SELF_LOOP_REACH: f64 = design::self_loop_reach();
 pub(super) const STEP_NOTE_PADDING_X: f64 = design::step_note_padding_x();
 pub(super) const STEP_NOTE_PADDING_Y: f64 = design::step_note_padding_y();
 pub(super) const TAB_PADDING: f64 = design::tab_padding();
 
 /// The height of a line of a sequence note, as a multiple of its text size.
 pub(super) const TEXT_LINE_HEIGHT: f64 = 1.35;
-/// The room between a message label's plate and its words, on the left and the right.
-pub(super) const PILL_PADDING_X: f64 = 8.0;
 
 /// How far a container's well holds what it holds in from its walls.
 pub(super) const NEST_INSET: f64 = 18.0;
@@ -65,9 +55,6 @@ pub(super) const FLOW_GAP: f64 = 32.0;
 /// that ends it: past its rounded corner and half an arrowhead (5.5 for a head
 /// 11 long), so the arrow meets a straight side.
 pub(super) const BAR_OVERHANG: f64 = 9.0;
-
-/// How far below its own row a self-message loop reaches.
-pub(super) const SELF_LOOP_EXTENT: f64 = SELF_LOOP_DROP + SELF_LOOP_CORNER * 2.0;
 
 /// Gap between a message's label and its arrow. Labels sit above horizontal
 /// arrows to keep their direction visible. A wide label reaches over the

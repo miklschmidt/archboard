@@ -125,7 +125,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                         to: placed.step.to.clone(),
                     },
                     words: archboard_scene::request::MessageWords {
-                        lines: placed.words.lines.clone(),
+                        lines: placed.words.plate.lines.clone(),
                     },
                     y: placed.y,
                     slot: placed.slot,

@@ -7,5 +7,18 @@
 //! answered here and drawn by the painter from the same private sheet.
 
 mod cards;
+mod messages;
 
 pub use cards::{ColumnLimits, HeadCard, HeadCards, sequence_cards};
+pub use messages::{
+    ArrowEnds, MessagePlate, activation_span, message_ends, message_plate, self_loop,
+};
+
+/// A stretch across the page.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Span {
+    /// Where it starts.
+    pub x: f64,
+    /// How wide it is.
+    pub width: f64,
+}

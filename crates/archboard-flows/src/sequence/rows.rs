@@ -4,20 +4,21 @@
 //! never cut, and the message's row grows to hold it.
 
 use archboard_scene::drawing::TextRun;
-use archboard_scene::geometry::Rect;
-use archboard_scene::js;
-use archboard_scene::request::WordLine;
+use archboard_scene::geometry::{Point, Rect};
+use archboard_scene::{MessagePlate, activation_span, js, message_plate, self_loop};
 
 use crate::content::{Flow, Message, MessageKind, messages_of};
 use crate::sequence::design::{
-    ACTIVATION_HALF_WIDTH, COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_LINE_STEP, MESSAGE_PITCH,
-    NOTE_SIZE, PILL_PADDING_X, PILL_TEXT_SIZE, SELF_LABEL_GAP, SELF_LOOP_EXTENT,
-    SELF_MESSAGE_PITCH, STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TEXT_LINE_HEIGHT,
+    COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_PITCH, NOTE_SIZE, SELF_LABEL_GAP, SELF_MESSAGE_PITCH,
+    STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH, STEP_NOTE_PADDING_X,
+    STEP_NOTE_PADDING_Y, TEXT_LINE_HEIGHT,
 };
 
-/// `Number.MAX_SAFE_INTEGER`: the width of a line nothing stands beside.
-const UNBOUNDED: f64 = 9_007_199_254_740_991.0;
+/// How far a busy column's bar reaches either side of its lifeline: the room
+/// a label or a note keeps clear of it.
+fn bar_reach() -> f64 {
+    activation_span(0.0).width / 2.0
+}
 
 /// A step's note, placed under its message.
 #[derive(Clone, Debug)]
@@ -46,11 +47,11 @@ pub(super) struct ColumnBounds {
     pub last_centre: f64,
 }
 
-/// A message's words as drawn: their lines, and where a long hop centres them.
+/// A message's words as drawn: their plate, and where a long hop centres them.
 #[derive(Clone, Debug)]
 pub(super) struct MessageWords {
-    /// Every line, whole, with its painted width.
-    pub lines: Vec<WordLine>,
+    /// Every line, whole, with its painted width, on its plate.
+    pub plate: MessagePlate,
     /// The x a crossing message's plate is centred on; a self-message's plate
     /// starts at its loop.
     pub centre: Option<f64>,
@@ -94,14 +95,14 @@ pub(super) fn required_note_column_width(flows: &[Flow]) -> f64 {
     if width == 0.0 {
         0.0
     } else {
-        width + (ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET) * 2.0 - COLUMN_GAP
+        width + (bar_reach() + STEP_NOTE_INSET) * 2.0 - COLUMN_GAP
     }
 }
 
 /// Where a note's leading edge goes: in the next corridor, or the previous one
 /// for a self-message on the last column.
 fn note_anchor(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> f64 {
-    let inset = ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET;
+    let inset = bar_reach() + STEP_NOTE_INSET;
     if step.kind != MessageKind::Myself {
         return js::js_min(ends.from_x, ends.to_x) + inset;
     }
@@ -120,7 +121,7 @@ pub(super) fn place_note(
 ) -> Option<PlacedNote> {
     let note = step.note.as_deref().filter(|note| has_words(Some(note)))?;
     let myself = step.kind == MessageKind::Myself;
-    let inset = ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET;
+    let inset = bar_reach() + STEP_NOTE_INSET;
     let corridor_width = bounds.pitch - inset * 2.0;
     let wrap_width = js::min([
         bounds.right - bounds.left,
@@ -141,7 +142,15 @@ pub(super) fn place_note(
         .iter()
         .fold(0.0, |widest, run| js::js_max(widest, run.width));
     let width = widest.ceil() + STEP_NOTE_PADDING_X * 2.0;
-    let drop = if myself { SELF_LOOP_EXTENT } else { 0.0 };
+    let drop = if myself {
+        self_loop(Point {
+            x: ends.from_x,
+            y: ends.y,
+        })
+        .height
+    } else {
+        0.0
+    };
     Some(PlacedNote {
         bounds: Rect {
             x: js::js_max(
@@ -164,13 +173,13 @@ pub(super) fn place_note(
 /// self-message's plate runs from its loop to the next column; on the last
 /// column nothing stands to its right.
 fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Option<f64>) {
-    let clear = ACTIVATION_HALF_WIDTH + LABEL_BAR_CLEARANCE;
+    let clear = bar_reach() + LABEL_BAR_CLEARANCE;
     if step.kind == MessageKind::Myself {
         let last = ends.from_x >= bounds.last_centre;
         let width = if last {
             f64::INFINITY
         } else {
-            bounds.pitch - clear - ACTIVATION_HALF_WIDTH - SELF_LABEL_GAP
+            bounds.pitch - clear - bar_reach() - SELF_LABEL_GAP
         };
         return (width, None);
     }
@@ -188,18 +197,8 @@ fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Op
 /// A message's words, wrapped to the room its plate has.
 pub(super) fn words_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> MessageWords {
     let (width, centre) = room_for(step, ends, bounds);
-    let limit = if width.is_finite() {
-        width - PILL_PADDING_X * 2.0
-    } else {
-        UNBOUNDED
-    };
     MessageWords {
-        lines: archboard_scene::message_lines(
-            &step.drawn_label(),
-            limit,
-            PILL_TEXT_SIZE,
-            MESSAGE_LINE_STEP,
-        ),
+        plate: message_plate(&step.drawn_label(), width),
         centre,
     }
 }

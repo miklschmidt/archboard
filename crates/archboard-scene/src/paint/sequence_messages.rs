@@ -12,18 +12,18 @@ use crate::paint::relay::PULSE_PACE;
 use crate::paint::slab::{boxed, ghost_face, slab, slab_seat};
 use crate::paint::standing::{ghost_opacity, ink_of, standing_palette, subject, warning_on_line};
 use crate::paint::styles::{
-    Styles, full_line_colour, head_base, head_reach, line_colour, marker_for, stroke_width,
+    Styles, full_line_colour, head_base, line_colour, marker_for, stroke_width,
 };
 use crate::paint::traffic::pulse_look;
 use crate::request::{MessageKind, SequenceClock, SequenceStep, Standing};
 use crate::scene::turn_distance;
 use crate::scene::{
-    Group, Head, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke,
-    SubjectKind, TrafficMark,
+    Group, HeadInk, Item, MarkerId, Motion, PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
+    TrafficMark,
 };
 use crate::sizes::{
     MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
+    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, arrow_standoff, step_head,
 };
 
 const STEP_WEIGHT: Emphasis = Emphasis::Normal;
@@ -36,26 +36,6 @@ const LIT_RULE_WIDTH: f64 = 1.25;
 pub(super) const PILL_BASELINE: f64 = 0.68;
 /// The air between the base of an arrowhead and the pulse that sinks into it.
 const AIR: f64 = 1.0;
-
-/// The arrowhead a message of each kind ends in.
-///
-/// A deliberate deviation from strict UML 2, which draws replies with an open
-/// head as well: here the open head is the one mark of "nobody is waiting on
-/// this". The dash already says "this is an answer", so an open-headed reply
-/// would put the asynchronous signature on every reply.
-fn step_head(kind: MessageKind) -> Head {
-    match kind {
-        MessageKind::Async => Head::Open,
-        MessageKind::Sync | MessageKind::Return | MessageKind::Myself => Head::Filled,
-    }
-}
-
-/// How far short of the bar or lifeline it arrives at a message's line stops:
-/// exactly the reach of its head, so the tip touches what it points at. Every
-/// message is drawn at one weight: a flow's steps carry no emphasis.
-pub fn arrow_standoff(kind: MessageKind) -> f64 {
-    head_reach(step_head(kind))
-}
 
 /// What sort of message each kind is, said in dashes: only the reply is dashed.
 fn step_dash(kind: MessageKind) -> &'static [f64] {

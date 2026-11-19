@@ -3,6 +3,7 @@
 //! their head cards, then the messages crossing them, and last the words of
 //! every message. The layer order is load-bearing. Pulses share one clock.
 
+use crate::flow_parts::activation_span;
 use crate::geometry::{Rect, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, group, grouped, lines, point, shape};
@@ -26,9 +27,7 @@ use crate::request::{
 use crate::scene::{
     Atlas, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
 };
-use crate::sizes::{
-    ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, LIFELINE_GAP, PILL_RADIUS, SHADOW_REACH, SLAB_RADIUS,
-};
+use crate::sizes::{DIAGRAM_MARGIN, LIFELINE_GAP, PILL_RADIUS, SHADOW_REACH, SLAB_RADIUS};
 
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;
@@ -119,11 +118,14 @@ fn activation_boxes(column: &SequenceColumn) -> Vec<Rect> {
     column
         .activations
         .iter()
-        .map(|bar| Rect {
-            x: column.centre_x - ACTIVATION_HALF_WIDTH,
-            y: bar.top - ACTIVATION_RADIUS,
-            width: ACTIVATION_HALF_WIDTH * 2.0,
-            height: bar.bottom - bar.top + ACTIVATION_RADIUS * 2.0,
+        .map(|bar| {
+            let span = activation_span(column.centre_x);
+            Rect {
+                x: span.x,
+                y: bar.top - ACTIVATION_RADIUS,
+                width: span.width,
+                height: bar.bottom - bar.top + ACTIVATION_RADIUS * 2.0,
+            }
         })
         .collect()
 }

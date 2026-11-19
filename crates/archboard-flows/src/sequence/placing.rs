@@ -12,13 +12,14 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::js;
+use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameGuard, Slot};
+use archboard_scene::{js, self_loop};
 
 use crate::content::{Decision, Message, MessageKind, Step};
 use crate::sequence::design::{
-    FRAME_GAP, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, MAX_PULSES_PER_STEP, MESSAGE_LINE_STEP,
-    MESSAGE_PITCH, SELF_LOOP_EXTENT, STEP_NOTE_GAP,
+    FRAME_GAP, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, MAX_PULSES_PER_STEP, MESSAGE_PITCH,
+    STEP_NOTE_GAP,
 };
 use crate::sequence::layout::{Branch, FrameRows, FrameStep, PlacedStep};
 use crate::sequence::rows::{ColumnBounds, MessageEnds, pitch_of, place_note, words_for};
@@ -66,7 +67,7 @@ impl<'a> Placing<'a, '_> {
             self.bounds,
         );
         // A label stands above its arrow, so every line past the first lowers the row.
-        let y = self.y + (words.lines.len() as f64 - 1.0) * MESSAGE_LINE_STEP;
+        let y = self.y + words.plate.taller_by;
         let note = place_note(step, MessageEnds { from_x, to_x, y }, self.bounds);
         // The row grows by the note it holds, so the next message's words sit
         // where they would have without it, only lower.
@@ -191,7 +192,11 @@ pub(super) fn lowest_drawn(steps: &[PlacedStep<'_>], frames: &[FrameRows<'_>], f
     let mut lowest = floor;
     for placed in steps {
         let reach = if placed.step.kind == MessageKind::Myself {
-            SELF_LOOP_EXTENT
+            self_loop(Point {
+                x: placed.from_x,
+                y: placed.y,
+            })
+            .height
         } else {
             0.0
         };

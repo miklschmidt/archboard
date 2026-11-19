@@ -3,6 +3,8 @@
 //! measure, never from the sheet (ADR 0088).
 
 use crate::drawing::{DiagramFont, FontFamily};
+use crate::request::MessageKind;
+use crate::scene::Head;
 
 /// How close two points must be to be one, and the least a turn may move.
 pub(crate) const EPSILON: f64 = 0.01;
@@ -234,3 +236,39 @@ pub(crate) const FRAME_GUARD_HEIGHT: f64 = 16.0;
 pub(crate) const FRAME_PAD: f64 = 10.0;
 /// The padding of a frame's tab around its operator.
 pub(crate) const FRAME_TAB_PADDING: f64 = 6.0;
+
+/// How long an arrowhead of each weight is, from its base to its tip.
+pub(crate) const HEAD_LENGTH: f64 = 11.0;
+
+/// Where on its ten-unit drawing each head sits on the end of its line.
+pub(crate) fn head_ref_x(head: Head) -> f64 {
+    match head {
+        Head::Filled => 8.0,
+        Head::Open => 10.0,
+    }
+}
+
+/// How far an arrowhead's tip lies past the end of its line.
+fn head_reach(head: Head) -> f64 {
+    ((10.0 - head_ref_x(head)) / 10.0) * HEAD_LENGTH
+}
+
+/// The arrowhead a message of each kind ends in.
+///
+/// A deliberate deviation from strict UML 2, which draws replies with an open
+/// head as well: here the open head is the one mark of "nobody is waiting on
+/// this". The dash already says "this is an answer", so an open-headed reply
+/// would put the asynchronous signature on every reply.
+pub(crate) fn step_head(kind: MessageKind) -> Head {
+    match kind {
+        MessageKind::Async => Head::Open,
+        MessageKind::Sync | MessageKind::Return | MessageKind::Myself => Head::Filled,
+    }
+}
+
+/// How far short of the bar or lifeline it arrives at a message's line stops:
+/// exactly the reach of its head, so the tip touches what it points at. Every
+/// message is drawn at one weight: a flow's steps carry no emphasis.
+pub(crate) fn arrow_standoff(kind: MessageKind) -> f64 {
+    head_reach(step_head(kind))
+}

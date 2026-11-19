@@ -5,15 +5,12 @@
 
 use crate::drawing::DiagramFont;
 use crate::sizes::{
-    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_RADIUS,
-    DIAGRAM_MARGIN, FAR_SCALE, FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT,
-    FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, LINE_WIDTH,
-    MESSAGE_LINE_STEP, NOTE_SIZE, PILL_FONT, PILL_HEIGHT, PILL_TEXT_SIZE, RAIL_GAP, RAILS,
-    SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER,
+    ARCHITECTURE_CARD_PADDING, ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, DIAGRAM_MARGIN, FAR_SCALE,
+    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FLOW_KIND, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
+    FRAME_PAD, FRAME_TAB_PADDING, HERO_LINE_WIDTH, LINE_WIDTH, NOTE_SIZE, PILL_FONT,
+    PILL_TEXT_SIZE, RAIL_GAP, RAILS, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE, STEP_NOTE_PADDING_X,
+    STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER,
 };
-
-pub use super::sequence_messages::arrow_standoff;
 
 /// The line widths a far view draws wider: a line of normal weight, of hero
 /// weight, and a double line's rails.
@@ -91,11 +88,6 @@ pub const fn note_size() -> f64 {
     NOTE_SIZE
 }
 
-/// How tall a message label's plate is for one line of words.
-pub const fn pill_height() -> f64 {
-    PILL_HEIGHT
-}
-
 /// The size of the words on a label plate.
 pub const fn pill_text_size() -> f64 {
     PILL_TEXT_SIZE
@@ -109,32 +101,6 @@ pub const fn shape_text_size() -> f64 {
 /// The room one line of a flowchart shape's words takes.
 pub const fn shape_text_line() -> f64 {
     SHAPE_TEXT_LINE
-}
-
-/// Half the width of a sequence's activation bar, and how far it holds arrows
-/// off the lifeline.
-pub const fn activation_half_width() -> f64 {
-    ACTIVATION_HALF_WIDTH
-}
-
-/// How far right a self-message reaches.
-pub const fn self_loop_reach() -> f64 {
-    SELF_LOOP_REACH
-}
-
-/// How far a self-message drops before it turns back.
-pub const fn self_loop_drop() -> f64 {
-    SELF_LOOP_DROP
-}
-
-/// The radius of the two bends of a self-message.
-pub const fn self_loop_corner() -> f64 {
-    SELF_LOOP_CORNER
-}
-
-/// The step from one line of a wrapped message label to the next.
-pub const fn message_line_step() -> f64 {
-    MESSAGE_LINE_STEP
 }
 
 /// How far a step's note holds its words in from its plate's sides.
