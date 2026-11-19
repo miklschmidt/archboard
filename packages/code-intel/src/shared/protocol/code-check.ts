@@ -73,7 +73,9 @@
 // TASK-646.18 adds `INTERFACE_UNDECLARED`, information, on a folder module
 // that declares no interface where only its own files use some of its names,
 // and gives a module the model marks `external` its counts and no finding on
-// its exports.
+// its exports. TASK-650 applies the vault's module-depth rules to each
+// reading's findings once `MODULE_SHALLOW` is derived, and `models[].rules`
+// carries them: `information` caps a finding, `off` removes it.
 
 import { architectureModelReadSchema } from "@archboard/model/contract";
 import { configurableLanguages } from "@archboard/workspace/languages";

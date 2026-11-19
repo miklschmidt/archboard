@@ -120,6 +120,23 @@ so agents in an implementation loop added exported constants and nothing failed.
   changes included (TASK-646.02). `--base` names the base, and the default-base
   lookup decides without it. A base that does not resolve is a refusal, never a
   pass, and so is a gated module whose range the check could not read.
+- **The vault sets the level of each module-depth rule** (TASK-650). The
+  vault policy's `codeCheck.rules` maps the seven module-depth codes to
+  `information`, which caps a finding's level and says that the vault policy
+  set it, or `off`, which removes its findings, counts, Measures entries and
+  annotations. The answer's `models[]` entry carries the rules, and the CLI
+  prints one line that names the codes that are off. A rule only lowers, so
+  an incomplete read that made a finding information never becomes a warning,
+  and `failShallowModules` stays the only promotion. The run applies the rules
+  to each reading once `MODULE_SHALLOW` is derived, so a rule never changes
+  which modules are shallow, and the rules belong to the vault, so no
+  severity depends on the caller. Another code or level is an invalid
+  configuration, and so is a rule on `MODULE_SHALLOW` beside
+  `failShallowModules: true`; beside `--fail-shallow-modules` it is the
+  refusal `SHALLOW_RULE_CONFLICT`. A vault without rules keeps every built-in
+  level, so upgrading adopts the new warnings. No rule is scoped to a path or
+  a module, since the model's `external` mark covers code that a repository
+  does not own, and no CLI flag or Action input sets one.
 - **A rule judges a language only where its adapter names the kind of each
   export.** TypeScript, Python, Go, C#, Rust, Swift, C, C++ and Objective-C
   have such adapters. Terraform, Nix flakes and Helm charts get counts and no
