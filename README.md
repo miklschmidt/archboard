@@ -422,7 +422,7 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 <details><summary><b>Does Archboard score my design?</b></summary>
 <br>
 
-No. Measures states how many entries a module has, what it hides, and what changes with it. A count can look bad for a good reason. You and your agent read the code and judge. The model does not measure implementation behavior, so it cannot prove that a module is shallow.
+No. Archboard gives no score. Measures states how many entries a module has, what it hides, and what changes with it. The code check reads each bound module's code and names what it finds, one finding at a time: an exported value that code outside reads, an export that only passes its call on, an export that nothing uses, and a shallow module, whose every export carries such a finding. Each finding names the code and says how to clear it. A count can still look bad for a good reason, so you and your agent read the code and judge.
 </details>
 
 <details><summary><b>Which agents does it work with?</b></summary>
