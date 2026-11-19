@@ -4,6 +4,7 @@ title: Terraform, Nix flakes and Helm modules get export counts
 status: To Do
 assignee: []
 created_date: '2026-11-19T00:03:00Z'
+updated_date: '2026-11-19T01:22:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -53,3 +54,9 @@ TASK-646 adds rules to `archboard check`, and this repository does not obey them
 - [ ] #1 Terraform, Nix flakes and Helm modules show export counts by kind
 - [ ] #2 Terraform keeps `VARIABLE_PASSED_THROUGH` and its own `MODULE_SHALLOW` as they are
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merge gate (orchestrator): footprint exits 1 on code-intel (and Packages) only through the new test file infrastructure-depth.test.ts, which only code-intel binds. Exception recorded in the proposal history (operation task-646-13-exceptions). Fact analysis needed no change: the infrastructure adapters already name each definition's kind, so Module depth, the slice's endpoint, carries the change. Unbound: the archboard skill's design lens.
+<!-- SECTION:NOTES:END -->
