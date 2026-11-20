@@ -19,7 +19,6 @@ import {
 } from "#server/panes/services/registry.ts";
 import { resolveVault } from "@archboard/server-requests/server";
 
-
 /**
  * Tell a pane which model it is on.
  *

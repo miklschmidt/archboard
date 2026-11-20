@@ -38,9 +38,9 @@ const against = process.env["AGAINST"];
 
 /** One document's saved result. */
 interface Result {
-  readonly page: string;
-  readonly reads: string;
-  readonly measures: Measure[];
+	readonly page: string;
+	readonly reads: string;
+	readonly measures: Measure[];
 }
 
 const items = await wideBoardItems(every);
@@ -51,11 +51,11 @@ const items = await wideBoardItems(every);
  * @returns The printed value.
  */
 function shown(measure: Measure): string {
-  return measure.value.toFixed(measure.digits);
+	return measure.value.toFixed(measure.digits);
 }
 
 const saved: Record<string, Result> =
-  against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
+	against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
 const results: Record<string, Result> = {};
 
 console.log(`reference pane ${shell("referencePane").width}x${shell("referencePane").height}`);
@@ -68,68 +68,68 @@ const keys: string[] = [];
  * @yields {{ svg: string; width: number; height: number; scale: number }} The drawing to capture.
  */
 async function* measured() {
-  for (const item of items) {
-    const { content } = item;
-    const drawn = await renderArchitecture({
-      content,
-      theme: "light",
-      layout,
-      policy: item.policy,
-    });
-    const key = `${item.name} ${item.variant}`;
-    const measures = scorecardOf(drawn, content);
-    const reads = drawn.readingDirection ?? "-";
-    const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
-    results[key] = { page, reads, measures };
-    if (!header) {
-      console.log(
-        ["document", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "),
-      );
-      header = true;
-    }
-    console.log([key, reads, page, ...measures.map(shown)].join(" | "));
-    keys.push(key);
-    yield { svg: drawn.svg, width: drawn.width, height: drawn.height, scale: 1 };
-  }
+	for (const item of items) {
+		const { content } = item;
+		const drawn = await renderArchitecture({
+			content,
+			theme: "light",
+			layout,
+			policy: item.policy,
+		});
+		const key = `${item.name} ${item.variant}`;
+		const measures = scorecardOf(drawn, content);
+		const reads = drawn.readingDirection ?? "-";
+		const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
+		results[key] = { page, reads, measures };
+		if (!header) {
+			console.log(
+				["document", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "),
+			);
+			header = true;
+		}
+		console.log([key, reads, page, ...measures.map(shown)].join(" | "));
+		keys.push(key);
+		yield { svg: drawn.svg, width: drawn.width, height: drawn.height, scale: 1 };
+	}
 }
 
 if (pictures) {
-  fs.mkdirSync(out, { recursive: true });
-  // Each picture is written before the next drawing is measured.
-  for await (const shot of rasterizeAll(measured())) {
-    const key = keys.shift()!;
-    fs.writeFileSync(path.join(out, `${key.replace(/[^A-Za-z0-9]+/g, "-")}.png`), shot.png);
-  }
+	fs.mkdirSync(out, { recursive: true });
+	// Each picture is written before the next drawing is measured.
+	for await (const shot of rasterizeAll(measured())) {
+		const key = keys.shift()!;
+		fs.writeFileSync(path.join(out, `${key.replace(/[^A-Za-z0-9]+/g, "-")}.png`), shot.png);
+	}
 } else {
-  for await (const _drawing of measured());
+	for await (const _drawing of measured());
 }
 
 if (save !== undefined) fs.writeFileSync(save, JSON.stringify(results, null, "\t"));
 
 if (against !== undefined) {
-  console.log(`\ncompared with ${against}, measure by measure`);
-  for (const [key, result] of Object.entries(results)) {
-    const before = saved[key];
-    if (before === undefined) {
-      console.log(`${key}: not in the saved run`);
-      continue;
-    }
-    const moved: string[] = [];
-    const counts = { better: 0, worse: 0 };
-    result.measures.forEach((measure, index) => {
-      const previous = before.measures[index]!;
-      const verdict = verdictOf(previous, measure);
-      if (verdict === "same") return;
-      if (verdict === "better" || verdict === "worse") counts[verdict] += 1;
-      moved.push(`${measure.name} ${shown(previous)} -> ${shown(measure)} ${verdict}`);
-    });
-    const pageNote = before.page === result.page ? "" : ` page ${before.page} -> ${result.page};`;
-    const readNote =
-      before.reads === result.reads ? "" : ` reads ${before.reads} -> ${result.reads};`;
-    console.log(
-      moved.length === 0 && pageNote === "" && readNote === ""
-        ? `${key}: unchanged`
-        : `${key}: ${counts.better} better, ${counts.worse} worse;${readNote}${pageNote} ${moved.join("; ")}`,
-    );
-  }
+	console.log(`\ncompared with ${against}, measure by measure`);
+	for (const [key, result] of Object.entries(results)) {
+		const before = saved[key];
+		if (before === undefined) {
+			console.log(`${key}: not in the saved run`);
+			continue;
+		}
+		const moved: string[] = [];
+		const counts = { better: 0, worse: 0 };
+		result.measures.forEach((measure, index) => {
+			const previous = before.measures[index]!;
+			const verdict = verdictOf(previous, measure);
+			if (verdict === "same") return;
+			if (verdict === "better" || verdict === "worse") counts[verdict] += 1;
+			moved.push(`${measure.name} ${shown(previous)} -> ${shown(measure)} ${verdict}`);
+		});
+		const pageNote = before.page === result.page ? "" : ` page ${before.page} -> ${result.page};`;
+		const readNote =
+			before.reads === result.reads ? "" : ` reads ${before.reads} -> ${result.reads};`;
+		console.log(
+			moved.length === 0 && pageNote === "" && readNote === ""
+				? `${key}: unchanged`
+				: `${key}: ${counts.better} better, ${counts.worse} worse;${readNote}${pageNote} ${moved.join("; ")}`,
+		);
+	}
 }

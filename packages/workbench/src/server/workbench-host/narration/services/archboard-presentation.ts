@@ -30,9 +30,11 @@ export const ARCHBOARD_VOICE_PRESENTATION: VoiceNarrativeAdapter =
 		 */
 		prepare: async (input, browserId) => {
 			const presentation = ArchboardVoicePresentationSchema.parse(input);
-			const captured = z.json().parse(
-				await narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
-			);
+			const captured = z
+				.json()
+				.parse(
+					await narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
+				);
 			if (captured === null) throw new Error("The Archboard presentation is empty.");
 			return captured;
 		},
