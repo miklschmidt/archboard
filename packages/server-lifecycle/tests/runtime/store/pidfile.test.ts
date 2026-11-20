@@ -17,7 +17,7 @@ import {
 	sweepDeadPidFiles,
 	writePidFile,
 } from "#runtime/store/pidfile.ts";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 
 const HOME_VARIABLES = ["HOME", "USERPROFILE", "LOCALAPPDATA", "XDG_STATE_HOME"] as const;
 const CHILD_BOUND_MS = 5_000;

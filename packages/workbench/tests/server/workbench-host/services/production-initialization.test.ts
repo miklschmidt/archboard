@@ -8,7 +8,7 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { findVault } from "@archboard/workspace/vault";
 import { withProductionState } from "#tests/server/support/generation/production-state.ts";
 import { createServerVoiceAgentOptions } from "#server/workbench-host/services/production.ts";

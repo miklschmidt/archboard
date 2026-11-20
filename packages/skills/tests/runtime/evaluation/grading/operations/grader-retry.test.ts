@@ -5,7 +5,7 @@
 // replaces the filed verdict, with a receipt of the bytes filed, only when it
 // mends the shortfall; the retry's usage counts; and it is never retried again.
 import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

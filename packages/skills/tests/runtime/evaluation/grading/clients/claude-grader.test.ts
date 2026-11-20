@@ -2,7 +2,7 @@
 // the pinned posture, the stream parser reads what the harness reports, and
 // the read receipts count only pictures the stream shows were opened.
 import { expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

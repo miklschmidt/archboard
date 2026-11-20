@@ -1,6 +1,6 @@
 import { connectedBrowsers, ensureServerRunning } from "@archboard/server-lifecycle/server";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
-import { browserUrl } from "@archboard/workspace/source-checkout";
+import { browserUrl } from "@archboard/machine/source-checkout";
 import { placeOfVault } from "@archboard/workspace/vault";
 import { waitUntil } from "@archboard/timing";
 import open from "open";

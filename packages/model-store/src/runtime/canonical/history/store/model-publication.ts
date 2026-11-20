@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { git } from "@archboard/process/git";
-import { writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
 import {
 	ARCHIVE_REF,
 	ArchiveError,

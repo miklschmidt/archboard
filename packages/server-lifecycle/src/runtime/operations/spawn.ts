@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "child_process";
 import { Readable } from "node:stream";
 import { logger } from "@archboard/diagnostics/logger";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import {
 	ARCHBOARD_BROWSER_URL,
 	ARCHBOARD_URL,

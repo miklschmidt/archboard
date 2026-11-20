@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import {
 	CLI_CONTRACT_ARTIFACT_NAMES,
 	renderCliContractArtifacts,

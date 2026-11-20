@@ -25,7 +25,7 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { deadline, durationMs } from "@archboard/timing";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 import { vaultDirectory } from "@archboard/workspace/vault";
 import { gitEnvironment } from "#cli/commands/vault/embeds/clients/git-environment.ts";
 

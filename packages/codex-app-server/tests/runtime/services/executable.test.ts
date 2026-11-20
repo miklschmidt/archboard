@@ -14,7 +14,7 @@ import {
 	verifyCodexExecutable,
 } from "#runtime/services/executable.ts";
 import { codexProtocolVersion } from "#runtime/protocol/protocol-version.ts";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 /** What the pinned Codex binary prints for `--version`. */
 const BINARY_VERSION = `codex-cli ${codexProtocolVersion()}` as const;

@@ -6,7 +6,7 @@
 // the rule reaches a batch that was run and graded before it.
 
 import { expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

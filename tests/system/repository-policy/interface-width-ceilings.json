@@ -6,6 +6,7 @@
 	"codex-app-server": 81,
 	"codex-realtime-voice": 50,
 	"diagnostics": 10,
+	"machine": 7,
 	"model-contract": 96,
 	"model-rules": 27,
 	"model-store": 20,
@@ -19,5 +20,5 @@
 	"ui-kit": 35,
 	"walkthrough": 20,
 	"workbench": 16,
-	"workspace": 29
+	"workspace": 22
 }

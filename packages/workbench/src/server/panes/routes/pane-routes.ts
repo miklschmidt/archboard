@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { staleFrontend } from "@archboard/server-lifecycle/server-process";
-import { browserUrl } from "@archboard/workspace/source-checkout";
+import { browserUrl } from "@archboard/machine/source-checkout";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 
 import { shownConversationPath } from "#shared/protocol/shown-conversation.ts";

@@ -9,8 +9,8 @@
 
 import fs from "fs";
 import path from "path";
-import { writeFileAtomic } from "#runtime/store/atomic-write.ts";
-import { stateDir } from "#runtime/services/state-dir.ts";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
+import { stateDir } from "@archboard/machine/state-dir";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { deadline, durationMs } from "@archboard/timing";
 

@@ -5,7 +5,7 @@
 // the authors read or the grader judges against. None of this runs a model.
 
 import { expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

@@ -2,7 +2,7 @@
 // package.json's `build`, so the one place that says how to build stays there. A release never
 // changes on disk except by an install, so it builds nothing (ADR 0076).
 
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { codedError } from "@archboard/diagnostics/thrown-error";
 import { frontendBuild } from "#runtime/services/staleness.ts";
 

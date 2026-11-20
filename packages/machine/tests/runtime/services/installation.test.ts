@@ -37,7 +37,7 @@ const MARKER = {
 function checkout(name: string): string {
 	const root = join(scratch, name);
 	mkdirSync(join(root, "bin"), { recursive: true });
-	mkdirSync(join(root, "packages", "workspace"), { recursive: true });
+	mkdirSync(join(root, "packages", "machine"), { recursive: true });
 	writeFileSync(
 		join(root, "package.json"),
 		JSON.stringify({ name: "archboard", version: "9.9.9" }),
@@ -61,11 +61,11 @@ function release(name: string, marker: string = JSON.stringify(MARKER)): string 
 }
 
 test("the running source is the checkout that holds packages/ and apps/, not the package", () => {
-	// This file is packages/workspace/tests/runtime/services/ below the checkout.
+	// This file is packages/machine/tests/runtime/services/ below the checkout.
 	const found = installation();
 	expect(found.mode).toBe("checkout");
 	expect(found.root).toBe(realpathSync(join(import.meta.dir, "..", "..", "..", "..", "..")));
-	expect(existsSync(join(found.root, "packages", "workspace", "package.json"))).toBe(true);
+	expect(existsSync(join(found.root, "packages", "machine", "package.json"))).toBe(true);
 	expect(existsSync(join(found.root, "apps", "cli", "src", "bin.ts"))).toBe(true);
 });
 
@@ -73,7 +73,7 @@ test("a checkout names the places the source and its build keep their parts", ()
 	const root = checkout("a-checkout");
 	const found = resolveInstallation({
 		executable: "/usr/bin/bun",
-		moduleDirectory: join(root, "packages", "workspace"),
+		moduleDirectory: join(root, "packages", "machine"),
 	});
 	expect(found).toMatchObject({
 		mode: "checkout",
@@ -125,7 +125,7 @@ test("the marker wins over a checkout above the module", () => {
 	const inside = checkout("checkout-of-release");
 	const found = resolveInstallation({
 		executable: join(root, "bin", "archboard"),
-		moduleDirectory: join(inside, "packages", "workspace"),
+		moduleDirectory: join(inside, "packages", "machine"),
 	});
 	expect(found.mode).toBe("release");
 });
@@ -136,7 +136,7 @@ test("a damaged marker refuses with a code, and does not fall back to the checko
 	expect(() =>
 		resolveInstallation({
 			executable: join(root, "bin", "archboard"),
-			moduleDirectory: join(inside, "packages", "workspace"),
+			moduleDirectory: join(inside, "packages", "machine"),
 		}),
 	).toThrow(expect.objectContaining({ code: "RELEASE_MARKER_INVALID" }));
 });

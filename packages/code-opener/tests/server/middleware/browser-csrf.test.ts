@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { browserUrl } from "@archboard/workspace/source-checkout";
+import { browserUrl } from "@archboard/machine/source-checkout";
 import { checkBrowserCsrf } from "#server/middleware/browser-csrf.ts";
 
 const accepted = (overrides: Record<string, string | undefined> = {}) => ({

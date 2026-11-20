@@ -2,7 +2,7 @@
 // touches the network: a failure to record loses the record, not the command.
 
 import { detectAgent } from "std-env";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { callerOf, RUNNER_VARIABLE } from "#runtime/records/rules/caller.ts";
 import { errorKind, ownFrames } from "#runtime/errors/rules/stack-frames.ts";
 import { currentConsent } from "#runtime/settings/operations/settings.ts";

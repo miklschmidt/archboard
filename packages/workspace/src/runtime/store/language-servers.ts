@@ -11,7 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
-import { unlinkDurably, writeFileAtomic } from "#runtime/store/atomic-write.ts";
+import { unlinkDurably, writeFileAtomic } from "@archboard/machine/atomic-write";
 import { registryPath, withFileLock } from "#runtime/store/registry-file.ts";
 import {
 	CONFIGURABLE_LANGUAGES,

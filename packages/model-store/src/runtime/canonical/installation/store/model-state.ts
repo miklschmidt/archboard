@@ -3,14 +3,14 @@ import type { ArchitectureModelRead, ModelDocument } from "@archboard/model-cont
 import { mintId } from "@archboard/model-rules";
 import { privateArchivePath } from "#runtime/canonical/archive/store/model-archive-location.ts";
 import { operationSubjects } from "#shared/rules/model-operation.ts";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 import { isDeepStrictEqual } from "node:util";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { durationMs } from "@archboard/timing";
 import { git, GitCommandError } from "@archboard/process/git";
-import { writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
 import { holdModel, ModelHeldError } from "#runtime/lock/store/lock.ts";
 import { modelLockState, releaseHold, renewRecord } from "#runtime/lock/store/lease-state.ts";
 import {
