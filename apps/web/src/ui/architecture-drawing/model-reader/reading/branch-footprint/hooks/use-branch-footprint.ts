@@ -7,7 +7,7 @@ import {
 	mergeBaseQuery,
 	sourceRefsQuery,
 	type SourceRefsAnswer,
-} from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import { useReadVault } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-read-vault.ts";
 import {
 	useMergeBaseStates,

@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Publication } from "#ui/architecture-drawing/model-reader/access/clients/publication.ts";
+import type { Publication } from "#ui/architecture-drawing/model-reader/reading/clients/publication.ts";
 
 /**
  * Keep remote retention limits and actionable exchange failures visible.

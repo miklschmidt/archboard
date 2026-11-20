@@ -3,7 +3,7 @@ import type { Model } from "@archboard/model-rules";
 import {
 	mergeBaseQuery,
 	type NamedRange,
-} from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import { architectureModelQuery } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import type { VaultStates } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/against.ts";
 

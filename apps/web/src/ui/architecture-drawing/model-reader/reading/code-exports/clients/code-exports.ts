@@ -2,7 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 import { codeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
-import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
 /** One module the pass measured, with the names of its exports. */
 type MeasuredModule = NonNullable<CodeCheckAnswer["depth"]>[number];
@@ -50,15 +50,7 @@ interface ExportsOfPass {
 function codeExportsQuery(vault: string, pass: ExportsOfPass) {
 	const { model, state, revision, checkedAt, module } = pass;
 	return queryOptions({
-		queryKey: [
-			...architectureModelKeys.vault(vault),
-			"code-exports",
-			model,
-			state,
-			revision,
-			module,
-			checkedAt,
-		] as const,
+		queryKey: vaultQueryKey(vault, "code-exports", model, state, revision, module, checkedAt),
 		/**
 		 * Read the exports.
 		 * @param context The query cancellation signal.

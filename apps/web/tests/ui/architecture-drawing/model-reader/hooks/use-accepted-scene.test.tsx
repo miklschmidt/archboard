@@ -57,7 +57,7 @@ const { act, cleanup, renderHook, waitFor } = await import("@testing-library/rea
 const { useAcceptedScene } =
 	await import("#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts");
 const { modelDrawingQuery } =
-	await import("#ui/architecture-drawing/model-reader/access/clients/drawing.ts");
+	await import("#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts");
 const { chooseLayoutEngine } =
 	await import("#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts");
 const { EMPTY_DRAWING } = await import("#ui/architecture-drawing/model-reader/rules/scene.ts");

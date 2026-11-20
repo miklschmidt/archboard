@@ -3,7 +3,7 @@ import type { Model } from "@archboard/model-rules";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { NOTHING_READ, type PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import type { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
-import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { useComparisonSavedAt } from "#ui/architecture-drawing/model-reader/hooks/use-comparison-saved-at.ts";
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";

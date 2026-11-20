@@ -1,7 +1,7 @@
 import { useMemo, type JSX, type ReactNode } from "react";
 import type { Model } from "@archboard/model-rules";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import type { VaultStates } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/against.ts";
 import { FootprintFacts } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintFacts.tsx";
 import { FootprintLists } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/FootprintLists.tsx";

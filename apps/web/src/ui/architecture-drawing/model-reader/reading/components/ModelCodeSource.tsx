@@ -5,7 +5,7 @@ import {
 	codeTokensQuery,
 	type CodeToken,
 } from "#ui/architecture-drawing/code-highlighting/clients/code-highlighter.ts";
-import { sourceLinesQuery } from "#ui/architecture-drawing/model-reader/access/clients/source-lines.ts";
+import { sourceLinesQuery } from "#ui/architecture-drawing/model-reader/reading/clients/source-lines.ts";
 import type { CodeEvidence } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorCode.tsx";
 
 /**

@@ -4,7 +4,7 @@ import { createElement, type ReactNode } from "react";
 import { explanationActionRequestSchema } from "@archboard/workbench/browser-contract";
 import { SHOP, shopReading } from "#tests/ui/support/model-reader/scene.ts";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
-import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { parseDocument } from "@archboard/model-contract";

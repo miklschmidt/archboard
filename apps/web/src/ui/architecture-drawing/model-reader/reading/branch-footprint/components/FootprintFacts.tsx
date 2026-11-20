@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import { RiInformationLine } from "@remixicon/react";
 import { buttonVariants, Popover } from "@archboard/ui-kit/components";
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import {
 	NOT_READ,
 	type FootprintSkip,

@@ -6,7 +6,7 @@ import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/compon
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import { PartHistory } from "#ui/architecture-drawing/canvas/presentation/components/PartHistory.tsx";
 import { kindLookOf } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
-import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
+import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/reading/clients/history.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 interface HistoryProps {

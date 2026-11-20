@@ -6,12 +6,13 @@ import {
 	readModelReply,
 	type ModelReply,
 	type ReplyOperation,
-	type ReplyDelivery,
 } from "@archboard/model-contract";
 import { inVault, strictReply } from "@archboard/server-requests";
-
-/** The schema a reply of type T is read through, as `strictReply` takes it. */
-type ReplySchema<T> = Parameters<typeof strictReply<T, unknown>>[2];
+import {
+	architectureHistoryResultSchema,
+	type architectureHistoryRequestSchema,
+} from "@archboard/code-intel/history";
+import type { z } from "zod";
 
 type StateSelection = {
 	readonly [Field in "ref" | "state" | "against" | "preview" | "bookmark" | "legacyAddress"]?:
@@ -26,6 +27,15 @@ type StateSelection = {
 };
 
 type CheckpointRows = ModelReply<"listCheckpointRows">;
+
+/** A request of one history analysis, as the route of its name parses its query. */
+type HistoryRequest = z.input<ReturnType<typeof architectureHistoryRequestSchema>>;
+/** The analyses of the history, each answered by the route of its name. */
+type HistoryAnalysis = HistoryRequest["analysis"];
+/** What a history route answers, a refusal included. */
+type HistoryReply = z.infer<ReturnType<typeof architectureHistoryResultSchema>>;
+/** The answer of one analysis. */
+type HistoryAnswer<A extends HistoryAnalysis> = Extract<HistoryReply, { analysis: A }>;
 type ArchitectureSummary = Extract<ArchitectureEvent, { type: "architecture_snapshot" }>["reading"];
 
 /** What a repository row knows of a vault, as the feed last reported it. */
@@ -164,67 +174,51 @@ const architectureModelKeys = {
 };
 
 /**
- * The two readers a strict reply asks for: an answer that came with a success status reads as
- * the operation's answer, and a body that came with an HTTP failure reads only as its refusal.
- * @param operation The operation whose answer it is.
- * @returns The reader of each delivery.
+ * The failure of a read whose reply is no answer: a refusal the transport reports keeps its words,
+ * and anything else says that the architecture could not be read.
+ * @param error What the transport reported.
+ * @returns The failure the read throws.
  */
-function replyReaders<O extends ReplyOperation>(operation: O) {
-	return { answered: replyReader(operation, "answered"), failed: replyReader(operation, "failed") };
+function unreadable(error?: unknown): Error {
+	return error instanceof Error && "code" in error
+		? error
+		: new Error("The architecture could not be read. Retry when the local server is available.");
 }
 
 /**
- * The reader of one delivery of an operation's answer.
- * @param operation The operation whose answer it is.
- * @param delivery How the body arrived.
- * @returns A reader that strictReply asks.
- */
-function replyReader<O extends ReplyOperation>(
-	operation: O,
-	delivery: ReplyDelivery,
-): ReplySchema<ModelReply<O>> {
-	return {
-		/**
-		 * Read one body.
-		 * @param body The body as received.
-		 * @returns The answer, or why the body is not one.
-		 */
-		safeParse: (body) => readModelReply(operation, body, delivery),
-	};
-}
-
-/**
- * Read a shared architecture contract without discarding structured refusals.
+ * Read a model operation's answer without discarding structured refusals: an answer that came
+ * with a success status reads as the operation's answer, and a body that came with an HTTP failure
+ * reads only as its refusal.
  * @param url The explicitly addressed resource.
- * @param reading The model operation whose answer it is, or the schema of another service's
- *   answer, which a refusal and a success both read as.
+ * @param operation The model operation whose answer it is.
  * @param signal Cancels an obsolete request.
  * @returns The shared runtime answer.
  */
-function readReply<O extends ReplyOperation>(
+async function readReply<O extends ReplyOperation>(
 	url: string,
-	reading: O,
+	operation: O,
 	signal?: AbortSignal,
-): Promise<ModelReply<O>>;
-function readReply<T>(url: string, reading: ReplySchema<T>, signal?: AbortSignal): Promise<T>;
-async function readReply(
-	url: string,
-	reading: ReplyOperation | ReplySchema<unknown>,
-	signal?: AbortSignal,
-): Promise<unknown> {
-	const { answered, failed } =
-		typeof reading === "string" ? replyReaders(reading) : { answered: reading, failed: reading };
-	const result = await strictReply<unknown, unknown>(
+): Promise<ModelReply<O>> {
+	const result = await strictReply<ModelReply<O>, ModelReply<O> | Error>(
 		url,
 		signal === undefined ? {} : { signal },
-		answered,
-		failed,
-		(error) =>
-			error instanceof Error && "code" in error
-				? error
-				: new Error(
-						"The architecture could not be read. Retry when the local server is available.",
-					),
+		{
+			/**
+			 * Read a body that came with a success status as the operation's answer.
+			 * @param body The body as received.
+			 * @returns The answer, or why the body is not one.
+			 */
+			safeParse: (body) => readModelReply(operation, body, "answered"),
+		},
+		{
+			/**
+			 * Read a body that came with an HTTP failure only as the operation's refusal.
+			 * @param body The body as received.
+			 * @returns The refusal, or why the body is not one.
+			 */
+			safeParse: (body) => readModelReply(operation, body, "failed"),
+		},
+		unreadable,
 	);
 	if (result instanceof Error) throw result;
 	return result;
@@ -443,6 +437,71 @@ function architectureClaimsQuery(vault: string) {
 }
 
 /**
+ * Whether a history answer is the analysis that was asked for.
+ * @param answer The answer.
+ * @param analysis The analysis asked for.
+ * @returns True when the answer is that analysis.
+ */
+function answers<A extends HistoryAnalysis>(
+	answer: Extract<HistoryReply, { success: true }>,
+	analysis: A,
+): answer is HistoryAnswer<A> {
+	return answer.analysis === analysis;
+}
+
+/**
+ * Read one analysis of the existing Git history, from the route of its name. A history read walks
+ * Git, so its answer is kept until its key moves or a person asks again, a failure waits for a
+ * person too, and the read takes no signal: a selection that moves on drops its subscriber before
+ * the next one mounts, and letting go must not stop a read that the next one joins.
+ * @param vault The explicitly addressed vault.
+ * @param request The analysis and its fields, which become the route's query in their order.
+ * @param options What the read is after the vault in the cache, and what the reader keeps of the
+ *   answer, which runs inside the read so that a throw fails it.
+ * @param options.key The query key after the vault's prefix.
+ * @param options.accept Checks the answer against what was asked and keeps what the reader needs.
+ * @returns One cached history request.
+ */
+function historyQuery<A extends HistoryAnalysis, const Key extends readonly unknown[], T>(
+	vault: string,
+	request: Extract<HistoryRequest, { analysis: A }>,
+	options: { readonly key: Key; readonly accept: (answer: HistoryAnswer<A>) => T },
+) {
+	const { analysis, ...fields } = request;
+	const parameters = new URLSearchParams(
+		Object.entries(fields).flatMap(([field, value]) =>
+			value === undefined ? [] : [[field, String(value)]],
+		),
+	);
+	return queryOptions({
+		queryKey: vaultQueryKey(vault, ...options.key),
+		/**
+		 * Read the analysis and keep what the reader accepts of it.
+		 * @returns What the reader keeps, or an explicit refusal.
+		 */
+		queryFn: async () => {
+			const result = await strictReply<HistoryReply, HistoryReply | Error>(
+				`${inVault(`/api/architecture/${analysis}`, vault)}&${parameters}`,
+				{},
+				architectureHistoryResultSchema(),
+				architectureHistoryResultSchema(),
+				unreadable,
+			);
+			if (result instanceof Error) throw result;
+			if (!result.success) throw new ArchitectureReadError(result);
+			if (!answers(result, analysis))
+				throw new Error("The history response contains another analysis. Retry the read.");
+			return options.accept(result);
+		},
+		staleTime: Number.POSITIVE_INFINITY,
+		retry: false,
+		retryOnMount: false,
+		refetchOnReconnect: false,
+		refetchOnWindowFocus: false,
+	});
+}
+
+/**
  * The cache key of a read of one vault that the readers of this module do not make, under the
  * vault's prefix so that what invalidates the vault invalidates it.
  * @param vault The explicit vault.
@@ -454,31 +513,22 @@ function vaultQueryKey<const Rest extends readonly unknown[]>(vault: string, ...
 }
 
 /**
- * Read every resource of one vault again.
+ * Read every resource of one vault again, or of every vault.
  * @param client The tab's query client.
- * @param vault The explicit vault.
+ * @param vault The explicit vault, or none for every vault.
  * @returns When the reads are invalidated.
  */
-function invalidateVaultQueries(client: QueryClient, vault: string): Promise<void> {
-	return client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
-}
-
-/**
- * Read every model resource of every vault again.
- * @param client The tab's query client.
- * @returns When the reads are invalidated.
- */
-function invalidateModelQueries(client: QueryClient): Promise<void> {
-	return client.invalidateQueries({ queryKey: architectureModelKeys.all });
+function invalidateModelQueries(client: QueryClient, vault?: string): Promise<void> {
+	return client.invalidateQueries({
+		queryKey: vault === undefined ? architectureModelKeys.all : architectureModelKeys.vault(vault),
+	});
 }
 
 export {
-	readReply,
-	replyReaders,
 	readModel,
 	architectureModelKeys,
+	historyQuery,
 	invalidateModelQueries,
-	invalidateVaultQueries,
 	vaultQueryKey,
 	architectureModelQuery,
 	architectureModuleQuery,
