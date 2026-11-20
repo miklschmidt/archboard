@@ -219,7 +219,8 @@ await until(() => client.snapshot().connection !== "connected", "the client to l
 await agent.start();
 await until(connected, "the client to reconnect after shutdown");
 console.log("reconnected", client.snapshot().connection);
-console.log("stale", await client.answerApproval(stale, { approvalKind: "command_execution", decision: "accept" }));
+const answered = await client.answerApproval(stale, { approvalKind: "command_execution", decision: "accept" });
+console.log("stale", String(answered));
 console.log("failure", client.snapshot().failure?.message);
 await client.dispose();
 await agent.shutdown();
