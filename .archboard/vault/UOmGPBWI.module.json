@@ -1,0 +1,28 @@
+{
+  "order": 960160,
+  "name": "Model documents",
+  "kind": "module",
+  "responsibility": "Every document the model's sides read, parsed by its kind: vault files, store records, the readings a pane or a picture is handed, and single values a caller checks",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-contract/src/shared/protocol/documents.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#UOmGPBWI",
+  "parent": "vKEsyHFk#QsBnI8Ja",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "decode a legacy board file",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/documents.ts",
+        "symbol": "decodeLegacyBoard"
+      },
+      "to": "vKEsyHFk/0T9enjhi#R3ldC44x",
+      "id": "vKEsyHFk#SHbaqmRr"
+    }
+  ]
+}

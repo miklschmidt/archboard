@@ -13,5 +13,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#Jx3qP5zW",
   "parent": "vKEsyHFk#uQ2UEbuS",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "the architecture recipe's shape",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/model-recipe.ts",
+        "symbol": "ArchitectureRecipeSchema"
+      },
+      "to": "vKEsyHFk#L56TWpZC",
+      "id": "vKEsyHFk#F9UPcoeS"
+    }
+  ]
 }

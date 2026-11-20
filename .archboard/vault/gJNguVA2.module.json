@@ -1,0 +1,28 @@
+{
+  "order": 42000,
+  "name": "Configuration routes",
+  "kind": "route",
+  "responsibility": "Answers the vault's canonical diagnostics, structure warnings and vocabulary on GET /api/vault/check",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http/handlers/reads/routes/configuration-routes.ts"
+  },
+  "parent": "vKEsyHFk/HBlhIeSD#ETrslazw",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#gJNguVA2",
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "check the vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/configuration-routes.ts",
+        "symbol": "checkArchitectureVault"
+      },
+      "id": "vKEsyHFk#cFOF2Hle",
+      "to": "vKEsyHFk#V0iTeueR"
+    }
+  ]
+}

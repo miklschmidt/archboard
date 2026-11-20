@@ -26,6 +26,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk#WgFarzeW"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "draw each kind's sample",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticLegend.tsx",
+        "symbol": "TypeSample"
+      },
+      "to": "vKEsyHFk#Np4wKswJ",
+      "id": "vKEsyHFk#isbKsVqi"
     }
   ]
 }

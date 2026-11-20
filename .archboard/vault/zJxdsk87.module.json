@@ -14,19 +14,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#zJxdsk87",
   "parent": "vKEsyHFk#EuaJBisP",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "resolve the variants a drawing compares",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model-rules/src/shared/compare/rules/drawing.ts",
-        "symbol": "resolveVariant"
-      },
-      "id": "vKEsyHFk#rZtTWSgd",
-      "to": "vKEsyHFk#vZUWUgyb"
-    }
-  ]
+  "outgoing": []
 }

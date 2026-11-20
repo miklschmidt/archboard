@@ -15,19 +15,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#uQ2UEbuS",
   "parent": "vKEsyHFk#EuaJBisP",
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "dependency",
-      "label": "the shapes a recipe composes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/render-recipe/src/runtime/operations/schema.ts",
-        "symbol": "modelShape"
-      },
-      "id": "vKEsyHFk#j8z6R0Tw",
-      "to": "vKEsyHFk#QsBnI8Ja"
-    }
-  ]
+  "outgoing": []
 }

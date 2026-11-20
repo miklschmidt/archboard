@@ -44,6 +44,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
       "to": "vKEsyHFk#vZUWUgyb"
+    },
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "compare a drawn variant with its base",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/render/rules/legacy-board.ts",
+        "symbol": "compareVariants"
+      },
+      "to": "vKEsyHFk#2TsE24MN",
+      "id": "vKEsyHFk#LDfyTpAV"
     }
   ]
 }

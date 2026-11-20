@@ -1,0 +1,40 @@
+{
+  "order": 12005,
+  "name": "Standalone voice host",
+  "kind": "external",
+  "responsibility": "A host's own page that mounts the published voice panel or builds on the voice client",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#zrJPhRGd",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "packages/codex-realtime-voice/README.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "mountVoice(element, url)",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#NPaFQGmm",
+      "to": "vKEsyHFk#8ejnRDt0"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "createVoiceClient({ url })",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#nt4BXBVR",
+      "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
+    },
+    {
+      "order": 30,
+      "kind": "dependency",
+      "label": "VoiceClientOptions",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#THgW2ajf",
+      "id": "vKEsyHFk#BmYo5qUe"
+    }
+  ]
+}

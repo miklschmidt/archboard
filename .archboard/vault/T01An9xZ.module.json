@@ -1,0 +1,41 @@
+{
+  "order": 915000,
+  "name": "Checkout resolution",
+  "kind": "module",
+  "responsibility": "Resolves a binding in the checkouts a vault reads: snapshots what each checkout holds, finds a repository's registered checkout and the local target of a code path",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-binding/src/runtime"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#T01An9xZ",
+  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "outgoing": [
+    {
+      "order": 28500,
+      "kind": "call",
+      "label": "the checkouts a vault reads, to resolve its bindings in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "id": "vKEsyHFk#vQSaWHTG",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "validate a binding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/binding-resolver.ts",
+        "symbol": "CodeBindingSchema"
+      },
+      "to": "vKEsyHFk#NVlMWCWO",
+      "id": "vKEsyHFk#Ha0uEFzA"
+    }
+  ]
+}

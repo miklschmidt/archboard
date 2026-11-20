@@ -37,6 +37,19 @@
       },
       "id": "vKEsyHFk#kaCP8FDl",
       "to": "vKEsyHFk#Q2Jc26oO"
+    },
+    {
+      "order": 30,
+      "kind": "dependency",
+      "label": "the session failure it reads and makes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/failures/rules/failures.ts",
+        "symbol": "CodexSessionMutationError"
+      },
+      "to": "vKEsyHFk#HWhu9Us6",
+      "id": "vKEsyHFk#B5tLXe40"
     }
   ]
 }

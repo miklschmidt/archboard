@@ -25,6 +25,19 @@
       },
       "id": "vKEsyHFk#GwDt9WAe",
       "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+    },
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "a pulse train's numbers, as JavaScript computes them",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/scene/traffic.rs",
+        "symbol": "max"
+      },
+      "id": "vKEsyHFk#j0MFQ3h7",
+      "to": "vKEsyHFk#1UxryIji"
     }
   ]
 }

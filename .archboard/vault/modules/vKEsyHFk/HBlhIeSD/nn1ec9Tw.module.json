@@ -133,6 +133,19 @@
       },
       "id": "vKEsyHFk#DmpFz1lt",
       "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "read the body, answer the refusal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
+        "symbol": "requestOf"
+      },
+      "to": "vKEsyHFk#pVWPwozS",
+      "id": "vKEsyHFk#g2DlZduF"
     }
   ]
 }

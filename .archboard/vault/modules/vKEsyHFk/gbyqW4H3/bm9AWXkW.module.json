@@ -37,6 +37,19 @@
       },
       "id": "vKEsyHFk#wsEMWmNJ",
       "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "read any recipe by its shape",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/read-recipe.ts",
+        "symbol": "AnyRenderRecipeSchema"
+      },
+      "to": "vKEsyHFk#L56TWpZC",
+      "id": "vKEsyHFk#BAwgP2gm"
     }
   ]
 }

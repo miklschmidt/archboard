@@ -19,19 +19,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 90,
-      "kind": "call",
-      "label": "a failed mutation's outcome, else outcome_unknown",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/rules/operation-errors.ts",
-        "symbol": "readCodexFailure"
-      },
-      "id": "vKEsyHFk#CtMqkVpA",
-      "to": "vKEsyHFk#9WRvXbgc"
-    }
-  ]
+  "outgoing": []
 }

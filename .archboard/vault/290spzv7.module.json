@@ -27,6 +27,19 @@
       },
       "id": "vKEsyHFk#zvxbACZ3",
       "to": "vKEsyHFk#GqMdZbTF"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "draw the traffic of each line at its moment",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/draw/mod.rs",
+        "symbol": "draw_traffic"
+      },
+      "to": "vKEsyHFk#jVpwXnu1",
+      "id": "vKEsyHFk#2DOXrMXS"
     }
   ]
 }

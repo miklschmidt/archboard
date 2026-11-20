@@ -49,6 +49,19 @@
       },
       "id": "vKEsyHFk#MiXMeDd5",
       "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "answer a refused model read",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-files/routes/code-files-route.ts",
+        "symbol": "respond"
+      },
+      "to": "vKEsyHFk#pVWPwozS",
+      "id": "vKEsyHFk#aZYm8Ft7"
     }
   ]
 }

@@ -1,0 +1,28 @@
+{
+  "order": 40000,
+  "name": "Recipe schema",
+  "kind": "module",
+  "responsibility": "The shape of a render's recipe: the board, variant and view by id, the drawing choices, and the fingerprint and picture digests",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/render-recipe/src/runtime/operations/schema.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#L56TWpZC",
+  "parent": "vKEsyHFk#uQ2UEbuS",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "dependency",
+      "label": "the shapes a recipe composes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/schema.ts",
+        "symbol": "modelShape"
+      },
+      "id": "vKEsyHFk#j8z6R0Tw",
+      "to": "vKEsyHFk#FV4APnhq"
+    }
+  ]
+}

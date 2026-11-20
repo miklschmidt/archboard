@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "outgoing": [
     {
+      "order": 900,
+      "kind": "call",
+      "label": "a mark's pulse breadth",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/marks.rs",
+        "symbol": "viewer_marks"
+      },
+      "id": "vKEsyHFk#WUJMjQhq",
+      "to": "vKEsyHFk#94vxmg9V"
+    },
+    {
       "order": 1000,
       "kind": "dependency",
       "label": "the page's colours",

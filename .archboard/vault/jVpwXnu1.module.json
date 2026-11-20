@@ -1,0 +1,28 @@
+{
+  "order": 7000,
+  "name": "Traffic beams",
+  "kind": "function",
+  "responsibility": "Draws a line's traffic as a beam of light that slides along each piece of its route to where this painter's clock says",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-paint/src/traffic.rs"
+  },
+  "parent": "vKEsyHFk#NFwqWgrm",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#jVpwXnu1",
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "each mark's pulse train and a leg's slide at the frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/traffic.rs",
+        "symbol": "draw_traffic"
+      },
+      "id": "vKEsyHFk#EEuLPVrA",
+      "to": "vKEsyHFk#94vxmg9V"
+    }
+  ]
+}

@@ -111,6 +111,19 @@
       },
       "id": "vKEsyHFk#Y3nWPghd",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "order": 20000,
+      "kind": "dependency",
+      "label": "the guard for a page's answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
+        "symbol": "isRecord"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#hcFlmrL5"
     }
   ]
 }

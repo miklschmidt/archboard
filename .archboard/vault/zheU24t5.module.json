@@ -1,0 +1,14 @@
+{
+  "order": 960180,
+  "name": "Model replies",
+  "kind": "module",
+  "responsibility": "What the model answers a caller, read once for every client: the operation's success, or a structured refusal that keeps its code and guidance",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-contract/src/shared/protocol/replies.ts"
+  },
+  "parent": "vKEsyHFk#QsBnI8Ja",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#zheU24t5",
+  "outgoing": []
+}

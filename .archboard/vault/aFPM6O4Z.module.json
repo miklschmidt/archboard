@@ -1,0 +1,28 @@
+{
+  "order": 72000,
+  "name": "Interface changes",
+  "kind": "module",
+  "responsibility": "What a variant changed about each container's interface, derived on both variants by inspectContainer and held against each other by node identity",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-store/src/shared/compare"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#aFPM6O4Z",
+  "outgoing": [
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "compare two states' interfaces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/shared/compare/rules/interfaces.ts",
+        "symbol": "inspectContainer"
+      },
+      "id": "vKEsyHFk#G8bTrBWb",
+      "to": "vKEsyHFk#DKzh4lMo"
+    }
+  ]
+}
