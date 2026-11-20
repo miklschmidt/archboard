@@ -4,7 +4,7 @@ title: ui-kit keeps the shared components, and the recording clock is its own pa
 status: Done
 assignee: []
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-20T21:07:00Z'
+updated_date: '2026-11-20T21:20:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -60,6 +60,8 @@ Deviations:
 Outside the slice: docs/readme/assets.json (README asset sources name packages/ui-clocks/src/ui beside ui-kit, so clips go stale when the frame clock changes); packages/ui-kit/src/ui/shadcn/components/README.md (digest rows moved, button deviation).
 
 Footprint gate exits 1: the 13 modules changed (Code target, Shell, Picture cache, Camera glide, Picture transition, Replay page, ui-kit, Frame clock, Camera motion, Fly into a card, Camera controller, Camera and pointer, Shared components) are not yet named in proposal sL6y1FLr; the vault is unchanged here.
+
+Merged into deepen/module-depth at cc1ef0fea4 (vault slice 57d0025903); footprint gate exit 1 with 7 import-only exceptions. Orchestrator accepted the three button looks (consistency with neighbouring buttons) and the hand move of the two registry files; both reported to the owner.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
