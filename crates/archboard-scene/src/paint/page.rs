@@ -228,8 +228,3 @@ pub(super) fn planned_title(title: &str, unbuilt: bool) -> String {
 pub const fn diagram_margin() -> f64 {
     DIAGRAM_MARGIN
 }
-
-/// The length of a drawing with a diagram margin at both ends.
-pub fn with_diagram_margins(length: f64) -> f64 {
-    length + 2.0 * DIAGRAM_MARGIN
-}

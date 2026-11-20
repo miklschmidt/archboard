@@ -10,7 +10,8 @@ use archboard_scene::geometry::Rect;
 use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::{
-    Definition, Geometry, Group, Item, MarkerId, Paint, Purpose, Role, Scene, Shape, SubjectKind,
+    Definition, Geometry, Group, Icon, Item, MarkerId, Paint, Purpose, Role, Scene, Shape,
+    SubjectKind,
 };
 use serde_json::Value;
 
@@ -202,4 +203,61 @@ fn each_line_is_a_path_stroked_with_a_colour_and_its_head_is_defined() {
             .expect("each line of this picture has a head");
         assert!(defines(&scene, head), "{id}'s head is defined");
     }
+}
+
+/// Every icon some items draw, depth first.
+fn icons(items: &[Item]) -> Vec<&Icon> {
+    items
+        .iter()
+        .flat_map(|item| match item {
+            Item::Icon(icon) => vec![icon],
+            Item::Group(group) => icons(&group.items),
+            _ => Vec::new(),
+        })
+        .collect()
+}
+
+#[test]
+fn a_part_whose_icon_is_missing_draws_the_fallback_icon() {
+    let mut asked: Value = serde_json::from_str(REQUEST).expect("the fixture is JSON");
+    let ids: Vec<String> = laid_out(&asked, "cards")
+        .iter()
+        .take(2)
+        .map(|card| {
+            card["measured"]["node"]["id"]
+                .as_str()
+                .expect("an id")
+                .to_owned()
+        })
+        .collect();
+    let appearances = &mut asked["picture"]["appearances"];
+    appearances[&ids[0]]
+        .as_object_mut()
+        .expect("an appearance")
+        .remove("icon");
+    appearances[&ids[1]]["icon"] = Value::from("RiNotAnIconTheHostHas");
+    let request: PaintRequest = serde_json::from_value(asked).expect("still a request");
+    let scene = paint(&request);
+    for id in &ids {
+        let card = drawing(&scene, SubjectKind::Node, id, |role| {
+            matches!(role, Role::Card(_))
+        });
+        let drawn: Vec<&str> = icons(&card.items)
+            .iter()
+            .map(|icon| icon.name.as_str())
+            .collect();
+        assert!(!drawn.is_empty(), "{id} draws its chip");
+        assert!(
+            drawn.iter().all(|name| *name == "RiQuestionLine"),
+            "{id}: {drawn:?}"
+        );
+    }
+    let Role::Card(look) = &drawing(&scene, SubjectKind::Node, &ids[0], |role| {
+        matches!(role, Role::Card(_))
+    })
+    .role
+    else {
+        unreachable!("a card's group")
+    };
+    assert_eq!(look.icon.as_deref(), Some("RiQuestionLine"));
 }

@@ -29,12 +29,13 @@ use archboard_scene::drawing::{
     MeasuredNode, NodeFacts, Painted, PaintedDrawing, PlacedLabel, ReadingDirection,
 };
 use archboard_scene::geometry::curve_through;
-use archboard_scene::paint::{flow_look, kind_icon};
+use archboard_scene::names::word;
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
+    TypeKind,
 };
-use archboard_scene::{CardWords, ShapeWords, shape_words};
+use archboard_scene::{CardWords, Part, ShapeWords, measure_label, measure_node, shape_words};
 use serde::Deserialize;
 
 use crate::content::{Flow, Node};
@@ -151,11 +152,12 @@ fn measured(
                     door: false,
                     toggle: None,
                 };
-                let measured = if node.parent.is_none() {
-                    archboard_scene::measure_flow_frame(node.facts(), &card)
+                let part = if node.parent.is_none() {
+                    Part::FlowFrame
                 } else {
-                    archboard_scene::measure_node(node.facts(), &card, false)
+                    Part::Card
                 };
+                let measured = measure_node(node.facts(), &card, part);
                 return (node.id.clone(), measured);
             };
             let (lines, width, height) = shape_size(shape, &node.name);
@@ -176,7 +178,7 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
                 for label in [&side.label, main] {
                     words
                         .entry(label.clone())
-                        .or_insert_with(|| archboard_scene::measure_label(label));
+                        .or_insert_with(|| measure_label(label).wide);
                 }
                 line_words(&side.blocks, words);
             }
@@ -184,7 +186,7 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
                 for Answer { label, blocks } in answers {
                     words
                         .entry(label.clone())
-                        .or_insert_with(|| archboard_scene::measure_label(label));
+                        .or_insert_with(|| measure_label(label).wide);
                     line_words(blocks, words);
                 }
             }
@@ -192,7 +194,7 @@ fn line_words(blocks: &[Block], words: &mut HashMap<String, MeasuredLabel>) {
                 for label in [REPEAT, DONE] {
                     words
                         .entry(label.to_owned())
-                        .or_insert_with(|| archboard_scene::measure_label(label));
+                        .or_insert_with(|| measure_label(label).wide);
                 }
                 line_words(body, words);
             }
@@ -337,7 +339,7 @@ fn node_appearances(
 ) -> BTreeMap<String, NodeAppearance> {
     let flow = KindLook {
         name: Some("Flow".to_owned()),
-        icon: Some(flow_look().icon.to_owned()),
+        icon: None,
         color: None,
     };
     let step = KindLook {
@@ -346,7 +348,7 @@ fn node_appearances(
         color: None,
     };
     let look = |kind: &str| match kind {
-        _ if kind == flow_look().kind => Some(&flow),
+        _ if kind == word(&TypeKind::Flow) => Some(&flow),
         SHAPE_KIND => Some(&step),
         _ => kinds.get(kind),
     };
@@ -374,11 +376,15 @@ fn node_appearances(
                 container: parents.contains(node.id.as_str()),
                 tags: Vec::new(),
                 type_color: kind.and_then(|kind| kind.color),
-                icon: kind_icon(kind.and_then(|kind| kind.icon.as_deref())),
+                icon: kind.and_then(|kind| kind.icon.clone()),
                 type_name: kind
                     .and_then(|kind| kind.name.clone())
                     .unwrap_or_else(|| node.kind.clone()),
-                type_kind: node.kind.clone(),
+                type_kind: if node.kind == word(&TypeKind::Flow) {
+                    TypeKind::Flow
+                } else {
+                    TypeKind::Policy(node.kind.clone())
+                },
                 drill: None,
             };
             (node.id.clone(), appearance)

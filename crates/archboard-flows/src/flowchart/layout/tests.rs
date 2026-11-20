@@ -37,7 +37,7 @@ fn measures(blocks: &[Block]) -> (HashMap<String, (f64, f64)>, HashMap<String, M
     let words = words
         .into_iter()
         .map(|text| {
-            let measured = measure_label(&text);
+            let measured = measure_label(&text).wide;
             (text, measured)
         })
         .collect();

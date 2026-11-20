@@ -14,7 +14,8 @@ use archboard_flows::{Step, every_step};
 use archboard_layout::{Engine, LineLook, Measured, Node, Standings, draw, shown_drawing};
 use archboard_scene::drawing::Painted;
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
-use archboard_scene::{CardWords, measure_label, measure_node, narrow_label};
+use archboard_scene::{CardWords, Part, measure_label, measure_node};
+use indexmap::IndexMap;
 
 use crate::appearance::{line_appearance, line_look, node_appearances, tags_of};
 use crate::entries::entry_points_of;
@@ -48,22 +49,29 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
             let container = containers.contains(node.id.as_str());
             (
                 node.id.clone(),
-                measure_node(node.facts(), &words, container),
+                measure_node(
+                    node.facts(),
+                    &words,
+                    if container {
+                        Part::Container
+                    } else {
+                        Part::Card
+                    },
+                ),
             )
         })
         .collect();
-    let words = || {
-        laid.edges.iter().filter_map(|edge| {
-            let words = edge.label.as_deref().filter(|words| !words.is_empty())?;
-            Some((edge.id.clone(), words))
-        })
-    };
-    let labels = words()
-        .map(|(id, words)| (id, measure_label(words)))
-        .collect();
-    let narrow_labels = words()
-        .filter_map(|(id, words)| Some((id, narrow_label(words)?)))
-        .collect();
+    let (mut labels, mut narrow_labels) = (IndexMap::new(), IndexMap::new());
+    for edge in &laid.edges {
+        let Some(words) = edge.label.as_deref().filter(|words| !words.is_empty()) else {
+            continue;
+        };
+        let plates = measure_label(words);
+        if let Some(narrow) = plates.narrow {
+            narrow_labels.insert(edge.id.clone(), narrow);
+        }
+        labels.insert(edge.id.clone(), plates.wide);
+    }
     let lines = laid
         .edges
         .iter()
@@ -283,7 +291,7 @@ fn paint_request<H: Host>(
     let document = document_request(request, title_for(request.told()), description_for(&shown));
     let named: Vec<&str> = appearances
         .values()
-        .map(|look| look.icon.as_str())
+        .filter_map(|look| look.icon.as_deref())
         .collect();
     let icons = icons_of(host, &named)?;
     let picture = ArchitecturePicture {

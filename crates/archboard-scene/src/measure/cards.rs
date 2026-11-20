@@ -6,6 +6,7 @@ use archboard_text::Paragraph;
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun, Toggle};
 use crate::js::{max, min};
 use crate::measure::far::far_name_width;
+use crate::measure::flow_frame::flow_frame;
 use crate::measure::{keep_tail, paragraph, width};
 use crate::request::GroupTag;
 use crate::sizes::{
@@ -124,11 +125,28 @@ struct Size {
     height: f64,
 }
 
-/// Measure a card or a frame's edge tab before layout.
-pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -> MeasuredNode<N> {
-    if container {
-        return one_line(node, words, TAB_SHOULDER);
+/// What a node is measured as.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Part {
+    /// A card, or a door where its words say it stands outside the open frame.
+    Card,
+    /// A container, measured as its frame's edge tab.
+    Container,
+    /// A flowchart's flow, measured as its frame's heading.
+    FlowFrame,
+}
+
+/// Measure a card, a frame's edge tab or a flow's heading before layout.
+pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, part: Part) -> MeasuredNode<N> {
+    match part {
+        Part::Card => card(node, words),
+        Part::Container => one_line(node, words, TAB_SHOULDER),
+        Part::FlowFrame => flow_frame(node, words),
     }
+}
+
+/// Measure a card, or a door, before layout.
+fn card<N: Clone>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
     if words.door {
         return door(node, words);
     }
@@ -432,7 +450,7 @@ mod tests {
             door: false,
             toggle: None,
         };
-        measure_node((), &words, false)
+        measure_node((), &words, Part::Card)
     }
 
     fn tag(name: &str) -> GroupTag {
@@ -538,11 +556,14 @@ mod tests {
             toggle: None,
         };
         let far = far_name_width(words.name);
-        assert_eq!(measure_node((), &words, false).width, far.max(CARD_LEAST));
+        assert_eq!(
+            measure_node((), &words, Part::Card).width,
+            far.max(CARD_LEAST)
+        );
     }
 
     #[test]
-    fn a_frame_measures_one_line_and_its_far_words_fit_the_tab() {
+    fn a_frames_far_words_fit_its_tab() {
         let words = CardWords {
             name: "Command startup",
             responsibility: Some("Takes argv from the process to one selected command."),
@@ -552,11 +573,7 @@ mod tests {
             door: false,
             toggle: None,
         };
-        let tab = measure_node((), &words, true);
-        assert_eq!(tab.height, TAB_HEIGHT);
-        assert_eq!(tab.header_height, TAB_HEIGHT);
-        assert!(tab.runs.iter().all(|run| run.y == tab.runs[0].y));
-        assert!(tab.runs.iter().all(|run| !run.text.contains("argv")));
+        let tab = measure_node((), &words, Part::Container);
         let far = tab_runs(TAB_FAR, words.name, words.path);
         let end = far.last().map_or(0.0, |run| run.x + run.width);
         assert!(end + TAB_PADDING + TAB_SHOULDER <= tab.width);

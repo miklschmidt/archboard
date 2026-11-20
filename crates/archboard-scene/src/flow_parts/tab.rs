@@ -15,7 +15,7 @@ pub struct FlowTab {
 }
 
 /// The tab of a flow's frame of some width, with or without its summary: as
-/// the flowchart measures the same heading (`measure_flow_frame`).
+/// the flowchart measures the same heading (`measure_node` of a `Part::FlowFrame`).
 pub fn flow_tab(frame_width: f64, has_summary: bool) -> FlowTab {
     let width = tab_width(frame_width);
     FlowTab {

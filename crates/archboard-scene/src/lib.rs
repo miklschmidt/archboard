@@ -31,4 +31,4 @@ pub use flow_parts::{
     activation_span, flow_tab, fragment_bounds, fragment_head, message_ends, message_plate,
     note_plate, self_loop, sequence_cards, shape_words,
 };
-pub use measure::{CardWords, measure_flow_frame, measure_label, measure_node, narrow_label};
+pub use measure::{CardWords, LabelPlates, Part, measure_label, measure_node};

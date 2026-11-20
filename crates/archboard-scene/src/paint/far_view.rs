@@ -13,19 +13,8 @@ use crate::sizes::{FAR_SCALE, HERO_LINE_WIDTH, ICON_CHIP_SIZE, LINE_WIDTH, RAILS
 /// weight, and a double line's rails.
 const FAR_WIDENED: [f64; 3] = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS];
 
-/// How much wider a far view draws a line of a stroke width, `far` of the way
-/// from the near view (0) to the far view (1): a line it does not widen keeps
-/// its width.
-pub fn far_line_scale(width: f64, far: f64) -> f64 {
-    if FAR_WIDENED.contains(&width) {
-        1.0 + (FAR_SCALE - 1.0) * far
-    } else {
-        1.0
-    }
-}
-
 /// Each line width a far view widens, with the width it draws it at there.
-pub fn far_line_widths() -> [(f64, f64); 3] {
+pub(super) fn far_lines() -> [(f64, f64); 3] {
     FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
 }
 

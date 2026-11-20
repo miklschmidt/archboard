@@ -8,6 +8,7 @@ use crate::paint::appearance::card_look;
 use crate::paint::build::{Items, grouped, lines, point, shape, text};
 use crate::paint::far_card::{NearCard, Part, Words, paint_card_views};
 use crate::paint::far_view::Place;
+use crate::paint::icons::as_drawn;
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, slab, slab_seat, slab_shadow};
 use crate::paint::standing::{
@@ -148,7 +149,7 @@ pub(super) fn paint_slab_card(
     let Part { rect, standing, .. } = *part;
     grouped(
         Group::new(
-            Role::Card(Box::new(part.appearance.clone())),
+            Role::Card(Box::new(as_drawn(part.appearance))),
             lines(vec![
                 slab_seat(rect, SLAB_RADIUS),
                 if standing == Some(Standing::Removed) {
@@ -215,7 +216,8 @@ pub(super) fn header_anchor(header: Rect) -> Place {
     }
 }
 
-/// How round a card's corner is to the layout, which keeps a line's port clear of it.
-pub const fn card_radius() -> f64 {
-    CARD_RADIUS
+/// Whether an x stands on the straight run of a card's top, between its
+/// rounded corners: where a layout may stand a line's port.
+pub fn straight_card_top_contains(card: Rect, x: f64) -> bool {
+    x >= card.x + CARD_RADIUS && x <= card.x + card.width - CARD_RADIUS
 }

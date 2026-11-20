@@ -14,16 +14,17 @@ use crate::paint::build::{Items, concat, grouped, lines};
 use crate::paint::drill_mark::corner_drill_mark;
 use crate::paint::far_card::words_in;
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
+use crate::paint::icons::as_drawn;
 use crate::paint::palette::Palette;
 use crate::paint::slab::slab_seat;
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
 use crate::paint::toggle::{quiet_rule, toggle_end};
 use crate::paint::tray::{Well, tab_view, well_body};
-use crate::request::{NodeAppearance, Standing};
+use crate::request::{NodeAppearance, Standing, TypeKind};
 use crate::scene::{Group, Role, SubjectKind};
 use crate::sizes::{
-    ARCHITECTURE_HEADER_PADDING, BAND_RADIUS, DRILL_MARK_ROOM, FLOW_KIND, PARENT_ICON_SIZE,
-    TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
+    ARCHITECTURE_HEADER_PADDING, BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP,
+    TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
 
 /// How much larger a drill mark stands in a tab seen from far away.
@@ -82,7 +83,7 @@ pub(super) fn paint_measured_frame(
     let look = tray_look(palette, placed.depth);
     let view = |well: &Well| tab_view(well, &look, palette, standing);
     let frame = Group::new(
-        Role::Frame(Some(Box::new(appearance.clone()))),
+        Role::Frame(Some(Box::new(as_drawn(appearance)))),
         lines(vec![
             slab_seat(views.near.body(), BAND_RADIUS),
             well_body(&views.near, &look, palette, standing),
@@ -137,7 +138,7 @@ fn line_views(
         size,
     };
     // A flow's tab holds its heading, as a sequence's does, and no kind.
-    let kind = if appearance.type_kind == FLOW_KIND {
+    let kind = if appearance.type_kind == TypeKind::Flow {
         Items::new()
     } else {
         shared_chip(
@@ -174,7 +175,7 @@ pub(super) fn paint_measured_header(
     let views = Views::of(placed, appearance, ctx.far_scale);
     let node = &placed.measured.node;
     let header = Group::new(
-        Role::Header(Box::new(appearance.clone())),
+        Role::Header(Box::new(as_drawn(appearance))),
         lines(vec![
             line_views(ctx, placed, &views, palette, standing, appearance),
             near_layer(warning_badge(views.near.tab, unsettled, palette)),
@@ -192,15 +193,10 @@ pub fn tab_width(frame_width: f64) -> f64 {
     frame_width - TAB_SHOULDER
 }
 
-/// The room a container's words have in a header of some width: its words
+/// How much wider a container's header is than the words it holds: its words
 /// stand in from both sides of its box.
-pub fn header_words_width(header_width: f64) -> f64 {
-    header_width - ARCHITECTURE_HEADER_PADDING
-}
-
-/// The narrowest a container's header is that holds words of some width.
-pub fn header_width_for(words_width: f64) -> f64 {
-    words_width + ARCHITECTURE_HEADER_PADDING
+pub const fn header_padding() -> f64 {
+    ARCHITECTURE_HEADER_PADDING
 }
 
 #[cfg(test)]

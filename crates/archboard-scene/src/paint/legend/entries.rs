@@ -5,7 +5,8 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::request::{Arrowhead, Dash, NodeAppearance, PaletteColor, Standing};
+use crate::names::word;
+use crate::request::{Arrowhead, Dash, NodeAppearance, PaletteColor, Standing, TypeKind};
 use crate::scene::{EntryKind, Group, Icon, Item, LineFacts, Role};
 
 /// How the picture drew a subject: as a part of some appearance, or as a
@@ -42,6 +43,14 @@ type SampleKey<'a> = (
     Arrowhead,
 );
 
+/// A kind as the picture spells it: a policy's key, or the flow's own word.
+fn kind_word(kind: &TypeKind) -> &str {
+    match kind {
+        TypeKind::Policy(key) => key,
+        flow @ TypeKind::Flow => word(flow),
+    }
+}
+
 impl Applied {
     /// What the subject's kind is called.
     pub fn type_name(&self) -> &str {
@@ -57,7 +66,7 @@ impl Applied {
         match &self.drawn {
             Drawn::Part(appearance) => (
                 icon,
-                &appearance.type_kind,
+                kind_word(&appearance.type_kind),
                 &appearance.type_name,
                 appearance.type_color,
                 None,
@@ -339,9 +348,9 @@ mod tests {
             container,
             tags: Vec::new(),
             type_color: Some(PaletteColor::Purple),
-            icon: "archive".to_owned(),
+            icon: Some("archive".to_owned()),
             type_name: "Package".to_owned(),
-            type_kind: "package".to_owned(),
+            type_kind: TypeKind::Policy("package".to_owned()),
             drill: None,
         };
         let icon = Icon {

@@ -2,7 +2,7 @@
 
 use crate::drawing::{MeasuredNode, TextRole, TextRun};
 use crate::js;
-use crate::measure::cards::CardWords;
+use crate::measure::CardWords;
 use crate::measure::{truncate, width};
 use crate::sizes::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT, CARD_TITLE_FONT,
@@ -33,7 +33,7 @@ fn flow_heading_run(words: &str, role: TextRole, baseline: f64) -> TextRun {
 
 /// Measure a flow's frame before layout: its name and its summary in its tab, as
 /// a sequence sets them.
-pub fn measure_flow_frame<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
+pub(super) fn flow_frame<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
     let top = ARCHITECTURE_CARD_PADDING;
     let note = words.responsibility.map(|summary| {
         let baseline = top + PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_SIZE;

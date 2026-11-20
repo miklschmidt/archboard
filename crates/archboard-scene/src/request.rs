@@ -93,14 +93,27 @@ pub struct NodeAppearance {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub type_color: Option<PaletteColor>,
-    /// The export name of its kind's icon.
-    pub icon: String,
+    /// The export name of the icon its kind asks for, when it asks for one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub icon: Option<String>,
     /// What its kind is called.
     pub type_name: String,
-    /// The key of its kind in the vault's policy.
-    pub type_kind: String,
+    /// Its kind.
+    pub type_kind: TypeKind,
     /// Which way the picture it opens lies, or null when it opens none.
     pub drill: Option<DrillDirection>,
+}
+
+/// What kind a part is: a flowchart's flow, or a kind of the vault's policy.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum TypeKind {
+    /// A flowchart's flow: its frame's tab holds its heading and no kind.
+    Flow,
+    /// A kind of the vault's policy, by its key.
+    #[serde(untagged)]
+    Policy(String),
 }
 
 /// How a line is dashed.

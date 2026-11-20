@@ -13,7 +13,7 @@ use archboard_scene::scene::Item;
 use serde::Serialize;
 use ts_rs::TS;
 
-use crate::groups::colour_word;
+use crate::groups::{colour_word, kind_word};
 use crate::write::write_icon;
 
 /// How a picture drew one subject, each fact as its group says it.
@@ -57,7 +57,7 @@ fn spelt(id: &str, applied: &Applied, icons: &BTreeMap<String, Vec<String>>) -> 
     }
     let (type_kind, depiction, type_color, line_color, dash, arrowhead) = match &applied.drawn {
         Drawn::Part(look) => (
-            look.type_kind.clone(),
+            kind_word(&look.type_kind).to_owned(),
             if look.container { "container" } else { "card" },
             colour_word(look.type_color),
             "neutral",

@@ -5,8 +5,8 @@
 use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
-    CardWords, ColumnLimits, HeadCard, Span, activation_span, flow_tab, fragment_bounds,
-    fragment_head, measure_flow_frame, message_ends, message_plate, note_plate, self_loop,
+    CardWords, ColumnLimits, HeadCard, Part, Span, activation_span, flow_tab, fragment_bounds,
+    fragment_head, measure_node, message_ends, message_plate, note_plate, self_loop,
     sequence_cards, shape_words,
 };
 
@@ -232,7 +232,7 @@ fn a_sequence_s_tab_holds_the_heading_a_flowchart_measures_for_the_same_flow() {
         // frame's corner, 20, and its words stand 12 in from either side.
         assert_eq!(tab.width, 380.0);
         assert_eq!((tab.header.x, tab.header.width), (12.0, 356.0));
-        let heading = measure_flow_frame((), &card("Place an order", summary, false));
+        let heading = measure_node((), &card("Place an order", summary, false), Part::FlowFrame);
         assert_eq!(tab.header.y * 2.0 + tab.header.height, heading.height);
     }
 }

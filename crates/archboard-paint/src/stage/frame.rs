@@ -22,6 +22,7 @@ impl Stage {
             shown,
             seen,
             palette,
+            marks,
             outlines,
             size,
             arriving,
@@ -61,6 +62,7 @@ impl Stage {
             palette,
             outlines: &mut *outlines,
             seen,
+            marks,
             still: (*settled && moved.is_none()).then_some(*looks),
         };
         faded(canvas, parent, |canvas| {
@@ -76,6 +78,7 @@ impl Stage {
             palette,
             outlines,
             seen: &plain,
+            marks,
             still: None,
         };
         if let Some((dive, fades)) = dive.as_ref().zip(fades) {
@@ -139,6 +142,7 @@ fn draw_ghost<C: Canvas>(
         palette: inks.palette,
         outlines: &mut *inks.outlines,
         seen: &look,
+        marks: inks.marks,
         still: None,
     };
     faded(canvas, own.shown * held.shown, |canvas| {

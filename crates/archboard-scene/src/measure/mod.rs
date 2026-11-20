@@ -18,11 +18,10 @@ mod labels;
 
 #[cfg(test)]
 pub(crate) use cards::TAB_NEAR;
-pub use cards::{CardWords, measure_node};
+pub use cards::{CardWords, Part, measure_node};
 pub(crate) use cards::{door_far_runs, tab_far, tab_runs, tag_end, tag_top};
 pub(crate) use far::{FarCard, FarWords, far_scale_for, far_words};
-pub use flow_frame::measure_flow_frame;
-pub use labels::{measure_label, narrow_label};
+pub use labels::{LabelPlates, measure_label};
 pub(crate) use labels::{message_lines, note_lines};
 
 /// The face a font names: Onest at 400, 500 or 700, or Maple Mono NL at 400 or

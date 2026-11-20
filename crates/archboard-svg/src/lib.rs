@@ -25,7 +25,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
-use archboard_scene::paint::far_line_widths;
+use archboard_scene::paint::viewer_marks;
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
 use css::css;
@@ -54,7 +54,8 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         format!("opacity:0;visibility:hidden;transition:{fade},visibility 0s linear {ms}ms");
     let movement = format!("transition:transform {ms}ms {SWAP_EASE}");
     let far = format!(".{FAR_VIEW_CLASS}");
-    let mut rules: Vec<String> = far_line_widths()
+    let mut rules: Vec<String> = viewer_marks()
+        .far_lines
         .iter()
         .map(|&(near, wide)| {
             let near = archboard_scene::js::number(near);

@@ -15,7 +15,9 @@
 //! A step no move can close is opened instead to the shortest step its two
 //! bends turn whole. The same moves part two lines that read as one (`parting.rs`).
 
-use crate::constants::{BEND_RADIUS, CARD_RADIUS};
+use archboard_scene::paint::straight_card_top_contains;
+
+use crate::constants::BEND_RADIUS;
 use crate::ecma::{abs, min, sign, to_fixed};
 use crate::track::chains::{ChainId, Kind, LANE, StationId, Track};
 use crate::track::channels::{End, NetId};
@@ -125,10 +127,7 @@ impl Track<'_> {
         let (left, width) = (item.bx.x, item.bx.width);
         let room = min([CORNER_ROOM, width / 2.0]);
         let face = card_face(item);
-        x >= left + room
-            && x <= left + width - room
-            && x >= face.x + CARD_RADIUS
-            && x <= face.x + face.width - CARD_RADIUS
+        x >= left + room && x <= left + width - room && straight_card_top_contains(face, x)
     }
 
     /// Move a card's own port along its face to an x, when the port is no

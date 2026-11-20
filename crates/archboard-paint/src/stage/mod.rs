@@ -17,6 +17,7 @@ mod tests;
 
 use std::collections::HashSet;
 
+use archboard_scene::paint::{ViewerMarks, viewer_marks};
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
@@ -62,6 +63,9 @@ pub struct Stage {
     shown: Option<Shown>,
     seen: Seen,
     palette: Palette,
+    /// The marks the painter draws a viewer's lines, warnings and far view by,
+    /// read once.
+    marks: ViewerMarks,
     outlines: Outlines,
     size: (f64, f64),
     phases: Option<Phases>,
@@ -106,6 +110,7 @@ impl Stage {
             shown: None,
             seen: Seen::default(),
             palette: Palette::of(theme),
+            marks: viewer_marks(),
             outlines: Outlines::default(),
             size,
             phases: pace.phases,
@@ -302,7 +307,7 @@ impl Stage {
     fn find_warnings(&mut self) {
         self.seen.warnings = match &self.shown {
             Some(shown) if !self.warned.is_empty() => {
-                Warnings::find(&shown.picture.scene, &self.warned)
+                Warnings::find(&shown.picture.scene, &self.warned, &self.marks)
             }
             _ => Warnings::default(),
         };

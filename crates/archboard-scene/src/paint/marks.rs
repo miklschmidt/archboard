@@ -6,6 +6,7 @@
 
 use crate::drawing::Emphasis;
 use crate::paint::edge_line::OPEN_ARM;
+use crate::paint::far_view::far_lines;
 use crate::paint::palette::Palette;
 use crate::paint::standing::{PIN_INSET, standing_pin_at, warning_glyph};
 use crate::paint::styles::{HEAD_LENGTH, WEIGHTS, drawn_ink, quietened, stroke_width};
@@ -13,6 +14,7 @@ use crate::paint::traffic::pulse_look;
 use crate::request::{PaletteColor, Standing};
 use crate::scene::pulse_breadth;
 use crate::scene::{Colour, Item};
+use crate::sizes::FAR_SCALE;
 
 /// Every colour a relationship kind can be drawn in: none, for the neutral line, then the palette's.
 const COLOURS: [Option<PaletteColor>; 18] = [
@@ -57,6 +59,13 @@ pub struct ViewerMarks {
     pub warning: Vec<Item>,
     /// How far in from a box's corner its pin and its warning stand.
     pub corner_inset: f64,
+    /// Each line width the far view widens, with the width it draws it at
+    /// there; a line of any other width keeps its width.
+    pub far_lines: [(f64, f64); 3],
+    /// How many times wider the far view draws a line it widens: a painter
+    /// that swaps views draws it `1 + (far_scale - 1) * far` times as wide,
+    /// `far` of the way from the near view (0) to the far view (1).
+    pub far_scale: f64,
 }
 
 /// The marks a viewer draws beside a picture, from the painter's own rules.
@@ -104,5 +113,7 @@ pub fn viewer_marks() -> ViewerMarks {
         pins,
         warning: warning_glyph(&palette),
         corner_inset: PIN_INSET,
+        far_lines: far_lines(),
+        far_scale: FAR_SCALE,
     }
 }

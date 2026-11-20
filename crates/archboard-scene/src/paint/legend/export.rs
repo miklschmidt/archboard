@@ -19,7 +19,6 @@ use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
 use crate::paint::legend::symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
-use crate::paint::with_diagram_margins;
 use crate::request::{ExportFrame, LegendLayout, Standing};
 use crate::scene::{Atlas, Colour, Group, Item, Role, Slot, Text, Transform};
 use crate::sizes::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
@@ -236,7 +235,7 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
         ]),
         width: js::max([
             page.width,
-            with_diagram_margins(measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil()),
+            measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil() + 2.0 * DIAGRAM_MARGIN,
         ]),
         height: band + page.height,
         atlas: moved_atlas(&page.atlas, 0.0, band),

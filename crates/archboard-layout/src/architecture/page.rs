@@ -4,7 +4,7 @@
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingNode, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
-use archboard_scene::paint::{diagram_margin, with_diagram_margins};
+use archboard_scene::paint::diagram_margin;
 
 /// A point moved.
 fn shifted(point: Point, by: Point) -> Point {
@@ -82,8 +82,8 @@ pub(crate) fn fitted_page(
         ..node
     };
     ArchitectureDrawing {
-        width: with_diagram_margins(drawn.width),
-        height: with_diagram_margins(drawn.height),
+        width: drawn.width + 2.0 * diagram_margin(),
+        height: drawn.height + 2.0 * diagram_margin(),
         cards: drawing.cards.into_iter().map(node).collect(),
         containers: drawing.containers.into_iter().map(node).collect(),
         edges: drawing

@@ -15,7 +15,7 @@ use crate::paint::colour::translucent;
 use crate::paint::far_card::{Part, words_in};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
 use crate::paint::finish::{Finish, finish_of};
-use crate::paint::icons::glyph_group;
+use crate::paint::icons::{as_drawn, drawn_icon, glyph_group};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{
     Lift, Rim, boxed, rim_band, shadow_under, slab_seat, slab_shadow, standing_border,
@@ -174,7 +174,7 @@ fn views(
     lines(vec![
         shared_chip(
             glyph_group(
-                &appearance.icon,
+                drawn_icon(appearance),
                 middle,
                 middle,
                 ink,
@@ -240,7 +240,7 @@ pub(super) fn paint_door(
     };
     grouped(
         Group::new(
-            Role::Card(Box::new(appearance.clone())),
+            Role::Card(Box::new(as_drawn(appearance))),
             lines(vec![
                 slab_seat(rect, DOOR_RADIUS),
                 halo(rect, DOOR_RADIUS, &Styles::of(palette), standing),

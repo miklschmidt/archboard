@@ -5,7 +5,7 @@
 //! container's members. Each wall is pulled in to one inset from the
 //! outermost thing its container holds.
 
-use archboard_scene::paint::header_width_for;
+use archboard_scene::paint::header_padding;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{abs, max, min, sorted_by};
@@ -217,7 +217,7 @@ pub(crate) fn fit_sides(
         .map(|frame| {
             let title = scene.titles[frame.id.as_str()];
             let words = scene.words[&title];
-            let narrowest = header_width_for(words);
+            let narrowest = words + header_padding();
             let heading = scene.moved_id(title, left);
             // A frame laid out as the region round it keeps the region's inset too.
             let inset = CONTAINER_INSET + scene.frames[frame.id.as_str()].below.unwrap_or(0.0);

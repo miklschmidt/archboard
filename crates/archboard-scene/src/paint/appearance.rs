@@ -7,7 +7,7 @@ use crate::geometry::Rect;
 use crate::js;
 use crate::paint::build::{Items, concat, shape};
 use crate::paint::colour::{Inked, Share, ToneStep, inked_over, light_dark, mixed, tinted};
-use crate::paint::icons::glyph_group;
+use crate::paint::icons::{drawn_icon, glyph_group};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, SlabLook, ghost_face, slab, slab_shadow};
 use crate::paint::tray::TrayLook;
@@ -110,7 +110,7 @@ pub(super) fn type_chip(
         height: ICON_CHIP_SIZE,
     };
     let glyph = glyph_group(
-        &appearance.icon,
+        drawn_icon(appearance),
         ICON_CHIP_SIZE / 2.0,
         (ICON_CHIP_SIZE - CHIP_THICKNESS) / 2.0,
         &ink,

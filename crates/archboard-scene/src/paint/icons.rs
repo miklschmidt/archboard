@@ -5,8 +5,8 @@ use std::collections::BTreeMap;
 
 use crate::geometry::round_coord;
 use crate::paint::build::{Items, grouped};
+use crate::request::{NodeAppearance, TypeKind};
 use crate::scene::{Colour, Group, Icon, Item, Role, Transform};
-use crate::sizes::FLOW_KIND;
 
 /// The icon drawn for a name the icon set does not have.
 pub(super) const FALLBACK_ICON: &str = "RiQuestionLine";
@@ -18,26 +18,24 @@ pub(super) const FLOW_ICON: &str = "RiFlowChart";
 /// gives the painter beside the icons the policy names.
 pub(super) const OWN_ICONS: [&str; 2] = [FALLBACK_ICON, FLOW_ICON];
 
-/// The icon a part of a kind is drawn with: the icon its policy asks for, or
-/// the icon for a name the set does not have when it asks for none.
-pub fn kind_icon(asked: Option<&str>) -> String {
-    asked.unwrap_or(FALLBACK_ICON).to_owned()
+/// The icon a part is drawn with: the icon its kind asks for; else a flow's
+/// own icon for a flowchart's flow, and the icon for a name the set does not
+/// have for any other kind.
+pub(super) fn drawn_icon(appearance: &NodeAppearance) -> &str {
+    appearance
+        .icon
+        .as_deref()
+        .unwrap_or(match appearance.type_kind {
+            TypeKind::Flow => FLOW_ICON,
+            TypeKind::Policy(_) => FALLBACK_ICON,
+        })
 }
 
-/// A flowchart's frame, which holds a flow: the kind it is drawn as, and its icon.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FlowLook {
-    /// The kind of the frame's node.
-    pub kind: &'static str,
-    /// The icon on its chip.
-    pub icon: &'static str,
-}
-
-/// How a flowchart's frame is drawn.
-pub const fn flow_look() -> FlowLook {
-    FlowLook {
-        kind: FLOW_KIND,
-        icon: FLOW_ICON,
+/// A part's look as the scene keeps it, with the icon it is drawn with.
+pub(super) fn as_drawn(appearance: &NodeAppearance) -> NodeAppearance {
+    NodeAppearance {
+        icon: Some(drawn_icon(appearance).to_owned()),
+        ..appearance.clone()
     }
 }
 

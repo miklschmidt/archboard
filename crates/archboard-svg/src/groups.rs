@@ -4,7 +4,7 @@
 
 use archboard_scene::js;
 use archboard_scene::names::word;
-use archboard_scene::request::{NodeAppearance, PaletteColor};
+use archboard_scene::request::{NodeAppearance, PaletteColor, TypeKind};
 use archboard_scene::scene::{Group, LineFacts, Role, Slot, Subject, Transform};
 
 use crate::definitions::Names;
@@ -62,6 +62,15 @@ pub(crate) fn colour_word(color: Option<PaletteColor>) -> &'static str {
     color.map_or("neutral", |color| word(&color))
 }
 
+/// A part's kind as the document spells it: its policy's key, or the flow's
+/// own word.
+pub(crate) fn kind_word(kind: &TypeKind) -> &str {
+    match kind {
+        TypeKind::Policy(key) => key,
+        flow @ TypeKind::Flow => word(flow),
+    }
+}
+
 /// How a part was drawn.
 fn appearance(appearance: &NodeAppearance, out: &mut Attributes) {
     out.set(
@@ -74,7 +83,7 @@ fn appearance(appearance: &NodeAppearance, out: &mut Attributes) {
     )
     .set("data-type-color", colour_word(appearance.type_color))
     .set("data-type-name", appearance.type_name.as_str())
-    .set("data-type-kind", appearance.type_kind.as_str());
+    .set("data-type-kind", kind_word(&appearance.type_kind));
 }
 
 /// A group's transform, as its role writes it.
