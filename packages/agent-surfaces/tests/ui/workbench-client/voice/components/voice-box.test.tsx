@@ -14,7 +14,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import type { JSX } from "react";
 
 import { Tooltip } from "@archboard/ui-kit/components";
-import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-clocks/frame-clock";
 import { OrbStageProvider } from "#ui/workbench-client/orb/components/OrbStage.tsx";
 import { subtitlePreference } from "#ui/workbench-client/subtitles/state/preference.ts";
 import { type SubtitleSource } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";

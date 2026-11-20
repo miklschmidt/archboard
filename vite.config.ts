@@ -551,7 +551,7 @@ export default defineConfig({
 						},
 						{
 							name: "controls",
-							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|cn))[\\/]/,
+							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|ui-clocks|cn))[\\/]/,
 							entriesAware: true,
 						},
 						{

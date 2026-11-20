@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import {
 	panCamera,
 	zoomCameraAbout,

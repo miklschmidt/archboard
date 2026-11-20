@@ -9,7 +9,7 @@
 // marks for search, copy, screen readers and the viewer.
 
 import { deadline, durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import { HeldInk } from "#ui/architecture-drawing/canvas/picture/clients/picture-ink.ts";
 import {

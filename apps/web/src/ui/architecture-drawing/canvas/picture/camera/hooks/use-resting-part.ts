@@ -15,7 +15,7 @@ import {
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { tipTargetAt } from "#ui/architecture-drawing/canvas/picture/clients/subject-tips.ts";
 

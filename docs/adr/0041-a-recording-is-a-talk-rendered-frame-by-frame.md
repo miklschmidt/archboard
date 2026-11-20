@@ -51,7 +51,7 @@ checkout, and replay reads no current vault.
 ### The frame clock
 
 Everything that moves on a board's pane reads one clock, `frameClock()` from
-`@archboard/ui-kit/frame-clock`. A live page gets the browser's clock. The
+`@archboard/ui-clocks/frame-clock`. A live page gets the browser's clock. The
 replay page installs a stepped clock once, before anything mounts. Lint keeps
 the board and subtitle code off the browser's timers.
 

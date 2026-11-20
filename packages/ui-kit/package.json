@@ -2,7 +2,7 @@
 	"name": "@archboard/ui-kit",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The shared presentation parts: one composite component per job over the shadcn Base UI components, the frame clock, fullscreen presentation and time as text.",
+	"description": "The shared presentation parts: one composite component per job over the shadcn Base UI components, and fullscreen presentation.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -11,8 +11,6 @@
 	},
 	"exports": {
 		"./components": "./src/ui/api/components.ts",
-		"./time": "./src/ui/api/time.ts",
-		"./frame-clock": "./src/ui/api/frame-clock.ts",
 		"./fullscreen-presentation": "./src/ui/api/fullscreen-presentation.ts"
 	}
 }

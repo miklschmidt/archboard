@@ -38,6 +38,7 @@
   "@archboard/skills" = copyPathToStore ./packages/skills;
   "@archboard/telemetry" = copyPathToStore ./packages/telemetry;
   "@archboard/timing" = copyPathToStore ./packages/timing;
+  "@archboard/ui-clocks" = copyPathToStore ./packages/ui-clocks;
   "@archboard/ui-kit" = copyPathToStore ./packages/ui-kit;
   "@archboard/walkthrough" = copyPathToStore ./packages/walkthrough;
   "@archboard/workbench" = copyPathToStore ./packages/workbench;

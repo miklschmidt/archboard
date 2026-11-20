@@ -13,7 +13,7 @@
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { Departure } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts";
 import {
 	NO_SHIFT,

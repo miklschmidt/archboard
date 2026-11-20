@@ -11,7 +11,7 @@
 
 import { useCallback, useMemo, useRef } from "react";
 
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import {
 	cameraTransform,
 	type Camera,

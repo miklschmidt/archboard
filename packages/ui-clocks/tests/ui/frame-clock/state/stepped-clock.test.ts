@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { createSteppedClock } from "#ui/frame-clock/state/stepped-clock.ts";
+import { createSteppedClock } from "@archboard/ui-clocks/frame-clock";
 
 /** A timeline the fakes run on, told apart by identity alone. */
 type FakeTimeline = object;
@@ -158,23 +158,26 @@ describe("a stepped clock", () => {
 		clock.advanceTo(1200);
 		clock.syncAnimations(document);
 		clock.advanceTo(5000);
-		clock.syncAnimations(document);
+		expect(clock.syncAnimations(document)).toEqual([]);
 		expect(brief.finishes).toBe(1);
 		expect(endless.currentTime).toBe(4000);
 		expect(endless.pauses).toBe(4);
-		expect(clock.violations()).toEqual([]);
 	});
 
-	test("refuses an animation on a timeline it does not drive", () => {
+	test("refuses an animation on a timeline it does not drive, and keeps every refusal so far", () => {
 		const clock = createSteppedClock(0);
 		const elsewhere = new FakeAnimation(timelineOf(), 100);
-		clock.syncAnimations(new FakeDocument(timelineOf(), [elsewhere]));
-		expect(clock.violations()).toHaveLength(1);
+		const document = new FakeDocument(timelineOf(), [elsewhere]);
+		expect(clock.syncAnimations(document)).toHaveLength(1);
+		clock.advanceTo(16);
+		expect(clock.syncAnimations(document)).toEqual([
+			{ at: 0, what: expect.any(String) },
+			{ at: 16, what: expect.any(String) },
+		]);
 		expect(elsewhere.currentTime).toBeNull();
 	});
 
 	test("runs a frame asked of the browser on the clock, and still waits for the browser to draw", async () => {
-		const clock = createSteppedClock(500);
 		const drawn: FrameRequestCallback[] = [];
 		const window = {
 			/**
@@ -190,7 +193,7 @@ describe("a stepped clock", () => {
 			 */
 			cancelAnimationFrame: (_request: number): void => undefined,
 		};
-		clock.install(window);
+		const clock = createSteppedClock(500, window);
 		const times: number[] = [];
 		window.requestAnimationFrame((time) => {
 			times.push(time);

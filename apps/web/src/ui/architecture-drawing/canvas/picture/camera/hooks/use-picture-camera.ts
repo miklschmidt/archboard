@@ -23,7 +23,7 @@ import {
 } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import { useCameraGlide } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts";
 import {
 	useCameraMotion,

@@ -184,6 +184,10 @@
       "name": "@archboard/timing",
       "version": "0.0.0",
     },
+    "packages/ui-clocks": {
+      "name": "@archboard/ui-clocks",
+      "version": "0.0.0",
+    },
     "packages/ui-kit": {
       "name": "@archboard/ui-kit",
       "version": "0.0.0",
@@ -254,6 +258,8 @@
     "@archboard/telemetry": ["@archboard/telemetry@workspace:packages/telemetry"],
 
     "@archboard/timing": ["@archboard/timing@workspace:packages/timing"],
+
+    "@archboard/ui-clocks": ["@archboard/ui-clocks@workspace:packages/ui-clocks"],
 
     "@archboard/ui-kit": ["@archboard/ui-kit@workspace:packages/ui-kit"],
 

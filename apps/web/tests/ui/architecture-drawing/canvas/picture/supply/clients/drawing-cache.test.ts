@@ -1,4 +1,4 @@
-import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-clocks/frame-clock";
 import { afterAll, expect, test } from "bun:test";
 import {
 	cachedModelDrawing,
