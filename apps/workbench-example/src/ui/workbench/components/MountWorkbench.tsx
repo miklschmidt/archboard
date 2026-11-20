@@ -1,35 +1,23 @@
 import { createRoot } from "react-dom/client";
-import { createVoiceClient, type VoiceClient } from "@archboard/codex-realtime-voice/browser";
-import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
-import { followPageLifecycle } from "#ui/workbench/clients/page-client.ts";
+import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
 import { Workbench } from "#ui/workbench/components/Workbench.tsx";
 import { ExampleConfigurationSchema, WORKBENCH_SOCKET_PATH } from "#shared/protocol/application.ts";
 
 /**
- * Mount the page over the page's voice client, and show the checkout it works in.
+ * Mount the page over the page's voice client, and show the checkout it works in. The client
+ * connects by itself, and lets go of its socket and microphone while the page is hidden.
  */
 function mountWorkbench(): void {
 	const element = document.getElementById("root");
 	if (element === null) throw new Error("The workbench page has no root element.");
 	const root = createRoot(element);
+	const client = createVoiceClient({ url: WORKBENCH_SOCKET_PATH });
 	let checkout = "Connecting to the workbench…";
-	let shown: VoiceClient | undefined;
-	/** Draw the page over the shown client. */
+	/** Draw the page over the client. */
 	const render = () => {
-		if (shown === undefined) return;
-		root.render(
-			<VoiceClientProvider client={shown}>
-				<Workbench checkout={checkout} />
-			</VoiceClientProvider>,
-		);
+		root.render(<Workbench client={client} checkout={checkout} />);
 	};
-	followPageLifecycle(
-		() => createVoiceClient({ socketPath: WORKBENCH_SOCKET_PATH }),
-		(client) => {
-			shown = client;
-			render();
-		},
-	);
+	render();
 	void (async () => {
 		checkout = await readCheckout();
 		render();

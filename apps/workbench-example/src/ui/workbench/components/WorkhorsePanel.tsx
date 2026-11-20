@@ -2,19 +2,21 @@ import { useCallback, useState, type ChangeEvent, type FormEvent } from "react";
 import type {
 	VoiceApproval,
 	VoiceApprovalResponse,
+	VoiceClient,
 	VoiceClientSnapshot,
 } from "@archboard/codex-realtime-voice/browser";
-import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
+import { useVoiceState } from "@archboard/codex-realtime-voice/react";
 import { Conversation } from "#ui/workbench/components/Conversation.tsx";
 import { ApprovalCard } from "#ui/workbench/components/ApprovalCard.tsx";
 
 /**
  * Keep composer state with the workhorse that receives it.
+ * @param props The page's voice client.
+ * @param props.client The client.
  * @returns The rendered controls or content.
  */
-function WorkhorsePanel() {
-	const client = useVoiceClient();
-	const state = useVoiceState();
+function WorkhorsePanel({ client }: { readonly client: VoiceClient }) {
+	const state = useVoiceState(client);
 	const [draft, setDraft] = useState("");
 	const running = workIsRunning(state);
 	const ready = state.server?.account.state === "ready";
@@ -47,7 +49,7 @@ function WorkhorsePanel() {
 				</button>
 			</div>
 			<Conversation timeline={state.server?.timeline} />
-			<ApprovalList state={state} />
+			<ApprovalList client={client} state={state} />
 			<form className="composer" onSubmit={submit}>
 				<label htmlFor="prompt">Message the workhorse</label>
 				<textarea
@@ -77,48 +79,51 @@ function canSend(state: VoiceClientSnapshot, running: boolean, draft: string): b
 	return state.connection === "connected" && state.server?.account.state === "ready";
 }
 
+/** What an approval list or entry is drawn from. */
+interface ApprovalsProps {
+	/** The page's voice client. */
+	readonly client: VoiceClient;
+	/** The client state that rendered the requests. */
+	readonly state: VoiceClientSnapshot;
+}
+
 /**
- * Show each approval with the intent of the state that rendered it.
- * @param props The rendered state.
- * @param props.state The client state.
+ * Show each approval the rendered state holds.
+ * @param props The client and the rendered state.
+ * @param props.client The page's voice client.
+ * @param props.state The client state that rendered the requests.
  * @returns The rendered controls or content.
  */
-function ApprovalList({ state }: { readonly state: VoiceClientSnapshot }) {
+function ApprovalList({ client, state }: ApprovalsProps) {
 	const approvals = state.server === null ? [] : state.server.approvals;
 	return approvals.map((approval) => (
-		<ApprovalEntry key={String(approval.requestId)} state={state} approval={approval} />
+		<ApprovalEntry
+			key={String(approval.requestId)}
+			client={client}
+			state={state}
+			approval={approval}
+		/>
 	));
 }
 
 /**
- * Bind a response to its rendered request and captured intent.
- * @param props The rendered state.
+ * Bind a response to the request the user sees.
+ * @param props The client, the rendered state and the request.
+ * @param props.client The page's voice client.
  * @param props.state The client state that rendered the request.
  * @param props.approval The request that the user sees.
  * @returns The rendered controls or content.
  */
 function ApprovalEntry({
+	client,
 	state,
 	approval,
-}: {
-	readonly state: VoiceClientSnapshot;
-	readonly approval: VoiceApproval;
-}) {
-	const client = useVoiceClient();
+}: ApprovalsProps & { readonly approval: VoiceApproval }) {
 	const respond = useCallback(
-		(response: VoiceApprovalResponse) => {
-			if (state.intent === null) return Promise.resolve(false);
-			return client.answerApproval(approval, response, state.intent);
-		},
-		[client, state.intent, approval],
+		(response: VoiceApprovalResponse) => client.answerApproval(approval, response),
+		[client, approval],
 	);
-	return (
-		<ApprovalCard
-			approval={approval}
-			disabled={state.busy || state.intent === null}
-			respond={respond}
-		/>
-	);
+	return <ApprovalCard approval={approval} disabled={state.busy} respond={respond} />;
 }
 
 /**
