@@ -9,7 +9,7 @@ import { build } from "vite-plus/pack";
 import { z } from "zod";
 
 /** What the bundle may import at run time: its dependencies, its peers and Bun's own modules. */
-const DEPENDENCIES = ["zod", "ws"] as const;
+const DEPENDENCIES = ["zod"] as const;
 // The browser hooks import React.
 const OPTIONAL_PEERS = ["react"] as const;
 // The declarations of `bunHandlers` name Bun's global types, which only a TypeScript consumer needs.
