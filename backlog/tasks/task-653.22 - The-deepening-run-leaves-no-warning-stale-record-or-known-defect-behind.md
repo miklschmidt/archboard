@@ -4,6 +4,7 @@ title: The deepening run leaves no warning, stale record or known defect behind
 status: To Do
 assignee: []
 created_date: '2026-11-20T03:28:00Z'
+updated_date: '2026-11-20T21:38:00Z'
 labels: []
 dependencies:
   - TASK-653.17
@@ -27,4 +28,14 @@ The archboard-deepen run (TASK-653) merged its builds with recorded gate excepti
 - [ ] #6 Workbench keeps one frame-to-text helper
 - [ ] #7 The voice panel has a visible container in the light theme and its copy drops the word "workhorse", checked by screenshot in both themes
 - [ ] #8 Parity tests cover the traffic view, the dark theme, the Track engine and every drawing in the corpus fixtures
+- [ ] #9 The semantic check of Current reports 0 errors: each of the 29 RELATIONSHIP_ON_CONTAINER relationships ends on the part the code reaches
+- [ ] #10 `archboard check code` on deepen/module-depth reports no warning: the 9 EXPOSED_UNUSED (codex-realtime-voice published names get their outside caller drawn, or stop being exported where nothing outside the repository uses them; LabelPlates; SocketSurface), the 7 RELATIONSHIP_UNDRAWN, header_padding and Thread tools `JsonValueSchema` are each resolved in code or model
+- [ ] #11 `archboard check embeds` passes: the README architecture SVGs are re-rendered by the readme-assets procedure
+- [ ] #12 measure.ts and timing.ts measure this repository vault, not only the six fixtures, or say so in their help
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Scope grew at adoption (c356deb613): the 29 semantic container errors, the remaining code-check warnings and the outdated README architecture SVGs. The Runtime control ANCHOR_MISMATCH and the listed RELATIONSHIP_UNDRAWN names may already be gone after adoption; check the live output.
+<!-- SECTION:NOTES:END -->
