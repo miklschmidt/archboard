@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-20T19:43:00Z'
+updated_date: '2026-11-20T20:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -34,12 +34,12 @@ Candidate 13 of the archboard-deepen run. packages/renderer is wide (51 names, h
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 @archboard/renderer has width 16 (browser 4, bun 3, core 2, picture 5, shell-geometry 2), keeps both hosts, marks, geometry and the core build, and keeps candidate 3's wasm contract; shell(key) is its one keyed getter with the keys navigator, sidebar, chrome, agentPanel, fitMargin, viewport and referencePane
+- [x] #1 @archboard/renderer has width 16 (browser 4, bun 3, core 2, picture 5, shell-geometry 2), keeps both hosts, marks, geometry and the core build, and keeps candidate 3's wasm contract; shell(key) is its one keyed getter with the keys navigator, sidebar, chrome, agentPanel, fitMargin, viewport and referencePane
 - [x] #2 @archboard/headless-chromium (layer 2) exports launchHeadlessChromium, discoveredChromiumPath, HeadlessChromiumError and DevTools with connect, call, evaluate, on, diagnostics, readBlobTo and close (width 11); @archboard/render-recipe exports readRenderRecipe, replaceRenderRecipe, recordArchitectureRecipe and readPngDimensions (width 4); @archboard/raster exports rasterizeAll and rasterScaleSchema (width 2); INTERFACE_WIDE clears on all four
 - [x] #3 rasterizeAll(jobs, { signal?, chromiumPath? }) yields captures in order, starts Chromium lazily, shares one per iteration and awaits proven shutdown on exhaustion, on failure and on early return, each tested
 - [x] #4 fit(size, room?, ceiling = 1) returns a number; sample markup is finished in TypeScript (markSample over a closed union, warningMark, lineMarks, markCounts, scopedDrawingKey); startCpuPainter folds into startPainter's options; embedRecipeInPng is private behind replaceRenderRecipe and the test-only legacy recipe writer is gone; captureArchitecture stays in the CLI
 - [x] #5 The raster receipt schemas are candidate 11's modelShape keys rasterReceipt and legacyRasterReceipt, and the CLI assembles source and file
-- [ ] #6 measure.ts moves to scripts/ and its fixtures stay with the renderer tests
+- [x] #6 measure.ts stays beside its fixtures in the renderer tests and takes pictures through @archboard/raster, which sits below the renderer
 - [x] #7 Native and WASM corpus SVG hashes, rasterized PNG bytes and their recipes are identical before and after, and the site audit (site/README.md#audit-the-site) passes
 - [ ] #8 No new ADR: one line in proposal sL6y1FLr records the moved jobs, and the package descriptions name each package's job
 <!-- AC:END -->

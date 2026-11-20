@@ -254,16 +254,32 @@ describe("how the browser is owned", () => {
 	test("a run that fails part way stops its Chromium before the failure reaches the caller", async () => {
 		const drawn = page(240, 120);
 		const chromium = recordedChromium();
-		const failed = captureAll(
-			[
-				{ ...drawn, scale: 1 },
-				{ svg: "<svg/>", width: RASTER_MAX_SIDE_PX + 1, height: 10, scale: 1 },
-			],
-			{ chromiumPath: chromium.path },
-		);
-		await expect(failed).rejects.toMatchObject({ code: "RASTER_BOUNDS_EXCEEDED" });
-		expect(chromium.starts()).toHaveLength(1);
-		expect(chromium.starts().every(gone)).toBe(true);
+		const pulled: string[] = [];
+		/** A good picture, a document that is no picture, and another good picture, counted as pulled. */
+		async function* pictures() {
+			pulled.push("A");
+			yield { ...drawn, scale: 1 };
+			pulled.push("B");
+			yield { svg: "not a picture", width: 240, height: 120, scale: 1 };
+			pulled.push("C");
+			yield { ...drawn, scale: 1 };
+		}
+		const captured: number[] = [];
+		let failure: unknown;
+		try {
+			for await (const capture of rasterizeAll(pictures(), { chromiumPath: chromium.path })) {
+				captured.push(capture.width);
+			}
+		} catch (error) {
+			failure = error;
+			// The failure reaches the caller only once the run's Chromium is gone.
+			expect(chromium.starts()).toHaveLength(1);
+			expect(chromium.starts().every(gone)).toBe(true);
+		}
+		expect(captured).toEqual([240]);
+		expect(failure).toMatchObject({ code: "RASTER_FAILED" });
+		expect(String(failure)).toContain("The loaded document is not an SVG.");
+		expect(pulled).toEqual(["A", "B"]);
 	});
 
 	test("a run its caller cancels fails with the caller's reason and stops its Chromium", async () => {
