@@ -20,8 +20,8 @@ pub use flow_parts::{
     activation_span, flow_tab, fragment_bounds, fragment_head, message_ends, message_plate,
     note_plate, self_loop, sequence_cards, shape_words,
 };
-pub use measure::{CardWords, LabelPlates, Part, measure_label, measure_node};
+pub use measure::{CardWords, Part, measure_label, measure_node};
 pub use paint::{
-    ViewerMarks, diagram_margin, header_padding, junction_boxes, own_icons, paint,
+    ViewerMarks, diagram_margin, junction_boxes, own_icons, paint,
     straight_card_top_contains, tab_width, viewer_marks,
 };

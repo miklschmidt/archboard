@@ -30,6 +30,9 @@ pub(crate) const REGION_INSET: f64 = 14.0;
 
 /// Equal space below a container title and at its sides and bottom.
 pub(crate) const CONTAINER_INSET: f64 = 20.0;
+/// How much wider a container's header is than the words it holds: its words
+/// stand in from both sides of its box.
+pub(crate) const HEADER_PADDING: f64 = 24.0;
 /// Label-to-card whitespace.
 pub(crate) const LABEL_CARD_CLEARANCE: f64 = 16.0;
 /// Whitespace between separate label boxes.

@@ -18,7 +18,7 @@ use crate::paint::standing::{standing_palette, standing_pin, subject, warning_ba
 use crate::paint::toggle::{quiet_rule, toggle_end};
 use crate::paint::tray::{Well, tab_view, well_body};
 use crate::sizes::{
-    ARCHITECTURE_HEADER_PADDING, BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP,
+    BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP,
     TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
 use archboard_geometry::Rect;
@@ -192,11 +192,6 @@ pub fn tab_width(frame_width: f64) -> f64 {
     frame_width - TAB_SHOULDER
 }
 
-/// How much wider a container's header is than the words it holds: its words
-/// stand in from both sides of its box.
-pub const fn header_padding() -> f64 {
-    ARCHITECTURE_HEADER_PADDING
-}
 
 #[cfg(test)]
 mod tests {

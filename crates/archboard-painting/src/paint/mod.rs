@@ -51,7 +51,7 @@ mod traffic;
 mod tray;
 
 pub use cards::straight_card_top_contains;
-pub use edge_tab::{header_padding, tab_width};
+pub use edge_tab::tab_width;
 pub use icons::own_icons;
 pub use junctions::junction_boxes;
 pub use marks::{ViewerMarks, viewer_marks};

@@ -6,9 +6,8 @@
 //! box and the region drawn round it; a line that stopped on the region's wall
 //! is carried on to the card's face.
 
-use archboard_painting::header_padding;
 
-use crate::constants::REGION_INSET;
+use crate::constants::{HEADER_PADDING, REGION_INSET};
 use crate::ecma::{abs, max, min, number_of, sorted_by};
 use crate::geometry::{Point, Rect};
 use crate::graph::{DOOR, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
@@ -256,7 +255,7 @@ pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> F
         steps: head.steps.map(|steps| {
             steps
                 .iter()
-                .map(|step| (step.width - header_padding(), step.height))
+                .map(|step| (step.width - HEADER_PADDING, step.height))
                 .collect()
         }),
         above: lone.map_or(0.0, band_of),
