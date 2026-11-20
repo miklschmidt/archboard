@@ -9,16 +9,12 @@ import { join } from "node:path";
 import type { CodexProcessGroupIdentity } from "@archboard/process/codex-group";
 import { waitUntil } from "@archboard/timing";
 
-import {
-	DevTools,
-	isJsonRecord,
-	type JsonRecord,
-} from "#runtime/headless-chromium/clients/devtools.ts";
+import { DevTools, isJsonRecord, type JsonRecord } from "#runtime/clients/devtools.ts";
 import {
 	HeadlessChromiumError,
 	messageOf,
 	type HeadlessChromiumCleanup,
-} from "#runtime/headless-chromium/processes/errors.ts";
+} from "#runtime/processes/errors.ts";
 import {
 	browserSocketUrl,
 	devToolsPortIn,
@@ -29,7 +25,7 @@ import {
 	stopProcessGroup,
 	tempParent,
 	type ChromiumProcess,
-} from "#runtime/headless-chromium/processes/process.ts";
+} from "#runtime/processes/process.ts";
 
 /** What a caller settles about one Chromium. */
 interface HeadlessChromiumOptions {

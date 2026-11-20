@@ -1,6 +1,6 @@
 // Driving the real shell in a private headless Chromium, and filming what it paints.
 //
-// The browser is the product's own (packages/renderer/src/runtime/headless-chromium/processes, ADR 0020): its own process
+// The browser is the product's own (packages/headless-chromium/src/runtime/processes, ADR 0020): its own process
 // group, a private profile, loopback DevTools only, and a teardown with proof. What the
 // walkthrough recorder cannot do is here: a take acts like a person (it moves a pointer, hovers,
 // double-clicks, types and presses keys) while the server redraws on CLI writes, so it is filmed
@@ -9,13 +9,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { isRecord } from "@archboard/diagnostics/unknown-record";
 import {
-	isJsonRecord,
 	launchHeadlessChromium,
 	type DevTools,
 	type HeadlessChromium,
-	type JsonRecord,
-} from "@archboard/renderer/headless-chromium";
+} from "@archboard/headless-chromium";
 import { shellSize } from "@archboard/renderer/shell-geometry";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
@@ -317,16 +316,19 @@ class Page {
 	async film(directory: string): Promise<() => Promise<Footage>> {
 		mkdirSync(directory, { recursive: true });
 		const frames: Frame[] = [];
-		const stopHearing = this.devtools.on("Page.screencastFrame", (params: JsonRecord) => {
-			const file = join(directory, `f${String(frames.length).padStart(5, "0")}.png`);
-			writeFileSync(file, Buffer.from(String(params["data"]), "base64"));
-			const metadata = params["metadata"];
-			const painted = isJsonRecord(metadata) ? metadata["timestamp"] : undefined;
-			frames.push({ file, at: typeof painted === "number" ? painted : now() });
-			void this.devtools
-				.call("Page.screencastFrameAck", { sessionId: params["sessionId"] })
-				.catch(() => undefined);
-		});
+		const stopHearing = this.devtools.on(
+			"Page.screencastFrame",
+			(params: Record<string, unknown>) => {
+				const file = join(directory, `f${String(frames.length).padStart(5, "0")}.png`);
+				writeFileSync(file, Buffer.from(String(params["data"]), "base64"));
+				const metadata = params["metadata"];
+				const painted = isRecord(metadata) ? metadata["timestamp"] : undefined;
+				frames.push({ file, at: typeof painted === "number" ? painted : now() });
+				void this.devtools
+					.call("Page.screencastFrameAck", { sessionId: params["sessionId"] })
+					.catch(() => undefined);
+			},
+		);
 		await this.devtools.call("Page.startScreencast", {
 			format: "png",
 			maxWidth: 4000,

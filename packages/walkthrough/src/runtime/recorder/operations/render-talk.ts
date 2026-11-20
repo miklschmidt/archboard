@@ -35,11 +35,8 @@ import {
 	type ReplayOptions,
 	type Talk,
 } from "#shared/protocol/talk.ts";
-import {
-	isJsonRecord,
-	type HeadlessChromium,
-	type HeadlessWindow,
-} from "@archboard/renderer/headless-chromium";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
+import { type HeadlessChromium, type HeadlessWindow } from "@archboard/headless-chromium";
 import {
 	openVideoEncoder,
 	type VideoEncoder,
@@ -242,7 +239,7 @@ async function loadTalk(
 		`${PAGE}.load(${JSON.stringify(request.talk)}, ${JSON.stringify(share.options)})`,
 		{ timeoutMs: durationMs("recorder.frameCall") },
 	);
-	const counted = isJsonRecord(loaded) ? loaded["frames"] : undefined;
+	const counted = isRecord(loaded) ? loaded["frames"] : undefined;
 	if (counted !== frames) {
 		throw new Error(
 			`The canvas page counts ${String(counted)} frames in the talk and this archboard counts ${frames}. Run \`archboard restart\` to build the frontend and restart the Archboard server.`,

@@ -17,7 +17,6 @@
 		"./core": "./src/runtime/api/core.ts",
 		"./rasterizer": "./src/runtime/api/rasterizer.ts",
 		"./recipe": "./src/runtime/api/recipe.ts",
-		"./headless-chromium": "./src/runtime/api/headless-chromium.ts",
 		"./theme": "./src/runtime/api/theme.ts",
 		"./assets": "./src/runtime/api/assets.ts",
 		"./theme.css": "./assets/theme.css",

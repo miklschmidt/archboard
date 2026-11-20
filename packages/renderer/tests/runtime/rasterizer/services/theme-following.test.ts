@@ -2,12 +2,12 @@ import { afterAll, beforeAll, expect, setDefaultTimeout, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { discoveredChromiumPath } from "#runtime/headless-chromium/processes/process.ts";
 import {
+	discoveredChromiumPath,
 	launchHeadlessChromium,
+	type DevTools,
 	type HeadlessChromium,
-} from "#runtime/headless-chromium/processes/launch.ts";
-import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
+} from "@archboard/headless-chromium";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { defaultSemanticPolicy } from "@archboard/model-contract";

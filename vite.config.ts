@@ -456,7 +456,7 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/services/diagnostics.test.ts",
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
-					"packages/renderer/tests/runtime/headless-chromium/processes/startup.test.ts",
+					"packages/headless-chromium/tests/runtime/processes/startup.test.ts",
 					"packages/model-store/tests/runtime/canonical/read/operations/model-read.test.ts",
 					"packages/model-store/tests/runtime/canonical/edit/operations/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",

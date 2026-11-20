@@ -13,7 +13,7 @@ import {
 } from "@archboard/process/codex-group";
 import { waitUntil } from "@archboard/timing";
 
-import { isJsonRecord } from "#runtime/headless-chromium/clients/devtools.ts";
+import { isJsonRecord } from "#runtime/clients/devtools.ts";
 
 /** The process a session leads. */
 type ChromiumProcess = Bun.Subprocess<"ignore", "pipe", "pipe">;

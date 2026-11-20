@@ -12,13 +12,10 @@ import { pathToFileURL } from "node:url";
 
 import {
 	HeadlessChromiumError,
-	type HeadlessChromiumCleanup,
-} from "#runtime/headless-chromium/processes/errors.ts";
-import {
 	launchHeadlessChromium,
+	type DevTools,
 	type HeadlessChromium,
-} from "#runtime/headless-chromium/processes/launch.ts";
-import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
+} from "@archboard/headless-chromium";
 import { waitUntil } from "@archboard/timing";
 
 import { regionOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
@@ -50,7 +47,7 @@ interface Capture {
 }
 
 /** What a closed session proved about its own teardown. */
-type SessionCleanup = HeadlessChromiumCleanup;
+type SessionCleanup = NonNullable<HeadlessChromiumError["cleanup"]>;
 
 /**
  * The flags a bitmap needs beyond every headless Chromium's: no GPU, no

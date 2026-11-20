@@ -1,5 +1,5 @@
-import { launchHeadlessChromium } from "#runtime/headless-chromium/processes/launch.ts";
-import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
+import { launchHeadlessChromium } from "#runtime/processes/launch.ts";
+import { HeadlessChromiumError } from "#runtime/processes/errors.ts";
 
 try {
 	const chromium = await launchHeadlessChromium({

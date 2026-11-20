@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
-import { launchHeadlessChromium } from "#runtime/headless-chromium/processes/launch.ts";
+import { HeadlessChromiumError } from "#runtime/processes/errors.ts";
+import { launchHeadlessChromium } from "#runtime/processes/launch.ts";
 
 test("an executable that exits before listening keeps its failure and cleans its process and profile", async () => {
 	const directory = mkdtempSync(join(tmpdir(), "archboard-startup-test-"));

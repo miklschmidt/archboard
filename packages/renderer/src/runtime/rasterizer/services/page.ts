@@ -4,7 +4,7 @@
 // (ADR 0059), so there is no face to wait for.
 
 import { bitmapSizeOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
-import { isJsonRecord } from "#runtime/headless-chromium/clients/devtools.ts";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
 
 /** How the page sat before the shot was taken. */
@@ -42,7 +42,7 @@ const READINESS_SCRIPT = `(async () => {
  */
 function isPageReadiness(value: unknown): value is PageReadiness {
 	return (
-		isJsonRecord(value) && typeof value["width"] === "number" && typeof value["height"] === "number"
+		isRecord(value) && typeof value["width"] === "number" && typeof value["height"] === "number"
 	);
 }
 
@@ -65,7 +65,7 @@ function checkedReadiness(value: unknown): PageReadiness {
  * @returns The bytes and their size.
  */
 function checkedBitmap(shot: unknown, bounds: RasterBounds): CheckedBitmap {
-	const data = isJsonRecord(shot) ? shot["data"] : undefined;
+	const data = isRecord(shot) ? shot["data"] : undefined;
 	if (typeof data !== "string") {
 		throw new Error("Chromium answered the screenshot without image data.");
 	}

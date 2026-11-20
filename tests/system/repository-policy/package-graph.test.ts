@@ -30,6 +30,7 @@ const LAYERS: Record<string, number> = {
 	process: 1,
 	machine: 1,
 	workspace: 2,
+	"headless-chromium": 2,
 	"code-binding": 3,
 	telemetry: 3,
 	"server-requests": 3,

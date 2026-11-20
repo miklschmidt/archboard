@@ -47,11 +47,8 @@ import {
 	type Talk,
 	type TalkLog,
 } from "#shared/protocol/talk.ts";
-import {
-	isJsonRecord,
-	type HeadlessChromium,
-	type HeadlessWindow,
-} from "@archboard/renderer/headless-chromium";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
+import { type HeadlessChromium, type HeadlessWindow } from "@archboard/headless-chromium";
 
 import { WalkthroughRecordingError } from "#runtime/recorder/operations/recording-errors.ts";
 import { resolveEncoder, startBrowser } from "#runtime/recorder/services/recording-tools.ts";
@@ -236,7 +233,7 @@ function pageHandle(window: HeadlessWindow): RecordingPageHandle {
 				returnByValue: false,
 				timeoutMs: durationMs("recorder.call"),
 			});
-			const objectId = isJsonRecord(remote) ? remote["objectId"] : undefined;
+			const objectId = isRecord(remote) ? remote["objectId"] : undefined;
 			if (typeof objectId !== "string") {
 				throw new RecordingPageError("The canvas page finished without a talk to hand over.", true);
 			}

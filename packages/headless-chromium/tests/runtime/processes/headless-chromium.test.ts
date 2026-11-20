@@ -2,13 +2,10 @@ import { afterAll, beforeAll, describe, expect, setDefaultTimeout, test } from "
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
-import { discoveredChromiumPath } from "#runtime/headless-chromium/processes/process.ts";
-import {
-	launchHeadlessChromium,
-	type HeadlessChromium,
-} from "#runtime/headless-chromium/processes/launch.ts";
-import { type DevTools } from "#runtime/headless-chromium/clients/devtools.ts";
+import { HeadlessChromiumError } from "#runtime/processes/errors.ts";
+import { discoveredChromiumPath } from "#runtime/processes/process.ts";
+import { launchHeadlessChromium, type HeadlessChromium } from "#runtime/processes/launch.ts";
+import { type DevTools } from "#runtime/clients/devtools.ts";
 
 // The module is held to what its callers build on: flags of their own reach
 // Chromium, a window's page is exactly the size asked for, events reach

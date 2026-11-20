@@ -8,7 +8,7 @@
 import { writeFileSync } from "node:fs";
 import { durationMs } from "@archboard/timing";
 
-import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
+import { HeadlessChromiumError } from "#runtime/processes/errors.ts";
 
 /** A JSON object, which is what every DevTools frame is. */
 type JsonRecord = Record<string, unknown>;

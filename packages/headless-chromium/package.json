@@ -1,0 +1,15 @@
+{
+	"name": "@archboard/headless-chromium",
+	"version": "0.0.0",
+	"private": true,
+	"description": "A private headless Chromium: launched for one caller, its pages and windows driven over DevTools, and stopped with proof that nothing it started is left.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		".": "./src/runtime/api/headless-chromium.ts"
+	}
+}

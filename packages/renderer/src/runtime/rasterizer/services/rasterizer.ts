@@ -9,8 +9,7 @@
 // frame, and takes the shot of the whole page. A bitmap that is not the size
 // the diagram asks for is refused, never cropped, scaled or padded to fit.
 
-import { HeadlessChromiumError } from "#runtime/headless-chromium/processes/errors.ts";
-import { discoveredChromiumPath } from "#runtime/headless-chromium/processes/process.ts";
+import { discoveredChromiumPath, HeadlessChromiumError } from "@archboard/headless-chromium";
 import { durationMs } from "@archboard/timing";
 import { boundsRefusal } from "#runtime/rasterizer/operations/bounds.ts";
 import {
