@@ -1,7 +1,8 @@
 // The shared presentation parts, one composite per job: a family's parts sit on its root
 // (`Dialog.Content`, `Select.Item`), so a caller imports the one name it draws with. Beside them
-// are `cn`, the class merger every component draws with, the button classes for an element that
-// is not a button, the platform's command key that shortcuts name, and a repository's shown name.
+// are `cn`, the class merger every component draws with, the platform's command key that
+// shortcuts name, and a repository's shown name. A part that one module draws lives beside it
+// (ADR 0093), and the next one that two modules draw comes here.
 export { Alert } from "#ui/components/Alert.tsx";
 export { Command } from "#ui/components/Command.tsx";
 export { Dialog } from "#ui/components/Dialog.tsx";
