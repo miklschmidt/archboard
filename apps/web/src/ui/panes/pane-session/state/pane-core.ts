@@ -25,9 +25,11 @@ import {
 	handleSocketMessage,
 	type MessageContext,
 } from "#ui/panes/pane-session/rules/socket-messages.ts";
-import { type PaneSessionOptions } from "#ui/panes/pane-session/rules/session-contracts.ts";
-import type { PaneWorkbenchSocketOwner } from "#ui/panes/pane-session/clients/workbench-socket.ts";
-import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbench-port.ts";
+import type {
+	PaneConversation,
+	PaneSessionOptions,
+} from "#ui/panes/pane-session/rules/session-contracts.ts";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { LegacyIdentity, PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
@@ -36,20 +38,20 @@ import type { ModelDocument } from "@archboard/model-contract";
 type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
 
 /** What the core reads out of React and writes back into it. */
-interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
+interface PaneCorePorts {
 	readonly paneId: string;
 	readonly clientId: string;
 	/**
 	 * The latest options.
 	 * @returns The options.
 	 */
-	readonly options: () => PaneSessionOptions<Transport>;
+	readonly options: () => PaneSessionOptions;
 	/**
 	 * The element the pane fills.
 	 * @returns The element, or null before it mounts.
 	 */
 	readonly paneElement: () => HTMLElement | null;
-	readonly workbenchSockets: PaneWorkbenchSocketOwner<Transport> | null;
+	readonly conversation: PaneConversation | null;
 	readonly setConnected: (connected: boolean) => void;
 	readonly setModel: (model: LegacyIdentity | null) => void;
 	/** The server put the pane in another vault (ADR 0050). */
@@ -61,7 +63,7 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 }
 
 /** One pane's wiring, as the hook holds it. */
-interface PaneCore<Transport extends WorkbenchTransportPort> {
+interface PaneCore {
 	readonly connect: () => void;
 	readonly publishStatus: () => void;
 	/** The pane's facets the server hears about changed. */
@@ -94,7 +96,7 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	 * The transport retained by the current socket generation.
 	 * @returns The transport, or null.
 	 */
-	readonly workbenchTransport: () => Transport | null;
+	readonly hostedConversation: () => HostedConversation | null;
 	readonly dispose: () => void;
 }
 
@@ -103,9 +105,7 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
  * @param ports What the core reads from React and writes back to it.
  * @returns The core.
  */
-function createPaneCore<Transport extends WorkbenchTransportPort>(
-	ports: PaneCorePorts<Transport>,
-): PaneCore<Transport> {
+function createPaneCore(ports: PaneCorePorts): PaneCore {
 	const { paneId, clientId } = ports;
 	let disposed = false;
 	// Whether a socket has ever opened here: what tells a reconnection apart.
@@ -303,9 +303,9 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param generation The socket generation.
 	 */
 	function socketOpened(generation: PaneSocketGeneration): void {
-		const sockets = ports.workbenchSockets;
-		if (sockets !== null) {
-			attachWorkbenchOwner({ sockets, generation, connector, live: isLive, publishStatus });
+		const conversation = ports.conversation;
+		if (conversation !== null) {
+			attachWorkbenchOwner({ conversation, generation, connector, live: isLive, publishStatus });
 		}
 		const returning = openedBefore;
 		openedBefore = true;
@@ -339,7 +339,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param socket The socket.
 	 */
 	function socketRetired(socket: WebSocket): void {
-		void ports.workbenchSockets?.detach(socket).catch(() => undefined);
+		void ports.conversation?.detach(socket).catch(() => undefined);
 	}
 
 	/**
@@ -406,12 +406,12 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		reading.dispose();
 		// Closing the socket is also how this pane stops being reported: the
 		// server drops it on the close.
-		const sockets = ports.workbenchSockets;
-		if (sockets === null) {
+		const conversation = ports.conversation;
+		if (conversation === null) {
 			connector.close();
 			return;
 		}
-		void sockets.dispose().finally(connector.close);
+		void conversation.dispose().finally(connector.close);
 	}
 
 	/** The pane's facets the server hears about changed. */
@@ -483,11 +483,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * The transport retained by the current socket generation.
-	 * @returns The transport, or null.
+	 * The conversation of the current socket generation.
+	 * @returns The conversation, or null until an attach completed.
 	 */
-	function workbenchTransport(): Transport | null {
-		return ports.workbenchSockets?.current()?.transport ?? null;
+	function hostedConversation(): HostedConversation | null {
+		return ports.conversation?.current() ?? null;
 	}
 
 	return {
@@ -500,7 +500,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		userChanged: reading.userChanged,
 		userChangeFailed: reading.userChangeFailed,
 		openCode,
-		workbenchTransport,
+		hostedConversation,
 		dispose,
 	};
 }

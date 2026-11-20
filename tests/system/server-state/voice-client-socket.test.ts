@@ -6,21 +6,7 @@ import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
 import { prepareProductionFixture } from "./support/codex-production.ts";
 import { waitFor } from "./support/http.ts";
 
-/**
- * Read how the server closes one socket on a URL.
- * @param url The socket URL.
- * @returns The close code and reason.
- */
-function closeOf(url: string): Promise<{ readonly code: number; readonly reason: string }> {
-	return new Promise((resolve) => {
-		const socket = new WebSocket(url);
-		socket.addEventListener("close", ({ code, reason }) => resolve({ code, reason }), {
-			once: true,
-		});
-	});
-}
-
-test("the browser client meets an agent's Bun.serve sockets before start and reconnects after a restart", async () => {
+test("the browser client meets an agent's Bun.serve sockets before start and reconnects by itself after a restart", async () => {
 	await using resources = new AsyncDisposableStack();
 	const fixture = prepareProductionFixture(
 		resources,
@@ -29,7 +15,7 @@ test("the browser client meets an agent's Bun.serve sockets before start and rec
 	const checkout = join(fixture.root, "checkout");
 	mkdirSync(checkout);
 	const agent = createVoiceAgent({
-		storage: { directory: join(fixture.root, "private") },
+		directory: join(fixture.root, "private"),
 		codex: { executablePath: fixture.executablePath },
 		checkouts: [checkout],
 		instructions: { coordinator: "Coordinate.", workhorse: "Work." },
@@ -56,20 +42,19 @@ test("the browser client meets an agent's Bun.serve sockets before start and rec
 	resources.defer(() => {
 		Reflect.deleteProperty(globalThis, "location");
 	});
-	const client = createVoiceClient({ socketPath: "/voice" });
+	const client = createVoiceClient({ url: "/voice" });
 	resources.defer(() => client.dispose());
 
-	expect(await client.connect()).toBe(false);
-	const refused = await closeOf(
-		`${server.url.origin.replace("http:", "ws:")}/voice?tabSessionId=t&chatId=main`,
-	);
-	expect(refused.code).toBe(1011);
-	expect(client.snapshot().failure?.message).toBe(refused.reason);
-	expect(client.snapshot().connection).toBe("reconnecting");
+	await waitFor(() => client.snapshot().failure !== null, "the client to be refused before start");
+	expect(client.snapshot().failure?.message).toBe("The Codex workbench is unavailable.");
+	expect(client.snapshot().connection).not.toBe("connected");
 
 	await agent.start();
-	expect(await client.connect()).toBe(true);
-	expect(client.snapshot().server?.account.state).toBeDefined();
+	await waitFor(
+		() => client.snapshot().connection === "connected" && client.snapshot().server !== null,
+		"the client to connect once the agent is ready",
+	);
+	expect(client.snapshot().failure).toBeNull();
 
 	await agent.shutdown();
 	await waitFor(
@@ -77,9 +62,8 @@ test("the browser client meets an agent's Bun.serve sockets before start and rec
 		"the client to lose its socket",
 	);
 	await agent.start();
-	server.reload({ ...agent.bunHandlers({ path: "/voice" }) });
 	await waitFor(
 		() => client.snapshot().connection === "connected" && client.snapshot().server !== null,
 		"the client to reconnect by itself",
 	);
-});
+}, 30_000);

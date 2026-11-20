@@ -6,8 +6,8 @@ import { createRoot, type Root } from "react-dom/client";
 
 import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
-import { mergeConversation } from "@archboard/codex-realtime-voice/controllers";
-import { type ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import { mergeConversation } from "#ui/workbench-client/timeline/rules/projection.ts";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 import { Conversation } from "#ui/workbench-client/thread/components/Conversation.tsx";
 
 const ids = browserIdentities();

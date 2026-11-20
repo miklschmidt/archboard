@@ -1,12 +1,10 @@
-import type { BrowserConnectionInstance } from "#runtime/voice/protocol/extension.ts";
-import type { BrowserLeaseLedger } from "#runtime/voice/protocol/extension.ts";
+import type { VoiceConnection } from "@archboard/codex-realtime-voice/server";
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
 import { addressablePanes, resolvePane } from "#server/panes/rules/pane-addressing.ts";
 import { panesInOrder, type PaneRegistration } from "#server/panes/rules/pane-layout.ts";
 import { readArchitectureModel } from "@archboard/model-store";
-import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
 // WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the model file
 // is the model and the server holds no copy of one (ADR 0015, ADR 0023).
@@ -35,8 +33,8 @@ const currentSocketsByClient = new Map<string, WebSocket>();
 // Initialization may finish out of acceptance order. One token per accepted
 // client generation keeps a slower predecessor from taking authority back.
 const latestSocketAcceptanceByClient = new Map<string, object>();
-const codexSocketInstances = new Map<WebSocket, BrowserConnectionInstance>();
-const browserLeaseLedger: BrowserLeaseLedger = createBrowserLeaseLedger();
+// Each admitted socket's connection to the voice agent, which its voice requests go to.
+const voiceConnections = new Map<WebSocket, VoiceConnection>();
 
 // What is on screen right now, one entry per pane, keyed by the same client id.
 // A pane is in here only while its socket is open: closing a tab or unsplitting
@@ -422,20 +420,17 @@ function forgetDisplay(): void {
 	paneVaults.clear();
 	currentSocketsByClient.clear();
 	latestSocketAcceptanceByClient.clear();
-	codexSocketInstances.clear();
+	voiceConnections.clear();
 	panes.clear();
 	paneKeys.clear();
-	browserLeaseLedger.sessions.clear();
 }
 
 export type { PaneRef };
 export {
 	admittedClientCount,
 	arrivedOnModel,
-	browserLeaseLedger,
 	clientIds,
 	clients,
-	codexSocketInstances,
 	currentSocketsByClient,
 	forgetDisplay,
 	latestSocketAcceptanceByClient,
@@ -443,6 +438,7 @@ export {
 	paneFromRequest,
 	paneIsLive,
 	paneKeyForNewPane,
+	voiceConnections,
 	paneKeyOf,
 	paneKeyOfClient,
 	paneKeys,

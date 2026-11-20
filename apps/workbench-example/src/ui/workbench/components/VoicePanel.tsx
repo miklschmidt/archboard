@@ -1,17 +1,18 @@
 import { useCallback } from "react";
-import type { VoiceClientSnapshot } from "@archboard/codex-realtime-voice/browser";
-import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
+import type { VoiceClient, VoiceClientSnapshot } from "@archboard/codex-realtime-voice/browser";
+import { useVoiceState } from "@archboard/codex-realtime-voice/react";
 
 const LIVE_PHASES = new Set(["listening", "speaking", "muted", "processing"]);
 const STOPPABLE_PHASES = new Set([...LIVE_PHASES, "requesting_permission", "negotiating"]);
 
 /**
  * Present coordinator voice with a stop that does not interrupt repository work.
+ * @param props The page's voice client.
+ * @param props.client The client.
  * @returns The rendered controls or content.
  */
-function VoicePanel() {
-	const client = useVoiceClient();
-	const state = useVoiceState();
+function VoicePanel({ client }: { readonly client: VoiceClient }) {
+	const state = useVoiceState(client);
 	const phase = state.voice.phase;
 	const live = LIVE_PHASES.has(phase);
 	const start = useCallback(() => {
@@ -68,7 +69,7 @@ function MediaProblem({ voice }: { readonly voice: VoiceClientSnapshot["voice"] 
 	if (!voice.available)
 		return (
 			<p role="alert">
-				{voice.problem} Allow microphone access in your browser, then select Reconnect.
+				{voice.problem} Allow microphone access in your browser, then reload the page.
 			</p>
 		);
 	return <p role="alert">{voice.problem}</p>;

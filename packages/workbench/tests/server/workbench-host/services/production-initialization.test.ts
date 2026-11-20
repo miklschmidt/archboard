@@ -3,7 +3,7 @@ import {
 	waitOwnerFor,
 	waitProbe,
 } from "#tests/server/support/generation/terminal-fixture.ts";
-import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readlinkSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -41,8 +41,8 @@ describe("production Codex storage", () => {
 						: join(root, "archboard", "codex-workbench");
 			const owner = join(workbench, "canvases", String(PORT));
 			expect({
-				rootDirectory: value.storage.directory,
-				ownerDirectory: value.storage.ownerDirectory,
+				rootDirectory: value.directory,
+				ownerDirectory: value.ownerDirectory,
 			}).toEqual({ rootDirectory: workbench, ownerDirectory: owner });
 			expect(statSync(owner).mode & 0o777).toBe(0o700);
 			// The coordinator works in a directory of its own, in no checkout, and reads the server's

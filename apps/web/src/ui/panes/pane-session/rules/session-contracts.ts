@@ -11,18 +11,26 @@ import type {
 	LegacyIdentity,
 	PaneStatus,
 } from "#ui/panes/pane-session/rules/session-types.ts";
-import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbench-port.ts";
-import type { PaneWorkbenchSocketOwner } from "#ui/panes/pane-session/clients/workbench-socket.ts";
 import type { ModelDocument } from "@archboard/model-contract";
+import type {
+	HostedConversation,
+	SocketConversation,
+} from "@archboard/codex-realtime-voice/browser";
 
 type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
 type PanePresentRequest = ModelDocument<"panePresentRequest">;
+
+/**
+ * The socket conversation a pane carries: attached to each socket once the server registered the
+ * pane, detached when that socket goes, and disposed when the pane closes.
+ */
+type PaneConversation = Pick<SocketConversation, "attach" | "detach" | "current" | "dispose">;
 
 /** Which palette the pane draws in. */
 type PaneTheme = "light" | "dark";
 
 /** What the shell tells one pane, and what it wants to hear back. */
-interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
+interface PaneSessionOptions {
 	paneId: string;
 	/** The first pane in reading order: the one that speaks for the tab. */
 	primary: boolean;
@@ -94,12 +102,12 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param previousKey The previously opened model key, or null on first adoption.
 	 */
 	onModelAdopted?: (paneId: string, paneKey: string, previousKey: string | null) => void;
-	/** The workbench sockets this pane carries, when the shell gives it one. */
-	createWorkbenchSockets?: () => PaneWorkbenchSocketOwner<Transport>;
+	/** The socket conversation this pane carries, when the shell gives it one. Read once. */
+	conversation?: () => PaneConversation;
 }
 
 /** One pane's session, as the shell holds it. */
-interface PaneSession<Transport extends WorkbenchTransportPort> {
+interface PaneSession {
 	/** The pane's identity to the server. */
 	readonly clientId: string;
 	/**
@@ -163,10 +171,10 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 */
 	readonly userChangeFailed: (part: SemanticPanePart) => void;
 	/**
-	 * The transport retained by the current socket generation, or null.
-	 * @returns The transport.
+	 * The conversation of the current socket generation, or null until an attach completed.
+	 * @returns The conversation.
 	 */
-	readonly workbenchTransport: () => Transport | null;
+	readonly hostedConversation: () => HostedConversation | null;
 }
 
-export { type PaneSession, type PaneSessionOptions, type PaneTheme };
+export { type PaneConversation, type PaneSession, type PaneSessionOptions, type PaneTheme };

@@ -7,7 +7,7 @@
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { SubtitleSource } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** What of the voice the subtitles read: whether it carries audio, whose it is, and what it said. */
 type SubtitledVoice = Pick<BrowserSnapshot["voice"], "state" | "unattended"> & {
@@ -46,9 +46,7 @@ function subtitledTranscript(
  * @param transport The pane's transport.
  * @returns The feed.
  */
-function heardOver(
-	transport: Pick<BrowserWorkbenchTransport, "subscribe" | "state"> | null,
-): VoiceFeed {
+function heardOver(transport: Pick<HostedConversation, "subscribe" | "state"> | null): VoiceFeed {
 	if (transport === null) return NO_FEED;
 	return {
 		subscribe: transport.subscribe,

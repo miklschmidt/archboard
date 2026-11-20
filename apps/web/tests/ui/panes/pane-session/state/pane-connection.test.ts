@@ -85,7 +85,7 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		 * @returns No element; an unplaced pane still registers.
 		 */
 		paneElement: () => null,
-		workbenchSockets: null,
+		conversation: null,
 		/**
 		 * Record the lifecycle event.
 		 * @param connected Whether the pane says it is ready for commands.
@@ -207,7 +207,7 @@ async function paneOnPayments() {
 		 * @returns No element; an unplaced pane still registers.
 		 */
 		paneElement: () => null,
-		workbenchSockets: null,
+		conversation: null,
 		/** Read from the published status instead. */
 		setConnected: (): void => {},
 		/** Read from the published status instead. */
@@ -366,7 +366,7 @@ function dialledTabSession(paneId: string): string | null {
 		 * @returns No element.
 		 */
 		paneElement: () => null,
-		workbenchSockets: null,
+		conversation: null,
 		/** The socket is never opened here. */
 		setConnected: (): void => {},
 		/** This fixture has no displayed model. */

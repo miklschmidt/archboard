@@ -1,25 +1,24 @@
 // The voice session for the pane voice runs for, as a store React reads. An
-// effect points it at that pane's transport; it makes the session, and
-// disposes it when the pane or its transport changes, since a session listens
+// effect points it at that pane's hosted conversation; it makes the session, and
+// disposes it when the pane or its conversation changes, since a session listens
 // to its pane's socket from the moment it exists.
 
 import type { SnapshotStore } from "#ui/application/state/snapshot-cache.ts";
 import type { VoiceOwner } from "#ui/application/state/workbench-owners.ts";
-import { createVoiceSession, type VoiceSessionPorts } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import { createVoiceSession } from "@archboard/workbench/voice";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
-/** What a voice session is made over: a pane, its transport and its media. */
+/** What a voice session is made over: a pane and its hosted conversation. */
 interface VoicePane {
 	readonly paneId: string;
-	readonly transport: BrowserWorkbenchTransport;
-	readonly realtime: VoiceSessionPorts["realtime"];
+	readonly transport: HostedConversation;
 }
 
 /** The voice owner, and the move that makes it. */
 interface VoiceStore extends SnapshotStore<VoiceOwner | null> {
 	/**
-	 * Make the voice session for one pane's transport.
-	 * @param pane The pane, its transport and its media.
+	 * Make the voice session for one pane's hosted conversation.
+	 * @param pane The pane and its hosted conversation.
 	 * @returns Dispose of the session.
 	 */
 	readonly follow: (pane: VoicePane) => () => void;
@@ -58,14 +57,18 @@ function createVoiceStore(): VoiceStore {
 		 */
 		getSnapshot: (): VoiceOwner | null => current,
 		/**
-		 * Make the voice session for one pane's transport.
-		 * @param pane The pane, its transport and its media.
+		 * Make the voice session for one pane's hosted conversation, with the conversation's voice.
+		 * @param pane The pane and its hosted conversation.
 		 * @returns Dispose of the session.
 		 */
 		follow: (pane: VoicePane): (() => void) => {
 			const owner: VoiceOwner = {
 				paneId: pane.paneId,
-				session: createVoiceSession(pane),
+				session: createVoiceSession({
+					paneId: pane.paneId,
+					transport: pane.transport,
+					realtime: pane.transport.media,
+				}),
 				transport: pane.transport,
 			};
 			publish(owner);

@@ -2,7 +2,7 @@
 // how the timeline and a delivery's answer move them on. Pure.
 
 import type { WorkbenchComposerSubmissionResult } from "#ui/workbench-client/surfaces/state/voice-parts.ts";
-import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
 
 /** Where one held message stands. */
 type HeldState = "waiting" | "sending" | "delivered" | "failed" | "unknown";

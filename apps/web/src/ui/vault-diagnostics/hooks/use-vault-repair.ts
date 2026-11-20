@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 
 import { vaultRepairRequest } from "#ui/vault-diagnostics/rules/repair-request.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /**
  * Ask the agent to repair the vault, and check again whenever a turn ends.
@@ -13,7 +13,7 @@ import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/
  */
 function useVaultRepair(
 	vault: string,
-	transport: BrowserWorkbenchTransport | null,
+	transport: Pick<HostedConversation, "snapshot" | "subscribe"> | null,
 	ask: (text: string) => void,
 	recheck: () => void,
 ): () => void {

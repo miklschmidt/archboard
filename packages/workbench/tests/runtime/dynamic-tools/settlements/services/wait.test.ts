@@ -1,7 +1,7 @@
 import type { ThreadLinkClassification } from "#runtime/voice/protocol/extension.ts";
 import { expect, test } from "bun:test";
 
-import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import { decodeDynamicCursor, encodeDynamicCursor } from "#runtime/dynamic-tools/rules/cursors.ts";
 import { waitForDynamicThreads } from "#runtime/dynamic-tools/settlements/services/wait.ts";
 import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";

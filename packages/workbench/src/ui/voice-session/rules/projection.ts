@@ -4,7 +4,7 @@
 // offered control and the person decides.
 
 import type { RealtimeMediaSnapshot } from "#ui/workbench-client/surfaces/state/voice-parts.ts";
-import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 import type {
 	VoiceSessionControls,
 	VoiceSessionFailure,

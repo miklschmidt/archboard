@@ -1,10 +1,15 @@
 // The voice client of one page view over the owners it is given: it opens the socket with the
-// tab's session id, attaches the transport and the media owner to it, publishes one frozen
-// state, and runs each page action once. An uncertain delivery stays in that
-// state as a failure the page shows; nothing retries it. A lost socket is
-// opened again at the time the transport names, and again after each failed
-// attempt, until one opens, the server's contract proves unreadable, or the
-// client is disposed. The attempts leave the page's failure as it is.
+// tab's session id as soon as it exists, attaches the transport and the media owner to it,
+// publishes one frozen state, and runs each page action once. An uncertain delivery stays in that
+// state as a failure the page shows; nothing retries it. A socket that does not open, or is lost,
+// is opened again at the time the transport names, and again after each failed attempt, until one
+// opens, the server's contract proves unreadable, or the client is disposed. A hidden page holds
+// no socket and no microphone: `pagehide` releases both, and `pageshow` opens the socket again.
+//
+// The client keeps one transport for the page's life, so its own reconnect detaches the media
+// owner and the transport from the old socket and attaches them to the new one, in that order.
+// Each approval is bound to the command intent of the server state that delivered it, and a new
+// socket forgets every binding: an answer to an approval from before it is refused here.
 
 import { durationMs } from "@archboard/timing";
 import type { RealtimeState } from "#shared/protocol/realtime-contract.ts";
@@ -13,10 +18,12 @@ import type { BrowserWorkbenchMediaOwner } from "#ui/media/clients/media-state.t
 import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,
+	type BrowserWorkbenchCommandIntent,
 	type BrowserWorkbenchSocket,
 	type BrowserWorkbenchTransport,
 } from "#ui/transport/state/contract.ts";
 import type {
+	VoiceApproval,
 	VoiceClient,
 	VoiceClientFailure,
 	VoiceClientOptions,
@@ -41,9 +48,13 @@ interface VoiceClientOwners {
 	readonly pageUrl: () => string;
 	/** Run once after a delay in milliseconds. Returns how to cancel it. */
 	readonly after: (delayMs: number, run: () => void) => () => void;
+	/** The page whose `pagehide` and `pageshow` the client follows, or null where none is. */
+	readonly page: EventTarget | null;
 }
 
 const UNCERTAIN = "Delivery is uncertain. Refresh the conversation before trying another action.";
+const STALE_APPROVAL =
+	"This approval is from an earlier state of the conversation. Answer it again from the current state.";
 /** The `readyState` of a socket whose close has begun; `CLOSED` is 3. */
 const SOCKET_CLOSING = 2;
 
@@ -62,7 +73,13 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	let failedToConnect = false;
 	let pending = 0;
 	let disposed = false;
+	/** The page is hidden: the client holds no socket until it shows again. */
+	let hidden = false;
 	let cancelReconnect: (() => void) | null = null;
+	/** The command intent of the server state that delivered each approval on this socket. */
+	let approvalIntents = new WeakMap<VoiceApproval, BrowserWorkbenchCommandIntent>();
+	/** The server state whose approvals are bound, or that a new socket left unbound. */
+	let boundState: VoiceClientSnapshot["server"] = null;
 	let current = read();
 
 	/**
@@ -71,14 +88,33 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 */
 	function read(): VoiceClientSnapshot {
 		const state = transport.state();
+		bindApprovals(state.snapshot);
 		return Object.freeze({
 			connection: state.connection,
 			server: state.snapshot,
 			voice: voiceOf(media),
 			busy: pending > 0,
 			failure,
-			intent: transport.capabilities().canCommand ? transport.captureCommandIntent() : null,
 		});
+	}
+
+	/**
+	 * Bind the approvals of a server state the client has not bound yet to its command intent,
+	 * once commands can be sent. A state publishes new approval objects, so an approval keeps the
+	 * intent of the state that delivered it.
+	 * @param server The server state.
+	 */
+	function bindApprovals(server: VoiceClientSnapshot["server"]): void {
+		if (server === null || server === boundState || !transport.capabilities().canCommand) return;
+		boundState = server;
+		const intent = transport.captureCommandIntent();
+		for (const approval of server.approvals) approvalIntents.set(approval, intent);
+	}
+
+	/** Forget every approval binding, because a new socket replaces the connection. */
+	function forgetApprovals(): void {
+		approvalIntents = new WeakMap();
+		boundState = transport.state().snapshot;
 	}
 
 	/** Publish a new state to every listener. */
@@ -167,6 +203,7 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	const open = async () => {
 		const next = owners.openSocket(socketUrl(options, owners.pageUrl(), owners.tabSessionId()));
 		socket = next;
+		forgetApprovals();
 		const closed = closeReasonOf(next);
 		await opened(next);
 		if (disposed) return;
@@ -181,22 +218,20 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 
 	/**
 	 * Release the socket, then open a new one and attach the owners to it. A
-	 * dispose while it runs opens no socket, or closes the one it opened.
+	 * dispose or a `pagehide` while it runs opens no socket, or releases the one it opened.
 	 */
 	const reopen = async () => {
 		await release();
-		if (!disposed) await open();
+		if (disposed || hidden) return;
+		await open();
+		if (hiddenNow()) await release();
 	};
 
 	/**
-	 * Open the socket again and attach the owners to it.
-	 * @returns Whether it opened.
+	 * Whether the page is hidden now, as a `pagehide` during an await leaves it.
+	 * @returns True while it is hidden.
 	 */
-	const connect = async () => {
-		const completed = await run(reopen);
-		failedToConnect = !completed && failure !== null;
-		return completed && !disposed;
-	};
+	const hiddenNow = () => hidden;
 
 	/**
 	 * Connect again after a delay, unless the socket is connected by then, and
@@ -204,7 +239,7 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 * @param delayMs How long to wait.
 	 */
 	const reconnectAfter = (delayMs: number) => {
-		if (disposed || cancelReconnect !== null) return;
+		if (disposed || hidden || cancelReconnect !== null) return;
 		cancelReconnect = owners.after(Math.max(0, delayMs), () => {
 			cancelReconnect = null;
 			if (disposed || transport.state().connection === "connected") return;
@@ -226,20 +261,50 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	};
 
 	/**
+	 * Show why a socket did not open, unless the page shows another failure.
+	 * @param error Why it did not open.
+	 */
+	const noteConnectFailure = (error: unknown) => {
+		if (failure !== null && !failedToConnect) return;
+		failure = failureOf(error);
+		failedToConnect = true;
+	};
+
+	/**
 	 * Connect once while no action runs, and wait to try again when the socket
 	 * does not open. The attempt keeps the failure the page shows, such as an
-	 * uncertain delivery.
+	 * uncertain delivery; while it shows none, it shows why the socket did not open.
 	 */
 	const reconnect = async () => {
-		const idle = pending === 0 && !disposed;
-		if (idle && (await busyWith(reopen, ignore))) {
-			if (failedToConnect) failure = null;
-			failedToConnect = false;
-			publish();
-			return;
-		}
-		if (!unreadableServer()) reconnectAfter(durationMs("codexRealtime.clientReconnect"));
+		const idle = pending === 0 && !disposed && !hidden;
+		if (idle && (await busyWith(reopen, noteConnectFailure))) reopened();
+		else if (!unreadableServer()) reconnectAfter(durationMs("codexRealtime.clientReconnect"));
 	};
+
+	/** A socket opened: it clears why an earlier one did not. */
+	const reopened = () => {
+		if (failedToConnect) failure = null;
+		failedToConnect = false;
+		publish();
+	};
+
+	/** Release the socket and the microphone while the page is hidden. */
+	const hide = () => {
+		if (disposed) return;
+		hidden = true;
+		cancelReconnect?.();
+		cancelReconnect = null;
+		void release().finally(publish);
+	};
+
+	/** Open the socket again once the hidden page shows. */
+	const show = () => {
+		if (disposed || !hidden) return;
+		hidden = false;
+		void reconnect();
+	};
+	owners.page?.addEventListener("pagehide", hide);
+	owners.page?.addEventListener("pageshow", show);
 	const unsubscribeLoss = transport.subscribe(() => {
 		const state = transport.state();
 		if (state.kind === "connection" && state.state === "backoff")
@@ -274,14 +339,16 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		}, true);
 
 	/**
-	 * Answer one approval against the intent that rendered it.
+	 * Answer one approval against the intent of the server state that delivered it. An approval
+	 * from before the current socket, or from no state of this client, is refused here.
 	 * @param approval The request.
 	 * @param response The answer.
-	 * @param intent The rendered state's intent.
 	 * @returns Whether it was delivered.
 	 */
-	const answerApproval: VoiceClient["answerApproval"] = (approval, response, intent) =>
+	const answerApproval: VoiceClient["answerApproval"] = (approval, response) =>
 		run(async () => {
+			const intent = approvalIntents.get(approval);
+			if (intent === undefined) throw new Error(STALE_APPROVAL);
 			const draft: BrowserCommandDraft = {
 				command: "approvalRespond",
 				requestId: approval.requestId,
@@ -306,6 +373,8 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	/** Stop voice, release the socket and end every subscription. */
 	const dispose = async () => {
 		disposed = true;
+		owners.page?.removeEventListener("pagehide", hide);
+		owners.page?.removeEventListener("pageshow", show);
 		cancelReconnect?.();
 		cancelReconnect = null;
 		unsubscribeLoss();
@@ -325,7 +394,6 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	};
 
 	const client: VoiceClient = {
-		connect,
 		/**
 		 * Read the server's state again.
 		 * @returns Whether it completed.
@@ -382,12 +450,8 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		subscribe,
 		dispose,
 	};
+	void reconnect();
 	return Object.freeze(client);
-}
-
-/** A reconnect attempt that fails leaves the page's failure as it is. */
-function ignore(): void {
-	// The next attempt, or the connection state, says what happens next.
 }
 
 /**
@@ -398,7 +462,7 @@ function ignore(): void {
  * @returns The URL.
  */
 function socketUrl(options: VoiceClientOptions, pageUrl: string, tabSessionId: string): string {
-	const url = new URL(options.socketPath, pageUrl);
+	const url = new URL(options.url, pageUrl);
 	if (url.protocol === "http:") url.protocol = "ws:";
 	if (url.protocol === "https:") url.protocol = "wss:";
 	url.searchParams.set("chatId", options.chatId ?? "main");

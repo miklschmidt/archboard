@@ -1,4 +1,4 @@
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 
 /** The browser's own model: every identity is a validated wire string, as the browser holds it. */
 const model = createCodexBrowserModel();

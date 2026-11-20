@@ -13,7 +13,7 @@
 import { durationMs } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { talkSamplesMs } from "@archboard/walkthrough/talk";
-import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/browser";
 import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { type CanvasStageProps } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";

@@ -4,11 +4,7 @@
 
 import type { RealtimePhase } from "#shared/protocol/realtime-contract.ts";
 import type { BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
-import type {
-	BrowserCommandDraft,
-	BrowserWorkbenchCommandIntent,
-	BrowserWorkbenchState,
-} from "#ui/transport/state/contract.ts";
+import type { BrowserCommandDraft, BrowserWorkbenchState } from "#ui/transport/state/contract.ts";
 
 /**
  * How a host connects one page view to the voice server. The tab session id
@@ -17,10 +13,10 @@ import type {
  */
 interface VoiceClientOptions {
 	/**
-	 * The server's socket path, or a full URL. A path resolves against the page
+	 * The server's socket URL, or its path. A path resolves against the page
 	 * location, and `http:` or `https:` becomes `ws:` or `wss:`.
 	 */
-	readonly socketPath: string;
+	readonly url: string;
 	/** The view in the host page that shows this conversation. Defaults to `main`. */
 	readonly chatId?: string;
 }
@@ -58,13 +54,6 @@ type VoiceApprovalResponse = Extract<
 /** How the account signs in. */
 type VoiceSignIn = Extract<BrowserCommandDraft, { readonly command: "accountLogin" }>["login"];
 
-/**
- * What the page showed when it offered an action. Pass the `intent` of the
- * state that rendered an approval back with its answer: the server refuses the
- * answer, rather than retargeting it, if the conversation moved since.
- */
-type VoiceCommandIntent = BrowserWorkbenchCommandIntent;
-
 /** The one state the client publishes. Each publication is a new frozen object. */
 interface VoiceClientSnapshot {
 	/** The socket to the server. */
@@ -79,35 +68,29 @@ interface VoiceClientSnapshot {
 	readonly voice: VoiceClientVoice;
 	/** An action is running. Only the two stops run during another action. */
 	readonly busy: boolean;
-	/** Why the last action failed, or null. The next action clears it when it starts. */
+	/**
+	 * Why the last action failed, or why the socket did not open, or null. The next action clears
+	 * it when it starts, and a socket that opens clears why one did not.
+	 */
 	readonly failure: VoiceClientFailure | null;
-	/** The intent that binds an answer to the approvals of this state, or null while none can be sent. */
-	readonly intent: VoiceCommandIntent | null;
 }
 
 /**
- * One page view's connection to the voice server. Every action resolves true
- * when it completed. It resolves false when it failed, and the failure is then
- * in the published state. It also resolves false, and changes nothing, after
- * `dispose` or while another action runs; only `stopVoice` and `stopWork` run
- * during another action.
+ * One page view's connection to the voice server. It opens its socket with the tab's session id
+ * when it is created. A socket that does not open, or closes, is opened again after a short wait,
+ * and again after each attempt that fails, until one opens or the client is disposed; meanwhile
+ * `connection` reads `reconnecting`. The attempts leave an action's failure as it is, so an
+ * uncertain delivery stays visible. A server whose contract this browser cannot read ends them:
+ * `connection` reads `stopped`, and `failure` says why unless it already holds another failure.
+ * On `pagehide` the client releases its socket and the microphone, and on `pageshow` it opens the
+ * socket again.
+ *
+ * Every action resolves true when it completed. It resolves false when it failed, and the failure
+ * is then in the published state. It also resolves false, and changes nothing, after `dispose` or
+ * while another action runs, the opening of a socket included; only `stopVoice` and `stopWork`
+ * run during another action.
  */
 interface VoiceClient {
-	/**
-	 * Open the socket with the tab's session id, or open it again. After a
-	 * socket that was open closes, the client reconnects by itself: `connection`
-	 * reads `reconnecting`, the client opens a new socket after a short wait,
-	 * and it tries again after each attempt that fails, until one opens or the
-	 * client is disposed. A socket that the server closes before its first
-	 * snapshot also counts as open, and `failure` names the server's reason. The
-	 * attempts leave an action's failure as it is, so an uncertain delivery stays
-	 * visible; an attempt that opens clears the failure of a `connect` that did
-	 * not. A server whose contract this browser cannot read ends them:
-	 * `connection` reads `stopped`, and `failure` says why unless it already
-	 * holds another failure. A first `connect` whose socket never opens is not
-	 * retried; the host calls `connect` again.
-	 */
-	readonly connect: () => Promise<boolean>;
 	/** Read the server's current state again without repeating a command. */
 	readonly refresh: () => Promise<boolean>;
 	/** Start a sign-in. Defaults to the private ChatGPT sign-in. */
@@ -127,25 +110,21 @@ interface VoiceClient {
 	/** Interrupt the workhorse's running turn. Voice keeps running. Runs during another action. */
 	readonly stopWork: () => Promise<boolean>;
 	/**
-	 * Answer one approval that the page showed.
+	 * Answer one approval that the page showed, from the state that delivered it. The server
+	 * refuses the answer, rather than retargeting it, when the conversation moved since; the
+	 * client refuses an approval from before its current socket itself.
 	 * @param approval The request from the rendered state.
 	 * @param response The answer.
-	 * @param intent The `intent` of the state that rendered the request.
 	 */
 	readonly answerApproval: (
 		approval: VoiceApproval,
 		response: VoiceApprovalResponse,
-		intent: VoiceCommandIntent,
 	) => Promise<boolean>;
 	/** The current state; the same object until the next publication. */
 	readonly snapshot: () => VoiceClientSnapshot;
 	/** Hear every publication. Returns the unsubscribe. */
 	readonly subscribe: (listener: () => void) => () => void;
-	/**
-	 * Stop voice, release the socket and end every subscription. A disposed
-	 * client never connects again, so a host that mounts twice, as React
-	 * StrictMode does, creates a client for each mount.
-	 */
+	/** Stop voice, release the socket and end every subscription. A disposed client never connects again. */
 	readonly dispose: () => Promise<void>;
 }
 

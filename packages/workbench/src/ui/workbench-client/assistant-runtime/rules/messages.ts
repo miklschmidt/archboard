@@ -11,7 +11,7 @@
 
 import type { MessageStatus, ThreadMessageLike } from "@assistant-ui/react";
 
-import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 import type { ConversationItem } from "#ui/workbench-client/surfaces/state/voice-parts.ts";
 
 /** The plan Codex published for a turn. */

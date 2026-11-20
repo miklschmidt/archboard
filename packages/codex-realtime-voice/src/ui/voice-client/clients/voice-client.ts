@@ -10,8 +10,8 @@ const TAB_SESSION_KEY = "codex-realtime-voice:tab";
 
 /**
  * Connect one page view to the voice server through the real browser.
- * @param options The socket path and the chat.
- * @returns The client. Call `connect()` to open the socket.
+ * @param options The socket URL and the chat.
+ * @returns The client, which opens its socket now.
  */
 function createVoiceClient(options: VoiceClientOptions): VoiceClient {
 	return openVoiceClient(options, {
@@ -43,6 +43,7 @@ function createVoiceClient(options: VoiceClientOptions): VoiceClient {
 			const timer = setTimeout(run, delayMs);
 			return () => clearTimeout(timer);
 		},
+		page: typeof window === "undefined" ? null : window,
 	});
 }
 

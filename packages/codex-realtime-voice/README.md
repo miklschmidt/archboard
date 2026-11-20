@@ -6,29 +6,29 @@ The package runs one private Codex app-server process, which is the process that
 
 ## Requirements
 
-- Bun 1.4.4 or newer.
+- Bun 1.4.4 or newer. The server runs on Bun only.
 - The `@openai/codex` package at exactly version 0.166.0. The package refuses every other version.
 - Node.js on `PATH`, because `@openai/codex` starts Codex with a Node.js script. A server that you start with `bun run <script>` needs no Node.js: `bun run` puts its own `node` on `PATH`.
 - Linux or macOS.
 - A Codex account that supports realtime voice. The person signs in from the page.
 - For voice: a browser with a microphone and speakers. Browsers give microphone access only to pages on `https` or on a local address such as `127.0.0.1`.
 - For the React entry: React 19.2.8 or a newer React 19.
-- For TypeScript: `@types/bun`, because the server types use Bun's own types.
+- For TypeScript: `@types/bun`.
 
 ## Install
 
 ```bash
-bun add @archboard/codex-realtime-voice @openai/codex@0.166.0 react react-dom
-bun add -d @types/bun @types/react @types/react-dom
+bun add @archboard/codex-realtime-voice @openai/codex@0.166.0
+bun add -d @types/bun
 ```
 
-`@openai/codex` is a peer dependency, so you install it yourself. `react` is an optional peer dependency. You need it only for `@archboard/codex-realtime-voice/react`. `@types/bun` is an optional peer dependency too. You need it only for type checking.
+`@openai/codex` is a peer dependency, so you install it yourself. `react` is an optional peer dependency: install `react` and `react-dom` only for `@archboard/codex-realtime-voice/react`. `@types/bun` is an optional peer dependency too, for type checking.
 
 ## Quickstart
 
-The quickstart is two files in the root of your project: a server and a React page. The workhorse works in the directory where you start the server.
+The quickstart is two files in the root of your project: a server and a page. The workhorse works in the directory where you start the server.
 
-`server.ts` starts the agent and a `Bun.serve` server. `agent.bunHandlers` gives the server its `fetch` and `websocket` handlers: the page's socket on `/voice` goes to the agent, and every other request goes to your `fetch`, which serves the page. A host on `node:http`, such as Express, uses [`attach`](#a-nodehttp-server) instead.
+`server.ts` starts the agent and a `Bun.serve` server that serves the page and the agent's socket on `/voice`:
 
 <!-- checked: server.ts -->
 
@@ -37,216 +37,41 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
 
-const agent = createVoiceAgent({
-	storage: { directory: path.join(homedir(), ".my-voice-agent") },
-	checkouts: [process.cwd()],
-	instructions: {
-		coordinator: "Answer short questions yourself. Give sustained work to the workhorse.",
-		workhorse: "Do the work the person asks for in this checkout.",
-	},
-	onFatal: (error) => {
-		console.error(error);
-		void stop();
-	},
-});
+const page = await Bun.build({ entrypoints: [path.join(import.meta.dir, "page.ts")] });
+const script = await page.outputs[0]?.text();
+const html = `<!doctype html><meta name="color-scheme" content="light dark"><title>Voice</title><main></main><script type="module" src="/page.js"></script>`;
 
-const page = await Bun.build({ entrypoints: [path.join(import.meta.dir, "page.tsx")] });
-const script = await page.outputs[0]!.text();
-const html = `<!doctype html><title>Voice</title><div id="root"></div><script type="module" src="/page.js"></script>`;
+const agent = createVoiceAgent({
+	directory: path.join(homedir(), ".voice-agent"),
+	checkouts: [process.cwd()],
+});
+await agent.start();
 
 const server = Bun.serve({
 	hostname: "127.0.0.1",
 	port: 4100,
-	...agent.bunHandlers({
-		path: "/voice",
-		fetch: (request) =>
-			new URL(request.url).pathname === "/page.js"
-				? new Response(script, { headers: { "Content-Type": "text/javascript" } })
-				: new Response(html, { headers: { "Content-Type": "text/html" } }),
-	}),
+	routes: {
+		"/": new Response(html, { headers: { "Content-Type": "text/html" } }),
+		"/page.js": new Response(script, { headers: { "Content-Type": "text/javascript" } }),
+	},
+	...agent.bunHandlers({ path: "/voice" }),
 });
-
-await agent.start();
 console.log(`Open ${server.url}`);
 
-async function stop(): Promise<void> {
+process.once("SIGINT", async () => {
 	await agent.shutdown();
 	await server.stop();
-}
-process.once("SIGINT", () => void stop());
-process.once("SIGTERM", () => void stop());
+});
 ```
 
-`page.tsx` connects to the socket and offers sign-in, text messages, voice, the two stops and command approvals:
+`page.ts` draws a working voice panel in the page's `<main>`:
 
-<!-- checked: page.tsx -->
+<!-- checked: page.ts -->
 
-```tsx
-import { useState } from "react";
-import { createRoot } from "react-dom/client";
-import {
-	createVoiceClient,
-	type VoiceApproval,
-	type VoiceApprovalResponse,
-} from "@archboard/codex-realtime-voice/browser";
-import {
-	VoiceClientProvider,
-	useVoiceClient,
-	useVoiceState,
-} from "@archboard/codex-realtime-voice/react";
+```ts
+import { mountVoice } from "@archboard/codex-realtime-voice/browser";
 
-function App() {
-	const client = useVoiceClient();
-	const failure = useVoiceState((state) => state.failure);
-	return (
-		<main>
-			{failure && <p role="alert">{failure.message}</p>}
-			{failure?.uncertain && <button onClick={() => void client.refresh()}>Refresh</button>}
-			<Conversation />
-		</main>
-	);
-}
-
-function Conversation() {
-	const client = useVoiceClient();
-	const state = useVoiceState();
-	if (state.connection !== "connected")
-		return <button onClick={() => void client.connect()}>Connect ({state.connection})</button>;
-	if (state.server?.account.state !== "ready") return <SignIn />;
-	const pending = state.server.approvals.filter(
-		(approval) => approval.lifecycle.state === "pending",
-	);
-	return (
-		<>
-			<Voice />
-			<Work />
-			{pending.map((approval) => (
-				<Approval key={String(approval.requestId)} approval={approval} />
-			))}
-		</>
-	);
-}
-
-function SignIn() {
-	const client = useVoiceClient();
-	const login = useVoiceState((state) => state.server?.login);
-	if (login?.state !== "pending")
-		return <button onClick={() => void client.signIn()}>Sign in with ChatGPT</button>;
-	return (
-		<p>
-			{login.authUrl && (
-				<a href={login.authUrl} target="_blank" rel="noreferrer">
-					Continue sign-in
-				</a>
-			)}{" "}
-			<button onClick={() => void client.refresh()}>I signed in</button>
-		</p>
-	);
-}
-
-const LIVE = [
-	"requesting_permission",
-	"negotiating",
-	"listening",
-	"muted",
-	"processing",
-	"speaking",
-];
-
-function Voice() {
-	const client = useVoiceClient();
-	const voice = useVoiceState((state) => state.voice);
-	const server = useVoiceState((state) => state.server);
-	const live = LIVE.includes(voice.phase);
-	return (
-		<section>
-			<h2>Voice: {voice.phase}</h2>
-			<button disabled={live || !voice.available} onClick={() => void client.startVoice()}>
-				Start voice
-			</button>
-			<button disabled={!live} onClick={() => void client.stopVoice()}>
-				Stop voice
-			</button>
-			{voice.problem && <p role="alert">{voice.problem}</p>}
-			{server?.voice.transcript.map((line) => (
-				<p key={line.itemId}>
-					{line.speaker}: {line.text}
-				</p>
-			))}
-		</section>
-	);
-}
-
-function Work() {
-	const client = useVoiceClient();
-	const timeline = useVoiceState((state) => state.server?.timeline);
-	const [message, setMessage] = useState("");
-	const running = timeline?.turns.some((turn) => turn.status === "inProgress") ?? false;
-	const send = async () => {
-		if (await client.send(message)) setMessage("");
-	};
-	return (
-		<section>
-			<h2>Workhorse</h2>
-			{timeline?.turns.flatMap((turn) =>
-				turn.items.map((item) =>
-					item.media === "prompt" || item.media === "text" ? (
-						<p key={item.itemId}>{item.text}</p>
-					) : null,
-				),
-			)}
-			<textarea value={message} onChange={(event) => setMessage(event.target.value)} />
-			<button disabled={running || message.trim() === ""} onClick={() => void send()}>
-				Send
-			</button>
-			<button disabled={!running} onClick={() => void client.stopWork()}>
-				Stop work
-			</button>
-		</section>
-	);
-}
-
-function Approval({ approval }: { readonly approval: VoiceApproval }) {
-	const client = useVoiceClient();
-	const intent = useVoiceState((state) => state.intent);
-	const answer = (response: VoiceApprovalResponse) => {
-		if (intent) void client.answerApproval(approval, response, intent);
-	};
-	if (approval.approvalKind !== "command_execution")
-		return <p>Codex asks a {approval.approvalKind} question that this page does not answer.</p>;
-	return (
-		<section>
-			<h2>Run this command?</h2>
-			<pre>{approval.command}</pre>
-			{approval.availableDecisions.map((decision) =>
-				typeof decision === "string" ? (
-					<button
-						key={decision}
-						onClick={() => answer({ approvalKind: "command_execution", decision })}
-					>
-						{decision}
-					</button>
-				) : null,
-			)}
-		</section>
-	);
-}
-
-const root = createRoot(document.getElementById("root")!);
-function mount() {
-	const client = createVoiceClient({ socketPath: "/voice" });
-	void client.connect();
-	window.addEventListener("pagehide", () => void client.dispose(), { once: true });
-	root.render(
-		<VoiceClientProvider client={client}>
-			<App />
-		</VoiceClientProvider>,
-	);
-}
-mount();
-window.addEventListener("pageshow", (event) => {
-	if (event.persisted) mount();
-});
+mountVoice(document.querySelector("main"), "/voice");
 ```
 
 Start the server from the directory that the workhorse works in:
@@ -257,24 +82,24 @@ bun server.ts
 
 Then do these steps:
 
-1. Open `http://127.0.0.1:4100`. Use this exact address, because the socket accepts only the server's own origin, and `localhost` is another origin.
-2. Select "Sign in with ChatGPT", then "Continue sign-in", and finish the sign-in in that browser. Select "I signed in" when the page still shows the sign-in.
+1. Open `http://127.0.0.1:4100`.
+2. Select "Sign in with ChatGPT", then "Continue sign-in", and finish the sign-in in that browser. Select "I signed in" when the panel still asks for the sign-in.
 3. Type a message to the workhorse and select "Send".
 4. Select "Start voice", allow the microphone, and talk to the coordinator.
 5. Press `Ctrl+C` in the terminal to stop the server and its Codex process.
 
-Bun bundles `page.tsx` when the server starts, so the quickstart needs no build step. For type checking, your `tsconfig.json` needs `"jsx": "react-jsx"`, the `DOM` library and the `bun` types. The page answers command approvals only. A complete page answers each approval kind. The example host in the [repository](https://github.com/miklschmidt/archboard/tree/main/apps/workbench-example) shows one.
+The panel uses the browser's own controls and the system's light and dark colors. It connects by itself, opens its socket again after the server restarts, and releases the socket and the microphone while the page is hidden. It answers command approvals; a page that answers every approval kind uses the client below.
 
-### A page without React
+## Your own page
 
-`@archboard/codex-realtime-voice/browser` works with any framework or none. The React hooks are a thin reading of this client:
+`mountVoice` is a panel over the client that `createVoiceClient` makes. A page that draws its own conversation uses the client directly, with any framework or none:
 
 <!-- checked: plain.ts -->
 
 ```ts
 import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
 
-const client = createVoiceClient({ socketPath: "/voice" });
+const client = createVoiceClient({ url: "/voice" });
 const status = document.createElement("output");
 const talk = document.createElement("button");
 talk.textContent = "Start voice";
@@ -286,10 +111,60 @@ client.subscribe(() => {
 	status.textContent = `${state.connection}, voice ${state.voice.phase}`;
 	talk.disabled = !state.voice.available;
 });
-await client.connect();
 ```
 
 `subscribe` calls the listener after each change, and `snapshot()` returns the current state. Each state is a new frozen object.
+
+A React page reads the same client with `useVoiceState(client)`, whole or through a selector:
+
+<!-- checked: react-page.tsx -->
+
+```tsx
+import { createRoot } from "react-dom/client";
+import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
+import { useVoiceState } from "@archboard/codex-realtime-voice/react";
+
+const client = createVoiceClient({ url: "/voice" });
+
+function App() {
+	const state = useVoiceState(client);
+	if (state.server?.account.state !== "ready")
+		return <button onClick={() => void client.signIn()}>Sign in with ChatGPT</button>;
+	const pending = state.server.approvals.filter(
+		(approval) => approval.lifecycle.state === "pending",
+	);
+	return (
+		<main>
+			<p role="status">Voice: {state.voice.phase}</p>
+			<button disabled={!state.voice.available} onClick={() => void client.startVoice()}>
+				Start voice
+			</button>
+			<button onClick={() => void client.stopVoice()}>Stop voice</button>
+			{pending.map((approval) =>
+				approval.approvalKind === "command_execution" ? (
+					<p key={String(approval.requestId)}>
+						<code>{approval.command}</code>
+						<button
+							onClick={() =>
+								void client.answerApproval(approval, {
+									approvalKind: "command_execution",
+									decision: "accept",
+								})
+							}
+						>
+							Run
+						</button>
+					</p>
+				) : null,
+			)}
+		</main>
+	);
+}
+
+createRoot(document.body).render(<App />);
+```
+
+For `.tsx` pages, your `tsconfig.json` needs `"jsx": "react-jsx"`, the `DOM` library and the `bun` types.
 
 ## Concepts
 
@@ -303,49 +178,52 @@ A tab session is one browser tab's conversation: one coordinator, and one workho
 
 A chat is one place in your page that shows the conversation, such as a panel. A chat id names it. Each chat has one socket. A chat that connects again replaces its earlier socket. All chats of a tab show the same conversation.
 
-An approval is a request from Codex that the person must answer, such as running a command. The page receives each open approval in the server state and answers it with `answerApproval`. The answer carries the `intent` of the state that showed the approval, so the server refuses an answer to a conversation that changed since.
+An approval is a request from Codex that the person must answer, such as running a command. The page receives each open approval in the server state and answers it with `answerApproval(approval, response)`. The client binds each approval to the state that delivered it: the server refuses an answer to a conversation that changed since, and the client itself refuses an approval from before its current socket.
 
 A spoken approval is an answer given aloud. Only a command approval that offers exactly "accept" or "decline" and grants nothing broader can be answered by voice. The coordinator classifies what the person said and settles the approval once through its own tool. When the words are unclear, the approval stays on the page for the person to answer there.
 
 An uncertain delivery is an action whose result the client cannot know, for example because the socket closed before the server answered. The client then publishes a failure with `uncertain: true` and does not try the action again, because a second try can do the work twice. Refresh the state and look before you act again. The coordinator and the workhorse follow the same rule for their own tools, and the coordinator tells the person what is uncertain.
 
-The state directory is the directory that you give as `storage.directory`. It holds the private Codex home (`codex-home`, the `CODEX_HOME` of the Codex process), the Codex database (`sqlite-home`) and the process-owner records (`owner`). The sign-in of the agent lives in this Codex home, not in the Codex home of your own Codex client. One running server owns one state directory.
+The state directory is the directory that you give as `directory`. It holds the private Codex home (`codex-home`, the `CODEX_HOME` of the Codex process), the Codex database (`sqlite-home`) and the process-owner records (`owner`). The sign-in of the agent lives in this Codex home, not in the Codex home of your own Codex client. One running server owns one state directory.
 
 ## Configuration
 
 ### `createVoiceAgent(options)`
 
-`createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory, when an instruction is empty, or when an `identity` value has the wrong shape. Without `codex.executablePath`, it also finds the installed Codex and proves it: an absolute, regular, executable file that reports exactly `codex-cli 0.166.0`, never looked up on `PATH`. When the proof fails, it throws a `CodexExecutableError` with a `code`. Each `start()` proves the executable again, a given `executablePath` included.
+`createVoiceAgent` creates the agent and starts nothing. It throws when a listed checkout is not a readable directory, when an origin or an `identity` value has the wrong shape, or when an instruction is empty. Without `codex.executablePath`, it also finds the installed Codex and proves it: an absolute, regular, executable file that reports exactly `codex-cli 0.166.0`, never looked up on `PATH`. When the proof fails, it throws a `CodexExecutableError` with a `code`. Each `start()` proves the executable again, a given `executablePath` included.
 
-| Field                      | Default                               | What it does                                                                                                                                                                                                                                                                                                    |
-| -------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage.directory`        | Required                              | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and not be a symbolic link. A link above it that you or root own, in directories no other user can change, such as `/tmp` on macOS, is resolved once. Keep it outside every checkout. |
-| `storage.ownerDirectory`   | `<directory>/owner`                   | Where the process-owner lock and records live.                                                                                                                                                                                                                                                                  |
-| `codex.executablePath`     | The installed `@openai/codex` package | An absolute path of the Codex executable, in place of the installed package. `start()` proves it.                                                                                                                                                                                                               |
-| `codex.installedIn`        | None                                  | Refuses an installed `@openai/codex` that is not in `<installedIn>/node_modules`, such as a global install. It does not apply to `executablePath`.                                                                                                                                                              |
-| `codex.releasedIn`         | None                                  | For a host's compiled release: the platform package whose `@openai/codex-<os>-<cpu>` dependency holds the native binary. It does not apply to `executablePath`.                                                                                                                                                 |
-| `codex.hostEnvironment`    | None                                  | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                                                                                                                                |
-| `codex.pathPrefixes`       | None                                  | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                                                                                                                                |
-| `codex.diagnosticSecrets`  | None                                  | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                                                                                                                                |
-| `codex.onGroupOwned`       | None                                  | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                                                                                                                                       |
-| `checkouts`                | Required                              | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.                                                                                                                      |
-| `instructions.coordinator` | Required                              | Your text for the coordinator. The package appends it to the built-in coordinator role. It must not be empty.                                                                                                                                                                                                   |
-| `instructions.workhorse`   | Required                              | Your text for each workhorse, appended to the built-in workhorse role. It must not be empty.                                                                                                                                                                                                                    |
-| `identity`                 | See the identity table below          | How the agent names itself to Codex and to the person. See the next table.                                                                                                                                                                                                                                      |
-| `onFatal`                  | Required                              | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                                                                                                                                |
-| `extensions`               | None                                  | Your own context, voice behavior and tools. See [Advanced hosting](#advanced-hosting).                                                                                                                                                                                                                          |
+| Field                      | Default                                      | What it does                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `directory`                | Required                                     | The state directory. The package creates it with mode `0700`. An existing directory must have mode `0700`, belong to you, and not be a symbolic link. A link above it that you or root own, in directories no other user can change, such as `/tmp` on macOS, is resolved once. Keep it outside every checkout: a workhorse writes in its checkout. |
+| `ownerDirectory`           | `<directory>/owner`                          | Where the process-owner lock and records live.                                                                                                                                                                                                                                                                                                      |
+| `checkouts`                | Required                                     | The admitted checkouts: a list of directories, or a function that returns the admitted path for a named checkout and `null` for a refused one. The package resolves each to its real path.                                                                                                                                                          |
+| `origins`                  | None                                         | More page origins that may open the agent's sockets, each exactly, such as `https://voice.example.com`. See [Security](#security).                                                                                                                                                                                                                  |
+| `instructions.coordinator` | A line that keeps the coordinator to its job | Your text for the coordinator. The package appends it to the built-in coordinator role.                                                                                                                                                                                                                                                             |
+| `instructions.workhorse`   | A line that keeps the workhorse to its job   | Your text for each workhorse, appended to the built-in workhorse role.                                                                                                                                                                                                                                                                              |
+| `onFatal`                  | Writes the fault to the console              | Receives a fault that the agent cannot recover from. You decide whether to stop.                                                                                                                                                                                                                                                                    |
+| `codex.executablePath`     | The installed `@openai/codex` package        | An absolute path of the Codex executable, in place of the installed package. `start()` proves it.                                                                                                                                                                                                                                                   |
+| `codex.installedIn`        | None                                         | Refuses an installed `@openai/codex` that is not in `<installedIn>/node_modules`, such as a global install. It does not apply to `executablePath`.                                                                                                                                                                                                  |
+| `codex.releasedIn`         | None                                         | For a host's compiled release: the platform package whose `@openai/codex-<os>-<cpu>` dependency holds the native binary. It does not apply to `executablePath`.                                                                                                                                                                                     |
+| `codex.hostEnvironment`    | None                                         | Extra environment variables for the Codex process. They replace inherited values, but never `CODEX_HOME` or `CODEX_SQLITE_HOME`.                                                                                                                                                                                                                    |
+| `codex.pathPrefixes`       | None                                         | Absolute directories that go first on the `PATH` of the Codex process, in order.                                                                                                                                                                                                                                                                    |
+| `codex.diagnosticSecrets`  | None                                         | Strings that the package removes from the Codex output it keeps for diagnostics.                                                                                                                                                                                                                                                                    |
+| `codex.onGroupOwned`       | None                                         | Receives the identity of the Codex process group before the process is ready, for a host that cleans up processes itself.                                                                                                                                                                                                                           |
+| `identity`                 | See the identity table below                 | How the agent names itself to Codex and to the person.                                                                                                                                                                                                                                                                                              |
+| `extensions`               | None                                         | Your own context, voice behavior and tools. See [Extensions](#extensions).                                                                                                                                                                                                                                                                          |
 
 The agent that `createVoiceAgent` returns has these members:
 
-| Member                    | What it does                                                                                                                                                                                                                                                                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `start()`                 | Starts the private Codex process and resolves with the status once it is ready. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. A call while the process is ready, or during `shutdown()`, rejects. |
-| `status()`                | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                                                                                              |
-| `bunHandlers(options)`    | Returns the `fetch` and `websocket` handlers of a `Bun.serve` server that serves the page's sockets on one path. Spread them into the options of `Bun.serve`. See [A `Bun.serve` server](#a-bunserve-server).                                                                                                                                  |
-| `attach(server, options)` | Serves the page's sockets on one path of a `node:http` server. It returns a function that detaches: it stops accepting, closes those sockets and waits for their work. See [A `node:http` server](#a-nodehttp-server).                                                                                                                         |
-| `shutdown()`              | Closes the sockets of every `bunHandlers` and `attach` call, stops the Codex process and forgets every tab session.                                                                                                                                                                                                                            |
-| `instructions`            | The exact coordinator and workhorse profiles that the threads start with: identity, instruction text, tools and the SHA-256 of each. Record the digests to notice when a change of your instructions or tools reaches Codex.                                                                                                                   |
-| `browser`                 | The browser connection port for a host that serves sockets itself. See [Advanced hosting](#advanced-hosting).                                                                                                                                                                                                                                  |
+| Member                   | What it does                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `start()`                | Starts the private Codex process and resolves with the status once it is ready. When Codex cannot start, it rejects with an error whose `code` is `startup_failed` and whose `cause` names the reason. Call it again after a failure or a shutdown to start a new process. A call while the process is ready, or during `shutdown()`, rejects. |
+| `status()`               | Reads the status without starting anything: `state` (`idle`, `starting`, `ready`, `stopping` or `failed`), `ready`, `failure` (a message or `null`), `childPid` and `generation`.                                                                                                                                                              |
+| `bunHandlers(options)`   | Returns the `fetch` and `websocket` handlers of a `Bun.serve` server that serves the agent's sockets on one path. Spread them into the options of `Bun.serve`. See [A `Bun.serve` server](#a-bunserve-server).                                                                                                                                 |
+| `connect(socket, route)` | Connects one socket from any WebSocket library on Bun. See [Any WebSocket library](#any-websocket-library).                                                                                                                                                                                                                                    |
+| `shutdown()`             | Closes the sockets that the agent admitted from their requests, releases every connection, stops the Codex process and forgets every tab session. A later `start()` serves the sockets that connect again.                                                                                                                                     |
+| `tabs`                   | The browser tabs as the agent's sockets name them: `of(browserId)`, `shown(tabSessionId, pin)`, `current(tabSessionId)`, `show(tabSessionId, checkout)` and `onShownChange(listener)`.                                                                                                                                                         |
+| `instructions`           | The exact coordinator and workhorse profiles that the threads start with: identity, instruction text, tools and the SHA-256 of each. Record the digests to notice when a change of your instructions or tools reaches Codex.                                                                                                                   |
+| `announce(change)`       | Tells the agents that something changed. See [Announcing a change](#announcing-a-change).                                                                                                                                                                                                                                                      |
+| `voiceStartTrace()`      | What happened in the last voice starts of this process: the stages of each, with sizes, states and the words of whatever refused it. It holds no audio and no prompt text.                                                                                                                                                                     |
 
 `identity` names the agent. A field that you leave out takes its default. Keep every value once threads exist: a thread keeps the names that it started with, a stored record keeps its prefix, and the agent drives only threads with its own thread source.
 
@@ -359,83 +237,127 @@ The agent that `createVoiceAgent` returns has these members:
 
 #### A `Bun.serve` server
 
-`bunHandlers` takes these options. It throws a `TypeError` when `path`, or an `origin` that you give, can never admit a socket.
+`bunHandlers` takes these options. It throws a `TypeError` when `path` does not start with `/`, when `checkout` is not admitted, or when the agent admits more than one checkout and `checkout` names none.
 
-| Field       | Default                    | What it does                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`      | Required                   | The socket path, such as `/voice`. It must start with `/`. A request that is not a socket upgrade on this path goes to `fetch`.                                                                                                                                                                                                                                                                                   |
-| `fetch`     | Answers `404`              | Your handler of every other request. It receives the request and the server, as the `fetch` of `Bun.serve` does, and it can upgrade sockets of its own.                                                                                                                                                                                                                                                           |
-| `websocket` | None                       | Your handlers of the sockets that your `fetch` upgrades. Bun has one handler set for each server, so the package tells its own sockets apart by their `data` and gives every other socket to these handlers. Their options, such as `maxPayloadLength`, apply to every socket of the server. When `backpressureLimit` makes Bun drop a frame to the page, the package closes that socket and the page reconnects. |
-| `origin`    | The origin of `server.url` | The HTTP origin of your server exactly, such as `http://127.0.0.1:4100`, with no path and no trailing slash. The default names the `hostname` that you gave `Bun.serve`, or `localhost` when you gave none, so a server on port `0` needs none. Give it when browsers reach the server by another name, as for a server on `0.0.0.0`, on a unix socket or behind a proxy. See [Security](#security).              |
-| `checkout`  | The only listed checkout   | The admitted checkout that every socket on this path works in. You must name it when the agent admits more than one checkout, or admits them with a function.                                                                                                                                                                                                                                                     |
+| Field       | Default                  | What it does                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`      | Required                 | The socket path, such as `/voice`. A request that is not a socket upgrade on this path goes to `routes` and `fetch`.                                                                                                                                                                                                                                                                                              |
+| `checkout`  | The only listed checkout | The admitted checkout that every socket on this path works in.                                                                                                                                                                                                                                                                                                                                                    |
+| `fetch`     | Answers `404`            | Your handler of every other request. It receives the request and the server, as the `fetch` of `Bun.serve` does, and it can upgrade sockets of its own.                                                                                                                                                                                                                                                           |
+| `websocket` | None                     | Your handlers of the sockets that your `fetch` upgrades. Bun has one handler set for each server, so the package tells its own sockets apart by their `data` and gives every other socket to these handlers. Their options, such as `maxPayloadLength`, apply to every socket of the server. When `backpressureLimit` makes Bun drop a frame to the page, the package closes that socket and the page reconnects. |
 
 When `fetch` upgrades sockets of its own, name the type of their `data`, as in `agent.bunHandlers<{ room: string }>({ path, fetch, websocket })`.
 
-A socket that arrives before `start()` is ready is closed with `1011`. After `shutdown()`, the server answers an upgrade on `path` with `503`. To serve sockets again after a new `start()`, call `bunHandlers` again and give the result to `server.reload`.
+A socket that arrives before `start()` is ready stays open: its requests are refused with "The Codex workbench is unavailable." until Codex is ready, and the client asks again by itself. `shutdown()` closes the agent's sockets with `1001`, and the same handlers serve the sockets that connect after the next `start()`.
 
-#### A `node:http` server
+#### Any WebSocket library
 
-`attach(server, options)` serves the sockets on a `node:http` server, such as one that Express or Node's `http` module makes. It takes the same `path` and `checkout`, and its `origin` is required. It applies the same checks as `bunHandlers`. Upgrades to other paths stay with the other `upgrade` listeners of the server, so a server with no other listener must end them itself. It throws a `TypeError` when `path` or `origin` can never admit a socket.
+`agent.connect(socket, route)` connects one socket. `socket` has `send(data)`, which returns or resolves once the socket took the text frame and throws or rejects when it cannot, and `close(code, reason)`. The route `{ request }` takes the upgrade request, its absolute URL and its headers: the agent checks its origin as `bunHandlers` does, reads the tab session and chat from the URL, and closes a refused socket with `1008`. `connect` returns the connection: give it each parsed frame with `receive(frame)`, and call `close()` when the socket closes. `receive` returns `false` at once for a frame that is not the agent's, so one socket can carry your own messages too. This server writes Bun's socket handlers by hand:
+
+<!-- checked: connect.ts -->
 
 ```ts
-agent.attach(server, { path: "/voice", origin: "http://127.0.0.1:4100" });
+import { homedir } from "node:os";
+import path from "node:path";
+import { createVoiceAgent, type VoiceConnection } from "@archboard/codex-realtime-voice/server";
+
+const agent = createVoiceAgent({
+	directory: path.join(homedir(), ".voice-agent"),
+	checkouts: [process.cwd()],
+});
+
+interface SocketData {
+	readonly request: { readonly url: string; readonly headers: Headers };
+	voice?: VoiceConnection;
+}
+
+Bun.serve({
+	hostname: "127.0.0.1",
+	port: 4100,
+	fetch(request, server) {
+		const data: SocketData = { request: { url: request.url, headers: request.headers } };
+		if (new URL(request.url).pathname === "/voice" && server.upgrade(request, { data })) return;
+		return new Response("Not found", { status: 404 });
+	},
+	websocket: {
+		data: {} as SocketData,
+		open(ws) {
+			const socket = { send: (text: string) => void ws.send(text), close: ws.close.bind(ws) };
+			ws.data.voice = agent.connect(socket, { request: ws.data.request });
+		},
+		message(ws, message) {
+			const frame: unknown = JSON.parse(String(message));
+			if (ws.data.voice?.receive(frame) === false) ws.send(String(message));
+		},
+		close(ws) {
+			void ws.data.voice?.close();
+		},
+	},
+});
+await agent.start();
 ```
+
+A host that admits its sockets itself, and knows who each one is, names the identity in the route instead of the request: `{ tabSessionId, browserId, chat, checkout }`. `tabSessionId` comes from `parseTabSessionId`, `browserId` names the chat's socket so that a later socket of the same chat replaces it, `chat` is the chat id or a function that the agent reads on every frame, and `checkout` is an admitted checkout or a function that the agent reads when the tab first needs one. The agent then checks neither origin nor checkout: that admission is yours. A socket without a `browserId` or a `tabSessionId` still connects, and the agent refuses its requests with "The Codex workbench requires an authoritative browser connection identity." or "The Codex workbench requires the browser tab session identity.", in that order. A route never makes `connect` throw for a Codex that is not ready, and its registration lasts across Codex restarts until you close the connection.
+
+### `mountVoice(element, url, options)`
+
+`mountVoice` draws the panel in `element` and connects it to the socket at `url`, a path such as `/voice` or a full URL. It returns the function that removes the panel and releases its client. It throws a `TypeError` when `element` is `null`. `options.chatId` names the chat (default `main`), and `options.text` replaces any of the panel's English words, such as `{ signIn: "Anmelden" }`.
 
 ### `createVoiceClient(options)`
 
-`createVoiceClient` makes the client of one chat. It opens nothing until you call `connect()`.
+`createVoiceClient` makes the client of one chat and opens its socket at once.
 
-| Field        | Default  | What it does                                                                                                                               |
-| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `socketPath` | Required | The socket path of the server, or a full URL. A path resolves against the page address. `http:` becomes `ws:` and `https:` becomes `wss:`. |
-| `chatId`     | `"main"` | The chat that this client shows. Use letters, digits, `_` and `-`, at most 128 characters.                                                 |
+| Field    | Default  | What it does                                                                                                                            |
+| -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`    | Required | The socket URL of the server, or its path. A path resolves against the page address. `http:` becomes `ws:` and `https:` becomes `wss:`. |
+| `chatId` | `"main"` | The chat that this client shows. Use letters, digits, `_` and `-`, at most 128 characters.                                              |
 
-Every action returns a promise that resolves to `true` when the action completed and to `false` when it failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs resolves to `false` at once and changes nothing. `stopVoice` and `stopWork` also run while another action runs. After `dispose()`, every action resolves to `false`.
+A socket that does not open, or closes, is opened again after 3 seconds, and again after each failed attempt, until one opens or the client is disposed. On `pagehide` the client releases its socket and the microphone, and on `pageshow` it opens the socket again.
 
-| Action                                       | What it does                                                                                                                                                                         |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `connect()`                                  | Opens the socket, or opens it again. After an open socket closes, the client opens a new one by itself. A first `connect()` whose socket never opens is not repeated: call it again. |
-| `refresh()`                                  | Reads the server state again without repeating a command.                                                                                                                            |
-| `signIn(login?)`                             | Starts a sign-in. The default is the ChatGPT sign-in. `{ type: "apiKey", apiKey }` signs in with an API key.                                                                         |
-| `cancelSignIn()`                             | Cancels the pending sign-in.                                                                                                                                                         |
-| `signOut()`                                  | Signs the account out.                                                                                                                                                               |
-| `send(message)`                              | Sends a message to the workhorse, and creates the conversation on first use.                                                                                                         |
-| `startVoice()`                               | Starts the coordinator's voice, and creates the conversation on first use.                                                                                                           |
-| `stopVoice()`                                | Stops voice. The workhorse keeps working.                                                                                                                                            |
-| `setMuted(muted)`                            | Mutes or unmutes the microphone of the running voice.                                                                                                                                |
-| `stopWork()`                                 | Interrupts the running workhorse turn. Voice keeps running.                                                                                                                          |
-| `answerApproval(approval, response, intent)` | Answers one approval that the page showed, with the `intent` of the state that showed it.                                                                                            |
-| `snapshot()`                                 | Returns the current state.                                                                                                                                                           |
-| `subscribe(listener)`                        | Calls the listener after each change of the state. Returns the function that stops it.                                                                                               |
-| `dispose()`                                  | Stops voice, releases the socket and ends every subscription.                                                                                                                        |
+Every action returns a promise that resolves to `true` when the action completed and to `false` when it failed. The reason is then in `failure` of the state. Only one action runs at a time: an action that you call while another runs, or while the socket opens, resolves to `false` at once and changes nothing. `stopVoice` and `stopWork` also run while another action runs. After `dispose()`, every action resolves to `false`.
+
+| Action                               | What it does                                                                                                          |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `refresh()`                          | Reads the server state again without repeating a command.                                                             |
+| `signIn(login?)`                     | Starts a sign-in. The default is the ChatGPT sign-in. `{ type: "apiKey", apiKey }` signs in with an API key.          |
+| `cancelSignIn()`                     | Cancels the pending sign-in.                                                                                          |
+| `signOut()`                          | Signs the account out.                                                                                                |
+| `send(message)`                      | Sends a message to the workhorse, and creates the conversation on first use.                                          |
+| `startVoice()`                       | Starts the coordinator's voice, and creates the conversation on first use.                                            |
+| `stopVoice()`                        | Stops voice. The workhorse keeps working.                                                                             |
+| `setMuted(muted)`                    | Mutes or unmutes the microphone of the running voice.                                                                 |
+| `stopWork()`                         | Interrupts the running workhorse turn. Voice keeps running.                                                           |
+| `answerApproval(approval, response)` | Answers one approval from the state that delivered it. The client refuses an approval from before its current socket. |
+| `snapshot()`                         | Returns the current state.                                                                                            |
+| `subscribe(listener)`                | Calls the listener after each change of the state. Returns the function that stops it.                                |
+| `dispose()`                          | Stops voice, releases the socket and ends every subscription.                                                         |
 
 The state has these fields:
 
-| Field        | What it holds                                                                                                                                                         |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `connection` | `connected`, `reconnecting` or `stopped`.                                                                                                                             |
-| `server`     | What the server published last: the account, the sign-in, the workhorse timeline, approvals, the queue and the voice transcript. `null` before the first publication. |
-| `voice`      | The voice run: `phase`, `available` (a new voice run can start) and `problem` (why voice cannot start or why the last run failed).                                    |
-| `busy`       | An action is running.                                                                                                                                                 |
-| `failure`    | Why the last action failed: `message` and `uncertain`. The next action clears it when it starts.                                                                      |
-| `intent`     | The value to pass with an approval answer, or `null` while no answer can be sent.                                                                                     |
+| Field        | What it holds                                                                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connection` | `connected`, `reconnecting` or `stopped`.                                                                                                                                        |
+| `server`     | What the server published last: the account, the sign-in, the workhorse timeline, approvals, the queue and the voice transcript. `null` before the first publication.            |
+| `voice`      | The voice run: `phase`, `available` (a new voice run can start) and `problem` (why voice cannot start or why the last run failed).                                               |
+| `busy`       | An action runs, or the socket opens.                                                                                                                                             |
+| `failure`    | Why the last action failed, or why the socket did not open: `message` and `uncertain`. The next action clears it when it starts, and a socket that opens clears why one did not. |
 
 ### React
 
-`VoiceClientProvider` takes a `client` and offers it to the components inside it. You connect and dispose the client yourself. A disposed client never connects again, so create the client outside React, as the quickstart does, or create one for each mount. Dispose it on `pagehide`, so a hidden page holds no socket and no microphone. When `pageshow` has `persisted: true`, the browser restored the page from its back-forward cache: create and connect a new client. The tab session id stays in `sessionStorage`, so the new client continues the conversation when the page comes back within 60 seconds. `useVoiceClient()` returns the client for its actions. `useVoiceState()` returns the whole state and renders again on each change. `useVoiceState(select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change.
+`useVoiceState(client)` returns the client's whole state and renders again on each change. `useVoiceState(client, select)` returns one part and renders again only when that part changes. The selector runs once for each change of the state. Return a part of the state or a primitive value: a new object counts as a change, so the component then renders again on each change. Create the client outside React, as the React page above does: a disposed client never connects again.
 
 ## Security
 
 The agent can run commands and change files in the admitted checkouts. Anyone who can use its socket can ask it to.
 
 - Your server owns the listener. The package opens no port. Bind to `127.0.0.1`, as the quickstart does, unless you put your own authentication in front of the socket.
-- `bunHandlers` and `attach` refuse a socket upgrade with `403` when the `Host` header is not the host of `origin`, or when the `Origin` header is present and is not exactly `origin`. This stops other web sites from opening the socket from a browser. A client that sends no `Origin` header, such as a local script, passes this check, so every process that can reach the port can drive the agent.
-- A workhorse works only in an admitted checkout. The browser never chooses the checkout: `bunHandlers` and `attach` fix it for each socket path. The coordinator can delegate to every admitted checkout.
-- Codex runs with a private `CODEX_HOME` in the state directory, never your own `~/.codex`. The package fixes its policy, and no option changes it: commands run in the `workspace-write` sandbox with network access, approvals are on request, and the approvals reviewer is `auto_review`. With `auto_review`, Codex gives an action that the sandbox refuses to a reviewer agent, which approves or denies it instead of asking the person.
+- A `{ request }` route, and so `bunHandlers`, admits an upgrade whose `Host` is a loopback address (`127.0.0.1`, `localhost` or `[::1]`) and whose `Origin`, when present, is exactly the server's own origin, scheme and port included. Each origin in `origins` admits itself and its host. Every other upgrade is refused: `bunHandlers` answers `403` before the upgrade, and `connect` closes the socket with `1008`. This stops other web sites, and pages that reach the server under another name, from opening the socket from a browser. A client that sends no `Origin` header, such as a local script, passes this check, so every process that can reach the port can drive the agent.
+- A workhorse works only in an admitted checkout. The browser never chooses the checkout: `bunHandlers` and the route fix it for each socket. The coordinator can delegate to every admitted checkout.
+- Codex runs with a private `CODEX_HOME` in the state directory, never your own `~/.codex`. Keep the state directory outside every checkout, so that no workhorse can write into it. The package fixes its policy, and no option changes it: commands run in the `workspace-write` sandbox with network access, approvals are on request, and the approvals reviewer is `auto_review`. With `auto_review`, Codex gives an action that the sandbox refuses to a reviewer agent, which approves or denies it instead of asking the person.
 - The Codex process receives only a fixed list of environment variables from your server: the user and shell (`HOME`, `USER`, `LOGNAME`, `SHELL`, `PATH`), the locale and time zone, the terminal, the temporary and XDG directories, the proxy and certificate variables, and `SSH_AUTH_SOCK`. Other variables, such as API keys, reach Codex only when you pass them in `codex.hostEnvironment`.
-- An approval answer carries the `intent` of the state that showed it. The server refuses the answer when the conversation changed since. Speech alone never settles an approval: a spoken answer is classified and settled once, and an unclear answer goes back to the page.
+- An approval answer is bound to the state that delivered the approval. The server refuses the answer when the conversation changed since. Speech alone never settles an approval: a spoken answer is classified and settled once, and an unclear answer goes back to the page.
 
-The package never looks up Codex on `PATH`, never uses your personal Codex sign-in, never lets the browser choose a checkout, and never repeats an action whose result is unknown. It writes only in the state directory and in `storage.ownerDirectory`. Codex writes in the admitted checkouts under its sandbox.
+The package never looks up Codex on `PATH`, never uses your personal Codex sign-in, never lets the browser choose a checkout, and never repeats an action whose result is unknown. It writes only in the state directory and in `ownerDirectory`. Codex writes in the admitted checkouts under its sandbox.
 
 ## Advanced hosting
 
@@ -453,7 +375,7 @@ A host without a domain of its own passes no `extensions`. These fields add your
 | `checkoutLabel`                        | The name that the workhorse list shows for a checkout. The default is the name of the checkout's directory.                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `narrative`                            | The narrative that a voice session starts to present: JSON whose meaning is yours, which the media owner's `start(narrative)` sends as `realtimeStart.narrative`. `validate` refuses it before a running session changes, `prepare` turns it into the narrative the session presents, `opened` and `forget` follow the session. `unattended` says that nobody listens to the session live: the coordinator then gets no workhorse outcome, and the state that the server publishes shows `server.voice.unattended` as `true`. |
 
-The remaining fields (`coordinatorContextFor`, `voiceFor`, `contextForOperation`, `onGeneration`, `onBrowserGateway`, `browserCheckoutOf`, `installBrowserSessions` and `browserLeaseLedger`) replace the package's own owners. They are for a host that routes its sockets itself.
+The remaining fields (`coordinatorContextFor`, `voiceFor`, `contextForOperation` and `onGeneration`) replace the package's own owners for a host with a domain of its own. `composeRoleInstructions(role, { text, sha256 })`, `createTextUserInput` and `additionalContextPolicy()` in `./server` serve such a host's instructions and tools; `createCodexBrowserModel()` in `./contract` checks the state that the server publishes, for a host that settles dynamic approvals and for tests.
 
 The extension types are not exported by name. Derive them from `VoiceAgentExtensions`. This context source tells the coordinator what the person selected:
 
@@ -515,24 +437,75 @@ export async function fileSaved(agent: VoiceAgent, checkout: string, file: strin
 
 A receipt for an audience that you told nothing has the reason `withheld`, unless a reason that is checked first applies, such as `voice_inactive` or `no_workhorse`. The receipt does not hold your reason text. The page does: each entry of `voiceContext.entries` in the state from `./contract` has a `withheld` field. For the coordinator and the voice, it holds the text that you gave as `withheld`, and it is `null` for every entry that has another reason. The agent cuts the text at 256 UTF-8 bytes and replaces each NUL character, so a long reason never stops the page from showing its state.
 
-### A host that owns its sockets
+### A page that carries the voice on its own socket
 
-`bunHandlers` covers a `Bun.serve` server and `attach` a `node:http` server. A host that serves sockets in another way uses `agent.browser` on the server instead: `accept` registers a socket with its chat, tab session and checkout, `handle` passes each parsed request, `close` ends a socket, and `drain` waits for accepted work. The two adapters in the package source are the reference uses.
+A page whose socket also carries its own messages draws the conversation with `createSocketConversation({ chatId, media })`. The server connects that socket with `agent.connect` and a route that names its identity. Attach each socket after your server registered it: `attach(socket)` gives the socket a fresh transport and fresh controllers, attaches the voice after the transport, and returns the hosted conversation of that socket. An attach that a later attach, a `detach` or a `dispose` superseded returns `null` and publishes nothing. The conversation never closes your socket.
 
-In the browser, `@archboard/codex-realtime-voice/controllers` holds the parts under `createVoiceClient`. Use them to draw your own conversation UI over a socket that you open: the transport and the media owner, the conversation controllers of one chat (the conversation link and sign-in, the composer with queue and steer, the queue and the approvals), and the conversation projected from the server timelines.
+<!-- checked: host-page.ts -->
+
+```ts
+import { createSocketConversation } from "@archboard/codex-realtime-voice/browser";
+
+const conversation = createSocketConversation({ chatId: "chat-1" });
+const status = document.createElement("output");
+document.body.append(status);
+
+const socket = new WebSocket(new URL("/socket", location.href));
+socket.addEventListener("message", (event) => {
+	const message: unknown = JSON.parse(String(event.data));
+	if (message === "registered")
+		void conversation.attach(socket).then((hosted) => {
+			hosted?.subscribe(() => {
+				status.textContent = `${hosted.state().connection}, voice ${conversation.media.state().state}`;
+			});
+		});
+});
+socket.addEventListener("close", () => void conversation.detach(socket));
+```
+
+The hosted conversation holds the state of its socket (`state`, `snapshot`, `subscribe`, `refresh`, `capabilities`), the `controllers` of the conversation (the thread link and sign-in, the composer with queue and steer, the queue and the approvals) and the conversation's `media`. `media` also takes where the voice is played and heard: `audioElements` makes the audio element, and `receivers` hears the voice's receivers.
 
 ### Entry points
 
-| Entry           | What it holds                                                                                                                                                                        |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `./server`      | `createVoiceAgent` and its types. The remaining exports are lower-level parts for a host that routes its own sockets. A host that uses `bunHandlers` or `attach` needs none of them. |
-| `./browser`     | `createVoiceClient` and its types.                                                                                                                                                   |
-| `./react`       | `VoiceClientProvider`, `useVoiceClient` and `useVoiceState`.                                                                                                                         |
-| `./controllers` | The transport, media and conversation parts under the client.                                                                                                                        |
-| `./contract`    | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval` and `BrowserTimeline`.                                                                |
-| `./schemas`     | The schemas of that state, for a server that extends it and for tests.                                                                                                               |
-| `./realtime`    | The phase and state types of a voice run.                                                                                                                                            |
-| `./runtime`     | Lower-level runtime parts, such as coordinator callbacks and the wait graph.                                                                                                         |
+| Entry        | What it holds                                                                                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `./server`   | `createVoiceAgent` and its types, `parseTabSessionId`, and `composeRoleInstructions`, `createTextUserInput` and `additionalContextPolicy` for a host with a domain of its own.         |
+| `./browser`  | `mountVoice`, `createVoiceClient` and `createSocketConversation`, and their types.                                                                                                     |
+| `./react`    | `useVoiceState`.                                                                                                                                                                       |
+| `./contract` | The types of the state that the server publishes, such as `BrowserSnapshot`, `BrowserApproval`, `BrowserTimeline` and `RealtimeState`, and `createCodexBrowserModel`, which checks it. |
+
+## Migrating from 0.5
+
+This release changes the package for a standalone host. A host on 0.5 changes these imports and calls. The table also holds the names that the previous release removed.
+
+| 0.5                                                                                                                                                                                                                                         | Now                                                                                                                                                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `createVoiceAgent({ storage: { directory, ownerDirectory } })`                                                                                                                                                                              | `createVoiceAgent({ directory, ownerDirectory })`                                                                                                                                                 |
+| `instructions` and `onFatal` required                                                                                                                                                                                                       | Both optional.                                                                                                                                                                                    |
+| `bunHandlers({ path, origin, checkout, fetch, websocket })`                                                                                                                                                                                 | `bunHandlers({ path, checkout, fetch, websocket })`. The origin is the loopback same-origin default; more origins go to `origins` on the agent.                                                   |
+| `bunHandlers` closes a socket before `start()` with `1011`, and serves no socket after `shutdown()`                                                                                                                                         | The socket stays and is served once Codex is ready; the same handlers serve again after the next `start()`.                                                                                       |
+| `agent.attach(server, { path, origin, checkout })`                                                                                                                                                                                          | Removed. Use `agent.connect(socket, route)` with any WebSocket library on Bun, or `bunHandlers`.                                                                                                  |
+| `agent.browser` (`accept`, `handle`, `close`, `drain`) and the type `VoiceAgentBrowserPort`                                                                                                                                                 | `agent.connect(socket, route)`, which returns `receive(frame)` and `close()`.                                                                                                                     |
+| `createServerCodexBrowserSocketOwner`, `createServerCodexBrowserSocketSend`, `createBrowserLeaseLedger`, `parseWorkhorseLinkKey`, `projectCodexBrowserState`, `BrowserProjectionInput` from `./server`                                      | Removed. `agent.connect` owns the sockets, the leases and the snapshot.                                                                                                                           |
+| `liveWorkhorseCheckouts(session)` from `./server`                                                                                                                                                                                           | `scope.sessions.liveCheckouts(tabSessionId)` on a domain scope.                                                                                                                                   |
+| `mountVoiceStartTraceRoute(app)` from `./server`                                                                                                                                                                                            | `agent.voiceStartTrace()`. Answer it on a route of your own.                                                                                                                                      |
+| `resolveCodexExecutable` from `./server`                                                                                                                                                                                                    | Leave `codex` out, or pass `codex: { executablePath, installedIn, releasedIn }`.                                                                                                                  |
+| `extensions.onBrowserGateway`, `installBrowserSessions`, `browserLeaseLedger`, `browserCheckoutOf`                                                                                                                                          | Removed. Read the tabs from `agent.tabs`; a route's `checkout` may be a function.                                                                                                                 |
+| The `CodexTransport` of a domain scope has `replaceIdentity`                                                                                                                                                                                | Removed.                                                                                                                                                                                          |
+| `createVoiceClient({ socketPath, chatId })` and `client.connect()`                                                                                                                                                                          | `createVoiceClient({ url, chatId })`, which connects by itself, retries every first socket too, and follows `pagehide` and `pageshow`.                                                            |
+| `client.answerApproval(approval, response, intent)` and the state's `intent`                                                                                                                                                                | `client.answerApproval(approval, response)`; the client binds each approval to the state that delivered it.                                                                                       |
+| `VoiceClientProvider`, `useVoiceClient()` and `useVoiceState(select?)` from `./react`                                                                                                                                                       | `useVoiceState(client, select?)`.                                                                                                                                                                 |
+| `./controllers`: `createBrowserWorkbenchTransport`, `createBrowserWorkbenchMediaOwner`, `createConversationControllers`, `browserAudioElements` and the type `BrowserWorkbenchTransport`                                                    | `createSocketConversation({ chatId, media })` from `./browser`, whose `attach(socket)` returns the hosted conversation of that socket. Build an audio element yourself for `media.audioElements`. |
+| `./controllers`: `mergeConversation`, `projectTimelineTurns`, `ConversationTurn`, `VOICE_OUTPUT_SPEAKING_LEVEL`                                                                                                                             | Removed. Read the turns of `server.timeline`; a level of 0.02 or more is speech.                                                                                                                  |
+| `./controllers` types `BrowserWorkbenchState`, `BrowserWorkbenchMediaOwner`, `BrowserAudioElementPort`, `VoiceOutputLevelSource`, `ConversationControllers`, `ApprovalChoice`                                                               | The same types from `./browser`.                                                                                                                                                                  |
+| `./runtime`: `createTextUserInput`, `ADDITIONAL_CONTEXT_POLICY`, and the types `OperationOutcome` and `DeepReadonly`                                                                                                                        | `createTextUserInput`, `additionalContextPolicy()`, `OperationOutcome` and `DeepReadonly` from `./server`.                                                                                        |
+| `./runtime`: `readWorkbenchInstructionDocument` with `composeWorkbenchRoleInstructions`                                                                                                                                                     | `composeRoleInstructions(role, { text, sha256 })` from `./server`.                                                                                                                                |
+| `./runtime`: `createCodexWaitGraph`, `createCodexRealtimeAdapter`, `CodexRealtimeAdapter`, `CodexRealtimeAdapterOptions`, `CodexRealtimeBinding`, `EMPTY_SPOKEN_APPROVAL_SNAPSHOT`, `emptyManifest`                                         | Removed.                                                                                                                                                                                          |
+| `./schemas`: `createCodexBrowserModel` and the types `BrowserSchemas`, `DynamicApprovalCanonicalEffect`, `BrowserDynamicApprovalEffect`, `BrowserDynamicApprovalResponse`                                                                   | The same names from `./contract`. `createCodexBrowserModel()` takes no argument for the wire identities.                                                                                          |
+| `./schemas`: `canonicalDynamicApprovalJson`, `dynamicApprovalHashForCanonicalJson`                                                                                                                                                          | The members of the same names of `createCodexBrowserModel()`.                                                                                                                                     |
+| `./schemas`: `JsonValueSchema`, `boundedText`, `BROWSER_IDLE_SPOKEN_APPROVAL`, `BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES`, `CodexBrowserModel`                                                                                            | Removed. Use `z.json()` of zod for JSON.                                                                                                                                                          |
+| `./realtime`: the types `RealtimePhase` and `RealtimeState`                                                                                                                                                                                 | The same types from `./contract`.                                                                                                                                                                 |
+| `./realtime`: `INITIAL_REALTIME_STATE`, `REALTIME_PHASES`, `REALTIME_TRANSITIONS`, `transitionRealtimeState`, `parseRealtimeCorrelationId`, `parseRealtimeItemId`, `parseRealtimeSessionId`, `RealtimeCorrelation`, `RealtimeSemanticEvent` | Removed.                                                                                                                                                                                          |
 
 ## Troubleshooting
 
@@ -566,47 +539,25 @@ To sign in with an API key, call `client.signIn({ type: "apiKey", apiKey })`.
 `voice.available` is `false` and `voice.problem` is "Microphone permission was denied." The browser refused the microphone.
 
 1. Allow the microphone for the page address in the browser's site settings.
-2. Call `client.connect()` or reload the page, then start voice again. After every failed voice start, `voice.available` stays `false` until the next `connect()`.
+2. Reload the page, then start voice again. After every failed voice start, `voice.available` stays `false` until the client opens a new socket.
 
 If `voice.problem` is "This browser cannot install realtime microphone and audio support.", the page has no microphone and WebRTC support. This happens when you open the page over `http` on an address that is not local. Open the page on `127.0.0.1`, `localhost` or `https`.
 
 ### The socket is refused
 
-The page shows "The voice connection failed. Reconnect to try again." and `connection` stays `stopped`. The browser's network panel shows the socket upgrade answered with `403`. The page address is not the socket's origin: the `origin` that you gave to `attach` or `bunHandlers`, or, when you gave `bunHandlers` none, the origin of `server.url`. For example, you opened `http://localhost:4100` and the origin is `http://127.0.0.1:4100`.
+`connection` stays `reconnecting`, and `failure` reads "The voice connection failed. Reconnect to try again." or "The voice connection closed.". The browser's network panel shows the socket upgrade answered with `403`, or the socket closed at once with `1008`. The page's origin is not admitted: its address is not a loopback address of the server's own origin, and it is not in `origins`. For example, the server answers on `0.0.0.0` and you opened its LAN address, or a development server on another port serves the page.
 
-1. Open the page at exactly the address in `origin`. When `bunHandlers` has no `origin` and the server runs on `0.0.0.0`, on a unix socket or behind a proxy, give it the `origin` that the browser uses.
-2. Serve the page and the socket from the same server. A page from a development server on another port has another origin.
+1. Open the page on `127.0.0.1` or `localhost`, on the server's own port, or add the page's origin to `origins`.
+2. Serve the page and the socket from the same server.
 
-A `400` answer means that the socket URL has no valid `tabSessionId` or `chatId`. `createVoiceClient` always sends both, so look at a custom `chatId`. A socket that closes at once with code `1011` puts the reason the server closed it with in `failure`, such as "The voice agent is unavailable. Restart the server.". It reached the server before `start()` resolved, after Codex failed, or on a path whose `checkout` the agent does not admit. The client opens a new socket by itself, as after any open socket that closes.
-
-### The state directory is in use
-
-`start()` rejects with code `startup_failed`. Its `cause` is "Another server owns this Codex state at `<directory>/owner`. Stop the other owner (pid `<pid>`) before retrying." Another process runs an agent on the same state directory.
-
-1. Stop the process with that pid, or give each process its own `storage.directory`.
-2. Start again. A lock whose owner has exited is set aside by the next start.
-
-The same rejection also names a state directory that the package cannot use:
-
-- "must have mode 0700, received 0755": run `chmod 700` on the directory, or let the package create it.
-- "Refusing symlink-escaped Codex storage path component": the path has a symbolic link that the package does not follow. That is the state directory itself, a directory below it, or a link above it that another user owns or could replace. `createVoiceAgent` follows a link above the state directory only when you or root own it and no other user can change the directories that lead to it, so a directory in `/tmp` or `os.tmpdir()` on macOS works. Give the state directory's real path, not a link in a shared directory.
-
-### Other errors from `createVoiceAgent`, `bunHandlers` and `attach`
-
-- "A workbench role requires domain instructions.": an instruction is empty. Give text for both roles.
-- A `TypeError` that starts with "A voice agent": an `identity` value has the wrong shape. The message names the rule.
-- "Name an absolute socket path" or "Name the listener's own origin": `bunHandlers` or `attach` received a `path` without a leading `/`, or an `origin` with a path, a trailing slash or another scheme than `http` or `https`.
-- "The allowed checkout `<path>` is not a readable directory.": a listed checkout does not exist. Create it or remove it from `checkouts`.
-- "Name the checkout these sockets work in: the agent admits more than one.": pass `checkout` to `bunHandlers` or `attach`.
+A `400` answer means that the socket URL has no valid `tabSessionId` or `chatId`. `createVoiceClient` always sends both, so look at a custom `chatId`.
 
 ### The page stays on reconnecting
 
-`connection` reads `reconnecting` after an open socket closed, for example because the server stopped. The client opens a new socket by itself, and tries again every 3 seconds until one opens. The attempts leave the failure of an action as it is, so the failure of an action that the lost socket ended, such as an uncertain delivery, stays on the page. An attempt that opens clears the failure of a `connect` that did not open. If the server speaks a contract that this browser cannot read, the attempts stop: `connection` reads `stopped`, and `failure` says why unless it already holds another failure. Build the page with the same package version as the server, then reload the page.
+`connection` reads `reconnecting` while no socket is open, for example because the server stopped, or while the server refuses the socket's requests with "The Codex workbench is unavailable." because `start()` has not resolved or Codex failed. The client tries again every 3 seconds. The attempts leave the failure of an action as it is, so the failure of an action that the lost socket ended, such as an uncertain delivery, stays on the page. If the server speaks a contract that this browser cannot read, the attempts stop: `connection` reads `stopped`, and `failure` says why unless it already holds another failure. Build the page with the same package version as the server, then reload the page.
 
 1. Make sure that the server runs and that `start()` resolved.
 2. If the server logs no error, look at the attempts in the browser's network panel. A `403` or `400` answer has the causes in [The socket is refused](#the-socket-is-refused).
-
-A first `connect()` whose socket never opens is not repeated. The quickstart's "Connect" button calls it again.
 
 ## License
 

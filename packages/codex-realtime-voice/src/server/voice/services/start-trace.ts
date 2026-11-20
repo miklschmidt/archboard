@@ -128,37 +128,12 @@ function sessionVoiceStartTrace(trace: VoiceStartTrace = voiceStartTrace): Sessi
 	};
 }
 
-/** Where the trace is read. */
-const VOICE_START_TRACE_ROUTE = "/api/voice/start-trace";
-
-/** The part of an HTTP response the trace answers through. An Express response has it. */
-interface TraceResponse {
-	json(body: unknown): unknown;
-}
-
 /**
- * The one method of an HTTP application the trace route needs. An Express application has it, so
- * the published types name no Express package.
+ * Every attempt this server kept, oldest first.
+ * @returns The attempts.
  */
-interface TraceRouteHost {
-	get(path: string, handler: (request: unknown, response: TraceResponse) => void): unknown;
-}
-
-/**
- * Answer with every kept attempt.
- * @param _request The request.
- * @param response Its response.
- */
-function readVoiceStartTrace(_request: unknown, response: TraceResponse): void {
-	response.json({ success: true, attempts: voiceStartTrace.attempts() });
-}
-
-/**
- * Mount the route the trace is read through.
- * @param app The HTTP application, such as an Express application.
- */
-function mountVoiceStartTraceRoute(app: TraceRouteHost): void {
-	app.get(VOICE_START_TRACE_ROUTE, readVoiceStartTrace);
+function voiceStartAttempts(): readonly VoiceStartAttempt[] {
+	return voiceStartTrace.attempts();
 }
 
 /**
@@ -172,7 +147,7 @@ function traceMessage(error: unknown): string {
 
 export {
 	createVoiceStartTrace,
-	mountVoiceStartTraceRoute,
+	voiceStartAttempts,
 	sessionVoiceStartTrace,
 	traceMessage,
 	type SessionVoiceStartTrace,

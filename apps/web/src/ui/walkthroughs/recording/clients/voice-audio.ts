@@ -12,10 +12,7 @@
 // recording mixes the stream itself, and a muted element still plays it,
 // which is what keeps Chrome handing a WebRTC track's sound to Web Audio.
 
-import {
-	browserAudioElements,
-	type BrowserAudioElementPort,
-} from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/browser";
 
 /**
  * The media owner's audio elements, each passing the voice it plays to a recording.
@@ -23,14 +20,18 @@ import {
  * @returns The port.
  */
 function recordingAudioElements(hear: (stream: MediaStream) => void): BrowserAudioElementPort {
-	const plain = browserAudioElements();
 	return Object.freeze({
 		/**
-		 * A hidden, autoplaying, muted audio element, whose stream the recording hears once it plays.
+		 * A hidden, autoplaying, muted audio element appended to the body, whose stream the
+		 * recording hears once it plays.
 		 * @returns The element.
 		 */
 		create: () => {
-			const element = plain.create();
+			const element = document.createElement("audio");
+			element.autoplay = true;
+			element.setAttribute("playsinline", "");
+			element.hidden = true;
+			document.body.append(element);
 			element.muted = true;
 			element.addEventListener("playing", () => {
 				const stream = element.srcObject;

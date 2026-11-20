@@ -42,7 +42,7 @@ test("the public factory captures process getters and detaches mutable inputs be
 		const secrets = ["captured-diagnostic-secret"];
 		const reads = { environment: 0, prefixes: 0, secrets: 0 };
 		const workbench = createVoiceAgent({
-			storage: { directory: join(fixture.root, "private") },
+			directory: join(fixture.root, "private"),
 			codex: {
 				executablePath: fixture.executablePath,
 				get hostEnvironment() {
@@ -101,7 +101,7 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		const checkout = join(fixture.root, "checkout");
 		mkdirSync(checkout);
 		const workbench = createVoiceAgent({
-			storage: { directory: join(fixture.root, "private") },
+			directory: join(fixture.root, "private"),
 			codex: { executablePath: fixture.executablePath, hostEnvironment: {} },
 			checkouts: [checkout],
 			instructions,
@@ -113,9 +113,22 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		expect(await workbench.start()).toMatchObject({ state: "ready", ready: true });
 		const tab = parseTabSessionId("standalone-proof")!;
 
-		const physical = {};
-		const registration = { chatId: "main", tabSessionId: tab, checkout };
-		workbench.browser.accept(physical, "browser", registration);
+		let response: unknown;
+		/**
+		 * Connect one socket of the chat, whose answers the test reads.
+		 * @returns The connection.
+		 */
+		const connectSocket = () =>
+			workbench.connect(
+				{
+					send: (data) => {
+						response = JSON.parse(data);
+					},
+					close: () => undefined,
+				},
+				{ tabSessionId: tab, browserId: "browser", chat: "main", checkout },
+			);
+		const physical = connectSocket();
 		type Lease = NonNullable<BrowserSnapshot["lease"]>;
 		interface Snapshot {
 			readonly snapshot: BrowserSnapshot;
@@ -128,20 +141,10 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		const request = async <Result>(
 			action: string,
 			extra: Record<string, unknown> = {},
-			instance: object = physical,
+			connection = physical,
 		): Promise<Result> => {
 			const requestId = `neutral-${++sequence}`;
-			let response: unknown;
-			await workbench.browser.handle(
-				instance,
-				"browser",
-				{ type: "codex_workbench_request", requestId, action, ...extra },
-				{
-					send: async (message) => {
-						response = message;
-					},
-				},
-			);
+			await connection.receive({ type: "codex_workbench_request", requestId, action, ...extra });
 			const envelope = z
 				.object({ ok: z.boolean(), value: z.unknown(), error: z.string().optional() })
 				.parse(response);
@@ -187,10 +190,9 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		]);
 		expect(starts[0]?.params?.["dynamicTools"]).toHaveLength(2);
 		expect(starts[1]?.params?.["dynamicTools"]).toHaveLength(1);
-		const replacement = {};
-		workbench.browser.accept(replacement, "browser", registration);
+		const replacement = connectSocket();
 		await request<Snapshot>("connect", {}, replacement);
-		await workbench.browser.close(physical, "browser");
+		await physical.close();
 		expect(
 			(await request<Snapshot>("snapshot", {}, replacement)).snapshot.threadLink.threadId,
 		).toBe(linked.threadId);
@@ -199,8 +201,7 @@ test("the public Codex factory starts a standalone host and owns workhorses and 
 		await workbench.shutdown();
 		expect(workbench.status()).toMatchObject({ ready: false, childPid: null });
 		expect(await workbench.start()).toMatchObject({ ready: true });
-		const restarted = {};
-		workbench.browser.accept(restarted, "browser", registration);
+		const restarted = connectSocket();
 		expect((await request<Snapshot>("connect", {}, restarted)).snapshot.threadLink.state).not.toBe(
 			"executable",
 		);

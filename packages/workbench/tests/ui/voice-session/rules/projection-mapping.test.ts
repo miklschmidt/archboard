@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 import { projectVoiceSession } from "#ui/voice-session/rules/projection.ts";
 import {
 	VOICE_SESSION_FAILURE_CODES,

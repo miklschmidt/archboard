@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
 import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
