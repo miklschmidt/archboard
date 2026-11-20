@@ -22,7 +22,8 @@ pub use cards::{CardWords, measure_node};
 pub(crate) use cards::{door_far_runs, tab_far, tab_runs, tag_end, tag_top};
 pub(crate) use far::{FarCard, FarWords, far_scale_for, far_words};
 pub use flow_frame::measure_flow_frame;
-pub use labels::{measure_label, message_lines, narrow_label, note_lines};
+pub use labels::{measure_label, narrow_label};
+pub(crate) use labels::{message_lines, note_lines};
 
 /// The face a font names: Onest at 400, 500 or 700, or Maple Mono NL at 400 or
 /// 500. A weight the files do not hold is the regular face.
@@ -37,7 +38,7 @@ pub(crate) fn face(font: DiagramFont) -> Face {
 }
 
 /// How wide one line of words is set, to a hundredth of a unit.
-pub fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
+pub(crate) fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
     js::round(set_width(text, font, size) * 100.0) / 100.0
 }
 
@@ -103,21 +104,4 @@ fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
     let folder = tail.iter().position(|character| *character == '/');
     let from = folder.unwrap_or(0);
     format!("{ELLIPSIS}{}", tail[from..].iter().collect::<String>())
-}
-
-/// The size a title is set at: the largest step, at or below the size it
-/// earned, where the whole title fits its run, and never below the floor.
-pub fn fitted_size(
-    label: &str,
-    font: DiagramFont,
-    earned: f64,
-    budget: f64,
-    floor: f64,
-    step: f64,
-) -> f64 {
-    let mut size = earned;
-    while size > floor && width(label, font, size) > budget {
-        size = js::js_max(floor, size - step);
-    }
-    size
 }

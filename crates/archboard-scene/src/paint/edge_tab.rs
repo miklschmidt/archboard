@@ -22,8 +22,8 @@ use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{NodeAppearance, Standing};
 use crate::scene::{Group, Role, SubjectKind};
 use crate::sizes::{
-    BAND_RADIUS, DRILL_MARK_ROOM, FLOW_KIND, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
-    TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
+    ARCHITECTURE_HEADER_PADDING, BAND_RADIUS, DRILL_MARK_ROOM, FLOW_KIND, PARENT_ICON_SIZE,
+    TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
 
 /// How much larger a drill mark stands in a tab seen from far away.
@@ -184,6 +184,23 @@ pub(super) fn paint_measured_header(
     .drawing(subject(SubjectKind::Region, &node.id, standing))
     .titled(node.responsibility.clone());
     grouped(header)
+}
+
+/// The width of a frame's edge tab on a frame of some width: the tab stops
+/// short of the frame's right edge by its foot and the frame's corner.
+pub fn tab_width(frame_width: f64) -> f64 {
+    frame_width - TAB_SHOULDER
+}
+
+/// The room a container's words have in a header of some width: its words
+/// stand in from both sides of its box.
+pub fn header_words_width(header_width: f64) -> f64 {
+    header_width - ARCHITECTURE_HEADER_PADDING
+}
+
+/// The narrowest a container's header is that holds words of some width.
+pub fn header_width_for(words_width: f64) -> f64 {
+    words_width + ARCHITECTURE_HEADER_PADDING
 }
 
 #[cfg(test)]

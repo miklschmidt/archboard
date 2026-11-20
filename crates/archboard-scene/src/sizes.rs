@@ -1,8 +1,10 @@
 //! The sizes and faces the painter draws with and the measurer measures with:
-//! one sheet, private to the crate. Other crates read what they need through
-//! `paint::design`.
+//! one sheet, private to the crate. Another crate learns a part's size from a
+//! measure, never from the sheet (ADR 0088).
 
 use crate::drawing::{DiagramFont, FontFamily};
+use crate::request::MessageKind;
+use crate::scene::Head;
 
 /// How close two points must be to be one, and the least a turn may move.
 pub(crate) const EPSILON: f64 = 0.01;
@@ -190,6 +192,20 @@ pub(crate) const ARCHITECTURE_LABEL_PADDING_Y: f64 = 8.0;
 
 /// The room inside a sequence card either side of its words.
 pub(crate) const CARD_PADDING_X: f64 = 13.0;
+/// A sequence card's height, and its height with a responsibility of one line.
+pub(crate) const CARD_HEIGHT: f64 = 46.0;
+pub(crate) const CARD_HEIGHT_WITH_NOTE: f64 = 58.0;
+/// Where a sequence card's name and its responsibility's first line sit, from
+/// the card's top, when it carries a responsibility.
+pub(crate) const TITLE_BASELINE_WITH_NOTE: f64 = 23.0;
+pub(crate) const NOTE_BASELINE: f64 = 39.0;
+/// The height of a line of a sequence note, as a multiple of its text size.
+pub(crate) const TEXT_LINE_HEIGHT: f64 = 1.35;
+/// The farthest a card's shadow reaches below its foot.
+pub(crate) const SHADOW_REACH: f64 = 12.0;
+/// How far under a sequence card its lifeline starts: the card's full shadow,
+/// plus air for the selected lifeline's stroke.
+pub(crate) const LIFELINE_GAP: f64 = SHADOW_REACH + 1.0;
 /// The radius of a drill-down mark's ring.
 pub(crate) const DRILL_MARK_RADIUS: f64 = 6.5;
 /// What a part keeps clear beside its name for a drill-down mark.
@@ -220,3 +236,39 @@ pub(crate) const FRAME_GUARD_HEIGHT: f64 = 16.0;
 pub(crate) const FRAME_PAD: f64 = 10.0;
 /// The padding of a frame's tab around its operator.
 pub(crate) const FRAME_TAB_PADDING: f64 = 6.0;
+
+/// How long an arrowhead of each weight is, from its base to its tip.
+pub(crate) const HEAD_LENGTH: f64 = 11.0;
+
+/// Where on its ten-unit drawing each head sits on the end of its line.
+pub(crate) fn head_ref_x(head: Head) -> f64 {
+    match head {
+        Head::Filled => 8.0,
+        Head::Open => 10.0,
+    }
+}
+
+/// How far an arrowhead's tip lies past the end of its line.
+fn head_reach(head: Head) -> f64 {
+    ((10.0 - head_ref_x(head)) / 10.0) * HEAD_LENGTH
+}
+
+/// The arrowhead a message of each kind ends in.
+///
+/// A deliberate deviation from strict UML 2, which draws replies with an open
+/// head as well: here the open head is the one mark of "nobody is waiting on
+/// this". The dash already says "this is an answer", so an open-headed reply
+/// would put the asynchronous signature on every reply.
+pub(crate) fn step_head(kind: MessageKind) -> Head {
+    match kind {
+        MessageKind::Async => Head::Open,
+        MessageKind::Sync | MessageKind::Return | MessageKind::Myself => Head::Filled,
+    }
+}
+
+/// How far short of the bar or lifeline it arrives at a message's line stops:
+/// exactly the reach of its head, so the tip touches what it points at. Every
+/// message is drawn at one weight: a flow's steps carry no emphasis.
+pub(crate) fn arrow_standoff(kind: MessageKind) -> f64 {
+    head_reach(step_head(kind))
+}

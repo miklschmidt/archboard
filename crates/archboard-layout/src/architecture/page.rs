@@ -4,7 +4,7 @@
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingNode, EdgeFacts, NodeFacts};
 use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
-use archboard_scene::paint::design::{diagram_margin, with_diagram_margins};
+use archboard_scene::paint::{diagram_margin, with_diagram_margins};
 
 /// A point moved.
 fn shifted(point: Point, by: Point) -> Point {

@@ -24,7 +24,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
-use archboard_scene::paint::design::far_line_widths;
+use archboard_scene::paint::far_line_widths;
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
 use css::css;

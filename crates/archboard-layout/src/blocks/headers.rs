@@ -4,7 +4,7 @@
 //! header row stands shorter. A block takes the widest one its container has
 //! room for once it knows how wide that is.
 
-use archboard_scene::paint::design::tab_width;
+use archboard_scene::paint::tab_width;
 
 use crate::ecma::js_max;
 use crate::graph::{HEADER_STEPS, Node};

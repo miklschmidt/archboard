@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use archboard_layout::{LineLook, Node};
-use archboard_scene::paint::design::fallback_icon;
+use archboard_scene::paint::kind_icon;
 use archboard_scene::request::{
     Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance,
 };
@@ -61,9 +61,7 @@ pub(crate) fn node_appearances(
                     tags_of(node, policy)
                 },
                 type_color: kind.and_then(|kind| kind.color),
-                icon: kind
-                    .and_then(|kind| kind.icon.clone())
-                    .unwrap_or_else(|| fallback_icon().to_owned()),
+                icon: kind_icon(kind.and_then(|kind| kind.icon.as_deref())),
                 type_name: kind
                     .and_then(|kind| kind.name.clone())
                     .unwrap_or_else(|| node.kind.clone()),

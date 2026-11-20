@@ -1,7 +1,7 @@
 //! A placed block's lines routed on tracks (TASK-349), and read back into the
 //! laid-out block: its boxes, bands, frames and regions, and its final size.
 
-use archboard_scene::paint::design::tab_width;
+use archboard_scene::paint::tab_width;
 
 use crate::ecma::{js_max, max, min};
 use crate::geometry::{Point, Rect};

@@ -12,9 +12,6 @@ use crate::scene::{
     Stop,
 };
 use crate::sizes::CARD_RADIUS;
-
-/// The farthest a card's shadow reaches below its foot.
-pub(super) const SHADOW_REACH: f64 = 12.0;
 /// How far a shadow spills past a block's sides, per unit of its reach below.
 const SPILL: f64 = 0.5;
 /// Shared gradient samples.

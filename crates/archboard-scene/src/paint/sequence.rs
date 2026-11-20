@@ -3,6 +3,7 @@
 //! their head cards, then the messages crossing them, and last the words of
 //! every message. The layer order is load-bearing. Pulses share one clock.
 
+use crate::flow_parts::activation_span;
 use crate::geometry::{Rect, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, group, grouped, lines, point, shape};
@@ -14,7 +15,6 @@ use crate::paint::sequence_frames::{paint_fragment, paint_frame};
 use crate::paint::sequence_messages::{
     Crossing, exchange_clock, paint_step, paint_step_words, row_tint, step_ride,
 };
-use crate::paint::shadow::SHADOW_REACH;
 use crate::paint::slab::{Lift, SlabLook, boxed, ghost_face, shadow_under, slab};
 use crate::paint::standing::{
     PIN_INSET, Standings, Unsettled, ghost_opacity, marked_box, standing_pin_at, subject,
@@ -27,12 +27,12 @@ use crate::request::{
 use crate::scene::{
     Atlas, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
 };
-use crate::sizes::{ACTIVATION_HALF_WIDTH, DIAGRAM_MARGIN, PILL_RADIUS, SLAB_RADIUS};
+use crate::sizes::{DIAGRAM_MARGIN, LIFELINE_GAP, PILL_RADIUS, SHADOW_REACH, SLAB_RADIUS};
 
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;
 const LIFELINE_DASH: [f64; 2] = [3.0, 5.0];
-const LIFELINE_DASH_OFFSET: f64 = SHADOW_REACH + 1.0 - 6.0;
+const LIFELINE_DASH_OFFSET: f64 = LIFELINE_GAP - 6.0;
 const HEAD_REACH: f64 = 64.0;
 const LIT_LIFELINE_WIDTH: f64 = 1.5;
 const NEUTRAL_BAR: Share = Share {
@@ -118,11 +118,14 @@ fn activation_boxes(column: &SequenceColumn) -> Vec<Rect> {
     column
         .activations
         .iter()
-        .map(|bar| Rect {
-            x: column.centre_x - ACTIVATION_HALF_WIDTH,
-            y: bar.top - ACTIVATION_RADIUS,
-            width: ACTIVATION_HALF_WIDTH * 2.0,
-            height: bar.bottom - bar.top + ACTIVATION_RADIUS * 2.0,
+        .map(|bar| {
+            let span = activation_span(column.centre_x);
+            Rect {
+                x: span.x,
+                y: bar.top - ACTIVATION_RADIUS,
+                width: span.width,
+                height: bar.bottom - bar.top + ACTIVATION_RADIUS * 2.0,
+            }
         })
         .collect()
 }

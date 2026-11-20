@@ -77,6 +77,39 @@ import {
 } from "#cli/routing/protocol/route.ts";
 import { registryOf } from "#cli/routing/rules/registry.ts";
 
+/**
+ * The options that may come before a subcommand's name, as the subcommands declare them.
+ * @param children - The subcommands.
+ * @returns Each option's spelling without its dashes, and whether it takes a value.
+ */
+function leadingOptions(
+	children: Readonly<Record<string, CommandRoute>>,
+): Record<string, "flag" | "value"> {
+	return Object.fromEntries(
+		Object.values(children).flatMap(({ owner }) =>
+			owner.contract.parameters.flatMap((parameter) =>
+				parameter.kind === "option"
+					? parameter.spellings.map((spelling) => [
+							spelling.replace(/^--/u, ""),
+							parameter.value === "none" ? "flag" : "value",
+						])
+					: [],
+			),
+		),
+	);
+}
+
+const CHECKS: Readonly<Record<string, CommandRoute>> = {
+	all: child(contract(checkAllContract, "apps/cli/src/cli/commands/vault/operations/vault.ts")),
+	semantics: child(
+		contract(checkSemanticsContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
+	),
+	code: child(contract(checkCodeContract, "apps/cli/src/cli/commands/vault/operations/vault.ts")),
+	embeds: child(
+		contract(checkEmbedsContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
+	),
+};
+
 // The one command table: every top-level command and its subcommands. What each is
 // called and what it accepts is its contract's; dispatch, the registry and help live in routing/rules/.
 const COMMANDS: Record<string, CommandRoute> = {
@@ -193,19 +226,10 @@ const COMMANDS: Record<string, CommandRoute> = {
 	},
 	check: {
 		owner: contract(checkContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
-		children: {
-			all: child(contract(checkAllContract, "apps/cli/src/cli/commands/vault/operations/vault.ts")),
-			semantics: child(
-				contract(checkSemanticsContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
-			),
-			code: child(
-				contract(checkCodeContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
-			),
-			embeds: child(
-				contract(checkEmbedsContract, "apps/cli/src/cli/commands/vault/operations/vault.ts"),
-			),
-		},
+		children: CHECKS,
 		bare: { kind: "default", child: "all", withLeadingOptions: true },
+		// `check --state X semantics` runs the check it names, not `check all`.
+		childDiscovery: { kind: "first-positional", options: leadingOptions(CHECKS) },
 	},
 	start: {
 		owner: contract(startContract, "apps/cli/src/cli/commands/server-control/operations/server.ts"),

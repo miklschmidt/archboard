@@ -168,7 +168,7 @@ pub(super) fn rail_cutouts(routes: &[Edge], double: &impl Fn(&Edge) -> bool) -> 
             Cutout {
                 edge_id: routed.edge.id.clone(),
                 shape: Shape::path(
-                    Purpose::Cutout,
+                    Purpose::Core,
                     route(&short_of_ends(&routed.curve, start, HEAD_LENGTH)),
                 )
                 .unfilled()
