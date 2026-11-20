@@ -70,13 +70,34 @@ function button(text: string, action: () => unknown): HTMLButtonElement {
 }
 
 /**
+ * Lay an element out with inline styles, keeping its display for {@link reveal}.
+ * @param made The element.
+ * @param css Its inline styles.
+ * @returns The element.
+ */
+function layout<Made extends HTMLElement>(made: Made, css: string): Made {
+	made.style.cssText = css;
+	made.dataset["display"] = made.style.display;
+	return made;
+}
+
+/**
+ * Show or hide an element. An inline `display` outranks the `hidden` attribute, so both change.
+ * @param target The element.
+ * @param shown Whether it shows.
+ */
+function reveal(target: HTMLElement, shown: boolean): void {
+	target.hidden = !shown;
+	target.style.display = shown ? (target.dataset["display"] ?? "") : "none";
+}
+
+/**
  * Lay out a group of elements in a row that wraps.
  * @param children The elements.
  * @returns The row.
  */
 function row(...children: HTMLElement[]): HTMLElement {
-	const made = element("div");
-	made.style.cssText = "display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center";
+	const made = layout(element("div"), "display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center");
 	made.append(...children);
 	return made;
 }
@@ -130,8 +151,7 @@ function build(client: VoiceClient, text: VoicePanelText) {
 	});
 	const approvals = element("div");
 	approvals.style.cssText = "display:grid;gap:0.75rem";
-	const conversation = element("div");
-	conversation.style.cssText = "display:grid;gap:0.75rem";
+	const conversation = layout(element("div"), "display:grid;gap:0.75rem");
 	conversation.append(row(startVoice, stopVoice), transcript, work, form, approvals);
 	panel.append(status, failure, signIn, conversation);
 	const parts: PanelParts = {
@@ -157,17 +177,16 @@ function build(client: VoiceClient, text: VoicePanelText) {
 }
 
 /**
- * Replace a list's items when their source changed.
+ * Replace a list's items when their source changed, and hide the list while it is empty.
  * @param list The list.
  * @param lines The text of each item.
  */
 function fill(list: HTMLElement, lines: readonly string[]): void {
-	if (
+	reveal(list, lines.length > 0);
+	const same =
 		list.childElementCount === lines.length &&
-		[...list.children].every((item, index) => item.textContent === lines[index])
-	)
-		return;
-	list.replaceChildren(...lines.map((line) => element("li", line)));
+		[...list.children].every((item, index) => item.textContent === lines[index]);
+	if (!same) list.replaceChildren(...lines.map((line) => element("li", line)));
 }
 
 /**
@@ -224,19 +243,19 @@ function show(
 	const status = statusOf(state, text);
 	if (parts.status.textContent !== status) parts.status.textContent = status;
 	const problem = state.failure?.message ?? state.voice.problem;
-	parts.failure.hidden = problem === null;
+	reveal(parts.failure, problem !== null);
 	parts.failureText.textContent = problem ?? "";
-	parts.refresh.hidden = state.failure?.uncertain !== true;
+	reveal(parts.refresh, state.failure?.uncertain === true);
 	const server = state.connection === "connected" ? state.server : null;
 	const ready = server?.account.state === "ready";
-	parts.signIn.hidden = server === null || ready;
+	reveal(parts.signIn, server !== null && !ready);
 	const login = server?.login;
 	const pending = login?.state === "pending";
-	parts.signInButton.hidden = pending;
-	parts.continueSignIn.hidden = !pending || login.authUrl === null;
+	reveal(parts.signInButton, !pending);
+	reveal(parts.continueSignIn, pending && login.authUrl !== null);
 	if (pending && login.authUrl !== null) parts.continueSignIn.href = login.authUrl;
-	parts.signedIn.hidden = !pending;
-	parts.conversation.hidden = !ready;
+	reveal(parts.signedIn, pending);
+	reveal(parts.conversation, ready);
 	if (server === null || !ready) return shown;
 	const live = LIVE.has(state.voice.phase);
 	parts.startVoice.disabled = state.busy || live || !state.voice.available;

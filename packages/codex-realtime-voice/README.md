@@ -39,7 +39,7 @@ import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
 
 const page = await Bun.build({ entrypoints: [path.join(import.meta.dir, "page.ts")] });
 const script = await page.outputs[0]?.text();
-const html = `<!doctype html><title>Voice</title><main></main><script type="module" src="/page.js"></script>`;
+const html = `<!doctype html><meta name="color-scheme" content="light dark"><title>Voice</title><main></main><script type="module" src="/page.js"></script>`;
 
 const agent = createVoiceAgent({
 	directory: path.join(homedir(), ".voice-agent"),

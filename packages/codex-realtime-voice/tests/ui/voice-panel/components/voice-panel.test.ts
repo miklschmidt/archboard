@@ -97,6 +97,8 @@ test("the panel says it connects, then answers a command approval with the decis
 	);
 	publish({ connection: "connected", server });
 	expect(host.querySelector('[role="status"]')?.textContent).toBe(ENGLISH.voice("idle"));
+	expect(buttonNamed(host, ENGLISH.signIn).parentElement?.style.display).toBe("none");
+	expect(host.querySelector<HTMLElement>('[role="alert"]')?.style.display).toBe("none");
 	const [pending] = server.approvals;
 	buttonNamed(host, "Run").click();
 	expect(calls).toContainEqual([
