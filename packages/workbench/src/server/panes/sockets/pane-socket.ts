@@ -3,7 +3,7 @@
 // listener and admits the upgrade; this owns what happens on the socket after that.
 
 import type { IncomingMessage } from "http";
-import { WebSocket, type RawData } from "ws";
+import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import { parsePaneKey } from "@archboard/model-contract";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
@@ -19,18 +19,6 @@ import {
 } from "#server/panes/services/registry.ts";
 import { resolveVault } from "@archboard/server-requests/server";
 
-/**
- * One socket frame as text. ws hands a frame over as a buffer, an array
- * buffer, or the buffers a fragmented message arrived in.
- * @param raw The frame.
- * @returns Its text.
- */
-function frameText(raw: RawData): string {
-	if (Array.isArray(raw)) {
-		return Buffer.concat(raw).toString("utf8");
-	}
-	return Buffer.from(raw instanceof ArrayBuffer ? new Uint8Array(raw) : raw).toString("utf8");
-}
 
 /**
  * Tell a pane which model it is on.
@@ -84,9 +72,11 @@ function listenForCodexRequests(ws: WebSocket): void {
 	ws.on("message", (raw) => {
 		const connection = voiceConnections.get(ws);
 		if (connection === undefined) return;
+		// ws hands every frame over as one buffer while nothing changes its binaryType.
+		if (!Buffer.isBuffer(raw)) return;
 		let frame: unknown;
 		try {
-			frame = JSON.parse(frameText(raw));
+			frame = JSON.parse(raw.toString("utf8"));
 		} catch {
 			return;
 		}

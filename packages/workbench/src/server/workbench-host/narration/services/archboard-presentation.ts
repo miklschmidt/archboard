@@ -1,5 +1,6 @@
+import { z } from "zod";
+
 import type { VoiceNarrativeAdapter } from "#runtime/voice/protocol/extension.ts";
-import { JsonValueSchema } from "#runtime/thread-tools/protocol/limits.ts";
 import { ArchboardVoicePresentationSchema } from "#shared/schemas/voice-presentation.ts";
 import {
 	narrationFor,
@@ -29,7 +30,7 @@ export const ARCHBOARD_VOICE_PRESENTATION: VoiceNarrativeAdapter =
 		 */
 		prepare: async (input, browserId) => {
 			const presentation = ArchboardVoicePresentationSchema.parse(input);
-			const captured = JsonValueSchema.parse(
+			const captured = z.json().parse(
 				await narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
 			);
 			if (captured === null) throw new Error("The Archboard presentation is empty.");
