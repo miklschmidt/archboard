@@ -1530,7 +1530,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
       "field": "description",
-      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents. Each pane gets one socket conversation from the pane handles, which its session attaches to each of its sockets and hands to the pane's agent. The agent itself is @archboard/agent-surfaces: the shell is drawn inside its root and reads the voice and the panel from it (TASK-653.13)."
+      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents. Each pane gets one socket conversation from the pane handles, which its session attaches to each of its sockets and hands to the pane's agent. The agent itself is @archboard/agent-surfaces: the shell is drawn inside its root and reads the voice and the panel from it (TASK-653.13). Presenting one pane fullscreen is its application state (state/fullscreen-presentation.ts, moved from ui-kit in TASK-653.17): one owned root, the pane wanted on it, and a browser that may refuse, lose or answer late."
     },
     {
       "type": "assign",
@@ -2482,6 +2482,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+      "field": "description",
+      "value": "Canonical readers reuse the picture surface, tips and type samples, and draw their own Legend and right panel in Model reading. The retained stage also presents original headers, variants, and walkthroughs through an explicit captured provider. These components contain no live legacy authoring path. The semantic changes checkbox is the shadcn checkbox registry item, kept beside SemanticChanges, its one caller (ADR 0093)."
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#lzpiRcT2",
       "kind": "relationship",
@@ -3084,6 +3090,18 @@
         "path": "crates/archboard-painting/src/paint/mod.rs",
         "symbol": "of_page"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#4LDuKQvq",
+      "field": "description",
+      "value": "Sends the legacy board, the subject's id and the vault of the pane it is in to the Archboard server, which owns the binding, the opener and the checkout registry, and opens the code at the branch or commit the binding pins. The browser never reads a local path. Also draws the panel that reads, tests and saves the opener settings inside the Settings dialog; its choice of opener is the shadcn radio group registry item, kept beside OpenerChoiceGroup, its one caller (ADR 0093). Canonical activation names the model, subject, and selected state or exact checkpoint. The existing opener and notices retain source refusals without substituting current code. A preview code action names the saved mapping origin. The server resolves the current preview before opening its authored binding. A file an agent's answer names goes with its line as the answer wrote it, and the server opens it only inside a checkout that the vault reads."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "field": "description",
+      "value": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Model ownership and level controls are retired. The resizable columns are its own (components/Resizable.tsx, ADR 0093): the navigator and the side column are its only callers. A notice's GitHub action is a Button with an href, a plain link."
     },
     {
       "type": "assign",
@@ -4618,6 +4636,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "field": "label",
+      "value": "its stepped clock; each frame, what moved outside it"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
       "field": "binding",
       "value": {
@@ -4653,6 +4677,93 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-painting/src/paint/legend/export.rs",
         "symbol": "width_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
+      "field": "responsibility",
+      "value": "The shared composite components the web app, the workbench and the code opener draw with"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
+      "field": "description",
+      "value": "Layer 0, @archboard/ui-kit, one entry ./components of width 20 (ceiling 21 with the type DialogError): Alert, Badge, Button, Command, Dialog, DropdownMenu, Field, IconButton, Input, InputGroup, Popover, RepositoryName, Select, Separator, Tabs, ToggleGroup, Tooltip, cn, usesCommandKey and shownRepository (TASK-653.17, a split by job, not depth). The frame clock and time as text are ui-clocks; fullscreen presentation is the web app's application state; a registry item with one caller and no shared dependent lives beside it (ADR 0093): Resizable in the shell's columns, Checkbox beside SemanticChanges, RadioGroup beside OpenerChoiceGroup. The next component two modules draw comes back here."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+      "field": "description",
+      "value": "The ./frame-clock entry of ui-clocks, moved from ui-kit (TASK-653.17). A replay creates its stepped clock over its window (createSteppedClock(start, window)), which takes over the browser's own requestAnimationFrame at once, so a library's frames run on it too, and swaps it in before it mounts anything (driveFramesFrom). It stands every animation at the frame's time, and syncAnimations returns every violation so far: an animation on a timeline it cannot stand. The picture stage asks it for its frames and reads its time, so a replay steps the canvas too. A lint rule keeps the viewer on it rather than on the browser's timers."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/ui-clocks/src/ui/frame-clock"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+      "placement": {
+        "holder": "vKEsyHFk#UX6KRQDf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#m41qbT4H",
+      "kind": "module",
+      "value": {
+        "order": 24003,
+        "name": "Time as text",
+        "kind": "module",
+        "responsibility": "How long ago or how long, as text that re-reads the time at a fixed tick",
+        "description": "The ./time entry: useClock re-renders its reader on whole multiples of its tick, so two readers with one tick agree; shortAge says how long ago a stamp was and clockDuration a duration as a clock. Moved from ui-kit with the frame clock (TASK-653.17).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/ui-clocks/src/ui"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#m41qbT4H"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#m41qbT4H",
+      "placement": {
+        "holder": "vKEsyHFk#UX6KRQDf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#UX6KRQDf",
+      "kind": "module",
+      "value": {
+        "order": 24050,
+        "name": "ui-clocks",
+        "kind": "package",
+        "responsibility": "The clocks the browser UI reads: the frame clock that motion steps on, stepped frame by frame for a replay or a test, and time as text",
+        "description": "Layer 0, area ui, @archboard/ui-clocks (TASK-653.17): ui-kit's frame clock and time as text, moved out whole, because tests and recordings drive frames and draw nothing with ui-kit. Two entries and no root, width 16. ./frame-clock (13): frameClock, driveFramesFrom, createSteppedClock(start, takeFramesOf?), and class SteppedClock with now, requestFrame, cancelFrame, after, cancelAfter, advanceTo, runFrame, syncAnimations and paint. ./time (3): useClock, shortAge, clockDuration. The web app, agent-surfaces and the system motion fixture call it; it calls nothing of ours. The built page keeps it in the controls chunk.",
+        "groups": [
+          "packages"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/ui-clocks"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#UX6KRQDf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#UX6KRQDf",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
       }
     },
     {
@@ -11149,6 +11260,12 @@
       "placement": {
         "holder": "vKEsyHFk#tpDrhmZh"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#OeR1aoDr",
+      "field": "description",
+      "value": "The twenty names of ui-kit's ./components entry: one composite per job over the shadcn Base UI items, a family's parts on its root (Dialog.Content, Select.Item), with cn, the platform's command key and a repository's shown name beside them. buttonVariants is private behind Button (TASK-653.17): the Base UI triggers render a Button, and Button's href branch draws a plain link with the same classes and no Base UI primitive, because Base UI gives a non-native element role=button; the shell's notices use it."
     },
     {
       "type": "assign",
