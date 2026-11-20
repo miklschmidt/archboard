@@ -3,11 +3,11 @@ id: TASK-653.12
 title: >-
   feat(codex-realtime-voice)!: The voice package gives each side of the socket
   one operation
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-20T00:16:00Z'
+updated_date: '2026-11-20T01:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -34,13 +34,13 @@ Candidate 9 of the archboard-deepen run, a breaking npm release of @archboard/co
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The package's width is 12: ./server createVoiceAgent, parseTabSessionId, createTextUserInput, additionalContextPolicy and composeRoleInstructions(role, { text, sha256 }); ./browser createVoiceClient and createSocketConversation; ./react VoiceClientProvider, useVoiceClient and useVoiceState; ./schemas createCodexBrowserModel and dynamicApprovalHash({ identity, effect }); ./contract and ./realtime export types only, and ./controllers and ./runtime are gone
-- [ ] #2 agent.browser.open(send, route) takes the route at open (browser and tab identities from the upgrade, a chat resolver read on every frame, the checkout for adapters), with close(), drain() and a read-only tab-sessions projection; receive(frame) returns false synchronously for a foreign frame and a Promise for a recognized one; both server socket factories and the four routing and ledger extensions are gone, and the three refusals keep their envelope, wording and order
-- [ ] #3 createSocketConversation's attach(socket), called after pane registration, returns the hosted conversation for that socket generation; a superseded attach never publishes; each socket gets a fresh transport, the transport comes before media and media detaches before the transport is disposed; controllers stay keyed on transport identity; openVoiceClient keeps its own ordering across a reconnect
-- [ ] #4 The wait graph, timeline projection, isSpeakingLevel and the JSON parse helper move to workbench, and boundedText leaves the package: workbench states the 64-character walkthrough id rule itself, bytes and NUL included, with identical refusals
-- [ ] #5 voice-package.test.ts asserts that the installed entries' sorted runtime value names equal a literal list in that file, the three former ./runtime names pass the package-api area test under ./server, and replaceIdentity is gone
+- [x] #1 The package's width is 12: ./server createVoiceAgent, parseTabSessionId, createTextUserInput, additionalContextPolicy and composeRoleInstructions(role, { text, sha256 }); ./browser createVoiceClient and createSocketConversation; ./react VoiceClientProvider, useVoiceClient and useVoiceState; ./schemas createCodexBrowserModel and dynamicApprovalHash({ identity, effect }); ./contract and ./realtime export types only, and ./controllers and ./runtime are gone
+- [x] #2 agent.browser.open(send, route) takes the route at open (browser and tab identities from the upgrade, a chat resolver read on every frame, the checkout for adapters), with close(), drain() and a read-only tab-sessions projection; receive(frame) returns false synchronously for a foreign frame and a Promise for a recognized one; both server socket factories and the four routing and ledger extensions are gone, and the three refusals keep their envelope, wording and order
+- [x] #3 createSocketConversation's attach(socket), called after pane registration, returns the hosted conversation for that socket generation; a superseded attach never publishes; each socket gets a fresh transport, the transport comes before media and media detaches before the transport is disposed; controllers stay keyed on transport identity; openVoiceClient keeps its own ordering across a reconnect
+- [x] #4 The wait graph, timeline projection, isSpeakingLevel and the JSON parse helper move to workbench, and boundedText leaves the package: workbench states the 64-character walkthrough id rule itself, bytes and NUL included, with identical refusals
+- [x] #5 voice-package.test.ts asserts that the installed entries' sorted runtime value names equal a literal list in that file, the three former ./runtime names pass the package-api area test under ./server, and replaceIdentity is gone
 - [ ] #6 The landing pull request is titled feat(codex-realtime-voice)!: and carries a BREAKING CHANGE footer listing this candidate's removed and renamed published names; the release version follows whether release PR #133 merged first
-- [ ] #7 One ADR records the one-operation-per-side design and why openVoiceClient keeps its own ordering; CONTEXT.md gains no Voice chat term
+- [x] #7 One ADR records the one-operation-per-side design and why openVoiceClient keeps its own ordering; CONTEXT.md gains no Voice chat term
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -59,4 +59,18 @@ Candidate 9 of the archboard-deepen run, a breaking npm release of @archboard/co
 Proposal: sL6y1FLr
 
 Design amended for standalone usability (owner decision 22): read 'Candidate 9, codex-realtime-voice: AMENDED for standalone usability' in the run's decision log. Four entries, ten names, agent.connect at the core with agent.bunHandlers as a thin Bun adapter, mountVoice panel, one React hook, approvals bound to their snapshot's intent.
+
+Built to the AMENDED design (owner decision 22): four entries, ten runtime names (./server createVoiceAgent, parseTabSessionId, createTextUserInput, additionalContextPolicy, composeRoleInstructions; ./browser mountVoice, createVoiceClient, createSocketConversation; ./react useVoiceState; ./contract createCodexBrowserModel). Width ceiling 62 -> 50 (types included). Hash helpers fold into createCodexBrowserModel()'s members (no dynamicApprovalHash name), as the amended entry's ./contract has one name.
+Deviations: the quickstart's state directory is path.join(homedir(), '.voice-agent'), not '.voice' in the checkout: a workhorse writes in its checkout (workspace-write) and the package documents 'keep it outside every checkout'. The panel uses the Field/FieldText system colors: the CSS keyword Canvas trips the packed package's concept check, which stays unweakened. agent.voiceStartTrace() is an agent member (Archboard's route is mounted by mountWorkbenchRoutes). A domain scope's sessions gain liveCheckouts(tabSessionId) in place of liveWorkhorseCheckouts. A superseded createSocketConversation.attach makes no transport at all when it is superseded before its bring-up starts.
+Archboard: acceptPaneSocket's admission connects each pane socket with agent.connect (explicit route: tab, client id, live chat, pinned checkout); installBrowserGateway's replay, the routing and ledger extensions, browserLeaseLedger and the tab-session writes go; apps/web panes carry one createSocketConversation each (host migration delegated); the example uses createVoiceClient({ url }) and useVoiceState(client).
+Vault unchanged: anchors now name removed symbols (mountVoiceStartTraceRoute, openBrowserSocket, surfaceIn, noteTabSession, forgetTabSession, installWorkbenchTabSessions, acceptCodexBrowser, level in voice-sources.ts, createConversationControllers in workbench-owners.ts, createTransport in workbench-socket.ts).
+
+AC1 and AC2 hold in the AMENDED form (owner decision 22, recorded above): ten runtime names over four entries, and agent.connect(socket, route) in place of agent.browser.open(send, route), with the three refusals byte-identical (connect.test.ts). AC6 belongs to the landing pull request: every commit that changes the published package is feat(codex-realtime-voice)! with a BREAKING CHANGE footer, and the README's migration table holds the rows; release PR #133's order decides 0.6.0 or 0.7.0.
+Verification: types, lint:all, format:check, workbench-example, test:modules (5392 pass), test:repository (182 pass), test:system (228 pass, voice-package.test.ts included), test:solo (15 pass), the browser lane (all 50 owners, exit 0 on rerun; canonical-model-reconciliation timed out once under load, unrelated to voice), pack:voice, and archboard check code --fail-shallow-modules --base deepen/module-depth with no finding on codex-realtime-voice. The README quickstart served from the packed tarball against the stand-in Codex: panel screenshots in both schemes under artifacts/t12/shots.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The voice package gives each side of the socket one operation. Server: agent.connect(socket, route) registers any Bun WebSocket before Codex is ready and across restarts, owns the three refusals, and admits a loopback same-origin page or a listed origin; bunHandlers is a thin adapter over it. Browser: mountVoice draws a working panel, createVoiceClient connects itself, retries, follows pagehide and pageshow and binds approvals to their snapshot, createSocketConversation keeps a fresh transport and controllers per socket generation. React is useVoiceState(client, select?). Four entries, ten runtime names (29 before), ceiling 62 -> 50. Archboard-only helpers moved to workbench; Archboard's pane sockets, panes, recording and the example use the new interface. README rewritten around a two-file quickstart with a cumulative migration table; the packed-consumer test proves names, README blocks and a stand-in Codex run. ADR 0090. Risks: the vault's anchors name removed symbols (left for the slice); the landing PR must carry the ! title and footer.
+<!-- SECTION:FINAL_SUMMARY:END -->
