@@ -2,7 +2,7 @@
 	"name": "@archboard/ui-kit",
 	"version": "0.0.0",
 	"private": true,
-	"description": "The shared presentation parts: one composite component per job over the shadcn Base UI components, and fullscreen presentation.",
+	"description": "The shared presentation parts: one composite component per job over the shadcn Base UI components.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -10,7 +10,6 @@
 		"#tests/*": "./tests/*"
 	},
 	"exports": {
-		"./components": "./src/ui/api/components.ts",
-		"./fullscreen-presentation": "./src/ui/api/fullscreen-presentation.ts"
+		"./components": "./src/ui/api/components.ts"
 	}
 }

@@ -25,7 +25,8 @@ import {
 import { usePanelRef, type Layout, type LayoutChangedMeta } from "react-resizable-panels";
 
 import { columnSlideSettledMs, durationMs } from "@archboard/timing";
-import { cn, Resizable } from "@archboard/ui-kit/components";
+import { cn } from "@archboard/ui-kit/components";
+import { Resizable } from "#ui/shell/components/Resizable.tsx";
 import { storedWidth, storeWidth, type ColumnWidths } from "#ui/shell/clients/column-width.ts";
 
 /** How much room a visible handle takes between its panels. */

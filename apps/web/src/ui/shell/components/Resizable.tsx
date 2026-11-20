@@ -1,7 +1,7 @@
 import type { JSX } from "react";
 import * as ResizablePrimitive from "react-resizable-panels";
 
-import { cn } from "#ui/rules/class-names.ts";
+import { cn } from "@archboard/ui-kit/components";
 
 /**
  * A row (or, vertically, a column) of panels that share its space.

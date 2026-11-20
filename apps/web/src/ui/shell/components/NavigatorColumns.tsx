@@ -7,7 +7,7 @@ import { useCallback, useState, type CSSProperties, type JSX, type ReactNode } f
 import { usePanelRef } from "react-resizable-panels";
 
 import { shell } from "@archboard/renderer/shell-geometry";
-import { Resizable } from "@archboard/ui-kit/components";
+import { Resizable } from "#ui/shell/components/Resizable.tsx";
 import { storedWidth, storeWidth, type ColumnWidths } from "#ui/shell/clients/column-width.ts";
 
 /** What the navigator can be. */

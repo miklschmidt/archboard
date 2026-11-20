@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createFullscreenPresentation } from "#ui/state/fullscreen-presentation.ts";
+import { createFullscreenPresentation } from "#ui/application/state/fullscreen-presentation.ts";
 
 /** A promise settled from outside. */
 interface Deferred<T> {

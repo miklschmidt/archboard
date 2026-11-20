@@ -11,7 +11,6 @@ export { IconButton } from "#ui/components/IconButton.tsx";
 export { InputGroup } from "#ui/components/InputGroup.tsx";
 export { RadioGroup } from "#ui/components/RadioGroup.tsx";
 export { RepositoryName } from "#ui/components/RepositoryName.tsx";
-export { Resizable } from "#ui/components/Resizable.tsx";
 export { Popover } from "#ui/components/Popover.tsx";
 export { Select } from "#ui/components/Select.tsx";
 export { Tabs } from "#ui/components/Tabs.tsx";
