@@ -16,6 +16,7 @@ crate-type = ["cdylib", "rlib"]
 # so that no native test or lint builds a GPU stack that nothing there uses.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 archboard-paint = { path = "../archboard-paint" }
+archboard-geometry = { path = "../archboard-geometry" }
 archboard-scene = { path = "../archboard-scene" }
 futures-channel = "0.3"
 js-sys = "0.3"

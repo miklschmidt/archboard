@@ -9,7 +9,7 @@
 //! of where they want to be when that crosses fewer lines (`label_runs.rs`).
 
 use crate::constants::{CONTAINER_INSET, LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
-use crate::ecma::{abs, js_max, js_min, max, min, number_key, sort_by, sorted_by, via_text};
+use crate::ecma::{abs, max, min, number_key, sort_by, sorted_by, via_text};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, LANE, StationId, Track};
 use crate::track::channels::{End, NetId};
@@ -133,7 +133,7 @@ fn within(bx: &Rect, stretch: Wall) -> bool {
 
 /// How far a box keeps from a container's wall, on whichever side it stands.
 fn keeps_from(bx: &Rect, wall: f64) -> f64 {
-    js_max(bx.x - wall, wall - bx.x - bx.width)
+    max([bx.x - wall, wall - bx.x - bx.width])
 }
 
 /// Whether a label box, moved, keeps its room from everything else on its band.
@@ -159,9 +159,7 @@ fn clear_on_band(scene: &Placement, item: ItemId, bx: &Rect, lanes: &[f64]) -> b
             .walled(label.band)
             .values()
             .flat_map(|&(left, right)| [left, right])
-            .all(|wall| {
-                keeps_from(bx, wall) >= js_min(CONTAINER_INSET, keeps_from(&label.bx, wall))
-            })
+            .all(|wall| keeps_from(bx, wall) >= min([CONTAINER_INSET, keeps_from(&label.bx, wall)]))
         && within(bx, extent_of(scene))
 }
 
@@ -174,7 +172,7 @@ impl Track<'_> {
             return (x, x);
         }
         let bx = self.scene.item(one.item.expect("a card")).bx;
-        let margin = js_min(FACE_MARGIN, bx.width / 2.0);
+        let margin = min([FACE_MARGIN, bx.width / 2.0]);
         (bx.x + margin, bx.x + bx.width - margin)
     }
 
@@ -191,8 +189,8 @@ impl Track<'_> {
     fn wanted_centre(&self, item: ItemId, above: NetId, below: NetId) -> f64 {
         let (a, b) = self.reach_from(above, End::Top);
         let (c, d) = self.reach_from(below, End::Bottom);
-        let low = js_max(a, c);
-        let high = js_min(b, d);
+        let low = max([a, c]);
+        let high = min([b, d]);
         if low > high {
             return if c > b { b } else { a };
         }
@@ -203,17 +201,17 @@ impl Track<'_> {
         };
         let shared = self.shared_at(above, End::Top).is_some()
             || self.shared_at(below, End::Bottom).is_some();
-        js_min(
+        min([
             high,
-            js_max(
+            max([
                 low,
                 if shared {
                     port
                 } else {
                     centre_x(self.scene.item(item))
                 },
-            ),
-        )
+            ]),
+        ])
     }
 
     /// Every label box that sits on a line, with where it wants its centre.
@@ -325,13 +323,13 @@ impl Track<'_> {
             walls.extend(labels);
             let (left, right) = stretch_of(&walls, &item);
             let half = item.bx.width / 2.0;
-            let lowest = js_max(face.0, left + half);
-            let highest = js_min(face.1, right - half);
+            let lowest = max([face.0, left + half]);
+            let highest = min([face.1, right - half]);
             let centre = centre_x(&item);
             if centre < lowest - 0.5 || centre > highest + 0.5 {
                 continue;
             }
-            let middle = js_min(highest, js_max(lowest, f64::midpoint(face.0, face.1)));
+            let middle = min([highest, max([lowest, f64::midpoint(face.0, face.1)])]);
             self.scene.item_mut(slider.item).bx.x = middle - half;
         }
     }
@@ -339,7 +337,7 @@ impl Track<'_> {
     /// Where a line would meet a label from one of its other stations.
     fn meeting_x(&self, station: StationId, item: ItemId) -> f64 {
         let (low, high) = self.reach(station);
-        js_min(high, js_max(low, centre_x(self.scene.item(item))))
+        min([high, max([low, centre_x(self.scene.item(item))])])
     }
 
     /// Move a label box straight over or under the lane or card face its line

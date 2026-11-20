@@ -1,7 +1,7 @@
 //! What a move does, held to the scenes a test builds by hand. None of it
 //! needs a GPU or a DOM: a move is plain items in and plain items out.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{
     Clip, ClipId, Definition, Group, Item, Mask, MaskId, Purpose, Role, Scene, Shape, Transform,
 };

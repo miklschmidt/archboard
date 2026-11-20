@@ -4,11 +4,13 @@
 
 use std::collections::BTreeMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::{Point, Rect};
+use archboard_scene::drawing::{DiagramFont, FontFamily};
 use archboard_scene::scene::{
-    Atlas, Colour, Geometry, Group, Item, Paint, Painting, PathStep, Purpose, Role, Scene, Shape,
-    Stroke, Subject,
+    Atlas, Colour, Geometry, GlyphPlace, Group, Item, Paint, Painting, PathStep, Purpose, Role,
+    Scene, Shape, Stroke, Subject, Text,
 };
+use archboard_text::Face;
 use kurbo::{Affine, BezPath, Shape as _, Vec2};
 use peniko::Color;
 
@@ -17,6 +19,40 @@ use crate::canvas::{Canvas, Ink, Layer, Lens};
 use crate::palette::Theme;
 use crate::presentation::{Camera, FarLine, Presentation, Timed};
 use crate::stage::{Arrival, Motion, Pace, Stage, Surface};
+
+/// A run of words in a sans face, regular or medium, at twelve units, its
+/// baseline starting at a point, shaped by the core's own text as Painting
+/// sets words.
+pub(crate) fn words_at(at: Point, medium: bool, words: &str) -> Text {
+    let (face, weight) = if medium {
+        (Face::SansMedium, 500)
+    } else {
+        (Face::SansRegular, 400)
+    };
+    let size = 12.0;
+    Text {
+        at,
+        font: DiagramFont {
+            family: FontFamily::Sans,
+            weight,
+        },
+        size,
+        fill: Colour::Black,
+        width: archboard_text::width(face, words, size),
+        units_per_em: face.units_per_em(),
+        glyphs: archboard_text::shape(face, words)
+            .glyphs
+            .iter()
+            .map(|glyph| GlyphPlace {
+                face: glyph.face,
+                id: glyph.id,
+                x: glyph.x,
+                y: glyph.y,
+            })
+            .collect(),
+        words: words.to_owned(),
+    }
+}
 
 /// A 400 by 400 white page that draws this body and has no icons.
 pub(crate) fn painting(body: Vec<Item>) -> Painting {

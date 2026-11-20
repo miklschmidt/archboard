@@ -9,7 +9,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{
     Geometry, Group, Item, Paint, Purpose, Role, Shape, Stroke, Token, Transform, Viewport,
 };
@@ -305,7 +305,7 @@ pub(super) fn outline(area: Rect, corner: f64, stroke: Stroke) -> Shape {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::scene::{Group, Item, Scene, Transform};
 
     use super::super::ease::carried;

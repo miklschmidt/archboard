@@ -117,7 +117,7 @@ function groupOf(svg: string, kind: string, id: string): DrawnGroup | undefined 
 /**
  * Where a container's header ends, on the page: the foot of its header slab,
  * the first rect its group draws with a slab's corners
- * (`SLAB_RADIUS` in crates/archboard-scene/src/sizes.rs).
+ * (`SLAB_RADIUS` in crates/archboard-painting/src/sizes.rs).
  * @param svg The drawn document.
  * @param id The container.
  * @returns The page coordinate of the slab's foot.

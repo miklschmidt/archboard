@@ -11,7 +11,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, PathStep, Shape, Transform, Viewport};
 
 use super::ease::{carried, ease_out, lerp, mix_rect, then};
@@ -324,7 +324,7 @@ impl Anchors {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::scene::{Geometry, Group, Item, Transform};
 
     use super::super::found::found;

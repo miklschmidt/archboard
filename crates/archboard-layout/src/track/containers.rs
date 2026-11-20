@@ -5,10 +5,10 @@
 
 use std::cell::OnceCell;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
-use crate::ecma::{js_max, max};
+use crate::ecma::max;
 use crate::placed::PlacedEdge;
 use crate::track::scene::{ItemId, Map, Placement, Set};
 
@@ -231,7 +231,7 @@ impl<'a> Containers<'a> {
             .chain(self.regions.iter().copied())
         {
             let band = self.last_band(at);
-            closing[band] = js_max(closing[band], self.reach(at));
+            closing[band] = max([closing[band], self.reach(at)]);
         }
         closing
     }

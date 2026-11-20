@@ -12,11 +12,11 @@ mod shown;
 
 use std::collections::BTreeMap;
 
+use archboard_geometry::{Curve, Point, Rect, Segment, curve_bounds, curve_through};
 use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, DrawingBridge, DrawingEdge, EdgeFacts, Emphasis, MeasuredLabel,
     NodeFacts, PlacedLabel, ReadingDirection,
 };
-use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, curve_through};
 use archboard_scene::request::{Arrowhead, Dash};
 
 use super::clearance::lacks_clearance;

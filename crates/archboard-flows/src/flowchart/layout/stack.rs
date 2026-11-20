@@ -2,7 +2,7 @@
 //! holds, and each column stacked on its axis, with a jump from the foot of
 //! one column to the top of the next.
 
-use archboard_scene::geometry::Point;
+use archboard_geometry::Point;
 use archboard_scene::request::JumpEnd;
 
 use super::{

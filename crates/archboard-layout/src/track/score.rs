@@ -1,9 +1,9 @@
 //! Geometry measures for local packing, folding and rank wrapping.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 
 use crate::constants::fit_in;
-use crate::ecma::{abs, js_min, max, min, number_key, pow, round, via_text};
+use crate::ecma::{abs, max, min, number_key, pow, round, via_text};
 use crate::track::scene::{Map, Set};
 
 /// What one crossing costs a layout, as the share of its fit it keeps.
@@ -41,7 +41,7 @@ pub(crate) struct Weighed {
 
 /// Whether a value lies strictly between two others, clear of both.
 fn inside(value: f64, one: f64, other: f64) -> bool {
-    value > js_min(one, other) + 1.0 && value < crate::ecma::js_max(one, other) - 1.0
+    value > min([one, other]) + 1.0 && value < max([one, other]) - 1.0
 }
 
 /// The key of a place: its rounded x and y, as a template literal spells them.
@@ -157,7 +157,7 @@ pub(crate) fn wrap_plans(runs: &[(Vec<String>, f64)]) -> Vec<Plan> {
                 clippy::cast_sign_loss,
                 reason = "a whole row from 0 to the last: the floor of a share of a positive total, clamped"
             )]
-            let row = js_min((rows - 1) as f64, share) as usize;
+            let row = min([(rows - 1) as f64, share]) as usize;
             for id in ids {
                 cut.insert(id.clone(), row);
             }

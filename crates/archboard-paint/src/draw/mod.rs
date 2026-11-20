@@ -1,10 +1,10 @@
 //! The draw walk: one scene under one presentation, onto one canvas. It reads
 //! the scene as the SVG writer does, and does what the SVG's stylesheet did.
 
-use archboard_scene::paint::far_line_scale;
+use archboard_painting::ViewerMarks;
 use archboard_scene::scene::{
-    Colour, Geometry, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
-    Transform, Viewport,
+    Colour, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token, Transform,
+    Viewport,
 };
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 
@@ -94,6 +94,7 @@ struct Walk<'a, C: Canvas> {
     definitions: &'a Definitions,
     outlines: &'a mut Outlines,
     seen: &'a Seen,
+    marks: &'a ViewerMarks,
     still: Option<u64>,
     /// The next retained item, numbered across every top-level move and inset.
     next_part: usize,
@@ -121,6 +122,8 @@ pub(crate) struct Inks<'a> {
     pub(crate) palette: &'a Palette,
     pub(crate) outlines: &'a mut Outlines,
     pub(crate) seen: &'a Seen,
+    /// The marks the painter draws a viewer's lines by, the far view's widths among them.
+    pub(crate) marks: &'a ViewerMarks,
     /// What a picture that stands still from frame to frame is known by.
     pub(crate) still: Option<u64>,
 }
@@ -139,6 +142,7 @@ pub(crate) fn draw_items<C: Canvas>(
         definitions,
         outlines: &mut *inks.outlines,
         seen: inks.seen,
+        marks: inks.marks,
         still: inks.still,
         next_part: 0,
     };
@@ -464,16 +468,6 @@ impl<C: Canvas> Walk<'_, C> {
             Paint::None => None,
             Paint::Colour { colour } => Some(Ink::Solid(self.palette.colour(colour, alpha))),
             Paint::Gradient { id } => self.definitions.gradient(*id, self.palette, alpha, bounds),
-        }
-    }
-
-    /// The width a line's direct stroke grows by in the far view.
-    fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
-        match stroke.width {
-            Some(width) if inside.line && matches!(geometry, Geometry::Path { .. }) => {
-                far_line_scale(width, self.seen.far)
-            }
-            _ => 1.0,
         }
     }
 

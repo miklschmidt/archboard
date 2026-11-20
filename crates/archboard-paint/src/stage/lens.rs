@@ -4,7 +4,7 @@
 
 use std::f64::consts::PI;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Scene;
 use peniko::Color;
 

@@ -6,7 +6,7 @@
 //! A cubic interpolated pointwise is still a cubic, which keeps the corners
 //! round in flight.
 
-use archboard_scene::geometry::Point;
+use archboard_geometry::Point;
 use archboard_scene::scene::{Geometry, PathStep};
 use kurbo::{CubicBez, ParamCurve as _, PathEl};
 
@@ -225,7 +225,7 @@ impl Morph {
 #[cfg(test)]
 mod tests {
     use super::{Morph, length};
-    use archboard_scene::geometry::Point;
+    use archboard_geometry::Point;
     use archboard_scene::scene::PathStep;
 
     fn at(x: f64, y: f64) -> Point {

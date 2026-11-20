@@ -38,7 +38,7 @@ pub use traffic::{
     GlowLayer, LegMotion, Motion, PulseLeg, PulseLook, PulseTrain, TrafficMark, pulse_slide,
     pulse_train,
 };
-pub(crate) use traffic::{pulse_breadth, turn_distance};
+pub use traffic::{pulse_breadth, turn_distance};
 
 /// One thing in a scene's order.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]

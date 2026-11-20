@@ -11,7 +11,7 @@
 //! morphed beside it, the two cross-fading. A swipe that appears or disappears
 //! morphs with the stroke, fading in or out.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{
     Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };

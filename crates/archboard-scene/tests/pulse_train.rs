@@ -3,7 +3,7 @@
 
 use std::f64::consts::FRAC_PI_4;
 
-use archboard_scene::geometry::{Curve, Point, Rect, Segment};
+use archboard_geometry::{Curve, Point, Rect, Segment};
 use archboard_scene::scene::{
     Colour, LegMotion, Motion, PulseLook, PulseTrain, Token, TrafficMark, pulse_slide, pulse_train,
 };

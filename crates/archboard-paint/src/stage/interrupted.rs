@@ -4,7 +4,7 @@ use super::{Arrival, Departure, Stage, Surface};
 use crate::cpu::CpuCanvas;
 use crate::passage::{Heading, Side};
 use crate::testing::{filled, painting, showing, stage, stroke, subject_group, traced};
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{Item, PathStep, Purpose, Role, Subject, SubjectKind, Token};
 
 fn card(id: &str, x: f64) -> Item {

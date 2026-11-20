@@ -4,7 +4,7 @@
 //! line crossing its cluster, all bulging one way (TASK-570). Where every
 //! such arc is crowded, the one that keeps the most clear space stands.
 
-use archboard_scene::geometry::{Curve, curve_bounds, inflate, segment_start};
+use archboard_geometry::{Curve, curve_bounds, inflate, segment_start};
 
 use super::super::crowding::{
     CROSSWISE_CLEARANCE, facing_crowding, facing_hops, forced_crowding, knot_crowding,
@@ -16,7 +16,7 @@ use super::super::hops::{
 };
 use super::super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS};
 use super::{LEAST_ROOM, Rise, Settling, at_on};
-use crate::ecma::{js_min, max, min, sign};
+use crate::ecma::{max, min, sign};
 
 /// How near two hops along one line stand before they read as one knot: the
 /// clear space each keeps from the other.
@@ -293,7 +293,7 @@ impl Settling<'_> {
         Arcs {
             rises,
             replaces,
-            near: js_min(knot, crowded),
+            near: min([knot, crowded]),
             knotted: knot <= 1.0,
             looked,
         }

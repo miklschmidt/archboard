@@ -40,7 +40,7 @@ fn spelt(value: &serde_json::Value) -> Result<String, String> {
         serde_json::Value::String(text) => Ok(text.clone()),
         serde_json::Value::Number(number) => number
             .as_f64()
-            .map(archboard_scene::js::number)
+            .map(archboard_ecma::number)
             .ok_or_else(|| format!("the attribute value {number} is no number")),
         serde_json::Value::Bool(truth) => Ok(truth.to_string()),
         other => Err(format!(

@@ -1,7 +1,7 @@
 //! One frame of a stage: its ground, the picture, the picture inside a card, and
 //! over them what is left of the last picture.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Item;
 use kurbo::{Affine, RoundedRect, Shape as _};
 
@@ -22,6 +22,7 @@ impl Stage {
             shown,
             seen,
             palette,
+            marks,
             outlines,
             size,
             arriving,
@@ -61,6 +62,7 @@ impl Stage {
             palette,
             outlines: &mut *outlines,
             seen,
+            marks,
             still: (*settled && moved.is_none()).then_some(*looks),
         };
         faded(canvas, parent, |canvas| {
@@ -76,6 +78,7 @@ impl Stage {
             palette,
             outlines,
             seen: &plain,
+            marks,
             still: None,
         };
         if let Some((dive, fades)) = dive.as_ref().zip(fades) {
@@ -139,6 +142,7 @@ fn draw_ghost<C: Canvas>(
         palette: inks.palette,
         outlines: &mut *inks.outlines,
         seen: &look,
+        marks: inks.marks,
         still: None,
     };
     faded(canvas, own.shown * held.shown, |canvas| {

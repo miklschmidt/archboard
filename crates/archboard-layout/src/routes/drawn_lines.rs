@@ -8,11 +8,11 @@
 //! module builds, so two of them are one where the TypeScript compared them by
 //! identity.
 
+use archboard_geometry::{Curve, Point, Segment, segment_start};
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Emphasis};
-use archboard_scene::geometry::{Curve, Point, Segment, segment_start};
 
 use crate::constants::{APPROACH_STRAIGHT, EPSILON};
-use crate::ecma::{js_max, js_min, min, sign};
+use crate::ecma::{max, min, sign};
 pub(super) use crate::geometry::Axis;
 
 /// Two straight pieces closer than this across their axis draw as one line.
@@ -135,8 +135,8 @@ pub(super) fn extent_of(run: &Run, rooms: bool) -> Extent {
     } else {
         (run.end_room, run.start_room)
     };
-    let low = js_min(from, to);
-    let high = js_max(from, to);
+    let low = min([from, to]);
+    let high = max([from, to]);
     if rooms {
         Extent {
             low: low + first,
@@ -172,9 +172,9 @@ pub(super) fn on_run(run: &Run, distance: f64, height: f64) -> Point {
 /// A straight piece of a run, centred on a place along it, as far as the run goes.
 pub(super) fn piece_of(run: &Run, at: f64, reach: f64) -> Curve {
     Curve {
-        from: on_run(run, js_max(0.0, at - reach), 0.0),
+        from: on_run(run, max([0.0, at - reach]), 0.0),
         segments: vec![Segment::Line {
-            to: on_run(run, js_min(run.length, at + reach), 0.0),
+            to: on_run(run, min([run.length, at + reach]), 0.0),
         }],
     }
 }
@@ -228,8 +228,7 @@ fn crosses(upper: &Run, lower: &Run) -> bool {
     }
     let at = along(upper, fixed_of(lower));
     let beneath = along(lower, fixed_of(upper));
-    !(js_min(at, upper.length - at) <= EPSILON
-        || js_min(beneath, lower.length - beneath) <= EPSILON)
+    !(min([at, upper.length - at]) <= EPSILON || min([beneath, lower.length - beneath]) <= EPSILON)
 }
 
 /// Every place two drawn lines cross on straight ink, once each: where a run
@@ -311,9 +310,9 @@ pub(super) fn straightness(runs: &[Run], run: &Run, coordinate: f64, rooms: bool
     min(line_runs(runs, run).into_iter().map(|other| {
         let whole = extent_of(other, false);
         if coordinate <= whole.low || coordinate >= whole.high {
-            return js_max(whole.low - coordinate, coordinate - whole.high);
+            return max([whole.low - coordinate, coordinate - whole.high]);
         }
         let clear = extent_of(other, rooms);
-        js_min(coordinate - clear.low, clear.high - coordinate)
+        min([coordinate - clear.low, clear.high - coordinate])
     }))
 }

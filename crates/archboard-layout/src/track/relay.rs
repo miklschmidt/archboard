@@ -12,7 +12,7 @@
 
 use std::rc::Rc;
 
-use crate::ecma::{js_max, js_min, sorted_by, sorted_unique};
+use crate::ecma::{max, min, sorted_by, sorted_unique};
 use crate::track::chains::{ByBand, ChainId, Kind, LANE, StationId, Track};
 use crate::track::labels::extent_of;
 use crate::track::occupancy::Occupancy;
@@ -34,7 +34,7 @@ const STEP: f64 = LANE / 2.0;
 
 /// How far an x stands outside a span; zero inside.
 fn outside(x: f64, span: Span) -> f64 {
-    js_max(js_max(0.0, span.0 - x), x - span.1)
+    max([max([0.0, span.0 - x]), x - span.1])
 }
 
 /// What a chain costs where it stands, by each count, and how many lines it crosses there.
@@ -83,7 +83,7 @@ impl Track<'_> {
             self.reach_of(stations[0]),
             self.reach_of(*stations.last().expect("a station")),
         );
-        let span = (js_min(upper.0, lower.0), js_max(upper.1, lower.1));
+        let span = (min([upper.0, lower.0]), max([upper.1, lower.1]));
         stations[1..stations.len() - 1]
             .iter()
             .any(|&station| outside(self.x(station), span) > STRAY)
@@ -344,7 +344,7 @@ impl Relay {
             .abs();
         }
         let far = self.beyond(track, stations, xs);
-        let lap = js_min(far / BEYOND_SHARE, CROSSING + SAVING);
+        let lap = min([far / BEYOND_SHARE, CROSSING + SAVING]);
         let run = travel + lap;
         [
             run + CROSSING * crossings,

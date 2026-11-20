@@ -11,6 +11,10 @@
   "changes": [
     {
       "type": "remove",
+      "subject": "vKEsyHFk#e3WuFSSK"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk#w44DwfpV"
     },
     {
@@ -151,6 +155,31 @@
       "subject": "vKEsyHFk#94vxmg9V",
       "placement": {
         "holder": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#GwDt9WAe",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "a route's length and the part a pulse rides",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/scene/traffic.rs",
+          "symbol": "round_coord"
+        },
+        "id": "vKEsyHFk#GwDt9WAe",
+        "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#GwDt9WAe",
+      "placement": {
+        "holder": "vKEsyHFk#94vxmg9V"
       }
     },
     {
@@ -304,6 +333,115 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#e4GGp9r3",
+      "kind": "module",
+      "value": {
+        "order": 60,
+        "name": "Page margin",
+        "kind": "function",
+        "responsibility": "Answers the margin every picture keeps clear around its drawing, which each layout leaves when it sizes the page",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painting/src/paint/page.rs",
+          "symbol": "diagram_margin"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#e4GGp9r3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#e4GGp9r3",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vGATA5x4",
+      "kind": "module",
+      "value": {
+        "order": 70,
+        "name": "Junction boxes",
+        "kind": "function",
+        "responsibility": "Answers the boxes the junction marks of finished routes take, where routes join and part on a shared lane, so a layout keeps labels off them",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painting/src/paint/junctions.rs",
+          "symbol": "junction_boxes"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#vGATA5x4",
+        "formerNames": [
+          "Junction marks"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vGATA5x4",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#MsqEgypi",
+      "kind": "module",
+      "value": {
+        "order": 80,
+        "name": "Own icons",
+        "kind": "function",
+        "responsibility": "Names the icons the core draws on its own, the fallback and the flow icon, so a host ships them with the icon set it gives",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painting/src/paint/icons.rs",
+          "symbol": "own_icons"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#MsqEgypi",
+        "formerNames": [
+          "Type icons"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MsqEgypi",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#3aoJrKB6",
+      "kind": "module",
+      "value": {
+        "order": 90,
+        "name": "Straight card top",
+        "kind": "function",
+        "responsibility": "Answers whether a card's top runs straight above a point, clear of its rounded corners, so a layout jogs a line only where it meets the flat edge",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painting/src/paint/cards.rs",
+          "symbol": "straight_card_top_contains"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#3aoJrKB6",
+        "formerNames": [
+          "Card shapes"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#3aoJrKB6",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#zxEUtLI7",
       "field": "binding",
@@ -316,13 +454,147 @@
       "type": "assign",
       "subject": "vKEsyHFk#U4Q7nid1",
       "field": "description",
-      "value": "The scene contract: typed data that every painter and the TypeScript bindings read. It computes a traffic mark's pulse train once, so the SVG and GPU painters share one set of numbers and keep only their clocks and their drawing. Its six submodules are private, and each name is reachable through one path. Of the builders it keeps Group::new, Transform::translate and Text::set; the setters and the producer-only constructors belong to Painting. Purpose::Core names the core a double line's mask cuts between its rails, which the SVG painter spells exactly as a cutout and the move recognises by purpose alone."
+      "value": "The scene contract: typed data that every painter and the TypeScript bindings read. It computes a traffic mark's pulse train once, so the SVG and GPU painters share one set of numbers and keep only their clocks and their drawing. Its six submodules are private, and each name is reachable through one path. Of the builders it keeps Group::new and Transform::translate; Text::set, the setters and the producer-only constructors belong to Painting, and tests outside Painting build a Text as plain data (ADR 0091). Purpose::Core names the core a double line's mask cuts between its rails, which the SVG painter spells exactly as a cutout and the move recognises by purpose alone."
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk#j0MFQ3h7",
       "field": "label",
       "value": "a pulse train's numbers, as JavaScript computes them"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#j0MFQ3h7",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/scene/traffic.rs",
+        "symbol": "max"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#YnLioZj6",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "a drawing's toggles, fonts and reading direction",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/scene/group.rs",
+          "symbol": "Toggle"
+        },
+        "id": "vKEsyHFk#YnLioZj6",
+        "to": "vKEsyHFk#G67025jN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#YnLioZj6",
+      "placement": {
+        "holder": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#cbuFHeuk",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the face each glyph of a run is drawn from",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/scene/text.rs",
+          "symbol": "Face"
+        },
+        "id": "vKEsyHFk#cbuFHeuk",
+        "to": "vKEsyHFk#C4dZpr3U"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#cbuFHeuk",
+      "placement": {
+        "holder": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#G67025jN",
+      "kind": "module",
+      "value": {
+        "order": 200,
+        "name": "Drawing contract",
+        "kind": "module",
+        "responsibility": "States the drawing a layout answers and the painter paints: measured and placed nodes, routed edges, labels and frames, each with its facts",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/drawing.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#G67025jN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#G67025jN",
+      "placement": {
+        "holder": "vKEsyHFk#9gGvxWHp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WgFarzeW",
+      "kind": "module",
+      "value": {
+        "order": 300,
+        "name": "Picture legend",
+        "kind": "function",
+        "responsibility": "Reads a picture's key back from its drawn scene: the appearance each subject was drawn with, and the distinct samples among them",
+        "description": "picture_legend(body) -> PictureLegend { subjects, kinds, relationships }, each an Applied appearance (Drawn and its icon). Every painter and the exported legend read the key here, so they cannot list different things (TASK-468).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/legend.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#WgFarzeW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WgFarzeW",
+      "placement": {
+        "holder": "vKEsyHFk#9gGvxWHp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#li2dTnjZ",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the drawn scene it reads the key from",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-scene/src/legend.rs",
+          "symbol": "picture_legend"
+        },
+        "id": "vKEsyHFk#li2dTnjZ",
+        "to": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#li2dTnjZ",
+      "placement": {
+        "holder": "vKEsyHFk#WgFarzeW"
+      }
     },
     {
       "type": "add",
@@ -526,6 +798,35 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#GqMdZbTF",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/marks.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#6ZMHr90w",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/marks.rs",
+        "symbol": "viewer_marks"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Hb3narYc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/standing.rs",
+        "symbol": "standing_pin_at"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#ttPYQNXo",
       "field": "responsibility",
       "value": "Holds one canvas's picture, how it is seen and everything that moves on it, takes the page's decisions whole, and draws a frame at a moment of its own clock"
@@ -535,6 +836,31 @@
       "subject": "vKEsyHFk#ttPYQNXo",
       "field": "description",
       "value": "Seven names (ADR 0085): Stage::new(theme, size, Pace), present(Presentation), arrive(Painting, Arrival), depart(Departure), draw(Surface, now) -> Motion and pick. The pace, a move's phases and the longest step of the clock, comes at birth. A presentation states only what changed: each value it states replaces the last, and a value it leaves out stays. An arrival is a cut, a carry, an entrance or a flight into a card; a departure is a leaving, a stay, a clear or the end of a flight into a card, so the page states each decision once and in no required order within a turn. The stage owns its clock. Each timed value carries its own moment (the camera, the awaited step, the light, a sweep, an entrance, a flight into a card and a leaving), and the stage reads the clock once for each such moment and once for each frame, so a stepped clock records it frame by frame. A cut, a carry, a stay, a clear and a sweep with no lines name no moment and read nothing. Each draw says whether to keep a strip canvas's parts: Surface::Strips wraps the canvas in the stage's part store and culls to the stage's size, and Surface::Direct draws whole, as the GPU canvas, a recording canvas and a counting canvas need. A frame answers its Motion: still, traffic alone or moving."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zPfKik87",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the viewer's marks, read once for the stage",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/stage/mod.rs",
+          "symbol": "viewer_marks"
+        },
+        "id": "vKEsyHFk#zPfKik87",
+        "to": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zPfKik87",
+      "placement": {
+        "holder": "vKEsyHFk#ttPYQNXo"
+      }
     },
     {
       "type": "assign",
@@ -750,12 +1076,47 @@
       "value": "It does what the SVG's stylesheet did: the colours of a theme, the recede of a lit set, the far view and the order in which a selected part is raised. A glyph is drawn from the outlines of the core's own faces. A line's far-view growth is Painting's far_line_scale, asked by the stroke's width. Vello on WebGPU and Vello GPU on WebGL2 implement the same Canvas trait in the browser crate."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#zvxbACZ3",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the far view's line widths and scale",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/draw/viewer.rs",
+          "symbol": "ViewerMarks"
+        },
+        "id": "vKEsyHFk#zvxbACZ3",
+        "to": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zvxbACZ3",
+      "placement": {
+        "holder": "vKEsyHFk#290spzv7"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#y8vuJJKu",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/page.rs",
+        "symbol": "atlas_boxes"
       }
     },
     {
@@ -1348,6 +1709,31 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#bIzYpLka",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "where a line's warning mark stands",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-paint/src/warnings.rs",
+          "symbol": "label_anchor_of"
+        },
+        "id": "vKEsyHFk#bIzYpLka",
+        "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#bIzYpLka",
+      "placement": {
+        "holder": "vKEsyHFk#HL9m7uSj"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#V0iTeueR",
       "kind": "module",
       "value": {
@@ -1432,6 +1818,56 @@
       "subject": "vKEsyHFk/gbyqW4H3#wLF1X11D",
       "field": "description",
       "value": "Keeps where a sequence's parts go and how far apart: column widths and gaps, rows, lifelines and frames. Each part's own size, a head card's, a message's or a note's plate, an arrow's ends, an activation bar, a self loop, a fragment's head and bounds and the flow's tab, comes from Flow part measures (ADR 0088); its own sheet (design.rs) holds only placement spacing. A fragment's head is measured once where the frame is placed and carried in its rows."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#5pOZ8osq",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "round and compare as JavaScript does",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/sequence/activations.rs",
+          "symbol": "max"
+        },
+        "id": "vKEsyHFk#5pOZ8osq",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#5pOZ8osq",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#wLF1X11D"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ouAvABSh",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the margin around the sequence",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/sequence/design.rs",
+          "symbol": "diagram_margin"
+        },
+        "id": "vKEsyHFk#ouAvABSh",
+        "to": "vKEsyHFk#e4GGp9r3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ouAvABSh",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#wLF1X11D"
+      }
     },
     {
       "type": "assign",
@@ -1561,7 +1997,43 @@
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
       "field": "description",
-      "value": "The core shapes every run with archboard-text and breaks it at a width, so a width is never estimated and never asked of the place that draws (ADR 0059, TASK-520.07). Every layout and every painter read the same numbers here. Sixteen names: message_lines, note_lines and width are crate-private, so a flow layout reaches the line breakers only through Flow part measures, which also owns title fitting (ADR 0088)."
+      "value": "The core shapes every run with archboard-text and breaks it at a width, so a width is never estimated and never asked of the place that draws (ADR 0059, TASK-520.07). Every layout and every painter read the same numbers here. Other crates call two operations (ADR 0091): measure_node(node, &CardWords, Part::{Card, Container, FlowFrame}) and measure_label(text) -> LabelPlates { wide, narrow }. The face mapping, width and the line breakers are crate-private: Painting's scene builders set a run of words through them, and a flow layout reaches the line breakers only through Flow part measures, which also owns title fitting (ADR 0088)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "placement": {
+        "holder": "vKEsyHFk#aZWqSegA"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ODr5oszF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/mod.rs",
+        "symbol": "paragraph"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#VTOV1R1u",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/mod.rs",
+        "symbol": "round"
+      }
     },
     {
       "type": "assign",
@@ -1581,7 +2053,7 @@
         "description": "Ten operations, re-exported from lib.rs over a private folder module (ADR 0088): sequence_cards(cards, ColumnLimits) -> HeadCards { width, lifeline_drop, cards } fits each participant's title (the title steps and ICON_MIN_CARD_WIDTH live here, fitted_size is private) under the column policy the layout passes; message_plate(label, room) and note_plate(note, wrap) wrap and size a message's and a step note's plate; message_ends(kind, from_x, to_x, busy) takes the column centres and answers where an arrow starts and stops, standoff and head included; activation_span(centre) is a getter with an argument (the layout reads a bar's half width from it); self_loop(start) -> Rect; fragment_head(operator, words, guards) -> FragmentHead is measured once where a frame is placed and carried in its rows; fragment_bounds(ink, columns, head) -> Span applies the side padding and the head's least width, so side padding never leaves the measure; flow_tab(frame_width, has_summary) answers the tab and the heading; shape_words(name, width) wraps a flowchart shape's words. The sizes come from the crate-private sheet (sizes.rs) that the painter draws by. TASK-653.20.",
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-scene/src/flow_parts"
+          "path": "crates/archboard-painting/src/flow_parts"
         },
         "schemaVersion": 1,
         "id": "vKEsyHFk#RYix4PQl",
@@ -1597,7 +2069,7 @@
       "type": "place",
       "subject": "vKEsyHFk#RYix4PQl",
       "placement": {
-        "holder": "vKEsyHFk#9gGvxWHp"
+        "holder": "vKEsyHFk#aZWqSegA"
       }
     },
     {
@@ -1611,7 +2083,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-scene/src/flow_parts/messages.rs",
+          "path": "crates/archboard-painting/src/flow_parts/messages.rs",
           "symbol": "message_plate"
         },
         "id": "vKEsyHFk#miWGCiDX",
@@ -1636,7 +2108,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-scene/src/flow_parts/tab.rs",
+          "path": "crates/archboard-painting/src/flow_parts/tab.rs",
           "symbol": "flow_tab"
         },
         "id": "vKEsyHFk#TTMTr7uY",
@@ -1661,7 +2133,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-scene/src/flow_parts/cards.rs",
+          "path": "crates/archboard-painting/src/flow_parts/cards.rs",
           "symbol": "largest"
         },
         "id": "vKEsyHFk#4qLy4yQD",
@@ -1696,6 +2168,25 @@
       "subject": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
       "field": "to",
       "value": "vKEsyHFk#QsBnI8Ja"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/palette.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#I1lGjMES",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "of_page"
+      }
     },
     {
       "type": "add",
@@ -1830,6 +2321,86 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "browserUrl"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#WMtzvSOO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "atlas_boxes"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#xKJERQyv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "shadow_under"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#pYtAAlpK",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "ports_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#s3eeTdzY",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_measured_card"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#Mi41O26J",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "marked_box"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#7xW4xT94",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_measured_frame"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#0Cf3WQEw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_door"
       }
     },
     {
@@ -2306,6 +2877,100 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#66ucHMOu",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "compare as JavaScript does",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-layout/src/blocks/card_layout.rs",
+          "symbol": "max"
+        },
+        "id": "vKEsyHFk#66ucHMOu",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#66ucHMOu",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#Wp2usbe5"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#KgeoU8Mf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "atlas_boxes"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#FQBxwNeT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence_messages.rs",
+        "symbol": "curve_through"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#HDZqKmN4",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
+        "symbol": "slab_seat"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#qtD8CVTd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
+        "symbol": "tab_view"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#t5CUCz5T",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
+        "symbol": "paint_heading_views"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#XVvCNvvX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
+        "symbol": "subject"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#fJHzqH3q",
       "kind": "relationship",
       "value": {
@@ -2315,7 +2980,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-scene/src/paint/sequence.rs",
+          "path": "crates/archboard-painting/src/paint/sequence.rs",
           "symbol": "activation_boxes"
         },
         "id": "vKEsyHFk#fJHzqH3q",
@@ -2362,6 +3027,45 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/slab.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#prq41gkQ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/slab.rs",
+        "symbol": "max"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#lW0CBEfj",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/slab.rs",
+        "symbol": "Palette"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#OVkwk7CO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/slab.rs",
+        "symbol": "ink_of"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#radK8osF",
       "field": "description",
       "value": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed. rules/draft-ref.ts holds the draft refs, which only code-intel reads; they left the model with the split (ADR 0086)."
@@ -2389,6 +3093,35 @@
       "subject": "vKEsyHFk#BY6QrV1Z",
       "placement": {
         "holder": "vKEsyHFk/HBlhIeSD#radK8osF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#zPI3vU4A",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/tray.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#GlD7SMi0",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/tray.rs",
+        "symbol": "slab_seat"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#KYdxUOD0",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/tray.rs",
+        "symbol": "ink_of"
       }
     },
     {
@@ -2421,6 +3154,44 @@
       "subject": "vKEsyHFk#zAB848k7",
       "field": "to",
       "value": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#Oqsd6MyT",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/ports.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#8jYL9wH6",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/far_card.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#lQFfcKXc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/far_card.rs",
+        "symbol": "far_words"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#qnIHdYgf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/far_card.rs",
+        "symbol": "standing_palette"
+      }
     },
     {
       "type": "assign",
@@ -2457,6 +3228,45 @@
       "subject": "vKEsyHFk#ALiDA38p",
       "placement": {
         "holder": "vKEsyHFk/XppR9owz#jAKtfzMA"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#Man3LVIp",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#WBfvIs2I",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs",
+        "symbol": "words_in"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#djrx53Aq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs",
+        "symbol": "standing_palette"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#QT3hte5K",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs",
+        "symbol": "tag_top"
       }
     },
     {
@@ -2617,6 +3427,45 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#jrbBTxz5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "legend_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#UTRklvpv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "mark_counts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#2DOiQ4Pi",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "width_of"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#R3ldC44x",
       "field": "binding",
       "value": {
@@ -2677,6 +3526,36 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workspace/src/server/projections/repository-listing.ts",
         "symbol": "vaultIn"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "legend_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#0ylLwMwH",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "entries_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#ryvCaAp5",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/symbols.rs",
+        "symbol": "standing_pin_at"
       }
     },
     {
@@ -2795,6 +3674,52 @@
       "subject": "vKEsyHFk/HBlhIeSD#nLp2hILd",
       "field": "description",
       "value": "TASK-653.10: listRegistry never throws, and answers the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads beside every entry. declareDirectory answers a refused directory as an outcome with its sentence, in place of RepoRegistryError, and the registry file beside what it recorded. Which checkout is chosen, and choosing one, are Checkout questions."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+      "field": "responsibility",
+      "value": "Lists the entries of an exported picture's legend: the comparison marks counted on the subjects it placed, and the samples of the picture's key"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+      "field": "description",
+      "value": "entries_of keeps one sample of each node and relationship kind in drawing order, from the key Picture legend reads back from the scene, and mark_counts counts a comparison's marks on the subjects a drawing placed."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/entries.rs"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6VfgaBJY",
+      "kind": "relationship",
+      "value": {
+        "order": 300,
+        "kind": "call",
+        "label": "the picture's key, read back from its scene",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painting/src/paint/legend/entries.rs",
+          "symbol": "entries_of"
+        },
+        "id": "vKEsyHFk#6VfgaBJY",
+        "to": "vKEsyHFk#WgFarzeW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6VfgaBJY",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+      }
     },
     {
       "type": "assign",
@@ -3243,8 +4168,17 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
       "field": "description",
-      "value": "Owns the producer builders: the setters and the producer-only constructors of shapes, strokes, text and colours, private to Painting, so the scene's other callers never learn them. It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance. Its public size sheet (paint/design.rs) is gone (ADR 0088): the sizes it draws by sit in the crate-private sheet sizes.rs, shared only with the measurer, and a flow layout learns a part's size from Flow part measures. Seventeen names remain: its own six, the page margin and the header and tab widths, card_radius, the far view's line scale by stroke width (far_line_scale(width, far), far_line_widths) and three icon answers (kind_icon, flow_look, own_icons)."
+      "value": "Its builders (paint/build.rs) are the producer's own: the setters, the producer-only constructors and Text::set, private to the crate (ADR 0091). It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance. The sizes it draws by sit in the crate-private sheet sizes.rs, shared only with the measurer (ADR 0088). Other crates call paint, viewer_marks, junction_boxes, own_icons, diagram_margin, straight_card_top_contains, tab_width and header_padding. The far view's widths and scale stay behind viewer_marks, and paint decides a part's icon: NodeAppearance.icon is optional, and a part's TypeKind has a Flow variant."
     },
     {
       "type": "assign",
@@ -3258,6 +4192,13 @@
       ]
     },
     {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+      "placement": {
+        "holder": "vKEsyHFk#aZWqSegA"
+      }
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#WUJMjQhq",
       "kind": "relationship",
@@ -3268,7 +4209,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-scene/src/paint/sequence_messages.rs",
+          "path": "crates/archboard-painting/src/paint/sequence_messages.rs",
           "symbol": "exchange_clock"
         },
         "id": "vKEsyHFk#WUJMjQhq",
@@ -3280,6 +4221,21 @@
       "subject": "vKEsyHFk#WUJMjQhq",
       "placement": {
         "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
+      "field": "responsibility",
+      "value": "What a picture carries beside its drawing: the entries of its legend, the symbol each is drawn with, and the title, legend and frame of an exported picture"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend"
       }
     },
     {
@@ -3339,6 +4295,56 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
         "symbol": "waitUntil"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CjdR92X9",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the margin around the chart",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/flowchart/frames.rs",
+          "symbol": "diagram_margin"
+        },
+        "id": "vKEsyHFk#CjdR92X9",
+        "to": "vKEsyHFk#e4GGp9r3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CjdR92X9",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#0idmUHd2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lYQUYv7k",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "data",
+        "label": "the drawing it answers",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-flows/src/flowchart/mod.rs",
+          "symbol": "PaintedDrawing"
+        },
+        "id": "vKEsyHFk#lYQUYv7k",
+        "to": "vKEsyHFk#G67025jN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lYQUYv7k",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#0idmUHd2"
       }
     },
     {
@@ -3553,6 +4559,25 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/standing.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#6kjJSJqv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/standing.rs",
+        "symbol": "Palette"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#sw4oFps0",
       "field": "responsibility",
       "value": "Archboard's host of the voice package: model context, domain tools, narration, the panes (registry, rules, routes, socket, registry follow, agent activity), explanations and the shell"
@@ -3568,6 +4593,65 @@
       "subject": "vKEsyHFk#n2J80LO7",
       "field": "description",
       "value": "The tab's left side is the side of the frame. The frame's responsibility stays out of the picture and goes with the tab's group as the title of the picture's file. It answers the widths drawn from its private sizes: tab_width(frame_width) for Flow part measures, and header_words_width and header_width_for for a container's header in the architecture layout."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#n2J80LO7",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/edge_tab.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#0dHSQwEC",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/edge_tab.rs",
+        "symbol": "tab_view"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#sUAWU5K9",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/edge_tab.rs",
+        "symbol": "slab_seat"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Hl0Ohdhv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/edge_tab.rs",
+        "symbol": "words_in"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#j0ETUaNy",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/edge_tab.rs",
+        "symbol": "standing_pin"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#k1FrCHMg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/edge_tab.rs",
+        "symbol": "tab_runs"
+      }
     },
     {
       "type": "assign",
@@ -3676,6 +4760,65 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#jn71SBXe",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/door.rs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#QqSMvn6U",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/door.rs",
+        "symbol": "Palette"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#4tSdqitW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/door.rs",
+        "symbol": "slab_seat"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#2O7PSXBM",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/door.rs",
+        "symbol": "words_in"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#V38aoFC1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/door.rs",
+        "symbol": "standing_pin"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#HXLXTybX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/door.rs",
+        "symbol": "door_far_runs"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/HBlhIeSD#ncTGv1jp",
       "field": "to",
       "value": "vKEsyHFk#9KeBXIBQ"
@@ -3778,9 +4921,164 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "order",
+      "value": 40150
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "name",
+      "value": "archboard-ecma"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "kind",
+      "value": "package"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-ecma"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "description",
+      "value": "The archboard-ecma crate (ADR 0091), 12 names: round, number, to_fixed, fixed, within, hypot, min, max, sign, pow, trim and is_space; powi stays private. js_min and js_max fold into min and max, bit for bit. The SVG spellers (a base, padding, plain decimals) live in archboard-svg's private spelling.rs, since only the SVG writes them. archboard-graphviz depends on this crate alone."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "formerNames",
+      "value": [
+        "ECMAScript numbers"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1UxryIji",
+      "field": "documents",
+      "value": [
+        {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
+        }
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1UxryIji",
+      "placement": {
+        "holder": "vKEsyHFk#HgZPVIE2"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "order",
+      "value": 40160
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "name",
+      "value": "archboard-geometry"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "kind",
+      "value": "package"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "responsibility",
+      "value": "Holds the points, boxes and routes that the renderer core's layouts route by and its painters draw by: rounds a routed polyline into a curve, and every coordinate in one place"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-geometry"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "description",
+      "value": "The archboard-geometry crate (ADR 0091), 17 names: Point, Rect, Segment and Curve with the operations every crate shares (curve_through rounds a routed polyline into a curve), and a route measured along its ink and shortened (route.rs: route_length, segment_length, shortened_by), the part of a line a pulse rides. Geometry only the layout uses (a route read backwards, route equality at drawn precision) lives in archboard-layout's private routes/curves.rs."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "formerNames",
+      "value": [
+        "Edge geometry"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "field": "documents",
+      "value": [
+        {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
+        }
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#L51bfquE",
+      "placement": {
+        "holder": "vKEsyHFk#HgZPVIE2"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#ffyOJimB",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "round and compare as JavaScript does",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-geometry/src/lib.rs",
+          "symbol": "round"
+        },
+        "id": "vKEsyHFk#ffyOJimB",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#ffyOJimB",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#L51bfquE"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#9gGvxWHp",
+      "field": "responsibility",
+      "value": "Holds the renderer core's drawing contract: the drawing a layout answers, the request a painter takes, and the typed scene every painter draws, with the reading of a picture's key"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#9gGvxWHp",
       "field": "description",
-      "value": "Its size sheet (sizes.rs) is private to the crate: the measurer and the painter read it, and other crates learn a part's size from Flow part measures (ADR 0088). sequence_picture.rs spells a fragment's guard once for the measure and the painter."
+      "value": "The contract crate of ADR 0091, 12 names; no crate re-exports a name of another. archboard-painting builds every scene, and the scene's types stay plain data. names.rs spells an enum's value by its name; sequence_picture.rs holds the sequence picture's types, reached through request."
     },
     {
       "type": "assign",
@@ -3789,9 +5087,131 @@
       "value": [
         {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+          "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
         }
       ]
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#aZWqSegA",
+      "kind": "module",
+      "value": {
+        "order": 40250,
+        "name": "archboard-painting",
+        "kind": "package",
+        "responsibility": "Measures every word a layout places and paints a settled drawing into the scene that every painter draws",
+        "description": "The archboard-painting crate (ADR 0091), 20 names: the ten Flow part measures, paint, viewer_marks, junction_boxes, own_icons, measure_node, measure_label, diagram_margin, straight_card_top_contains, tab_width and header_padding. The measurer stays with the painter because they share the size sheet (sizes.rs), which is private to the crate: other crates learn a part's size from Flow part measures (ADR 0088) and the few answers above, never from the sheet. Its scene builders are its own, so no other crate sets a run of words.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painting"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#aZWqSegA",
+        "documents": [
+          {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+          },
+          {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
+          }
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#aZWqSegA",
+      "placement": {
+        "holder": "vKEsyHFk#HgZPVIE2"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#ld6jjHND",
+      "field": "description",
+      "value": "Its ECMAScript semantics beyond archboard-ecma's arithmetic (ecma.rs) and the few measures of boxes it takes (geometry.rs) are its own; so is the geometry only the layout uses, a route read backwards and route equality at drawn precision (routes/curves.rs, ADR 0091). From archboard-painting it reads only the page margin, the boxes junction marks take, where a card's top runs straight, and a frame's tab width and header padding."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#28YEM8uk",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "spell the viewer's marks as JavaScript does",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-render/src/bin/export-marks.rs",
+          "symbol": "number"
+        },
+        "id": "vKEsyHFk#28YEM8uk",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#28YEM8uk",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#nmyK8UOO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#C8R5Fr61",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the painting a render answers",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-render/src/lib.rs",
+          "symbol": "Painting"
+        },
+        "id": "vKEsyHFk#C8R5Fr61",
+        "to": "vKEsyHFk#U4Q7nid1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#C8R5Fr61",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#nmyK8UOO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#zDZM4ASX",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the icons the core draws without the host's set",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-render/src/lib.rs",
+          "symbol": "own_icons"
+        },
+        "id": "vKEsyHFk#zDZM4ASX",
+        "to": "vKEsyHFk#MsqEgypi"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#zDZM4ASX",
+      "placement": {
+        "holder": "vKEsyHFk/OjRLKb74#nmyK8UOO"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#baNgC045",
+      "field": "to",
+      "value": "vKEsyHFk#WgFarzeW"
     },
     {
       "type": "add",
@@ -3814,6 +5234,81 @@
     {
       "type": "place",
       "subject": "vKEsyHFk#6OgjwUVz",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#DwTGGY15",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "a line's weight, arrowhead and ink, as style rules",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-svg/src/lib.rs",
+          "symbol": "viewer_marks"
+        },
+        "id": "vKEsyHFk#DwTGGY15",
+        "to": "vKEsyHFk#GqMdZbTF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DwTGGY15",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KEp94Akf",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "spell every number as JavaScript does",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-svg/src/css.rs",
+          "symbol": "number"
+        },
+        "id": "vKEsyHFk#KEp94Akf",
+        "to": "vKEsyHFk#1UxryIji"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KEp94Akf",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#wQ1qhuYS",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "round each coordinate it writes",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-svg/src/xml.rs",
+          "symbol": "round_coord"
+        },
+        "id": "vKEsyHFk#wQ1qhuYS",
+        "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#wQ1qhuYS",
       "placement": {
         "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
       }
@@ -3876,6 +5371,31 @@
       "subject": "vKEsyHFk#UpjzNLKH",
       "field": "description",
       "value": "It mirrors the stage (ADR 0085). A page states how the picture is seen, a picture's arrival and a departure as JSON through present, arrive and depart, and one numeric setCamera stays so that a glide parses no JSON on each frame. It picks under a point, resizes the canvas, and draws the frame of a moment of the page's clock, which answers whether it is still, moves traffic alone or moves. Each start function, gpu, webgl and cpu, takes the page's pace as JSON. The stage keeps its own clock and the parts of its strip canvases, so the crate holds no clock and no keeper beside the stage; the counting canvas that count_frame draws whole on lives here. This crate is a browser's: a native build of the workspace compiles it empty. It carries the hash of the sources it was built from, and the page refuses a build of other sources."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#MUMkZJNe",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "dependency",
+        "label": "the boxes a lens frames",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-painter-wasm/src/lens.rs",
+          "symbol": "Rect"
+        },
+        "id": "vKEsyHFk#MUMkZJNe",
+        "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#MUMkZJNe",
+      "placement": {
+        "holder": "vKEsyHFk#UpjzNLKH"
+      }
     },
     {
       "type": "assign",
@@ -6869,6 +8389,56 @@
       "value": "TASK-653.11: createCodexTransport is private; openCodexConnection opens it over the child's stdio with the connection's identity authority. It writes each frame through encodeFrame and turns a refusal into its write error (a usage error for a value with no JSON form, else frame-too-large). replaceIdentity, its dead call and the ?? fallbacks are gone from CodexTransport (owner decision 22). Its error classes stay inside, under their names and messages, and callers read them through readCodexFailure."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#F4k8wufh",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "fit the page to what is drawn",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-layout/src/architecture/mod.rs",
+          "symbol": "fitted_page"
+        },
+        "id": "vKEsyHFk#F4k8wufh",
+        "to": "vKEsyHFk#tpDrhmZh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#F4k8wufh",
+      "placement": {
+        "holder": "vKEsyHFk#iK24tmVF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#LfEO4AuW",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "data",
+        "label": "the settled drawing it answers",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-layout/src/architecture/mod.rs",
+          "symbol": "PaintedDrawing"
+        },
+        "id": "vKEsyHFk#LfEO4AuW",
+        "to": "vKEsyHFk#G67025jN"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#LfEO4AuW",
+      "placement": {
+        "holder": "vKEsyHFk#iK24tmVF"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#PmExcyj9",
       "field": "responsibility",
@@ -6905,6 +8475,131 @@
         "path": "packages/workbench/src/server/panes/rules/pane-report.ts",
         "symbol": "paneAddressKey"
       }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#tpDrhmZh",
+      "kind": "module",
+      "value": {
+        "order": 960300,
+        "name": "Page fit",
+        "kind": "function",
+        "responsibility": "Moves every engine's settled drawing to the margin and cuts its page to what it draws, so every side keeps the same margin",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-layout/src/architecture/page.rs"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#tpDrhmZh"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#tpDrhmZh",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#Y0smyqtZ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#QSyFoNlp",
+      "kind": "relationship",
+      "value": {
+        "order": 900,
+        "kind": "call",
+        "label": "the margin each side keeps",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "crates/archboard-layout/src/architecture/page.rs",
+          "symbol": "diagram_margin"
+        },
+        "id": "vKEsyHFk#QSyFoNlp",
+        "to": "vKEsyHFk#e4GGp9r3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#QSyFoNlp",
+      "placement": {
+        "holder": "vKEsyHFk#tpDrhmZh"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#8oId5pfI",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#1ohCTBHb",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "Scene"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#V4rI4i48",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "framed_for_export"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#xV0HwjdR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "architecture.paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#rN5226KV",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint_sequence"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#0wPxGNoW",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "Palette"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ETQA4rnI",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "Standings"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
+      "field": "to",
+      "value": "vKEsyHFk#WgFarzeW"
     },
     {
       "type": "assign",
@@ -7231,6 +8926,86 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#cWuZ3fFx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint_sequence"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#UM4ZGYZb",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "paint_sequence"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#fLMPVxJ6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "measure_node"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#aRiECsZT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#mVuR3qNf",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#zyeRC559",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "measure_node"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#yKVb0R1p",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#xaDDNjPP",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#APiBh4ih",
       "field": "participants",
       "value": [
@@ -7283,8 +9058,198 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/flow_parts/cards.rs",
+        "path": "crates/archboard-painting/src/flow_parts/cards.rs",
         "symbol": "sequence_cards"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#670bDrhG",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint_sequence"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#hvm2hvsw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "paint_flow"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#vHyOda5O",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence_messages.rs",
+        "symbol": "curve_through"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#LLjWcyC8",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-geometry/src/lib.rs",
+        "symbol": "curve_through"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#o1aDteuC",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "paint_flow"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#eo5hZg4V",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "atlas_boxes"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#qU8wRslx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/page.rs",
+        "symbol": "atlas_boxes"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#p2qxm18z",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "paint_sequence"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#NV6GSQ5E",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "framed_for_export"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#KLl81Vh2",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "mark_counts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#2OkuWYG3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/entries.rs",
+        "symbol": "mark_counts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#XqwcLlCR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "legend_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#7ZIx3pOn",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "entries_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#5MnjnM20",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/entries.rs",
+        "symbol": "entries_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#PKofi6GZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "legend_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#p1LvPUgr",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "legend_only"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#IZLQKDye",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "with_legend"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#0i7XkljB",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "under_title"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#pfdwGBeB",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/export.rs",
+        "symbol": "framed_for_export"
       }
     },
     {
@@ -7786,6 +9751,126 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#VvuVMt2N",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "measure_node"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#WLZ1TpXI",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#fGx4kjfR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#UMqwdfOH",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
+        "symbol": "paint_architecture"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#2leWQWCZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "measure_node"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#bmSCOd8q",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "CARD_LEAST"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#jzt1WWkm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "marked"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#25HE191y",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/mod.rs",
+        "symbol": "paragraph"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#mY1hDmn2",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "CARD_MOST"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#pg7iuzfp",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "runs_for"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#dcc2Zdl3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "slab"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/OjRLKb74#k46CuhtA",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/measure/cards.rs",
+        "symbol": "measure_node"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#SiHTZh57",
       "field": "label",
       "value": "is the voice live, and is it audible"
@@ -7833,6 +9918,9 @@
     "vKEsyHFk/9ncuT5DP#UE6yrRV7",
     "vKEsyHFk/9ncuT5DP#egDoJ9fH",
     "vKEsyHFk#CDYvZWoX",
-    "vKEsyHFk/9ncuT5DP#tef70baL"
+    "vKEsyHFk/9ncuT5DP#tef70baL",
+    "vKEsyHFk#e3WuFSSK",
+    "vKEsyHFk#0ZhQaQLW",
+    "vKEsyHFk#4eKZ6q3Y"
   ]
 }

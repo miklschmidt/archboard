@@ -1,10 +1,8 @@
 //! A group's attributes: the subject it draws first, then what its role says
 //! of it, as the picture has always written them. The class names here are
 //! the ones the stylesheet toggles and a viewer reaches for.
-
-use archboard_scene::js;
 use archboard_scene::names::word;
-use archboard_scene::request::{NodeAppearance, PaletteColor};
+use archboard_scene::request::{NodeAppearance, PaletteColor, TypeKind};
 use archboard_scene::scene::{Group, LineFacts, Role, Slot, Subject, Transform};
 
 use crate::definitions::Names;
@@ -39,12 +37,12 @@ const TOGGLE_ATTRIBUTE: &str = "data-toggle";
 fn placed(transform: Transform, unit: &str) -> String {
     let moved = format!(
         "translate({}{unit},{}{unit})",
-        js::number(transform.x),
-        js::number(transform.y)
+        archboard_ecma::number(transform.x),
+        archboard_ecma::number(transform.y)
     );
     match transform.scale {
         None => moved,
-        Some(scale) => format!("{moved} scale({})", js::number(scale)),
+        Some(scale) => format!("{moved} scale({})", archboard_ecma::number(scale)),
     }
 }
 
@@ -62,6 +60,15 @@ pub(crate) fn colour_word(color: Option<PaletteColor>) -> &'static str {
     color.map_or("neutral", |color| word(&color))
 }
 
+/// A part's kind as the document spells it: its policy's key, or the flow's
+/// own word.
+pub(crate) fn kind_word(kind: &TypeKind) -> &str {
+    match kind {
+        TypeKind::Policy(key) => key,
+        flow @ TypeKind::Flow => word(flow),
+    }
+}
+
 /// How a part was drawn.
 fn appearance(appearance: &NodeAppearance, out: &mut Attributes) {
     out.set(
@@ -74,7 +81,7 @@ fn appearance(appearance: &NodeAppearance, out: &mut Attributes) {
     )
     .set("data-type-color", colour_word(appearance.type_color))
     .set("data-type-name", appearance.type_name.as_str())
-    .set("data-type-kind", appearance.type_kind.as_str());
+    .set("data-type-kind", kind_word(&appearance.type_kind));
 }
 
 /// A group's transform, as its role writes it.
@@ -168,7 +175,11 @@ fn page(group: &Group, out: &mut Attributes) -> bool {
             out.maybe(
                 "transform",
                 group.transform.map(|moved| {
-                    format!("translate({} {})", js::number(moved.x), js::number(moved.y))
+                    format!(
+                        "translate({} {})",
+                        archboard_ecma::number(moved.x),
+                        archboard_ecma::number(moved.y)
+                    )
                 }),
             );
         }

@@ -3,8 +3,8 @@ name: archboard-renderer
 description: >-
   Change how Archboard places, routes, labels or paints a picture, and judge the
   result. Use when a picture draws correct meaning wrong, when you change
-  crates/archboard-layout, archboard-scene or archboard-render, or when you
-  compare layout results across the corpus.
+  crates/archboard-layout, archboard-painting, archboard-scene or
+  archboard-render, or when you compare layout results across the corpus.
 metadata:
   internal: true
 ---
@@ -43,8 +43,8 @@ gives up on a route. The wrong fix routes the picture twice and keeps the old pl
 
 ## How the pipeline decides
 
-- Words are measured before layout. `measure_label` and `narrow_label` in
-  `crates/archboard-scene/src/measure/labels.rs` give a wide and a narrow plate. The layout
+- Words are measured before layout. `measure_label` in
+  `crates/archboard-painting/src/measure/labels.rs` gives a wide and a narrow plate. The layout
   places one. `crates/archboard-layout/src/architecture/drawn.rs` paints the lines of the plate
   that the layout placed.
 - A dense reading routes every placement at each room of its reading, the cheapest first

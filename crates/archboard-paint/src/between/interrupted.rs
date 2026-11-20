@@ -1,6 +1,6 @@
 //! A new flight starts with the geometry and cuts of the frame it interrupts.
 
-use archboard_scene::geometry::{Curve, Segment};
+use archboard_geometry::{Curve, Segment};
 use archboard_scene::scene::{
     Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, PulseLook, Purpose, Role,
     Token, TrafficMark,
@@ -60,7 +60,7 @@ fn a_double_line_keeps_its_in_between_core_when_another_picture_arrives() {
 }
 
 /// A card's visible box includes the growth of its entrance.
-fn drawn_box(group: &Group) -> archboard_scene::geometry::Rect {
+fn drawn_box(group: &Group) -> archboard_geometry::Rect {
     let frame = plate(group);
     let transform = group
         .transform

@@ -9,10 +9,9 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::DiagramFont;
-use crate::geometry::{Point, Rect};
-use crate::measure;
 use crate::scene::Item;
 use crate::scene::colour::Colour;
+use archboard_geometry::{Point, Rect};
 
 /// One glyph of a run: the glyph in its face, and where its origin stands
 /// from the run's point, in font units (every face has 1000 to the em).
@@ -50,33 +49,6 @@ pub struct Text {
     pub glyphs: Vec<GlyphPlace>,
     /// The words.
     pub words: String,
-}
-
-impl Text {
-    /// Words shaped in a face at a size, their baseline starting at a point.
-    pub fn set(at: Point, font: DiagramFont, size: f64, fill: Colour, words: &str) -> Text {
-        let face = measure::face(font);
-        let shaped = archboard_text::shape(face, words);
-        Text {
-            at,
-            font,
-            size,
-            fill,
-            width: measure::width(words, font, size),
-            units_per_em: face.units_per_em(),
-            glyphs: shaped
-                .glyphs
-                .iter()
-                .map(|glyph| GlyphPlace {
-                    face: glyph.face,
-                    id: glyph.id,
-                    x: glyph.x,
-                    y: glyph.y,
-                })
-                .collect(),
-            words: words.to_owned(),
-        }
-    }
 }
 
 /// A Remix Icon, by the name it is exported under, drawn from its own 24-unit

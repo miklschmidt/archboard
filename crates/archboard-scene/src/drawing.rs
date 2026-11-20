@@ -10,7 +10,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::{Curve, Rect};
+use archboard_geometry::{Curve, Rect};
 
 /// Which of the two families a piece of text is set in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]

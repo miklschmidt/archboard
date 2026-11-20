@@ -11,8 +11,8 @@
 
 use std::collections::{HashMap, HashSet};
 
-use archboard_scene::geometry::{Curve, Point, Rect, Segment, label_anchor_of};
-use archboard_scene::paint::viewer_marks;
+use archboard_geometry::{Curve, Point, Rect, Segment, label_anchor_of};
+use archboard_painting::ViewerMarks;
 use archboard_scene::scene::{Geometry, Group, Item, PathStep, Purpose, Role, Scene, SubjectKind};
 
 use crate::sweep::is_route;
@@ -105,12 +105,11 @@ fn words_anchor(line: &Group) -> Option<Point> {
 
 impl Warnings {
     /// Where the marks of the warned subjects stand in a scene.
-    pub(crate) fn find(scene: &Scene, ids: &HashSet<String>) -> Warnings {
+    pub(crate) fn find(scene: &Scene, ids: &HashSet<String>, marks: &ViewerMarks) -> Warnings {
         let mut found = HashMap::new();
         gather(&scene.body, ids, &mut found);
-        let marks = viewer_marks();
         let mut warnings = Warnings {
-            glyph: marks.warning,
+            glyph: marks.warning.clone(),
             ..Warnings::default()
         };
         for groups in found.values() {
@@ -195,7 +194,8 @@ impl Warnings {
 #[cfg(test)]
 mod tests {
     use super::Warnings;
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
+    use archboard_painting::viewer_marks;
     use archboard_scene::scene::{
         Atlas, Colour, Group, Item, PathStep, Purpose, Role, Scene, Subject, SubjectKind, Token,
     };
@@ -266,7 +266,7 @@ mod tests {
     #[test]
     fn a_part_is_marked_in_its_top_right_corner() {
         let scene = scene(vec![card()]);
-        let warnings = Warnings::find(&scene, &warned(&["a"]));
+        let warnings = Warnings::find(&scene, &warned(&["a"]), &viewer_marks());
         let Item::Group(group) = &scene.body[0] else {
             unreachable!("the body is a group")
         };
@@ -281,7 +281,7 @@ mod tests {
     #[test]
     fn a_line_with_no_words_is_marked_in_the_middle_of_its_longest_run() {
         let scene = scene(vec![line()]);
-        let warnings = Warnings::find(&scene, &warned(&["e"]));
+        let warnings = Warnings::find(&scene, &warned(&["e"]), &viewer_marks());
         let Item::Group(group) = &scene.body[0] else {
             unreachable!("the body is a group")
         };
@@ -291,7 +291,11 @@ mod tests {
 
     #[test]
     fn a_subject_that_is_not_warned_is_not_marked() {
-        let warnings = Warnings::find(&scene(vec![card(), line()]), &warned(&["z"]));
+        let warnings = Warnings::find(
+            &scene(vec![card(), line()]),
+            &warned(&["z"]),
+            &viewer_marks(),
+        );
         assert!(warnings.is_empty());
     }
 }

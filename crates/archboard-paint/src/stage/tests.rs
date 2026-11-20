@@ -9,7 +9,7 @@ use crate::presentation::{Camera, Light, Presentation, Shine};
 use crate::testing::{
     Op, Record, boxed, camera, far_line, frame, painting, showing, stage, subject_group,
 };
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Purpose, Role, Subject, SubjectKind};
 
 /// The canvas of these tests, in pixels.

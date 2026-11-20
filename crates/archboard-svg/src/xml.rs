@@ -2,8 +2,9 @@
 //! written as one `style`, text made safe, and the id a definition takes from
 //! what it holds.
 
-use archboard_scene::geometry::round_coord;
-use archboard_scene::js;
+use archboard_geometry::round_coord;
+
+use crate::spelling;
 
 /// A value as an attribute spells it.
 pub(crate) trait Spelt {
@@ -13,7 +14,7 @@ pub(crate) trait Spelt {
 
 impl Spelt for f64 {
     fn spelt(self) -> String {
-        js::number(self)
+        archboard_ecma::number(self)
     }
 }
 
@@ -31,7 +32,7 @@ impl Spelt for String {
 
 /// A coordinate as the picture writes it: to a hundredth.
 pub(crate) fn coord(value: f64) -> String {
-    js::number(round_coord(value))
+    archboard_ecma::number(round_coord(value))
 }
 
 /// Whether an attribute is paint, written as CSS.
@@ -149,11 +150,11 @@ pub(crate) fn content_id(body: &str) -> String {
         other = (other ^ u32::from(code)).wrapping_mul(0x811c_9dc5);
         length = length.wrapping_add(1);
     }
-    let spelt = js::pad_start(&js::radix(length, 16), 4, '0');
+    let spelt = spelling::pad_start(&spelling::radix(length, 16), 4, '0');
     format!(
         "{}{}{}",
-        js::pad_start(&js::radix(one, 16), 8, '0'),
-        js::pad_start(&js::radix(other, 16), 8, '0'),
+        spelling::pad_start(&spelling::radix(one, 16), 8, '0'),
+        spelling::pad_start(&spelling::radix(other, 16), 8, '0'),
         &spelt[spelt.len() - 4..]
     )
 }

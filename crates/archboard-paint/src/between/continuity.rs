@@ -1,6 +1,6 @@
 //! Contracts at the handoff between an opening, an entrance, and an edit.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Scene, Transform};
 
 use super::ease::carried;

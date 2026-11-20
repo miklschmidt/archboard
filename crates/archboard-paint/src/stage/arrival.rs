@@ -1,7 +1,7 @@
 //! How a picture arrives with nothing to carry it from: part by part over what
 //! is left of the last one, or inside the card the camera flies into.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Painting;
 use kurbo::Point;
 

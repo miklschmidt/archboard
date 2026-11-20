@@ -258,7 +258,7 @@ impl Targets {
 mod tests {
     use super::Targets;
     use crate::presentation::Seen;
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::scene::{
         Atlas, Colour, Group, Item, Paint, PathStep, Pointer, Purpose, Role, Scene, Shape, Subject,
         SubjectKind, Token,
