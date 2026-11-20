@@ -31,7 +31,7 @@ import type {
 	LegacyBoard,
 	ModelReply,
 } from "@archboard/model-contract";
-import { shellSize } from "@archboard/renderer/shell-geometry";
+import { shell } from "@archboard/renderer/shell-geometry";
 import { durationMs } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
@@ -263,7 +263,7 @@ async function openRecordingPage(
 		);
 		const window = await chromium.openWindow(
 			"about:blank",
-			shellSize("viewport"),
+			shell("viewport"),
 			durationMs("recorder.call"),
 		);
 		const { page } = window;

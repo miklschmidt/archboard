@@ -15,7 +15,7 @@ import {
 	type DevTools,
 	type HeadlessChromium,
 } from "@archboard/headless-chromium";
-import { shellSize } from "@archboard/renderer/shell-geometry";
+import { shell } from "@archboard/renderer/shell-geometry";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { chromiumPath, inOrder } from "./tools.ts";
@@ -398,8 +398,8 @@ class Browser {
 	 * @returns Its page.
 	 */
 	async open(options: WindowOptions): Promise<Page> {
-		const width = options.width ?? shellSize("viewport").width;
-		const height = options.height ?? shellSize("viewport").height;
+		const width = options.width ?? shell("viewport").width;
+		const height = options.height ?? shell("viewport").height;
 		const window = await this.#chromium.openWindow("about:blank", { width, height }, CALL_MS);
 		const page = window.page;
 		await page.call("Emulation.setDeviceMetricsOverride", {

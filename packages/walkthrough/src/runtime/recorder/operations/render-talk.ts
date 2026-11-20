@@ -22,7 +22,7 @@ import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model-contract";
-import { shellSize } from "@archboard/renderer/shell-geometry";
+import { shell } from "@archboard/renderer/shell-geometry";
 import { durationMs, waitUntil } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import {
@@ -172,7 +172,7 @@ async function openReplayPage(
 ): Promise<HeadlessWindow> {
 	const window = await chromium.openWindow(
 		"about:blank",
-		shellSize("viewport"),
+		shell("viewport"),
 		durationMs("recorder.call"),
 	);
 	const { page } = window;
@@ -250,11 +250,11 @@ async function loadTalk(
 	});
 	if (
 		!Array.isArray(size) ||
-		size[0] !== shellSize("viewport").width ||
-		size[1] !== shellSize("viewport").height
+		size[0] !== shell("viewport").width ||
+		size[1] !== shell("viewport").height
 	) {
 		throw new Error(
-			`The render's window is ${String(size)} rather than ${shellSize("viewport").width}x${shellSize("viewport").height}, so its frames would not be that size.`,
+			`The render's window is ${String(size)} rather than ${shell("viewport").width}x${shell("viewport").height}, so its frames would not be that size.`,
 		);
 	}
 }

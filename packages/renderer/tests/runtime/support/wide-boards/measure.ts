@@ -27,7 +27,7 @@ import {
 	type SemanticPolicy,
 } from "@archboard/model-contract";
 import { checkArchitectureVault } from "@archboard/model-store";
-import { shellSize } from "@archboard/renderer/shell-geometry";
+import { shell } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { fixtureDocument } from "../model-documents.ts";
 import { orderedFixture } from "../ordered-fixture.ts";
@@ -108,9 +108,7 @@ const saved: Record<string, Result> =
 	against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
 const results: Record<string, Result> = {};
 
-console.log(
-	`reference pane ${shellSize("referencePane").width}x${shellSize("referencePane").height}`,
-);
+console.log(`reference pane ${shell("referencePane").width}x${shell("referencePane").height}`);
 let header = false;
 /** Each drawing to write a picture of, as the measures reach it. */
 const shots: { key: string; svg: string; width: number; height: number }[] = [];

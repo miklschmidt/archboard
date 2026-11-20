@@ -6,7 +6,7 @@
 // and out of the component is what lets "a refetch did not move the camera" be
 // a fact about one function rather than a claim about a render.
 
-import { fitMargin, fitRoom, fitScale, type Size } from "@archboard/renderer/shell-geometry";
+import { fit, shell, type Size } from "@archboard/renderer/shell-geometry";
 
 /** Where the pane is looking: the diagram's origin, and how magnified it is. */
 interface Camera {
@@ -188,6 +188,16 @@ function pinchCamera(camera: Camera, before: Fingers, after: Fingers): Camera {
 }
 
 /**
+ * The room a picture is fitted into: a viewport less the fit margin on every side.
+ * @param viewport The viewport.
+ * @returns The room inside the margins.
+ */
+function marginedRoom(viewport: Size): Size {
+	const margin = shell("fitMargin");
+	return { width: viewport.width - 2 * margin, height: viewport.height - 2 * margin };
+}
+
+/**
  * The camera that shows one rectangle of the diagram, centred, with a margin.
  *
  * A viewport or a rectangle with no size cannot be fitted to; the caller is
@@ -200,19 +210,19 @@ function pinchCamera(camera: Camera, before: Fingers, after: Fingers): Camera {
  * @returns The fitted camera, or null when there is nothing to fit.
  */
 function fitRect(viewport: Size, rect: Rect, ceiling: number, anchor?: "top"): Camera | null {
-	const room = fitRoom(viewport);
+	const room = marginedRoom(viewport);
 	if (room.width <= 0 || room.height <= 0 || rect.width <= 0 || rect.height <= 0) {
 		return null;
 	}
-	// The same arithmetic the layout suite measures a drawing's fit with
-	// (`fitIn` beside `fitScale`), so a fit there is a fit here.
-	const scale = Math.min(ceiling, clampScale(fitScale(room, rect)));
+	// The same arithmetic the layout suite measures a drawing's fit with, so a fit there is a fit
+	// here. Every ceiling lies inside the clamp, so clamping after it caps the same scale.
+	const scale = clampScale(fit(rect, room, ceiling));
 	return {
 		scale,
 		x: viewport.width / 2 - (rect.x + rect.width / 2) * scale,
 		y:
 			anchor === "top"
-				? fitMargin() - rect.y * scale
+				? shell("fitMargin") - rect.y * scale
 				: viewport.height / 2 - (rect.y + rect.height / 2) * scale,
 	};
 }
@@ -255,8 +265,8 @@ function flowCamera(viewport: Size, content: Size): Camera | null {
 	const width = content.width * FLOW_FLOOR;
 	return {
 		scale: FLOW_FLOOR,
-		x: width <= fitRoom(viewport).width ? (viewport.width - width) / 2 : fitMargin(),
-		y: fitMargin(),
+		x: width <= marginedRoom(viewport).width ? (viewport.width - width) / 2 : shell("fitMargin"),
+		y: shell("fitMargin"),
 	};
 }
 
