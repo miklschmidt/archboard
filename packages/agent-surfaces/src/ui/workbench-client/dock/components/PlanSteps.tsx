@@ -6,7 +6,7 @@ import { RiCheckLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
-import { clockDuration } from "@archboard/ui-kit/time";
+import { clockDuration } from "@archboard/ui-clocks/time";
 import type { CardStep } from "#ui/workbench-client/dock/rules/plan-steps.ts";
 
 /** Inputs for the steps. */

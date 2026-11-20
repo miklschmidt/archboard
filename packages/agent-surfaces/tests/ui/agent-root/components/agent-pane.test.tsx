@@ -18,7 +18,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 
-import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-clocks/frame-clock";
 import {
 	agentPage,
 	fakeConversation,

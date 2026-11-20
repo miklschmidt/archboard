@@ -12,7 +12,7 @@ import { pickedTarget } from "#ui/architecture-drawing/canvas/picture/camera/cli
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	tipTargetAt,

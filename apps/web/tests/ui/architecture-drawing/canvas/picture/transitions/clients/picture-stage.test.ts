@@ -2,7 +2,7 @@
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, mock, test } from "bun:test";
-import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-clocks/frame-clock";
 
 /** Every call the painter took, by name, and an arrival or a departure with its kind. */
 const taken: string[] = [];

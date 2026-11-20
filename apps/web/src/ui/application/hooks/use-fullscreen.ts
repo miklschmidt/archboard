@@ -8,7 +8,7 @@ import {
 	createFullscreenPresentation,
 	type FullscreenPresentation,
 	type FullscreenPresentationSnapshot,
-} from "@archboard/ui-kit/fullscreen-presentation";
+} from "#ui/application/state/fullscreen-presentation.ts";
 import type { ShellPresentation } from "#ui/shell/rules/contracts.ts";
 
 const IDLE: FullscreenPresentationSnapshot = Object.freeze({ paneId: null, error: null });

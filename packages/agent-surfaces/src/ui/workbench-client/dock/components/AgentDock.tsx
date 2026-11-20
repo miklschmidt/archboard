@@ -30,7 +30,7 @@ import { useRef, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import { durationMs } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
-import { useClock } from "@archboard/ui-kit/time";
+import { useClock } from "@archboard/ui-clocks/time";
 import { useOrbOffered, useOrbPlacement } from "#ui/workbench-client/orb/hooks/use-orb-stage.ts";
 import type { OrbHome } from "#ui/workbench-client/orb/state/orb-stage.ts";
 import { SubtitlesToggle } from "#ui/workbench-client/subtitles/components/SubtitlesToggle.tsx";

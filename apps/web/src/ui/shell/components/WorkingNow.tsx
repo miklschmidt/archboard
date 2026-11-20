@@ -12,7 +12,7 @@ import { durationMs } from "@archboard/timing";
 import { ActivityLamp } from "#ui/shell/components/ActivityLamp.tsx";
 import { PaneChips } from "#ui/shell/components/PaneChips.tsx";
 import { RepositoryName } from "@archboard/ui-kit/components";
-import { shortAge, useClock } from "@archboard/ui-kit/time";
+import { shortAge, useClock } from "@archboard/ui-clocks/time";
 import {
 	FACTS_GAP,
 	MARKER_WIDTH,

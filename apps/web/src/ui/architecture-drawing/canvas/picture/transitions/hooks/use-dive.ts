@@ -17,7 +17,7 @@
 import { useEffect, useState, type RefObject } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { SemanticRenderRequest } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { CAMERA_MOTION_ATTRIBUTE } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts";

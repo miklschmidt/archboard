@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { SpokenCue } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 
 /** What is drawn of the subtitle while it fades. */

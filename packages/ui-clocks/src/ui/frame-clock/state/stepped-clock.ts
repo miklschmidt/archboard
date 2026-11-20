@@ -68,11 +68,17 @@ class SteppedClock implements FrameClock {
 	#browserFrame: ((callback: FrameRequestCallback) => number) | null = null;
 
 	/**
-	 * A clock standing at a time.
+	 * A clock standing at a time. Given a window, it takes the browser's own frames over there: a
+	 * frame asked of the browser in it is run by this clock instead, at this clock's time.
 	 * @param start Where it stands, in milliseconds.
+	 * @param takeFramesOf The window whose frames it runs, if any.
 	 */
-	constructor(start: number) {
+	constructor(start: number, takeFramesOf?: FramedWindow) {
 		this.#time = start;
+		if (takeFramesOf === undefined) return;
+		this.#browserFrame = takeFramesOf.requestAnimationFrame.bind(takeFramesOf);
+		takeFramesOf.requestAnimationFrame = this.requestFrame.bind(this);
+		takeFramesOf.cancelAnimationFrame = this.cancelFrame.bind(this);
 	}
 
 	/**
@@ -149,8 +155,9 @@ class SteppedClock implements FrameClock {
 	/**
 	 * Stand every animation in a document where this clock says it is, from when it began.
 	 * @param document The document.
+	 * @returns What moved outside the clock so far, this time included, oldest first.
 	 */
-	syncAnimations(document: AnimatedDocument): void {
+	syncAnimations(document: AnimatedDocument): readonly ClockViolation[] {
 		const book = {
 			now: this.#time,
 			timeline: document.timeline,
@@ -159,27 +166,9 @@ class SteppedClock implements FrameClock {
 		};
 		for (const animation of document.getAnimations()) {
 			const outcome = syncAnimation(animation, book);
-			if (outcome !== null) this.#notice(outcome);
+			if (outcome !== null) this.#noticed.push({ at: this.#time, what: outcome });
 		}
-	}
-
-	/**
-	 * What moved outside the clock so far.
-	 * @returns The violations, oldest first.
-	 */
-	violations(): readonly ClockViolation[] {
 		return [...this.#noticed];
-	}
-
-	/**
-	 * Take the browser's own frames over for a window: a frame asked of the
-	 * browser there is run by this clock instead, at this clock's time.
-	 * @param window The window.
-	 */
-	install(window: FramedWindow): void {
-		this.#browserFrame = window.requestAnimationFrame.bind(window);
-		window.requestAnimationFrame = this.requestFrame.bind(this);
-		window.cancelAnimationFrame = this.cancelFrame.bind(this);
 	}
 
 	/**
@@ -194,23 +183,17 @@ class SteppedClock implements FrameClock {
 			});
 		});
 	}
-
-	/**
-	 * Record what moved outside the clock.
-	 * @param what What happened.
-	 */
-	#notice(what: string): void {
-		this.#noticed.push({ at: this.#time, what });
-	}
 }
 
 /**
- * A clock that stands at a time until it is stepped.
+ * A clock that stands at a time until it is stepped. Given a window, it takes that window's own
+ * frames over at once, so nothing the page asks of the browser runs behind it.
  * @param start Where it stands, in milliseconds.
+ * @param takeFramesOf The window whose frames it runs instead, if any.
  * @returns The clock.
  */
-function createSteppedClock(start: number): SteppedClock {
-	return new SteppedClock(start);
+function createSteppedClock(start: number, takeFramesOf?: FramedWindow): SteppedClock {
+	return new SteppedClock(start, takeFramesOf);
 }
 
 export { createSteppedClock, type SteppedClock };

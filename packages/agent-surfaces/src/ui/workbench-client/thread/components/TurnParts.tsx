@@ -12,7 +12,7 @@ import {
 import type { JSX } from "react";
 
 import { durationMs } from "@archboard/timing";
-import { clockDuration, useClock } from "@archboard/ui-kit/time";
+import { clockDuration, useClock } from "@archboard/ui-clocks/time";
 import type { ConversationDataParts } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
 import { DelegatedFrom } from "#ui/workbench-client/thread/components/VoiceTurn.tsx";
 

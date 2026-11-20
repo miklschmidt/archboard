@@ -1,12 +1,13 @@
 // The real page's motion, advanced frame by frame without waiting for a display refresh.
-import { createSteppedClock } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock } from "@archboard/ui-clocks/frame-clock";
 
-const clock = createSteppedClock(performance.now());
+const clock = createSteppedClock(performance.now(), window);
 const channel = new MessageChannel();
 let resume: (() => void) | undefined;
 channel.port1.addEventListener("message", (): void => resume?.());
 channel.port1.start();
-clock.install(window);
+/** What moved outside the clock so far, as standing the animations last answered. */
+let outside: ReturnType<typeof clock.syncAnimations> = [];
 Object.defineProperty(performance, "now", { value: () => clock.now(), configurable: true });
 
 /** Yield to React and browser events without the nested timeout's four-millisecond clamp. */
@@ -30,8 +31,8 @@ Object.assign(globalThis, {
 			clock.advanceTo(Math.min(clock.now() + 16, end));
 			clock.runFrame();
 			await yieldTask();
-			clock.syncAnimations(document);
+			outside = clock.syncAnimations(document);
 		}
-		return clock.violations();
+		return outside;
 	},
 });

@@ -17,7 +17,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { useSyncExternalStore, type JSX } from "react";
 
 import { Tooltip } from "@archboard/ui-kit/components";
-import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-clocks/frame-clock";
 import { SubtitlesToggle } from "#ui/workbench-client/subtitles/components/SubtitlesToggle.tsx";
 import { VoiceSubtitles } from "#ui/workbench-client/subtitles/components/VoiceSubtitles.tsx";
 import {

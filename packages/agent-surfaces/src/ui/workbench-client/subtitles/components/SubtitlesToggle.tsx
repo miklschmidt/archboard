@@ -8,7 +8,7 @@ import { cn } from "cn";
 import { useCallback, useRef, type JSX } from "react";
 import { flushSync } from "react-dom";
 
-import { buttonVariants, Tooltip } from "@archboard/ui-kit/components";
+import { Button, Tooltip } from "@archboard/ui-kit/components";
 import { useSubtitlesWanted } from "#ui/workbench-client/subtitles/hooks/use-subtitle-preference.ts";
 import {
 	subtitlePreference,
@@ -17,6 +17,12 @@ import {
 
 /** What every subtitles control is told apart by. */
 const TOGGLE = '[data-slot="voice-subtitles-toggle"]';
+
+/** The button each look of the toggle draws. */
+const KEYS = {
+	ghost: <Button variant="ghost" size="icon-xs" />,
+	outline: <Button variant="outline" size="icon-xs" />,
+} as const;
 
 /**
  * Whether the control that was pressed still has focus where it is: a control that replaced
@@ -128,12 +134,8 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 			<Tooltip.Trigger
 				ref={trigger}
 				data-slot="voice-subtitles-toggle"
-				className={cn(
-					buttonVariants({ variant: face.variant, size: "icon-xs" }),
-					"relative after:absolute after:-inset-1",
-					face.tone,
-					props.className,
-				)}
+				render={KEYS[face.variant]}
+				className={cn("relative after:absolute after:-inset-1", face.tone, props.className)}
 				aria-label={label}
 				aria-pressed={wanted}
 				onClick={toggle}

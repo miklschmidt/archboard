@@ -22,6 +22,7 @@ const ADOPTERS: {
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
 	{ name: "code-binding", areas: ["shared", "runtime"] },
 	{ name: "ui-kit", areas: ["ui"] },
+	{ name: "ui-clocks", areas: ["ui"] },
 	{ name: "server-requests", areas: ["server", "ui"] },
 	{ name: "code-intel", areas: ["shared", "runtime"] },
 	{ name: "renderer", areas: ["shared", "runtime", "ui"] },

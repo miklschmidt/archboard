@@ -27,6 +27,7 @@ const LAYERS: Record<string, number> = {
 	timing: 0,
 	diagnostics: 0,
 	"ui-kit": 0,
+	"ui-clocks": 0,
 	process: 1,
 	machine: 1,
 	workspace: 2,

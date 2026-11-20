@@ -1,7 +1,8 @@
 // The shared presentation parts, one composite per job: a family's parts sit on its root
 // (`Dialog.Content`, `Select.Item`), so a caller imports the one name it draws with. Beside them
-// are `cn`, the class merger every component draws with, the button classes for an element that
-// is not a button, the platform's command key that shortcuts name, and a repository's shown name.
+// are `cn`, the class merger every component draws with, the platform's command key that
+// shortcuts name, and a repository's shown name. A part that one module draws lives beside it
+// (ADR 0093), and the next one that two modules draw comes here.
 export { Alert } from "#ui/components/Alert.tsx";
 export { Command } from "#ui/components/Command.tsx";
 export { Dialog } from "#ui/components/Dialog.tsx";
@@ -9,17 +10,14 @@ export { DropdownMenu } from "#ui/components/DropdownMenu.tsx";
 export { Field } from "#ui/components/Field.tsx";
 export { IconButton } from "#ui/components/IconButton.tsx";
 export { InputGroup } from "#ui/components/InputGroup.tsx";
-export { RadioGroup } from "#ui/components/RadioGroup.tsx";
 export { RepositoryName } from "#ui/components/RepositoryName.tsx";
-export { Resizable } from "#ui/components/Resizable.tsx";
 export { Popover } from "#ui/components/Popover.tsx";
 export { Select } from "#ui/components/Select.tsx";
 export { Tabs } from "#ui/components/Tabs.tsx";
 export { ToggleGroup } from "#ui/components/ToggleGroup.tsx";
 export { Tooltip } from "#ui/components/Tooltip.tsx";
 export { Badge } from "#ui/shadcn/components/badge.tsx";
-export { Button, buttonVariants } from "#ui/shadcn/components/button.tsx";
-export { Checkbox } from "#ui/shadcn/components/checkbox.tsx";
+export { Button } from "#ui/shadcn/components/button.tsx";
 export { Input } from "#ui/shadcn/components/input.tsx";
 export { Separator } from "#ui/shadcn/components/separator.tsx";
 export { cn } from "#ui/rules/class-names.ts";

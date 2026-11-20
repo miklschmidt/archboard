@@ -7,7 +7,13 @@
 import { cn } from "cn";
 import type { JSX, ReactNode } from "react";
 
-import { buttonVariants, Tooltip } from "@archboard/ui-kit/components";
+import { Button, Tooltip } from "@archboard/ui-kit/components";
+
+/** The button each look of the action draws. */
+const KEYS = {
+	ghost: <Button variant="ghost" size="icon-xs" />,
+	outline: <Button variant="outline" size="icon-xs" />,
+} as const;
 
 /** Inputs for the icon action. */
 interface IconActionProps {
@@ -32,8 +38,8 @@ function IconAction(props: IconActionProps): JSX.Element {
 	return (
 		<Tooltip>
 			<Tooltip.Trigger
+				render={KEYS[props.variant ?? "ghost"]}
 				className={cn(
-					buttonVariants({ variant: props.variant ?? "ghost", size: "icon-xs" }),
 					"relative after:absolute after:-inset-1",
 					props.disabled === true && "pointer-events-none opacity-50",
 					props.className,

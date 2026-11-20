@@ -20,7 +20,8 @@
 	"skills": 1,
 	"telemetry": 7,
 	"timing": 10,
-	"ui-kit": 35,
+	"ui-clocks": 7,
+	"ui-kit": 21,
 	"walkthrough": 20,
 	"workbench": 16,
 	"workspace": 22

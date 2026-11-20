@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 
 /**
  * Whether the box is mounted: from when it is wanted until it has left.
