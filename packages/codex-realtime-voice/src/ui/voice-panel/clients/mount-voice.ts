@@ -123,7 +123,7 @@ function build(client: VoiceClient, text: VoicePanelText) {
 	const panel = element("section");
 	panel.setAttribute("aria-label", text.panel);
 	panel.style.cssText =
-		"color-scheme:light dark;background:Field;color:FieldText;display:grid;gap:0.75rem;max-width:40rem;padding:1rem";
+		"color-scheme:light dark;background:Field;color:FieldText;border:1px solid GrayText;border-radius:0.5rem;display:grid;gap:0.75rem;max-width:40rem;padding:1rem";
 	const status = element("p");
 	status.setAttribute("role", "status");
 	const failureText = element("span");
@@ -406,4 +406,4 @@ function mountVoice(
 	};
 }
 
-export { mountVoice, renderVoicePanel, type MountVoiceOptions, type VoicePanelText };
+export { mountVoice, renderVoicePanel, type VoicePanelText };
