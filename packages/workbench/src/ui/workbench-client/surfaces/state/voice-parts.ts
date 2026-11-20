@@ -3,14 +3,14 @@
 
 import type {
 	BrowserWorkbenchMediaOwner,
-	BrowserWorkbenchTransport,
 	ConversationControllers,
-} from "@archboard/codex-realtime-voice/controllers";
+	HostedConversation,
+} from "@archboard/codex-realtime-voice/browser";
 import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 
-/** What the transport may do right now. */
-type BrowserWorkbenchCapabilities = ReturnType<BrowserWorkbenchTransport["capabilities"]>;
+/** What the conversation may do right now. */
+type BrowserWorkbenchCapabilities = ReturnType<HostedConversation["capabilities"]>;
 /** Where the media owner stands: installing, ready to start, or why it cannot. */
 type BrowserWorkbenchMediaState = ReturnType<BrowserWorkbenchMediaOwner["state"]>;
 /** One voice run's correlation and state. */

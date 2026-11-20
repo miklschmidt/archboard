@@ -5,7 +5,7 @@ import { type BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import { IDLE_SPOKEN_APPROVAL } from "#tests/ui/support/voice-session/workbench-fixture.ts";
 
 import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
-import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/controllers";
+import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
 
 const brand = browserIdentities();
 

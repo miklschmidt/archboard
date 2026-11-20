@@ -18,8 +18,8 @@ import { type ConversationOwner } from "#ui/workbench-client/surfaces/state/voic
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type {
 	BrowserWorkbenchState,
-	BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/controllers";
+	HostedConversation,
+} from "@archboard/codex-realtime-voice/browser";
 
 /** The conversation, or why it could not be read. */
 interface Conversation {
@@ -33,8 +33,11 @@ interface Conversation {
 	readonly failure: string | null;
 }
 
-/** What the conversation is read from: a transport, or nothing. */
-type ConversationSource = Pick<BrowserWorkbenchTransport, "subscribe"> & {
+/** What the conversation is read from: a pane's hosted conversation. */
+type ConversationReader = Pick<HostedConversation, "state" | "subscribe">;
+
+/** What the conversation is read from: a hosted conversation, or nothing. */
+type ConversationSource = Pick<HostedConversation, "subscribe"> & {
 	readonly state: () => BrowserWorkbenchState | null;
 };
 
@@ -95,7 +98,7 @@ function timelinesOf(snapshot: Conversation["snapshot"]): {
  * @param transport The transport, or null while the pane has none.
  * @returns The conversation.
  */
-function useConversation(transport: BrowserWorkbenchTransport | null): Conversation {
+function useConversation(transport: ConversationReader | null): Conversation {
 	const source: ConversationSource = transport ?? NO_TRANSPORT;
 	const state = useSyncExternalStore(source.subscribe, source.state, source.state);
 	const snapshot = state?.snapshot ?? null;
@@ -124,7 +127,7 @@ function useConversation(transport: BrowserWorkbenchTransport | null): Conversat
  * @param transport The transport.
  * @returns The runtime and the conversation it shows.
  */
-function useAgentRuntime(transport: BrowserWorkbenchTransport): {
+function useAgentRuntime(transport: ConversationReader): {
 	readonly runtime: AssistantRuntime;
 	readonly conversation: Conversation;
 } {

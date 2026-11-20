@@ -3,12 +3,12 @@
 // returns. The realtime module owns media and the state machine; this module
 // owns one binding, the guards around it, and the projection.
 
-import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
 import type {
 	BrowserWorkbenchMediaOwner,
 	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/controllers";
+	HostedConversation,
+} from "@archboard/codex-realtime-voice/browser";
 import type {
 	BrowserWorkbenchMediaState,
 	RealtimeMediaSnapshot,
@@ -158,17 +158,11 @@ type VoiceRealtimePort = Pick<
 	"snapshot" | "state" | "outputLevel" | "subscribe" | "start" | "mute" | "unmute" | "stop"
 >;
 
-/**
- * The already-constructed workbench transport, seen through its read surface.
- * `captureCommandTarget` is absent because it is not a read: on the real
- * transport it renews the command lease and broadcasts before it can refuse.
- */
-interface VoiceTransportPort {
-	readonly state: () => BrowserWorkbenchState;
-	readonly snapshot: () => BrowserSnapshot | null;
-	readonly capabilities: () => BrowserWorkbenchCapabilities;
-	readonly subscribe: (listener: () => void) => () => void;
-}
+/** The pane's hosted conversation, seen through its read surface. */
+type VoiceTransportPort = Pick<
+	HostedConversation,
+	"state" | "snapshot" | "capabilities" | "subscribe"
+>;
 
 /** What the adapter is built over. */
 interface VoiceSessionPorts {

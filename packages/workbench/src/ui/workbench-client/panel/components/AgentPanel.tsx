@@ -17,15 +17,15 @@ import { SignInCard } from "#ui/workbench-client/panel/components/SignInCard.tsx
 import { VoiceLines } from "#ui/workbench-client/voice/components/VoiceLines.tsx";
 import { AgentRuntimeProvider } from "#ui/workbench-client/assistant-runtime/components/AgentRuntimeProvider.tsx";
 import { Conversation } from "#ui/workbench-client/thread/components/Conversation.tsx";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 import type { DraftStore } from "#ui/workbench-client/surfaces/state/draft-store.ts";
 
 /** Inputs for the panel. */
 interface AgentPanelProps {
 	readonly view: AgentView;
 	readonly actions: AgentActions;
-	/** The focused pane's transport, or null while its socket is down. */
-	readonly transport: BrowserWorkbenchTransport | null;
+	/** The focused pane's conversation, or null while its socket is down. */
+	readonly transport: Pick<HostedConversation, "state" | "subscribe"> | null;
 	/** What the composer holds. */
 	readonly draft: DraftStore;
 	/** Put a suggestion in the composer. */

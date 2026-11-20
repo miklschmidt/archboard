@@ -8,7 +8,7 @@ import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 import type {
 	VoiceOutputLevelSource,
 	BrowserWorkbenchState,
-} from "@archboard/codex-realtime-voice/controllers";
+} from "@archboard/codex-realtime-voice/browser";
 import type {
 	RealtimeMediaSnapshot,
 	BrowserWorkbenchMediaState,
