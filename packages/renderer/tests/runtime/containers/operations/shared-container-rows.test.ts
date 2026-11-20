@@ -5,7 +5,7 @@ import {
 	type DiagramBox,
 	type VariantContent,
 } from "@archboard/model-contract";
-import { fitIn } from "#shared/constants/shell-geometry.ts";
+import { fit } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
@@ -155,7 +155,7 @@ for (const fixture of [
 		// TASK-278 measured the baseline sizes and route totals.
 		// Improvement must exceed the corpus's two-percent size tolerance, not pin
 		// either engine's chosen coordinates or trade height for unusable width.
-		expect(fitIn(drawing)).toBeGreaterThan(fitIn(fixture) * 1.02);
+		expect(fit(drawing)).toBeGreaterThan(fit(fixture) * 1.02);
 		const measures = new Map(scorecardOf(drawing, content).map(({ name, value }) => [name, value]));
 		expect(measures.get("route length")).toBeLessThan(fixture.length);
 		expect(measures.get("crossings")).toBeLessThanOrEqual(fixture.crossings);

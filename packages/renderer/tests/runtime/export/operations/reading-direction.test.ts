@@ -3,7 +3,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 import { describe, expect, test } from "bun:test";
 import { defaultSemanticPolicy, modelShape, type VariantContent } from "@archboard/model-contract";
-import { fitIn } from "#shared/constants/shell-geometry.ts";
+import { fit } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { readingOf } from "#tests/runtime/support/drawn-reading.ts";
@@ -83,7 +83,7 @@ describe("architecture diagrams read top to bottom", () => {
 			content: CHAIN,
 			theme: "light",
 		});
-		expect(fitIn(drawing)).toBe(1);
+		expect(fit(drawing)).toBe(1);
 		expect(drawing.readingDirection).toBe("down");
 		expect(readingOf(drawing)).toBe("down");
 	});

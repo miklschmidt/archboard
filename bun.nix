@@ -24,11 +24,14 @@
   "@archboard/codex-app-server" = copyPathToStore ./packages/codex-app-server;
   "@archboard/codex-realtime-voice" = copyPathToStore ./packages/codex-realtime-voice;
   "@archboard/diagnostics" = copyPathToStore ./packages/diagnostics;
+  "@archboard/headless-chromium" = copyPathToStore ./packages/headless-chromium;
   "@archboard/machine" = copyPathToStore ./packages/machine;
   "@archboard/model-contract" = copyPathToStore ./packages/model-contract;
   "@archboard/model-rules" = copyPathToStore ./packages/model-rules;
   "@archboard/model-store" = copyPathToStore ./packages/model-store;
   "@archboard/process" = copyPathToStore ./packages/process;
+  "@archboard/raster" = copyPathToStore ./packages/raster;
+  "@archboard/render-recipe" = copyPathToStore ./packages/render-recipe;
   "@archboard/renderer" = copyPathToStore ./packages/renderer;
   "@archboard/server-lifecycle" = copyPathToStore ./packages/server-lifecycle;
   "@archboard/server-requests" = copyPathToStore ./packages/server-requests;

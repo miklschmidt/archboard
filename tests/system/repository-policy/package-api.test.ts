@@ -34,6 +34,9 @@ const ADOPTERS: {
 	{ name: "codex-realtime-voice", areas: ["shared", "runtime", "server", "ui"] },
 	{ name: "process", areas: ["runtime"] },
 	{ name: "machine", areas: ["runtime"] },
+	{ name: "headless-chromium", areas: ["runtime"] },
+	{ name: "render-recipe", areas: ["runtime"] },
+	{ name: "raster", areas: ["runtime"] },
 ];
 
 function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {

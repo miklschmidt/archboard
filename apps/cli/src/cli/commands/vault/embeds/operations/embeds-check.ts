@@ -3,7 +3,7 @@ import { embedStanding, fixLine } from "#cli/commands/vault/rules/embed-state.ts
 import { writeFileAtomic } from "@archboard/machine/atomic-write";
 import { checkoutsReadFrom, repoRootOf } from "@archboard/workspace/checkouts";
 import { checkoutOfVault } from "@archboard/workspace/vault";
-import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/render-recipe";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";

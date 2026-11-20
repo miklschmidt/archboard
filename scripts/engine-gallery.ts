@@ -18,7 +18,7 @@ import { projectFlow, projectModel } from "@archboard/model-rules";
 import { readArchitectureModel } from "@archboard/model-store";
 import { modelShape } from "@archboard/model-contract";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { fitIn } from "@archboard/renderer/shell-geometry";
+import { fit } from "@archboard/renderer/shell-geometry";
 /** One drawing under one engine. */
 interface Drawn {
 	readonly engine: string;
@@ -97,7 +97,7 @@ for (const reading of readings) {
 			ms: Math.round(performance.now() - started),
 			width,
 			height,
-			fit: fitIn({ width, height }),
+			fit: fit({ width, height }),
 		});
 	}
 	drawings.push({ model: model.manifest.name, view: reading.name, drawn });

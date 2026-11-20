@@ -14,7 +14,7 @@ import {
 	discoveredChromiumPath,
 	launchHeadlessChromium,
 	type HeadlessChromium,
-} from "@archboard/renderer/headless-chromium";
+} from "@archboard/headless-chromium";
 import {
 	findFfmpeg,
 	probeFfmpeg,

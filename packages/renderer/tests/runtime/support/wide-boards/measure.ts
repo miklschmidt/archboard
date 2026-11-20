@@ -27,7 +27,8 @@ import {
 	type SemanticPolicy,
 } from "@archboard/model-contract";
 import { checkArchitectureVault } from "@archboard/model-store";
-import { shellSize } from "@archboard/renderer/shell-geometry";
+import { shell } from "@archboard/renderer/shell-geometry";
+import { rasterizeAll } from "@archboard/raster";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { fixtureDocument } from "../model-documents.ts";
 import { orderedFixture } from "../ordered-fixture.ts";
@@ -41,9 +42,6 @@ const layout = fixtureDocument("layoutEngine", process.env["ENGINE"] ?? defaultL
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
-const rasterizer = pictures
-	? (await import("@archboard/renderer/rasterizer")).createSemanticRasterizer({})
-	: null;
 
 /** One thing to measure: a document's variant, or a fixture. */
 interface Item {
@@ -111,43 +109,52 @@ const saved: Record<string, Result> =
 	against === undefined ? {} : JSON.parse(fs.readFileSync(against, "utf8"));
 const results: Record<string, Result> = {};
 
-console.log(
-	`reference pane ${shellSize("referencePane").width}x${shellSize("referencePane").height}`,
-);
+console.log(`reference pane ${shell("referencePane").width}x${shell("referencePane").height}`);
 let header = false;
-for (const item of items) {
-	// A fixture authored before subjects carried an order is given one by position.
-	const content = orderedFixture(item.content);
-	const drawn = await renderArchitecture({
-		content,
-		theme: "light",
-		layout,
-		policy: item.policy,
-	});
-	const key = `${item.name} ${item.variant}`;
-	const measures = scorecardOf(drawn, content);
-	const reads = drawn.readingDirection ?? "-";
-	const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
-	results[key] = { page, reads, measures };
-	if (!header) {
-		console.log(
-			["document", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "),
-		);
-		header = true;
-	}
-	console.log([key, reads, page, ...measures.map(shown)].join(" | "));
-	if (rasterizer !== null) {
-		const shot = await rasterizer.rasterize({
-			svg: drawn.svg,
-			width: drawn.width,
-			height: drawn.height,
-			scale: 1,
+/** The key of each drawing yielded for a picture and not yet written, oldest first. */
+const keys: string[] = [];
+
+/**
+ * Measure each item and print its row, yielding each drawing for its picture.
+ * @yields {{ svg: string; width: number; height: number; scale: number }} The drawing to capture.
+ */
+async function* measured() {
+	for (const item of items) {
+		// A fixture authored before subjects carried an order is given one by position.
+		const content = orderedFixture(item.content);
+		const drawn = await renderArchitecture({
+			content,
+			theme: "light",
+			layout,
+			policy: item.policy,
 		});
-		fs.mkdirSync(out, { recursive: true });
-		fs.writeFileSync(path.join(out, `${key.replace(/[^A-Za-z0-9]+/g, "-")}.png`), shot.png);
+		const key = `${item.name} ${item.variant}`;
+		const measures = scorecardOf(drawn, content);
+		const reads = drawn.readingDirection ?? "-";
+		const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
+		results[key] = { page, reads, measures };
+		if (!header) {
+			console.log(
+				["document", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "),
+			);
+			header = true;
+		}
+		console.log([key, reads, page, ...measures.map(shown)].join(" | "));
+		keys.push(key);
+		yield { svg: drawn.svg, width: drawn.width, height: drawn.height, scale: 1 };
 	}
 }
-await rasterizer?.stop();
+
+if (pictures) {
+	fs.mkdirSync(out, { recursive: true });
+	// Each picture is written before the next drawing is measured.
+	for await (const shot of rasterizeAll(measured())) {
+		const key = keys.shift()!;
+		fs.writeFileSync(path.join(out, `${key.replace(/[^A-Za-z0-9]+/g, "-")}.png`), shot.png);
+	}
+} else {
+	for await (const _drawing of measured());
+}
 
 if (save !== undefined) fs.writeFileSync(save, JSON.stringify(results, null, "\t"));
 

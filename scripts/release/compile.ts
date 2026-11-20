@@ -27,7 +27,11 @@ import {
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { checkoutPath, coreBuildPath, loadCore } from "@archboard/renderer/core";
+import { installation } from "@archboard/machine/installation";
+import { buildCore, coreSourceHash } from "@archboard/renderer/core";
+
+/** The checkout the release is built from. */
+const ROOT = installation().root;
 
 /** The platforms a release is built for. */
 const TARGETS = ["bun-linux-x64", "bun-linux-arm64", "bun-darwin-arm64"] as const;
@@ -86,9 +90,8 @@ function refuse(message: string): never {
 function releaseCommit(): string {
 	const flake = process.env["ARCHBOARD_RELEASE_COMMIT"];
 	if (flake !== undefined && flake !== "") return flake;
-	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: checkoutPath() });
-	if (commit.exitCode !== 0)
-		refuse(`${checkoutPath()} has no commit to record. Commit, then compile.`);
+	const commit = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: ROOT });
+	if (commit.exitCode !== 0) refuse(`${ROOT} has no commit to record. Commit, then compile.`);
 	return commit.stdout.toString().trim();
 }
 
@@ -96,18 +99,18 @@ function releaseCommit(): string {
  * The version, the commit, the hash of the checkout's core build and the pinned Codex, which the
  * installation module reads from `archboard-release.json`.
  * @returns The marker of the release.
- * @throws {Error} When the core is missing or stale, or the checkout has no commit.
+ * @throws {Error} When the checkout has no commit.
  */
 function releaseMarker() {
 	const manifest = z
 		.object({ version: z.string(), dependencies: z.object({ "@openai/codex": z.string() }) })
-		.parse(JSON.parse(readFileSync(checkoutPath("package.json"), "utf8")));
+		.parse(JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8")));
 	return {
 		version: manifest.version,
 		commit: releaseCommit(),
 		// The checkout refuses a core of other sources than its own, so the release records the
-		// hash of the sources it was built from.
-		coreSourceHash: loadCore().sourceHash(),
+		// hash of the sources its core is built from, once the build of them is current.
+		coreSourceHash: coreSourceHash(),
 		codexVersion: manifest.dependencies["@openai/codex"],
 	};
 }
@@ -133,7 +136,7 @@ function holdsAddon(directory: string): boolean {
  * @returns The packages and addons.
  */
 function nativeInputs(inputs: readonly string[]): string[] {
-	const modules = checkoutPath("node_modules");
+	const modules = path.join(ROOT, "node_modules");
 	const packages = new Set(
 		inputs.flatMap((input) => /^node_modules\/((?:@[^/]+\/)?[^/]+)\//.exec(input)?.[1] ?? []),
 	);
@@ -182,8 +185,8 @@ function runtimeOf(target: Target): { executablePath?: string } {
  */
 async function compileExecutable(target: Target, outfile: string): Promise<string[]> {
 	const built = await Bun.build({
-		entrypoints: ENTRIES.map((entry) => checkoutPath(entry)),
-		root: checkoutPath(),
+		entrypoints: ENTRIES.map((entry) => path.join(ROOT, entry)),
+		root: ROOT,
 		target: "bun",
 		metafile: true,
 		compile: {
@@ -220,14 +223,14 @@ async function compileExecutable(target: Target, outfile: string): Promise<strin
 async function layOutCore(directory: string): Promise<void> {
 	mkdirSync(directory, { recursive: true });
 	const glue = await Bun.build({
-		entrypoints: [coreBuildPath(CORE_GLUE)],
+		entrypoints: [path.join(installation().coreDirectory, CORE_GLUE)],
 		target: "bun",
 		format: "esm",
 	});
 	const [output] = glue.outputs;
 	if (!glue.success || output === undefined) refuse(`${CORE_GLUE} did not bundle.`);
 	writeFileSync(path.join(directory, CORE_GLUE), await output.text());
-	cpSync(coreBuildPath(CORE_WASM), path.join(directory, CORE_WASM));
+	cpSync(path.join(installation().coreDirectory, CORE_WASM), path.join(directory, CORE_WASM));
 }
 
 /**
@@ -238,10 +241,11 @@ async function layOutCore(directory: string): Promise<void> {
  * @throws {Error} When the checkout lacks a build, or the executable does not compile.
  */
 async function compileRelease(target: Target, directory: string): Promise<CompiledRelease> {
-	const frontend = checkoutPath("dist", "frontend");
+	const frontend = path.join(ROOT, "dist", "frontend");
 	if (!existsSync(path.join(frontend, "index.html"))) {
 		refuse(`${frontend} holds no browser bundle. Run \`bun run build\`, then compile.`);
 	}
+	await buildCore();
 	const marker = releaseMarker();
 	rmSync(directory, { recursive: true, force: true });
 	const executable = path.join(directory, "bin", "archboard");
@@ -249,7 +253,7 @@ async function compileRelease(target: Target, directory: string): Promise<Compil
 	cpSync(frontend, path.join(directory, "frontend"), { recursive: true });
 	await layOutCore(path.join(directory, "core"));
 	for (const skill of SKILLS) {
-		cpSync(checkoutPath("skills", skill), path.join(directory, "skills", skill), {
+		cpSync(path.join(ROOT, "skills", skill), path.join(directory, "skills", skill), {
 			recursive: true,
 			dereference: true,
 		});

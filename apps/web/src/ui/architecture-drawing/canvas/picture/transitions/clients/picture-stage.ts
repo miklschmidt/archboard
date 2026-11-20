@@ -512,7 +512,7 @@ class PictureStage {
 		let next: StartedPainter;
 		try {
 			const { startPainter } = await import("@archboard/renderer/browser");
-			next = await startPainter(this.#canvas, pageIsDark(), failure);
+			next = await startPainter(this.#canvas, pageIsDark(), { failure });
 		} catch (cause) {
 			// No painter at all: the SVG stays, a correct model, and says why.
 			this.#retire(cause);

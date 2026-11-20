@@ -2,7 +2,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
-import { HEAD_LENGTH } from "@archboard/renderer/picture";
+import { markSample } from "@archboard/renderer/picture";
 import { announceModelChange } from "#ui/architecture-drawing/canvas/picture/reads/state/model-changes.ts";
 import { pressKey } from "#tests/ui/support/canvas/camera-probes.ts";
 import { sidebarSettled } from "#tests/ui/support/canvas/sidebar-probes.ts";
@@ -193,15 +193,30 @@ test("the legend lists each sample the key lists, kinds that share a name apart"
 	expect(labels.filter((label) => label === "Message")).toHaveLength(2);
 });
 
-test("the legend draws each arrowhead as large as the picture draws the head of a plain line", async () => {
+/**
+ * Markup as the page holds it once parsed, so two spellings of one sample compare equal.
+ * @param markup The markup.
+ * @returns It, parsed and written again.
+ */
+function parsed(markup: string): string {
+	const holder = document.createElement("template");
+	holder.innerHTML = markup;
+	return holder.innerHTML;
+}
+
+test("the legend shows each relationship kind as the renderer's own sample of its line", async () => {
 	server.reply = { status: 200, body: keyedDrawing() };
 	mountStage();
 	await settle();
-	// A line sample draws its head as a square of its own inside the sample.
-	const heads = [...part("semantic-legend").querySelectorAll("svg > svg")];
-	expect(heads).toHaveLength(2);
-	for (const head of heads) {
-		expect(Number(head.getAttribute("width"))).toBe(HEAD_LENGTH);
-		expect(Number(head.getAttribute("height"))).toBe(HEAD_LENGTH);
+	const samples = [...part("semantic-legend").querySelectorAll("span[aria-hidden] > svg")].map(
+		(sample) => sample.outerHTML,
+	);
+	for (const { dash, arrowhead } of [
+		{ dash: "solid", arrowhead: "filled" },
+		{ dash: "dashed", arrowhead: "open" },
+	]) {
+		expect(samples).toContain(
+			parsed(markSample({ kind: "line", color: "", dash, arrowhead }, { width: 28 })),
+		);
 	}
 });

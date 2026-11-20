@@ -32,6 +32,10 @@ import {
 } from "#shared/canonical-contracts/schemas/model-operations.ts";
 import { SemanticSubjectKindSchema } from "#shared/protocol/pane-context.ts";
 import {
+	ArchitectureRasterReceiptSchema,
+	SemanticRasterReceiptSchema,
+} from "#shared/protocol/raster-receipt.ts";
+import {
 	DiagramThemeSchema,
 	DrawnPictureSchema,
 	LayoutEngineSchema,
@@ -89,6 +93,9 @@ const SHAPES = {
 	offeredView: OfferedViewSchema,
 	subjectStanding: SubjectStandingSchema,
 	pictureReceipt: PictureReceiptShape,
+	// What a rasterized picture's receipt says: of a model reading, and of a legacy board's view.
+	rasterReceipt: ArchitectureRasterReceiptSchema,
+	legacyRasterReceipt: SemanticRasterReceiptSchema,
 	// The vocabularies an option or a field offers.
 	diagramTheme: DiagramThemeSchema,
 	standaloneTheme: StandaloneThemeSchema,

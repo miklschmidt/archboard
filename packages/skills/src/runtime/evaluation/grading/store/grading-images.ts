@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { readPngDimensions } from "@archboard/renderer/rasterizer";
+import { readPngDimensions } from "@archboard/render-recipe";
 import {
 	CAPTURE_TILE_SIDE_PX,
 	tileRegions,

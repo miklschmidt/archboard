@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { readArchitectureModel } from "@archboard/model-store";
 import type { ArchitectureModelRead, ModelRequest } from "@archboard/model-contract";
 import { projectModel, projectFlow, type Model } from "@archboard/model-rules";
-import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
+import { recordArchitectureRecipe } from "@archboard/render-recipe";
 import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";

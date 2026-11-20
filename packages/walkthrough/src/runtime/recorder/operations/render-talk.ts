@@ -22,7 +22,7 @@ import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model-contract";
-import { shellSize } from "@archboard/renderer/shell-geometry";
+import { shell } from "@archboard/renderer/shell-geometry";
 import { durationMs, waitUntil } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";
 import {
@@ -35,11 +35,8 @@ import {
 	type ReplayOptions,
 	type Talk,
 } from "#shared/protocol/talk.ts";
-import {
-	isJsonRecord,
-	type HeadlessChromium,
-	type HeadlessWindow,
-} from "@archboard/renderer/headless-chromium";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
+import { type HeadlessChromium, type HeadlessWindow } from "@archboard/headless-chromium";
 import {
 	openVideoEncoder,
 	type VideoEncoder,
@@ -175,7 +172,7 @@ async function openReplayPage(
 ): Promise<HeadlessWindow> {
 	const window = await chromium.openWindow(
 		"about:blank",
-		shellSize("viewport"),
+		shell("viewport"),
 		durationMs("recorder.call"),
 	);
 	const { page } = window;
@@ -242,7 +239,7 @@ async function loadTalk(
 		`${PAGE}.load(${JSON.stringify(request.talk)}, ${JSON.stringify(share.options)})`,
 		{ timeoutMs: durationMs("recorder.frameCall") },
 	);
-	const counted = isJsonRecord(loaded) ? loaded["frames"] : undefined;
+	const counted = isRecord(loaded) ? loaded["frames"] : undefined;
 	if (counted !== frames) {
 		throw new Error(
 			`The canvas page counts ${String(counted)} frames in the talk and this archboard counts ${frames}. Run \`archboard restart\` to build the frontend and restart the Archboard server.`,
@@ -253,11 +250,11 @@ async function loadTalk(
 	});
 	if (
 		!Array.isArray(size) ||
-		size[0] !== shellSize("viewport").width ||
-		size[1] !== shellSize("viewport").height
+		size[0] !== shell("viewport").width ||
+		size[1] !== shell("viewport").height
 	) {
 		throw new Error(
-			`The render's window is ${String(size)} rather than ${shellSize("viewport").width}x${shellSize("viewport").height}, so its frames would not be that size.`,
+			`The render's window is ${String(size)} rather than ${shell("viewport").width}x${shell("viewport").height}, so its frames would not be that size.`,
 		);
 	}
 }

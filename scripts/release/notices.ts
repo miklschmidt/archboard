@@ -6,7 +6,10 @@
 import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { checkoutPath } from "@archboard/renderer/core";
+import { installation } from "@archboard/machine/installation";
+
+/** The checkout the release is built from. */
+const ROOT = installation().root;
 
 /** The packages that are no part of what a platform package holds. */
 const SEPARATE = new Set([
@@ -21,9 +24,9 @@ const BUILD_TOOLS = ["tailwindcss", "vite"];
 /** The crates the renderer core is built from: the core of the server and the painter of the page. */
 const CORE_CRATES = new Set(["archboard-renderer-wasm", "archboard-painter-wasm"]);
 /** The fonts and their license texts. */
-const FONTS = checkoutPath("packages", "renderer", "assets", "fonts");
+const FONTS = path.join(ROOT, "packages", "renderer", "assets", "fonts");
 /** The notice of the code adapted from PR Lens. */
-const PR_LENS_NOTICE = checkoutPath("packages", "renderer", "NOTICE.md");
+const PR_LENS_NOTICE = path.join(ROOT, "packages", "renderer", "NOTICE.md");
 /** A file that holds a license, a copyright or a notice at the top of a package. */
 const LICENSE_FILE = /^(?:licen[cs]e|copying|notice)(?:[-._].*)?$/i;
 
@@ -124,13 +127,13 @@ function unnoticed(name: string): boolean {
  */
 function npmPackages(bundled: readonly string[]): Licensed[] {
 	const manifest = NpmManifest.parse(
-		JSON.parse(readFileSync(checkoutPath("package.json"), "utf8")),
+		JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8")),
 	);
 	const leaves = [
-		...bundled.map((directory) => checkoutPath(directory)),
-		...resolveAll(BUILD_TOOLS, checkoutPath()),
+		...bundled.map((directory) => path.join(ROOT, directory)),
+		...resolveAll(BUILD_TOOLS, ROOT),
 	];
-	const roots = resolveAll(Object.keys(manifest.dependencies ?? {}), checkoutPath());
+	const roots = resolveAll(Object.keys(manifest.dependencies ?? {}), ROOT);
 	// The queue is a stack, so the production dependencies and all they depend on come first, and a
 	// package that one of them depends on is followed although the executable bundles it too.
 	const queue = [
@@ -195,7 +198,7 @@ function coreCrates(): Licensed[] {
 			"--filter-platform",
 			"wasm32-unknown-unknown",
 		],
-		{ cwd: checkoutPath(), stdout: "pipe", stderr: "pipe" },
+		{ cwd: ROOT, stdout: "pipe", stderr: "pipe" },
 	);
 	if (asked.exitCode !== 0) {
 		throw new Error(

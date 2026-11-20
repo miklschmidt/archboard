@@ -8,7 +8,7 @@
 // renderer's SVG of the same picture stands whole.
 
 import { durationMs } from "@archboard/timing";
-import { startCpuPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
+import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";
 import { animate, whileVisible } from "./reveal";
@@ -25,7 +25,7 @@ const REPLAY_AFTER = 2200;
 
 /** The painter of the window's picture, with the shop's painting. */
 interface Shop {
-	painter: Awaited<ReturnType<typeof startCpuPainter>>["painter"];
+	painter: Awaited<ReturnType<typeof startPainter>>["painter"];
 	painting: string;
 }
 
@@ -37,7 +37,7 @@ interface Shop {
 async function paintShop(canvas: HTMLCanvasElement): Promise<Shop | null> {
 	try {
 		const [{ painter }, painting] = await Promise.all([
-			startCpuPainter(canvas, true),
+			startPainter(canvas, true, { only: "cpu" }),
 			fetch(paintingUrl).then((answer) => {
 				if (!answer.ok) throw new Error(`The painting did not load (HTTP ${answer.status}).`);
 				return answer.text();

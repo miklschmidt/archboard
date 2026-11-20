@@ -5,7 +5,7 @@
 // Everything, read against nothing, can follow a deleted document's name.
 
 import { expect, test } from "bun:test";
-import type { readRenderRecipe } from "@archboard/renderer/recipe";
+import type { readRenderRecipe } from "@archboard/render-recipe";
 type RenderRecipe = Extract<
 	Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"],
 	{ board: unknown }

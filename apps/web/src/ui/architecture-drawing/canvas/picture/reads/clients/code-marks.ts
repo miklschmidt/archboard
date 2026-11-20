@@ -21,7 +21,7 @@
 // such a line when it is undecided: a group of the line's words that holds only
 // the mark.
 
-import { cornerWarning, lineWarning } from "@archboard/renderer/picture";
+import { warningMark } from "@archboard/renderer/picture";
 import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 import {
 	lineTo,
@@ -200,7 +200,7 @@ function markPart(groups: readonly Element[]): void {
 			width: numberOf(rect, "width"),
 			height: numberOf(rect, "height"),
 		};
-		holder.append(markElement(cornerWarning(box), holder.ownerDocument));
+		holder.append(markElement(warningMark(box), holder.ownerDocument));
 	}
 }
 
@@ -242,7 +242,7 @@ function markBareLine(line: Element): void {
 	const at = wordsAnchor(stroke?.getAttribute("d") ?? "");
 	if (at === null) return;
 	const holder = wordsFor(line);
-	holder.append(markElement(lineWarning(at), line.ownerDocument));
+	holder.append(markElement(warningMark(at), line.ownerDocument));
 	line.parentElement?.append(holder);
 }
 
@@ -256,7 +256,7 @@ function markLine(groups: readonly Element[]): void {
 	const plate = words === undefined ? null : bodyRect(words);
 	if (words !== undefined && plate !== null) {
 		const at = { x: numberOf(plate, "x"), y: numberOf(plate, "y") + numberOf(plate, "height") / 2 };
-		words.append(markElement(lineWarning(at), words.ownerDocument));
+		words.append(markElement(warningMark(at), words.ownerDocument));
 		return;
 	}
 	const line = groupFor(groups, null);

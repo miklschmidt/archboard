@@ -11,7 +11,6 @@
 import {
 	addressedVariant,
 	type DiagramGrammar,
-	type FlowStep,
 	type LayoutEngineName,
 	type LegacyBoard,
 	type LegendLayout,
@@ -24,14 +23,8 @@ import {
 	type SemanticView,
 	type StandaloneTheme,
 	type ToldStanding,
-	type VariantContent,
 } from "@archboard/model-contract";
-import {
-	comparedWith,
-	compareVariants,
-	type ReadingScope,
-	scopedContent,
-} from "@archboard/model-rules";
+import { compareVariants, type ReadingScope, scopedContent } from "@archboard/model-rules";
 import { drawnSubjects, findView, nothingBuilt } from "#shared/render/rules/legacy-subjects.ts";
 import { SemanticRenderError, type SubjectStanding } from "#shared/protocol/render-request.ts";
 import { renderSemanticView } from "#shared/render/rules/diagram.ts";
@@ -65,43 +58,6 @@ interface LegacyRenderChoices {
 	readonly legendOnly?: boolean | undefined;
 }
 
-/**
- * What a variant draws: its parts, relationships and flows. Its walkthroughs
- * are told over the picture and never drawn in it, and the code that a
- * relationship or a step cites is bookkeeping that neither the picture nor a
- * comparison reads (ADR 0046), so neither is here.
- */
-type DrawnContent = Pick<VariantContent, "nodes" | "edges" | "flows">;
-
-/**
- * Everything that a picture is drawn from and the board says (TASK-526.02).
- * It leaves out the drawing choices, which the request states, and what a
- * picture does not draw: the board's name and version, its other variants
- * and every walkthrough. A render recipe fingerprints this, so the
- * fingerprint moves when what the picture draws moves, and not when the
- * renderer does. Its shape is part of every recipe already written: a field
- * added here or taken away moves every embed's fingerprint at once.
- */
-interface DrawnInput {
-	readonly level: string;
-	/** The vault's vocabulary as a picture draws it, without the evidence that only the code check reads. */
-	readonly policy: unknown;
-	/** The view's scope and grammar, the overview's when no view was named. */
-	readonly reading: { readonly scope: ReadingScope; readonly grammar: DiagramGrammar };
-	readonly drawn: DrawnContent;
-	/** The subjects the drawn variant is waiting on, which are drawn with a warning. */
-	readonly unsettled: readonly string[];
-	/**
-	 * The variant it is read against, or null when there is none. The layout
-	 * reads it with or without the comparison, so it counts either way.
-	 */
-	readonly base: DrawnContent | null;
-	/** Whether the picture is framed as planned. */
-	readonly planned: boolean;
-	/** The words drawn above the picture, or null for none. */
-	readonly title: string | null;
-}
-
 /** Which of the request's names this board does not have. */
 interface LegacyRenderRefusal {
 	readonly ok: false;
@@ -112,11 +68,6 @@ interface LegacyRenderRefusal {
 /** The answer, or which of the request's names this board does not have. */
 type LegacyRenderOutcome =
 	| { readonly ok: true; readonly reply: SemanticRenderReply }
-	| LegacyRenderRefusal;
-
-/** The answer and what it was drawn from, or the refusal. */
-type LegacyDrawing =
-	| { readonly ok: true; readonly reply: SemanticRenderReply; readonly input: DrawnInput }
 	| LegacyRenderRefusal;
 
 /**
@@ -238,7 +189,7 @@ async function drawnReply(
 		legend: LegendLayout | undefined;
 		legendOnly: boolean | undefined;
 	},
-): Promise<{ reply: SemanticRenderReply; input: DrawnInput }> {
+): Promise<SemanticRenderReply> {
 	const reading = readingOf(view);
 	// The comparison restores what the variant lacks of the one it is read against.
 	// The core draws only the variant's own reading when comparison is off.
@@ -261,13 +212,6 @@ async function drawnReply(
 	};
 	const title = titleOf(how.title, identity, how.comparison);
 	const unbuilt = framedAsPlanned(board, against);
-	const input = drawnInput(board, variant, against, {
-		reading,
-		policy: how.policy,
-		waiting,
-		title,
-		planned: unbuilt,
-	});
 	try {
 		const { placed, ...picture } = await renderSemanticView({
 			policy: how.policy,
@@ -290,7 +234,7 @@ async function drawnReply(
 			...picture,
 			drawn: drawnSubjects(proposal.content, placed),
 		};
-		return { reply, input };
+		return reply;
 	} catch (error) {
 		if (error instanceof SemanticRenderError) {
 			const reply = {
@@ -298,113 +242,10 @@ async function drawnReply(
 				changes: changesPlaced(proposal.changes, []),
 				empty: emptyReason(view, variant, error.code),
 			};
-			return { reply, input };
+			return reply;
 		}
 		throw error;
 	}
-}
-
-/**
- * What one picture is drawn from, as the board says it.
- * @param board The board, as read.
- * @param variant The variant to draw.
- * @param against The variant the caller named to read it against, if any.
- * @param drawing What the answer resolved for the picture.
- * @param drawing.reading The view's scope and grammar.
- * @param drawing.policy The vault's presentation policy.
- * @param drawing.waiting What the variant is waiting on, or null.
- * @param drawing.title The words drawn above the picture, if any.
- * @param drawing.planned Whether the picture is framed as planned.
- * @returns The drawn input.
- */
-function drawnInput(
-	board: LegacyBoard,
-	variant: SemanticVariant,
-	against: SemanticVariant | undefined,
-	drawing: {
-		reading: DrawnInput["reading"];
-		policy: SemanticPolicy;
-		waiting: ToldStanding | null;
-		title: string | undefined;
-		planned: boolean;
-	},
-): DrawnInput {
-	return {
-		level: board.level,
-		policy: drawnPolicy(drawing.policy),
-		reading: { scope: drawing.reading.scope, grammar: drawing.reading.grammar },
-		drawn: drawnContent(variant.content),
-		unsettled: drawing.waiting?.issues.map((issue) => issue.subject) ?? [],
-		base: drawnBase(board, variant, against),
-		planned: drawing.planned,
-		title: drawing.title ?? null,
-	};
-}
-
-/**
- * What a variant draws, without the walkthroughs told over it and the code its
- * relationships and steps cite.
- * @param content The variant's content.
- * @returns Its parts, relationships and flows.
- */
-function drawnContent(content: VariantContent): DrawnContent {
-	return {
-		nodes: content.nodes,
-		edges: content.edges.map(({ anchor: _cited, ...edge }) => edge),
-		flows: content.flows.map((flow) => ({ ...flow, steps: uncitedSteps(flow.steps) })),
-	};
-}
-
-/**
- * Steps without the code their messages cite, at every depth.
- * @param steps The steps of a flow, an alternative or a loop.
- * @returns The same steps without anchors.
- */
-function uncitedSteps(steps: readonly FlowStep[]): FlowStep[] {
-	return steps.map((step) => {
-		if (step.kind === "decision") {
-			return {
-				...step,
-				alternatives: step.alternatives.map((one) => ({ ...one, steps: uncitedSteps(one.steps) })),
-			};
-		}
-		if (step.kind === "loop") return { ...step, steps: uncitedSteps(step.steps) };
-		const { anchor: _cited, ...message } = step;
-		return message;
-	});
-}
-
-/**
- * What the drawn variant is read against, as `compareVariants` reads it: the variant
- * the caller named, else the one the board reads it against.
- * @param board The board, as read.
- * @param variant The variant to draw.
- * @param against The variant the caller named, if any.
- * @returns What that variant draws, or null when there is none.
- */
-function drawnBase(
-	board: LegacyBoard,
-	variant: SemanticVariant,
-	against: SemanticVariant | undefined,
-): DrawnContent | null {
-	const base = against ?? comparedWith(board, variant);
-	return base === undefined ? null : drawnContent(base.content);
-}
-
-/**
- * The vault's vocabulary as a picture draws it. The evidence that a
- * relationship kind accepts belongs to the code check, and no picture draws it.
- * @param policy The vault's presentation policy.
- * @returns The policy without relationship evidence.
- */
-function drawnPolicy(policy: SemanticPolicy): unknown {
-	const relationshipKinds = Object.fromEntries(
-		Object.entries(policy.relationshipKinds).map(([kind, { evidence: _checked, ...drawn }]) => [
-			kind,
-			drawn,
-		]),
-	);
-	return { ...policy, relationshipKinds };
 }
 
 /**
@@ -492,23 +333,6 @@ async function renderLegacyBoard(
 	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
 ): Promise<LegacyRenderOutcome> {
-	const drawing = await drawLegacyBoard(board, choices, policy);
-	return drawing.ok ? { ok: true, reply: drawing.reply } : drawing;
-}
-
-/**
- * Draw one board as `renderLegacyBoard` answers it, and name the input the picture
- * was drawn from, for the recipe of a board render.
- * @param board The board, as read.
- * @param choices The variant, view, faces and, for a document that stands alone, theme asked for.
- * @param policy The vault's presentation policy.
- * @returns The answer and its drawn input, or which name the board does not have.
- */
-async function drawLegacyBoard(
-	board: LegacyBoard,
-	choices: LegacyRenderChoices,
-	policy: SemanticPolicy,
-): Promise<LegacyDrawing> {
 	const addressed = addressedVariant(board, choices.variant);
 	if (!addressed.ok) {
 		return { ok: false, code: "UNKNOWN_VARIANT", error: addressed.problem };
@@ -526,7 +350,7 @@ async function drawLegacyBoard(
 	if (typeof against === "string") {
 		return { ok: false, code: "UNKNOWN_VARIANT", error: against };
 	}
-	const drawn = await drawnReply(board, variant, view, against, {
+	const reply = await drawnReply(board, variant, view, against, {
 		theme: choices.theme,
 		policy,
 		comparison: choices.comparison !== false,
@@ -535,13 +359,7 @@ async function drawLegacyBoard(
 		legend: choices.legend,
 		legendOnly: choices.legendOnly,
 	});
-	return { ok: true, ...drawn };
+	return { ok: true, reply };
 }
 
-export {
-	drawLegacyBoard,
-	renderLegacyBoard,
-	type LegacyRenderChoices,
-	type LegacyRenderOutcome,
-	type DrawnInput,
-};
+export { renderLegacyBoard, type LegacyRenderChoices, type LegacyRenderOutcome };
