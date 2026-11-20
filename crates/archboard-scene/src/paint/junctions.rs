@@ -88,8 +88,8 @@ fn stretch_between(
         route,
         across,
         at: if across { a.y } else { a.x },
-        from: js::js_min(start, end),
-        to: js::js_max(start, end),
+        from: js::min([start, end]),
+        to: js::max([start, end]),
         from_bend: if forward { bends[0] } else { bends[1] },
         to_bend: if forward { bends[1] } else { bends[0] },
         width,
@@ -158,9 +158,9 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     if one.route == other.route || one.across != other.across {
         return None;
     }
-    let near = js::js_max(f64::midpoint(one.width, other.width), ONWARD);
-    let from = js::js_max(one.from, other.from);
-    let to = js::js_min(one.to, other.to);
+    let near = js::max([f64::midpoint(one.width, other.width), ONWARD]);
+    let from = js::max([one.from, other.from]);
+    let to = js::min([one.to, other.to]);
     if (one.at - other.at).abs() > near || to - from <= near {
         return None;
     }
@@ -174,7 +174,7 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     };
     let middle = f64::midpoint(from, to);
     let inward = |along: f64, at_from: bool| {
-        js::js_min(
+        js::min([
             (middle - along).abs(),
             js::max([one, other].map(|stretch| {
                 let end = if at_from { stretch.from } else { stretch.to };
@@ -188,7 +188,7 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
                     0.0
                 }
             })),
-        )
+        ])
     };
     Some(Shared {
         ends: [
@@ -353,7 +353,7 @@ fn bends_of(curve: &Curve) -> Vec<f64> {
     let mut radii = vec![0.0];
     for segment in &curve.segments {
         if let Segment::Cubic { to, .. } = segment {
-            radii.push(js::js_max((to.x - from.x).abs(), (to.y - from.y).abs()));
+            radii.push(js::max([(to.x - from.x).abs(), (to.y - from.y).abs()]));
         }
         from = segment.to();
     }
@@ -390,8 +390,8 @@ pub fn junction_boxes(routes: &[Edge]) -> Vec<Rect> {
             let until = junction.until.unwrap_or(junction.point);
             let [from, to] = [junction.point, until];
             Rect {
-                x: js::js_min(from.x, to.x) - radius,
-                y: js::js_min(from.y, to.y) - radius,
+                x: js::min([from.x, to.x]) - radius,
+                y: js::min([from.y, to.y]) - radius,
                 width: (from.x - to.x).abs() + radius * 2.0,
                 height: (from.y - to.y).abs() + radius * 2.0,
             }

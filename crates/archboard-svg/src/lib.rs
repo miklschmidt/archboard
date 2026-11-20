@@ -14,6 +14,7 @@ mod legend;
 mod path;
 mod pulse;
 mod shapes;
+mod spelling;
 mod write;
 mod xml;
 

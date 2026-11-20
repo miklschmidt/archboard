@@ -3,7 +3,7 @@
 //! the TypeScript painter wrote (ADR 0059), so a number is rounded and spelt
 //! here exactly as JavaScript rounds and spells it.
 
-use crate::ecma::{fixed, is_space, powi};
+use crate::ecma::{is_space, powi};
 
 /// `Math.round`, as JavaScriptCore computes it: the nearest integer, a half
 /// rounded up, and the sign of a zero kept.
@@ -93,55 +93,15 @@ fn rounded_up(longer: &str) -> String {
     String::from_utf8(digits).unwrap_or_default()
 }
 
-/// `String(Number(value.toFixed(places)))`: a number rounded to some places and
-/// spelt without trailing zeros.
-pub fn fixed_number(value: f64, places: usize) -> String {
-    number(fixed(value, places))
+/// `Number(value.toFixed(places))`: a number rounded to some places.
+pub fn fixed(value: f64, places: usize) -> f64 {
+    to_fixed(value, places).parse::<f64>().unwrap_or(f64::NAN)
 }
 
 /// Where a value falls within one period from zero: ECMAScript's remainder,
 /// moved up by the period where it is negative.
 pub fn within(value: f64, period: f64) -> f64 {
     ((value % period) + period) % period
-}
-
-/// `value.toLocaleString("en-US", { useGrouping: false, maximumSignificantDigits: 21 })`:
-/// the shortest digits that read back as the number, always without an exponent.
-pub fn plain_decimal(value: f64) -> String {
-    let spelt = number(value);
-    let Some(at) = spelt.find('e') else {
-        return spelt;
-    };
-    let (mantissa, exponent) = (&spelt[..at], &spelt[at + 1..]);
-    let exponent: i32 = exponent.parse().unwrap_or(0);
-    let (sign, mantissa) = match mantissa.strip_prefix('-') {
-        Some(rest) => ("-", rest),
-        None => ("", mantissa),
-    };
-    let digits: String = mantissa.chars().filter(char::is_ascii_digit).collect();
-    let (point, zeros) = moved_point(mantissa.find('.').unwrap_or(mantissa.len()), exponent);
-    let written = if point == 0 {
-        format!("0.{}{digits}", "0".repeat(zeros))
-    } else if point >= digits.len() {
-        format!("{digits}{}", "0".repeat(point - digits.len()))
-    } else {
-        format!("{}.{}", &digits[..point], &digits[point..])
-    };
-    format!("{sign}{written}")
-}
-
-/// Where the decimal point stands once an exponent moves it from after a
-/// mantissa's `whole` digits: how many digits stand before it, or, when none
-/// do, how many zeros stand between it and the digits.
-fn moved_point(whole: usize, exponent: i32) -> (usize, usize) {
-    let shift = exponent.unsigned_abs() as usize;
-    if exponent >= 0 {
-        return (whole + shift, 0);
-    }
-    match whole.checked_sub(shift) {
-        Some(point) if point > 0 => (point, 0),
-        _ => (0, shift - whole),
-    }
 }
 
 /// Two to a power, exactly.
@@ -199,18 +159,20 @@ pub fn hypot(a: f64, b: f64) -> f64 {
     kernel(large, small)
 }
 
-/// `Math.min(...values)`: infinity for none.
+/// `Math.min(...values)`: infinity for none, NaN where any is, and negative
+/// zero below positive zero.
 pub fn min(values: impl IntoIterator<Item = f64>) -> f64 {
-    values.into_iter().fold(f64::INFINITY, js_min)
+    values.into_iter().fold(f64::INFINITY, lesser)
 }
 
-/// `Math.max(...values)`: negative infinity for none.
+/// `Math.max(...values)`: negative infinity for none, NaN where any is, and
+/// positive zero above negative zero.
 pub fn max(values: impl IntoIterator<Item = f64>) -> f64 {
-    values.into_iter().fold(f64::NEG_INFINITY, js_max)
+    values.into_iter().fold(f64::NEG_INFINITY, greater)
 }
 
 /// `Math.min(a, b)`: NaN wins, and negative zero is below positive zero.
-pub fn js_min(a: f64, b: f64) -> f64 {
+fn lesser(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
         return f64::NAN;
     }
@@ -221,7 +183,7 @@ pub fn js_min(a: f64, b: f64) -> f64 {
 }
 
 /// `Math.max(a, b)`: NaN wins, and positive zero is above negative zero.
-pub fn js_max(a: f64, b: f64) -> f64 {
+fn greater(a: f64, b: f64) -> f64 {
     if a.is_nan() || b.is_nan() {
         return f64::NAN;
     }
@@ -260,30 +222,6 @@ pub fn trim(text: &str) -> &str {
     text.trim_matches(is_space)
 }
 
-/// A 32-bit number spelt in some base, lowercase, as `toString(radix)` spells it.
-pub fn radix(mut value: u32, base: u32) -> String {
-    const DIGITS: &[u8] = b"0123456789abcdefghijklmnopqrstuvwxyz";
-    if value == 0 {
-        return "0".to_owned();
-    }
-    let mut spelt = Vec::new();
-    while value > 0 {
-        spelt.push(DIGITS[(value % base) as usize]);
-        value /= base;
-    }
-    spelt.reverse();
-    String::from_utf8(spelt).unwrap_or_default()
-}
-
-/// `text.padStart(width, fill)`.
-pub fn pad_start(text: &str, width: usize, fill: char) -> String {
-    let length = text.encode_utf16().count();
-    if length >= width {
-        return text.to_owned();
-    }
-    format!("{}{text}", fill.to_string().repeat(width - length))
-}
-
 #[cfg(test)]
 #[expect(
     clippy::unreadable_literal,
@@ -320,14 +258,6 @@ mod tests {
         ] {
             assert_eq!(to_fixed(value, digits), fixed, "{value:?} to {digits}");
         }
-    }
-
-    #[test]
-    fn spells_locale_decimals_without_exponent() {
-        assert_eq!(plain_decimal(1e-7), "0.0000001");
-        assert_eq!(plain_decimal(2.345_678_901_234_568), "2.345678901234568");
-        assert_eq!(plain_decimal(1e21), "1000000000000000000000");
-        assert_eq!(plain_decimal(0.000001234), "0.000001234");
     }
 
     #[test]

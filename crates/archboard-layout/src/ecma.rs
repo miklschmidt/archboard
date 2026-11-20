@@ -5,9 +5,7 @@
 
 use std::cmp::Ordering;
 
-pub(crate) use archboard_scene::js::{
-    hypot, js_max, js_min, max, min, number, pow, round, sign, to_fixed,
-};
+pub(crate) use archboard_scene::js::{hypot, max, min, number, pow, round, sign, to_fixed};
 
 /// What a comparator's answer means to a sort: below zero first, above zero
 /// second, and zero or not a number alike.

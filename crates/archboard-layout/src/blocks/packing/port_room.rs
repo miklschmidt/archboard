@@ -2,7 +2,7 @@
 use super::pack::{HEAD_GAP, PackLayout};
 use super::packings::Packing;
 use super::trunks::TRUNK_CLEARANCE;
-use crate::ecma::js_max;
+use crate::ecma::max;
 use crate::geometry::Side;
 use crate::track::chains::LANE;
 use crate::track::scene::Set;
@@ -26,10 +26,10 @@ impl PackLayout<'_> {
         } else {
             0
         };
-        js_max(
+        max([
             HEAD_GAP,
             (ports + headed) as f64 * LANE + 2.0 * TRUNK_CLEARANCE,
-        )
+        ])
     }
 
     /// Whether an end is on the top face of a block in the first row.

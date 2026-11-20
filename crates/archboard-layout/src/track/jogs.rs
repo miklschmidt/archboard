@@ -16,7 +16,7 @@
 //! bends turn whole. The same moves part two lines that read as one (`parting.rs`).
 
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
-use crate::ecma::{abs, js_min, sign, to_fixed};
+use crate::ecma::{abs, min, sign, to_fixed};
 use crate::track::chains::{ChainId, Kind, LANE, StationId, Track};
 use crate::track::channels::{End, NetId};
 use crate::track::scene::{Item, Map, Set, card_face, centre_x};
@@ -123,7 +123,7 @@ impl Track<'_> {
     fn on_face(&self, station: StationId, x: f64) -> bool {
         let item = self.scene.item(self.station(station).item.expect("a card"));
         let (left, width) = (item.bx.x, item.bx.width);
-        let room = js_min(CORNER_ROOM, width / 2.0);
+        let room = min([CORNER_ROOM, width / 2.0]);
         let face = card_face(item);
         x >= left + room
             && x <= left + width - room

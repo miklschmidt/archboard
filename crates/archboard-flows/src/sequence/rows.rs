@@ -67,10 +67,10 @@ fn minimum_note_width(note: Option<&str>) -> f64 {
     let Some(note) = note.filter(|note| has_words(Some(note))) else {
         return 0.0;
     };
-    js::js_max(
+    js::max([
         STEP_NOTE_MIN_WIDTH,
         note_plate(note, STEP_NOTE_MIN_WIDTH).width,
-    )
+    ])
 }
 
 /// The column width that leaves every note a readable corridor, or zero when
@@ -79,7 +79,7 @@ pub(super) fn required_note_column_width(flows: &[Flow]) -> f64 {
     let mut width: f64 = 0.0;
     for flow in flows {
         for step in messages_of(&flow.steps) {
-            width = js::js_max(width, minimum_note_width(step.note.as_deref()));
+            width = js::max([width, minimum_note_width(step.note.as_deref())]);
         }
     }
     if width == 0.0 {
@@ -94,7 +94,7 @@ pub(super) fn required_note_column_width(flows: &[Flow]) -> f64 {
 fn note_anchor(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> f64 {
     let inset = bar_reach() + STEP_NOTE_INSET;
     if step.kind != MessageKind::Myself {
-        return js::js_min(ends.from_x, ends.to_x) + inset;
+        return js::min([ends.from_x, ends.to_x]) + inset;
     }
     if ends.from_x == bounds.last_centre && bounds.first_centre != bounds.last_centre {
         return ends.from_x - bounds.pitch + inset;
@@ -116,7 +116,7 @@ pub(super) fn place_note(
     let wrap_width = js::min([
         bounds.right - bounds.left,
         STEP_NOTE_MAX_WIDTH,
-        js::js_max(STEP_NOTE_MIN_WIDTH, (ends.to_x - ends.from_x).abs()),
+        js::max([STEP_NOTE_MIN_WIDTH, (ends.to_x - ends.from_x).abs()]),
         corridor_width,
     ]);
     let plate = note_plate(note, wrap_width);
@@ -131,10 +131,10 @@ pub(super) fn place_note(
     };
     Some(PlacedNote {
         bounds: Rect {
-            x: js::js_max(
+            x: js::max([
                 bounds.left,
-                js::js_min(note_anchor(step, ends, bounds), bounds.right - plate.width),
-            ),
+                js::min([note_anchor(step, ends, bounds), bounds.right - plate.width]),
+            ]),
             y: ends.y + drop + STEP_NOTE_GAP,
             width: plate.width,
             height: plate.height,
@@ -161,10 +161,10 @@ fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Op
         };
         return (width, None);
     }
-    let hops = js::js_max(
+    let hops = js::max([
         1.0,
         js::round((ends.to_x - ends.from_x).abs() / bounds.pitch),
-    );
+    ]);
     let direction = js::sign(ends.to_x - ends.from_x);
     (
         bounds.pitch - clear * 2.0,

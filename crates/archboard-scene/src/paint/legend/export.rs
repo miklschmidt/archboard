@@ -204,13 +204,13 @@ fn with_legend(page: PaintedPage, legend: &Legend, palette: &Palette) -> Painted
         return PaintedPage {
             body: lines(vec![page.body, legend.draw(page.width, 0.0, palette)]),
             width: round_coord(page.width + legend.laid.width),
-            height: js::js_max(page.height, legend.laid.height),
+            height: js::max([page.height, legend.laid.height]),
             atlas: page.atlas,
         };
     }
     PaintedPage {
         body: lines(vec![page.body, legend.draw(0.0, page.height, palette)]),
-        width: js::js_max(page.width, legend.laid.width),
+        width: js::max([page.width, legend.laid.width]),
         height: round_coord(page.height + legend.laid.height),
         atlas: page.atlas,
     }
@@ -234,10 +234,10 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
             grouped(Group::new(Role::Slot(Slot::ExportTitle), words)),
             grouped(Group::new(Role::Inset, page.body).moved(Transform::translate(0.0, band))),
         ]),
-        width: js::js_max(
+        width: js::max([
             page.width,
             with_diagram_margins(measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil()),
-        ),
+        ]),
         height: band + page.height,
         atlas: moved_atlas(&page.atlas, 0.0, band),
     }

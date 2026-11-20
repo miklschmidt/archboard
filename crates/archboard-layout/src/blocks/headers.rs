@@ -6,7 +6,7 @@
 
 use archboard_scene::paint::tab_width;
 
-use crate::ecma::js_max;
+use crate::ecma::max;
 use crate::graph::{HEADER_STEPS, Node};
 
 use super::laid::Size;
@@ -91,7 +91,7 @@ pub(crate) struct Taken {
 /// when none of its wider sizes fits.
 pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Taken {
     let steps = header.steps.as_deref().unwrap_or(&[]);
-    let box_of = |step: &Size| js_max(header.width, step.width - room.frame + room.content);
+    let box_of = |step: &Size| max([header.width, step.width - room.frame + room.content]);
     let mut index = 0;
     while index + 1 < steps.len()
         && steps[index + 1].width <= room.frame

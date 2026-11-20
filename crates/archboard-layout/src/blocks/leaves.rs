@@ -2,7 +2,7 @@
 //! off: the header in its corner, with the ports on its rank beside it.
 
 use crate::constants::CONTAINER_INSET;
-use crate::ecma::{js_max, js_min, max, min, via_text};
+use crate::ecma::{max, min, via_text};
 use crate::geometry::{Point, Rect, Side};
 use crate::placed::PlacedNode;
 use crate::track::chains::LANE;
@@ -42,7 +42,7 @@ pub(crate) fn corner_header(leaves: &mut [PlacedNode], block: &Block, side: f64)
     let mut free = leaves[at].x + leaves[at].width + LANE;
     for index in beside {
         let leaf = &mut leaves[index];
-        leaf.x = js_max(leaf.x, free);
+        leaf.x = max([leaf.x, free]);
         free = leaf.x + leaf.width + LANE;
     }
     taken
@@ -98,7 +98,7 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
     let (left, right) = extent_of(scene);
     let clear = scene.cards.get(&header_of(block)).map_or(left, |&item| {
         let header = scene.item(item).bx;
-        js_max(left, header.x + header.width + LANE)
+        max([left, header.x + header.width + LANE])
     });
     for (port, &side) in &block.ports {
         let Some(&item) = scene.cards.get(port) else {
@@ -108,7 +108,7 @@ pub(crate) fn let_ports_slide(scene: &mut Placement, block: &Block) {
             continue;
         }
         let low = if side == Side::Top { clear } else { left };
-        scene.slides.insert(item, (low, js_max(low, right)));
+        scene.slides.insert(item, (low, max([low, right])));
     }
 }
 
@@ -226,11 +226,11 @@ pub(crate) fn hold_resized_children(nodes: &mut [PlacedNode]) {
             continue;
         };
         let inset = CONTAINER_INSET + row.below.map_or(0.0, via_text);
-        let low = js_min(node.x, min(children.iter().map(|child| child.x - inset)));
-        let high = js_max(
+        let low = min([node.x, min(children.iter().map(|child| child.x - inset))]);
+        let high = max([
             node.x + node.width,
             max(children.iter().map(|child| child.x + child.width + inset)),
-        );
+        ]);
         node.x = low;
         node.width = high - low;
         let row = node.frame.as_mut().expect("a frame");

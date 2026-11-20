@@ -22,7 +22,7 @@ pub fn shape_words(name: &str, width: f64) -> ShapeWords {
     ShapeWords {
         width: lines
             .iter()
-            .fold(0.0, |widest, line| js::js_max(widest, line.width)),
+            .fold(0.0, |widest, line| js::max([widest, line.width])),
         height: lines.len() as f64 * SHAPE_TEXT_LINE,
         lines: lines.into_iter().map(|line| line.text).collect(),
     }

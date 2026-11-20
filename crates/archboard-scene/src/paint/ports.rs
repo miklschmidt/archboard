@@ -254,7 +254,7 @@ fn outlined(steps: Vec<PathStep>, fill: impl Into<crate::scene::Paint>) -> Items
 
 /// A share of a card's box, spelt finely enough.
 fn share(value: f64) -> f64 {
-    crate::ecma::fixed(value, 6)
+    js::fixed(value, 6)
 }
 
 /// A port's hole in its card's clip, in shares of the card's box: the slot, and

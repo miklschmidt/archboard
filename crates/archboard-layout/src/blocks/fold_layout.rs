@@ -6,7 +6,7 @@
 //! so the fold reads as one bus from the end of a column to the start of the
 //! next. The block's own ports stand over or under what their lines reach.
 
-use crate::ecma::{abs, js_max, js_min, max, min, number_of, sort_by};
+use crate::ecma::{abs, max, min, number_of, sort_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::channels::spread_ports;
@@ -176,10 +176,10 @@ impl<'t> FoldLayout<'t> {
                 if index == 0 {
                     return 0.0;
                 }
-                js_max(
+                max([
                     MIN_GUTTER,
                     2.0 * GUTTER_MARGIN + lanes.saturating_sub(1) as f64 * LANE,
-                )
+                ])
             })
             .collect()
     }
@@ -197,7 +197,7 @@ impl<'t> FoldLayout<'t> {
             let room = width - 2.0 * GUTTER_MARGIN;
             let gaps = over.len().saturating_sub(1) as f64;
             let step = if over.len() > 1 {
-                js_min(LANE, room / gaps)
+                min([LANE, room / gaps])
             } else {
                 0.0
             };
@@ -210,7 +210,7 @@ impl<'t> FoldLayout<'t> {
 
     /// The mean x of what some lines reach.
     fn mean(reached: &[f64]) -> f64 {
-        reached.iter().fold(0.0, |sum, x| sum + x) / js_max(1.0, reached.len() as f64)
+        reached.iter().fold(0.0, |sum, x| sum + x) / max([1.0, reached.len() as f64])
     }
 
     /// Where the block's own ports stand: over or under the pins their lines
@@ -248,7 +248,7 @@ impl<'t> FoldLayout<'t> {
                 .as_ref()
                 .map_or(0.0, |header| header.size.width + LANE);
         let low = if top { clear } else { self.insets.side };
-        let high = js_max(right, low + LANE * (ports.len() + 1) as f64);
+        let high = max([right, low + LANE * (ports.len() + 1) as f64]);
         let xs = spread_ports(
             &Rect {
                 x: low,
@@ -376,12 +376,12 @@ impl<'t> FoldLayout<'t> {
     /// Put every column, own port and channel at its height. Answers the tops of both channels.
     fn stack_rows(&mut self, top: &Stacked, bottom: &Stacked) -> (f64, f64) {
         let tops = self.ports_on(Side::Top);
-        let row = js_max(
+        let row = max([
             self.header
                 .as_ref()
                 .map_or(0.0, |header| header.size.height),
             if tops.is_empty() { 0.0 } else { PORT },
-        );
+        ]);
         let channel_top = self.insets.top + row;
         let columns_top = channel_top + self.head_room(top);
         // Every column's first card stands on one line, as newspaper columns do.

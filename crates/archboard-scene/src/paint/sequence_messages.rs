@@ -164,10 +164,10 @@ pub(super) struct Crossing {
 /// The clock for a drawing whose turns cross lines of some lengths, in order.
 pub(super) fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
     let distance = turn_distance(lengths);
-    let speed = js::js_max(
+    let speed = js::max([
         clock.traffic_speed * PULSE_PACE,
         distance / (clock.cycle_cap_ms / 1000.0),
-    );
+    ]);
     let mut along = 0.0;
     let starts = lengths
         .iter()

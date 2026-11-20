@@ -2,7 +2,7 @@
 //! do in each channel a chain passes, read onto the route's columns, and the
 //! least costly way down through the columns a chain's stations may take.
 
-use crate::ecma::{js_max, js_min, sort_by};
+use crate::ecma::{max, min, sort_by};
 use crate::track::chains::{StationId, Track};
 use crate::track::relay::Relay;
 use crate::track::scene::Map;
@@ -87,7 +87,7 @@ impl Relay {
         sort_by(&mut ends, |one, other| one - other);
         let runs: Vec<Span> = nets
             .iter()
-            .map(|&(one, two)| (js_min(one, two), js_max(one, two)))
+            .map(|&(one, two)| (min([one, two]), max([one, two])))
             .collect();
         Traffic {
             warped: warp(xs, &ends),

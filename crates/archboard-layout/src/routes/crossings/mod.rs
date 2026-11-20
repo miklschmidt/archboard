@@ -25,7 +25,7 @@ use archboard_scene::geometry::Curve;
 use archboard_scene::request::Dash;
 
 use crate::constants::BEND_RADIUS;
-use crate::ecma::{js_min, max, min, round, sign, sorted_by};
+use crate::ecma::{max, min, round, sign, sorted_by};
 
 use super::clusters::{Cluster, Clusters, at_on, clusters_of, sides_of};
 use super::crowding::{crowded, near_own_head};
@@ -250,7 +250,7 @@ impl Settling<'_> {
         let run = &runs[self.cluster(rise.cluster).run];
         min(rise.crossings.iter().map(|&crossing| {
             let point = self.crossings[crossing].point;
-            js_min(ROOM_CAP, straightness(runs, run, run.axis.of(point), true))
+            min([ROOM_CAP, straightness(runs, run, run.axis.of(point), true)])
         }))
     }
 

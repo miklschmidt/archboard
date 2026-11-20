@@ -73,8 +73,8 @@ pub(super) fn label_look(palette: &Palette) -> SlabLook {
 /// The floor of a tray nested in some containers: a step deeper for each.
 fn floor_at(depth: f64, palette: &Palette) -> Colour {
     let sink = Share {
-        light: js::js_min(TRAY_SINK_MAX.light, depth * TRAY_SINK.light),
-        dark: js::js_min(TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark),
+        light: js::min([TRAY_SINK_MAX.light, depth * TRAY_SINK.light]),
+        dark: js::min([TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark]),
     };
     tinted(&palette.tray_floor, Some(&palette.tray_sink), sink)
 }

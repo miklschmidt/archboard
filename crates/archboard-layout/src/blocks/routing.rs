@@ -3,7 +3,7 @@
 
 use archboard_scene::paint::tab_width;
 
-use crate::ecma::{js_max, max, min};
+use crate::ecma::{max, min};
 use crate::geometry::{Point, Rect};
 use crate::placed::PlacedBlock;
 use crate::track::containers::Edges;
@@ -193,7 +193,7 @@ fn read(
     reach.extend(drawn.iter().map(|frame| frame.bx));
     reach.extend(regions.iter().map(|region| region.bx));
     let inside = inner_points(block, &walled);
-    let left = js_max(0.0, side - min(inside.iter().map(|point| point.x)));
+    let left = max([0.0, side - min(inside.iter().map(|point| point.x))]);
     reach.extend(inside.into_iter().map(|Point { x, y }| Rect {
         x,
         y,

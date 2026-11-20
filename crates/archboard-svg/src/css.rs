@@ -8,10 +8,11 @@ use archboard_scene::names::word;
 use archboard_scene::scene::{Colour, Paint};
 
 use crate::definitions::gradient_id;
+use crate::spelling;
 
 /// A share as a CSS percentage, to four places.
 fn percent(share: f64) -> String {
-    format!("{}%", js::fixed_number(share * 100.0, 4))
+    format!("{}%", spelling::fixed_number(share * 100.0, 4))
 }
 
 /// A colour as CSS.
@@ -79,7 +80,7 @@ pub(crate) fn colour_id(colour: &Colour) -> String {
             spelt.push(character);
         } else {
             spelt.push('_');
-            spelt.push_str(&js::pad_start(
+            spelt.push_str(&spelling::pad_start(
                 &format!("{:x}", u32::from(character)),
                 2,
                 '0',

@@ -102,7 +102,7 @@ fn fixed_of(run: &Run) -> f64 {
 fn extent_of(run: &Run) -> (f64, f64) {
     let from = get(run.from, run.axis);
     let to = get(run.to, run.axis);
-    (js::js_min(from, to), js::js_max(from, to))
+    (js::min([from, to]), js::max([from, to]))
 }
 
 /// Whether two runs of different routes lie on one drawn line.
@@ -133,7 +133,7 @@ fn merged_stretches(stretches: &[(f64, f64)]) -> Vec<(f64, f64)> {
     let mut merged: Vec<(f64, f64)> = Vec::new();
     for stretch in stretches {
         match merged.last_mut() {
-            Some(last) if stretch.0 <= last.1 => last.1 = js::js_max(last.1, stretch.1),
+            Some(last) if stretch.0 <= last.1 => last.1 = js::max([last.1, stretch.1]),
             _ => merged.push(*stretch),
         }
     }
@@ -174,8 +174,8 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
         })
         .filter_map(|other| {
             let (their_low, their_high) = extent_of(other);
-            let from = js::js_max(low, their_low);
-            let to = js::js_min(high, their_high);
+            let from = js::max([low, their_low]);
+            let to = js::min([high, their_high]);
             (to - from > SHARED_INK).then_some((from, to))
         })
         .collect();

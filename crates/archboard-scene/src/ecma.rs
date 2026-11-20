@@ -1,13 +1,6 @@
 //! The ECMAScript arithmetic and spelling of [`crate::js`] that only this
 //! crate's own code reads.
 
-use crate::js::to_fixed;
-
-/// `Number(value.toFixed(places))`: a number rounded to some places.
-pub(crate) fn fixed(value: f64, places: usize) -> f64 {
-    to_fixed(value, places).parse::<f64>().unwrap_or(f64::NAN)
-}
-
 /// `x ** n` for a small whole exponent, as JavaScriptCore multiplies it out.
 pub(crate) fn powi(base: f64, exponent: u32) -> f64 {
     let mut result = 1.0;

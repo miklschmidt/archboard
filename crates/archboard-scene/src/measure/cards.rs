@@ -4,7 +4,7 @@
 use archboard_text::Paragraph;
 
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun, Toggle};
-use crate::js::{js_max, js_min};
+use crate::js::{max, min};
 use crate::measure::far::far_name_width;
 use crate::measure::{keep_tail, paragraph, width};
 use crate::request::GroupTag;
@@ -176,13 +176,13 @@ pub(crate) const TAB_FAR: TabLine = TabLine {
 pub(crate) fn tab_far(name: &str, scale: f64, room: f64) -> TabLine {
     let wide = width(name, TITLE.font, TAB_FAR_NAME);
     let held = (room - TAB_FAR.left - TAB_PADDING) / wide * TAB_FAR_NAME;
-    let size = js_min(PART_TITLE_SIZE * scale, js_min(TAB_FAR_MOST, held));
-    let size = js_max(TAB_FAR_NAME, size);
+    let size = min([PART_TITLE_SIZE * scale, min([TAB_FAR_MOST, held])]);
+    let size = max([TAB_FAR_NAME, size]);
     TabLine {
         baseline: TAB_FAR.baseline + (size - TAB_FAR_NAME) * TAB_FAR_DROP,
         name: size,
         path: TAB_FAR_PATH * size / TAB_FAR_NAME,
-        most: js_min(TAB_MOST, room),
+        most: min([TAB_MOST, room]),
         ..TAB_FAR
     }
 }
@@ -251,7 +251,7 @@ fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
     let far = tab_runs(TAB_FAR, words.name, words.path);
     let end_of = |runs: &[TextRun]| runs.last().map_or(0.0, |run| run.x + run.width);
     let room = words.marked() + words.toggled();
-    let width = js_max(end_of(&near), end_of(&far)) + TAB_PADDING + room + beside;
+    let width = max([end_of(&near), end_of(&far)]) + TAB_PADDING + room + beside;
     MeasuredNode {
         node,
         width,
@@ -339,21 +339,21 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let far = far_name_width(words.name);
     let name = title.natural_width() + marked;
-    let least = js_max(js_max(size.least, far + marked), name + left + padding);
+    let least = max([max([size.least, far + marked]), name + left + padding]);
     // A note that outgrows the card takes the most width, never a width of its
     // own, so a row of cards reads as one set.
     let plain = if note.natural_width() + left + padding <= least {
-        js_min(size.most, least)
+        min([size.most, least])
     } else {
         size.most
     };
     // Tags stand on the name's row and the card widens for them, so the name
     // keeps the room it has without them.
     let beside = tags_beside(tags);
-    let width = js_max(
+    let width = max([
         plain,
-        left + js_min(name, plain - left - padding) + beside + padding,
-    );
+        left + min([name, plain - left - padding]) + beside + padding,
+    ]);
     let available = width - left - padding;
     let titles = runs_for(
         &title,
@@ -371,13 +371,13 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
         note_top + notes.len() as f64 * NOTE.line
     };
     let foot = cap_margin(title_style) + CARD_THICKNESS;
-    let height = js_max(
+    let height = max([
         size.height,
         match words.path {
             Some(_) => told + PART_PATH_GAP + PATH.size + foot,
             None => told + padding,
         },
-    );
+    ]);
     // A card with no path keeps no empty band: its words stand in the middle.
     let slack = match words.path {
         Some(_) => 0.0,
@@ -388,18 +388,19 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     });
     // The painted width wins, even when a single long word needs a little more
     // space than the preferred maximum; no character is hidden or cut.
-    let painted = titles
-        .iter()
-        .map(|run| run.width + marked + beside)
-        .chain(notes.iter().map(|run| run.width))
-        .fold(0.0, js_max);
+    let painted = max(std::iter::once(0.0).chain(
+        titles
+            .iter()
+            .map(|run| run.width + marked + beside)
+            .chain(notes.iter().map(|run| run.width)),
+    ));
     let shifted = |run: TextRun| TextRun {
         y: run.y + slack,
         ..run
     };
     MeasuredNode {
         node,
-        width: js_max(width, left + painted + padding),
+        width: max([width, left + painted + padding]),
         height,
         header_height: 0.0,
         runs: titles

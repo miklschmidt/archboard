@@ -6,7 +6,7 @@
 
 use archboard_scene::geometry::{Curve, Point, Rect, curve_bounds, inflate, segment_start};
 
-use crate::ecma::{js_min, max, min, sign};
+use crate::ecma::{max, min, sign};
 
 use super::clearance::curve_boxes;
 use super::drawn_lines::{Axis, Run, SHARED_INK, fixed_of, line_runs};
@@ -63,7 +63,7 @@ fn route_crowding(scene: &HopScene<'_>, allowed: &[&Run], bounds: Rect, curve: &
                     segments: vec![*segment],
                 })
             });
-            nearest = js_min(nearest, pieces_crowding(&bridge_boxes, pieces));
+            nearest = min([nearest, pieces_crowding(&bridge_boxes, pieces)]);
         }
     }
     nearest
@@ -121,7 +121,7 @@ fn crowding_among<'h>(
     for under in beneath {
         allowed.extend(line_runs(&scene.runs, under));
     }
-    js_min(
+    min([
         nearest,
         route_crowding(
             scene,
@@ -129,7 +129,7 @@ fn crowding_among<'h>(
             inflate(curve_bounds, BRIDGE_CLEARANCE),
             curve,
         ),
-    )
+    ])
 }
 
 /// Whether something crowds a crest (`crowding`).

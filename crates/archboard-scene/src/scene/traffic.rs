@@ -14,7 +14,7 @@ use crate::scene::colour::Colour;
 
 /// How thick a pulse's core is on a line of one width.
 pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
-    js::js_max(1.5, line_width + 0.6)
+    js::max([1.5, line_width + 0.6])
 }
 
 /// The colours of a pulse and how thick the line it rides is.
@@ -382,8 +382,8 @@ fn leg_of(piece: &Piece, core: f64, span: f64, motion: Motion) -> PulseLeg {
             cycle,
             start,
         } => {
-            let enters = js::js_max(0.0, turn_moment(-PULSE_SPAN - 1.0, start, speed, along));
-            let leaves = js::js_min(cycle, turn_moment(length + 1.0, start, speed, along));
+            let enters = js::max([0.0, turn_moment(-PULSE_SPAN - 1.0, start, speed, along)]);
+            let leaves = js::min([cycle, turn_moment(length + 1.0, start, speed, along)]);
             (
                 Bar {
                     from: 0.0,

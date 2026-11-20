@@ -41,7 +41,7 @@ impl Views {
     fn of(placed: &Node, appearance: &NodeAppearance, far_scale: f64) -> Views {
         let frame = placed.bounds;
         let node = &placed.measured.node;
-        let room = js::js_min(placed.measured.width, frame.width) - TAB_SHOULDER;
+        let room = js::min([placed.measured.width, frame.width]) - TAB_SHOULDER;
         let drill = if appearance.drill.is_some() {
             DRILL_MARK_ROOM
         } else {
@@ -50,7 +50,7 @@ impl Views {
         let mark = drill + node.toggle.map_or(0.0, |_| TOGGLE_ROOM);
         let hugging = |runs: &[TextRun]| {
             let words = js::max(runs.iter().map(|run| run.x + run.width));
-            js::js_max(js::js_min(words + TAB_PADDING + mark, room), 0.0)
+            js::max([js::min([words + TAB_PADDING + mark, room]), 0.0])
         };
         let line = tab_far(&node.name, far_scale, room - mark);
         let far_runs = tab_runs(line, &node.name, node.code_path.as_deref());

@@ -10,14 +10,13 @@ use std::cell::OnceCell;
 use std::collections::BTreeMap;
 
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::{
-    Curve, Point, Rect, Segment, curve_bounds, reversed, segment_start,
-};
+use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, segment_start};
 use archboard_scene::paint::junction_boxes;
 use archboard_scene::request::{Arrowhead, Dash};
 
 use crate::constants::APPROACH_STRAIGHT;
-use crate::ecma::{hypot, js_max, js_min, max, min, sign, sorted_by};
+use crate::ecma::{hypot, max, min, sign, sorted_by};
+use crate::routes::curves::reversed;
 
 use super::drawn_lines::{Axis, Run, SHARED_INK, fixed_of, on_run, straight_through, straightness};
 use super::{BRIDGE_CLEARANCE, BRIDGE_RADIUS, LineLook};
@@ -214,7 +213,7 @@ pub(super) fn crest_along(
         .axis
         .of(on_run(run, first - (BRIDGE_RADIUS + room), 0.0));
     let high = run.axis.of(on_run(run, last + (BRIDGE_RADIUS + room), 0.0));
-    straight_through(runs, run, js_min(low, high), js_max(low, high))
+    straight_through(runs, run, min([low, high]), max([low, high]))
         .then(|| hump(run, first, last, bulge))
 }
 
@@ -234,8 +233,8 @@ pub(super) fn hop_fits(scene: &HopScene<'_>, run: &Run, coordinate: f64, rooms: 
             })
             .map(|hop| {
                 let [one, other] = [axis.of(hop.curve.from), axis.of(curve_end(&hop.curve))];
-                let (low, high) = (js_min(one, other), js_max(one, other));
-                js_max(0.0, js_max(low - coordinate, coordinate - high))
+                let (low, high) = (min([one, other]), max([one, other]));
+                max([0.0, max([low - coordinate, coordinate - high])])
             }),
     ));
     clear >= BRIDGE_RADIUS + FORCED_GAP
@@ -299,7 +298,7 @@ fn arrowhead_box(from: Point, to: Point) -> Option<Rect> {
     if length == 0.0 {
         return None;
     }
-    let share = js_min(length, APPROACH_STRAIGHT) / length;
+    let share = min([length, APPROACH_STRAIGHT]) / length;
     let back = Point {
         x: to.x + (from.x - to.x) * share,
         y: to.y + (from.y - to.y) * share,
@@ -314,8 +313,8 @@ fn arrowhead_box(from: Point, to: Point) -> Option<Rect> {
 /// the line only.
 fn widened(from: Point, to: Point, side: f64) -> Rect {
     let bounds = Rect {
-        x: js_min(from.x, to.x),
-        y: js_min(from.y, to.y),
+        x: min([from.x, to.x]),
+        y: min([from.y, to.y]),
         width: (from.x - to.x).abs(),
         height: (from.y - to.y).abs(),
     };

@@ -2,7 +2,7 @@
 //! label, a message's words and a note's lines.
 
 use crate::drawing::{MeasuredLabel, TextRole, TextRun};
-use crate::js::js_max;
+use crate::js::max;
 use crate::measure::cards::{NOTE, Style, runs_for};
 use crate::measure::paragraph;
 use crate::sequence_picture::WordLine;
@@ -49,11 +49,11 @@ pub fn measure_label(text: &str) -> MeasuredLabel {
 /// takes it only where the wide plate finds no spot. The plate holds its longest word whole.
 pub fn narrow_label(text: &str) -> Option<MeasuredLabel> {
     let word = |word: &str| paragraph(word, LABEL.font, LABEL.size).natural_width();
-    let longest = text.split_whitespace().map(word).fold(0.0, js_max);
-    let width = js_max(
+    let longest = max(std::iter::once(0.0).chain(text.split_whitespace().map(word)));
+    let width = max([
         LABEL_NARROW_WIDTH,
         longest + 2.0 * ARCHITECTURE_LABEL_PADDING_X,
-    );
+    ]);
     let narrow = plate(text, width);
     (narrow.width < measure_label(text).width - 1.0).then_some(narrow)
 }
@@ -62,8 +62,8 @@ pub fn narrow_label(text: &str) -> Option<MeasuredLabel> {
 fn plate(text: &str, max_width: f64) -> MeasuredLabel {
     let limit = max_width - 2.0 * ARCHITECTURE_LABEL_PADDING_X;
     let lines = balanced_lines(text, LABEL, limit);
-    let widest = lines.iter().map(|line| line.width).fold(0.0, js_max);
-    let width = js_max(LABEL_MIN_WIDTH, widest + 2.0 * ARCHITECTURE_LABEL_PADDING_X);
+    let widest = max(std::iter::once(0.0).chain(lines.iter().map(|line| line.width)));
+    let width = max([LABEL_MIN_WIDTH, widest + 2.0 * ARCHITECTURE_LABEL_PADDING_X]);
     let height = lines.len().max(1) as f64 * LABEL.line + 2.0 * ARCHITECTURE_LABEL_PADDING_Y;
     let runs = lines
         .into_iter()

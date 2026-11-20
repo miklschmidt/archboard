@@ -67,7 +67,7 @@ pub fn message_plate(label: &str, room: f64) -> MessagePlate {
     let lines = message_lines(label, limit, PILL_TEXT_SIZE, MESSAGE_LINE_STEP);
     let widest = lines
         .iter()
-        .fold(0.0, |widest, line| js::js_max(widest, line.width));
+        .fold(0.0, |widest, line| js::max([widest, line.width]));
     let taller_by = (lines.len() as f64 - 1.0) * MESSAGE_LINE_STEP;
     MessagePlate {
         lines,
@@ -90,7 +90,7 @@ pub fn note_plate(note: &str, wrap: f64) -> NotePlate {
     );
     let widest = lines
         .iter()
-        .fold(0.0, |widest, run| js::js_max(widest, run.width));
+        .fold(0.0, |widest, run| js::max([widest, run.width]));
     NotePlate {
         width: widest.ceil() + STEP_NOTE_PADDING_X * 2.0,
         height: lines.len() as f64 * line_height + STEP_NOTE_PADDING_Y * 2.0,

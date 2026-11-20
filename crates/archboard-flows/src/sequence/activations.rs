@@ -54,7 +54,7 @@ fn last_involvement(steps: &[PlacedStep<'_>], from: usize, node: &str) -> f64 {
     let mut lowest = steps.get(from).map_or(0.0, |step| step.y);
     for candidate in steps.iter().skip(from) {
         if candidate.step.from == node || candidate.step.to == node {
-            lowest = js::js_max(lowest, candidate.y);
+            lowest = js::max([lowest, candidate.y]);
         }
     }
     lowest
@@ -68,7 +68,7 @@ fn merged_bars(bars: Vec<Activation>) -> Vec<Activation> {
     for bar in bars {
         match merged.last_mut() {
             Some(current) if bar.top <= current.bottom => {
-                current.bottom = js::js_max(current.bottom, bar.bottom);
+                current.bottom = js::max([current.bottom, bar.bottom]);
             }
             _ => merged.push(bar),
         }

@@ -1,7 +1,7 @@
 //! The distances the layout keeps, in diagram units, and its target page shape.
 //! Shared sizes come from the scene that the layout places.
 
-use archboard_scene::geometry::{bend_radius, route_tolerance};
+use archboard_scene::geometry::bend_radius;
 use archboard_scene::paint::card_radius;
 
 /// The radius of every bend a route takes.
@@ -9,7 +9,7 @@ pub(crate) const BEND_RADIUS: f64 = bend_radius();
 /// How round a card's corner is, which keeps a line's port clear of it.
 pub(crate) const CARD_RADIUS: f64 = card_radius();
 /// How close two points must be to be one, and the least a turn may move.
-pub(crate) const EPSILON: f64 = route_tolerance();
+pub(crate) const EPSILON: f64 = 0.01;
 
 /// The width of the one viewport the shell supports.
 const SHELL_WIDTH: f64 = 1920.0;
@@ -56,6 +56,6 @@ const REFERENCE_PANE_HEIGHT: f64 = REFERENCE_WIDTH / LAYOUT_ASPECT;
 /// A drawing's fit in the reference pane: the scale that shows it whole,
 /// capped at one (`fitIn` of shell-geometry.ts).
 pub fn fit_in(width: f64, height: f64) -> f64 {
-    let scale = crate::ecma::js_min(REFERENCE_PANE_WIDTH / width, REFERENCE_PANE_HEIGHT / height);
-    crate::ecma::js_min(1.0, scale)
+    let scale = crate::ecma::min([REFERENCE_PANE_WIDTH / width, REFERENCE_PANE_HEIGHT / height]);
+    crate::ecma::min([1.0, scale])
 }

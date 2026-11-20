@@ -5,7 +5,7 @@
 //! Stations, chains, nets and trunks are kept by place in one [`Track`], since
 //! the router asks of each whether it is the same one as another.
 
-use crate::ecma::{js_max, js_min};
+use crate::ecma::{max, min};
 use crate::geometry::{Point, polyline_x};
 use crate::placed::PlacedEdge;
 use crate::track::channels::{Net, NetId, Trunk};
@@ -307,7 +307,7 @@ impl<'s> Track<'s> {
             return at.unwrap_or_else(|| self.x(station));
         }
         let (low, high) = self.reach_of(station);
-        js_min(high, js_max(low, toward))
+        min([high, max([low, toward])])
     }
 
     /// Whether two chains meet at one station: the same one, or the same card.
@@ -462,14 +462,14 @@ impl<'s> Track<'s> {
             return (x, x);
         };
         let bx = self.scene.item(item).bx;
-        let margin = js_min(
+        let margin = min([
             if station.kind == Kind::Label {
                 LANE
             } else {
                 FACE_MARGIN
             },
             bx.width / 2.0,
-        );
+        ]);
         (bx.x + margin, bx.x + bx.width - margin)
     }
 
@@ -478,9 +478,9 @@ impl<'s> Track<'s> {
     pub(crate) fn meeting(&self, before: StationId, after: StationId, near: f64) -> Option<f64> {
         let (a, b) = self.reach_of(before);
         let (c, d) = self.reach_of(after);
-        let low = js_max(a, c);
-        let high = js_min(b, d);
-        (low <= high).then(|| js_min(high, js_max(low, near)))
+        let low = max([a, c]);
+        let high = min([b, d]);
+        (low <= high).then(|| min([high, max([low, near])]))
     }
 
     /// Where a run of lanes to or from a container runs straight on: the

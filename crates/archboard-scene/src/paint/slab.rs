@@ -190,7 +190,7 @@ pub(super) fn standing_border(
                 width: face.width - OUTLINE_WIDTH,
                 height: face.height - OUTLINE_WIDTH,
             }),
-            Some(round_coord(js::js_max(0.0, radius - half))),
+            Some(round_coord(js::max([0.0, radius - half]))),
         )
         .unfilled()
         .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing)))
@@ -328,7 +328,7 @@ fn solid_border(
     };
     let half = OUTLINE_WIDTH / 2.0;
     shape(
-        solid(&inset(face, half), js::js_max(0.0, radius - half))
+        solid(&inset(face, half), js::max([0.0, radius - half]))
             .unfilled()
             .stroked(Stroke::new(ink, OUTLINE_WIDTH).dashed(outline_dash(standing))),
     )

@@ -86,7 +86,7 @@ fn straight_drawn(placed: &PlacedStep<'_>, start: f64, end: f64) -> (Rect, Rect)
         height: plate.height,
     };
     let arrow = Rect {
-        x: js::js_min(start, end),
+        x: js::min([start, end]),
         y: placed.y,
         width: (end - start).abs(),
         height: 0.0,
@@ -136,8 +136,8 @@ pub(super) fn frame_span(
     let mut right = x + width;
     for placed in steps {
         let ink = drawn(placed, active).bounds;
-        left = js::js_min(left, (ink.x - NEST_INSET).floor());
-        right = js::js_max(right, (ink.x + ink.width + NEST_INSET).ceil());
+        left = js::min([left, (ink.x - NEST_INSET).floor()]);
+        right = js::max([right, (ink.x + ink.width + NEST_INSET).ceil()]);
     }
     (left, right - left)
 }

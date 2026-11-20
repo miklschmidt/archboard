@@ -3,7 +3,7 @@
 //! its guards and its dividers.
 
 use crate::geometry::{Rect, round_coord};
-use crate::js::js_min;
+use crate::js::min;
 use crate::names::word;
 use crate::paint::appearance::tray_look;
 use crate::paint::build::{Items, group, lines, point, shape, text};
@@ -47,7 +47,7 @@ pub(super) fn paint_frame(
     let well = |width: f64| Well {
         frame,
         tab: Rect {
-            width: js_min(width, layout.tab.width),
+            width: min([width, layout.tab.width]),
             ..layout.tab
         },
     };

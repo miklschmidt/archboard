@@ -15,7 +15,7 @@
 
 use std::rc::Rc;
 
-use crate::ecma::{abs, js_max, js_min, max, min, sort_by};
+use crate::ecma::{abs, max, min, sort_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::channels::port_reach;
@@ -37,7 +37,7 @@ fn middle(at: &Rect) -> f64 {
 
 /// The part two spans share, if any.
 fn overlap(one: Span, other: Span) -> Option<Span> {
-    let (low, high) = (js_max(one.0, other.0), js_min(one.1, other.1));
+    let (low, high) = (max([one.0, other.0]), min([one.1, other.1]));
     (low <= high).then_some((low, high))
 }
 
@@ -49,7 +49,7 @@ fn nearest(span: Span, other: Span) -> f64 {
     if span.0 > other.1 {
         return span.0;
     }
-    f64::midpoint(js_max(span.0, other.0), js_min(span.1, other.1))
+    f64::midpoint(max([span.0, other.0]), min([span.1, other.1]))
 }
 
 /// Where two ends of one line stand: in one column where their spans share
@@ -57,7 +57,7 @@ fn nearest(span: Span, other: Span) -> f64 {
 /// the other as its span allows.
 fn facing(one: Span, other: Span, now: f64) -> (f64, f64) {
     if let Some(shared) = overlap(one, other) {
-        let x = js_min(shared.1, js_max(shared.0, now));
+        let x = min([shared.1, max([shared.0, now])]);
         return (x, x);
     }
     (nearest(one, other), nearest(other, one))
@@ -173,7 +173,7 @@ impl Settling<'_> {
         let low = header
             .filter(|_| top)
             .map_or(side, |header| header.x + header.width + clearance);
-        let edge = (low, js_max(low, inner.width - side));
+        let edge = (low, max([low, inner.width - side]));
         let reach = self
             .reach_of(block, port)
             .unwrap_or_else(|| self.open_of(block, port, edge));
@@ -336,7 +336,7 @@ impl Settling<'_> {
         }
         let track = corners_from(points, at)[1].y;
         let face = if track < at.y { at.y } else { at.y + at.height };
-        let (low, high) = (js_min(track, face), js_max(track, face));
+        let (low, high) = (min([track, face]), max([track, face]));
         let between: Vec<Rect> = block
             .items
             .iter()

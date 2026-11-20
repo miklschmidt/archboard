@@ -111,7 +111,7 @@ fn spacing_of(chain: &[&Lane]) -> f64 {
             .filter(|lane| lane.ride > 0.0)
             .map(|lane| lane.ride),
     );
-    js::js_max(MIN_SPACING, js::js_min(speed / volume, shortest))
+    js::max([MIN_SPACING, js::min([speed / volume, shortest])])
 }
 
 /// Where the pulses of every lane of a chain are at time zero.
@@ -171,10 +171,10 @@ pub(super) fn relay_rhythms(
 ) -> HashMap<String, Rhythm> {
     let mut rhythms = HashMap::new();
     for chain in chains(lanes) {
-        let speed = js::js_min(
-            js::js_max(chain[0].traffic.speed * PULSE_PACE, SLOWEST),
+        let speed = js::min([
+            js::max([chain[0].traffic.speed * PULSE_PACE, SLOWEST]),
             FASTEST,
-        );
+        ]);
         let spacing = spacing_of(&chain);
         let phases = phases_of(&chain, spacing, across);
         for lane in &chain {
@@ -291,13 +291,13 @@ fn locate(ring: &Ring, point: Point) -> f64 {
         let t = if size == 0.0 {
             0.0
         } else {
-            js::js_min(
-                js::js_max(
+            js::min([
+                js::max([
                     ((point.x - from.x) * dx + (point.y - from.y) * dy) / size,
                     0.0,
-                ),
+                ]),
                 1.0,
-            )
+            ])
         };
         let gap = js::hypot(from.x + dx * t - point.x, from.y + dy * t - point.y);
         if gap < best_gap {
@@ -312,7 +312,7 @@ fn locate(ring: &Ring, point: Point) -> f64 {
 pub(super) fn rim_length(rect: Rect, from: Point, to: Point) -> f64 {
     let ring = ring_of(rect);
     let forward = within(locate(&ring, to) - locate(&ring, from), ring.length);
-    js::js_min(forward, ring.length - forward)
+    js::min([forward, ring.length - forward])
 }
 
 #[cfg(test)]

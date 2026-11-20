@@ -233,7 +233,7 @@ pub(super) fn lowest_drawn(steps: &[PlacedStep<'_>], frames: &[FrameRows<'_>], f
         lowest = js::max([lowest, placed.y + reach, note]);
     }
     for frame in frames {
-        lowest = js::js_max(lowest, frame.bottom);
+        lowest = js::max([lowest, frame.bottom]);
     }
     lowest
 }

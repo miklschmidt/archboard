@@ -67,7 +67,7 @@ pub fn sequence_cards(cards: &[CardWords<'_>], limits: ColumnLimits) -> HeadCard
     let asked = cards.iter().map(asked_width);
     // A whole unit: adding measured widths leaves floating-point dust, and a
     // card handed back exactly the width its name measured would cut it.
-    let preferred = js::js_min(limits.most, largest(asked, limits.least).ceil());
+    let preferred = js::min([limits.most, largest(asked, limits.least).ceil()]);
     let notes: Vec<Vec<TextRun>> = cards
         .iter()
         .map(|card| card_notes(card, preferred))
@@ -115,7 +115,7 @@ pub fn sequence_cards(cards: &[CardWords<'_>], limits: ColumnLimits) -> HeadCard
 
 /// The largest of some numbers, and the floor when there are none.
 fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 {
-    values.into_iter().fold(floor, js::js_max)
+    js::max(std::iter::once(floor).chain(values))
 }
 
 /// The horizontal run a card's words have, after its padding and its kind's chip.
@@ -164,15 +164,15 @@ fn asked_width(card: &CardWords<'_>) -> f64 {
         .unwrap_or("")
         .split(['\r', '\n'])
         .fold(0.0, |widest, line| {
-            js::js_max(widest, width(line, CARD_NOTE_FONT, NOTE_SIZE))
+            js::max([widest, width(line, CARD_NOTE_FONT, NOTE_SIZE)])
         });
     CARD_PADDING_X * 2.0
         + ICON_CHIP_SIZE
         + ICON_CHIP_GAP
-        + js::js_max(
+        + js::max([
             width(card.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(card),
             note_width,
-        )
+        ])
 }
 
 /// The size a title is set at: the largest step, at or below the size it
@@ -187,7 +187,7 @@ fn fitted_size(
 ) -> f64 {
     let mut size = earned;
     while size > floor && width(label, font, size) > budget {
-        size = js::js_max(floor, size - step);
+        size = js::max([floor, size - step]);
     }
     size
 }

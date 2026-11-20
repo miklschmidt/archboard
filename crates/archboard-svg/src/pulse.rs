@@ -14,6 +14,7 @@ use archboard_scene::scene::{
 
 use crate::css::css;
 use crate::path::{Spelling, path_data};
+use crate::spelling;
 use crate::xml::{Attributes, close, coord, empty, open};
 
 /// The class every moving mark carries, for the stylesheet to hide it from a
@@ -26,7 +27,7 @@ fn short_hash(markup: &str) -> String {
     for code in markup.encode_utf16() {
         state = (state ^ u32::from(code)).wrapping_mul(0x0100_0193);
     }
-    js::pad_start(&js::radix(state, 36), 7, '0')
+    spelling::pad_start(&spelling::radix(state, 36), 7, '0')
 }
 
 /// A definition and the id it is referred to by.
@@ -41,13 +42,13 @@ fn frame_of(leg: &PulseLeg) -> String {
     let scaled = if (leg.stretch - 1.0).abs() < 1e-4 {
         String::new()
     } else {
-        format!(" scale({} 1)", js::fixed_number(leg.stretch, 5))
+        format!(" scale({} 1)", spelling::fixed_number(leg.stretch, 5))
     };
     format!(
         "translate({} {}) rotate({}){scaled}",
         coord(leg.from.x),
         coord(leg.from.y),
-        js::fixed_number(angle, 3)
+        spelling::fixed_number(angle, 3)
     )
 }
 
@@ -131,7 +132,7 @@ fn mask_of(leg: &PulseLeg, glow: &[GlowLayer]) -> Defined {
                 )
                 .set("fill", "none")
                 .set("stroke", "#ffffff")
-                .set("stroke-width", js::fixed_number(layer.width, 2))
+                .set("stroke-width", spelling::fixed_number(layer.width, 2))
                 .set("stroke-opacity", layer.light);
             let mut path = String::new();
             empty("path", &attributes, &mut path);
@@ -156,7 +157,7 @@ fn gradient_of(look: &PulseLook, train: &PulseTrain) -> Defined {
     for stop in &train.stops {
         let mut attributes = Attributes::new();
         attributes
-            .set("offset", js::fixed_number(stop.offset, 4))
+            .set("offset", spelling::fixed_number(stop.offset, 4))
             .set(
                 "stop-color",
                 if stop.hot {
@@ -165,12 +166,12 @@ fn gradient_of(look: &PulseLook, train: &PulseTrain) -> Defined {
                     head.as_str()
                 },
             )
-            .set("stop-opacity", js::fixed_number(stop.light, 3));
+            .set("stop-opacity", spelling::fixed_number(stop.light, 3));
         empty("stop", &attributes, &mut stops);
     }
     let markup = format!(
         "gradientUnits=\"userSpaceOnUse\" x1=\"0\" y1=\"0\" x2=\"{}\" y2=\"0\"{}>{stops}",
-        js::fixed_number(train.span, 4),
+        spelling::fixed_number(train.span, 4),
         if train.repeats {
             " spreadMethod=\"repeat\""
         } else {
@@ -186,12 +187,12 @@ fn gradient_of(look: &PulseLook, train: &PulseTrain) -> Defined {
 
 /// A duration as a SMIL timecount: decimal, never with an exponent.
 fn timecount(seconds: f64) -> String {
-    format!("{}s", js::plain_decimal(seconds))
+    format!("{}s", spelling::plain_decimal(seconds))
 }
 
 /// A point on the cycle, as SMIL spells a key time: clamped, six places.
 fn ratio(value: f64) -> String {
-    js::to_fixed(js::js_min(js::js_max(value, 0.0), 1.0), 6)
+    js::to_fixed(js::min([js::max([value, 0.0]), 1.0]), 6)
 }
 
 /// How a piece's bar slides over one turn of its train, as SMIL spells it,
@@ -205,7 +206,7 @@ fn motion_of(motion: &LegMotion, train: &PulseTrain) -> (f64, Attributes) {
         LegMotion::Steady { shift, .. } => {
             attributes
                 .set("from", "0 0")
-                .set("to", format!("{} 0", js::fixed_number(train.span, 4)));
+                .set("to", format!("{} 0", spelling::fixed_number(train.span, 4)));
             shift
         }
         LegMotion::Turn {
@@ -218,7 +219,7 @@ fn motion_of(motion: &LegMotion, train: &PulseTrain) -> (f64, Attributes) {
         } => {
             let values = [from, from, to, to]
                 .iter()
-                .map(|x| format!("{} 0", js::fixed_number(*x, 2)))
+                .map(|x| format!("{} 0", spelling::fixed_number(*x, 2)))
                 .collect::<Vec<_>>()
                 .join(";");
             let times = [
@@ -251,7 +252,7 @@ fn leg_markup(
     let shift = if shift == 0.0 {
         String::new()
     } else {
-        format!(" translate({} 0)", js::fixed_number(shift, 2))
+        format!(" translate({} 0)", spelling::fixed_number(shift, 2))
     };
     let mut out = String::new();
     let mut masked = Attributes::new();
@@ -265,10 +266,10 @@ fn leg_markup(
     open("g", &framed, &mut out);
     let bar = leg.bar;
     let mut rect = Attributes::new();
-    rect.set("x", js::fixed_number(bar.from, 2))
-        .set("y", js::fixed_number(-bar.height / 2.0, 2))
-        .set("width", js::fixed_number(bar.width, 2))
-        .set("height", js::fixed_number(bar.height, 2))
+    rect.set("x", spelling::fixed_number(bar.from, 2))
+        .set("y", spelling::fixed_number(-bar.height / 2.0, 2))
+        .set("width", spelling::fixed_number(bar.width, 2))
+        .set("height", spelling::fixed_number(bar.height, 2))
         .set("fill", format!("url(#{gradient})"));
     open("rect", &rect, &mut out);
     empty("animateTransform", &motion, &mut out);

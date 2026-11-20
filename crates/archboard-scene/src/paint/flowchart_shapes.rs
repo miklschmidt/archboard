@@ -175,6 +175,12 @@ fn jump_inks(number: u32) -> (Colour, Colour) {
     }
 }
 
+/// Whether a shape is a step of the flow, which a reader picks: a decision or
+/// a loop, and never a terminal or a jump.
+fn is_step(shape: FlowchartShape) -> bool {
+    matches!(shape, FlowchartShape::Decision | FlowchartShape::Loop)
+}
+
 /// How a shape's slab looks: a gold face with the primary edge, its corners
 /// rounded but for a terminal's, whose outline is already round; a jump's in
 /// the ink of its jump, a tag's corners rounded less.
@@ -336,7 +342,7 @@ pub(super) fn ring(
     shape(
         Shape::path(
             Purpose::Ring,
-            polygon_path(&inset(outline, by), js::js_max(0.0, radius - by)),
+            polygon_path(&inset(outline, by), js::max([0.0, radius - by])),
         )
         .unfilled()
         .stroked(Styles::of(palette).ring(Some(HALO_WIDTH))),
@@ -373,10 +379,7 @@ impl FlowchartShapes<'_> {
         );
         shadow_group(
             cast,
-            shaped
-                .shape
-                .is_step()
-                .then_some(card.measured.node.id.as_str()),
+            is_step(shaped.shape).then_some(card.measured.node.id.as_str()),
             None,
         )
     }
@@ -389,7 +392,7 @@ impl FlowchartShapes<'_> {
         let rect = card.bounds;
         let outline = outline_of(shaped.shape, rect);
         let foreground = Colour::from(Token::PrimaryForeground);
-        if !shaped.shape.is_step() {
+        if !is_step(shaped.shape) {
             let words = match shaped.shape {
                 FlowchartShape::Jump { end, number } => {
                     jump_letter(end, rect, &shaped.words, &jump_inks(number).1)

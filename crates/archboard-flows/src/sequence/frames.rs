@@ -23,7 +23,7 @@ use crate::sequence::messages::drawn;
 /// What one message claims across a frame: its ink, and the lifelines it runs
 /// between with the bars on them, so a frame's side never lies on a bar.
 fn ink_of(placed: &PlacedStep<'_>, active: &ActiveAt<'_>) -> Rect {
-    let bar = activation_span(js::js_min(placed.from_x, placed.to_x));
+    let bar = activation_span(js::min([placed.from_x, placed.to_x]));
     let left = bar.x;
     let width = (placed.to_x - placed.from_x).abs() + bar.width;
     covering(
@@ -110,8 +110,8 @@ pub(super) fn span_around((x, width): (f64, f64), frames: &[PlacedFrame<'_>]) ->
     let mut right = x + width;
     for frame in frames {
         let bounds = frame.bounds;
-        left = js::js_min(left, (bounds.x - NEST_INSET).floor());
-        right = js::js_max(right, (bounds.x + bounds.width + NEST_INSET).ceil());
+        left = js::min([left, (bounds.x - NEST_INSET).floor()]);
+        right = js::max([right, (bounds.x + bounds.width + NEST_INSET).ceil()]);
     }
     (left, right - left)
 }

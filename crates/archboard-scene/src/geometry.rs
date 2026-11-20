@@ -84,10 +84,10 @@ pub fn round_coord(value: f64) -> f64 {
 
 /// The smallest box containing both of them.
 pub fn covering(a: Rect, b: Rect) -> Rect {
-    let left = js::js_min(a.x, b.x);
-    let top = js::js_min(a.y, b.y);
-    let right = js::js_max(a.x + a.width, b.x + b.width);
-    let bottom = js::js_max(a.y + a.height, b.y + b.height);
+    let left = js::min([a.x, b.x]);
+    let top = js::min([a.y, b.y]);
+    let right = js::max([a.x + a.width, b.x + b.width]);
+    let bottom = js::max([a.y + a.height, b.y + b.height]);
     Rect {
         x: left,
         y: top,
@@ -124,36 +124,11 @@ pub fn segment_start(curve: &Curve, index: usize) -> Point {
         .map_or(curve.from, Segment::to)
 }
 
-/// A line read backwards: the same pieces, from its end to its start.
-pub fn reversed(curve: &Curve) -> Curve {
-    let segments = curve
-        .segments
-        .iter()
-        .enumerate()
-        .map(|(index, segment)| {
-            let to = segment_start(curve, index);
-            match *segment {
-                Segment::Line { .. } => Segment::Line { to },
-                Segment::Cubic { first, second, .. } => Segment::Cubic {
-                    first: second,
-                    second: first,
-                    to,
-                },
-            }
-        })
-        .rev()
-        .collect();
-    Curve {
-        from: curve.end(),
-        segments,
-    }
-}
-
 /// The point a fraction of the way along a route, by its segments.
 fn point_at(curve: &Curve, t: f64) -> Point {
     let count = curve.segments.len();
-    let scaled = js::js_min(js::js_max(t, 0.0), 1.0) * count as f64;
-    let index = js::js_min(scaled.floor(), count as f64 - 1.0);
+    let scaled = js::min([js::max([t, 0.0]), 1.0]) * count as f64;
+    let index = js::min([scaled.floor(), count as f64 - 1.0]);
     if index < 0.0 {
         return curve.from;
     }
@@ -169,53 +144,6 @@ fn point_at(curve: &Curve, t: f64) -> Point {
         }
         None => curve.from,
     }
-}
-
-/// Whether two coordinates have the same value at drawing precision.
-/// All indeterminate coordinates compare alike, as their written values do.
-fn same_rounded_coordinate(a: f64, b: f64) -> bool {
-    let a = round_coord(a);
-    let b = round_coord(b);
-    a == b || (a.is_nan() && b.is_nan())
-}
-
-/// Whether two points coincide at drawing precision.
-fn same_rounded_point(a: Point, b: Point) -> bool {
-    same_rounded_coordinate(a.x, b.x) && same_rounded_coordinate(a.y, b.y)
-}
-
-/// Whether two pieces have the same kind, control points and end at drawing precision.
-fn same_rounded_segment(a: &Segment, b: &Segment) -> bool {
-    match (a, b) {
-        (Segment::Line { to: a }, Segment::Line { to: b }) => same_rounded_point(*a, *b),
-        (
-            Segment::Cubic {
-                first: first_a,
-                second: second_a,
-                to: to_a,
-            },
-            Segment::Cubic {
-                first: first_b,
-                second: second_b,
-                to: to_b,
-            },
-        ) => [(*first_a, *first_b), (*second_a, *second_b), (*to_a, *to_b)]
-            .into_iter()
-            .all(|(a, b)| same_rounded_point(a, b)),
-        _ => false,
-    }
-}
-
-/// Whether two routes have the same ordered pieces after rounding every
-/// coordinate to a hundredth. This keeps the drawing unchanged when a layout
-/// pass reconstructs a route from its vertices.
-pub fn same_rounded_curve(a: &Curve, b: &Curve) -> bool {
-    same_rounded_point(a.from, b.from)
-        && a.segments.len() == b.segments.len()
-        && a.segments
-            .iter()
-            .zip(&b.segments)
-            .all(|(a, b)| same_rounded_segment(a, b))
 }
 
 /// The box round every point a route runs through, its control points included.
@@ -246,11 +174,6 @@ const BEND_RADIUS: f64 = 8.0;
 /// The radius of every bend a route takes, which a layout keeps room for.
 pub const fn bend_radius() -> f64 {
     BEND_RADIUS
-}
-
-/// How close two points must be to be one, and the least a turn may move.
-pub const fn route_tolerance() -> f64 {
-    EPSILON
 }
 
 /// Waypoints without repeats and without points that run straight on.
@@ -408,40 +331,6 @@ mod tests {
     }
 
     #[test]
-    fn a_reversed_line_runs_the_same_pieces_backwards() {
-        let point = |x, y| Point { x, y };
-        let curve = Curve {
-            from: point(0.0, 0.0),
-            segments: vec![
-                Segment::Line {
-                    to: point(0.0, 10.0),
-                },
-                Segment::Cubic {
-                    first: point(0.0, 14.0),
-                    second: point(4.0, 18.0),
-                    to: point(8.0, 18.0),
-                },
-            ],
-        };
-        let back = reversed(&curve);
-        assert_eq!(back.from, point(8.0, 18.0));
-        assert_eq!(
-            back.segments,
-            [
-                Segment::Cubic {
-                    first: point(4.0, 18.0),
-                    second: point(0.0, 14.0),
-                    to: point(0.0, 10.0),
-                },
-                Segment::Line {
-                    to: point(0.0, 0.0)
-                },
-            ]
-        );
-        assert_eq!(reversed(&back), curve);
-    }
-
-    #[test]
     fn bends_a_route_through_its_corners() {
         let curve = curve_through(
             &[
@@ -467,6 +356,23 @@ mod tests {
                 },
             ],
         };
-        assert!(same_rounded_curve(&curve, &expected));
+        let rounded = |point: Point| Point {
+            x: round_coord(point.x),
+            y: round_coord(point.y),
+        };
+        let segments: Vec<Segment> = curve
+            .segments
+            .iter()
+            .map(|segment| match *segment {
+                Segment::Line { to } => Segment::Line { to: rounded(to) },
+                Segment::Cubic { first, second, to } => Segment::Cubic {
+                    first: rounded(first),
+                    second: rounded(second),
+                    to: rounded(to),
+                },
+            })
+            .collect();
+        assert_eq!(rounded(curve.from), expected.from);
+        assert_eq!(segments, expected.segments);
     }
 }

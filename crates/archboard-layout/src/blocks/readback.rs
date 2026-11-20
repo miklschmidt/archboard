@@ -3,7 +3,7 @@
 //! nodes around their members with their title rows, and the regions as rows
 //! on the block's root, the shape the track scene reads.
 
-use crate::ecma::{abs, js_min};
+use crate::ecma::{abs, min};
 use crate::geometry::{Point, Rect};
 use crate::placed::{PlacedNode, PlacedRegion};
 use crate::track::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
@@ -120,8 +120,8 @@ impl Clusters<'_> {
             boxes.insert(
                 id.clone(),
                 Rect {
-                    x: js_min(x1, x2) - origin.x,
-                    y: js_min(y1, y2) - origin.y,
+                    x: min([x1, x2]) - origin.x,
+                    y: min([y1, y2]) - origin.y,
                     width: abs(x2 - x1),
                     height: abs(y2 - y1),
                 },

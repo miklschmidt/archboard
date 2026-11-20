@@ -25,7 +25,7 @@ fn rounded_corner(before: Point, corner: Point, after: Point, radius: f64) -> (P
     };
     let lengths = [js::hypot(back.x, back.y), js::hypot(forth.x, forth.y)];
     let cosine = (back.x * forth.x + back.y * forth.y) / (lengths[0] * lengths[1]);
-    let half = libm::acos(js::js_min(js::js_max(cosine, -1.0), 1.0)) / 2.0;
+    let half = libm::acos(js::min([js::max([cosine, -1.0]), 1.0])) / 2.0;
     let reach = js::min([radius / libm::tan(half), lengths[0] / 2.0, lengths[1] / 2.0]);
     (
         Point {

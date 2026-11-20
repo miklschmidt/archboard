@@ -12,7 +12,7 @@ use rustc_hash::FxHashMap;
 
 use crate::Graphviz;
 use crate::constants::CONTAINER_INSET;
-use crate::ecma::{abs, js_max, js_min};
+use crate::ecma::{abs, max, min};
 use crate::geometry::{Point, Rect, Side};
 use crate::placed::{PlacedBlock, PlacedEdge, PlacedNode};
 use crate::track::graphviz::{boxes_of, centres_of, numbers, output_of, polyline_points};
@@ -210,7 +210,7 @@ impl<'t> CardLayout<'t> {
         let card = &self.tree.cards[name];
         let reserved = self.port_widths.get(name).copied().unwrap_or(0.0);
         Size {
-            width: js_max(card.width, reserved),
+            width: max([card.width, reserved]),
             height: card.height,
         }
     }
@@ -380,8 +380,8 @@ impl<'t> CardLayout<'t> {
         let bb = numbers(&output.bb)?;
         let (left, low, right, high) = (bb[0], bb[1], bb[2], bb[3]);
         let origin = Point {
-            x: js_min(left, right),
-            y: js_min(low, high),
+            x: min([left, right]),
+            y: min([low, high]),
         };
         let mut polylines: Map<String, Vec<Point>> = Map::default();
         for edge in &output.edges {

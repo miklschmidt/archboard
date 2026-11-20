@@ -40,11 +40,11 @@ pub(super) fn canvas_for(
             shift_y: 0.0,
         };
     };
-    let shift_x = js::js_max(0.0, margin - drawn.x).ceil();
-    let shift_y = js::js_max(0.0, margin - drawn.y).ceil();
+    let shift_x = js::max([0.0, margin - drawn.x]).ceil();
+    let shift_y = js::max([0.0, margin - drawn.y]).ceil();
     Canvas {
-        width: (js::js_max(laid_width, drawn.x + drawn.width + margin) + shift_x).ceil(),
-        height: (js::js_max(laid_height, drawn.y + drawn.height + margin) + shift_y).ceil(),
+        width: (js::max([laid_width, drawn.x + drawn.width + margin]) + shift_x).ceil(),
+        height: (js::max([laid_height, drawn.y + drawn.height + margin]) + shift_y).ceil(),
         shift_x,
         shift_y,
     }
@@ -146,7 +146,7 @@ fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
     let dx = PLANNED_FRAME_MARGIN;
     let dy = PLANNED_FRAME_MARGIN + LABEL_RISE;
     let needed = label_width + 2.0 * (PLANNED_FRAME_INSET + LABEL_INDENT + LABEL_CLEARANCE);
-    let width = js::js_max(page.width + 2.0 * dx, needed);
+    let width = js::max([page.width + 2.0 * dx, needed]);
     let height = page.height + dx + dy;
     let top = PLANNED_FRAME_INSET + LABEL_RISE;
     let label_x = PLANNED_FRAME_INSET + LABEL_INDENT;

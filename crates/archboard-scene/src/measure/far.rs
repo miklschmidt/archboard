@@ -5,7 +5,7 @@
 //! them takes as many lines of its responsibility as it holds.
 
 use crate::drawing::{DiagramFont, TextRole, TextRun};
-use crate::js::{js_max, js_min};
+use crate::js::{max, min};
 use crate::measure::cards::{Style, TITLE, path_runs};
 use crate::measure::width;
 use crate::sizes::{
@@ -285,7 +285,7 @@ fn stacked(card: &FarCard<'_>, sizes: Sizes) -> Option<Stack> {
     let names = name_lines(card.name, sizes.name, sizes.name_room, most)?;
     let foot = foot_of(card, sizes);
     let line = sizes.name * NAME_LINE;
-    let lead = js_max(0.0, (ICON_CHIP_SIZE - line) / 2.0);
+    let lead = max([0.0, (ICON_CHIP_SIZE - line) / 2.0]);
     let named = names.len() as f64 * line;
     let spare = sizes.height - lead - named - foot - foot_room(foot);
     if spare < 0.0 {
@@ -388,7 +388,7 @@ fn largest(card: &FarCard<'_>) -> f64 {
 /// The scale a picture sets every far card at: the far scale, or less where a
 /// box of the picture does not hold its words.
 pub(crate) fn far_scale_for(cards: &[FarCard<'_>]) -> f64 {
-    cards.iter().map(largest).fold(FAR_SCALE, js_min)
+    min(std::iter::once(FAR_SCALE).chain(cards.iter().map(largest)))
 }
 
 /// The width a card needs to set its name whole from far away, on the fewest
@@ -404,12 +404,10 @@ pub(crate) fn far_name_width(name: &str) -> f64 {
             });
         width(&text, TITLE.font, size)
     };
-    let widest = (0..=parts.len())
-        .map(|cut| {
-            let (first, second) = parts.split_at(cut);
-            js_max(line(first), line(second))
-        })
-        .fold(f64::INFINITY, js_min);
+    let widest = min((0..=parts.len()).map(|cut| {
+        let (first, second) = parts.split_at(cut);
+        max([line(first), line(second)])
+    }));
     WORDS_X + widest + PAD
 }
 

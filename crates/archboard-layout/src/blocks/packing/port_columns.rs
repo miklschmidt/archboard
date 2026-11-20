@@ -2,7 +2,7 @@
 //! each other also need separate columns: the router fixes their end segments
 //! and can overlap those segments when the pins stand on the same column.
 
-use crate::ecma::{abs, js_max, js_min};
+use crate::ecma::{abs, max, min};
 use crate::geometry::{Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::scene::{Map, Set};
@@ -116,7 +116,7 @@ pub(crate) fn separate_facing_ports(
             })
             .collect();
         if let Some(free) = nearest_free((low, high), &blocked, LANE, x) {
-            let to = js_max(free.0, js_min(free.1, x)) - one.bx.x;
+            let to = max([free.0, min([free.1, x])]) - one.bx.x;
             settled[one.held].1.insert(one.id.clone(), to);
         }
     }
@@ -125,20 +125,20 @@ pub(crate) fn separate_facing_ports(
 /// Wanted x's spread a lane apart within a span, in their order.
 pub(crate) fn spread(span: Span, wanted: &[f64]) -> Vec<f64> {
     let gap = if wanted.len() > 1 {
-        js_min(LANE, (span.1 - span.0) / (wanted.len() - 1) as f64)
+        min([LANE, (span.1 - span.0) / (wanted.len() - 1) as f64])
     } else {
         0.0
     };
     let mut xs: Vec<f64> = wanted
         .iter()
-        .map(|&x| js_min(span.1, js_max(span.0, x)))
+        .map(|&x| min([span.1, max([span.0, x])]))
         .collect();
     for index in 1..xs.len() {
-        xs[index] = js_max(xs[index], xs[index - 1] + gap);
+        xs[index] = max([xs[index], xs[index - 1] + gap]);
     }
     for index in (0..xs.len()).rev() {
         let next = xs.get(index + 1).copied().unwrap_or(span.1 + gap);
-        xs[index] = js_min(xs[index], next - gap);
+        xs[index] = min([xs[index], next - gap]);
     }
     xs
 }

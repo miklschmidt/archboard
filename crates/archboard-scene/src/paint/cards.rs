@@ -202,7 +202,7 @@ pub(super) fn header_width(header: Rect, name: &str, responsibility: Option<&str
     };
     let named = wide(name, CARD_TITLE_FONT, PART_TITLE_SIZE);
     responsibility.map_or(named, |note| {
-        crate::js::js_max(named, wide(note, CARD_NOTE_FONT, PART_NOTE_SIZE))
+        crate::js::max([named, wide(note, CARD_NOTE_FONT, PART_NOTE_SIZE)])
     })
 }
 

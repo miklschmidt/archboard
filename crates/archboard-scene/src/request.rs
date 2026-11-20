@@ -5,8 +5,6 @@
 
 use std::collections::BTreeMap;
 
-use serde::de::IntoDeserializer;
-use serde::de::value::{Error as ValueError, StrDeserializer};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -56,15 +54,6 @@ pub enum PaletteColor {
     Fuchsia,
     Pink,
     Rose,
-}
-
-impl PaletteColor {
-    /// The colour a name names, if it is one of the palette's: read as the
-    /// contract reads it.
-    pub fn named(name: &str) -> Option<PaletteColor> {
-        let name: StrDeserializer<'_, ValueError> = name.into_deserializer();
-        PaletteColor::deserialize(name).ok()
-    }
 }
 
 /// Which way the picture a part opens lies from the picture it is drawn on.
@@ -188,14 +177,6 @@ pub enum JumpEnd {
     OutRight,
     /// Where the lines that stopped go on, drawn as a disc.
     In,
-}
-
-impl FlowchartShape {
-    /// Whether it is a step of the flow, which a reader picks: a decision or
-    /// a loop, and never a terminal or a jump.
-    pub fn is_step(self) -> bool {
-        matches!(self, FlowchartShape::Decision | FlowchartShape::Loop)
-    }
 }
 
 /// One card a flowchart draws as a shape, and its wrapped words.
@@ -366,16 +347,4 @@ pub struct PaintRequest {
     /// Each icon's path data, by its export name: every icon the picture's
     /// appearances name that the host has.
     pub icons: BTreeMap<String, Vec<String>>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::PaletteColor;
-
-    #[test]
-    fn names_a_palette_colour_as_the_contract_spells_it() {
-        assert_eq!(PaletteColor::named("fuchsia"), Some(PaletteColor::Fuchsia));
-        assert_eq!(PaletteColor::named("neutral"), None);
-        assert_eq!(PaletteColor::named("Rose"), None);
-    }
 }
