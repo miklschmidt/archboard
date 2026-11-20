@@ -482,6 +482,31 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#DkKTm18j",
+      "kind": "relationship",
+      "value": {
+        "order": 30,
+        "kind": "call",
+        "label": "the root of the vault's checkout",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/canonical/read/operations/model-at-ref.ts",
+          "symbol": "repoRootOf"
+        },
+        "id": "vKEsyHFk#DkKTm18j",
+        "to": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DkKTm18j",
+      "placement": {
+        "holder": "vKEsyHFk#zxEUtLI7"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#PFXyjBr4",
       "kind": "module",
       "value": {
@@ -2711,6 +2736,28 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#qTv7HuBw",
+      "field": "description",
+      "value": "It writes exact bytes and fsyncs changes. Canonical model installation coordinates these file operations through its journal before reporting completion."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/0T9enjhi#qTv7HuBw",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/store/atomic-write.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/0T9enjhi#qTv7HuBw",
+      "placement": {
+        "holder": "vKEsyHFk#WXIezSNF"
+      }
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#lEeSgaRX",
       "kind": "relationship",
@@ -3023,6 +3070,31 @@
       "subject": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
       "field": "description",
       "value": "TASK-472.09. No environment variable names a vault any longer: a set ARCHBOARD_VAULT is refused before the command runs, and the finder's origin is -C or working-directory. locateVault finds the vault; a command asks through findVault in Vault address. vaultIn(directory) is the vault a directory holds when the server serves it: a .archboard/vault whose real directory is in the layout. A vault named directly is one when vaultIn(checkoutOfVault(real)) === real, which is how the server and the workbench check a named vault now that isVaultLayout is private (TASK-653.10). The finder refuses a vault whose link leads out of that layout as VAULT_NOT_FOUND (reason vault-outside-layout), before the command registers anything. TASK-480: in a checkout with no vault, the finder asks the lookup it is given for the known vaults whose models bind the checkout's repository, and the refusal names each one as the -C to give, with its models."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#rpHrv5d1",
+      "kind": "relationship",
+      "value": {
+        "order": 100000,
+        "kind": "call",
+        "label": "the root and the repository of a vault's holder",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/services/vault-finder.ts",
+          "symbol": "repoIdentityAt"
+        },
+        "id": "vKEsyHFk#rpHrv5d1",
+        "to": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#rpHrv5d1",
+      "placement": {
+        "holder": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+      }
     },
     {
       "type": "add",
@@ -4281,6 +4353,31 @@
       "value": "TASK-653.10: listRegistry never throws, and answers the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads beside every entry. declareDirectory answers a refused directory as an outcome with its sentence, in place of RepoRegistryError, and the registry file beside what it recorded. Which checkout is chosen, and choosing one, are Checkout questions."
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#FCohlI9N",
+      "kind": "relationship",
+      "value": {
+        "order": 24500,
+        "kind": "call",
+        "label": "the root, the worktrees and the head of a checkout",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/store/repo-registry.ts",
+          "symbol": "inspectCheckout"
+        },
+        "id": "vKEsyHFk#FCohlI9N",
+        "to": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#FCohlI9N",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
       "field": "responsibility",
@@ -4343,6 +4440,59 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#TJgty8nf",
+      "kind": "relationship",
+      "value": {
+        "order": 200,
+        "kind": "call",
+        "label": "the repository a remote names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/clients/git-sync.ts",
+          "symbol": "repoIdentityFor"
+        },
+        "id": "vKEsyHFk#TJgty8nf",
+        "to": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#TJgty8nf",
+      "placement": {
+        "holder": "vKEsyHFk#IvTUZ8Hk"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#WXIezSNF",
+      "kind": "module",
+      "value": {
+        "order": 26500,
+        "name": "machine",
+        "kind": "package",
+        "responsibility": "This installation on this machine: which Archboard runs, where its machine-local state lives, how a file is replaced durably, and how a command reaches another checkout's source",
+        "description": "Layer 1, @archboard/machine (TASK-653.15). Seven names over four subpaths: ./installation (installation), ./source-checkout (browserUrl, defaultArchboardUrl, handOff), ./state-dir (stateDir) and ./atomic-write (writeFileAtomic, unlinkDurably); its outcome types stay unexported. It left workspace as a pure move, so behavior, the files written and the CLI's output are unchanged. Workspace calls it for the registry file and the language server files, and the model store, the CLI, the server, workbench, code-opener, code-intel, server-lifecycle, telemetry, the renderer and walkthrough call it directly.",
+        "groups": [
+          "packages"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/machine"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#WXIezSNF"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WXIezSNF",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#9FxduWoO",
       "field": "description",
@@ -4370,13 +4520,38 @@
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#tdKalihR",
       "field": "responsibility",
-      "value": "Which installation runs; where a vault, a checkout and the state directory are; which checkout of a repository this machine reads and which checkouts a vault reads; the atomic write"
+      "value": "Where a vault and a checkout are: which checkout of a repository this machine reads, which checkouts a vault reads, the repository registry, the Git lookups and each repository's language servers"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#tdKalihR",
       "field": "description",
-      "value": "TASK-653.10: workspace answers the place questions its callers assembled from the registry. ./checkouts: repoRootOf, repoIdentityAt, inspectCheckout (with the branch and commit that checkoutHead gave), listRegistry (never throws; the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads), declareDirectory (a refusal is an outcome with its sentence; a record carries the registry file), forgetDirectory, checkoutOf, chooseCheckout, checkoutsReadFrom (returns own), readServers, setServer, passServers. ./vault: findVault ({ register } absorbs findAndRegisterVault), vaultIn, placeOfVault (absorbs both repositoryOfVault names), checkoutOfVault, vaultDirectory. ./shapes: workspaceShape, the one keyed getter (repositoryListing, checkoutChoice, languageServers, vaultOrigin, configurableLanguage), replaces ./repositories and ./languages. isVaultLayout, registryPath, RepoRegistryError, chosenCheckouts, chooseKnownCheckout and gitCheckoutOfVault are private. 27 names under a ceiling of 29; the machine foundation splits out in TASK-653.15."
+      "value": "TASK-653.10: workspace answers the place questions its callers assembled from the registry. ./checkouts: repoRootOf, repoIdentityAt, inspectCheckout (with the branch and commit that checkoutHead gave), listRegistry (never throws; the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads), declareDirectory (a refusal is an outcome with its sentence; a record carries the registry file), forgetDirectory, checkoutOf, chooseCheckout, checkoutsReadFrom (returns own), readServers, setServer, passServers. ./vault: findVault ({ register } absorbs findAndRegisterVault), vaultIn, placeOfVault (absorbs both repositoryOfVault names), checkoutOfVault, vaultDirectory. ./shapes: workspaceShape, the one keyed getter (repositoryListing, checkoutChoice, languageServers, vaultOrigin, configurableLanguage), replaces ./repositories and ./languages. isVaultLayout, registryPath, RepoRegistryError, chosenCheckouts, chooseKnownCheckout and gitCheckoutOfVault are private. TASK-653.15: the machine foundation (installation, the state directory, the atomic write and the source checkout) left for @archboard/machine, which the registry file and the language server files call; no re-export stays. Twenty names under a ceiling of 22."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#7OhD3Pyx",
+      "kind": "module",
+      "value": {
+        "order": 27050,
+        "name": "Git lookups",
+        "kind": "module",
+        "responsibility": "Asks Git which repository a directory belongs to, what that repository is called on every machine, and what a checkout has out",
+        "description": "repoRootOf, repoIdentityAt and inspectCheckout (the branch, commit and worktrees of a checkout) go out through ./checkouts. The registry, the vault finder and the vault's Git checkout read it inside workspace, and the model store asks it for the root of a checkout and the identity of its repository (TASK-653.15).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workspace/src/runtime/clients/git.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#7OhD3Pyx",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#tdKalihR"
+      }
     },
     {
       "type": "assign",
@@ -5127,6 +5302,47 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#4FdKQJqK",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/installation.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4FdKQJqK",
+      "placement": {
+        "holder": "vKEsyHFk#WXIezSNF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#U8ur3Tbs",
+      "kind": "relationship",
+      "value": {
+        "order": 2000,
+        "kind": "call",
+        "label": "a refusal with its code",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/machine/src/runtime/services/installation.ts",
+          "symbol": "codedError"
+        },
+        "id": "vKEsyHFk#U8ur3Tbs",
+        "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#U8ur3Tbs",
+      "placement": {
+        "holder": "vKEsyHFk#4FdKQJqK"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#mYtOhgML",
       "field": "binding",
       "value": {
@@ -5238,6 +5454,32 @@
       "subject": "vKEsyHFk#ZDqomga8",
       "placement": {
         "holder": "vKEsyHFk#9KeBXIBQ"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/source-checkout.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/XppR9owz#NG7OXLv9",
+      "placement": {
+        "holder": "vKEsyHFk#WXIezSNF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#heZZYGsd",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/source-checkout.ts",
+        "symbol": "installation"
       }
     },
     {
@@ -7711,6 +7953,31 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#8N5IBOG5",
+      "kind": "relationship",
+      "value": {
+        "order": 174500,
+        "kind": "call",
+        "label": "the root of the vault's checkout",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-location.ts",
+          "symbol": "repoRootOf"
+        },
+        "id": "vKEsyHFk#8N5IBOG5",
+        "to": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8N5IBOG5",
+      "placement": {
+        "holder": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#yNZEhzyc",
       "field": "binding",
@@ -8510,6 +8777,31 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "git"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#tkEAQFva",
+      "kind": "relationship",
+      "value": {
+        "order": 106500,
+        "kind": "call",
+        "label": "the identity of the checkout's repository",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+          "symbol": "repoIdentityAt"
+        },
+        "id": "vKEsyHFk#tkEAQFva",
+        "to": "vKEsyHFk#7OhD3Pyx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#tkEAQFva",
+      "placement": {
+        "holder": "vKEsyHFk#1RhUzmyZ"
       }
     },
     {
@@ -9727,6 +10019,22 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/rules/pane-report.ts",
         "symbol": "paneAddressKey"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Q1jP0WbC",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/state-dir.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Q1jP0WbC",
+      "placement": {
+        "holder": "vKEsyHFk#WXIezSNF"
       }
     },
     {
@@ -11567,6 +11875,36 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#JNDebM7n",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/source-checkout.ts",
+        "symbol": "runInstead"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#5ctXAMbv",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/source-checkout.ts",
+        "symbol": "handOff"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/XppR9owz#lqzL56xQ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/machine/src/runtime/services/source-checkout.ts",
+        "symbol": "handOff"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#j71M2dfg",
       "field": "participants",
       "value": [
@@ -11868,6 +12206,8 @@
     "vKEsyHFk#4eKZ6q3Y",
     "vKEsyHFk/yejBBUFY#gIVISpC9",
     "vKEsyHFk/yejBBUFY#pNlMVRMt",
-    "vKEsyHFk#TjiaPdzb"
+    "vKEsyHFk#TjiaPdzb",
+    "vKEsyHFk#B4RRDeWH",
+    "vKEsyHFk#SULD8OZ8"
   ]
 }
