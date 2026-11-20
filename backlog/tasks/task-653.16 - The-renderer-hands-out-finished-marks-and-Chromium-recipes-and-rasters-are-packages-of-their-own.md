@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-20T20:02:00Z'
+updated_date: '2026-11-20T20:27:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -41,7 +41,7 @@ Candidate 13 of the archboard-deepen run. packages/renderer is wide (51 names, h
 - [x] #5 The raster receipt schemas are candidate 11's modelShape keys rasterReceipt and legacyRasterReceipt, and the CLI assembles source and file
 - [x] #6 measure.ts stays beside its fixtures in the renderer tests and takes pictures through @archboard/raster, which sits below the renderer
 - [x] #7 Native and WASM corpus SVG hashes, rasterized PNG bytes and their recipes are identical before and after, and the site audit (site/README.md#audit-the-site) passes
-- [ ] #8 No new ADR: one line in proposal sL6y1FLr records the moved jobs, and the package descriptions name each package's job
+- [x] #8 No new ADR: one line in proposal sL6y1FLr records the moved jobs, and the package descriptions name each package's job
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -70,6 +70,8 @@ Deviations awaiting advisors:
 Other choices: rasterizeAll ends a run on the first failed capture (the old rasterizer retired the session and went on); the stop-during-startup test case went with stop(); markSample(sample, { width?, id? }) returns a whole <svg>, which the web wraps in an inline-flex shrink-0 span; warningMark takes a point or a box; startPainter(canvas, dark, { failure?, only?: "cpu" }); buildCore() is async and re-enters nix develop with bun --eval instead of exiting the process; coreSourceHash() now hashes the build module in place of scripts/build-core.ts, so the hash (CI caches, release marker) changes once; the test-only board recipe writer and the legacy board's DrawnInput fingerprint went with it.
 
 Outside the slice: model-contract (raster-receipt.ts, two shapes keys), walkthrough (imports), scripts/release (installation()), apps/web shell/legend/camera/flow-fit callers, evals/coverage.json (owner path), site/src/scripts hero painters.
+
+Merged into deepen/module-depth at 88361fc2ef (vault slice 37a70bbcb0, which records the moved jobs in the renderer's description). Footprint gate exit 1 with 9 exceptions (renamed shell/fit callers, test imports, one coverage entry, Release's Installation read). Unbound: the ticket, lockfiles, scripts/build-core.ts and readme-assets scripts, two site painters, system tests and policy files, vite.config.ts. Advisor rounds at high effort settled measure.ts staying in the renderer tests (streaming), themeColors removed (renderer 16), and rasterizeAll ending on its first failure (no caller used per-job recovery; the CLI stop error drops 'canonical').
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
