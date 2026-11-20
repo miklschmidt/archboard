@@ -6,7 +6,7 @@ import { useSyncExternalStore } from "react";
 
 import { voiceEnd } from "#ui/workbench-client/dock/rules/circle-state.ts";
 import { useOrbStage } from "#ui/workbench-client/orb/hooks/use-orb-stage.ts";
-import { useVoiceSurface } from "#ui/workbench-client/voice/hooks/use-voice-surface.ts";
+import { useSurfaceState } from "#ui/agent-root/hooks/use-agent.ts";
 
 /** What a Narrate key does. */
 interface NarrateKey {
@@ -30,7 +30,7 @@ interface NarrateKey {
 function useNarrateKey(): NarrateKey {
 	const stage = useOrbStage();
 	const wanted = useSyncExternalStore(stage.subscribe, stage.wanted, () => null);
-	const surface = useVoiceSurface();
+	const surface = useSurfaceState();
 	if (wanted !== "box" || surface === null)
 		return { launch: stage.launch, hangingUp: false, end: undefined };
 	return { launch: stage.launch, hangingUp: true, end: voiceEnd(surface.voice, surface.actions) };

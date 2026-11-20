@@ -3,7 +3,7 @@
 // voice key and Narrate key, and the answers that name files. The shell passes only its own facts:
 // which pane is focused, how a file opens, and how a conversation is shown.
 
-import { useMemo, type JSX, type ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 
 import {
 	PanelContext,
@@ -15,7 +15,6 @@ import { useAgentRoot, type ChooseShownConversation } from "#ui/agent-root/hooks
 import { OrbStageProvider } from "#ui/workbench-client/orb/components/OrbStage.tsx";
 import { AnswerFilesProvider } from "#ui/workbench-client/thread/components/AnswerFilesProvider.tsx";
 import type { OpenAnswerFile } from "#ui/workbench-client/thread/hooks/use-answer-files.ts";
-import { VoiceSurfaceContext } from "#ui/workbench-client/voice/hooks/use-voice-surface.ts";
 
 /** Inputs for the agent's root. */
 interface AgentRootProps {
@@ -35,24 +34,18 @@ interface AgentRootProps {
  */
 function AgentRoot(props: AgentRootProps): JSX.Element {
 	const { surfaces, voice, panel, pane } = useAgentRoot(props);
-	const surface = useMemo(
-		() => ({ voice: surfaces.voice, actions: surfaces.actions }),
-		[surfaces.voice, surfaces.actions],
-	);
 	return (
 		<OrbStageProvider>
 			<SurfaceContext value={surfaces}>
-				<VoiceSurfaceContext value={surface}>
-					<VoiceContext value={voice}>
-						<PanelContext value={panel}>
-							<PaneVoiceContext value={pane}>
-								<AnswerFilesProvider open={props.openAnswerFile}>
-									{props.children}
-								</AnswerFilesProvider>
-							</PaneVoiceContext>
-						</PanelContext>
-					</VoiceContext>
-				</VoiceSurfaceContext>
+				<VoiceContext value={voice}>
+					<PanelContext value={panel}>
+						<PaneVoiceContext value={pane}>
+							<AnswerFilesProvider open={props.openAnswerFile}>
+								{props.children}
+							</AnswerFilesProvider>
+						</PaneVoiceContext>
+					</PanelContext>
+				</VoiceContext>
 			</SurfaceContext>
 		</OrbStageProvider>
 	);

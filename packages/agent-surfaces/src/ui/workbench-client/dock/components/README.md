@@ -1,8 +1,8 @@
 # Agent workbench
 
 The agent's surfaces in the shell. They all read one `AgentView` and act through one
-`AgentActions` (`workbench-client/surfaces/state/contracts.ts`). The application composes both from the workbench
-owners. The thread link, composer, queue, approvals and the conversation they act on come from
+`AgentActions` (`workbench-client/surfaces/state/contracts.ts`). `AgentRoot` (`agent-root/components`) composes both
+from the owners over the panes' conversations. The thread link, composer, queue, approvals and the conversation they act on come from
 each pane's socket conversation of `@archboard/codex-realtime-voice/browser`. The runtime and the voice session
 (`voice-session/state`) are in `packages/agent-surfaces/src/ui`. The components under
 `workbench-client/dock/components`, `workbench-client/panel/components` and `workbench-client/voice/components` draw them.
@@ -22,13 +22,13 @@ each pane's socket conversation of `@archboard/codex-realtime-voice/browser`. Th
 - `workbench-client/voice/components/VoiceBox.tsx`: the voice over a pane's picture. While the person wants
   subtitles, the voice has no circle in the dock. The box carries the orb, the words, mute
   and the subtitles control. A rendered recording draws the same box at the foot of its
-  walkthrough box (`src/ui/walkthrough-replay`).
+  walkthrough box (`RecordedVoice` and `RecordedVoiceBox`).
 - `workbench-client/voice/components/TalkControl.tsx`: the one key of a fullscreen presentation's bar, Talk and then
   End voice.
 
-The application reaches them through `@archboard/workbench/agent` (`AgentDock`, `AgentPanel`,
-the view and the actions, and `createDraftStore`) and `@archboard/workbench/voice` (`VoiceBox`,
-`TalkControl`, `VoiceSurfaceProvider`, `useVoiceSurface`, `useCircleState` and the voice view).
+The application reaches them through `@archboard/agent-surfaces`: it places `AgentRoot` over its
+panes, the surfaces below it, and `AgentPane` in each pane, and reads the voice and the panel
+through `useAgentVoice` and `useAgentPanel` (ADR 0092).
 
 Type roles come from the theme's `text-technical`, `text-body`, `text-control` and
 `text-title` utilities. The registry's `cn` treats an unknown `text-*` utility as a colour.
@@ -76,6 +76,5 @@ the keyboard keeps its place on it. `TalkControl` does the same for the presenta
 key that cannot act says so with `aria-disabled` and stays focusable. A disabled button drops
 the keyboard's place.
 
-The voice box is drawn deep inside a pane. So the application offers the voice and its
-actions through `VoiceSurfaceProvider`. The box reads them with `useVoiceSurface` where it
-is drawn.
+The voice box is drawn deep inside a pane. So `AgentRoot` offers the voice and its actions
+through a context, and `AgentPane` reads them where the box is drawn.

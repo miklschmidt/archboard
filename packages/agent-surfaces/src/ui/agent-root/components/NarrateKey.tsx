@@ -21,7 +21,7 @@ import { useCallback, type CSSProperties, type JSX, type MouseEvent } from "reac
 import { durationMs } from "@archboard/timing";
 import { cn } from "@archboard/ui-kit/components";
 import { OrbSlot } from "#ui/workbench-client/orb/components/OrbStage.tsx";
-import { useNarrateKey } from "#ui/workbench-client/orb/hooks/use-narrate-key.ts";
+import { useNarrateKey } from "#ui/agent-root/hooks/use-narrate-key.ts";
 
 /** What the key says while a narration can start. */
 const NARRATE_HINT = "Hear this walkthrough read aloud.";

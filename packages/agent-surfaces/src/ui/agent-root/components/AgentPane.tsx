@@ -20,14 +20,13 @@
 
 import { useEffect, useMemo, useSyncExternalStore, type JSX, type ReactNode } from "react";
 
-import { usePaneVoice } from "#ui/agent-root/hooks/use-agent.ts";
+import { usePaneVoice, useSurfaceState } from "#ui/agent-root/hooks/use-agent.ts";
 import { subtitledTranscript, type VoiceFeed } from "#ui/agent-root/rules/subtitled-transcript.ts";
 import { VoiceSubtitles } from "#ui/workbench-client/subtitles/components/VoiceSubtitles.tsx";
 import { useSubtitlesWanted } from "#ui/workbench-client/subtitles/hooks/use-subtitle-preference.ts";
 import { useVoiceBoxed } from "#ui/workbench-client/subtitles/hooks/use-voice-boxed.ts";
 import type { SubtitleSource } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 import { VoiceBox } from "#ui/workbench-client/voice/components/VoiceBox.tsx";
-import { useVoiceSurface } from "#ui/workbench-client/voice/hooks/use-voice-surface.ts";
 import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** Inputs for a pane's part of the agent. */
@@ -125,7 +124,7 @@ function PaneSubtitles(props: PaneSubtitlesProps): JSX.Element {
  */
 function Subtitled(props: SubtitledProps): JSX.Element {
 	const wanted = useSubtitlesWanted();
-	const surface = useVoiceSurface();
+	const surface = useSurfaceState();
 	const boxable = surface !== null && !props.recording;
 	const on = surface !== null && surface.voice.stage !== "idle";
 	const boxed = useVoiceBoxed(on, boxable, props.dockless);
