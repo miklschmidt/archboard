@@ -1,4 +1,7 @@
-import { CORE_ROLE_INSTRUCTIONS, readWorkbenchInstructionDocument } from "#runtime/host/rules/authored.ts";
+import {
+	CORE_ROLE_INSTRUCTIONS,
+	readWorkbenchInstructionDocument,
+} from "#runtime/host/rules/authored.ts";
 import {
 	assertWorkbenchThreadTools,
 	isReservedWorkbenchNamespace,

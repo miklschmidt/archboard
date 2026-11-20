@@ -89,7 +89,10 @@ test("a request route admits a loopback page of its own origin and listed origin
 		await admission(`http://127.0.0.1:4100${SURFACE}`, { ...own, origin: "http://localhost:4100" }),
 	).toBe(1008);
 	expect(
-		await admission(`http://127.0.0.1:4100${SURFACE}`, { ...own, origin: "https://127.0.0.1:4100" }),
+		await admission(`http://127.0.0.1:4100${SURFACE}`, {
+			...own,
+			origin: "https://127.0.0.1:4100",
+		}),
 	).toBe(1008);
 	expect(
 		await admission(`http://127.0.0.1:4100${SURFACE}`, { ...own, origin: "https://other.example" }),
@@ -143,7 +146,11 @@ test("the three refusals keep their envelope, wording and order", async () => {
 		},
 	]);
 	expect(
-		await answers({ tabSessionId: parseTabSessionId("tab-one"), browserId: "browser", chat: "main" }),
+		await answers({
+			tabSessionId: parseTabSessionId("tab-one"),
+			browserId: "browser",
+			chat: "main",
+		}),
 	).toEqual([
 		{
 			type: "codex_workbench_result",

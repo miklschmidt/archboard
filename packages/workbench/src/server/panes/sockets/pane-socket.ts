@@ -11,10 +11,7 @@ import { placeOfVault } from "@archboard/workspace/vault";
 
 import type { WebSocketMessage } from "#shared/protocol/pane-messages.ts";
 import { agentActivity } from "#server/panes/services/agent-activity.ts";
-import {
-	admitSocket,
-	registerSocket,
-} from "#server/panes/services/pane-sockets.ts";
+import { admitSocket, registerSocket } from "#server/panes/services/pane-sockets.ts";
 import {
 	paneKeyForNewPane,
 	paneVaultOf,

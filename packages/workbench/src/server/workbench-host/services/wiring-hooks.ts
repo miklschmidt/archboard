@@ -59,9 +59,4 @@ function liveWorkhorseCheckouts(tabSessionId: TabSessionId): readonly string[] {
 	return codexWiring.codex.liveWorkhorseCheckouts?.(tabSessionId) ?? [];
 }
 
-export {
-	codexWiring,
-	liveWorkhorseCheckouts,
-	publishPaneContext,
-	resetCodexWorkbenchWiring,
-};
+export { codexWiring, liveWorkhorseCheckouts, publishPaneContext, resetCodexWorkbenchWiring };

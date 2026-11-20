@@ -1,8 +1,4 @@
-import {
-	admitsOrigin,
-	surfaceOf,
-	type UpgradeRequest,
-} from "#server/agent/services/admission.ts";
+import { admitsOrigin, surfaceOf, type UpgradeRequest } from "#server/agent/services/admission.ts";
 import type { createWorkbenchBrowserConnections } from "#server/browser-socket/services/connections.ts";
 import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 
@@ -209,8 +205,7 @@ export function createVoiceConnector(options: ConnectorOptions) {
 		else checkout = () => onlyCheckout;
 		if (browserId === undefined || browserId === null)
 			return {
-				unidentified:
-					"The Codex workbench requires an authoritative browser connection identity.",
+				unidentified: "The Codex workbench requires an authoritative browser connection identity.",
 			};
 		if (tabSessionId === null)
 			return { unidentified: "The Codex workbench requires the browser tab session identity." };

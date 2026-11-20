@@ -7,11 +7,7 @@ export type {
 	VoiceAgentExtensions,
 	VoiceAgentOptions,
 } from "#server/agent/services/voice-agent.ts";
-export type {
-	VoiceConnection,
-	VoiceRoute,
-	VoiceSocket,
-} from "#server/agent/services/connect.ts";
+export type { VoiceConnection, VoiceRoute, VoiceSocket } from "#server/agent/services/connect.ts";
 export type { ContextChange } from "#server/sessions/announce/protocol/contract.ts";
 export { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 export type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";

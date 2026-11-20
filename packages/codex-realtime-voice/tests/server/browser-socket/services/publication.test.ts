@@ -195,7 +195,8 @@ describe("server Codex publication boundary", () => {
 		const transport = {
 			send: async (message: unknown) => {
 				await Promise.resolve();
-				if ((message as { type?: unknown }).type === "codex_workbench_event") throw eventSendFailure;
+				if ((message as { type?: unknown }).type === "codex_workbench_event")
+					throw eventSendFailure;
 			},
 		};
 		try {

@@ -247,7 +247,8 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 	const connector = createVoiceConnector({
 		connections: workbench.connections,
 		admit: workbench.resolveCheckout,
-		onlyCheckout: typeof checkouts !== "function" && checkouts.length === 1 ? checkouts[0] : undefined,
+		onlyCheckout:
+			typeof checkouts !== "function" && checkouts.length === 1 ? checkouts[0] : undefined,
 		origins,
 	});
 	return Object.freeze({

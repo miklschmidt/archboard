@@ -24,7 +24,9 @@ function installVoiceAgent(agent: NonNullable<typeof installed>): () => void {
  * @param route Who it is.
  * @returns Its connection, or null while no agent runs.
  */
-function connectVoice(...[socket, route]: Parameters<VoiceAgent["connect"]>): VoiceConnection | null {
+function connectVoice(
+	...[socket, route]: Parameters<VoiceAgent["connect"]>
+): VoiceConnection | null {
 	return installed?.connect(socket, route) ?? null;
 }
 

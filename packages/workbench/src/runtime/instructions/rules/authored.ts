@@ -1,4 +1,7 @@
-import { composeRoleInstructions, type VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
+import {
+	composeRoleInstructions,
+	type VoiceAgentOptions,
+} from "@archboard/codex-realtime-voice/server";
 // The executable of a release carries these documents, so they are embedded, not read by path.
 import workhorseDocument from "#runtime/instructions/rules/workhorse-developer-instructions.txt" with { type: "text" };
 import coordinatorDocument from "#runtime/instructions/rules/coordinator-developer-instructions.txt" with { type: "text" };

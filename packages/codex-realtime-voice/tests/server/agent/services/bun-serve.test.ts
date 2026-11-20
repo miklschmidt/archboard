@@ -223,7 +223,9 @@ test("an agent's Bun handlers keep a socket that arrives before start, close it 
 	const refusal = new Promise<unknown>((resolve) =>
 		early.once("message", (raw: Buffer) => resolve(JSON.parse(raw.toString()))),
 	);
-	early.send(JSON.stringify({ type: "codex_workbench_request", requestId: "r", action: "connect" }));
+	early.send(
+		JSON.stringify({ type: "codex_workbench_request", requestId: "r", action: "connect" }),
+	);
 	expect(await refusal).toEqual({
 		type: "codex_workbench_result",
 		requestId: "r",

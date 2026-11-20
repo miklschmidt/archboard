@@ -11,7 +11,14 @@ import type {
 } from "#ui/voice-client/state/contract.ts";
 import { ENGLISH, statusOf, type VoicePanelText } from "#ui/voice-panel/rules/text.ts";
 
-const LIVE = new Set(["requesting_permission", "negotiating", "listening", "muted", "processing", "speaking"]);
+const LIVE = new Set([
+	"requesting_permission",
+	"negotiating",
+	"listening",
+	"muted",
+	"processing",
+	"speaking",
+]);
 
 /** The elements the panel updates on each publication. */
 interface PanelParts {
@@ -155,7 +162,11 @@ function build(client: VoiceClient, text: VoicePanelText) {
  * @param lines The text of each item.
  */
 function fill(list: HTMLElement, lines: readonly string[]): void {
-	if (list.childElementCount === lines.length && [...list.children].every((item, index) => item.textContent === lines[index])) return;
+	if (
+		list.childElementCount === lines.length &&
+		[...list.children].every((item, index) => item.textContent === lines[index])
+	)
+		return;
 	list.replaceChildren(...lines.map((line) => element("li", line)));
 }
 
@@ -167,7 +178,11 @@ function fill(list: HTMLElement, lines: readonly string[]): void {
  * @param text The panel's words.
  * @returns The card.
  */
-function approvalCard(client: VoiceClient, approval: VoiceApproval, text: VoicePanelText): HTMLElement {
+function approvalCard(
+	client: VoiceClient,
+	approval: VoiceApproval,
+	text: VoicePanelText,
+): HTMLElement {
 	const card = element("section");
 	card.style.cssText = "display:grid;gap:0.5rem";
 	if (approval.approvalKind !== "command_execution") {
@@ -226,12 +241,17 @@ function show(
 	const live = LIVE.has(state.voice.phase);
 	parts.startVoice.disabled = state.busy || live || !state.voice.available;
 	parts.stopVoice.disabled = !live;
-	fill(parts.transcript, server.voice.transcript.map((line) => `${line.speaker}: ${line.text}`));
+	fill(
+		parts.transcript,
+		server.voice.transcript.map((line) => `${line.speaker}: ${line.text}`),
+	);
 	const turns = server.timeline?.turns ?? [];
 	fill(
 		parts.work,
 		turns.flatMap((turn) =>
-			turn.items.flatMap((item) => (item.media === "prompt" || item.media === "text" ? [item.text] : [])),
+			turn.items.flatMap((item) =>
+				item.media === "prompt" || item.media === "text" ? [item.text] : [],
+			),
 		),
 	);
 	const running = turns.some((turn) => turn.status === "inProgress");
@@ -239,7 +259,9 @@ function show(
 	parts.stopWork.disabled = !running;
 	const approvals = server.approvals.filter((approval) => approval.lifecycle.state === "pending");
 	if (shown === server.approvals) return shown;
-	parts.approvals.replaceChildren(...approvals.map((approval) => approvalCard(client, approval, text)));
+	parts.approvals.replaceChildren(
+		...approvals.map((approval) => approvalCard(client, approval, text)),
+	);
 	return server.approvals;
 }
 
@@ -283,9 +305,16 @@ interface MountVoiceOptions {
  * @returns Removes the panel and disposes its client.
  * @throws {TypeError} When there is no element to draw in.
  */
-function mountVoice(host: Element | null, url: string, options: MountVoiceOptions = {}): () => void {
+function mountVoice(
+	host: Element | null,
+	url: string,
+	options: MountVoiceOptions = {},
+): () => void {
 	if (host === null) throw new TypeError("Give mountVoice an element to draw the voice panel in.");
-	const client = createVoiceClient({ url, ...(options.chatId === undefined ? {} : { chatId: options.chatId }) });
+	const client = createVoiceClient({
+		url,
+		...(options.chatId === undefined ? {} : { chatId: options.chatId }),
+	});
 	const remove = renderVoicePanel(host, client, { ...ENGLISH, ...options.text });
 	return () => {
 		remove();

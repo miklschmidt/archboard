@@ -157,8 +157,11 @@ function createApproval(
 		 */
 		bindingForCaller: (threadId) => {
 			const tabSessionId =
-				workhorseOfLinkKey(created, threadId, owners.authority?.executableLinkKeyFor(threadId) ?? null)
-					?.tabSessionId ?? null;
+				workhorseOfLinkKey(
+					created,
+					threadId,
+					owners.authority?.executableLinkKeyFor(threadId) ?? null,
+				)?.tabSessionId ?? null;
 			if (tabSessionId === null) throw new Error("The dynamic caller has no live tab session.");
 			return {
 				tabSessionId,

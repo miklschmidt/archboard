@@ -17,6 +17,7 @@ import {
 } from "#tests/ui/support/transport/fake-socket.ts";
 import {
 	accountResult,
+	approval,
 	commandResult,
 	lease,
 	snapshot,
@@ -243,6 +244,8 @@ interface GatewayBehaviour {
 	readonly lostOnCommand?: readonly number[];
 	/** The sockets the server closes before its first answer. */
 	readonly closed?: readonly number[];
+	/** The approvals each snapshot carries. */
+	readonly approvals?: readonly unknown[];
 }
 
 /** A gateway double that delivers every command and loses, refuses and closes no socket. */
@@ -252,6 +255,7 @@ const PLAIN_GATEWAY: Required<GatewayBehaviour> = {
 	unreadable: [],
 	lostOnCommand: [],
 	closed: [],
+	approvals: [],
 };
 
 /**
@@ -260,16 +264,17 @@ const PLAIN_GATEWAY: Required<GatewayBehaviour> = {
  * @returns The client, the opened sockets, the media calls, the commands sent and the timers.
  */
 function gateway(behaviour: GatewayBehaviour = {}) {
-	const { outcome, refused, unreadable, lostOnCommand, closed } = {
+	const { outcome, refused, unreadable, lostOnCommand, closed, approvals } = {
 		...PLAIN_GATEWAY,
 		...behaviour,
 	};
+	const page = new EventTarget();
 	const sockets: FakeSocket[] = [];
 	const urls: string[] = [];
 	const timers: Timer[] = [];
 	const commands: string[] = [];
 	const { media, calls } = recordingMedia();
-	let current = snapshot({ linkState: "executable" });
+	let current = snapshot({ linkState: "executable", approvals });
 	let sequence = 0;
 	let claims = 0;
 	/**
@@ -309,7 +314,7 @@ function gateway(behaviour: GatewayBehaviour = {}) {
 		return answer;
 	};
 	const client = openVoiceClient(
-		{ socketPath: "/api/voice", chatId: "chat-a" },
+		{ url: "/api/voice", chatId: "chat-a" },
 		{
 			transport: createBrowserWorkbenchTransport(),
 			media,
@@ -355,9 +360,32 @@ function gateway(behaviour: GatewayBehaviour = {}) {
 					timer.cancelled = true;
 				};
 			},
+			page,
 		},
 	);
-	return { client, sockets, urls, calls, commands, timers };
+	return { client, sockets, urls, calls, commands, timers, page };
+}
+
+/**
+ * Wait until the client's state passes a check, as the page sees its publications.
+ * @param client The client.
+ * @param check The check.
+ */
+async function until(
+	client: ReturnType<typeof gateway>["client"],
+	check: (state: ReturnType<typeof client.snapshot>) => boolean,
+): Promise<void> {
+	for (let turn = 0; turn < 100 && !check(client.snapshot()); turn++)
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	expect(check(client.snapshot())).toBe(true);
+}
+
+/**
+ * Wait until the client is connected and idle.
+ * @param client The client.
+ */
+async function connected(client: ReturnType<typeof gateway>["client"]): Promise<void> {
+	await until(client, (state) => state.connection === "connected" && !state.busy);
 }
 
 /**
@@ -374,78 +402,104 @@ async function fire(timers: Timer[]): Promise<void> {
 	await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-test("connect opens the socket with the chat and tab identity and attaches voice", async () => {
-	const { client, sockets, urls, calls } = gateway();
-	expect(await client.connect()).toBe(true);
+test("the client opens its socket with the chat and tab identity when it is created, and attaches voice", async () => {
+	const { client, urls, calls } = gateway();
+	await connected(client);
 	const url = new URL(urls[0] ?? "");
 	expect(url.protocol).toBe("wss:");
 	expect(url.pathname).toBe("/api/voice");
 	expect(url.searchParams.get("chatId")).toBe("chat-a");
 	expect(url.searchParams.get("tabSessionId")).toBe("tab-1");
 	expect(calls).toEqual(["attach"]);
-	expect(client.snapshot().connection).toBe("connected");
 	expect(client.snapshot().server?.account.state).toBe("ready");
-	expect(await client.connect()).toBe(true);
-	expect(sockets[0]?.closeCalls).toBe(1);
-	expect(calls).toEqual(["attach", "detach", "attach"]);
 	await client.dispose();
 });
 
-/**
- * Dispose a client while a connect runs.
- * @param reconnect Whether a socket is already open when the connect starts.
- * @returns What the connect resolved and whether every socket it opened is closed.
- */
-async function disposeDuringConnect(reconnect: boolean) {
+test("a dispose while the first socket opens leaves no socket open", async () => {
 	const { client, sockets } = gateway();
-	if (reconnect) await client.connect();
-	const connecting = client.connect();
 	await client.dispose();
-	return {
-		connected: await connecting,
-		closed: sockets.every((socket) => socket.closeCalls > 0),
-	};
-}
-
-test("a dispose during connect or reconnect leaves no socket open", async () => {
-	expect(await disposeDuringConnect(false)).toEqual({ connected: false, closed: true });
-	expect(await disposeDuringConnect(true)).toEqual({ connected: false, closed: true });
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	expect(sockets.every((socket) => socket.closeCalls > 0)).toBe(true);
 });
 
-test("a lost socket opens again by itself, also after failed attempts", async () => {
-	const { client, sockets, timers } = gateway({ refused: [1, 2] });
-	expect(await client.connect()).toBe(true);
-	expect(timers).toHaveLength(0);
-	sockets[0]?.close();
-	expect(client.snapshot().connection).toBe("reconnecting");
+test("a socket that does not open, or is lost, opens again by itself after each failed attempt", async () => {
+	const { client, sockets, timers } = gateway({ refused: [0, 2, 3] });
+	await until(client, (state) => state.failure !== null);
+	expect(client.snapshot().failure?.message).toBe("The voice connection closed.");
 	await fire(timers);
-	await fire(timers);
-	expect(client.snapshot().connection).toBe("reconnecting");
+	expect(client.snapshot().connection).toBe("connected");
 	expect(client.snapshot().failure).toBeNull();
+	sockets[1]?.close();
+	expect(client.snapshot().connection).toBe("reconnecting");
 	await fire(timers);
-	expect(sockets).toHaveLength(4);
+	await fire(timers);
+	expect(client.snapshot().connection).toBe("reconnecting");
+	await fire(timers);
+	expect(sockets).toHaveLength(5);
 	expect(client.snapshot().connection).toBe("connected");
 	expect(timers.filter((timer) => !timer.cancelled)).toHaveLength(0);
 	await client.dispose();
 });
 
-test("a dispose ends a reconnect that waits, and a first connect that fails is not retried", async () => {
-	const lost = gateway();
-	await lost.client.connect();
-	lost.sockets[0]?.close();
-	await lost.client.dispose();
-	expect(lost.timers.map((timer) => timer.cancelled)).toEqual([true]);
-	expect(lost.sockets).toHaveLength(1);
-	const first = gateway({ refused: [0] });
-	expect(await first.client.connect()).toBe(false);
-	await new Promise((resolve) => setTimeout(resolve, 0));
-	expect(first.timers).toHaveLength(0);
-	await first.client.dispose();
+test("a dispose ends a reconnect that waits", async () => {
+	const { client, sockets, timers } = gateway();
+	await connected(client);
+	sockets[0]?.close();
+	await client.dispose();
+	expect(timers.map((timer) => timer.cancelled)).toEqual([true]);
+	expect(sockets).toHaveLength(1);
+});
+
+test("pagehide releases the socket and the microphone, and pageshow opens the socket again", async () => {
+	const { client, sockets, calls, timers, page } = gateway();
+	await connected(client);
+	page.dispatchEvent(new Event("pagehide"));
+	await until(client, () => sockets[0]?.closeCalls === 1);
+	expect(calls).toEqual(["attach", "detach"]);
+	sockets[0]?.close();
+	expect(timers.filter((timer) => !timer.cancelled)).toHaveLength(0);
+	page.dispatchEvent(new Event("pageshow"));
+	await connected(client);
+	expect(sockets).toHaveLength(2);
+	expect(calls).toEqual(["attach", "detach", "attach"]);
+	await client.dispose();
+});
+
+test("an approval from before a reconnect is refused here, and never reaches the new socket", async () => {
+	const { client, sockets, commands, timers } = gateway({ approvals: [approval()] });
+	await connected(client);
+	const stale = client.snapshot().server?.approvals[0];
+	if (stale === undefined) throw new Error("The snapshot carries no approval.");
+	sockets[0]?.close();
+	await fire(timers);
+	await connected(client);
+	expect(client.snapshot().server?.approvals).toHaveLength(1);
+	expect(
+		await client.answerApproval(stale, { approvalKind: "command_execution", decision: "accept" }),
+	).toBe(false);
+	expect(client.snapshot().failure?.message).toBe(
+		"This approval is from an earlier state of the conversation. Answer it again from the current state.",
+	);
+	expect(commands).toEqual([]);
+	await client.dispose();
+});
+
+test("an approval of the current state is answered with the intent of the state that delivered it", async () => {
+	const { client, commands } = gateway({ approvals: [approval()] });
+	await connected(client);
+	const current = client.snapshot().server?.approvals[0];
+	if (current === undefined) throw new Error("The snapshot carries no approval.");
+	await client.answerApproval(current, { approvalKind: "command_execution", decision: "accept" });
+	expect(client.snapshot().failure?.message).not.toBe(
+		"This approval is from an earlier state of the conversation. Answer it again from the current state.",
+	);
+	expect(commands).toEqual(["approvalRespond"]);
+	await client.dispose();
 });
 
 test("a reconnect keeps the uncertain failure of the action that the lost socket ended", async () => {
 	const { client, timers } = gateway({ lostOnCommand: [0] });
-	await client.connect();
+	await connected(client);
 	expect(await client.send("Investigate the checkout")).toBe(false);
 	expect(client.snapshot().failure?.uncertain).toBe(true);
 	await fire(timers);
@@ -456,7 +510,7 @@ test("a reconnect keeps the uncertain failure of the action that the lost socket
 
 test("a reconnect stops for good when the server speaks a contract this browser cannot read", async () => {
 	const { client, sockets, timers } = gateway({ unreadable: [1] });
-	await client.connect();
+	await connected(client);
 	sockets[0]?.close();
 	await fire(timers);
 	expect(sockets).toHaveLength(2);
@@ -468,7 +522,7 @@ test("a reconnect stops for good when the server speaks a contract this browser 
 
 test("a socket the server closes before its first snapshot fails with the server's reason and opens again", async () => {
 	const { client, sockets, calls, timers } = gateway({ closed: [0] });
-	expect(await client.connect()).toBe(false);
+	await until(client, (state) => state.failure !== null && !state.busy);
 	expect(client.snapshot().failure?.message).toBe(SERVER_REASON);
 	expect(client.snapshot().connection).toBe("reconnecting");
 	expect(calls).toEqual([]);
@@ -481,7 +535,7 @@ test("a socket the server closes before its first snapshot fails with the server
 
 test("an uncertain delivery stays visible and is never sent again", async () => {
 	const { client, commands } = gateway({ outcome: "outcome_unknown" });
-	await client.connect();
+	await connected(client);
 	expect(await client.send("Investigate the checkout")).toBe(false);
 	expect(commands).toEqual(["start"]);
 	expect(client.snapshot().failure?.uncertain).toBe(true);
@@ -493,7 +547,7 @@ test("an uncertain delivery stays visible and is never sent again", async () => 
 
 test("voice stops during another action and the workhorse keeps working", async () => {
 	const { client, calls, commands } = gateway();
-	await client.connect();
+	await connected(client);
 	const sending = client.send("Keep working");
 	expect(client.snapshot().busy).toBe(true);
 	expect(await client.startVoice()).toBe(false);
@@ -507,11 +561,9 @@ test("voice stops during another action and the workhorse keeps working", async 
 
 /** One page load: a client that opens its socket and is disposed. */
 async function loadPage(): Promise<void> {
-	const client = createVoiceClient({ socketPath: "/api/voice" });
-	const connecting = client.connect();
+	const client = createVoiceClient({ url: "/api/voice" });
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	await client.dispose();
-	await connecting;
 }
 
 /**

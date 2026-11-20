@@ -4,11 +4,7 @@ import {
 	surfaceOf,
 	type UpgradeRequest,
 } from "#server/agent/services/admission.ts";
-import type {
-	VoiceConnection,
-	VoiceRoute,
-	VoiceSocket,
-} from "#server/agent/services/connect.ts";
+import type { VoiceConnection, VoiceRoute, VoiceSocket } from "#server/agent/services/connect.ts";
 
 // The agent's sockets on one path of a `Bun.serve` server: the upgrade, its admission, and each
 // socket's frames and close, all through `connect`, so its origin check is the one `connect`

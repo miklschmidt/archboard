@@ -235,9 +235,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	 */
 	const requireOwner = (): CodexWorkbenchOwner => {
 		if (owner === null)
-			throw new Error(
-				"The voice agent has not started. Start it before it announces a change.",
-			);
+			throw new Error("The voice agent has not started. Start it before it announces a change.");
 		return owner;
 	};
 	return Object.freeze({
