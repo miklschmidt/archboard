@@ -25,6 +25,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_geometry::curve_through;
 use archboard_layout::Node as GraphNode;
+use archboard_painting::{CardWords, Part, ShapeWords, measure_label, measure_node, shape_words};
 use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, DrawingEdge, DrawingNode, EdgeFacts, Emphasis, MeasuredLabel,
     MeasuredNode, NodeFacts, Painted, PaintedDrawing, PlacedLabel, ReadingDirection,
@@ -35,7 +36,6 @@ use archboard_scene::request::{
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
     TypeKind,
 };
-use archboard_scene::{CardWords, Part, ShapeWords, measure_label, measure_node, shape_words};
 use serde::Deserialize;
 
 use crate::content::{Flow, Node};

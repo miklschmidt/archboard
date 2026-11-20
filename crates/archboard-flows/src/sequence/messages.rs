@@ -10,7 +10,7 @@
 //! the measure's (`archboard_scene::message_ends`, `message_plate`).
 
 use archboard_geometry::{Point, Rect, covering};
-use archboard_scene::{ArrowEnds, message_ends, self_loop};
+use archboard_painting::{ArrowEnds, message_ends, self_loop};
 
 use crate::sequence::design::{MESSAGE_LABEL_GAP, NEST_INSET, SELF_LABEL_GAP};
 use crate::sequence::layout::{ActiveAt, PlacedStep};

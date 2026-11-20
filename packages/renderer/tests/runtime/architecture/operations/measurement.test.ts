@@ -20,9 +20,9 @@ import {
 const TITLE_SIZE = 14;
 /** A card's responsibility size, set smaller than its name. */
 const NOTE_SIZE = 11;
-/** A line's words size: archboard_scene::measure::labels LABEL. */
+/** A line's words size: archboard_painting::measure::labels LABEL. */
 const LABEL_SIZE = 10;
-/** The narrowest a plate is: archboard_scene::measure::labels LABEL_MIN_WIDTH. */
+/** The narrowest a plate is: archboard_painting::measure::labels LABEL_MIN_WIDTH. */
 const LABEL_MIN_WIDTH = 40;
 /** The widest a card is drawn. */
 const CARD_MAX_WIDTH = 340;

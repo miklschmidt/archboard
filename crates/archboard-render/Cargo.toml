@@ -13,6 +13,7 @@ workspace = true
 archboard-ecma = { path = "../archboard-ecma" }
 archboard-flows = { path = "../archboard-flows" }
 archboard-layout = { path = "../archboard-layout" }
+archboard-painting = { path = "../archboard-painting" }
 archboard-scene = { path = "../archboard-scene" }
 archboard-svg = { path = "../archboard-svg" }
 # The vault's groups are read in the order its policy lists them.

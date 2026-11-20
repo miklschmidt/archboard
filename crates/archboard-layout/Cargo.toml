@@ -16,6 +16,7 @@ archboard-ecma = { path = "../archboard-ecma" }
 # Points, boxes and the routes between them.
 archboard-geometry = { path = "../archboard-geometry" }
 # The drawing a layout answers, and the painter's measures it keeps room for.
+archboard-painting = { path = "../archboard-painting" }
 archboard-scene = { path = "../archboard-scene" }
 # A Blocks picture's trunks between its blocks are routed round them.
 archboard-router = { path = "../archboard-router" }

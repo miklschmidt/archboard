@@ -14,7 +14,7 @@
 use std::collections::HashMap;
 
 use archboard_geometry::{Rect, covering, union};
-use archboard_scene::{Span, activation_span, fragment_bounds};
+use archboard_painting::{Span, activation_span, fragment_bounds};
 
 use crate::sequence::design::NEST_INSET;
 use crate::sequence::layout::{ActiveAt, FrameRows, PlacedFrame, PlacedStep};

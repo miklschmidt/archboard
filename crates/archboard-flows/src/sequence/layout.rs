@@ -20,9 +20,11 @@
 use std::collections::HashMap;
 
 use archboard_geometry::Rect;
+use archboard_painting::{
+    CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards,
+};
 use archboard_scene::drawing::TextRun;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
-use archboard_scene::{CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards};
 
 use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;

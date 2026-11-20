@@ -5,7 +5,7 @@
 //! container's members. Each wall is pulled in to one inset from the
 //! outermost thing its container holds.
 
-use archboard_scene::paint::header_padding;
+use archboard_painting::header_padding;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{abs, max, min, sorted_by};

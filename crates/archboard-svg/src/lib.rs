@@ -25,7 +25,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
-use archboard_scene::paint::viewer_marks;
+use archboard_painting::viewer_marks;
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
 use css::css;

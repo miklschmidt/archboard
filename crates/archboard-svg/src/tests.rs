@@ -21,16 +21,19 @@ fn labelled(words: &str) -> String {
         definitions: Vec::new(),
         body: vec![Item::Group(Group::new(
             Role::Icon(Some(words.to_owned())),
-            vec![Item::Text(Text::set(
-                Point { x: 10.0, y: 20.0 },
-                DiagramFont {
+            vec![Item::Text(Text {
+                at: Point { x: 10.0, y: 20.0 },
+                font: DiagramFont {
                     family: FontFamily::Sans,
                     weight: 400,
                 },
-                12.0,
-                Token::DiagramSelection.into(),
-                words,
-            ))],
+                size: 12.0,
+                fill: Token::DiagramSelection.into(),
+                width: 40.0,
+                units_per_em: 1000,
+                glyphs: Vec::new(),
+                words: words.to_owned(),
+            })],
         ))],
         atlas: Atlas::default(),
         placed: Vec::new(),

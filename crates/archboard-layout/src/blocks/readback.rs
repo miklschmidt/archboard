@@ -8,7 +8,7 @@ use crate::geometry::{Point, Rect};
 use crate::placed::{PlacedNode, PlacedRegion};
 use crate::track::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
 use crate::track::scene::Map;
-use archboard_scene::paint::header_padding;
+use archboard_painting::header_padding;
 
 use super::clusters::{Clusters, NODE_GAP, title_of};
 use super::laid::Size;

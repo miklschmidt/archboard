@@ -15,7 +15,7 @@
 //! A step no move can close is opened instead to the shortest step its two
 //! bends turn whole. The same moves part two lines that read as one (`parting.rs`).
 
-use archboard_scene::paint::straight_card_top_contains;
+use archboard_painting::straight_card_top_contains;
 
 use crate::constants::BEND_RADIUS;
 use crate::ecma::{abs, min, sign, to_fixed};

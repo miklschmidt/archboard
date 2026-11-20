@@ -3,8 +3,8 @@
 //! so every side keeps the same margin.
 
 use archboard_geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
+use archboard_painting::diagram_margin;
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingNode, EdgeFacts, NodeFacts};
-use archboard_scene::paint::diagram_margin;
 
 /// A point moved.
 fn shifted(point: Point, by: Point) -> Point {

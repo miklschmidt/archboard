@@ -13,9 +13,8 @@
 use std::collections::HashMap;
 
 use archboard_geometry::Point;
-use archboard_scene::fragment_head;
+use archboard_painting::{fragment_head, self_loop};
 use archboard_scene::request::{FrameGuard, FrameOperator, Slot};
-use archboard_scene::self_loop;
 
 use crate::content::{Decision, Message, MessageKind, Step};
 use crate::sequence::design::{FRAME_GAP, MAX_PULSES_PER_STEP, MESSAGE_PITCH, STEP_NOTE_GAP};

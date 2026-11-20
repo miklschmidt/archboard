@@ -12,6 +12,7 @@ workspace = true
 [dependencies]
 archboard-ecma = { path = "../archboard-ecma" }
 archboard-geometry = { path = "../archboard-geometry" }
+archboard-painting = { path = "../archboard-painting" }
 archboard-scene = { path = "../archboard-scene" }
 # A picture's glyphs are drawn from the outlines of the core's own faces.
 archboard-text = { path = "../archboard-text" }

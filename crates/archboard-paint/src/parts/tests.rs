@@ -9,7 +9,7 @@ use crate::palette::Theme;
 use crate::presentation::Camera;
 use crate::stage::{Arrival, Pace, Stage, Surface};
 use crate::testing::Record;
-use archboard_scene::paint::paint;
+use archboard_painting::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, BezPath, PathEl, Point};
@@ -17,7 +17,7 @@ use peniko::Color;
 
 /// The paint request of "Codex session".
 const REQUEST: &str =
-    include_str!("../../../archboard-scene/tests/fixtures/codex-session.paint.json");
+    include_str!("../../../archboard-painting/tests/fixtures/codex-session.paint.json");
 
 /// The canvas, in pixels.
 const SIZE: (u16, u16) = (400, 300);

@@ -1,7 +1,7 @@
 //! The draw walk: one scene under one presentation, onto one canvas. It reads
 //! the scene as the SVG writer does, and does what the SVG's stylesheet did.
 
-use archboard_scene::paint::ViewerMarks;
+use archboard_painting::ViewerMarks;
 use archboard_scene::scene::{
     Colour, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token, Transform,
     Viewport,

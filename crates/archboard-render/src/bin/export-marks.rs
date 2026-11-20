@@ -3,9 +3,9 @@
 //! standing's pin and the warning, as the painter draws them in a picture.
 //! `scripts/build-core.ts` writes them beside the WebAssembly build, so a pane
 //! that draws a key, a pin or a warning holds no copy of the painter's rules.
+use archboard_painting::own_icons;
+use archboard_painting::viewer_marks;
 use archboard_scene::names::word;
-use archboard_scene::paint::own_icons;
-use archboard_scene::paint::viewer_marks;
 use archboard_scene::request::PaletteColor;
 use archboard_scene::scene::Colour;
 use archboard_svg::{colour, markup};

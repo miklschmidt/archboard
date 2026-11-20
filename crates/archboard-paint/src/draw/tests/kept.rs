@@ -3,15 +3,14 @@
 use std::collections::{HashMap, HashSet};
 
 use archboard_geometry::Point;
-use archboard_scene::drawing::{DiagramFont, FontFamily};
-use archboard_scene::scene::{Colour, Group, Item, Role, Slot, SubjectKind, Text, Transform};
+use archboard_scene::scene::{Group, Item, Role, Slot, SubjectKind, Transform};
 use kurbo::{Affine, BezPath};
 
 use super::{marked, places, plate, route, stage_of, subject};
 use crate::canvas::{Canvas, Ink, Layer, PartKey};
 use crate::presentation::{Camera, Marks};
 use crate::stage::{Stage, Surface};
-use crate::testing::{Op, Record, subject_group};
+use crate::testing::{Op, Record, subject_group, words_at};
 
 /// A canvas that keeps each part as what was drawn of it, and draws it again
 /// under the transform it is asked for.
@@ -58,15 +57,7 @@ impl Canvas for Keeping {
 
 /// A card and its words, under one move.
 fn card_with_words() -> Vec<Item> {
-    let words = |x| {
-        let at = Point { x, y: 5.0 };
-        let font = DiagramFont {
-            family: FontFamily::Sans,
-            weight: 500,
-        };
-        let text = Text::set(at, font, 12.0, Colour::Black, "Same words");
-        Item::Text(text)
-    };
+    let words = |x| Item::Text(words_at(Point { x, y: 5.0 }, true, "Same words"));
     let card = Group::new(Role::NearView, vec![plate(1.0), words(10.0), words(200.0)]);
     vec![Item::Group(Group::new(Role::Move, vec![Item::Group(card)]))]
 }

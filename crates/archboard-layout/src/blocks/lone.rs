@@ -6,7 +6,7 @@
 //! box and the region drawn round it; a line that stopped on the region's wall
 //! is carried on to the card's face.
 
-use archboard_scene::paint::header_padding;
+use archboard_painting::header_padding;
 
 use crate::constants::REGION_INSET;
 use crate::ecma::{abs, max, min, number_of, sorted_by};

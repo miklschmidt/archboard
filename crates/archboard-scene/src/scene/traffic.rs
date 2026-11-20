@@ -12,7 +12,7 @@ use archboard_geometry::segment_length;
 use archboard_geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 
 /// How thick a pulse's core is on a line of one width.
-pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
+pub fn pulse_breadth(line_width: f64) -> f64 {
     archboard_ecma::max([1.5, line_width + 0.6])
 }
 
@@ -268,7 +268,7 @@ pub fn pulse_slide(motion: &LegMotion, seconds: f64) -> Option<f64> {
 
 /// How far a turn's clock carries a pulse across lines of some lengths, in
 /// order: the lines, and the room the last pulse's light takes to leave.
-pub(crate) fn turn_distance(lengths: &[f64]) -> f64 {
+pub fn turn_distance(lengths: &[f64]) -> f64 {
     lengths.iter().fold(0.0, |sum, length| sum + length) + (PULSE_SPAN + PULSE_MASK_ROOM)
 }
 

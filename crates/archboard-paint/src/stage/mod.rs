@@ -17,7 +17,7 @@ mod tests;
 
 use std::collections::HashSet;
 
-use archboard_scene::paint::{ViewerMarks, viewer_marks};
+use archboard_painting::{ViewerMarks, viewer_marks};
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 

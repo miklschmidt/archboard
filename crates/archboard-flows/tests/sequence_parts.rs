@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use archboard_flows::sequence::{SequenceRequest, picture};
 use archboard_geometry::{Point, Rect};
-use archboard_scene::paint::paint;
+use archboard_painting::paint;
 use archboard_scene::request::{
     DocumentRequest, NodeAppearance, PageRequest, Picture, Relief, SequenceClock, SequenceDrawing,
     TypeKind,
