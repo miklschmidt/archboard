@@ -87,6 +87,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/gbyqW4H3#bwa7JRYk"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk#gJg0IMG5"
     },
     {
@@ -124,6 +128,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/yejBBUFY#pNlMVRMt"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/gbyqW4H3#PAOQHNdT"
     },
     {
       "type": "remove",
@@ -1355,6 +1363,58 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#Jx3qP5zW",
+      "kind": "module",
+      "value": {
+        "order": 1000,
+        "name": "Model render recipe",
+        "kind": "function",
+        "responsibility": "Records a model render's recipe in its SVG: the model, the reading, the exact input revision and the picture's digest",
+        "groups": [
+          "drawing"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/render-recipe/src/runtime/operations/model-recipe.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Jx3qP5zW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Jx3qP5zW",
+      "placement": {
+        "holder": "vKEsyHFk#uQ2UEbuS"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#4Mk2WepQ",
+      "kind": "relationship",
+      "value": {
+        "order": 40000,
+        "kind": "call",
+        "label": "the checkout the release is built from",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "scripts/release/build.ts",
+          "symbol": "installation"
+        },
+        "id": "vKEsyHFk#4Mk2WepQ",
+        "to": "vKEsyHFk#4FdKQJqK"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#4Mk2WepQ",
+      "placement": {
+        "holder": "vKEsyHFk#rnYDP0Ma"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#ttPYQNXo",
       "field": "responsibility",
@@ -1474,6 +1534,28 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#Inhz9zl3",
+      "field": "label",
+      "value": "build the core, then record the hash of its sources"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Inhz9zl3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/compile.ts",
+        "symbol": "buildCore"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Inhz9zl3",
+      "field": "to",
+      "value": "vKEsyHFk#3c7n7VDm"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#9jix9Dsx",
       "field": "responsibility",
       "value": "Turns one scene into the next as one Between, made by a carry or an entrance and sampled by progress: it pairs groups by subject id and mixes their typed geometry, opacity and transforms"
@@ -1584,11 +1666,67 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#KyQxypRC",
+      "field": "responsibility",
+      "value": "Draws a run of pictures to PNGs in order: starts one Chromium when the first job needs it, shares it across the run, and awaits proof of its shutdown when the run ends, fails or is left early"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#KyQxypRC",
+      "field": "description",
+      "value": "rasterizeAll takes jobs as an iterable or an async iterable and pulls the next only after the last capture is handed out. The run ends on its first failure: the per-job recovery of the old rasterizer is gone on purpose, because no caller carried on. A stop that cannot be proved fails as \"The rasterizer did not stop cleanly:\"."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#KyQxypRC",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#7gIxznvp",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
+        "symbol": "boundsRefusal"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IiA7nIxT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
+        "symbol": "RasterSession"
+      }
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
+      "field": "description"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
+        "symbol": "discoveredChromiumPath"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#zAZwER1T",
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
         "symbol": "durationMs"
       }
     },
@@ -1636,6 +1774,15 @@
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#7N0JLb2b",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/operations/bounds.ts"
       }
     },
     {
@@ -1690,6 +1837,75 @@
       "subject": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
       "field": "label",
       "value": "how a pane is addressed and laid out"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#8c0zvhQW",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/session.ts"
+      }
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
+      "field": "description"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/session.ts",
+        "symbol": "launchHeadlessChromium"
+      }
+    },
+    {
+      "type": "clear",
+      "subject": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
+      "field": "description"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/session.ts",
+        "symbol": "DevTools.evaluate"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#TBd33jdx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/session.ts",
+        "symbol": "checkedReadiness"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/session.ts",
+        "symbol": "regionOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/session.ts",
+        "symbol": "RasterSession"
+      }
     },
     {
       "type": "add",
@@ -2212,6 +2428,35 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#6uHnaygd",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/launch.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#De1J26nB",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/launch.ts",
+        "symbol": "spawnChromium"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#ZP5lfDZ6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/launch.ts",
+        "symbol": "DevTools"
+      }
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#43TCPDtg",
       "kind": "relationship",
@@ -2222,7 +2467,7 @@
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
+          "path": "packages/headless-chromium/src/runtime/processes/launch.ts",
           "symbol": "waitUntil"
         },
         "id": "vKEsyHFk#43TCPDtg",
@@ -2234,6 +2479,31 @@
       "subject": "vKEsyHFk#43TCPDtg",
       "placement": {
         "holder": "vKEsyHFk/SMjRfwN3#6uHnaygd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lzpiRcT2",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "call",
+        "label": "the key's finished samples and the code warning mark",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx",
+          "symbol": "markSample"
+        },
+        "id": "vKEsyHFk#lzpiRcT2",
+        "to": "vKEsyHFk#Ut8M2UHc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lzpiRcT2",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
       }
     },
     {
@@ -2341,6 +2611,25 @@
       "subject": "vKEsyHFk/9ncuT5DP#jylkTBp7",
       "field": "description",
       "value": "The session performs the handshake and owns request identity serialization, response adoption, reverse requests, and failure classification. Coordinator and workhorse callers share this same implementation boundary. TASK-653.11: callers open it with openCodexSession on a Codex connection and get { session, control }; createCodexSession and codexSessionControl leave the interface, and a mutation failure is read as kind mutation through readCodexFailure."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#AVCQVNqI",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/clients/devtools.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#JgtXFRyO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/clients/devtools.ts",
+        "symbol": "WebSocket"
+      }
     },
     {
       "type": "assign",
@@ -2527,6 +2816,51 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#FXGZhgKo",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/page.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#68lKuaPg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/page.ts",
+        "symbol": "readPngDimensions"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#noNd5J0o",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/page.ts",
+        "symbol": "bitmapSizeOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#DDGmqL3f",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster/src/runtime/services/page.ts",
+        "symbol": "isRecord"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#DDGmqL3f",
+      "field": "to",
+      "value": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
       "field": "responsibility",
       "value": "Measures every card, note and label in the faces the core carries; its line breakers serve only the crate's own measures"
@@ -2699,6 +3033,22 @@
       "subject": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
       "field": "to",
       "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#ctgF3OPk",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/png.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#ctgF3OPk",
+      "placement": {
+        "holder": "vKEsyHFk#uQ2UEbuS"
+      }
     },
     {
       "type": "assign",
@@ -3226,6 +3576,28 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
+      "field": "label",
+      "value": "the raster receipt shapes, by modelShape key"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
+        "symbol": "modelShape"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
+      "field": "to",
+      "value": "vKEsyHFk#QsBnI8Ja"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/SJ2JMVyz#abHx4peq",
       "field": "binding",
       "value": {
@@ -3244,6 +3616,72 @@
       "subject": "vKEsyHFk/SJ2JMVyz#abHx4peq",
       "placement": {
         "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#FxiFVi9W",
+      "kind": "relationship",
+      "value": {
+        "order": 20000,
+        "kind": "call",
+        "label": "the scales a caller may ask for",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
+          "symbol": "rasterScaleSchema"
+        },
+        "id": "vKEsyHFk#FxiFVi9W",
+        "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#FxiFVi9W",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#69392DWF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6LIflBm3",
+      "kind": "relationship",
+      "value": {
+        "order": 30000,
+        "kind": "call",
+        "label": "read the picture's recipe and carry it into the PNG",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
+          "symbol": "replaceRenderRecipe"
+        },
+        "id": "vKEsyHFk#6LIflBm3",
+        "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6LIflBm3",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#69392DWF"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#inbTEHtR",
+      "field": "label",
+      "value": "capture the picture to PNG in a private Chromium"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#inbTEHtR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
+        "symbol": "rasterizeAll"
       }
     },
     {
@@ -3353,6 +3791,45 @@
       "subject": "vKEsyHFk#PxNrfkib",
       "placement": {
         "holder": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#ShT7QadJ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/process.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#chzSzpL4",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/process.ts",
+        "symbol": "spawnChromium"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#YZuYCZhH",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/process.ts",
+        "symbol": "isJsonRecord"
       }
     },
     {
@@ -3831,6 +4308,43 @@
       "subject": "vKEsyHFk#zAB848k7",
       "field": "to",
       "value": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#gbjuMdZa",
+      "field": "description",
+      "value": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#8rmq24D9",
+      "field": "description",
+      "value": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xpeisrdS",
+      "kind": "relationship",
+      "value": {
+        "order": 90000,
+        "kind": "call",
+        "label": "the viewport each page's window is sized to",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
+          "symbol": "shell"
+        },
+        "id": "vKEsyHFk#xpeisrdS",
+        "to": "vKEsyHFk#PwpfcGFH"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xpeisrdS",
+      "placement": {
+        "holder": "vKEsyHFk/SMjRfwN3#EWBbxckL"
+      }
     },
     {
       "type": "assign",
@@ -4465,6 +4979,18 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk#Ut8M2UHc",
+      "field": "responsibility",
+      "value": "The marks a pane draws beside or over a picture, finished, without the core: the key's samples of a line, of its emphasis and traffic and of a standing pin, and the warning a code finding raises"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Ut8M2UHc",
+      "field": "description",
+      "value": "markSample takes a closed union of samples and warningMark a place; both answer finished markup. Their inks, sizes and markup are generated from the core's painter by bun run build:core, so a pane holds no copy of the painter's rules: it places the markup this module finishes (TASK-653.16)."
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#WXIezSNF",
       "kind": "module",
@@ -4488,6 +5014,68 @@
     {
       "type": "place",
       "subject": "vKEsyHFk#WXIezSNF",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "order",
+      "value": 26700
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "name",
+      "value": "headless-chromium"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "kind",
+      "value": "package"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "responsibility",
+      "value": "A private headless Chromium for one caller: launched, its pages and windows driven over DevTools, and stopped with proof that nothing it started is left"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "description",
+      "value": "Layer 2, @archboard/headless-chromium (TASK-653.16): the renderer's headless-chromium folder, moved out whole. Width 11 at its one entry: launchHeadlessChromium, discoveredChromiumPath, HeadlessChromiumError, and DevTools with connect, call, evaluate, on, diagnostics, readBlobTo and close. raster, walkthrough's recorder and the README asset scripts call it; it calls process for the Chromium process group and timing for its waits."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "groups",
+      "value": [
+        "packages"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+      "field": "formerNames",
+      "value": [
+        "Headless browser"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
       "placement": {
         "holder": "vKEsyHFk#EuaJBisP"
       }
@@ -4744,6 +5332,60 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#uQ2UEbuS",
+      "kind": "module",
+      "value": {
+        "order": 28900,
+        "name": "render-recipe",
+        "kind": "package",
+        "responsibility": "The render recipe a picture file carries: read from an SVG's or a PNG's bytes, replaced in place, and recorded into a model render's SVG, so the picture can be drawn again",
+        "description": "Layer 5, @archboard/render-recipe (TASK-653.16): the renderer's recipe folder and its PNG reader, moved out. Width 4: readRenderRecipe, replaceRenderRecipe, recordArchitectureRecipe and readPngDimensions. embedRecipeInPng is private behind replaceRenderRecipe, and the test-only legacy recipe writer is gone. A recipe's schema composes model-contract's shapes. The CLI's model rasterize and embeds check, the server's flow pictures, raster and the skill grader call it.",
+        "groups": [
+          "drawing",
+          "packages"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/render-recipe"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#uQ2UEbuS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uQ2UEbuS",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#j8z6R0Tw",
+      "kind": "relationship",
+      "value": {
+        "order": 100,
+        "kind": "dependency",
+        "label": "the shapes a recipe composes",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/render-recipe/src/runtime/operations/schema.ts",
+          "symbol": "modelShape"
+        },
+        "id": "vKEsyHFk#j8z6R0Tw",
+        "to": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#j8z6R0Tw",
+      "placement": {
+        "holder": "vKEsyHFk#uQ2UEbuS"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
       "field": "responsibility",
@@ -4769,6 +5411,12 @@
       "subject": "vKEsyHFk/9ncuT5DP#wkvnbMs8",
       "field": "description",
       "value": "TASK-653.11: the voice kernel is the CodexConnection, so the generation contract, its lifecycle and each generation hold the connection in place of a separate identity ledger, authorities and transport, and the factories open the session on it with openCodexSession."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
+      "field": "description",
+      "value": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches."
     },
     {
       "type": "assign",
@@ -4908,6 +5556,31 @@
       "value": "vKEsyHFk#V0iTeueR"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#N7Kjhgfe",
+      "kind": "relationship",
+      "value": {
+        "order": 72000,
+        "kind": "call",
+        "label": "photograph each measured drawing, in one run",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/tests/runtime/support/wide-boards/measure.ts",
+          "symbol": "rasterizeAll"
+        },
+        "id": "vKEsyHFk#N7Kjhgfe",
+        "to": "vKEsyHFk/SMjRfwN3#KyQxypRC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#N7Kjhgfe",
+      "placement": {
+        "holder": "vKEsyHFk#S6MFhkV7"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#vo1cE4kF",
       "field": "anchor",
@@ -4925,6 +5598,69 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "order",
+      "value": 29500
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "name",
+      "value": "raster"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "kind",
+      "value": "package"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "responsibility",
+      "value": "Pictures to PNGs: one private headless Chromium per run, started when the first picture needs it, each bitmap exactly the size asked for, and proof that the browser is gone when the run ends"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/raster"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "description",
+      "value": "Layer 6, @archboard/raster (TASK-653.16), below the renderer: the renderer's rasterizer folder, moved out. Width 2: rasterizeAll(jobs, { signal?, chromiumPath? }) yields captures in order, and rasterScaleSchema() is the scales a caller may ask for. The CLI's model rasterize and the layout scorecards call it; it calls headless-chromium for the browser, render-recipe for a bitmap's size and timing for its limits."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "groups",
+      "value": [
+        "drawing",
+        "packages"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "field": "formerNames",
+      "value": [
+        "Semantic rasterizer"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#xEGElQkc",
       "field": "anchor",
       "value": {
@@ -4938,6 +5674,24 @@
       "subject": "vKEsyHFk/vKEsyHFk#xEGElQkc",
       "field": "to",
       "value": "vKEsyHFk#QsBnI8Ja"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#a0oemoX5",
+      "field": "description",
+      "value": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+      "field": "responsibility",
+      "value": "Draws a model as a picture, in the browser or under Bun, hands a pane the finished marks and the shell's measures, and builds the renderer core"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+      "field": "description",
+      "value": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours. A page paints a picture on a canvas with Vello, on WebGPU, on WebGL2 or on the CPU, from the same scene. The SVG stays the product of exports, PNGs and README assets, and stays in the page as the semantic layer. Recordings paint on the CPU. Layer 7, width 16 over five subpaths (TASK-653.16): ./browser (startBrowserRenderer, prepareContentHere, drawLegacyBoardHere, startPainter), ./bun (renderArchitecture, diagramIconPaths, policyIconPaths), ./core (buildCore, coreSourceHash), ./picture (markSample, warningMark, lineMarks, markCounts, scopedDrawingKey) and ./shell-geometry (shell(key), its one keyed getter, and fit); ./theme.css and the fonts stay, and the ./theme code entry is gone. Moved jobs, with no new ADR because ADR 0055 already calls the two hosts execution areas of one behavior: headless Chromium went to @archboard/headless-chromium, render recipes to @archboard/render-recipe, rasterizing to @archboard/raster, and the raster receipt shapes to model-contract's modelShape keys."
     },
     {
       "type": "assign",
@@ -5080,6 +5834,12 @@
       "placement": {
         "holder": "vKEsyHFk#51X5gvya"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#Kiapa8dj",
+      "field": "label",
+      "value": "the size of each graded image"
     },
     {
       "type": "assign",
@@ -5405,6 +6165,22 @@
       "subject": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
       "field": "to",
       "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
+      "field": "label",
+      "value": "draw the warning mark on a subject and on a code line"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
+        "symbol": "warningMark"
+      }
     },
     {
       "type": "add",
@@ -5749,6 +6525,60 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
+      "field": "responsibility",
+      "value": "Reads the recipe a picture file carries and puts another in its place, in an SVG or a PNG"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
+      "field": "description",
+      "value": "A PNG takes a recipe whether or not it carried one, which is how a bitmap gets its recipe; every other byte stays as it was, whatever a post-processor did to the picture. Model render commands and the embed checker reuse canonical reading and rendering owners."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/read-recipe.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
+      "placement": {
+        "holder": "vKEsyHFk#uQ2UEbuS"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Xn6zGm0D",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/read-recipe.ts",
+        "symbol": "pngRecipeText"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#wsEMWmNJ",
+      "field": "label",
+      "value": "the size a PNG states"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#wsEMWmNJ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/read-recipe.ts",
+        "symbol": "readPngDimensions"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#jn71SBXe",
       "field": "binding",
       "value": {
@@ -5867,6 +6697,32 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#H2MUNwiC",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/png-recipe.ts"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#H2MUNwiC",
+      "placement": {
+        "holder": "vKEsyHFk#uQ2UEbuS"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#rzORtiO1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/png-recipe.ts",
+        "symbol": "readPngDimensions"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#xssnUgIk",
       "field": "description",
       "value": "Its page makes one createVoiceClient({ url }), which connects by itself and lets go of its socket and microphone while the page is hidden, and reads it through useVoiceState(client); its own page-lifecycle client and the provider are gone (TASK-653.12)."
@@ -5876,6 +6732,56 @@
       "subject": "vKEsyHFk/9ncuT5DP#qbAR52W1",
       "field": "label",
       "value": "createVoiceClient, read through useVoiceState(client)"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#3c7n7VDm",
+      "kind": "module",
+      "value": {
+        "order": 40000,
+        "name": "Core build",
+        "kind": "module",
+        "responsibility": "Builds the renderer core and its painter to WebAssembly from the checkout's crates when the build is stale, and writes the contract's types, the pane's marks and the theme colours beside it",
+        "description": "buildCore keeps a complete build of the checkout's sources, so a run without a change needs no Rust tools; one that lacks them builds again inside the checkout's nix develop shell. bun run build:core and the release compile call it (TASK-653.16: it left scripts/build-core.ts).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/operations/build-core.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#3c7n7VDm"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#3c7n7VDm",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#hXbAI4Fh",
+      "kind": "relationship",
+      "value": {
+        "order": 100,
+        "kind": "call",
+        "label": "whether the build of these sources is current",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/runtime/operations/build-core.ts",
+          "symbol": "loadCore"
+        },
+        "id": "vKEsyHFk#hXbAI4Fh",
+        "to": "vKEsyHFk#jY4mqBJe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#hXbAI4Fh",
+      "placement": {
+        "holder": "vKEsyHFk#3c7n7VDm"
+      }
     },
     {
       "type": "assign",
@@ -6300,6 +7206,56 @@
       "subject": "vKEsyHFk#wQ1qhuYS",
       "placement": {
         "holder": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PwpfcGFH",
+      "kind": "module",
+      "value": {
+        "order": 41000,
+        "name": "Shell geometry",
+        "kind": "module",
+        "responsibility": "The shell's measures that a pane, a recording and the layout suite size pictures by, and the scale that fits a size into a room",
+        "description": "shell(key) is the renderer's one keyed getter, over navigator, sidebar, chrome, agentPanel, fitMargin, viewport and referencePane; fit(size, room?, ceiling = 1) answers the scale (TASK-653.16). The browser shell, the canvas camera, the walkthrough recorder and the layout suite read them, so a picture fitted in one fits in the others.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/shared/constants/shell-geometry.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#PwpfcGFH"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PwpfcGFH",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CTux08cL",
+      "kind": "relationship",
+      "value": {
+        "order": 30000,
+        "kind": "call",
+        "label": "record the flow picture's recipe in its SVG",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+          "symbol": "recordArchitectureRecipe"
+        },
+        "id": "vKEsyHFk#CTux08cL",
+        "to": "vKEsyHFk#Jx3qP5zW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CTux08cL",
+      "placement": {
+        "holder": "vKEsyHFk/HBlhIeSD#gRG7JEPt"
       }
     },
     {
@@ -7184,6 +8140,31 @@
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/edit"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#D8bHS02D",
+      "kind": "relationship",
+      "value": {
+        "order": 30000,
+        "kind": "call",
+        "label": "read a tracked picture's recipe; replace it when redrawn",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/cli/src/cli/commands/vault/embeds/operations/embeds-check.ts",
+          "symbol": "replaceRenderRecipe"
+        },
+        "id": "vKEsyHFk#D8bHS02D",
+        "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#D8bHS02D",
+      "placement": {
+        "holder": "vKEsyHFk/XppR9owz#s25sE5P3"
       }
     },
     {
@@ -9142,6 +10123,22 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
+      "field": "label",
+      "value": "renderLegacyBoard on the core"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
+        "symbol": "renderLegacyBoardIn"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#rG1FeuCg",
       "field": "responsibility",
       "value": "Owns the live voice of a tab: start, stop, level, whether it is audible, and mute"
@@ -9783,6 +10780,73 @@
       "subject": "vKEsyHFk#9VahN2IU",
       "placement": {
         "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+      "field": "order",
+      "value": 960140
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+      "field": "name",
+      "value": "Raster receipt"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/raster-receipt.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+      "field": "description",
+      "value": "The shapes behind modelShape's keys rasterReceipt and legacyRasterReceipt (TASK-653.16), moved out of the renderer's rasterizer. The CLI's model rasterize answers one, assembling its source and file, and skill evaluation reads both."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+      "field": "formerNames",
+      "value": [
+        "Receipt"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+      "placement": {
+        "holder": "vKEsyHFk#QsBnI8Ja"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#iwKJdNZW",
+      "kind": "relationship",
+      "value": {
+        "order": 100,
+        "kind": "dependency",
+        "label": "the render result a model raster receipt extends",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/model-contract/src/shared/protocol/raster-receipt.ts",
+          "symbol": "ArchitectureRenderResultSchema"
+        },
+        "id": "vKEsyHFk#iwKJdNZW",
+        "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#iwKJdNZW",
+      "placement": {
+        "holder": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
       }
     },
     {
@@ -11875,6 +12939,16 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#W2bGXkG1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/process.ts",
+        "symbol": "spawnChromium"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/XppR9owz#JNDebM7n",
       "field": "anchor",
       "value": {
@@ -12208,6 +13282,8 @@
     "vKEsyHFk/yejBBUFY#pNlMVRMt",
     "vKEsyHFk#TjiaPdzb",
     "vKEsyHFk#B4RRDeWH",
-    "vKEsyHFk#SULD8OZ8"
+    "vKEsyHFk#SULD8OZ8",
+    "vKEsyHFk/gbyqW4H3#bwa7JRYk",
+    "vKEsyHFk/gbyqW4H3#PAOQHNdT"
   ]
 }
