@@ -18,12 +18,6 @@ import type { PaneTheme } from "#ui/panes/pane-session/rules/session-contracts.t
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import type { WalkthroughRecorder } from "#ui/walkthroughs/recording/state/recorder.ts";
 
-/** Something the shell lays over one pane's picture. */
-interface PaneOverlay {
-	readonly paneId: string;
-	readonly element: ReactNode;
-}
-
 /** What the mounted panes are assembled from. */
 interface PaneViewSources {
 	/** What a pane is made from: never the records, which change with every pane's news. */
@@ -44,8 +38,8 @@ interface PaneViewSources {
 	readonly onVariantChange: (paneId: string, variant: string | null) => void;
 	/** Narration, offered to every pane, or null where the page does not narrate by hand. */
 	readonly narration: Narration | null;
-	/** What is laid over one pane's picture, or null: the subtitles of the voice running for it. */
-	readonly overlay: PaneOverlay | null;
+	/** The pane presented fullscreen, or null in the workspace. */
+	readonly presentedPaneId: string | null;
 	/** The page records its one pane (TASK-304), or null. */
 	readonly recording: PaneRecording | null;
 	/**
@@ -91,7 +85,7 @@ function paneElement(sources: PaneViewSources, paneId: string, index: number): R
 		callbacks: panes.callbacks,
 		handles: panes.handles,
 		narration: sources.narration?.forPane(paneId),
-		overlay: sources.overlay?.paneId === paneId ? sources.overlay.element : undefined,
+		dockless: sources.presentedPaneId === paneId,
 		reducedMotion: sources.reducedMotion,
 		openingVault: sources.openingVault(paneId),
 	});
@@ -152,7 +146,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		reducedMotion,
 		onVariantChange,
 		narration,
-		overlay,
+		presentedPaneId,
 		recording,
 		openPaneKey,
 		openingVault,
@@ -169,7 +163,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					reducedMotion,
 					onVariantChange,
 					narration,
-					overlay,
+					presentedPaneId,
 					recording,
 					openPaneKey,
 					openingVault,
@@ -188,11 +182,11 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		reducedMotion,
 		onVariantChange,
 		narration,
-		overlay,
+		presentedPaneId,
 		recording,
 		openPaneKey,
 		openingVault,
 	]);
 }
 
-export { usePaneViews, type PaneOverlay, type PaneRecording };
+export { usePaneViews, type PaneRecording };

@@ -4,21 +4,24 @@
 // voice that is merely not set up yet is not a problem, because Talk sets it up.
 //
 // The level is handed on as a source and never read here. It changes on every
-// frame while the model speaks, and the view is read at the application's root:
-// read here, it drew the whole shell again on every frame (TASK-385.03).
+// frame while the model speaks, and the view is read at the agent's root, which
+// the shell's own surfaces hear: read here, it drew the whole shell again on
+// every frame (TASK-385.03).
 
 import { useMemo, useSyncExternalStore } from "react";
 
-import type { AgentSetupSnapshot } from "@archboard/workbench/agent";
-import type { VoiceOwner } from "#ui/application/state/workbench-owners.ts";
+import type { AgentSetupSnapshot } from "#ui/agent-setup/state/setup.ts";
+import type { VoiceOwner } from "#ui/agent-root/state/workbench-owners.ts";
 import type {
 	VoiceSession,
 	VoiceSessionStatus,
 	VoiceSessionView,
+} from "#ui/voice-session/state/contract.ts";
+import type {
 	AgentVoiceView,
 	VoiceLevel,
 	VoiceStage,
-} from "@archboard/workbench/voice";
+} from "#ui/workbench-client/surfaces/state/contracts.ts";
 
 /** The stage each session status is at. */
 const STAGES: Readonly<Record<VoiceSessionStatus, VoiceStage>> = {

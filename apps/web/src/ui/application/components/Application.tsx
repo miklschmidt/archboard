@@ -1,8 +1,7 @@
 import { ModelArrivalContext } from "#ui/panes/reading-routing/state/model-arrival.ts";
 // The application root: the pane sessions, the listing, the notices, the
-// workbench and the presentation composed over the shell. The sessions, the
-// transport, the runtime and the controllers are the state; this file only
-// connects them.
+// agent and the presentation composed over the shell. The sessions, the
+// agent and the presentation are the state; this file only connects them.
 
 import { VaultDiagnostics } from "#ui/vault-diagnostics/components/VaultDiagnostics.tsx";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
@@ -22,7 +21,6 @@ import { assembleShellView } from "#ui/application/rules/shell-view.ts";
 import { useTheme } from "#ui/application/hooks/use-theme.ts";
 import { usePaneReadings } from "#ui/application/hooks/use-pane-reading.ts";
 import { usePaneViews } from "#ui/application/hooks/use-pane-views.ts";
-import { useSubtitleOverlay } from "#ui/application/hooks/use-subtitle-overlay.ts";
 import {
 	shellPresentationOf,
 	useFullscreen,
@@ -42,9 +40,11 @@ import {
 	usePageRecorder,
 	useRecordedViews,
 } from "#ui/application/hooks/use-page-recording.ts";
-import { useAgentSurfaces, type AgentSurfaces } from "#ui/application/hooks/use-agent-surfaces.ts";
-import { conversationActivation } from "#ui/application/clients/shown-conversation.ts";
-import { useWorkbench, type Workbench } from "#ui/application/hooks/use-workbench.ts";
+import type { WalkthroughRecorder } from "#ui/walkthroughs/recording/state/recorder.ts";
+import {
+	conversationActivation,
+	type ConversationActivation,
+} from "#ui/application/clients/shown-conversation.ts";
 import { useWorkspaceAddressing } from "#ui/application/hooks/use-workspace-addressing.ts";
 import { useBesideOpening } from "#ui/application/hooks/use-beside-opening.ts";
 import { ModelCatalogProvider } from "#ui/panes/model-catalog/components/ModelCatalogProvider.tsx";
@@ -61,13 +61,17 @@ import {
 	paneKeyFor,
 } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { RecordingStage } from "#ui/walkthroughs/recording/components/RecordingStage.tsx";
-import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
-import { AnswerFilesProvider, type OpenAnswerFile } from "@archboard/workbench/agent";
+import {
+	AgentDock,
+	AgentPanel,
+	AgentRoot,
+	TalkControl,
+	useAgentPanel,
+	type OpenAnswerFile,
+} from "@archboard/workbench/agent-surfaces";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
-import { AgentDockSlot, AgentPanelSlot } from "#ui/application/components/AgentSurfaceSlots.tsx";
 import { NavigatorModeSwitch } from "#ui/application/components/NavigatorModeSwitch.tsx";
 import { useNavigatorMode } from "#ui/application/hooks/use-navigator-mode.ts";
-import { PresentationVoiceKey } from "#ui/application/components/PresentationVoiceKey.tsx";
 import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { StartShell } from "#ui/application/components/StartShell.tsx";
 import { Shell } from "#ui/shell/components/Shell.tsx";
@@ -108,42 +112,23 @@ interface AgentSlots {
 	readonly voiceControls: ReactNode;
 }
 
-/** What the agent's surfaces are drawn from. */
-interface AgentSlotSources {
-	readonly agent: AgentSurfaces;
-	readonly workbench: Workbench;
-	readonly reducedMotion: boolean;
-	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
-	readonly dockless: boolean;
-	/** The switch of what the navigator lists, at the start of the dock's keys. */
-	readonly lead: ReactNode;
-}
-
 /**
  * The agent's surfaces drawn: the dock, the panel for the shell to show while it is open, and the
- * voice key a presentation's bar carries. The dock and the panel read what changes
- * while the agent works themselves, so these elements are made again only when
- * the person acts.
- * @param sources The agent, the workbench, the motion preference and whether the dock is off screen.
+ * voice key a presentation's bar carries. Each reads what changes while the agent works itself, so
+ * these elements are made again only when the shell's own facts change.
+ * @param reducedMotion Whether the person asked for reduced motion.
+ * @param dockless Whether the agent dock is off screen, as while a pane is presented fullscreen.
+ * @param lead The switch of what the navigator lists, at the start of the dock's keys.
  * @returns The slots.
  */
-function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, reducedMotion, dockless, lead } = sources;
+function useAgentSlots(reducedMotion: boolean, dockless: boolean, lead: ReactNode): AgentSlots {
 	return useMemo(
 		() => ({
-			dock: (
-				<AgentDockSlot
-					agent={agent}
-					workbench={workbench}
-					reducedMotion={reducedMotion}
-					dockless={dockless}
-					lead={lead}
-				/>
-			),
-			panel: <AgentPanelSlot agent={agent} workbench={workbench} />,
-			voiceControls: <PresentationVoiceKey />,
+			dock: <AgentDock reducedMotion={reducedMotion} dockless={dockless} lead={lead} />,
+			panel: <AgentPanel />,
+			voiceControls: <TalkControl />,
 		}),
-		[agent, workbench, reducedMotion, dockless, lead],
+		[reducedMotion, dockless, lead],
 	);
 }
 
@@ -231,17 +216,12 @@ interface ApplicationBodyProps {
 }
 
 /**
- * The root component's body, inside the providers it needs.
+ * The root component's body: the panes and the agent over them, with the shell inside.
  * @param props The start and the repositories.
- * @returns The shell, the settings dialogs and the workbench.
+ * @returns The shell, the settings dialogs and the agent.
  */
 function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
-	const { start, catalog, notices } = props;
-	const [theme, setTheme] = useTheme();
-	const reducedMotion = useReducedMotion();
-	const [settings, setSettings] = useState<SettingsSurface | null>(null);
-	const closeSettings = useCallback((): void => setSettings(null), []);
-
+	const { start, notices } = props;
 	// The address the tab was opened on mounts the panes, so a restored
 	// comparison has both panes in its first render rather than growing one.
 	const opening = useOpeningAddress();
@@ -250,31 +230,12 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		useCallback(() => openingPaneList(opening), [opening]),
 		recordedMedia(recorder),
 	);
-	const paneReadings = usePaneReadings();
-	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
-	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
-	// Choosing a way of reading a model is the person's own move, so it is
-	// announced and the address bar keeps it.
-	const readings = useMemo(
-		() => announcingViews(paneReadings, addressing),
-		[paneReadings, addressing],
-	);
-	const agentActivity = useAgentActivity();
-	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
-	const { vault: activeVault } = panes.active.status;
 	// The actions read the panes as they are when somebody acts, so a pane's news
 	// does not make them, and every control holding one, again.
 	const [panesNow] = useState(() => new LiveBinding<Panes>());
 	panesNow.bind(panes);
 	const [livePanes] = useState(() => livePanesOver(panesNow));
 	const [activate] = useState(() => conversationActivation(() => livePanes.records));
-	const showConversation = useCallback(
-		(checkout: string): void => {
-			void activate(livePanes.active.status.paneId, { checkout });
-		},
-		[activate, livePanes],
-	);
-	const agent = useAgentSurfaces(workbench, showConversation);
 	const { raise } = notices;
 	// A file an agent's answer names opens through the focused pane's vault, as the page's other
 	// requests do, so it opens only inside a checkout that vault reads.
@@ -293,6 +254,56 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 			}),
 		[livePanes, start.first, raise],
 	);
+	return (
+		<AgentRoot
+			activePaneId={panes.list.activePaneId}
+			openAnswerFile={openAnswerFile}
+			chooseShownConversation={activate}
+		>
+			<ApplicationFrame
+				{...props}
+				recorder={recorder}
+				panes={panes}
+				livePanes={livePanes}
+				activate={activate}
+			/>
+		</AgentRoot>
+	);
+}
+
+/** What the shell below the agent is drawn from. */
+interface ApplicationFrameProps extends ApplicationBodyProps {
+	readonly recorder: WalkthroughRecorder | null;
+	readonly panes: Panes;
+	/** The panes as they are when somebody acts. */
+	readonly livePanes: Panes;
+	readonly activate: ConversationActivation;
+}
+
+/**
+ * The shell, below the agent: it reads the voice and the conversation panel from there.
+ * @param props The start, the repositories, the notices, the recorder, the panes and the activation.
+ * @returns The shell, the settings dialogs, or the recording page.
+ */
+function ApplicationFrame(props: ApplicationFrameProps): JSX.Element {
+	const { start, catalog, notices, recorder, panes, livePanes, activate } = props;
+	const [theme, setTheme] = useTheme();
+	const reducedMotion = useReducedMotion();
+	const [settings, setSettings] = useState<SettingsSurface | null>(null);
+	const closeSettings = useCallback((): void => setSettings(null), []);
+	const paneReadings = usePaneReadings();
+	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
+	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
+	// Choosing a way of reading a model is the person's own move, so it is
+	// announced and the address bar keeps it.
+	const readings = useMemo(
+		() => announcingViews(paneReadings, addressing),
+		[paneReadings, addressing],
+	);
+	const agentActivity = useAgentActivity();
+	const agentPanel = useAgentPanel();
+	const { vault: activeVault } = panes.active.status;
+	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
 	const onRefused = useCallback(
@@ -311,14 +322,14 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		() => <NavigatorModeSwitch mode={listing.mode} onMode={listing.setMode} />,
 		[listing.mode, listing.setMode],
 	);
-	const slots = useAgentSlots({ agent, workbench, reducedMotion, dockless, lead: modeSwitch });
+	const slots = useAgentSlots(reducedMotion, dockless, modeSwitch);
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	const repositoryVaults = useVaultOf(catalog);
 	useWorkspaceAddressing({ panes, notices, readings, vaultOf: repositoryVaults }, addressBinding);
 	usePresentationTransfer(panes, fullscreen);
 	// Bound each render, after the owners the events reach exist.
-	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
+	panes.bindEvents(paneEvents({ notices, catalog, readings, activity: agentActivity }));
 
 	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
 	const router = useRouter();
@@ -398,15 +409,9 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		(paneId: string): void => actionsNow.read().selectPane(paneId),
 		[actionsNow],
 	);
-	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
-	const overlay = useSubtitleOverlay({
-		workbench,
-		activePaneId: panes.list.activePaneId,
-		reducedMotion,
-		recording: recorder !== null,
-		presentedPaneId: fullscreen.snapshot.paneId,
-	});
-	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const narration = useNarration(selectPane);
+	const recordedPaneId = panes.list.panes[0]?.paneId ?? panes.list.activePaneId;
+	const recorded = useRecordedViews(recorder, recordedPaneId, narration);
 	const [catalogNow] = useState(() => new LiveBinding<ModelCatalog>());
 	catalogNow.bind(catalog);
 	const openingVault = useCallback(
@@ -425,6 +430,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		onVariantChange,
 		openPaneKey: selectModel,
 		openingVault,
+		presentedPaneId: fullscreen.snapshot.paneId,
 		...recorded,
 	});
 	const view = useShellView({
@@ -458,49 +464,23 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		[actions, panes, activate, fullscreen.snapshot.paneId],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
-	const transport = workbench.owners?.transport ?? null;
-	// The bell speaks for the repository in front of the person.
+	// The bell speaks for the repository in front of the person, and checks again as that pane's
+	// agent finishes a turn.
 	const diagnosed = activeVault ?? start.first;
-	const { ask, draft, panel } = agent;
-	// A fix goes to the workhorse of the checkout it is about, so that checkout is shown first: the
-	// pane's own, or one named. The server tells the workbench socket of the switch before it
-	// answers, but that answer can arrive first. A read on the socket comes after the news, so the
-	// fix is composed for the conversation shown now, not refused because the workbench moved under
-	// it. A named checkout the tab cannot show gets no message, which would go to another one.
-	const askIn = useCallback(
-		async (text: string, checkout?: string): Promise<boolean> => {
-			const { paneId } = livePanes.active.status;
-			const shown = await activate(paneId, checkout === undefined ? {} : { checkout });
-			if (!shown && checkout !== undefined) return false;
-			await transport?.refresh().catch(() => undefined);
-			ask(text);
-			return true;
-		},
-		[activate, livePanes, ask, transport],
-	);
+	const transport = panes.active.conversation;
+	const { ask, fill } = agentPanel;
 	// A repair goes to the workhorse of the repository diagnosed.
 	const askAboutDiagnosed = useCallback(
 		(text: string): void => {
-			void askIn(text);
+			void ask(text);
 		},
-		[askIn],
+		[ask],
 	);
 	const diagnostics = useMemo(
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
 		[diagnosed, transport, askAboutDiagnosed],
 	);
-	// A state's way on goes to the conversation of the pane's checkout, and the reader sends it.
-	const fillDraft = useCallback(
-		(text: string): void => {
-			void activate(livePanes.active.status.paneId).then(() => {
-				panel.openPanel();
-				if (draft.get() !== text) draft.fill(text);
-				return undefined;
-			});
-		},
-		[activate, livePanes, panel, draft],
-	);
-	const serverFix = useLanguageServerFix(catalogNow, askIn, raise);
+	const serverFix = useLanguageServerFix(catalogNow, ask, raise);
 	useLastReading();
 
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
@@ -513,31 +493,25 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	}
 	return (
 		<ModelArrivalContext value={addressing.modelArriving}>
-			<ModelDraftContext value={fillDraft}>
+			{/* A state's way on goes to the conversation of the pane's checkout, and the reader sends it. */}
+			<ModelDraftContext value={fill}>
 				<LanguageServerFixContext value={serverFix}>
-					<OrbStageProvider>
-						{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
-						<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-							<AnswerFilesProvider open={openAnswerFile}>
-								<Tooltip.Provider>
-									<Shell
-										view={view}
-										actions={actions}
-										diagnostics={diagnostics}
-										voiceControls={slots.voiceControls}
-										agentDock={slots.dock}
-										agentPanel={slots.panel}
-										agentPanelOpen={agent.panel.open}
-										onAgentPanelClose={agent.panel.closePanel}
-										navigatorMode={listing.mode}
-										onLeaveCode={listing.leaveCode}
-										attachStage={fullscreen.attachStage}
-									/>
-									<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
-								</Tooltip.Provider>
-							</AnswerFilesProvider>
-						</VoiceSurfaceProvider>
-					</OrbStageProvider>
+					<Tooltip.Provider>
+						<Shell
+							view={view}
+							actions={actions}
+							diagnostics={diagnostics}
+							voiceControls={slots.voiceControls}
+							agentDock={slots.dock}
+							agentPanel={slots.panel}
+							agentPanelOpen={agentPanel.open}
+							onAgentPanelClose={agentPanel.close}
+							navigatorMode={listing.mode}
+							onLeaveCode={listing.leaveCode}
+							attachStage={fullscreen.attachStage}
+						/>
+						<SettingsDialog surface={settings} notices={notices} onClose={closeSettings} />
+					</Tooltip.Provider>
 				</LanguageServerFixContext>
 			</ModelDraftContext>
 		</ModelArrivalContext>
@@ -561,7 +535,7 @@ function ApplicationStart(): JSX.Element {
 /**
  * The root component. The model cache is above everything that reads a model
  * resource, and is made once for the life of the tab (TASK-167).
- * @returns The shell inside its providers, with the workbench.
+ * @returns The shell inside its providers, with the agent.
  */
 function Application(): JSX.Element {
 	return (

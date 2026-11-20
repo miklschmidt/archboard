@@ -3,9 +3,9 @@
 // disposes it when the pane or its conversation changes, since a session listens
 // to its pane's socket from the moment it exists.
 
-import type { SnapshotStore } from "#ui/application/state/snapshot-cache.ts";
-import type { VoiceOwner } from "#ui/application/state/workbench-owners.ts";
-import { createVoiceSession } from "@archboard/workbench/voice";
+import type { SnapshotStore } from "#ui/agent-root/state/snapshot-cache.ts";
+import type { VoiceOwner } from "#ui/agent-root/state/workbench-owners.ts";
+import { createVoiceSession } from "#ui/voice-session/state/session.ts";
 import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** What a voice session is made over: a pane and its hosted conversation. */

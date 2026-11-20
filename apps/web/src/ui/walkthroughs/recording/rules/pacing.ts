@@ -14,6 +14,7 @@
 
 import { deadline, durationMs } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
+import type { VoiceStanding } from "@archboard/workbench/agent-surfaces";
 import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
 /**
@@ -26,13 +27,6 @@ type SpokenLine = Pick<BrowserSnapshot["voice"]["transcript"][number], "speaker"
 
 /** Where the pane's presentation is, as the pane reports it. */
 type PanePlace = Pick<NonNullable<SemanticPaneReading["presentation"]>, "beat" | "of" | "arrived">;
-
-/** How the voice stands. */
-type VoiceStanding =
-	| { readonly kind: "live" }
-	| { readonly kind: "failed"; readonly reason: string }
-	/** Not live and not failed: on its way, or not started. */
-	| { readonly kind: "other" };
 
 /** What the page sees on one tick. */
 interface PaceObservation {
@@ -320,5 +314,4 @@ export {
 	type PaceState,
 	type PanePlace,
 	type SpokenLine,
-	type VoiceStanding,
 };

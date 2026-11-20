@@ -12,7 +12,6 @@
 	"exports": {
 		"./browser-contract": "./src/shared/api/browser-contract.ts",
 		"./server": "./src/server/api/server.ts",
-		"./agent": "./src/ui/api/agent.ts",
-		"./voice": "./src/ui/api/voice.ts"
+		"./agent-surfaces": "./src/ui/api/agent-surfaces.ts"
 	}
 }

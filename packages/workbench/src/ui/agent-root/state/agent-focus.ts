@@ -3,7 +3,7 @@
 // as one object that stays the same while they change. The setup listens to
 // its transport and hears the new pane's state the moment focus moves.
 
-import type { VoiceOwner, WorkbenchOwners } from "#ui/application/state/workbench-owners.ts";
+import type { VoiceOwner, WorkbenchOwners } from "#ui/agent-root/state/workbench-owners.ts";
 import type { BrowserWorkbenchState } from "@archboard/codex-realtime-voice/browser";
 
 /** While no pane has a transport. */

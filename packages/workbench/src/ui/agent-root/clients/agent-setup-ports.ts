@@ -9,9 +9,9 @@ import type {
 	AgentSetupPorts,
 	AuthTab,
 	SetupStepResult,
-} from "@archboard/workbench/agent";
-import type { AgentFocus } from "#ui/application/state/agent-focus.ts";
-import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voice";
+} from "#ui/agent-setup/state/setup.ts";
+import type { AgentFocus } from "#ui/agent-root/state/agent-focus.ts";
+import type { VoiceSession, VoiceSessionStatus } from "#ui/voice-session/state/contract.ts";
 import type { ConversationControllers } from "@archboard/codex-realtime-voice/browser";
 
 /** The thread link controller of a pane. */
@@ -196,22 +196,26 @@ function gestureTab(setup: Pick<AgentSetup, "snapshot">): AuthTab | undefined {
 	return setup.snapshot().phase.kind === "signed_out" ? openAuthTab() : undefined;
 }
 
+/** What voice is started with: a walkthrough to narrate, and the recording that paces it. */
+type VoiceStart = Pick<NonNullable<Parameters<AgentSetup["talk"]>[0]>, "walkthrough" | "recording">;
+
 /**
- * Start voice to narrate one walkthrough, from the person's gesture, so a
- * sign-in it needs gets its tab like any other Talk.
+ * Start voice from the person's gesture, so a sign-in it needs gets its tab like any other Talk.
+ * A recording is nobody's gesture, so it gets no tab.
  * @param setup The agent setup.
- * @param walkthrough The walkthrough's id.
+ * @param start The walkthrough to narrate and the recording that paces it, if any.
  */
-function narrate(setup: Pick<AgentSetup, "snapshot" | "talk">, walkthrough: string): void {
-	setup.talk({ walkthrough, tab: gestureTab(setup) });
+function talkWith(setup: Pick<AgentSetup, "snapshot" | "talk">, start: VoiceStart): void {
+	setup.talk({ ...start, tab: start.recording === undefined ? gestureTab(setup) : undefined });
 }
 
 export {
 	agentSetupPorts,
 	gestureTab,
-	narrate,
 	openAuthTab,
 	releaseWhenVoiceEnds,
+	talkWith,
 	threadLinkStep,
 	voicePort,
+	type VoiceStart,
 };

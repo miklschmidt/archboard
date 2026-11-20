@@ -3,9 +3,11 @@
 // that needs a provider's sign-in page opens its tab from the person's own
 // gesture, so the browser lets it through.
 
-import { type AgentSetup, type AgentActions, type DraftStore } from "@archboard/workbench/agent";
-import { gestureTab, openAuthTab } from "#ui/application/clients/agent-setup-ports.ts";
-import type { VoiceOwner, WorkbenchOwners } from "#ui/application/state/workbench-owners.ts";
+import type { AgentSetup } from "#ui/agent-setup/state/setup.ts";
+import type { AgentActions } from "#ui/workbench-client/surfaces/state/contracts.ts";
+import type { DraftStore } from "#ui/workbench-client/surfaces/state/draft-store.ts";
+import { gestureTab, openAuthTab } from "#ui/agent-root/clients/agent-setup-ports.ts";
+import type { VoiceOwner, WorkbenchOwners } from "#ui/agent-root/state/workbench-owners.ts";
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 
 /** What the actions act on. */

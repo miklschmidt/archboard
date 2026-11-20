@@ -24,7 +24,7 @@ type PanePresentRequest = ModelDocument<"panePresentRequest">;
  * The socket conversation a pane carries: attached to each socket once the server registered the
  * pane, detached when that socket goes, and disposed when the pane closes.
  */
-type PaneConversation = Pick<SocketConversation, "attach" | "detach" | "current" | "dispose">;
+type PaneConversation = Pick<SocketConversation, "attach" | "detach" | "dispose">;
 
 /** Which palette the pane draws in. */
 type PaneTheme = "light" | "dark";
@@ -170,11 +170,8 @@ interface PaneSession {
 	 * @param part The part.
 	 */
 	readonly userChangeFailed: (part: SemanticPanePart) => void;
-	/**
-	 * The conversation of the current socket generation, or null until an attach completed.
-	 * @returns The conversation.
-	 */
-	readonly hostedConversation: () => HostedConversation | null;
+	/** The conversation of the current socket generation, or null until an attach completed. */
+	readonly conversation: HostedConversation | null;
 }
 
 export { type PaneConversation, type PaneSession, type PaneSessionOptions, type PaneTheme };

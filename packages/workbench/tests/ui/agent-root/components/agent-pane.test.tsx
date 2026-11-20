@@ -1,31 +1,34 @@
-// What a pane draws over its picture for the voice: the voice box while subtitles are on,
-// and plain subtitles where the box has no place.
+// What a pane lays over its picture for the voice, through the agent: the voice box while
+// subtitles are on, and plain subtitles where the box has no place.
 //
 // What is guarded: with subtitles on and a voice live the subtitles are the box's, so the voice
 // is read where its words are; turning subtitles off takes the box away; a fullscreen presentation,
 // which has no dock to take the voice back, keeps the box whatever the person chose and lets the
 // subtitles decide only whether there are words; the page that records a talk has plain subtitles
 // whatever the person chose, and never the box, because nobody sees that page (the video is
-// rendered afterwards by the replay page, with the box); and a voice that is not on has no box.
+// rendered afterwards by the replay page, with the box); a voice that is not on has no box; and
+// the voice's words are subtitled while a session carries audio, a recording's only on the page
+// that records it (TASK-304, TASK-306), because the server shares one voice session between its
+// browsers.
 //
-// The words come from a stand-in feed, as a transport publishes them: where the words come from is
-// not what is under test.
+// The pane hands the agent a conversation over fakes: its media says how the voice stands, and
+// what the conversation publishes says what the voice has said.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, render } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
-import type { JSX } from "react";
 
-import { PaneSubtitles } from "#ui/application/components/PaneSubtitles.tsx";
-import type { VoiceFeed } from "#ui/application/rules/subtitled-transcript.ts";
-import { Tooltip } from "@archboard/ui-kit/components";
 import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
 import {
-	OrbStageProvider,
-	VoiceSurfaceProvider,
-	type AgentVoiceView,
-} from "@archboard/workbench/voice";
-import type { AgentActions } from "@archboard/workbench/agent";
+	agentPage,
+	fakeConversation,
+	type FakeConversation,
+} from "#tests/ui/support/agent-root/conversation.tsx";
+import { listening } from "#tests/ui/support/voice-session/harness.ts";
+import { voice } from "#tests/ui/support/voice-session/workbench-fixture.ts";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
+
+const ids = browserIdentities();
 
 /**
  * How wide the stand-in canvas measures a text.
@@ -87,7 +90,7 @@ function pressSubtitlesKey(): void {
  * @param wanted Whether subtitles are wanted.
  */
 function chooseSubtitles(wanted: boolean): void {
-	render(pane({ dockless: true }));
+	pane({ dockless: true });
 	const key = document.querySelector('[data-slot="voice-subtitles-toggle"]');
 	if (key?.getAttribute("aria-pressed") !== String(wanted)) {
 		pressSubtitlesKey();
@@ -95,164 +98,55 @@ function chooseSubtitles(wanted: boolean): void {
 	cleanup();
 }
 
-/** Nothing happens: the test presses nothing. */
-function nothing(): void {
-	// No control is used here.
-}
-
-/** Actions for a voice nobody presses anything on. */
-const NO_ACTIONS: AgentActions = {
-	send: nothing,
-	talk: nothing,
-	mute: nothing,
-	unmute: nothing,
-	endVoice: nothing,
-	stop: nothing,
-	signIn: nothing,
-	cancelSignIn: nothing,
-	signOut: nothing,
-	newConversation: nothing,
-	retry: nothing,
-	edit: nothing,
-	respondToApproval: nothing,
-	respondToDynamicApproval: nothing,
-	queue: { moveUp: nothing, moveDown: nothing, remove: nothing, sendNow: nothing },
-	openPanel: nothing,
-	showConversation: nothing,
-};
-
-/**
- * A voice in a stage that makes no sound.
- * @param stage The stage.
- * @returns The voice.
- */
-function voiceIn(stage: AgentVoiceView["stage"]): AgentVoiceView {
-	return {
-		stage,
-		problem: null,
-		busy: false,
-		level: {
-			/**
-			 * The level of a voice that makes no sound.
-			 * @returns Silence.
-			 */
-			read: () => 0,
-			/**
-			 * Nothing to hear.
-			 * @returns How to stop hearing nothing.
-			 */
-			subscribe: () => () => undefined,
-		},
-	};
-}
-
-/**
- * Nothing to hear when the page has no transport to listen on.
- * @returns How to stop listening.
- */
-function listenToNothing(): () => undefined {
-	return () => undefined;
-}
-
-/**
- * A voice a transport carries, with the voice model part way through saying something.
- * @param text What it has said so far; nothing for none.
- * @returns The voice, a value of its own that stays the same until another is made.
- */
-function carried(text: string): ReturnType<VoiceFeed["voice"]> {
-	const said = [{ itemId: "said-1", speaker: "assistant", text, final: false }] as const;
-	return { state: "active", unattended: false, transcript: text === "" ? [] : said };
-}
-
-/** A voice a transport carries, with nothing said yet. */
-const HEARD_VOICE = carried("");
-
-/**
- * The voice the transport last published, which is the same one until it publishes another.
- * @returns The voice.
- */
-function heardVoice(): ReturnType<VoiceFeed["voice"]> {
-	return HEARD_VOICE;
-}
-
-/** A pane's voice as a transport would carry it. */
-const HEARD: VoiceFeed = { subscribe: listenToNothing, voice: heardVoice };
-
-/**
- * A voice that says more as the test lets it, as a transport publishes it a word at a time. What a
- * pane finds said when it begins to watch is history, so words show only for what is said after.
- * @returns The feed, and how to have the voice say something.
- */
-function speakingFeed(): { readonly feed: VoiceFeed; readonly say: (text: string) => void } {
-	let voice = HEARD_VOICE;
-	const listeners = new Set<() => void>();
-	return {
-		feed: {
-			/**
-			 * Hear the voice change.
-			 * @param listener Called on each change.
-			 * @returns How to stop.
-			 */
-			subscribe: (listener) => {
-				listeners.add(listener);
-				return () => listeners.delete(listener);
-			},
-			/**
-			 * The voice as last published.
-			 * @returns It.
-			 */
-			voice: () => voice,
-		},
-		/**
-		 * Say something: the voice is published again with it in its transcript.
-		 * @param text What the voice model has said so far.
-		 */
-		say: (text) => {
-			voice = carried(text);
-			for (const listener of listeners) listener();
-		},
-	};
-}
-
 /** What a pane is given. */
 interface PaneSetup {
-	readonly stage: AgentVoiceView["stage"];
+	/** Whether the voice is live. */
+	readonly live: boolean;
 	readonly recording: boolean;
-	/** Whether the agent dock is off screen, as in a fullscreen presentation. */
+	/** Whether the pane is presented fullscreen, so the agent dock is off screen. */
 	readonly dockless: boolean;
-	/** Where the pane hears its voice. */
-	readonly feed: VoiceFeed;
 }
 
 /** A live voice in a pane that can carry it, in the workspace, unless a test says otherwise. */
-const LIVE_PANE: PaneSetup = {
-	stage: "listening",
-	recording: false,
-	dockless: false,
-	feed: HEARD,
-};
+const LIVE_PANE: PaneSetup = { live: true, recording: false, dockless: false };
 
 /**
- * A pane's subtitles, in a page that has the orb's stage and the voice.
+ * Draw a pane with the agent over it, its voice as the test says.
  * @param setup What differs from a live voice in a pane that can carry it.
- * @returns The subtitles, drawn.
+ * @returns The pane's conversation, to have the voice say something.
  */
-function pane(setup: Partial<PaneSetup> = {}): JSX.Element {
+function pane(setup: Partial<PaneSetup> = {}): FakeConversation {
 	const given = { ...LIVE_PANE, ...setup };
-	return (
-		<OrbStageProvider>
-			<Tooltip.Provider>
-				<VoiceSurfaceProvider voice={voiceIn(given.stage)} actions={NO_ACTIONS}>
-					<PaneSubtitles
-						feed={given.feed}
-						reducedMotion={false}
-						recording={given.recording}
-						dockless={given.dockless}
-					/>
-				</VoiceSurfaceProvider>
-			</Tooltip.Provider>
-		</OrbStageProvider>
+	const fake = fakeConversation();
+	if (given.live) fake.media.set(listening());
+	render(
+		agentPage({
+			conversation: fake.conversation,
+			recording: given.recording,
+			dockless: given.dockless,
+		}),
 	);
+	return fake;
+}
+
+/**
+ * Have the voice say something, as the conversation publishes it a word at a time.
+ * @param fake The pane's conversation.
+ * @param text What the voice model has said so far.
+ * @param unattended Whether the session is a recording's, which nobody listens to live.
+ */
+function say(fake: FakeConversation, text: string, unattended = false): void {
+	act(() => {
+		fake.hear(
+			voice({
+				state: "active",
+				unattended,
+				transcript: [
+					{ itemId: ids.item("said-1"), sequence: 1, speaker: "assistant", text, final: false },
+				],
+			}),
+		);
+	});
 }
 
 /**
@@ -276,6 +170,16 @@ function words(): boolean {
 }
 
 /**
+ * Whether plain subtitles say something.
+ * @returns True while they do.
+ */
+function saidPlainly(): boolean {
+	return (
+		document.querySelector('[data-slot="voice-subtitles"]')?.getAttribute("data-showing") === "true"
+	);
+}
+
+/**
  * Whether plain subtitles are on the page: the paragraph, with no box round it.
  * @returns True when they are.
  */
@@ -287,7 +191,7 @@ function plain(): boolean {
 }
 
 test("with subtitles on and a voice live the box carries the subtitles", () => {
-	render(pane());
+	pane();
 	expect(boxed()).toBe(true);
 	expect(
 		document.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]'),
@@ -298,7 +202,7 @@ test("turning subtitles off takes the box away once it has left", () => {
 	const clock = createSteppedClock(0);
 	const restore = driveFramesFrom(clock);
 	try {
-		render(pane());
+		pane();
 		pressSubtitlesKey();
 		expect(boxed()).toBe(true);
 		expect(document.querySelector('[data-slot="voice-box"]')?.hasAttribute("data-leaving")).toBe(
@@ -316,17 +220,14 @@ test("turning subtitles off takes the box away once it has left", () => {
 });
 
 test("a voice that is not on has no box", () => {
-	render(pane({ stage: "idle" }));
+	pane({ live: false });
 	expect(boxed()).toBe(false);
 });
 
 test("a fullscreen presentation has no dock, so the box carries the voice whatever the person chose, and the choice is only whether there are words", () => {
-	const { feed, say } = speakingFeed();
-	render(pane({ dockless: true, feed }));
+	const fake = pane({ dockless: true });
 	expect(boxed()).toBe(true);
-	act(() => {
-		say("The ledger sets");
-	});
+	say(fake, "The ledger sets");
 	expect(words()).toBe(true);
 
 	// The words are what the person turns off: the box holds the voice and says nothing.
@@ -337,7 +238,22 @@ test("a fullscreen presentation has no dock, so the box carries the voice whatev
 
 test("the page that records a talk has plain subtitles whatever the person chose, and never the box", () => {
 	chooseSubtitles(false);
-	render(pane({ recording: true }));
+	pane({ recording: true });
 	expect(boxed()).toBe(false);
 	expect(plain()).toBe(true);
+});
+
+test("the voice's words are subtitled, and a recording's only on the page that records it", () => {
+	const shared = pane({ dockless: true });
+	say(shared, "The front door", true);
+	expect(words()).toBe(false);
+	say(shared, "The front door");
+	expect(words()).toBe(true);
+	cleanup();
+
+	const recorded = pane({ recording: true });
+	say(recorded, "The front door");
+	expect(saidPlainly()).toBe(false);
+	say(recorded, "The front door", true);
+	expect(saidPlainly()).toBe(true);
 });

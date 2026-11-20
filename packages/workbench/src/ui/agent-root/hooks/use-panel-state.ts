@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { AgentView } from "@archboard/workbench/agent";
+import type { AgentView } from "#ui/workbench-client/surfaces/state/contracts.ts";
 
 const STORAGE_KEY = "archboard.agent.panel";
 
@@ -62,7 +62,7 @@ interface AgentPanelState {
  * The conversation panel's state.
  * @returns The state and its moves.
  */
-function useAgentPanel(): AgentPanelState {
+function usePanelState(): AgentPanelState {
 	const [open, setOpen] = useState(storedOpen);
 	const [details, setDetails] = useState(false);
 	const change = useCallback((next: boolean): void => {
@@ -95,4 +95,4 @@ function useUnread(conversation: AgentView["conversation"], open: boolean): bool
 	return !open && seen !== mark;
 }
 
-export { useAgentPanel, useUnread, type AgentPanelState };
+export { usePanelState, useUnread, type AgentPanelState };

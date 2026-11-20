@@ -3,7 +3,7 @@
 // dock can say a turn has gone quiet without reading the clock while it draws.
 
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
-import type { SnapshotStore } from "#ui/application/state/snapshot-cache.ts";
+import type { SnapshotStore } from "#ui/agent-root/state/snapshot-cache.ts";
 import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** One item of a published turn. */

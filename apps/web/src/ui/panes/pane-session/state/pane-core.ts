@@ -52,6 +52,8 @@ interface PaneCorePorts {
 	 */
 	readonly paneElement: () => HTMLElement | null;
 	readonly conversation: PaneConversation | null;
+	/** The conversation of the current socket, or null while it has none. */
+	readonly setConversation: (conversation: HostedConversation | null) => void;
 	readonly setConnected: (connected: boolean) => void;
 	readonly setModel: (model: LegacyIdentity | null) => void;
 	/** The server put the pane in another vault (ADR 0050). */
@@ -92,11 +94,6 @@ interface PaneCore {
 	 * @param subjectId The semantic id.
 	 */
 	readonly openCode: (subjectId: string) => void;
-	/**
-	 * The transport retained by the current socket generation.
-	 * @returns The transport, or null.
-	 */
-	readonly hostedConversation: () => HostedConversation | null;
 	readonly dispose: () => void;
 }
 
@@ -110,6 +107,8 @@ function createPaneCore(ports: PaneCorePorts): PaneCore {
 	let disposed = false;
 	// Whether a socket has ever opened here: what tells a reconnection apart.
 	let openedBefore = false;
+	// The socket whose conversation the pane holds now, so only its retirement takes it away.
+	let attachedSocket: WebSocket | null = null;
 
 	/**
 	 * Whether this pane is still mounted.
@@ -305,7 +304,21 @@ function createPaneCore(ports: PaneCorePorts): PaneCore {
 	function socketOpened(generation: PaneSocketGeneration): void {
 		const conversation = ports.conversation;
 		if (conversation !== null) {
-			attachWorkbenchOwner({ conversation, generation, connector, live: isLive, publishStatus });
+			attachWorkbenchOwner({
+				conversation,
+				generation,
+				connector,
+				live: isLive,
+				publishStatus,
+				/**
+				 * Hold this socket's conversation.
+				 * @param attached The conversation.
+				 */
+				attached: (attached) => {
+					attachedSocket = generation.socket;
+					ports.setConversation(attached);
+				},
+			});
 		}
 		const returning = openedBefore;
 		openedBefore = true;
@@ -339,6 +352,10 @@ function createPaneCore(ports: PaneCorePorts): PaneCore {
 	 * @param socket The socket.
 	 */
 	function socketRetired(socket: WebSocket): void {
+		if (socket === attachedSocket) {
+			attachedSocket = null;
+			ports.setConversation(null);
+		}
 		void ports.conversation?.detach(socket).catch(() => undefined);
 	}
 
@@ -482,14 +499,6 @@ function createPaneCore(ports: PaneCorePorts): PaneCore {
 		schedulePaneReport(true);
 	}
 
-	/**
-	 * The conversation of the current socket generation.
-	 * @returns The conversation, or null until an attach completed.
-	 */
-	function hostedConversation(): HostedConversation | null {
-		return ports.conversation?.current() ?? null;
-	}
-
 	return {
 		connect: connector.connect,
 		publishStatus,
@@ -500,7 +509,6 @@ function createPaneCore(ports: PaneCorePorts): PaneCore {
 		userChanged: reading.userChanged,
 		userChangeFailed: reading.userChangeFailed,
 		openCode,
-		hostedConversation,
 		dispose,
 	};
 }

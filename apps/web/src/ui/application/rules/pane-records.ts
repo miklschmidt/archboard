@@ -1,16 +1,19 @@
-// What the application has collected from each pane's session: its status,
-// and its reported holder. Pure: keyed by pane id,
-// replaced rather than mutated.
+// What the application has collected from each pane's session: its status, and
+// the conversation of its current socket. Pure: keyed by pane id, replaced
+// rather than mutated.
 
 import type { PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
+import type { PaneSession } from "#ui/panes/pane-session/rules/session-contracts.ts";
 
 /** Everything the application has heard from one pane. */
 interface PaneRecord {
 	readonly status: PaneStatus;
+	/** The conversation of the pane's current socket, or null while it has none. */
+	readonly conversation: PaneSession["conversation"];
 }
 
 /** Every field a patch may carry; `patchRecord` compares them one by one. */
-const RECORD_FIELDS = ["status"] as const satisfies readonly (keyof PaneRecord)[];
+const RECORD_FIELDS = ["status", "conversation"] as const satisfies readonly (keyof PaneRecord)[];
 
 /** The records by pane id. */
 type PaneRecords = Readonly<Record<string, PaneRecord>>;
@@ -53,6 +56,7 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 function initialPaneRecord(paneId: string): PaneRecord {
 	return Object.freeze({
 		status: emptyPaneStatus(paneId),
+		conversation: null,
 	});
 }
 

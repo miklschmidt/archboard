@@ -42,6 +42,9 @@ interface SessionState {
 	arrived: () => void;
 	vault: string;
 	setVault: (vault: string) => void;
+	/** The conversation of the pane's current socket, or null while it has none. */
+	conversation: HostedConversation | null;
+	setConversation: (conversation: HostedConversation | null) => void;
 }
 
 /**
@@ -56,6 +59,7 @@ function useSessionState(openingVault: string): SessionState {
 	const [arrivals, setArrivals] = useState(0);
 	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
 	const [vault, setVault] = useState(openingVault);
+	const [conversation, setConversation] = useState<HostedConversation | null>(null);
 	return {
 		contact,
 		setConnected,
@@ -67,6 +71,8 @@ function useSessionState(openingVault: string): SessionState {
 		arrived,
 		vault,
 		setVault,
+		conversation,
+		setConversation,
 	};
 }
 
@@ -140,6 +146,7 @@ function usePaneSession(options: PaneSessionOptions): PaneSession {
 			options: box.options.bind(box),
 			paneElement: box.element.bind(box),
 			conversation: box.options().conversation?.() ?? null,
+			setConversation: state.setConversation,
 			setConnected: state.setConnected,
 			setModel: state.setModel,
 			setVault: state.setVault,
@@ -179,10 +186,6 @@ function usePaneSession(options: PaneSessionOptions): PaneSession {
 		(part: SemanticPanePart): void => core.userChangeFailed(part),
 		[core],
 	);
-	const hostedConversation = useCallback(
-		(): HostedConversation | null => core.hostedConversation(),
-		[core],
-	);
 
 	return {
 		clientId,
@@ -197,7 +200,7 @@ function usePaneSession(options: PaneSessionOptions): PaneSession {
 		flushReading,
 		userChanged,
 		userChangeFailed,
-		hostedConversation,
+		conversation: state.conversation,
 	};
 }
 

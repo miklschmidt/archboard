@@ -6,7 +6,7 @@
 // shown its voice. The voice says a recording's session is unattended: nobody listens to it live.
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { SubtitleSource } from "@archboard/workbench/voice";
+import type { SubtitleSource } from "#ui/workbench-client/subtitles/hooks/use-voice-subtitles.ts";
 import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** What of the voice the subtitles read: whether it carries audio, whose it is, and what it said. */

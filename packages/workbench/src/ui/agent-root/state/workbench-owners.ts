@@ -4,9 +4,9 @@
 // conversation is the tab's (TASK-373), so whichever pane of the tab the person
 // is reading speaks for it, with that pane's model as context.
 
-import { createSnapshotCache, type SnapshotStore } from "#ui/application/state/snapshot-cache.ts";
-import { createProgressClock } from "#ui/application/state/progress-clock.ts";
-import type { VoiceSession } from "@archboard/workbench/voice";
+import { createSnapshotCache, type SnapshotStore } from "#ui/agent-root/state/snapshot-cache.ts";
+import { createProgressClock } from "#ui/agent-root/state/progress-clock.ts";
+import type { VoiceSession } from "#ui/voice-session/state/contract.ts";
 import type {
 	ConversationControllers,
 	HostedConversation,

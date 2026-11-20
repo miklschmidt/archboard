@@ -9,7 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { OrbStageProvider } from "@archboard/workbench/voice";
+import { AgentRoot } from "@archboard/workbench/agent-surfaces";
 import {
 	type PaneChrome,
 	PaneChromeContext,
@@ -82,22 +82,40 @@ interface Mounted {
 /** The vault every mounted pane is in. */
 const PANE_VAULT = "/work/archboard/.archboard/vault";
 
+/** The harness's pane: no agent is ever connected to it. */
+const HARNESS_PANE = "pane-a";
+
+/** Nobody opens a file from the stage under test. */
+function openNoFile(): void {
+	// The stage under test names no file.
+}
+
 /**
- * The stage inside a cache with this product's read defaults, in one vault, on the orb stage the
- * shell gives every pane, which a presented walkthrough's Narrate key offers a socket on.
+ * No conversation is shown from the stage under test.
+ * @returns That none was.
+ */
+function showNoConversation(): Promise<boolean> {
+	return Promise.resolve(false);
+}
+
+/**
+ * The stage inside a cache with this product's read defaults, in one vault, below the agent the
+ * shell gives every pane, whose orb stage a presented walkthrough's Narrate key offers a socket on.
  * @param children The stage.
  * @returns The providers around it.
  */
 function Cache(children: ReactNode): JSX.Element {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	return createElement(
-		QueryClientProvider,
-		{ client },
-		createElement(
-			OrbStageProvider,
-			null,
-			createElement(PaneVaultContext, { value: PANE_VAULT }, children),
-		),
+	return (
+		<QueryClientProvider client={client}>
+			<AgentRoot
+				activePaneId={HARNESS_PANE}
+				openAnswerFile={openNoFile}
+				chooseShownConversation={showNoConversation}
+			>
+				<PaneVaultContext value={PANE_VAULT}>{children}</PaneVaultContext>
+			</AgentRoot>
+		</QueryClientProvider>
 	);
 }
 
