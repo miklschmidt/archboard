@@ -1,13 +1,16 @@
 import { useCallback } from "react";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
+import type { VoiceClient } from "@archboard/codex-realtime-voice/browser";
+import { useVoiceState } from "@archboard/codex-realtime-voice/react";
 
 /**
  * Keep sign-in separate from the two conversation owners.
+ * @param props The page's voice client.
+ * @param props.client The client.
  * @returns The rendered controls or content.
  */
-function AccountConnection() {
-	const state = useVoiceState();
+function AccountConnection({ client }: { readonly client: VoiceClient }) {
+	const state = useVoiceState(client);
 	const snapshot = state.server;
 	if (snapshot?.account.state === "ready") return null;
 	const login = snapshot === null ? null : snapshot.login;
@@ -15,7 +18,11 @@ function AccountConnection() {
 		<section className="sign-in" aria-label="Codex sign-in">
 			<h2>Connect your Codex account</h2>
 			<p>This application keeps its own private sign-in.</p>
-			<LoginActions login={login} disabled={state.busy || state.connection !== "connected"} />
+			<LoginActions
+				client={client}
+				login={login}
+				disabled={state.busy || state.connection !== "connected"}
+			/>
 			<AccountProblem snapshot={snapshot} />
 		</section>
 	);
@@ -35,18 +42,20 @@ function AccountProblem({ snapshot }: { readonly snapshot: BrowserSnapshot | nul
 /**
  * Keep the login URL and cancellation tied to the current pending login.
  * @param props The rendered state and its action owners.
+ * @param props.client The page's voice client.
  * @param props.login The current sign-in state.
  * @param props.disabled Whether these controls are unavailable.
  * @returns The rendered controls or content.
  */
 function LoginActions({
+	client,
 	login,
 	disabled,
 }: {
+	readonly client: VoiceClient;
 	readonly login: BrowserSnapshot["login"] | null;
 	readonly disabled: boolean;
 }) {
-	const client = useVoiceClient();
 	const signIn = useCallback(() => {
 		void client.signIn();
 	}, [client]);

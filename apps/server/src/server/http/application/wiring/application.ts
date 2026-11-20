@@ -30,7 +30,6 @@ import { mountWorkbenchRoutes } from "@archboard/workbench/server";
 import { refusalStatus } from "#server/http/handlers/routes/model-response.ts";
 import { mountRepositoryRoutes } from "#server/http/handlers/repositories/routes/repository-routes.ts";
 import { mountArchitectureConfigurationRoutes } from "#server/http/handlers/reads/routes/configuration-routes.ts";
-import { mountVoiceStartTraceRoute } from "@archboard/codex-realtime-voice/server";
 
 import { mountServiceRoutes } from "#server/http/handlers/reads/routes/service-routes.ts";
 import { mountLegacyMigrationRoutes } from "#server/http/handlers/reads/routes/migration-routes.ts";
@@ -124,7 +123,6 @@ mountArchitectureHistoryRoutes(app);
 mountLegacyMigrationRoutes(app);
 mountCodeCheckRoute(app);
 mountCodeFilesRoute(app);
-mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write
 // rather than who has been told. Watching the models on screen is what keeps a

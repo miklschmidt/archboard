@@ -17,7 +17,7 @@ import {
 	type ApprovalCard as Card,
 	type ApprovalDecisionOption,
 } from "#ui/workbench-client/dock/rules/approval-projection.ts";
-import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
+import type { ApprovalChoice } from "@archboard/codex-realtime-voice/browser";
 import type { AgentActions } from "#ui/workbench-client/surfaces/state/contracts.ts";
 
 /** Inputs for a card. */

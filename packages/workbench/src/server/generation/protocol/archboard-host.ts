@@ -2,7 +2,6 @@ import type {
 	PendingOperation,
 	WorkbenchOperationAuthority,
 	CodexWorkbenchDomainScope,
-	BrowserLeaseLedger,
 } from "#runtime/voice/protocol/extension.ts";
 import type { VoiceAgentExtensions } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardContext } from "#runtime/instructions/rules/context.ts";
@@ -70,8 +69,6 @@ export interface ArchboardWorkbenchServer {
 		typeof createServerDynamicLifecycleOwner
 	>[0]["waitForTargets"];
 	readonly installLifecycleSignals: (components: CodexWorkbenchDomainScope) => () => void;
-	readonly installBrowserGateway: NonNullable<VoiceAgentExtensions["onBrowserGateway"]>;
-	readonly browserLeaseLedger: BrowserLeaseLedger;
 
 	readonly onFatal: (error: unknown) => void;
 }

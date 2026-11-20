@@ -1,3 +1,4 @@
+import { liveWorkhorseCheckouts } from "#server/chat-conversations/browser-state/projections/workhorse-list.ts";
 import type { CodexWorkbenchDomainScope } from "#server/generation/protocol/domain.ts";
 import type { CodexWorkbenchComponents } from "#server/generation/services/lifecycle.ts";
 import type { CodexWorkbenchChildInput } from "#server/owner/services/lifecycle.ts";
@@ -57,6 +58,17 @@ export function domainScope(
 			 * @returns The owning workhorse, or null when none owns the thread.
 			 */
 			workhorseForThread: (id) => requireCreated(created, "sessions").workhorseForThread(id),
+			/**
+			 * The checkouts of a tab session's live workhorses.
+			 * @param id The tab session.
+			 * @returns Them, in the order they were built; none while the session is not live.
+			 */
+			liveCheckouts: (id) => {
+				const session = requireCreated(created, "sessions")
+					.list()
+					.find((candidate) => candidate.id === id);
+				return session === undefined ? [] : liveWorkhorseCheckouts(session);
+			},
 			/**
 			 * End a tab session and release its generation resources.
 			 * @param id The tab session id.

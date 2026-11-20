@@ -2,8 +2,8 @@
 // guards around it, and the projection; the media owner and the transport it
 // reads are constructed elsewhere and are never disposed here.
 
-import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
-import { parseJsonValue } from "@archboard/codex-realtime-voice/schemas";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
+import { z } from "zod";
 import type {
 	VoiceSession,
 	VoiceSessionBinding,
@@ -19,6 +19,7 @@ import {
 } from "#ui/voice-session/rules/binding.ts";
 import { presentedFailure } from "#ui/voice-session/rules/failure.ts";
 import { createLevelChannel } from "#ui/voice-session/state/level-channel.ts";
+import { isSpeakingLevel } from "#ui/workbench-client/voice/rules/speaking.ts";
 import { projectVoiceSession } from "#ui/voice-session/rules/projection.ts";
 import { sameView } from "#ui/voice-session/rules/view-equality.ts";
 
@@ -223,7 +224,7 @@ function createVoiceSession(ports: VoiceSessionPorts): VoiceSession {
 	 */
 	const startNew = async (presentation: VoiceNarration | null = null): Promise<void> => {
 		bindNewSession();
-		await realtime.start(presentation === null ? null : parseJsonValue(presentation));
+		await realtime.start(presentation === null ? null : z.json().parse(presentation));
 	};
 
 	/**
@@ -292,6 +293,11 @@ function createVoiceSession(ports: VoiceSessionPorts): VoiceSession {
 			};
 		},
 		level: levels.level,
+		/**
+		 * Whether the model is speaking now, by its measured output.
+		 * @returns True at or above the speaking level.
+		 */
+		audible: () => isSpeakingLevel(levels.level()),
 		subscribeLevel: levels.subscribe,
 		/**
 		 * Re-reads and republishes.

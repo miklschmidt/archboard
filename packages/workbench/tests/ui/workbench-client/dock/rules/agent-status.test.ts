@@ -5,7 +5,7 @@ import type { AgentSetupSnapshot } from "#ui/agent-setup/state/setup.ts";
 import type { HeldMessage } from "#ui/agent-setup/state/held.ts";
 import { agentStatus } from "#ui/workbench-client/dock/rules/agent-status.ts";
 import type { AgentView } from "#ui/workbench-client/surfaces/state/contracts.ts";
-import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 
 const ids = browserIdentities();
 const threadId = ids.thread("thread-status");

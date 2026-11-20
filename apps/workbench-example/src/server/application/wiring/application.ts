@@ -93,7 +93,7 @@ export async function startExample(
 		options.codex === undefined ? {} : { executablePath: options.codex },
 	);
 	const agent = createVoiceAgent({
-		storage: { directory: options.state },
+		directory: options.state,
 		codex: { executablePath },
 		checkouts: [options.checkout],
 		identity: { serviceName: "workbench-example", threadSource: "workbench-example" },

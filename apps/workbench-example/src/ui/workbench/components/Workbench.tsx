@@ -1,21 +1,25 @@
 import { useCallback } from "react";
-import { useVoiceClient, useVoiceState } from "@archboard/codex-realtime-voice/react";
+import type { VoiceClient } from "@archboard/codex-realtime-voice/browser";
+import { useVoiceState } from "@archboard/codex-realtime-voice/react";
 import { VoicePanel } from "#ui/workbench/components/VoicePanel.tsx";
 import { WorkhorsePanel } from "#ui/workbench/components/WorkhorsePanel.tsx";
 import { AccountConnection } from "#ui/workbench/components/AccountConnection.tsx";
 
 /**
  * Mount both roles over one voice client.
- * @param props The page facts the client does not hold.
+ * @param props The client and the page facts it does not hold.
+ * @param props.client The page's voice client.
  * @param props.checkout The checkout path the workhorse works in.
  * @returns The rendered controls or content.
  */
-function Workbench({ checkout }: { readonly checkout: string }) {
-	const client = useVoiceClient();
-	const state = useVoiceState();
-	const connect = useCallback(() => {
-		void client.connect();
-	}, [client]);
+function Workbench({
+	client,
+	checkout,
+}: {
+	readonly client: VoiceClient;
+	readonly checkout: string;
+}) {
+	const state = useVoiceState(client);
 	const refresh = useCallback(() => {
 		void client.refresh();
 	}, [client]);
@@ -28,9 +32,6 @@ function Workbench({ checkout }: { readonly checkout: string }) {
 				</div>
 				<div className="actions">
 					<output>{state.connection}</output>
-					<button disabled={state.busy} onClick={connect}>
-						Reconnect
-					</button>
 					<button disabled={state.busy || state.connection !== "connected"} onClick={refresh}>
 						Refresh
 					</button>
@@ -41,10 +42,10 @@ function Workbench({ checkout }: { readonly checkout: string }) {
 					{state.failure.message}
 				</p>
 			)}
-			<AccountConnection />
+			<AccountConnection client={client} />
 			<div className="workspace">
-				<VoicePanel />
-				<WorkhorsePanel />
+				<VoicePanel client={client} />
+				<WorkhorsePanel client={client} />
 			</div>
 		</main>
 	);

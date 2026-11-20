@@ -2,8 +2,8 @@
 
 The agent's surfaces in the shell. They all read one `AgentView` and act through one
 `AgentActions` (`workbench-client/surfaces/state/contracts.ts`). The application composes both from the workbench
-owners. The thread link, composer, queue, approvals and transport come from
-`@archboard/codex-realtime-voice/controllers`. The runtime and the voice session
+owners. The thread link, composer, queue, approvals and the conversation they act on come from
+each pane's socket conversation of `@archboard/codex-realtime-voice/browser`. The runtime and the voice session
 (`voice-session/state`) are in `packages/workbench/src/ui`. The components under
 `workbench-client/dock/components`, `workbench-client/panel/components` and `workbench-client/voice/components` draw them.
 

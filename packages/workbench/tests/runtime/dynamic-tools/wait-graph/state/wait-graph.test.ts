@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createCodexWaitGraph } from "#runtime/workhorses/wait-graph/state/wait-graph.ts";
+import { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 
 type CodexWaitGraph = ReturnType<typeof createCodexWaitGraph>;

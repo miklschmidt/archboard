@@ -3,7 +3,7 @@
 // type error here until it is given a code, and the module's message is
 // carried through untouched.
 
-import type { RealtimeState } from "@archboard/codex-realtime-voice/realtime";
+import type { RealtimeState } from "@archboard/codex-realtime-voice/contract";
 import type {
 	RealtimeRecoverableErrorReason,
 	RealtimeTerminalErrorReason,

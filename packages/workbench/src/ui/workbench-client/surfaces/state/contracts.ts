@@ -8,7 +8,7 @@ import type {
 	BrowserSnapshot,
 } from "@archboard/codex-realtime-voice/contract";
 import type { VoiceSignIn } from "@archboard/codex-realtime-voice/browser";
-import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
+import type { ApprovalChoice } from "@archboard/codex-realtime-voice/browser";
 import type {
 	DynamicApprovalVerdict,
 	WorkbenchQueueActions,

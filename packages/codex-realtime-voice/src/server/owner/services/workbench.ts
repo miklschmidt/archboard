@@ -7,7 +7,7 @@ import {
 	workbenchStorage,
 	type CodexWorkbenchStorageInput,
 } from "#server/host/services/storage.ts";
-import { createTabSessions, type TabSessions } from "#server/sessions/services/browser-tabs.ts";
+import { createTabSessions } from "#server/sessions/services/browser-tabs.ts";
 import { createWorkbenchBrowserConnections } from "#server/browser-socket/services/connections.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
 import { captureWorkbenchInstructions } from "#runtime/host/rules/instructions.ts";
@@ -22,7 +22,6 @@ import { createGenerationOwnerStore } from "#server/generation/services/owners.t
 import { createServerCodexWorkbenchApplication } from "#server/owner/services/application.ts";
 import type { CodexWorkbenchHostPolicy } from "#server/generation/protocol/host.ts";
 import type { CodexWorkbenchDomainScope } from "#server/generation/protocol/domain.ts";
-import type { BrowserLeaseLedger } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import { announceContextChange } from "#server/sessions/announce/services/announce.ts";
 import type { ContextChange } from "#server/sessions/announce/protocol/contract.ts";
 
@@ -32,19 +31,18 @@ export interface CreateCodexWorkbenchOptions {
 	readonly process: Omit<CodexProcessOptions, "workingDirectory" | "storage">;
 	readonly host: DefaultWorkbenchHostInput;
 	readonly extensions?: CodexWorkbenchExtensions;
-	readonly browserLeaseLedger?: BrowserLeaseLedger;
 }
 
-/** Optional application adapters install domain context and browser routing on the core lifecycle. */
+/** Optional application adapters install domain context on the core lifecycle. */
 export type CodexWorkbenchExtensions = Omit<
 	Partial<CodexWorkbenchHostPolicy>,
-	"instructions" | "resolveCheckout" | "shownCheckoutOf" | "shownConversationOf" | "onShownChange"
-> & {
-	/** The checkout a browser's tab shows first. Default: the checkout its socket was accepted with. */
-	readonly browserCheckoutOf?: (browserId: string) => string;
-	/** Install the host's reading and activation of the tab registry on each generation's gateway. */
-	readonly installBrowserSessions?: (tabs: TabSessions) => () => void;
-};
+	| "instructions"
+	| "resolveCheckout"
+	| "shownCheckoutOf"
+	| "shownConversationOf"
+	| "onShownChange"
+	| "onBrowserGateway"
+>;
 
 /**
  * Capture process inputs before a caller can change a reviewed installation.
@@ -79,13 +77,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	const tabs = createTabSessions();
 
 	const extensions = Object.freeze({ ...options.extensions });
-	const ingress = createWorkbenchBrowserConnections(
-		tabs,
-		(named) => host.resolveCheckout(named),
-		() => {
-			requireScope();
-		},
-	);
+	const connections = createWorkbenchBrowserConnections(tabs);
 	const defaults = createDefaultWorkbenchHost(options.host, {
 		/**
 		 * Resolve the shown checkout through the core tab registry.
@@ -96,7 +88,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 			const id = tabs.of(browserId);
 			if (id === null) throw new Error("The browser has no registered tab session.");
 			return tabs.shown(id, () => {
-				const checkout = extensions.browserCheckoutOf?.(browserId) ?? ingress.checkoutOf(browserId);
+				const checkout = connections.checkoutOf(browserId);
 				if (checkout === undefined) throw new Error("The browser has no admitted checkout.");
 				return checkout;
 			});
@@ -113,7 +105,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	const processOptions = captureProcessOptions(options.process);
 	for (const directory of [storage.ownerDirectory, storage.coordinatorDirectory])
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
-	const leaseLedger = options.browserLeaseLedger ?? { sessions: new Map() };
+	const leaseLedger = { sessions: new Map() };
 	let current: CodexWorkbenchDomainScope | null = null;
 	let owner: CodexWorkbenchOwner | null = null;
 	const host: CodexWorkbenchHostPolicy = Object.freeze({
@@ -164,20 +156,15 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 		onBrowserGateway: (
 			scope: Parameters<NonNullable<CodexWorkbenchHostPolicy["onBrowserGateway"]>>[0],
 		) => {
-			const removeTabs = extensions.installBrowserSessions?.(tabs);
 			const stopEnding = tabs.onEnded((id) => {
 				scope.gateway.endSession(id);
 				void scope.sessions.end(id).catch(policy.onFatal);
 			});
 			let remove: () => void;
 			try {
-				remove =
-					extensions.onBrowserGateway === undefined
-						? ingress.install(scope)
-						: extensions.onBrowserGateway(scope);
+				remove = connections.install(scope);
 			} catch (error) {
 				stopEnding();
-				removeTabs?.();
 				throw error;
 			}
 			return () => {
@@ -185,7 +172,6 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 					remove();
 				} finally {
 					stopEnding();
-					removeTabs?.();
 				}
 			};
 		},
@@ -249,22 +235,8 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 	 */
 	const requireOwner = (): CodexWorkbenchOwner => {
 		if (owner === null)
-			throw new Error(
-				"The voice agent has not started. Start it before it serves browser sockets.",
-			);
+			throw new Error("The voice agent has not started. Start it before it announces a change.");
 		return owner;
-	};
-	/**
-	 * Require the ready generation and its current execution authority.
-	 * @returns The live generation capabilities.
-	 */
-	const requireScope = (): CodexWorkbenchDomainScope => {
-		if (current === null || !requireOwner().snapshot().ready)
-			throw new Error(
-				"The voice agent is not ready for browser sockets. Retry once its status reads ready.",
-			);
-		current.assertCurrent();
-		return current;
 	};
 	return Object.freeze({
 		start: application.prepare,
@@ -274,7 +246,7 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 		shutdown: async () => {
 			await application.shutdown();
 			tabs.forgetAll();
-			ingress.clear();
+			connections.clear();
 		},
 		/**
 		 * Read the private process lifecycle without starting a child.
@@ -289,7 +261,9 @@ export function createCodexWorkbench(options: CreateCodexWorkbenchOptions) {
 				ready: false,
 				failure: null,
 			},
-		browser: ingress.port,
+		connections,
+		tabs,
+		resolveCheckout: host.resolveCheckout,
 		instructions: host.instructions,
 		/**
 		 * Tell the agents of the live tab sessions about a context change.

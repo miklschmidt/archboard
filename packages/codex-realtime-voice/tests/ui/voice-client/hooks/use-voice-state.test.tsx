@@ -2,9 +2,8 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 let dom: typeof import("@testing-library/react/pure");
 import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 
-import { createVoiceClient } from "#ui/voice-client/clients/voice-client.ts";
-import { VoiceClientProvider } from "#ui/voice-client/components/VoiceClientProvider.tsx";
-import { useVoiceState } from "#ui/voice-client/hooks/use-voice-client.ts";
+import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
+import { useVoiceState } from "#ui/voice-client/hooks/use-voice-state.ts";
 import type { VoiceClient, VoiceClientSnapshot } from "#ui/voice-client/state/contract.ts";
 
 beforeAll(async () => {
@@ -17,16 +16,22 @@ afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
+type PublishingClient = Pick<VoiceClient, "snapshot" | "subscribe">;
+
 /**
  * A client whose state the test publishes.
  * @returns The client and the publish.
  */
 function publishingClient() {
-	const original = createVoiceClient({ socketPath: "/api/voice" });
 	const listeners = new Set<() => void>();
-	let state = original.snapshot();
-	const client: VoiceClient = {
-		...original,
+	let state: VoiceClientSnapshot = Object.freeze({
+		connection: "reconnecting",
+		server: null,
+		voice: { phase: INITIAL_REALTIME_STATE.phase, available: false, problem: null },
+		busy: false,
+		failure: null,
+	});
+	const client: PublishingClient = {
 		/**
 		 * The published state.
 		 * @returns The state.
@@ -55,24 +60,21 @@ function publishingClient() {
 
 /**
  * Shows whether an action runs, read through a selector that builds a new object.
+ * @param props The client.
+ * @param props.client The client.
  * @returns The rendered state.
  */
-function BusyLabel() {
-	const { busy } = useVoiceState((state) => ({ busy: state.busy }));
+function BusyLabel({ client }: { readonly client: PublishingClient }) {
+	const { busy } = useVoiceState(client, (state) => ({ busy: state.busy }));
 	return <output>{busy ? "busy" : "idle"}</output>;
 }
 
 test("a selector that builds a new object renders each publication once", async () => {
 	const { client, publish } = publishingClient();
-	const view = dom.render(
-		<VoiceClientProvider client={client}>
-			<BusyLabel />
-		</VoiceClientProvider>,
-	);
+	const view = dom.render(<BusyLabel client={client} />);
 	expect(view.getByRole("status").textContent).toBe("idle");
 	await dom.act(async () => {
 		publish({ busy: true });
 	});
 	expect(view.getByRole("status").textContent).toBe("busy");
-	await client.dispose();
 });

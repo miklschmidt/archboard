@@ -12,7 +12,7 @@ import type {
 } from "@archboard/workbench/agent";
 import type { AgentFocus } from "#ui/application/state/agent-focus.ts";
 import type { VoiceSession, VoiceSessionStatus } from "@archboard/workbench/voice";
-import type { ConversationControllers } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationControllers } from "@archboard/codex-realtime-voice/browser";
 
 /** The thread link controller of a pane. */
 type ThreadLinkController = ConversationControllers["threadLink"];

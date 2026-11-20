@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 
-import type { BrowserTimeline } from "#shared/browser/schemas/snapshot.ts";
-import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
+import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
+import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import {
 	conversationTurnId,
 	mergeConversation,
 	projectTimelineTurns,
-} from "#ui/timeline/rules/projection.ts";
+} from "#ui/workbench-client/timeline/rules/projection.ts";
 
 const brand = browserIdentities();
 const threadId = brand.thread("thread-timeline");

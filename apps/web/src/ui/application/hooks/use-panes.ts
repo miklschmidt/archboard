@@ -6,7 +6,6 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import { LiveBinding } from "#ui/application/state/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/application/rules/pane-list.ts";
 import { createPaneMoves } from "#ui/application/state/pane-moves.ts";
@@ -42,9 +41,7 @@ interface PaneEvents {
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
 	/** The server moved a pane onto a model, which the address bar records. */
-	readonly onModelAdopted: NonNullable<
-		PaneSessionOptions<BrowserWorkbenchTransport>["onModelAdopted"]
-	>;
+	readonly onModelAdopted: NonNullable<PaneSessionOptions["onModelAdopted"]>;
 	/** A pane reported its session, or went. */
 	readonly onSession: (paneId: string, session: PaneSession | null) => void;
 }
@@ -52,7 +49,7 @@ interface PaneEvents {
 /** The session callbacks every pane shares; stable for the application's life. */
 type PaneCallbacks = Required<
 	Pick<
-		PaneSessionOptions<BrowserWorkbenchTransport>,
+		PaneSessionOptions,
 		| "onStatus"
 		| "onPaneReconnected"
 		| "onStaleFrontend"
@@ -212,7 +209,7 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
  * The panes.
  * @param initial The list to start with, which the address bar seeds from the
  *   URL so a restored comparison mounts both panes in its first render.
- * @param media What each pane's media owner is made with, read once.
+ * @param media Where each pane's voice is played and heard, read once.
  * @returns The panes, their records and the moves.
  */
 function usePanes(

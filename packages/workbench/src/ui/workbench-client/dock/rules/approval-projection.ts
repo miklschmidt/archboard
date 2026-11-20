@@ -9,7 +9,7 @@ import type {
 } from "@archboard/codex-realtime-voice/contract";
 
 import type { CodexCommandExecutionApprovalDecision } from "@archboard/codex-app-server/contract";
-import type { ApprovalChoice } from "@archboard/codex-realtime-voice/controllers";
+import type { ApprovalChoice } from "@archboard/codex-realtime-voice/browser";
 import { clockTime, counted } from "#ui/workbench-client/dock/rules/format.ts";
 
 /** One line of request detail; mono for commands, paths and identifiers. */

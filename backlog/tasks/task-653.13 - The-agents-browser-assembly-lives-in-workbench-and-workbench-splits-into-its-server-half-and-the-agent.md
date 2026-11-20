@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T17:33:00Z'
+updated_date: '2026-11-20T01:21:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -33,7 +33,7 @@ Candidate 10, browser half (10b), of the archboard-deepen run. After 10a, workbe
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The confirming advisor round ran after candidate 9 merged, and its answers (the ten names, isSpeakingLevel's place, the package name) are recorded in the run's decision log before the move starts
+- [x] #1 The confirming advisor round ran after candidate 9 merged, and its answers (the ten names, isSpeakingLevel's place, the package name) are recorded in the run's decision log before the move starts
 - [ ] #2 The agent package exports AgentRoot({ activePaneId, openAnswerFile, chooseShownConversation, children }), AgentDock, AgentPanel, AgentPane({ paneId, conversation, recording, dockless, reducedMotion }), TalkControl, useNarrateKey, useAgentVoice, RecordedVoice({ level, children }), RecordedVoiceBox({ transcript, presented }) and AgentAnswer, with any change the confirming round made; the pane owns its socket, and React mount and unmount register the hosted conversation per socket generation
 - [ ] #3 apps/web no longer assembles the agent; agent-setup-ports, pane-subtitles-box and pane-subtitles tests move into the package, rewritten to cross its interface
 - [ ] #4 Workbench splits as a pure move into the server package (about 12) and the agent package (about 10) above it, each 20 or fewer; package-graph.test.ts, package-api.test.ts areas and interface-width ceilings take the measured counts; INTERFACE_WIDE clears on both
@@ -46,4 +46,6 @@ Candidate 10, browser half (10b), of the archboard-deepen run. After 10a, workbe
 
 <!-- SECTION:NOTES:BEGIN -->
 Proposal: sL6y1FLr
+
+Confirming advisor round done after candidate 9: read 'Candidate 10b CONFIRMED after candidate 9' in the run's decision log. The new package is @archboard/agent-surfaces (one entry, layer 10).
 <!-- SECTION:NOTES:END -->

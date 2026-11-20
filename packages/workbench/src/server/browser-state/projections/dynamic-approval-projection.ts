@@ -1,6 +1,6 @@
 import type { BrowserDynamicApproval } from "@archboard/codex-realtime-voice/contract";
-import type { BrowserDynamicApprovalEffect } from "@archboard/codex-realtime-voice/schemas";
-import type { BrowserSchemas } from "@archboard/codex-realtime-voice/schemas";
+import type { BrowserDynamicApprovalEffect } from "@archboard/codex-realtime-voice/contract";
+import type { BrowserSchemas } from "@archboard/codex-realtime-voice/contract";
 import type { TrustedIdentityDecoder, TurnId } from "@archboard/codex-app-server/identity";
 import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type { DynamicApprovalOwnerView } from "#server/projection/protocol/domain-approval-contract.ts";

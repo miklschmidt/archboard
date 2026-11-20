@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { browserIdentities } from "#tests/ui/support/browser-identities.ts";
 import { toThreadMessageLike } from "#ui/workbench-client/assistant-runtime/rules/messages.ts";
-import type { ConversationTurn } from "@archboard/codex-realtime-voice/controllers";
+import type { ConversationTurn } from "#ui/workbench-client/timeline/state/contract.ts";
 
 const ids = browserIdentities();
 const threadId = ids.thread("thread-messages");

@@ -3,7 +3,7 @@ import type {
 	CodexWorkbenchDomainTools,
 	CodexWorkbenchDomain,
 } from "#runtime/voice/protocol/extension.ts";
-import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
 import { createServerDynamicOperationIdAdapter } from "#server/generation/services/operation-lifecycle.ts";

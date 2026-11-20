@@ -1,15 +1,7 @@
-// How the workbench rides a pane's socket: pane-report sequencing, the
-// registration latch, and the owner that keeps one transport generation and
-// one media generation together per socket. The pane session remains the
+// How the workbench rides a pane's socket: pane-report sequencing and the
+// registration latch the workbench attach waits on. The pane's socket
+// conversation keeps the workbench generations; the pane session remains the
 // only owner that can close the actual socket.
-
-import {
-	stoppedState,
-	type PaneSocket,
-	type WorkbenchMediaPort,
-	type WorkbenchTransportPort,
-	type WorkbenchTransportState,
-} from "#ui/panes/pane-session/rules/workbench-port.ts";
 
 /** One pane report, identified within a socket generation. */
 interface PaneReportRequest {
@@ -23,7 +15,7 @@ interface PaneReportRequest {
  * report path recovers it on a later report without a second retry loop.
  */
 interface PaneRegistrationLatch {
-	readonly socket: PaneSocket;
+	readonly socket: WebSocket;
 	readonly generation: number;
 	readonly promise: Promise<void>;
 	/** Release the one-shot attach latch; pane health is tracked separately. */
@@ -33,13 +25,13 @@ interface PaneRegistrationLatch {
 /** The identity a pane report was dispatched under. */
 interface PaneReportDispatch {
 	readonly request: PaneReportRequest;
-	readonly socket: PaneSocket | null;
+	readonly socket: WebSocket | null;
 	readonly registration: PaneRegistrationLatch | null;
 }
 
 /** The identity the pane holds when the response comes back. */
 interface PaneReportCurrent {
-	readonly socket: PaneSocket | null;
+	readonly socket: WebSocket | null;
 	readonly generation: number;
 	readonly registration: PaneRegistrationLatch | null;
 }
@@ -198,10 +190,7 @@ function permittedEffects(standing: ReportStanding): PaneReportEffects {
  * @param generation Its generation.
  * @returns The registration.
  */
-function createPaneRegistrationLatch(
-	socket: PaneSocket,
-	generation: number,
-): PaneRegistrationLatch {
+function createPaneRegistrationLatch(socket: WebSocket, generation: number): PaneRegistrationLatch {
 	const latch = createLatch();
 	let acknowledged = false;
 	/**
@@ -248,258 +237,24 @@ function createLatch(): Latch {
 }
 
 /** Inputs for attaching after registration. */
-interface WorkbenchAttachAfterRegistrationOptions {
+interface WorkbenchAttachAfterRegistrationOptions<Attached> {
 	readonly registration: PaneRegistrationLatch;
 	readonly isCurrent: () => boolean;
-	readonly attach: () => Promise<WorkbenchTransportState>;
+	readonly attach: () => Promise<Attached>;
 }
 
 /**
  * Release a workbench attach only after pane registration, with the generation
- * check immediately before the owner is called. The callback is synchronous at
+ * check immediately before the attach is called. The callback is synchronous at
  * that point, so an old completion cannot attach a replacement socket.
  * @param options The registration, the currency check and the attach.
- * @returns The attached state, or null when the registration was no longer current.
+ * @returns What the attach gave, or null when the registration was no longer current.
  */
-async function attachWorkbenchAfterRegistration(
-	options: WorkbenchAttachAfterRegistrationOptions,
-): Promise<WorkbenchTransportState | null> {
+async function attachWorkbenchAfterRegistration<Attached>(
+	options: WorkbenchAttachAfterRegistrationOptions<Attached>,
+): Promise<Attached | null> {
 	await options.registration.promise;
 	return options.isCurrent() ? options.attach() : null;
-}
-
-/** The socket and transport of one generation. */
-interface WorkbenchSocketGeneration<Transport extends WorkbenchTransportPort> {
-	readonly socket: PaneSocket;
-	readonly transport: Transport;
-}
-
-/** Keeps one transport generation per pane socket. */
-interface PaneWorkbenchSocketOwner<Transport extends WorkbenchTransportPort> {
-	readonly current: () => WorkbenchSocketGeneration<Transport> | null;
-	readonly attach: (socket: PaneSocket) => Promise<WorkbenchTransportState>;
-	readonly detach: (socket: PaneSocket) => Promise<void>;
-	readonly dispose: () => Promise<void>;
-}
-
-/** What the owner needs: the media owner and how to make a transport. */
-interface PaneWorkbenchSocketOwnerOptions<Transport extends WorkbenchTransportPort> {
-	readonly media: WorkbenchMediaPort<Transport>;
-	readonly createTransport: () => Transport;
-}
-
-interface Generation<
-	Transport extends WorkbenchTransportPort,
-> extends WorkbenchSocketGeneration<Transport> {
-	retired: boolean;
-	cleanup: Promise<void> | null;
-}
-
-/**
- * Run a cleanup step, swallowing its failure: retirement must finish.
- * @param step The step.
- */
-async function quietly(step: () => Promise<unknown>): Promise<void> {
-	try {
-		await step();
-	} catch {
-		// A retiring generation's failure has nobody left to tell.
-	}
-}
-
-/**
- * Keep socket generation, transport generation, and media generation together.
- * Retiring a transport only removes its listeners and pending work; the pane
- * session remains the only owner that closes the actual socket.
- * @param options The media owner and the transport factory.
- * @returns The owner.
- */
-function createPaneWorkbenchSocketOwner<Transport extends WorkbenchTransportPort>(
-	options: PaneWorkbenchSocketOwnerOptions<Transport>,
-): PaneWorkbenchSocketOwner<Transport> {
-	let active: Generation<Transport> | null = null;
-	let disposed = false;
-	let latestAttach = 0;
-	let retirement: Promise<void> = Promise.resolve();
-
-	/**
-	 * The state to report now.
-	 * @returns The active transport's state, or a stopped state.
-	 */
-	function state(): WorkbenchTransportState {
-		if (active !== null) {
-			return active.transport.state();
-		}
-		return stoppedState(
-			disposed
-				? "The pane's workbench socket owner is disposed."
-				: "No pane workbench socket is attached.",
-		);
-	}
-
-	/**
-	 * Retire a generation once, after any retirement already in progress.
-	 * @param generation The generation.
-	 * @returns Settles when its media and transport are gone.
-	 */
-	function retire(generation: Generation<Transport>): Promise<void> {
-		if (generation.retired) {
-			return generation.cleanup ?? Promise.resolve();
-		}
-		generation.retired = true;
-		if (active === generation) {
-			active = null;
-		}
-		const cleanup = cleanUpAfter(retirement, generation);
-		generation.cleanup = cleanup;
-		retirement = quietly(() => cleanup);
-		return cleanup;
-	}
-
-	/**
-	 * Detach a generation's media and dispose its transport, after earlier retirements.
-	 * @param after The retirement already in progress.
-	 * @param generation The generation to clean up.
-	 */
-	async function cleanUpAfter(
-		after: Promise<void>,
-		generation: Generation<Transport>,
-	): Promise<void> {
-		await after;
-		await quietly(() => options.media.detach(generation.transport));
-		await quietly(() => generation.transport.dispose());
-	}
-
-	/**
-	 * Whether a generation is still the one an attach request is for.
-	 * @param generation The generation.
-	 * @param request The attach request number.
-	 * @returns True while nothing has superseded it.
-	 */
-	function isCurrent(generation: Generation<Transport>, request: number): boolean {
-		return !disposed && request === latestAttach && active === generation && !generation.retired;
-	}
-
-	/**
-	 * Attach the transport and media of a fresh generation, retiring it if superseded.
-	 * @param generation The generation.
-	 * @param request The attach request number.
-	 * @returns The state to report.
-	 */
-	async function bringUp(
-		generation: Generation<Transport>,
-		request: number,
-	): Promise<WorkbenchTransportState> {
-		try {
-			await generation.transport.attach(generation.socket);
-			if (!isCurrent(generation, request)) {
-				await retire(generation);
-				return state();
-			}
-			await options.media.attach(generation.transport);
-			if (!isCurrent(generation, request)) {
-				await retire(generation);
-				return state();
-			}
-			return generation.transport.state();
-		} catch (error) {
-			await retire(generation);
-			throw error;
-		}
-	}
-
-	/**
-	 * Attach a socket, replacing the previous generation.
-	 * @param socket The socket.
-	 * @returns The state to report.
-	 */
-	/**
-	 * Whether an attach request may still create a generation.
-	 * @param request The attach request number.
-	 * @returns True while the owner is live and nothing newer was requested.
-	 */
-	function acceptsAttach(request: number): boolean {
-		return !disposed && request === latestAttach;
-	}
-
-	/**
-	 * Start a fresh generation on a socket.
-	 * @param socket The socket.
-	 * @param request The attach request number.
-	 * @returns The state to report.
-	 */
-	function startGeneration(socket: PaneSocket, request: number): Promise<WorkbenchTransportState> {
-		const generation: Generation<Transport> = {
-			socket,
-			transport: options.createTransport(),
-			retired: false,
-			cleanup: null,
-		};
-		active = generation;
-		return bringUp(generation, request);
-	}
-
-	/**
-	 * Attach a socket, replacing the previous generation.
-	 * @param socket The socket.
-	 * @returns The state to report.
-	 */
-	async function attach(socket: PaneSocket): Promise<WorkbenchTransportState> {
-		const request = ++latestAttach;
-		if (disposed) {
-			return stoppedState("The pane's workbench socket owner is disposed.");
-		}
-		const previous = active;
-		if (previous?.socket === socket && !previous.retired) {
-			return previous.transport.state();
-		}
-		await settlePrevious(previous);
-		return acceptsAttach(request) ? startGeneration(socket, request) : state();
-	}
-
-	/**
-	 * Retire the previous generation, or wait for a retirement in progress.
-	 * @param previous The generation that was active, or null.
-	 * @returns Settles when the previous generation is gone.
-	 */
-	function settlePrevious(previous: Generation<Transport> | null): Promise<void> {
-		return previous === null ? retirement : retire(previous);
-	}
-
-	/**
-	 * Retire the generation on a socket, if it is the active one.
-	 * @param socket The socket.
-	 */
-	async function detach(socket: PaneSocket): Promise<void> {
-		const generation = active;
-		if (generation === null || generation.socket !== socket) {
-			return;
-		}
-		++latestAttach;
-		await retire(generation);
-	}
-
-	/** Retire everything and dispose the media owner. */
-	async function dispose(): Promise<void> {
-		if (disposed) {
-			return;
-		}
-		disposed = true;
-		++latestAttach;
-		const generation = active;
-		await (generation === null ? retirement : retire(generation));
-		await quietly(() => options.media.dispose());
-	}
-
-	/**
-	 * The active generation.
-	 * @returns The socket and transport, or null when none is attached.
-	 */
-	function current(): WorkbenchSocketGeneration<Transport> | null {
-		return active;
-	}
-
-	return Object.freeze({ current, attach, detach, dispose });
 }
 
 export {
@@ -507,9 +262,7 @@ export {
 	type PaneReportCurrent,
 	type PaneReportDispatch,
 	type PaneReportEffects,
-	type PaneWorkbenchSocketOwner,
 	attachWorkbenchAfterRegistration,
 	createPaneRegistrationLatch,
 	createPaneReportSequencer,
-	createPaneWorkbenchSocketOwner,
 };

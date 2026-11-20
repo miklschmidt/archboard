@@ -4,12 +4,12 @@
 // never something silently merged. The voice coordinator's turns are projected
 // the same way and stand among the workhorse's by when they started.
 
-import type { BrowserTimeline } from "#shared/browser/schemas/snapshot.ts";
+import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type {
 	ConversationOutcome,
 	ConversationOwner,
 	ConversationTurn,
-} from "#ui/timeline/state/contract.ts";
+} from "#ui/workbench-client/timeline/state/contract.ts";
 
 type BrowserTurn = BrowserTimeline["turns"][number];
 

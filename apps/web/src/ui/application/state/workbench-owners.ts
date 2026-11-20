@@ -1,16 +1,16 @@
-// The owners the application composes over one pane's workbench transport:
-// the composer, queue, approvals and thread-link controllers. The
+// The owners the application composes over one pane's hosted conversation:
+// its composer, queue, approvals and thread-link controllers, with the caches
+// the cards and the dock read. The
 // conversation is the tab's (TASK-373), so whichever pane of the tab the person
 // is reading speaks for it, with that pane's model as context.
 
 import { createSnapshotCache, type SnapshotStore } from "#ui/application/state/snapshot-cache.ts";
 import { createProgressClock } from "#ui/application/state/progress-clock.ts";
 import type { VoiceSession } from "@archboard/workbench/voice";
-import {
-	createConversationControllers,
-	type BrowserWorkbenchTransport,
-	type ConversationControllers,
-} from "@archboard/codex-realtime-voice/controllers";
+import type {
+	ConversationControllers,
+	HostedConversation,
+} from "@archboard/codex-realtime-voice/browser";
 
 /** The approvals controller's state as the cards read it. */
 interface ApprovalDecisions {
@@ -19,27 +19,28 @@ interface ApprovalDecisions {
 	readonly errors: Readonly<Record<string, string>>;
 }
 
-/** The owners over one transport. */
+/** The owners over one hosted conversation. */
 interface WorkbenchOwners extends ConversationControllers {
 	readonly paneId: string;
-	readonly transport: BrowserWorkbenchTransport;
+	/** The pane's conversation of its current socket. */
+	readonly transport: HostedConversation;
 	/** The approvals controller's decisions, cached per publication. */
 	readonly approvalDecisions: SnapshotStore<ApprovalDecisions>;
 	/** When the running turn last reported anything new. */
 	readonly progress: SnapshotStore<number | null>;
 }
 
-/** The voice session, the pane it runs for, and that pane's transport. */
+/** The voice session, the pane it runs for, and that pane's hosted conversation. */
 interface VoiceOwner {
 	readonly paneId: string;
 	readonly session: VoiceSession;
-	readonly transport: BrowserWorkbenchTransport;
+	readonly transport: HostedConversation;
 }
 
 /** What the owners need from the application. */
 interface WorkbenchOwnersOptions {
 	readonly paneId: string;
-	readonly transport: BrowserWorkbenchTransport;
+	readonly transport: HostedConversation;
 }
 
 /**
@@ -61,18 +62,17 @@ function approvalDecisions(approvals: ConversationControllers["approvals"]): App
 }
 
 /**
- * Compose the owners over one transport.
- * @param options The pane, the transport and how voice starts.
+ * Compose the owners over one hosted conversation.
+ * @param options The pane and its hosted conversation.
  * @returns The owners.
  */
 function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners {
 	const { paneId, transport } = options;
-	const controllers = createConversationControllers({ chatId: paneId, transport });
-	const { approvals } = controllers;
+	const { approvals } = transport.controllers;
 	return Object.freeze({
 		paneId,
 		transport,
-		...controllers,
+		...transport.controllers,
 		approvalDecisions: createSnapshotCache(approvals.subscribe, () => approvalDecisions(approvals)),
 		progress: createProgressClock(transport),
 	});

@@ -1,6 +1,6 @@
-// The agent over the server's panes: each pane's current transport, heard
-// through one publication per pane; the owners over the focused pane's
-// transport, which is the pane a message speaks from; one agent setup for the
+// The agent over the server's panes: each pane's current hosted conversation,
+// heard through one publication per pane; the owners over the focused pane's
+// conversation, which is the pane a message speaks from; one agent setup for the
 // whole server, so a message waiting on sign-in survives the person clicking
 // the other pane; and the voice session, which stays with the pane voice was
 // started from until it ends, because its media belongs to that pane's socket.
@@ -35,10 +35,10 @@ import {
 	createWorkbenchTransportPublication,
 	type WorkbenchTransportPublication,
 } from "#ui/panes/pane-session/state/workbench-publication.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
-/** The transports by pane id; null while a pane has none. */
-type PaneTransports = Readonly<Record<string, BrowserWorkbenchTransport | null>>;
+/** The hosted conversations by pane id; null while a pane has none. */
+type PaneTransports = Readonly<Record<string, HostedConversation | null>>;
 
 /** The agent's state and the moves the panes drive. */
 interface Workbench {
@@ -67,19 +67,17 @@ function usePaneTransports(handles: PaneHandles): {
 	readonly paneGone: (paneId: string) => void;
 } {
 	const [transports, setTransports] = useState<PaneTransports>({});
-	const publications = useRef(
-		new Map<string, WorkbenchTransportPublication<BrowserWorkbenchTransport>>(),
-	);
+	const publications = useRef(new Map<string, WorkbenchTransportPublication<HostedConversation>>());
 	const publicationFor = useCallback(
-		(paneId: string): WorkbenchTransportPublication<BrowserWorkbenchTransport> => {
+		(paneId: string): WorkbenchTransportPublication<HostedConversation> => {
 			const existing = publications.current.get(paneId);
 			if (existing !== undefined) return existing;
-			const created = createWorkbenchTransportPublication<BrowserWorkbenchTransport>({
+			const created = createWorkbenchTransportPublication<HostedConversation>({
 				/**
-				 * The transport the pane's socket owner holds now.
-				 * @returns The transport, or null.
+				 * The conversation of the pane's current socket.
+				 * @returns The conversation, or null.
 				 */
-				current: () => handles.session(paneId)?.workbenchTransport() ?? null,
+				current: () => handles.session(paneId)?.hostedConversation() ?? null,
 				listener: {
 					/**
 					 * The pane's transport changed.
@@ -112,21 +110,16 @@ function usePaneTransports(handles: PaneHandles): {
 
 /**
  * The voice session for the pane voice runs for.
- * @param handles The pane sessions.
  * @param paneId The pane.
- * @param transport Its transport, or null.
+ * @param transport Its hosted conversation, or null.
  * @returns The voice owner, or null.
  */
-function useVoiceOwner(
-	handles: PaneHandles,
-	paneId: string,
-	transport: BrowserWorkbenchTransport | null,
-): VoiceOwner | null {
+function useVoiceOwner(paneId: string, transport: HostedConversation | null): VoiceOwner | null {
 	const [store] = useState(createVoiceStore);
 	useEffect(() => {
 		if (transport === null) return undefined;
-		return store.follow({ paneId, transport, realtime: handles.media(paneId) });
-	}, [store, handles, paneId, transport]);
+		return store.follow({ paneId, transport });
+	}, [store, paneId, transport]);
 	return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
 }
 
@@ -182,7 +175,7 @@ function useWorkbench(handles: PaneHandles, activePaneId: string): Workbench {
 	);
 	const [voicePane, setVoicePane] = useState<string | null>(null);
 	const voicePaneId = voicePane ?? activePaneId;
-	const voice = useVoiceOwner(handles, voicePaneId, transports[voicePaneId] ?? null);
+	const voice = useVoiceOwner(voicePaneId, transports[voicePaneId] ?? null);
 
 	// The setup outlives focus: its ports read whatever is focused when a step is taken.
 	const [focus] = useState(createAgentFocus);

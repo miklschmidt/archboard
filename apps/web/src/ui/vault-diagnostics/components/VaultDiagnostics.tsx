@@ -6,7 +6,7 @@ import { Button, Dialog } from "@archboard/ui-kit/components";
 import { DiagnosticList } from "#ui/vault-diagnostics/components/DiagnosticList.tsx";
 import { useVaultCheck } from "#ui/vault-diagnostics/hooks/use-vault-check.ts";
 import { useVaultRepair } from "#ui/vault-diagnostics/hooks/use-vault-repair.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 import type { ModelReply } from "@archboard/model-contract";
 
 type VaultCheck = ModelReply<"checkVault">;
@@ -18,7 +18,7 @@ interface VaultDiagnosticsProps {
 	/** The focused pane's vault: the bell speaks for the repository in front of the person. */
 	vault: string;
 	/** The focused pane's transport, to check again when the agent's turn ends. */
-	transport: BrowserWorkbenchTransport | null;
+	transport: Pick<HostedConversation, "snapshot" | "subscribe"> | null;
 	/** Send the agent a message; the agent sets itself up if it needs to. */
 	ask: (text: string) => void;
 }

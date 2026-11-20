@@ -12,7 +12,7 @@ import {
 	type PaneSession,
 	type PaneSessionOptions,
 } from "#ui/panes/pane-session/rules/session-contracts.ts";
-import type { WorkbenchTransportPort } from "#ui/panes/pane-session/rules/workbench-port.ts";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 import type { LegacyIdentity } from "#ui/panes/pane-session/rules/session-types.ts";
 import type { ModelDocument } from "@archboard/model-contract";
 
@@ -78,15 +78,15 @@ function useSessionState(openingVault: string): SessionState {
  * immutability rule is about values a component renders; this is the box those
  * values are handed through.
  */
-class PaneBox<Transport extends WorkbenchTransportPort> {
-	#options: PaneSessionOptions<Transport>;
+class PaneBox {
+	#options: PaneSessionOptions;
 	#element: HTMLElement | null = null;
 
 	/**
 	 * Hold the first options a pane was mounted with.
 	 * @param options The options.
 	 */
-	constructor(options: PaneSessionOptions<Transport>) {
+	constructor(options: PaneSessionOptions) {
 		this.#options = options;
 	}
 
@@ -94,7 +94,7 @@ class PaneBox<Transport extends WorkbenchTransportPort> {
 	 * The latest options the shell gave this pane.
 	 * @returns The options.
 	 */
-	options(): PaneSessionOptions<Transport> {
+	options(): PaneSessionOptions {
 		return this.#options;
 	}
 
@@ -102,7 +102,7 @@ class PaneBox<Transport extends WorkbenchTransportPort> {
 	 * The shell re-optioned this pane.
 	 * @param options The options.
 	 */
-	setOptions(options: PaneSessionOptions<Transport>): void {
+	setOptions(options: PaneSessionOptions): void {
 		this.#options = options;
 	}
 
@@ -128,20 +128,18 @@ class PaneBox<Transport extends WorkbenchTransportPort> {
  * @param options What the shell tells the session, and what it wants to hear.
  * @returns The session.
  */
-function usePaneSession<Transport extends WorkbenchTransportPort>(
-	options: PaneSessionOptions<Transport>,
-): PaneSession<Transport> {
+function usePaneSession(options: PaneSessionOptions): PaneSession {
 	const { paneId } = options;
 	const [clientId] = useState(() => mintClientId(paneId));
 	const state = useSessionState(options.openingVault);
-	const [box] = useState(() => new PaneBox<Transport>(options));
-	const [core] = useState<PaneCore<Transport>>(() =>
-		createPaneCore<Transport>({
+	const [box] = useState(() => new PaneBox(options));
+	const [core] = useState<PaneCore>(() =>
+		createPaneCore({
 			paneId,
 			clientId,
 			options: box.options.bind(box),
 			paneElement: box.element.bind(box),
-			workbenchSockets: box.options().createWorkbenchSockets?.() ?? null,
+			conversation: box.options().conversation?.() ?? null,
 			setConnected: state.setConnected,
 			setModel: state.setModel,
 			setVault: state.setVault,
@@ -181,7 +179,10 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		(part: SemanticPanePart): void => core.userChangeFailed(part),
 		[core],
 	);
-	const workbenchTransport = useCallback((): Transport | null => core.workbenchTransport(), [core]);
+	const hostedConversation = useCallback(
+		(): HostedConversation | null => core.hostedConversation(),
+		[core],
+	);
 
 	return {
 		clientId,
@@ -196,7 +197,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		flushReading,
 		userChanged,
 		userChangeFailed,
-		workbenchTransport,
+		hostedConversation,
 	};
 }
 

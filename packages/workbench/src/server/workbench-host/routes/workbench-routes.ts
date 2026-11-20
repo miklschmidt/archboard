@@ -1,5 +1,5 @@
 // Every route the workbench answers, mounted together: the panes, what they read, the model they
-// show, the conversation a tab shows, and the explanations. The server lends what it owns: the
+// show, the conversation a tab shows, the explanations and the voice start trace. The server lends what it owns: the
 // mutation lease, the status it gives a refused read, how it reads the vault a request names, and
 // where it listens.
 
@@ -9,6 +9,7 @@ import type { Express, NextFunction, Request, RequestHandler, Response } from "e
 import { mountExplanationRoutes } from "#server/explanations/routes/explanation-routes.ts";
 import { mountPaneRoutes } from "#server/panes/routes/pane-routes.ts";
 import { agentActivity } from "#server/panes/services/agent-activity.ts";
+import { voiceStartAttempts } from "#server/panes/services/voice-agent.ts";
 
 /** What the server lends the workbench's routes. */
 interface WorkbenchHooks {
@@ -58,6 +59,10 @@ function mountWorkbenchRoutes(app: Express, hooks: WorkbenchHooks): void {
 	app.use("/api/architecture", hooks.requireVault, observeWrite(hooks.vaultOfRequest));
 	mountPaneRoutes(app, hooks);
 	mountExplanationRoutes(app, hooks);
+	// What happened in the last voice starts, for a person or an agent that diagnoses a failed one.
+	app.get("/api/voice/start-trace", (_req: Request, res: Response) => {
+		res.json({ success: true, attempts: voiceStartAttempts() });
+	});
 }
 
 export { mountWorkbenchRoutes };

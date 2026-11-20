@@ -4,7 +4,7 @@
 
 import type { BrowserTimeline } from "@archboard/codex-realtime-voice/contract";
 import type { SnapshotStore } from "#ui/application/state/snapshot-cache.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** One item of a published turn. */
 type TimelineItem = BrowserTimeline["turns"][number]["items"][number];
@@ -29,7 +29,7 @@ function itemMark(item: TimelineItem): string {
  * @param transport The transport.
  * @returns The signature, or null while no turn runs.
  */
-function runningSignature(transport: BrowserWorkbenchTransport): string | null {
+function runningSignature(transport: Pick<HostedConversation, "snapshot">): string | null {
 	const turn = transport
 		.snapshot()
 		?.timeline?.turns.findLast((entry) => entry.status === "inProgress");
@@ -46,7 +46,7 @@ function runningSignature(transport: BrowserWorkbenchTransport): string | null {
  * @returns The store.
  */
 function createProgressClock(
-	transport: BrowserWorkbenchTransport,
+	transport: Pick<HostedConversation, "snapshot" | "subscribe">,
 	now: () => number = Date.now,
 ): SnapshotStore<number | null> {
 	let signature: string | null = null;

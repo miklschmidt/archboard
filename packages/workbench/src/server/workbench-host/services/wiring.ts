@@ -35,7 +35,6 @@ import { workbenchFeedFor } from "#server/sessions/services/feed.ts";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 import { reportStartupOwnership } from "@archboard/server-lifecycle/server-process";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
-import { createServerCodexBrowserSocketOwner } from "@archboard/codex-realtime-voice/server";
 import type { ArchboardWorkbenchServer } from "#server/workbench-host/services/production.ts";
 import {
 	canonicalContextFromBrief,
@@ -43,15 +42,10 @@ import {
 	semanticInputFor,
 } from "#server/semantic-context/projections/semantic-input.ts";
 import { waitForTargetsWith } from "#server/dynamic-tools/services/target-wait.ts";
-import { liveWorkhorseCheckouts } from "@archboard/codex-realtime-voice/server";
 import { narrationChangesOf } from "#server/workbench-host/narration/projections/walkthrough-narration.ts";
 import { canvasOf } from "#server/semantic-context/projections/tab-canvas.ts";
-import {
-	browserLeaseLedger,
-	codexSocketInstances,
-	currentSocketsByClient,
-	panes,
-} from "#server/panes/services/registry.ts";
+import { panes } from "#server/panes/services/registry.ts";
+import { installVoiceAgent } from "#server/panes/services/voice-agent.ts";
 import {
 	currentShownCheckout,
 	onShownChange,
@@ -93,63 +87,6 @@ function bindingMatchesAuthority(
 		link.epoch === authority.epoch &&
 		(authority.linkRevision === undefined || binding.revision === authority.linkRevision)
 	);
-}
-
-/**
- * Attach the gateway to current pane sockets and open each tab's conversation on its first connection.
- * @param components The gateway, and the tab sessions it serves.
- * @returns Removes the hooks and disposes the socket owner.
- */
-function installBrowserGateway(
-	components: Parameters<ArchboardWorkbenchServer["installBrowserGateway"]>[0],
-): () => void {
-	const socketOwner = createServerCodexBrowserSocketOwner({
-		gateway: components.gateway,
-		/**
-		 * The pane a browser id presents.
-		 * @param browserId The browser's client id.
-		 * @returns The pane id, or null while it has no registration.
-		 */
-		chatForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
-		tabSessionForBrowser: tabSessionOf,
-		/**
-		 * Open a connecting tab's conversation, or find it open.
-		 * @param tabSessionId The tab session.
-		 */
-		openTabSession: (tabSessionId) => {
-			components.sessions.open(tabSessionId);
-		},
-	});
-	/** Take the hooks down. */
-	const remove = (): void => {
-		socketOwner.dispose();
-		resetCodexWorkbenchWiring();
-	};
-	/**
-	 * Hand one browser message to the socket owner.
-	 * @param instance The socket's connection instance.
-	 * @param browserId The browser's client id.
-	 * @param input The message.
-	 * @param send How to answer.
-	 * @returns Resolves once handled.
-	 */
-	codexWiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
-		socketOwner.handle(instance, browserId, input, { send });
-	codexWiring.codex.acceptBrowser = socketOwner.accept;
-	codexWiring.codex.closeBrowser = socketOwner.close;
-	codexWiring.codex.drainBrowsers = socketOwner.drain;
-	try {
-		for (const [browserId, socket] of currentSocketsByClient) {
-			const instance = codexSocketInstances.get(socket);
-			if (instance !== undefined) {
-				socketOwner.accept(instance, browserId);
-			}
-		}
-	} catch (error) {
-		remove();
-		throw error;
-	}
-	return remove;
 }
 
 /**
@@ -279,12 +216,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			 */
 			onGeneration: (scope) => integration.installLifecycleSignals(scope),
 			/**
-			 * Attach Archboard browser sockets to the core gateway.
-			 * @param scope The gateway and sessions that serve the sockets.
-			 * @returns The browser gateway cleanup.
-			 */
-			onBrowserGateway: (scope) => integration.installBrowserGateway(scope),
-			/**
 			 * Report an unrecoverable core fault through the Archboard logger.
 			 * @param error The reported fault.
 			 * @returns Nothing after the fault is reported.
@@ -411,7 +342,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			}
 			return waitForTargetsWith(workbench, input);
 		},
-		browserLeaseLedger,
 		/**
 		 * Make a graph the active one, end its tab sessions once gone, and return the remover.
 		 * @param components The graph.
@@ -452,15 +382,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					logger().error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
 			};
-			/**
-			 * The checkouts of a tab session's live workhorses.
-			 * @param tabSessionId The tab session.
-			 * @returns Them, or none while the session is not live.
-			 */
-			codexWiring.codex.liveWorkhorseCheckouts = (tabSessionId) => {
-				const session = components.sessions.list().find(({ id }) => id === tabSessionId);
-				return session === undefined ? [] : liveWorkhorseCheckouts(session);
-			};
+			codexWiring.codex.liveWorkhorseCheckouts = components.sessions.liveCheckouts;
 			return () => {
 				stopReconciling();
 				stopExplanations();
@@ -473,7 +395,6 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 				}
 			};
 		},
-		installBrowserGateway,
 		/**
 		 * Log a fault the workbench cannot recover from.
 		 * @param error The fault.
@@ -486,6 +407,9 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 }
 /** The Codex workbench application of this generation, from its preparation until its stop. */
 let codexApplication: VoiceAgent | null = null;
+
+/** Stops the panes connecting to this generation's application. */
+let uninstallVoiceAgent: (() => void) | null = null;
 
 /** The stop of this generation, shared by every caller once one has begun. */
 let generationStop: Promise<void> | null = null;
@@ -503,6 +427,8 @@ async function stopGeneration(application: VoiceAgent | null): Promise<void> {
 	} finally {
 		if (codexApplication === application) {
 			codexApplication = null;
+			uninstallVoiceAgent?.();
+			uninstallVoiceAgent = null;
 		}
 		forgetSemanticPaneContexts();
 		forgetPanePresentations();
@@ -540,6 +466,7 @@ async function prepareWorkbench(
 		productionModule.createServerVoiceAgentOptions(createArchboardWorkbenchServer(), address),
 	);
 	codexApplication = application;
+	uninstallVoiceAgent = installVoiceAgent(application);
 	generationStop = null;
 	/** Shut the application down on cancellation, swallowing the shutdown's own failure. */
 	const cancel = (): void => {

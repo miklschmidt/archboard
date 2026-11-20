@@ -25,19 +25,12 @@ import type { PaneHandles } from "#ui/application/state/pane-handles.ts";
 import { NOTHING_READ } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { usePaneSession } from "#ui/panes/pane-session/hooks/use-pane-session.ts";
 import {
+	type PaneConversation,
 	type PaneSessionOptions,
 	type PaneTheme,
 } from "#ui/panes/pane-session/rules/session-contracts.ts";
-import {
-	createPaneWorkbenchSocketOwner,
-	type PaneWorkbenchSocketOwner,
-} from "#ui/panes/pane-session/clients/workbench-socket.ts";
 import { ArchitectureModelStage } from "#ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx";
 import { type WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
-import {
-	createBrowserWorkbenchTransport,
-	type BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/controllers";
 
 /** Inputs for one application pane. */
 interface ApplicationPaneProps {
@@ -73,7 +66,7 @@ interface BoundCallbacks {
 	onModelError: (error: string) => void;
 	onReadingTrouble: (trouble: ReadingTrouble | null) => void;
 	onLayoutRequest: (request: "open" | "close") => void;
-	createWorkbenchSockets: () => PaneWorkbenchSocketOwner<BrowserWorkbenchTransport>;
+	conversation: () => PaneConversation;
 }
 
 /**
@@ -82,10 +75,7 @@ interface BoundCallbacks {
  * @param bound The pane-bound callbacks.
  * @returns The options.
  */
-function optionsFor(
-	props: ApplicationPaneProps,
-	bound: BoundCallbacks,
-): PaneSessionOptions<BrowserWorkbenchTransport> {
+function optionsFor(props: ApplicationPaneProps, bound: BoundCallbacks): PaneSessionOptions {
 	const { callbacks } = props;
 	return {
 		paneId: props.paneId,
@@ -102,7 +92,7 @@ function optionsFor(
 		onRepositoriesChanged: callbacks.onRepositoriesChanged,
 		onModelAdopted: callbacks.onModelAdopted,
 		onLayoutRequest: bound.onLayoutRequest,
-		createWorkbenchSockets: bound.createWorkbenchSockets,
+		conversation: bound.conversation,
 	};
 }
 
@@ -125,17 +115,13 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 		(request: "open" | "close"): void => callbacks.onLayoutRequest(paneId, request),
 		[callbacks, paneId],
 	);
-	const createWorkbenchSockets = useCallback(
-		(): PaneWorkbenchSocketOwner<BrowserWorkbenchTransport> =>
-			createPaneWorkbenchSocketOwner({
-				media: handles.media(paneId),
-				createTransport: createBrowserWorkbenchTransport,
-			}),
+	const conversation = useCallback(
+		(): PaneConversation => handles.conversation(paneId),
 		[handles, paneId],
 	);
 	return useMemo(
-		() => ({ onModelError, onReadingTrouble, onLayoutRequest, createWorkbenchSockets }),
-		[onModelError, onReadingTrouble, onLayoutRequest, createWorkbenchSockets],
+		() => ({ onModelError, onReadingTrouble, onLayoutRequest, conversation }),
+		[onModelError, onReadingTrouble, onLayoutRequest, conversation],
 	);
 }
 

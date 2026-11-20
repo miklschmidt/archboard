@@ -3,7 +3,7 @@
 // coordinator, and server coordinator and voice states.
 
 import { browserIdentities, type BrowserIdentities } from "#tests/ui/support/browser-identities.ts";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
 

@@ -3,139 +3,131 @@ import type { CodexWorkbenchHostPolicy } from "#server/generation/protocol/host.
 import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import type { TabSessions } from "#server/sessions/services/browser-tabs.ts";
 import { assertOpaqueName } from "#server/chat-conversations/gateway/operations/browser-command.ts";
-import { createServerCodexBrowserSocketOwner } from "#server/browser-socket/services/socket.ts";
+import {
+	createServerCodexBrowserSocketOwner,
+	type ServerCodexBrowserSocketSend,
+} from "#server/browser-socket/services/socket.ts";
 
+/** One registered browser socket: who it is, where its frames go back, and what it shows. */
 export interface BrowserRegistration {
 	readonly instance: BrowserConnectionInstance;
-	readonly chatId: string;
+	readonly browserId: string;
 	readonly tabSessionId: TabSessionId;
-	readonly checkout: string;
+	/** The chat the socket shows now, read on every frame; null while it shows none. */
+	readonly chat: () => string | null;
+	/** The checkout that pins its tab's shown conversation on the first read. */
+	readonly checkout: () => string | undefined;
+	readonly transport: ServerCodexBrowserSocketSend;
 }
+
 type GatewayScope = Parameters<NonNullable<CodexWorkbenchHostPolicy["onBrowserGateway"]>>[0];
 type SocketOwner = ReturnType<typeof createServerCodexBrowserSocketOwner>;
-type SocketTransport = Parameters<SocketOwner["handle"]>[3];
 
 /**
- * Own browser registrations and their socket adapter over replaceable Codex generations.
- * @param tabs The core tab registry.
- * @param admit The host checkout admission policy.
- * @param requireReady Refuses operations outside a ready generation.
- * @returns Browser ingress and its generation installation boundary.
+ * Keep the agent's browser registrations across replaceable Codex generations. A socket registers
+ * once, whether or not a generation is installed; each generation that installs accepts every
+ * registration, and a frame that arrives while none is installed finds no owner.
+ * @param tabs The tab sessions the registrations name.
+ * @returns The registry and its generation installation.
  */
-export function createWorkbenchBrowserConnections(
-	tabs: TabSessions,
-	admit: (named: string) => string | null,
-	requireReady: () => void,
-) {
+export function createWorkbenchBrowserConnections(tabs: TabSessions) {
 	const registrations = new Map<string, BrowserRegistration>();
 	let current: SocketOwner | null = null;
-	/**
-	 * Require this generation's installed socket adapter.
-	 * @returns The socket adapter.
-	 */
-	const owner = (): SocketOwner => {
-		requireReady();
-		if (current === null) throw new Error("The host provides its own browser socket adapter.");
-		return current;
-	};
 	return Object.freeze({
 		/**
-		 * Read the registered checkout that pins a browser tab on its first read.
-		 * @param id The browser identity.
-		 * @returns The registered checkout, or undefined before registration.
+		 * The checkout that pins a browser's tab on its first read.
+		 * @param browserId The browser.
+		 * @returns The checkout, or undefined when none is registered.
 		 */
-		checkoutOf: (id: string) => registrations.get(id)?.checkout,
+		checkoutOf: (browserId: string) => registrations.get(browserId)?.checkout(),
 		/**
-		 * Install the existing socket owner before this generation accepts browser work.
-		 * @param scope The generation gateway and session operations.
+		 * Install this generation's socket owner, and accept every registration on it.
+		 * @param scope The generation's gateway and session operations.
 		 * @returns The generation cleanup.
 		 */
 		install: (scope: GatewayScope) => {
 			const installed = createServerCodexBrowserSocketOwner({
 				gateway: scope.gateway,
 				/**
-				 * Resolve a browser surface from its authoritative socket registration.
-				 * @param id The registered browser identity.
-				 * @returns The surface identity, or null before registration.
+				 * The chat a registered browser shows now.
+				 * @param id The browser.
+				 * @returns The chat, or null before registration or while it shows none.
 				 */
-				chatForBrowser: (id) => registrations.get(id)?.chatId ?? null,
-				tabSessionForBrowser: tabs.of,
+				chatForBrowser: (id) => registrations.get(id)?.chat() ?? null,
 				/**
-				 * Open the tab session its registered browser names.
-				 * @param id The registered tab session identity.
+				 * The tab session a registered browser named.
+				 * @param id The browser.
+				 * @returns The tab session, or null before registration.
+				 */
+				tabSessionForBrowser: (id) => registrations.get(id)?.tabSessionId ?? null,
+				/**
+				 * Open the tab session a registered browser names.
+				 * @param id The tab session.
 				 */
 				openTabSession: (id) => {
 					scope.sessions.open(id);
 				},
 			});
+			try {
+				for (const { instance, browserId } of registrations.values())
+					installed.accept(instance, browserId);
+			} catch (error) {
+				installed.dispose();
+				throw error;
+			}
 			current = installed;
 			return () => {
 				if (current === installed) current = null;
 				installed.dispose();
 			};
 		},
-		/** Release registrations after the workbench stops. */
+		/**
+		 * Register a socket, replacing the browser's earlier one, and accept it on the installed
+		 * generation, if any.
+		 * @param registration The socket's identity, chat, checkout and send.
+		 */
+		register: (registration: BrowserRegistration) => {
+			assertOpaqueName(registration.browserId, "browser");
+			registrations.set(registration.browserId, registration);
+			tabs.note(registration.browserId, registration.tabSessionId);
+			current?.accept(registration.instance, registration.browserId);
+		},
+		/**
+		 * Hand one recognized frame to the installed generation.
+		 * @param instance The socket.
+		 * @param browserId The browser.
+		 * @param frame The frame.
+		 * @returns The handling, or null while no generation is installed.
+		 * @throws {Error} When the socket was replaced or released.
+		 */
+		handle: (instance: BrowserConnectionInstance, browserId: string, frame: unknown) => {
+			const owner = current;
+			if (owner === null) return null;
+			const registration = registrations.get(browserId);
+			if (registration?.instance !== instance)
+				throw new Error("The browser socket instance is not registered.");
+			return owner.handle(instance, browserId, frame, registration.transport);
+		},
+		/**
+		 * Release one exact socket without forgetting its replacement.
+		 * @param instance The socket.
+		 * @param browserId The browser.
+		 */
+		close: async (instance: BrowserConnectionInstance, browserId: string) => {
+			await current?.close(instance, browserId);
+			if (registrations.get(browserId)?.instance === instance) {
+				tabs.forget(browserId);
+				registrations.delete(browserId);
+			}
+		},
+		/**
+		 * Wait for the publications and closes the installed generation took on.
+		 * @returns Resolves when they settled.
+		 */
+		drain: () => current?.drain() ?? Promise.resolve(),
+		/** Forget every registration, once the agent stopped. */
 		clear: () => {
 			registrations.clear();
 		},
-		port: Object.freeze({
-			/**
-			 * Accept an exact socket and register its admitted checkout and tab session.
-			 * @param instance The exact physical socket capability.
-			 * @param browserId The browser identity assigned by the host.
-			 * @param registration The host-owned surface, session, and checkout registration.
-			 */
-			accept: (
-				instance: BrowserConnectionInstance,
-				browserId: string,
-				registration: Omit<BrowserRegistration, "instance">,
-			) => {
-				const installed = owner();
-				assertOpaqueName(browserId, "browser");
-				assertOpaqueName(registration.chatId, "chat");
-				const checkout = admit(registration.checkout);
-				if (checkout === null)
-					throw new Error("The checkout is not admitted by this workbench host.");
-				registrations.set(browserId, { ...registration, checkout, instance });
-				tabs.note(browserId, registration.tabSessionId);
-				tabs.shown(registration.tabSessionId, () => checkout);
-				installed.accept(instance, browserId);
-			},
-			/**
-			 * Route a browser envelope through the existing gateway and publication owner.
-			 * @param instance The exact physical socket capability.
-			 * @param browserId The registered browser identity.
-			 * @param input The browser envelope.
-			 * @param transport The host socket send boundary.
-			 * @returns Resolves after the request and its publication settle.
-			 */
-			handle: async (
-				instance: BrowserConnectionInstance,
-				browserId: string,
-				input: unknown,
-				transport: SocketTransport,
-			) => {
-				if (registrations.get(browserId)?.instance !== instance)
-					throw new Error("The browser socket instance is not registered.");
-				return owner().handle(instance, browserId, input, transport);
-			},
-			/**
-			 * Close one exact socket without forgetting its replacement.
-			 * @param instance The exact physical socket capability.
-			 * @param browserId The registered browser identity.
-			 */
-			close: async (instance: BrowserConnectionInstance, browserId: string) => {
-				await current?.close(instance, browserId);
-				if (registrations.get(browserId)?.instance === instance) {
-					tabs.forget(browserId);
-					registrations.delete(browserId);
-				}
-			},
-			/**
-			 * Wait for publications and closes already accepted by the current socket owner.
-			 * @returns Resolves when the accepted work settles.
-			 */
-			drain: () => current?.drain() ?? Promise.resolve(),
-		}),
 	});
 }

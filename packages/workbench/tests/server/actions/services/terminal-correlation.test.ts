@@ -5,7 +5,7 @@ import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol
 import { serverNotification } from "#tests/server/support/server-notification.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { archboardAppBinding } from "#runtime/thread-tools/protocol/manifest.ts";
-import { createCodexWaitGraph } from "@archboard/codex-realtime-voice/runtime";
+import { createCodexWaitGraph } from "#runtime/dynamic-tools/wait-graph/state/wait-graph.ts";
 import { createServerDynamicApprovalOwner } from "#server/actions/services/dynamic-approvals.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 

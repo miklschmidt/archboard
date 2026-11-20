@@ -5,11 +5,11 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import type { JSX, ReactNode } from "react";
 
 import { useAgentRuntime } from "#ui/workbench-client/assistant-runtime/hooks/use-agent-runtime.ts";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 /** Inputs for the provider. */
 interface AgentRuntimeProviderProps {
-	readonly transport: BrowserWorkbenchTransport;
+	readonly transport: Pick<HostedConversation, "state" | "subscribe">;
 	readonly children: ReactNode;
 }
 
