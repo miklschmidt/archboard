@@ -103,6 +103,17 @@ function row(...children: HTMLElement[]): HTMLElement {
 }
 
 /**
+ * Send the message field's text to the workhorse, and empty the field once it was delivered,
+ * unless the person typed on meanwhile.
+ * @param client The client.
+ * @param message The message field.
+ */
+async function sendMessage(client: VoiceClient, message: HTMLTextAreaElement): Promise<void> {
+	const sent = message.value;
+	if ((await client.send(sent)) && message.value === sent) message.value = "";
+}
+
+/**
  * Build the panel's elements and wire their actions to the client.
  * @param client The client.
  * @param text The panel's words.
@@ -144,10 +155,7 @@ function build(client: VoiceClient, text: VoicePanelText) {
 	form.append(label, row(send, stopWork));
 	form.addEventListener("submit", (event) => {
 		event.preventDefault();
-		const sent = message.value;
-		void client.send(sent).then((delivered) => {
-			if (delivered && message.value === sent) message.value = "";
-		});
+		void sendMessage(client, message);
 	});
 	const approvals = element("div");
 	approvals.style.cssText = "display:grid;gap:0.75rem";
@@ -224,39 +232,48 @@ function approvalCard(
 	return card;
 }
 
+type ServerState = NonNullable<VoiceClientSnapshot["server"]>;
+
 /**
- * Show one state of the client.
- * @param client The client.
+ * Show the status line and the failure of a state.
  * @param parts The panel's parts.
  * @param text The panel's words.
  * @param state The state.
- * @param shown The approvals the panel shows now, replaced when the state's approvals change.
- * @returns The approvals the panel shows after this state.
  */
-function show(
-	client: VoiceClient,
-	parts: PanelParts,
-	text: VoicePanelText,
-	state: VoiceClientSnapshot,
-	shown: readonly VoiceApproval[] | null,
-): readonly VoiceApproval[] | null {
+function showStatus(parts: PanelParts, text: VoicePanelText, state: VoiceClientSnapshot): void {
 	const status = statusOf(state, text);
 	if (parts.status.textContent !== status) parts.status.textContent = status;
 	const problem = state.failure?.message ?? state.voice.problem;
 	reveal(parts.failure, problem !== null);
 	parts.failureText.textContent = problem ?? "";
 	reveal(parts.refresh, state.failure?.uncertain === true);
-	const server = state.connection === "connected" ? state.server : null;
-	const ready = server?.account.state === "ready";
-	reveal(parts.signIn, server !== null && !ready);
-	const login = server?.login;
-	const pending = login?.state === "pending";
-	reveal(parts.signInButton, !pending);
-	reveal(parts.continueSignIn, pending && login.authUrl !== null);
-	if (pending && login.authUrl !== null) parts.continueSignIn.href = login.authUrl;
-	reveal(parts.signedIn, pending);
-	reveal(parts.conversation, ready);
-	if (server === null || !ready) return shown;
+}
+
+/**
+ * Show the sign-in of a signed-out account: the button, then the link and the confirmation while
+ * a sign-in is pending.
+ * @param parts The panel's parts.
+ * @param login The account's sign-in.
+ */
+function showSignIn(parts: PanelParts, login: ServerState["login"]): void {
+	const authUrl = login.state === "pending" ? login.authUrl : null;
+	reveal(parts.signInButton, login.state !== "pending");
+	reveal(parts.continueSignIn, authUrl !== null);
+	if (authUrl !== null) parts.continueSignIn.href = authUrl;
+	reveal(parts.signedIn, login.state === "pending");
+}
+
+/**
+ * Show the voice, the transcript, the workhorse's messages and the controls of a signed-in state.
+ * @param parts The panel's parts.
+ * @param state The state.
+ * @param server What the server published.
+ */
+function showConversation(
+	parts: PanelParts,
+	state: VoiceClientSnapshot,
+	server: ServerState,
+): void {
 	const live = LIVE.has(state.voice.phase);
 	parts.startVoice.disabled = state.busy || live || !state.voice.available;
 	parts.stopVoice.disabled = !live;
@@ -276,12 +293,60 @@ function show(
 	const running = turns.some((turn) => turn.status === "inProgress");
 	parts.send.disabled = state.busy || running;
 	parts.stopWork.disabled = !running;
-	const approvals = server.approvals.filter((approval) => approval.lifecycle.state === "pending");
-	if (shown === server.approvals) return shown;
+}
+
+/**
+ * Show one state of the client.
+ * @param client The client.
+ * @param parts The panel's parts.
+ * @param text The panel's words.
+ * @param state The state.
+ * @param shown The approvals the panel shows now, replaced when the state's approvals change.
+ * @returns The approvals the panel shows after this state.
+ */
+function show(
+	client: VoiceClient,
+	parts: PanelParts,
+	text: VoicePanelText,
+	state: VoiceClientSnapshot,
+	shown: readonly VoiceApproval[] | null,
+): readonly VoiceApproval[] | null {
+	showStatus(parts, text, state);
+	const server = state.connection === "connected" ? state.server : null;
+	const ready = server?.account.state === "ready";
+	reveal(parts.signIn, server !== null && !ready);
+	reveal(parts.conversation, ready);
+	if (server === null) return shown;
+	if (!ready) {
+		showSignIn(parts, server.login);
+		return shown;
+	}
+	showConversation(parts, state, server);
+	return showApprovals(client, parts, text, server.approvals, shown);
+}
+
+/**
+ * Show the pending approvals of a state, when they are not the ones shown already.
+ * @param client The client.
+ * @param parts The panel's parts.
+ * @param text The panel's words.
+ * @param approvals The state's approvals.
+ * @param shown The approvals the panel shows now.
+ * @returns The approvals the panel shows after this state.
+ */
+function showApprovals(
+	client: VoiceClient,
+	parts: PanelParts,
+	text: VoicePanelText,
+	approvals: readonly VoiceApproval[],
+	shown: readonly VoiceApproval[] | null,
+): readonly VoiceApproval[] {
+	if (shown === approvals) return shown;
+	const pending = approvals.filter((approval) => approval.lifecycle.state === "pending");
 	parts.approvals.replaceChildren(
-		...approvals.map((approval) => approvalCard(client, approval, text)),
+		...pending.map((approval) => approvalCard(client, approval, text)),
 	);
-	return server.approvals;
+	return approvals;
 }
 
 /**

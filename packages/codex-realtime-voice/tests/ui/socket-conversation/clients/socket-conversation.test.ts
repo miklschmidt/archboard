@@ -4,6 +4,7 @@ import type {
 	BrowserWorkbenchMediaOwner,
 	BrowserWorkbenchMediaState,
 } from "#ui/media/clients/media-state.ts";
+import { createBrowserWorkbenchMediaOwner } from "#ui/media/clients/media-owner.ts";
 import { openSocketConversation } from "#ui/socket-conversation/clients/socket-conversation.ts";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import type { BrowserWorkbenchTransport } from "#ui/transport/state/contract.ts";
@@ -17,6 +18,11 @@ import { snapshot, snapshotMessage } from "#tests/ui/support/transport/fixtures.
 function paneSocket(): FakeSocket {
 	const socket = new FakeSocket();
 	let sequence = 0;
+	/**
+	 * Answer a snapshot request with the next snapshot.
+	 * @param request The request.
+	 * @param on The socket it came on.
+	 */
 	socket.onRequest = (request: FakeSocketRequest, on: FakeSocket) => {
 		if (request["action"] === "subscribe" || request["action"] === "snapshot") {
 			sequence += 1;
@@ -43,10 +49,16 @@ function recordingConversation() {
 		const name = `t${names.size + 1}`;
 		const transport: BrowserWorkbenchTransport = {
 			...real,
+			/**
+			 * Attach, and log it.
+			 * @param socket The socket.
+			 * @returns The real transport's state.
+			 */
 			attach: async (socket) => {
 				log.push(`${name}.attach`);
 				return real.attach(socket);
 			},
+			/** Dispose, and log it. */
 			dispose: async () => {
 				log.push(`${name}.dispose`);
 				await real.dispose();
@@ -56,22 +68,30 @@ function recordingConversation() {
 		return transport;
 	};
 	const ready: BrowserWorkbenchMediaState = { state: "ready" };
-	const media = {
+	const media: BrowserWorkbenchMediaOwner = {
+		...createBrowserWorkbenchMediaOwner(),
+		/**
+		 * Log an attach.
+		 * @param transport The transport.
+		 * @returns Ready.
+		 */
 		attach: async (transport: BrowserWorkbenchTransport) => {
 			log.push(`media.attach ${names.get(transport)}`);
 			return ready;
 		},
+		/**
+		 * Log a detach.
+		 * @param transport The transport.
+		 */
 		detach: async (transport: BrowserWorkbenchTransport) => {
 			log.push(`media.detach ${names.get(transport)}`);
 		},
+		/** Log a dispose. */
 		dispose: async () => {
 			log.push("media.dispose");
 		},
-	} as Pick<BrowserWorkbenchMediaOwner, "attach" | "detach" | "dispose">;
-	const conversation = openSocketConversation(
-		{ chatId: "pane-a" },
-		{ createTransport, media: media as BrowserWorkbenchMediaOwner },
-	);
+	};
+	const conversation = openSocketConversation({ chatId: "chat-a" }, { createTransport, media });
 	return { conversation, log };
 }
 

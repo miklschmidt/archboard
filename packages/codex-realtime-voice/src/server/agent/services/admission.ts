@@ -80,13 +80,34 @@ function hostnameOf(host: string): string | null {
 export function admitsOrigin(request: UpgradeRequest, origins: ReadonlySet<string>): boolean {
 	const host = header(request.headers, "host");
 	if (host === undefined || !URL.canParse(request.url)) return false;
-	const loopback = LOOPBACK_HOSTNAMES.has(hostnameOf(host) ?? "");
-	const listedHost = [...origins].some((origin) => new URL(origin).host === host);
-	if (!loopback && !listedHost) return false;
-	const origin = header(request.headers, "origin");
-	if (origin === undefined) return true;
-	const own = `${new URL(request.url).protocol}//${host}`;
-	return (loopback && origin === own) || origins.has(origin);
+	const loopback = isLoopback(host);
+	if (!loopback && ![...origins].some((origin) => new URL(origin).host === host)) return false;
+	const own = loopback ? `${new URL(request.url).protocol}//${host}` : null;
+	return pageAdmitted(header(request.headers, "origin"), own, origins);
+}
+
+/**
+ * Whether a `Host` header names a loopback address.
+ * @param host The `Host` header.
+ * @returns True for `127.0.0.1`, `localhost` and `[::1]`, on any port.
+ */
+function isLoopback(host: string): boolean {
+	return LOOPBACK_HOSTNAMES.has(hostnameOf(host) ?? "");
+}
+
+/**
+ * Whether an upgrade's `Origin` names a page the agent admits.
+ * @param origin The `Origin` header, absent for a client that is no page.
+ * @param own The request's own origin when its `Host` is a loopback address, else null.
+ * @param origins The listed origins.
+ * @returns True for no `Origin`, the own origin or a listed one.
+ */
+function pageAdmitted(
+	origin: string | undefined,
+	own: string | null,
+	origins: ReadonlySet<string>,
+): boolean {
+	return origin === undefined || origin === own || origins.has(origin);
 }
 
 /**

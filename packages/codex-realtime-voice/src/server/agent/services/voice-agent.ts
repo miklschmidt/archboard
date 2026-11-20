@@ -218,20 +218,37 @@ function logFatal(error: unknown): void {
 }
 
 /**
- * Create a realtime Codex voice agent. Nothing starts until {@link VoiceAgent.start}.
- * @param options The state directory, checkouts and, optionally, origins, instructions, Codex
- * process, identity and extensions.
- * @returns The agent's lifecycle and socket operations.
- * @throws {TypeError} When an origin, an instruction or an identity value has the wrong shape.
+ * The origins an agent admits beside its loopback default.
+ * @param origins The origins the host lists, if any.
+ * @returns Them.
+ * @throws {TypeError} When one is not exactly an HTTP(S) origin.
  */
-export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
+function admittedOrigins(origins: readonly string[] = []): ReadonlySet<string> {
+	for (const origin of origins) assertSocketOrigin(origin);
+	return new Set(origins);
+}
+
+/**
+ * The checkout a socket works in when its route names none.
+ * @param checkouts The admitted checkouts.
+ * @returns The only listed one, or undefined when there are more or a function admits them.
+ */
+function onlyCheckoutOf(checkouts: VoiceAgentOptions["checkouts"]): string | undefined {
+	return typeof checkouts !== "function" && checkouts.length === 1 ? checkouts[0] : undefined;
+}
+
+/**
+ * The workbench the agent runs over, from the host's options.
+ * @param options The host's options.
+ * @returns The workbench's options.
+ */
+function workbenchOptions(options: VoiceAgentOptions): CreateCodexWorkbenchOptions {
 	const { context, voice, tools, ...extensions } = options.extensions ?? {};
-	for (const origin of options.origins ?? []) assertSocketOrigin(origin);
-	const origins: ReadonlySet<string> = new Set(options.origins);
-	const workbench = createCodexWorkbench({
+	const { ownerDirectory } = options;
+	return {
 		storage: {
 			rootDirectory: options.directory,
-			...(options.ownerDirectory === undefined ? {} : { ownerDirectory: options.ownerDirectory }),
+			...(ownerDirectory === undefined ? {} : { ownerDirectory }),
 		},
 		process: codexProcess(options.codex),
 		host: {
@@ -242,13 +259,23 @@ export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
 			...(voice === undefined ? {} : { voice }),
 		},
 		extensions,
-	});
-	const { checkouts } = options;
+	};
+}
+
+/**
+ * Create a realtime Codex voice agent. Nothing starts until {@link VoiceAgent.start}.
+ * @param options The state directory, checkouts and, optionally, origins, instructions, Codex
+ * process, identity and extensions.
+ * @returns The agent's lifecycle and socket operations.
+ * @throws {TypeError} When an origin, an instruction or an identity value has the wrong shape.
+ */
+export function createVoiceAgent(options: VoiceAgentOptions): VoiceAgent {
+	const origins = admittedOrigins(options.origins);
+	const workbench = createCodexWorkbench(workbenchOptions(options));
 	const connector = createVoiceConnector({
 		connections: workbench.connections,
 		admit: workbench.resolveCheckout,
-		onlyCheckout:
-			typeof checkouts !== "function" && checkouts.length === 1 ? checkouts[0] : undefined,
+		onlyCheckout: onlyCheckoutOf(options.checkouts),
 		origins,
 	});
 	return Object.freeze({

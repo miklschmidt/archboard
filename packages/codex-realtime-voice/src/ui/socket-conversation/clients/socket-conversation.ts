@@ -197,6 +197,27 @@ function openSocketConversation(
 		return { socket, transport, hosted, up: Promise.resolve(null), retired: false, cleanup: null };
 	};
 
+	/**
+	 * Retire a generation, or wait for the retirement in progress when there is none.
+	 * @param generation The generation, or null.
+	 * @returns Settles when it is gone.
+	 */
+	const settle = (generation: Generation | null): Promise<void> =>
+		generation === null ? retirement : retire(generation);
+
+	/**
+	 * Start a fresh generation on a socket and bring it up.
+	 * @param socket The socket.
+	 * @param request The attach request number.
+	 * @returns Its conversation, or null when superseded.
+	 */
+	const start = (socket: BrowserWorkbenchSocket, request: number) => {
+		const generation = generationOn(socket);
+		active = generation;
+		generation.up = bringUp(generation, request);
+		return generation.up;
+	};
+
 	return Object.freeze({
 		/**
 		 * Attach a socket, replacing the earlier generation.
@@ -208,12 +229,9 @@ function openSocketConversation(
 			const previous = active;
 			if (previous?.socket === socket && !previous.retired) return previous.up;
 			const request = ++latestAttach;
-			await (previous === null ? retirement : retire(previous));
-			if (disposed || request !== latestAttach) return null;
-			const generation = generationOn(socket);
-			active = generation;
-			generation.up = bringUp(generation, request);
-			return generation.up;
+			await settle(previous);
+			// A later attach, a detach and a dispose each count a new request.
+			return request === latestAttach ? start(socket, request) : null;
 		},
 		/**
 		 * Retire the generation on a socket, if it is the current one.
@@ -236,8 +254,7 @@ function openSocketConversation(
 			if (disposed) return;
 			disposed = true;
 			++latestAttach;
-			const generation = active;
-			await (generation === null ? retirement : retire(generation));
+			await settle(active);
 			await quietly(() => media.dispose());
 		},
 	});

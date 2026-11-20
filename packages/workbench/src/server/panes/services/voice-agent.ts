@@ -1,7 +1,12 @@
 // The voice agent this server runs, from its creation until its stop: the pane sockets connect to
 // it, and the panes read their tabs from it.
 
-import type { VoiceAgent, VoiceConnection } from "@archboard/codex-realtime-voice/server";
+import type {
+	VoiceAgent,
+	VoiceConnection,
+	VoiceRoute,
+	VoiceSocket,
+} from "@archboard/codex-realtime-voice/server";
 
 let installed: Pick<VoiceAgent, "connect" | "tabs" | "voiceStartTrace"> | null = null;
 
@@ -24,9 +29,7 @@ function installVoiceAgent(agent: NonNullable<typeof installed>): () => void {
  * @param route Who it is.
  * @returns Its connection, or null while no agent runs.
  */
-function connectVoice(
-	...[socket, route]: Parameters<VoiceAgent["connect"]>
-): VoiceConnection | null {
+function connectVoice(socket: VoiceSocket, route: VoiceRoute): VoiceConnection | null {
 	return installed?.connect(socket, route) ?? null;
 }
 

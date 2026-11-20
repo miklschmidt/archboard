@@ -1,8 +1,8 @@
 // The browser side of the voice agent, safe for the browser. `mountVoice` draws a working panel in
 // one line. `createVoiceClient` is the same client without the panel, for a page that draws its
 // own. `createSocketConversation` serves a page that carries the voice frames on a socket it owns.
-export { mountVoice } from "#ui/voice-panel/components/mount-voice.ts";
-export type { MountVoiceOptions, VoicePanelText } from "#ui/voice-panel/components/mount-voice.ts";
+export { mountVoice } from "#ui/voice-panel/clients/mount-voice.ts";
+export type { MountVoiceOptions, VoicePanelText } from "#ui/voice-panel/clients/mount-voice.ts";
 export { createVoiceClient } from "#ui/voice-client/clients/voice-client.ts";
 export type {
 	VoiceApproval,

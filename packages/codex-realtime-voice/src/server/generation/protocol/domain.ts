@@ -27,7 +27,10 @@ export interface CodexWorkbenchDomainScope {
 	readonly sessions: Pick<
 		CodexWorkbenchSessions,
 		"open" | "list" | "require" | "forThread" | "workhorseForThread" | "end" | "onChange"
-	>;
+	> & {
+		/** The checkouts of a tab session's live workhorses, those that have a thread; none while it is not live. */
+		readonly liveCheckouts: (id: TabSessionId) => readonly string[];
+	};
 	readonly assertCurrent: () => void;
 	readonly shutdown: () => Promise<
 		import("#server/generation/services/lifecycle.ts").CodexWorkbenchSnapshot

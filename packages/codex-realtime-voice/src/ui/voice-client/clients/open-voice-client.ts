@@ -224,8 +224,14 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		await release();
 		if (disposed || hidden) return;
 		await open();
-		if (hidden) await release();
+		if (hiddenNow()) await release();
 	};
+
+	/**
+	 * Whether the page is hidden now, as a `pagehide` during an await leaves it.
+	 * @returns True while it is hidden.
+	 */
+	const hiddenNow = () => hidden;
 
 	/**
 	 * Connect again after a delay, unless the socket is connected by then, and
@@ -271,13 +277,15 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 */
 	const reconnect = async () => {
 		const idle = pending === 0 && !disposed && !hidden;
-		if (idle && (await busyWith(reopen, noteConnectFailure))) {
-			if (failedToConnect) failure = null;
-			failedToConnect = false;
-			publish();
-			return;
-		}
-		if (!unreadableServer()) reconnectAfter(durationMs("codexRealtime.clientReconnect"));
+		if (idle && (await busyWith(reopen, noteConnectFailure))) reopened();
+		else if (!unreadableServer()) reconnectAfter(durationMs("codexRealtime.clientReconnect"));
+	};
+
+	/** A socket opened: it clears why an earlier one did not. */
+	const reopened = () => {
+		if (failedToConnect) failure = null;
+		failedToConnect = false;
+		publish();
 	};
 
 	/** Release the socket and the microphone while the page is hidden. */

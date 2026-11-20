@@ -86,8 +86,6 @@ interface CodexWorkbenchTabSession {
 	readonly workhorse: (checkout: string) => CodexWorkbenchWorkhorse;
 	/** The workhorse voice is bound to: the one of the checkout voice last started from. */
 	readonly voiceWorkhorse: () => CodexWorkbenchWorkhorse | null;
-	/** The checkouts of its live workhorses, those that have a thread, in the order they were built. */
-	readonly liveCheckouts: () => readonly string[];
 	/**
 	 * Stop the work tree of the workhorse of one checkout, or of every workhorse of the tab when the
 	 * checkout is null: its turn, every sub-agent it spawned and every queued request. Each answer

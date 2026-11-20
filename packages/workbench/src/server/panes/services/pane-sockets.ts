@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { TabSessionId, VoiceSocket } from "@archboard/codex-realtime-voice/server";
+import type { TabSessionId, VoiceRoute, VoiceSocket } from "@archboard/codex-realtime-voice/server";
 
 import { messageOf } from "#server/request/services/request-fields.ts";
 import {
@@ -193,14 +193,13 @@ function voiceSocketOf(ws: WebSocket): VoiceSocket {
 		 * @param data The frame's text.
 		 * @returns Resolves once it was written.
 		 */
-		send: (data) =>
-			new Promise<void>((resolve, reject) => {
-				if (ws.readyState !== WebSocket.OPEN) {
-					reject(new Error("The Codex browser WebSocket is not open."));
-					return;
-				}
+		send: (data) => {
+			const { promise, resolve, reject } = Promise.withResolvers<void>();
+			if (ws.readyState === WebSocket.OPEN)
 				ws.send(data, (error) => (error ? reject(error) : resolve()));
-			}),
+			else reject(new Error("The Codex browser WebSocket is not open."));
+			return promise;
+		},
 		/**
 		 * Close the socket.
 		 * @param code The close code.
@@ -213,25 +212,46 @@ function voiceSocketOf(ws: WebSocket): VoiceSocket {
 }
 
 /**
- * Connect an admitted pane socket to the voice agent: as its pane, which the tab and pane
- * registration name, or without an identity, whose voice requests the agent refuses.
+ * Who a pane socket is to the voice agent: its pane, as the tab and the pane registration name
+ * it, or no identity, whose voice requests the agent refuses.
+ * @param socket What it is registered as.
+ * @returns The route.
+ */
+function paneRoute(socket: RegisteredSocket): VoiceRoute {
+	const { clientId, tabSessionId } = socket;
+	if (clientId === null) return { tabSessionId, browserId: null, chat: noChat };
+	return {
+		tabSessionId,
+		browserId: clientId,
+		/**
+		 * The pane the socket presents now.
+		 * @returns Its pane id, or null while it has no registration.
+		 */
+		chat: () => panes.get(clientId)?.paneId ?? null,
+		/**
+		 * The checkout the pane's tab shows first.
+		 * @returns The checkout of its focused pane, or of its own.
+		 */
+		checkout: () => pinnedCheckoutOf(clientId),
+	};
+}
+
+/**
+ * The chat of a socket that names no pane.
+ * @returns None.
+ */
+function noChat(): null {
+	return null;
+}
+
+/**
+ * Connect an admitted pane socket to the voice agent.
  * @param ws The socket.
  * @param socket What it is registered as.
  */
 function connectPaneVoice(ws: WebSocket, socket: RegisteredSocket): void {
-	const { clientId, tabSessionId } = socket;
 	try {
-		const connection = connectVoice(
-			voiceSocketOf(ws),
-			clientId === null
-				? { tabSessionId, browserId: null, chat: () => null }
-				: {
-						tabSessionId,
-						browserId: clientId,
-						chat: () => panes.get(clientId)?.paneId ?? null,
-						checkout: () => pinnedCheckoutOf(clientId),
-					},
-		);
+		const connection = connectVoice(voiceSocketOf(ws), paneRoute(socket));
 		if (connection !== null) voiceConnections.set(ws, connection);
 	} catch (error) {
 		logger().error("Codex browser acceptance failed:", error);

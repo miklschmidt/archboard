@@ -65,6 +65,7 @@ export interface VoiceConnection {
 }
 
 type Connections = ReturnType<typeof createWorkbenchBrowserConnections>;
+type Transport = Parameters<Connections["register"]>[0]["transport"];
 
 /** What the connector reads from the agent. */
 interface ConnectorOptions {
@@ -104,8 +105,22 @@ function isVoiceRequest(frame: unknown): frame is Record<string, unknown> {
 	return (
 		typeof frame === "object" &&
 		frame !== null &&
-		(frame as Record<string, unknown>)["type"] === "codex_workbench_request"
+		"type" in frame &&
+		frame.type === "codex_workbench_request"
 	);
+}
+
+/**
+ * A reader that always reads one value.
+ * @param value The value.
+ * @returns The reader.
+ */
+function always<Value>(value: Value): () => Value {
+	/**
+	 * Read the value.
+	 * @returns It.
+	 */
+	return () => value;
 }
 
 /**
@@ -184,39 +199,46 @@ export function createVoiceConnector(options: ConnectorOptions) {
 	};
 
 	/**
-	 * Read what a route names.
+	 * Read what a route that carries its upgrade request names.
+	 * @param route The route.
+	 * @returns Its identity, or why its socket is refused.
+	 */
+	const requestNamed = (route: Extract<VoiceRoute, { readonly request: unknown }>): Named => {
+		const checkout = checkoutOf(route.checkout);
+		if (!admitsOrigin(route.request, origins))
+			return { refused: "The voice socket's origin is not admitted." };
+		const surface = surfaceOf(route.request);
+		if (surface === null)
+			return { refused: "Name the tabSessionId and chatId of the voice socket." };
+		return { identity: { ...surface, chat: always(surface.chatId), checkout } };
+	};
+
+	/**
+	 * How a route that names its identity reads its checkout.
+	 * @param named The checkout or its reader, if any.
+	 * @returns The reader.
+	 */
+	const hostCheckout = (named: string | (() => string) | undefined) => {
+		if (typeof named === "function") return named;
+		return named === undefined ? always(onlyCheckout) : checkoutOf(named);
+	};
+
+	/**
+	 * Read what a route that names its identity names.
 	 * @param route The route.
 	 * @returns Its identity, or why it has none.
 	 */
-	const namedBy = (route: VoiceRoute): Named => {
-		if ("request" in route) {
-			const checkout = checkoutOf(route.checkout);
-			if (!admitsOrigin(route.request, origins))
-				return { refused: "The voice socket's origin is not admitted." };
-			const surface = surfaceOf(route.request);
-			if (surface === null)
-				return { refused: "Name the tabSessionId and chatId of the voice socket." };
-			return { identity: { ...surface, chat: () => surface.chatId, checkout } };
-		}
+	const hostNamed = (route: Exclude<VoiceRoute, { readonly request: unknown }>): Named => {
 		const { tabSessionId, browserId, chat } = route;
-		let checkout: () => string | undefined;
-		if (typeof route.checkout === "function") checkout = route.checkout;
-		else if (route.checkout !== undefined) checkout = checkoutOf(route.checkout);
-		else checkout = () => onlyCheckout;
+		const checkout = hostCheckout(route.checkout);
 		if (browserId === undefined || browserId === null)
 			return {
 				unidentified: "The Codex workbench requires an authoritative browser connection identity.",
 			};
 		if (tabSessionId === null)
 			return { unidentified: "The Codex workbench requires the browser tab session identity." };
-		return {
-			identity: {
-				browserId,
-				tabSessionId,
-				chat: typeof chat === "function" ? chat : () => chat,
-				checkout,
-			},
-		};
+		const reads = typeof chat === "function" ? chat : always(chat);
+		return { identity: { browserId, tabSessionId, chat: reads, checkout } };
 	};
 
 	/**
@@ -232,7 +254,7 @@ export function createVoiceConnector(options: ConnectorOptions) {
 		instance: object,
 		identity: Identity,
 		frame: Record<string, unknown>,
-		transport: { readonly send: (message: unknown) => Promise<void> },
+		transport: Transport,
 	): Promise<void> => {
 		const handling = connections.handle(instance, identity.browserId, frame);
 		await (handling ?? transport.send(refusal(frame, "The Codex workbench is unavailable.")));
@@ -247,7 +269,7 @@ export function createVoiceConnector(options: ConnectorOptions) {
 	 * while the agent admits more than one.
 	 */
 	const connect = (socket: VoiceSocket, route: VoiceRoute): VoiceConnection => {
-		const named = namedBy(route);
+		const named = "request" in route ? requestNamed(route) : hostNamed(route);
 		if ("refused" in named) {
 			socket.close(1008, named.refused);
 			return RELEASED;
@@ -266,6 +288,11 @@ export function createVoiceConnector(options: ConnectorOptions) {
 		if (identity !== null) connections.register({ ...identity, instance, transport });
 		let closing: Promise<void> | undefined;
 		const connection: VoiceConnection = Object.freeze({
+			/**
+			 * Hand over one frame.
+			 * @param frame The parsed frame.
+			 * @returns False for a frame that is not a voice request, else its answer.
+			 */
 			receive: (frame: unknown) => {
 				if (!isVoiceRequest(frame)) return false;
 				if (closing !== undefined)
@@ -273,6 +300,10 @@ export function createVoiceConnector(options: ConnectorOptions) {
 				if ("unidentified" in named) return transport.send(refusal(frame, named.unidentified));
 				return handle(instance, named.identity, frame, transport);
 			},
+			/**
+			 * Release the connection, once.
+			 * @returns Resolves once it is released.
+			 */
 			close: () => {
 				closing ??= (async () => {
 					live.delete(connection);

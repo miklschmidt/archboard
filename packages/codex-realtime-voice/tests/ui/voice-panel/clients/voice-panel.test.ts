@@ -4,7 +4,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import type { VoiceClient, VoiceClientSnapshot } from "#ui/voice-client/state/contract.ts";
-import { renderVoicePanel } from "#ui/voice-panel/components/mount-voice.ts";
+import { renderVoicePanel } from "#ui/voice-panel/clients/mount-voice.ts";
 import { ENGLISH } from "#ui/voice-panel/rules/text.ts";
 import { approval, snapshot } from "#tests/ui/support/transport/fixtures.ts";
 
@@ -54,11 +54,24 @@ function stubClient(server: VoiceClientSnapshot["server"]) {
 		setMuted: action("setMuted"),
 		stopWork: action("stopWork"),
 		answerApproval: action("answerApproval"),
+		/**
+		 * The published state.
+		 * @returns The state.
+		 */
 		snapshot: () => state,
+		/**
+		 * Hear each publication.
+		 * @param listener The listener.
+		 * @returns The unsubscribe.
+		 */
 		subscribe: (listener) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
 		},
+		/**
+		 * Nothing to release.
+		 * @returns Resolved.
+		 */
 		dispose: async () => undefined,
 	};
 	/**

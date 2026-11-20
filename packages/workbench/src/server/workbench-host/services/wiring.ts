@@ -382,15 +382,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					logger().error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
 				}
 			};
-			/**
-			 * The checkouts of a tab session's live workhorses.
-			 * @param tabSessionId The tab session.
-			 * @returns Them, or none while the session is not live.
-			 */
-			codexWiring.codex.liveWorkhorseCheckouts = (tabSessionId) => {
-				const session = components.sessions.list().find(({ id }) => id === tabSessionId);
-				return session?.liveCheckouts() ?? [];
-			};
+			codexWiring.codex.liveWorkhorseCheckouts = components.sessions.liveCheckouts;
 			return () => {
 				stopReconciling();
 				stopExplanations();
