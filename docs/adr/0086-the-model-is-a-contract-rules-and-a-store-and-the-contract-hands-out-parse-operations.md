@@ -50,9 +50,9 @@ browser and the backend draw and compare it, and only Bun code reads and writes 
   coherence check are the contract's, and its migration is the store's. A fourth package would
   only move names.
 - **Pane keys live in the contract.** `parsePaneKey`, `paneAddressKey`, `statedVariant` and
-  `normalizePaneKey` are read by the store's lock and legacy addresses, by `server-lifecycle` and
-  by the server, which sit on both sides of the store. This replaces the interim home in
-  `server-lifecycle` that candidate 4 named.
+  `normalizePaneKey` are read by the store's lock and legacy addresses and by workbench's pane
+  addressing, which sits above the store. This replaces the interim home in `server-lifecycle`
+  that candidate 4 named.
 - **A browser build carries no icon names.** A vault's configuration names RemixIcon components,
   and listing them loads every icon. The contract's `#installed-icons` import resolves to an empty
   list under the `browser` condition, because no browser reads a vault's configuration.
