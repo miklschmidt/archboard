@@ -15,6 +15,14 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/6E6hL0Zk#7plLLcKh"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/Oi6SBIAM#1MfDpq9X"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk#N9jW1gq2"
     },
     {
@@ -87,6 +95,14 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#tef70baL"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#UE6yrRV7"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#E7pOpTZi"
     },
     {
@@ -96,6 +112,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#epRLrdt6"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/9ncuT5DP#egDoJ9fH"
     },
     {
       "type": "remove",
@@ -305,6 +325,206 @@
       "value": "a pulse train's numbers, as JavaScript computes them"
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#o0NC4h92",
+      "kind": "module",
+      "value": {
+        "order": 300,
+        "name": "Socket conversation",
+        "kind": "module",
+        "responsibility": "createSocketConversation: one chat's conversation over sockets the host owns, one socket generation at a time, with a fresh transport and fresh controllers for each attached socket",
+        "description": "attach(socket), called after the host registered the socket, returns the hosted conversation of that generation: its state, snapshot, subscribe, capabilities, controllers and media. The transport attaches before the media, and the media detaches before the transport is disposed; retirements run one after another, and an attach that a later attach, a detach or a dispose superseded publishes nothing. The media owner is the conversation's and follows each generation, and the controllers stay keyed on transport identity. The host owns the socket: the conversation never closes it (ADR 0090).",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/socket-conversation"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#o0NC4h92"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#o0NC4h92",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#vhRHlCPW",
+      "kind": "relationship",
+      "value": {
+        "order": 903,
+        "kind": "call",
+        "label": "a fresh transport for each attached socket",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/socket-conversation/clients/socket-conversation.ts",
+          "symbol": "openSocketConversation"
+        },
+        "id": "vKEsyHFk#vhRHlCPW",
+        "to": "vKEsyHFk/yejBBUFY#941UBxya"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#vhRHlCPW",
+      "placement": {
+        "holder": "vKEsyHFk#o0NC4h92"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#gBAbkHJa",
+      "kind": "relationship",
+      "value": {
+        "order": 904,
+        "kind": "call",
+        "label": "its media owner follows each generation",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/socket-conversation/clients/socket-conversation.ts",
+          "symbol": "openSocketConversation"
+        },
+        "id": "vKEsyHFk#gBAbkHJa",
+        "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#gBAbkHJa",
+      "placement": {
+        "holder": "vKEsyHFk#o0NC4h92"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#JnF5NLSC",
+      "kind": "relationship",
+      "value": {
+        "order": 905,
+        "kind": "call",
+        "label": "fresh controllers over each generation's transport",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/socket-conversation/clients/socket-conversation.ts",
+          "symbol": "openSocketConversation"
+        },
+        "id": "vKEsyHFk#JnF5NLSC",
+        "to": "vKEsyHFk/yejBBUFY#hO56iL2W"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#JnF5NLSC",
+      "placement": {
+        "holder": "vKEsyHFk#o0NC4h92"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#8ejnRDt0",
+      "kind": "module",
+      "value": {
+        "order": 301,
+        "name": "Voice panel",
+        "kind": "module",
+        "responsibility": "mountVoice(element, url): a working voice panel over one voice client, so a host has an agent in one line",
+        "description": "Native controls, accessible status updates, the system's light and dark colors and replaceable English words; it carries no stylesheet beyond them. A custom page builds on createVoiceClient instead and gets the same reconnect and restoration behavior.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/voice-panel"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#8ejnRDt0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8ejnRDt0",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#lU0khwR0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dQ31dMe7",
+      "kind": "relationship",
+      "value": {
+        "order": 906,
+        "kind": "call",
+        "label": "one voice client on the host's socket URL",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/ui/voice-panel/clients/mount-voice.ts",
+          "symbol": "mountVoice"
+        },
+        "id": "vKEsyHFk#dQ31dMe7",
+        "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dQ31dMe7",
+      "placement": {
+        "holder": "vKEsyHFk#8ejnRDt0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#kucowX1d",
+      "kind": "module",
+      "value": {
+        "order": 302,
+        "name": "Installed voice agent",
+        "kind": "module",
+        "responsibility": "The voice agent this server runs, from its creation until its stop: the pane sockets connect to it, the panes read their tabs from it, and the start trace route reads its last voice starts",
+        "description": "While no agent runs, a pane socket gets no voice connection, the tabs read as none and the trace is empty.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/voice-agent.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#kucowX1d"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#kucowX1d",
+      "placement": {
+        "holder": "vKEsyHFk/vKEsyHFk#sw4oFps0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#uhUNewEY",
+      "kind": "relationship",
+      "value": {
+        "order": 907,
+        "kind": "call",
+        "label": "connect, tabs and the last voice starts",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/panes/services/voice-agent.ts",
+          "symbol": "connectVoice"
+        },
+        "id": "vKEsyHFk#uhUNewEY",
+        "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#uhUNewEY",
+      "placement": {
+        "holder": "vKEsyHFk#kucowX1d"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#ttPYQNXo",
       "field": "responsibility",
@@ -390,6 +610,12 @@
       "subject": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
       "field": "to",
       "value": "vKEsyHFk#9KeBXIBQ"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
+      "field": "description",
+      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents. Each pane gets one socket conversation from the pane handles, which its session attaches to each of its sockets; the voice store makes the voice session over that conversation's media."
     },
     {
       "type": "assign",
@@ -606,12 +832,24 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "field": "label",
+      "value": "hand each parsed frame to the socket's voice connection"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
-        "symbol": "handleCodexBrowserMessage"
+        "symbol": "listenForCodexRequests"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
     },
     {
       "type": "place",
@@ -758,8 +996,36 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk#Zse70SS2",
+      "field": "responsibility",
+      "value": "Registers each accepted pane socket, hands its pane's authority to the newest socket, connects it to the voice agent with the chat and checkout it shows, and retires it on close or at stop"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Zse70SS2",
       "field": "description",
       "value": "At stop, closeBrowserOwners(accepted) closes the registry watch first, then the browser owners and every socket the server passes, feed sockets included, at the same point in the shutdown order as before; it keeps no tracking set of its own (TASK-653.09)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Tr8wcPNp",
+      "field": "label",
+      "value": "connect each socket with its chat and checkout; close it"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Tr8wcPNp",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
+        "symbol": "connectPaneVoice"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#Tr8wcPNp",
+      "field": "to",
+      "value": "vKEsyHFk#kucowX1d"
     },
     {
       "type": "add",
@@ -1215,6 +1481,12 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
+      "field": "description",
+      "value": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs, waits for your approval or waits for your answer, in text and not in colour alone; a pick shows that workhorse's conversation in every pane. The list is one named group of buttons that the Up and Down arrows move through. It reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's hosted conversation and its controllers, and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live. It keeps the timeline projection (timeline/) and the speaking predicate isSpeakingLevel (voice/rules/speaking.ts), which moved here from the voice package (TASK-653.12)."
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#cxOsPb1d",
       "kind": "module",
@@ -1290,6 +1562,12 @@
       "subject": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
       "field": "description",
       "value": "The core shapes every run with archboard-text and breaks it at a width, so a width is never estimated and never asked of the place that draws (ADR 0059, TASK-520.07). Every layout and every painter read the same numbers here. Sixteen names: message_lines, note_lines and width are crate-private, so a flow layout reaches the line breakers only through Flow part measures, which also owns title fitting (ADR 0088)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+      "field": "description",
+      "value": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to the media owner of that pane's socket conversation, negotiated over the pane's hosted conversation. Whether the voice is audible is workbench's own speaking predicate."
     },
     {
       "type": "add",
@@ -1637,6 +1915,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+      "field": "description",
+      "value": "The dispatcher runs reads, writes, and waits through the same request cache and quarantine boundary. Its private services retain mutation settlements and waiting state. One generation owns its lifetime. It owns the wait graph, which moved here from the voice package, and reads the approval hash through the voice package's createCodexBrowserModel (TASK-653.12)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
       "field": "description",
       "value": "TASK-653.11: 8 names used outside it. decodeFrame(line) reads a line's envelope evidence only and returns the inbound frame; decodeFrameBody(frame, method?) decodes a notification's, request's or response's body as a result, not a throw; encodeFrame(frame, maximumBytes) returns the encoded line or its refusal reason (unencodable, too-large). The session reads decodeClientRequestParams, decodeResponse, ProtocolDecodeError and isClientRequestMethodWithoutParams; the executable and the release build read codexProtocolVersion. It no longer depends on the transport: the wire's errors are the transport's to make from a refusal."
@@ -1673,6 +1957,31 @@
       "subject": "vKEsyHFk#eYsz7cYK",
       "placement": {
         "holder": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#JMErAyt1",
+      "kind": "relationship",
+      "value": {
+        "order": 909,
+        "kind": "call",
+        "label": "serve the last voice starts at /api/voice/start-trace",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+          "symbol": "mountWorkbenchRoutes"
+        },
+        "id": "vKEsyHFk#JMErAyt1",
+        "to": "vKEsyHFk#kucowX1d"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#JMErAyt1",
+      "placement": {
+        "holder": "vKEsyHFk#eYsz7cYK"
       }
     },
     {
@@ -1748,6 +2057,28 @@
       "subject": "vKEsyHFk#zKOR7EE4",
       "placement": {
         "holder": "vKEsyHFk#eYsz7cYK"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#abHx4peq",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/dynamic-tools/wait-graph/state"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/SJ2JMVyz#abHx4peq",
+      "field": "description",
+      "value": "Moved from the voice package's workhorses into workbench's thread tool calls (TASK-653.12): only workbench's waiting tools register edges."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/SJ2JMVyz#abHx4peq",
+      "placement": {
+        "holder": "vKEsyHFk/SJ2JMVyz#ZGoXFusm"
       }
     },
     {
@@ -2501,6 +2832,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/qKGcB6vZ#En8mB6jo",
+      "field": "description",
+      "value": "composeRoleInstructions(role, { text, sha256 }) on ./server composes one role's instructions from an authored document and its digest, so a host such as workbench reads the composed text and digest as module constants before any agent exists."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#tdKalihR",
       "field": "responsibility",
       "value": "Which installation runs; where a vault, a checkout and the state directory are; which checkout of a repository this machine reads and which checkouts a vault reads; the atomic write"
@@ -2572,6 +2909,12 @@
       "placement": {
         "holder": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zkDth8gp",
+      "field": "description",
+      "value": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.\n\nIt hands the pane's session the pane's socket conversation from the pane handles; it makes no socket owner or transport itself."
     },
     {
       "type": "assign",
@@ -2861,6 +3204,12 @@
       "value": "vKEsyHFk#QsBnI8Ja"
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#ScHf2pj3",
+      "field": "responsibility",
+      "value": "Keeps a pane session mounted and publishes its React state and its current socket's hosted conversation"
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#cFOF2Hle",
       "kind": "relationship",
@@ -3022,6 +3371,12 @@
       "subject": "vKEsyHFk/vKEsyHFk#vEVm326r",
       "field": "description",
       "value": "TASK-653.11: 16 functions, and no class, across eight entries. ./connection: openCodexConnection, openCodexSession. ./failure: readCodexFailure, createCodexFailure. ./process: createCodexProcess (it absorbs createProcessOwner, whose options let tests replace the spawn, the file system and the clock), resolveCodexExecutable. ./session: isQueuedSubmission, parseCodexServerResponse, parseSupportedLoginAccountParams, codexSessionThreadSource. ./contract: codexPendingReverseRequestLimit, codexFieldSchema (thread status callers parse its threadStatusType field in place of isCodexThreadStatusType), createCodexCommandExecutionApprovalDecisionSchema. ./identity: logicalToolCallKey, canonicalItemIdMaxLength. ./protocol: codexProtocolVersion. ./transport hands out types only. The seven error classes, createCodexTransport, createCodexSession, codexSessionControl and the identity ledger and authority factories are private: callers open a connection and read a failure. The process stays apart from the connection, because one process yields many children and a connection belongs to one child and epoch (ADR 0089)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+      "field": "description",
+      "value": "The wait graph left for workbench's thread tool calls (TASK-653.12), since only workbench's waiting tools register edges."
     },
     {
       "type": "assign",
@@ -3345,7 +3700,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#lU0khwR0",
       "field": "description",
-      "value": "Its npm build bundles codex-app-server, process, timing and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses. TASK-653.11: the wire identity context lives in the shared browser area (shared/browser/schemas/wire-identity.ts), and createCodexBrowserModel() with no argument uses it, so browser-side code and the voice, workbench and example ui tests build and brand identities through the browser's own model; the explicit-context overload stays. Its packed declarations lose CodexTransport's replaceIdentity and respell SessionResponsePayloads, which the migration table records (owner decision 22)."
+      "value": "Its npm build bundles codex-app-server, process, timing and diagnostics, which are MIT like it; every other workspace package is BUSL and stays out of it. Archboard and the example reach it only through the entries an outside host uses. TASK-653.11: the wire identity context lives in the shared browser area (shared/browser/schemas/wire-identity.ts), and createCodexBrowserModel() with no argument uses it, so browser-side code and the voice, workbench and example ui tests build and brand identities through the browser's own model; the explicit-context overload stays. Its packed declarations lose CodexTransport's replaceIdentity and respell SessionResponsePayloads, which the migration table records (owner decision 22). TASK-653.12 (ADR 0090): four entries, ten runtime names. ./server: createVoiceAgent, parseTabSessionId, composeRoleInstructions, createTextUserInput, additionalContextPolicy. ./browser: mountVoice, createVoiceClient, createSocketConversation. ./react: useVoiceState. ./contract: createCodexBrowserModel with the contract types. ./controllers, ./runtime, ./schemas and ./realtime are gone, and no source imports ws. The wait graph, the timeline projection, the speaking predicate and the JSON parse helper moved to workbench."
     },
     {
       "type": "assign",
@@ -3377,6 +3732,18 @@
       "placement": {
         "holder": "vKEsyHFk/6E6hL0Zk#Wcng1nxx"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#xssnUgIk",
+      "field": "description",
+      "value": "Its page makes one createVoiceClient({ url }), which connects by itself and lets go of its socket and microphone while the page is hidden, and reads it through useVoiceState(client); its own page-lifecycle client and the provider are gone (TASK-653.12)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#qbAR52W1",
+      "field": "label",
+      "value": "createVoiceClient, read through useVoiceState(client)"
     },
     {
       "type": "assign",
@@ -3572,12 +3939,40 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#bnZdIxyK",
+      "field": "responsibility",
+      "value": "Reads voice readiness, status and whether the voice is audible for the recorder"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#5y8UuVhP",
+      "field": "label",
+      "value": "live and audible yet; stop"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#5y8UuVhP",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
+        "symbol": "readVoice"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/history"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#k9hxdLjq",
+      "field": "description",
+      "value": "It owns the browser connections, the tab store and their lease ledger itself and hands the agent its connections, tabs and checkout admission. The routing and ledger extensions are gone: browserLeaseLedger, browserCheckoutOf, installBrowserSessions and the onBrowserGateway override (TASK-653.12)."
     },
     {
       "type": "assign",
@@ -3612,11 +4007,108 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+      "field": "responsibility",
+      "value": "Reads a pane's tab and its shown conversation from the installed voice agent's tab projection"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+      "field": "description",
+      "value": "Pane registration notes no tab here: the agent notes a socket's tab when it connects, and forgets it when the connection closes (TASK-653.12)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "field": "label",
+      "value": "the browser tabs as the agent's sockets name them"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
+        "symbol": "requireTabs"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/Oi6SBIAM#HO533F7P",
+      "field": "to",
+      "value": "vKEsyHFk#kucowX1d"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/archive"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+      "field": "responsibility",
+      "value": "The host's one entry: createVoiceAgent turns its directory, checkouts, origins, instructions and extensions into one workbench, connects each browser socket through agent.connect and announces changes"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+      "field": "description",
+      "value": "start, status and shutdown come from the workbench it creates. agent.connect(socket, route) registers a socket at once, before Codex is ready and across Codex restarts, from any WebSocket library on Bun. A { request } route is admitted from its upgrade: a loopback Host with an exact same-origin match, or a listed origin, else 1008 before registration; an upgrade without an Origin header stays admitted. A route that names its identity is the host's to admit. receive(frame) returns false at once for a frame that is not a voice request, and answers the three refusals in their envelope, wording and order; close() releases the connection. bunHandlers({ path }) is a thin Bun.serve adapter over connect; the node:http attach, the socket factories and the lease ledger are gone. tabs is a read-only projection of the browser tabs, and voiceStartTrace reads the last voice starts for a host's route. The role profiles are composed here from the host's instructions, tools and identity, so every thread Codex is given carries the host's names and no other."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#8FV2EPia",
+      "kind": "relationship",
+      "value": {
+        "order": 910,
+        "kind": "call",
+        "label": "the last voice starts, as voiceStartTrace",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
+          "symbol": "voiceStartAttempts"
+        },
+        "id": "vKEsyHFk#8FV2EPia",
+        "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8FV2EPia",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#cWzsQnxC",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
+        "symbol": "surfaceOf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
+      "field": "label",
+      "value": "register each socket; its voice frames; release on close"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/connect.ts",
+        "symbol": "createVoiceConnector"
       }
     },
     {
@@ -3647,6 +4139,12 @@
         "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-blobs.ts",
         "symbol": "git"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#Lrq90XiL",
+      "field": "description",
+      "value": "createVoiceClient({ url }) owns the socket, the tab session id, the transport and media owners and the state a page draws, and connects by itself; an uncertain delivery stays visible as a failure. It always retries, releases the socket and the microphone on pagehide and opens again on pageshow. Each approval is bound to the command intent of the server state that delivered it, and an answer to an approval from before the current socket is refused here. It keeps one transport for the page's life and its own reconnect ordering (ADR 0090). ./react reads it through useVoiceState. A host that owns its sockets, as Archboard does, builds on createSocketConversation instead."
     },
     {
       "type": "assign",
@@ -4123,6 +4621,18 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+      "field": "responsibility",
+      "value": "The voice client a page builds on: its contract, the client, and one React hook useVoiceState(client, select?) over it"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+      "field": "description",
+      "value": "The provider and useVoiceClient are gone: a page passes its client to the hook."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
       "field": "binding",
       "value": {
@@ -4237,6 +4747,12 @@
         "path": "packages/model-store/src/runtime/canonical/edit/operations/prepare.ts",
         "symbol": "requireUnchanged"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#yt8fa9w3",
+      "field": "description",
+      "value": "The host narrative adapter can prepare synchronously or asynchronously. A cancelled or replaced start cannot create an offer after preparation. The existing voice owner keeps lifecycle, cleanup, and command authority. The start trace is read through voiceStartAttempts, which the agent hands out as voiceStartTrace; the host mounts its own route."
     },
     {
       "type": "assign",
@@ -4503,6 +5019,12 @@
         "path": "packages/model-store/src/runtime/canonical/installation/store/model-state.ts",
         "symbol": "privateArchivePath"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#hO56iL2W",
+      "field": "description",
+      "value": "The voice package owns the controllers and makes them in one operation. The socket conversation makes a fresh set for each socket generation, keyed on its transport, and hands them out with the hosted conversation; the application adds the caches the cards read."
     },
     {
       "type": "assign",
@@ -5840,6 +6362,48 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#rG1FeuCg",
+      "field": "responsibility",
+      "value": "Owns the live voice of a tab: start, stop, level, whether it is audible, and mute"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#DTRtWKab",
+      "field": "label",
+      "value": "the pane's hosted conversation: agent state, capabilities"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#DTRtWKab",
+      "field": "to",
+      "value": "vKEsyHFk#o0NC4h92"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#x1I9VaDn",
+      "field": "responsibility",
+      "value": "What the dock does: send, Talk and narrate over the focused pane's hosted conversation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#x1I9VaDn",
+      "field": "description",
+      "value": "The running turn is read from the timeline's own turns, not from the voice package's timeline projection."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "field": "label",
+      "value": "the focused pane's hosted conversation and controllers"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "field": "to",
+      "value": "vKEsyHFk#o0NC4h92"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#tZ5yz21o",
       "field": "binding",
       "value": {
@@ -6010,6 +6574,31 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#m6RzSGdL",
+      "kind": "relationship",
+      "value": {
+        "order": 908,
+        "kind": "call",
+        "label": "install the agent it creates; uninstall it at stop",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+          "symbol": "installVoiceAgent"
+        },
+        "id": "vKEsyHFk#m6RzSGdL",
+        "to": "vKEsyHFk#kucowX1d"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#m6RzSGdL",
+      "placement": {
+        "holder": "vKEsyHFk#OY4JPr8G"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#hJaOWiEr",
       "kind": "relationship",
       "value": {
@@ -6099,9 +6688,59 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "field": "label",
+      "value": "attach each registered socket; its generation's conversation"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/pane-session/clients/pane-workbench-attach.ts",
+        "symbol": "attachWorkbenchOwner"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "field": "to",
+      "value": "vKEsyHFk#o0NC4h92"
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#EAT8ges2",
       "field": "to",
       "value": "vKEsyHFk#KnU5WSI6"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#3dIPCHbC",
+      "field": "responsibility",
+      "value": "Holds the page's agent setup, its voice session, and the focused pane's hosted conversation with its controllers"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "field": "label",
+      "value": "the focused pane's hosted conversation and its controllers"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/state/workbench-owners.ts",
+        "symbol": "createWorkbenchOwners"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "field": "to",
+      "value": "vKEsyHFk#o0NC4h92"
     },
     {
       "type": "assign",
@@ -6529,6 +7168,65 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
         "symbol": "stopWorkbench"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#gBoH41j4",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+        "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+        "vKEsyHFk/9ncuT5DP#hCKEBd5f",
+        "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+        "vKEsyHFk/9ncuT5DP#iay14AUl",
+        "vKEsyHFk/9ncuT5DP#QGVPyMwG",
+        "vKEsyHFk/9ncuT5DP#YxDrzJtI",
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#EPxYqowm",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#EPxYqowm",
+      "field": "label",
+      "value": "a socket closes; its connection releases its tab"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#EPxYqowm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/connect.ts",
+        "symbol": "createVoiceConnector"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#r9HIC4rX",
+      "field": "to",
+      "value": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#r9HIC4rX",
+      "field": "label",
+      "value": "a new socket connects and names its tab"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#r9HIC4rX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/connect.ts",
+        "symbol": "createVoiceConnector"
       }
     },
     {
@@ -7085,6 +7783,22 @@
         "path": "packages/workbench/src/server/panes/services/registry.ts",
         "symbol": "sendToEveryClient"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#SiHTZh57",
+      "field": "label",
+      "value": "is the voice live, and is it audible"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#SiHTZh57",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
+        "symbol": "readVoice"
+      }
     }
   ],
   "retiredIds": [
@@ -7113,6 +7827,12 @@
     "vKEsyHFk#N9jW1gq2",
     "vKEsyHFk#PLVZZKxC",
     "vKEsyHFk#gJg0IMG5",
-    "vKEsyHFk#w44DwfpV"
+    "vKEsyHFk#w44DwfpV",
+    "vKEsyHFk/6E6hL0Zk#7plLLcKh",
+    "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
+    "vKEsyHFk/9ncuT5DP#UE6yrRV7",
+    "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+    "vKEsyHFk#CDYvZWoX",
+    "vKEsyHFk/9ncuT5DP#tef70baL"
   ]
 }
