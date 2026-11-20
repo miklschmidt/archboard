@@ -133,4 +133,13 @@ there. CI fails when `bun install` changes the committed `bun.lock`. The flake's
 output runs `bun run pack:voice` and packs the result beside the other
 packages.
 
+The voice package's entries, their runtime names and its published types are
+its public contract. `tests/system/process-contracts/voice-package.test.ts`
+lists each entry's runtime names, so a change of them fails until the list
+changes too. A pull request that removes or changes one has `!` in its title
+and a `BREAKING CHANGE:` footer in its body that names each removal and its
+replacement, because the repository squash-merges, and release-please reads
+only the title and body of the commit that lands on `main`. The package
+README's migration table carries the same rows.
+
 The repository stores no npm token.
