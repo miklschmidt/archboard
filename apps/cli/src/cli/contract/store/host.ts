@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
 import type { PendingArtifact } from "#cli/contract/protocol/contract.ts";
 
 /**

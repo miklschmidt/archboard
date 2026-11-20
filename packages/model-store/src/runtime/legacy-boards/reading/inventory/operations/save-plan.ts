@@ -6,7 +6,7 @@ import {
 import { mintId } from "@archboard/model-rules";
 import { legacyAuthorityProblem } from "#runtime/legacy-boards/reading/inventory/store/legacy-authority.ts";
 import { join } from "node:path";
-import { writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { checkDoing } from "#runtime/store/doing.ts";
 import { withLease, ModelHeldError } from "#runtime/lock/store/lock.ts";

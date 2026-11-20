@@ -5,8 +5,8 @@ import path from "node:path";
 import { mkdirSync, readlinkSync, rmSync, symlinkSync } from "node:fs";
 
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
-import { installation } from "@archboard/workspace/installation";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { installation } from "@archboard/machine/installation";
+import { stateDir } from "@archboard/machine/state-dir";
 import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 import type { ArchboardWorkbenchServer } from "#server/generation/protocol/archboard-host.ts";
 

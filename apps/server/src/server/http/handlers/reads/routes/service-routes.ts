@@ -2,7 +2,7 @@ import path from "path";
 import { recordError } from "@archboard/telemetry/record";
 import type { Express, NextFunction, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { serverCodeState } from "@archboard/server-lifecycle/server-process";
 import { mutationAdmission } from "#server/wiring/server-owners.ts";
 import { serverPhase } from "#server/start-stop/lifecycle/server-startup.ts";

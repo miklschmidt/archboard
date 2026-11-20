@@ -20,7 +20,7 @@
 
 import fs from "fs";
 import path from "path";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 // When this server process loaded its module graph. A guarded restart moves it
 // forward; editing source in a running process does not.

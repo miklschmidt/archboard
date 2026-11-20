@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { z } from "zod";
 import { renderCliContractArtifacts } from "#cli/commands/contract-artifacts/operations/render.ts";
 import { cliContractRegistry } from "#cli/routing/operations/run.ts";

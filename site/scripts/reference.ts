@@ -24,7 +24,7 @@ import {
 import { ENVIRONMENT, EXIT_CODES } from "../../apps/cli/src/cli/routing/protocol/conventions.ts";
 import { CliUsageError } from "../../apps/cli/src/cli/contract/protocol/contract.ts";
 import { FIRST_NATIVE_TYPESCRIPT } from "../../packages/code-intel/src/runtime/language-servers/operations/server-command.ts";
-import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
+import { RELEASE_PORT } from "../../packages/machine/src/runtime/services/source-checkout.ts";
 import { summaryLimits } from "../../actions/check/summary.ts";
 import { ANNOTATION_LIMIT_PER_LEVEL } from "../../actions/shared/workflow-commands.ts";
 

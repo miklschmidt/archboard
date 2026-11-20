@@ -3,7 +3,7 @@
 
 import net from "net";
 import { logger } from "@archboard/diagnostics/logger";
-import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
+import { defaultArchboardUrl } from "@archboard/machine/source-checkout";
 
 // The CLI names the port when it starts a server. Started by hand, a server
 // takes the port that the CLI of its installation expects: a checkout's own, or the release

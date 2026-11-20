@@ -1,4 +1,4 @@
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 /**
  * The version of the installation that runs: the package.json of a checkout, or the marker of a

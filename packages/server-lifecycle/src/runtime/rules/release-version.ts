@@ -5,7 +5,7 @@
 // release. A server of another version still answers every command, so a difference is a
 // warning that names the remedy and not a refusal.
 
-import type { installation } from "@archboard/workspace/installation";
+import type { installation } from "@archboard/machine/installation";
 
 type Installation = ReturnType<typeof installation>;
 

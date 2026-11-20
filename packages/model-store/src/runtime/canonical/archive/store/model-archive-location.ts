@@ -4,7 +4,7 @@ import { existsSync, lstatSync, mkdirSync, realpathSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { git } from "@archboard/process/git";
 import { repoRootOf } from "@archboard/workspace/checkouts";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 import type { ArchitectureModelRead } from "@archboard/model-contract";
 
 const ARCHIVE_REF = "refs/heads/archboard-history";

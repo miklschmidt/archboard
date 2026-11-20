@@ -1,6 +1,6 @@
 import { captureArchitecture } from "#cli/commands/model/operations/rasterize.ts";
 import { embedStanding, fixLine } from "#cli/commands/vault/rules/embed-state.ts";
-import { writeFileAtomic } from "@archboard/workspace/atomic-write";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
 import { checkoutsReadFrom, repoRootOf } from "@archboard/workspace/checkouts";
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";

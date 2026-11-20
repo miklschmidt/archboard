@@ -6,7 +6,7 @@
 // to build stays there. A release builds nothing: it stops the server and starts it
 // again, which is how a server runs the version that an install put on disk (ADR 0076).
 
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { bundleToServe } from "#runtime/services/frontend-bundle.ts";
 import {
 	type EnsureResult,

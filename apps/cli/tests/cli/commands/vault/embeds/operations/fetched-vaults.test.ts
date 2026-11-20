@@ -10,7 +10,7 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 import { fetchedVault, remoteOf } from "#cli/commands/vault/embeds/operations/fetched-vaults.ts";
 
 test("an identity of a host and a path is fetched over HTTPS and cached below the state directory", () => {

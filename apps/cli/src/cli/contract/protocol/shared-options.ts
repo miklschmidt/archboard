@@ -7,7 +7,7 @@
 // those, and one it does not read is refused instead of accepted in silence.
 
 import type { OptionParameter, SharedOptionKey } from "#cli/contract/protocol/contract.ts";
-import { defaultArchboardUrl } from "@archboard/workspace/source-checkout";
+import { defaultArchboardUrl } from "@archboard/machine/source-checkout";
 
 /** One shared option, as help and the parser both describe it. */
 type SharedOption = Omit<OptionParameter, "kind" | "key" | "route" | "hidden"> & {

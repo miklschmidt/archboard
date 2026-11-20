@@ -128,6 +128,10 @@
       "name": "@archboard/diagnostics",
       "version": "0.0.0",
     },
+    "packages/machine": {
+      "name": "@archboard/machine",
+      "version": "0.0.0",
+    },
     "packages/model-contract": {
       "name": "@archboard/model-contract",
       "version": "0.0.0",
@@ -210,6 +214,8 @@
     "@archboard/codex-realtime-voice": ["@archboard/codex-realtime-voice@workspace:packages/codex-realtime-voice"],
 
     "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
+
+    "@archboard/machine": ["@archboard/machine@workspace:packages/machine"],
 
     "@archboard/model-contract": ["@archboard/model-contract@workspace:packages/model-contract"],
 

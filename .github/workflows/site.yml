@@ -58,6 +58,7 @@ on:
       - packages/timing/**
       # The reference reads the CLI's contracts and the facts that these packages hold.
       - packages/code-intel/**
+      - packages/machine/**
       - packages/workspace/**
       - apps/cli/**
       - actions/**
@@ -90,6 +91,7 @@ on:
       - packages/timing/**
       # The reference reads the CLI's contracts and the facts that these packages hold.
       - packages/code-intel/**
+      - packages/machine/**
       - packages/workspace/**
       - apps/cli/**
       - actions/**

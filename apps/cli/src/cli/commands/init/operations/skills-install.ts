@@ -14,7 +14,7 @@ import {
 	skillsCommand,
 	type Runner,
 } from "#cli/commands/init/rules/setup-choices.ts";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 /** What the skills step did: the runner that installed the skills, or why none did. */
 type SkillsInstall =
