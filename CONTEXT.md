@@ -295,6 +295,11 @@ _Avoid_: scene (that is what the renderer core answers), board, workspace, sessi
 **Left column**:
 The column that lists where to go: Find, the repository switcher, the keys that open the `History` and `Measures` dialogs, one list with the sections `Modules`, `Flows` and `Walkthroughs`, and Talk.
 
+**Agent surfaces**:
+Everything of the agent that the browser draws over a page's panes: the agent dock, the conversation panel, the voice box over a pane, the Talk key of a presentation and its Narrate key.
+One root holds the agent's state for every pane, and the shell places the surfaces and passes only its own facts, such as which pane has focus.
+_Avoid_: agent shell (the shell is the web app), workbench (that is the server's side of the agent), agent UI
+
 **Measures**:
 The dialog that checks the reading on screen against its code and its history. It shows where the model and its code disagree, one finding at a time. It also lists every module of the model on show in two tables, sorted by one count at a time. One table holds its interface measures. The other holds its commits, the modules it changes with and its unjoined pairs.
 The user can read the most first or the fewest first, and can show all modules, those with parts or those with no parts.
