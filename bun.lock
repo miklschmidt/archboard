@@ -100,6 +100,10 @@
       "name": "@archboard-app/workbench-example",
       "version": "0.0.0",
     },
+    "packages/agent-surfaces": {
+      "name": "@archboard/agent-surfaces",
+      "version": "0.0.0",
+    },
     "packages/code-binding": {
       "name": "@archboard/code-binding",
       "version": "0.0.0",
@@ -192,6 +196,8 @@
     "@archboard-app/web": ["@archboard-app/web@workspace:apps/web"],
 
     "@archboard-app/workbench-example": ["@archboard-app/workbench-example@workspace:apps/workbench-example"],
+
+    "@archboard/agent-surfaces": ["@archboard/agent-surfaces@workspace:packages/agent-surfaces"],
 
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
 

@@ -561,7 +561,7 @@ export default defineConfig({
 						},
 						{
 							name: "agent",
-							test: /packages[\\/](?:workbench|codex-realtime-voice)[\\/]/,
+							test: /packages[\\/](?:agent-surfaces|workbench|codex-realtime-voice)[\\/]/,
 							entriesAware: true,
 						},
 					],

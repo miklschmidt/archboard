@@ -4,7 +4,7 @@ import { useModelArrival } from "#ui/architecture-drawing/model-reader/hooks/use
 import { useCallback, useEffect, useMemo, useState, type ComponentProps, type JSX } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { AgentPane } from "@archboard/workbench/agent-surfaces";
+import { AgentPane } from "@archboard/agent-surfaces";
 import { RecordedModelStage } from "#ui/walkthroughs/recording/components/RecordedModelStage.tsx";
 import type { Model } from "@archboard/model-rules";
 import { ModelExplanationHost } from "#ui/application/components/ModelExplanationHost.tsx";

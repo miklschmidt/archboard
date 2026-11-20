@@ -3,7 +3,7 @@
 // said. Everything is read from the agent the page already has; nothing here
 // holds state of its own.
 
-import type { AgentVoice } from "@archboard/workbench/agent-surfaces";
+import type { AgentVoice } from "@archboard/agent-surfaces";
 
 import type { PaceObservation } from "#ui/walkthroughs/recording/rules/pacing.ts";
 

@@ -4,7 +4,7 @@
 
 import type { JSX } from "react";
 
-import { NarrateKey } from "@archboard/workbench/agent-surfaces";
+import { NarrateKey } from "@archboard/agent-surfaces";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 
 /** Inputs for the key that has the walkthrough narrated. */

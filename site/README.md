@@ -73,8 +73,8 @@ Every diagram on the page is real output of the Archboard renderer, in the dark 
   reading stands in without script or where no painter draws. The caption links to that SVG at
   full size, so readers can inspect the diagram and legend on a narrow screen.
 - The fonts come from `packages/renderer/assets/fonts/`, the same files the renderer uses.
-- The voice orb is the product's own code, imported from `packages/workbench/src/ui/workbench-client/orb/clients/`
-  and `packages/workbench/src/ui/workbench-client/orb/rules/`. The site points `@archboard/timing` at
+- The voice orb is the product's own code, imported from `packages/agent-surfaces/src/ui/workbench-client/orb/clients/`
+  and `packages/agent-surfaces/src/ui/workbench-client/orb/rules/`. The site points `@archboard/timing` at
   `packages/timing` in `astro.config.mjs` and `tsconfig.json`, because it does not install the
   repository's workspaces.
 - The social card is `docs/assets/archboard-social-card.jpg`.

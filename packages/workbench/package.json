@@ -2,7 +2,7 @@
 	"name": "@archboard/workbench",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Archboard integration for the reusable Codex agent workbench: board context, vault admission, domain tools, narration, the browser shell, and the panes: their registry, how a pane is addressed, laid out and reported, the routes and pane socket the server mounts, the agent activity and checkout registry every pane follows, the messages it sends a pane, and the workbench's place in the server's start and stop.",
+	"description": "Archboard integration for the reusable Codex agent workbench on the server: board context, vault admission, domain tools, narration, and the panes: their registry, how a pane is addressed, laid out and reported, the routes and pane socket the server mounts, the agent activity and checkout registry every pane follows, the messages it sends a pane, and the workbench's place in the server's start and stop.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
@@ -11,7 +11,6 @@
 	},
 	"exports": {
 		"./browser-contract": "./src/shared/api/browser-contract.ts",
-		"./server": "./src/server/api/server.ts",
-		"./agent-surfaces": "./src/ui/api/agent-surfaces.ts"
+		"./server": "./src/server/api/server.ts"
 	}
 }

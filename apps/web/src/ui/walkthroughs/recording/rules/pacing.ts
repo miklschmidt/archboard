@@ -14,7 +14,7 @@
 
 import { deadline, durationMs } from "@archboard/timing";
 import type { BrowserSnapshot } from "@archboard/codex-realtime-voice/contract";
-import type { VoiceStanding } from "@archboard/workbench/agent-surfaces";
+import type { VoiceStanding } from "@archboard/agent-surfaces";
 import type { SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 
 /**

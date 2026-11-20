@@ -5,7 +5,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 
-import { useAgentVoice } from "@archboard/workbench/agent-surfaces";
+import { useAgentVoice } from "@archboard/agent-surfaces";
 
 import type { Narration } from "#ui/application/hooks/use-narration.ts";
 import type { PaneRecording } from "#ui/application/hooks/use-pane-views.ts";

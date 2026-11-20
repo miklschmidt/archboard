@@ -44,10 +44,11 @@ const LAYERS: Record<string, number> = {
 	"codex-realtime-voice": 8,
 	workbench: 9,
 	skills: 9,
-	"apps/cli": 10,
-	"apps/server": 10,
-	"apps/web": 10,
-	"apps/workbench-example": 10,
+	"agent-surfaces": 10,
+	"apps/cli": 11,
+	"apps/server": 11,
+	"apps/web": 11,
+	"apps/workbench-example": 11,
 };
 
 interface Edge {
@@ -191,14 +192,14 @@ describe("the package graph", () => {
 		expect(owners.filter(({ id }) => LAYERS[id] === undefined).map(({ id }) => id)).toEqual([]);
 	});
 
-	test("the apps share layer 10 above every package, and the graph does not need them to exist", () => {
+	test("the apps share layer 11 above every package, and the graph does not need them to exist", () => {
 		const appLayers = Object.entries(LAYERS).filter(([id]) => id.startsWith("apps/"));
 		const packageLayers = Object.entries(LAYERS).filter(([id]) => !id.startsWith("apps/"));
 		expect(new Set(appLayers.map(([id]) => id))).toEqual(
 			new Set(appDirectories().map(({ id }) => id)),
 		);
-		expect(new Set(appLayers.map(([, layer]) => layer))).toEqual(new Set([10]));
-		expect(Math.max(...packageLayers.map(([, layer]) => layer))).toBeLessThan(10);
+		expect(new Set(appLayers.map(([, layer]) => layer))).toEqual(new Set([11]));
+		expect(Math.max(...packageLayers.map(([, layer]) => layer))).toBeLessThan(11);
 		expect(appDirectories(path.join(appsRoot, "missing"))).toEqual([]);
 		expect(readEdges([])).toEqual([]);
 	});
@@ -262,7 +263,7 @@ describe("the package graph", () => {
 			LAYERS,
 		);
 		expect(bad).toHaveLength(3);
-		expect(bad[0]).toContain("layer 9 (workbench) takes in layer 10 (apps/web)");
+		expect(bad[0]).toContain("layer 9 (workbench) takes in layer 11 (apps/web)");
 
 		const exported = { "model-contract": [".", "./ids"] };
 		const reached = [

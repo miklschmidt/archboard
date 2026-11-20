@@ -23,7 +23,7 @@ import { readingOf } from "#ui/application/rules/pane-reading.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { CanvasStage } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";
 import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
-import { RecordedVoice, RecordedVoiceBox } from "@archboard/workbench/agent-surfaces";
+import { RecordedVoice, RecordedVoiceBox } from "@archboard/agent-surfaces";
 import { RecordingStage } from "#ui/walkthroughs/recording/components/RecordingStage.tsx";
 import type { TalkPlayback } from "#ui/walkthroughs/replay/state/talk-playback.ts";
 

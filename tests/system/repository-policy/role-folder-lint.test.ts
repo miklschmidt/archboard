@@ -62,7 +62,7 @@ describe("ui-concern-placement reads the one role folder of a path", () => {
 });
 
 describe("assistant-ui-imports finds its owners above the role folder", () => {
-	const UI = "packages/workbench/src/ui";
+	const UI = "packages/agent-surfaces/src/ui";
 	const ROOT_IMPORT =
 		'import { ThreadPrimitive } from "@assistant-ui/react";\nexport const Root = ThreadPrimitive.Root;\n';
 	const MARKDOWN =
@@ -73,7 +73,8 @@ describe("assistant-ui-imports finds its owners above the role folder", () => {
 		[`${UI}/workbench-client/thread/components/Thread.tsx`]: ROOT_IMPORT,
 		[`${UI}/workbench-client/assistant-runtime/hooks/use-runtime.ts`]: ROOT_IMPORT,
 		[`${UI}/workbench-client/thread/components/MarkdownText.tsx`]: MARKDOWN,
-		"packages/workbench/tests/ui/workbench-client/thread/components/thread.test.tsx": ROOT_IMPORT,
+		"packages/agent-surfaces/tests/ui/workbench-client/thread/components/thread.test.tsx":
+			ROOT_IMPORT,
 	};
 	const refused = {
 		// Another behavior.

@@ -29,7 +29,8 @@ const ADOPTERS: {
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
 	{ name: "server-lifecycle", areas: ["runtime"] },
-	{ name: "workbench", areas: ["shared", "runtime", "server", "ui"] },
+	{ name: "workbench", areas: ["shared", "runtime", "server"] },
+	{ name: "agent-surfaces", areas: ["ui"] },
 	{ name: "codex-realtime-voice", areas: ["shared", "runtime", "server", "ui"] },
 	{ name: "process", areas: ["runtime"] },
 ];

@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { durationMs } from "@archboard/timing";
 
-import { useAgentVoice, type VoiceStage } from "@archboard/workbench/agent-surfaces";
+import { useAgentVoice, type VoiceStage } from "@archboard/agent-surfaces";
 import { offerNarration } from "#ui/application/rules/narration-offer.ts";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
 

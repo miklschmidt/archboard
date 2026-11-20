@@ -68,7 +68,7 @@ import {
 	TalkControl,
 	useAgentPanel,
 	type OpenAnswerFile,
-} from "@archboard/workbench/agent-surfaces";
+} from "@archboard/agent-surfaces";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { NavigatorModeSwitch } from "#ui/application/components/NavigatorModeSwitch.tsx";
 import { useNavigatorMode } from "#ui/application/hooks/use-navigator-mode.ts";

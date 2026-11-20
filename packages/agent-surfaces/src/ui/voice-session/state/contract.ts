@@ -3,7 +3,7 @@
 // returns. The realtime module owns media and the state machine; this module
 // owns one binding, the guards around it, and the projection.
 
-import type { BrowserVoicePresentation } from "#shared/schemas/voice-presentation.ts";
+import type { BrowserVoicePresentation } from "@archboard/workbench/browser-contract";
 import type {
 	BrowserWorkbenchMediaOwner,
 	BrowserWorkbenchState,

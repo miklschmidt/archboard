@@ -1,12 +1,12 @@
 # Workbench thread: the conversation as a person reads it
 
 `Conversation.tsx` renders the agent's turns over the
-assistant-ui runtime that `packages/workbench/src/ui/workbench-client/assistant-runtime/components` provides: each prompt,
+assistant-ui runtime that `packages/agent-surfaces/src/ui/workbench-client/assistant-runtime/components` provides: each prompt,
 the work between prompts as rows that open to their evidence, the plan's
 progress, approvals and how the turn ended. A turn of the voice coordinator
 stands among the workhorse's turns with its own head and rule, and a workhorse
 turn that the coordinator delegated says so. The `thread/` and `assistant-runtime/` folders
-of `packages/workbench/src/ui/workbench-client` are the only owners of
+of `packages/agent-surfaces/src/ui/workbench-client` are the only owners of
 `@assistant-ui/react` imports (named, from the package root); the `thread/`
 folders are the only owner of `@assistant-ui/react-markdown`. The lint rule `archboard/assistant-ui-imports`
 enforces both.

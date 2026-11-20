@@ -31,7 +31,7 @@ import {
 	readVoice,
 	type RecordingSources,
 } from "#ui/walkthroughs/recording/rules/voice-sources.ts";
-import type { VoiceTranscript } from "@archboard/workbench/agent-surfaces";
+import type { VoiceTranscript } from "@archboard/agent-surfaces";
 
 /** The page's side of the recording contract, as it is published. */
 type RecordingPage = Parameters<typeof publishRecordingPage>[0];

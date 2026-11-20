@@ -4,7 +4,7 @@ The agent's surfaces in the shell. They all read one `AgentView` and act through
 `AgentActions` (`workbench-client/surfaces/state/contracts.ts`). The application composes both from the workbench
 owners. The thread link, composer, queue, approvals and the conversation they act on come from
 each pane's socket conversation of `@archboard/codex-realtime-voice/browser`. The runtime and the voice session
-(`voice-session/state`) are in `packages/workbench/src/ui`. The components under
+(`voice-session/state`) are in `packages/agent-surfaces/src/ui`. The components under
 `workbench-client/dock/components`, `workbench-client/panel/components` and `workbench-client/voice/components` draw them.
 
 - `workbench-client/dock/components/AgentDock.tsx`: the dock at the foot of the navigator. While voice is off it
@@ -13,7 +13,7 @@ each pane's socket conversation of `@archboard/codex-realtime-voice/browser`. Th
   state, the voice's own line, mute and subtitles. When the layout turns,
   `workbench-client/dock/hooks/use-dock-motion.ts` plays every part from its old place to its new one.
 - `workbench-client/panel/components/AgentPanel.tsx`: the conversation beside the navigator. It opens on request
-  only. It holds the assistant-ui thread (`packages/workbench/src/ui/workbench-client/thread/components`), which shows the
+  only. It holds the assistant-ui thread (`packages/agent-surfaces/src/ui/workbench-client/thread/components`), which shows the
   workhorse's turns and, marked as its own, the voice coordinator's. Before anybody signs
   in, it holds the sign-in instead. On request it shows the session's details. At its foot
   are `PendingWork`, which shows what the conversation does not hold yet, and `ApprovalCard`,

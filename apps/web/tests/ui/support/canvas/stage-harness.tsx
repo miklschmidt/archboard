@@ -9,7 +9,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useEffect, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { AgentRoot } from "@archboard/workbench/agent-surfaces";
+import { AgentRoot } from "@archboard/agent-surfaces";
 import {
 	type PaneChrome,
 	PaneChromeContext,

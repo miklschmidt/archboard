@@ -296,7 +296,7 @@ describe("the frame clock rule follows the model canvas and the subtitles", () =
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
 	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
 	// Fixture paths in the workbench's ui area, which the override names; no file loads them.
-	const WORKBENCH_UI = "packages/workbench/src/ui";
+	const WORKBENCH_UI = "packages/agent-surfaces/src/ui";
 	const canvas = [
 		// Behavior first (ADR 0075), the canvas is one folder of the architecture drawing.
 		"apps/web/src/ui/architecture-drawing/canvas/presentation/components/Stamp.tsx",
