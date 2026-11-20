@@ -2,7 +2,7 @@
 	"name": "@archboard/renderer",
 	"version": "0.0.0",
 	"private": true,
-	"description": "Hosts the renderer core in Bun and the browser, runs its layout workers and rasterizer, and supplies the shared stylesheet and fonts.",
+	"description": "Draws a reading with the renderer core in Bun and in the browser, hands a pane the finished marks and the shell's measures, builds the core, and supplies the shared stylesheet and fonts.",
 	"license": "BUSL-1.1",
 	"type": "module",
 	"imports": {
