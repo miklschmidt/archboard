@@ -451,6 +451,28 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#y39xN3Ne",
+      "field": "description",
+      "value": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the branch changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent in the model that the footprint read: the head's branch reading when the footprint read the vault at that ref, else the vault on disk. It selects each changed module it draws and each drawn module that holds one. Its queries live in its clients: branchFootprintQuery, sourceRefsQuery and mergeBaseQuery, each one historyQuery of Model queries with its key tail and its check of the answer (TASK-653.14)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#MTXzrty6",
+      "field": "label",
+      "value": "the footprint, the source refs and the merge base"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#MTXzrty6",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts",
+        "symbol": "historyQuery"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#zxEUtLI7",
       "field": "binding",
       "value": {
@@ -4425,6 +4447,12 @@
       "value": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.\n\nIt hands the pane's session the pane's socket conversation from the pane handles; it makes no socket owner or transport itself."
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#ponUuQbD",
+      "field": "to",
+      "value": "vKEsyHFk#dDVY1Iqe"
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#daoQ6MAE",
       "kind": "relationship",
@@ -4829,6 +4857,53 @@
       "subject": "vKEsyHFk#WUJMjQhq",
       "placement": {
         "holder": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#51X5gvya",
+      "field": "description",
+      "value": "Functions, classes with their public members, values and types each get a group. Each name shows its findings from the last code check, and a module with many names keeps its groups collapsed. Its query lives in its clients and reads the code check route's exports itself, cached under the vault's prefix from Model queries (TASK-653.14)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#NqQSFaBz",
+      "field": "label",
+      "value": "its cache key under the vault"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#NqQSFaBz",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports/clients/code-exports.ts",
+        "symbol": "vaultQueryKey"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#274OGnTu",
+      "kind": "relationship",
+      "value": {
+        "order": 910,
+        "kind": "http",
+        "label": "the selected module's export names and lines",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports/clients/code-exports.ts",
+          "symbol": "codeExportsQuery"
+        },
+        "id": "vKEsyHFk#274OGnTu",
+        "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#274OGnTu",
+      "placement": {
+        "holder": "vKEsyHFk#51X5gvya"
       }
     },
     {
@@ -6383,6 +6458,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+      "field": "description",
+      "value": "Picture identity follows its captured content. Canonical drawing reuses the picture cache while retained readers supply their original content through an explicit provider. It holds the model reader's drawing query, Reading preparation (TASK-653.14)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#7mTerd6Y",
       "field": "binding",
       "value": {
@@ -7225,6 +7306,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#TLCeNkdh",
+      "field": "description",
+      "value": "Reads one coherent canonical model and its selected state. Opening a module changes attention without copying architecture. Unmigrated vaults expose explicit migration guidance. Exact retained originals use their captured viewer. A branch reading is keyed by its ref, follows no live change, and offers no claims, code findings or Explain, because each of them reads the vault on disk. Its scene hooks draw a reading through Reading preparation in Picture supply, and its explanation state holds the invocation and action types that the reader and the host share (TASK-653.14)."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#YREYrbYW",
       "field": "binding",
       "value": {
@@ -7358,6 +7445,12 @@
         "path": "packages/model-store/src/runtime/canonical/edit/operations/claims.ts",
         "symbol": "deadline"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+      "field": "responsibility",
+      "value": "Shows recursive modules, interfaces, connection evidence, and exact reading history, and holds the queries of locality, publication, source lines and walkthroughs (TASK-653.14)"
     },
     {
       "type": "assign",
@@ -7647,6 +7740,78 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#YLoD5SNo",
+      "field": "description",
+      "value": "Owns only dismissal and result presentation. The backend identifies the latest action in the tab. Toolbar, context menu, keyboard, typed requests, and voice use one backend action. The existing query cache holds result snapshots. The answer names its captured model and state. Progress, unavailable agents, cancellation, failure, and exact captured retry remain visible. Answers become architecture only through an explicit later agent write. It reads and controls the answer through Explanation requests (TASK-653.14)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#RaEm0Enu",
+      "field": "to",
+      "value": "vKEsyHFk#dDVY1Iqe"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#RaEm0Enu",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
+        "symbol": "explanationRequest"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#dDVY1Iqe",
+      "kind": "module",
+      "value": {
+        "order": 64100,
+        "name": "Explanation requests",
+        "kind": "function",
+        "responsibility": "Reads a tab's latest temporary answer and sends each explanation action through the one action route",
+        "description": "explanationKey(tab), explanationQuery(vault, tab) and explanationRequest(vault, input, signal?), which moved from Model queries to the application that shows the answer (TASK-653.14). One query per browser tab outlives repository navigation.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/application/clients/explanations.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#dDVY1Iqe"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#dDVY1Iqe",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#HggZR41l"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#LD7AScwW",
+      "kind": "relationship",
+      "value": {
+        "order": 64200,
+        "kind": "http",
+        "label": "the tab's latest answer, and each action on it",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/application/clients/explanations.ts",
+          "symbol": "explanationRequest"
+        },
+        "id": "vKEsyHFk#LD7AScwW",
+        "to": "vKEsyHFk/HBlhIeSD#QboPNrzG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#LD7AScwW",
+      "placement": {
+        "holder": "vKEsyHFk#dDVY1Iqe"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/0T9enjhi#llmZ5fau",
       "field": "binding",
       "value": {
@@ -7813,6 +7978,18 @@
       }
     },
     {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#r5MuZktA",
+      "field": "description",
+      "value": "Preview playback uses the same capture, including exact original state and checkpoint. A bookmark does not replace the narrative definition or its captured target. It reads its playback target through Walkthrough query (TASK-653.14)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#tEO0oHDD",
+      "field": "to",
+      "value": "vKEsyHFk#DGjSdYTW"
+    },
+    {
       "type": "add",
       "subject": "vKEsyHFk#bEaZPJ6O",
       "kind": "relationship",
@@ -7836,6 +8013,18 @@
       "placement": {
         "holder": "vKEsyHFk#iPnxvJWp"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tQ2B3iEF",
+      "field": "description",
+      "value": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why. What a module exposes shows Model and Code columns side by side, each sortable, and code findings join the findings list. A language without its server says which server it needs and offers Fix with Codex, which starts the setup in Talk. A fourth view, What this branch changed, holds the branch footprint. That read is Locality query (TASK-653.14)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#w8kCmXJj",
+      "field": "to",
+      "value": "vKEsyHFk#HjyF6Ilp"
     },
     {
       "type": "assign",
@@ -9306,11 +9495,112 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#guvtYApo",
+      "field": "responsibility",
+      "value": "A model's readings, records, claims, checkpoints and modules as cached queries, the one query of a history analysis, the vault's query keys and its live feed"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#guvtYApo",
+      "field": "description",
+      "value": "TASK-653.14: 13 names. architectureModelQuery, architectureRecordQuery, architectureSummaryQuery, architectureClaimsQuery, architectureCheckpointsQuery, architectureModuleQuery, retainedModuleQuery, readModel, historyQuery, ArchitectureReadError, vaultQueryKey, invalidateModelQueries(client, vault?), which absorbs invalidateVaultQueries, and architectureFeed. The key table, readReply and createFeedSocket are private; readReply reads each model reply through model-contract's reply reader. historyQuery(vault, request, { key, accept }) takes a request typed from code-intel's history request schema and spells its query string in field order, so no caller builds one. It owns the route, the refusal as ArchitectureReadError, the wrong-analysis sentence, the freshness options and the read without a signal; each caller keeps its key tail and checks or narrows the answer in accept, inside the read. vaultQueryKey puts a behavior's own read under the vault's prefix, so invalidateModelQueries reads it again. Every other query lives with the behavior that reads it: locality, publication, source lines and walkthroughs in parts of Model reading; the footprint, the source refs and the merge base in Branch footprint; exports in Code exports; explanations in Explanation requests; drawing in Reading preparation."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tLRnKy0B",
+      "field": "label",
+      "value": "one history analysis, from locality to the merge base"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tLRnKy0B",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/queries.ts",
+        "symbol": "historyQuery"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#65P5jbnZ",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#65P5jbnZ",
+      "field": "description",
+      "value": "modelDrawingQuery and retryFailedDrawings. It moved from Model access to Picture supply with the drawing it prepares (TASK-653.14); the model reader's scene hooks and its stage call it."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#65P5jbnZ",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#yJNjYLh1"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#f0RC9khM",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts",
+        "symbol": "browserPictureStorage"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#uykc1ukm",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts",
+        "symbol": "prepareContentHere"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#P9dwhB8m",
       "field": "binding",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical/installation/news/store/model-news.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#p0EDMxTr",
+      "field": "description",
+      "value": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording. It reads a vault's resources again through invalidateModelQueries, and retries failed drawings through Reading preparation (TASK-653.14)."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#lyU6KWmI",
+      "kind": "relationship",
+      "value": {
+        "order": 69100,
+        "kind": "call",
+        "label": "retry the drawings that failed",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
+          "symbol": "retryFailedDrawings"
+        },
+        "id": "vKEsyHFk#lyU6KWmI",
+        "to": "vKEsyHFk#65P5jbnZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#lyU6KWmI",
+      "placement": {
+        "holder": "vKEsyHFk#p0EDMxTr"
       }
     },
     {
@@ -9829,6 +10119,201 @@
       "subject": "vKEsyHFk#Yav1RSmc",
       "placement": {
         "holder": "vKEsyHFk#nT2UAqsi"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#HjyF6Ilp",
+      "kind": "module",
+      "value": {
+        "order": 1003900,
+        "name": "Locality query",
+        "kind": "function",
+        "responsibility": "The one locality read of a revision, which Measures, a selection and Changes with share",
+        "description": "modelHistoryQuery moved from Model queries to the reading that reads it (TASK-653.14). It is one historyQuery of Model queries, and it keeps the answer only when the answer reads the model on screen.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/history.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#HjyF6Ilp",
+        "formerNames": [
+          "Reading queries"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#HjyF6Ilp",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#kWrbB2T3",
+      "kind": "relationship",
+      "value": {
+        "order": 1004100,
+        "kind": "call",
+        "label": "a revision's locality, through the one history query",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/history.ts",
+          "symbol": "historyQuery"
+        },
+        "id": "vKEsyHFk#kWrbB2T3",
+        "to": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#kWrbB2T3",
+      "placement": {
+        "holder": "vKEsyHFk#HjyF6Ilp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#13Xhxdhs",
+      "kind": "module",
+      "value": {
+        "order": 1003910,
+        "name": "Publication queries",
+        "kind": "function",
+        "responsibility": "Reads a vault's archive publication, and publishes or fetches it",
+        "description": "architecturePublicationQuery and changeArchitecturePublication moved from Model queries to the reading that shows publication (TASK-653.14). The read is cached under the vault's prefix from Model queries.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/publication.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#13Xhxdhs"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#13Xhxdhs",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#8MLqwolD",
+      "kind": "relationship",
+      "value": {
+        "order": 41000,
+        "kind": "http",
+        "label": "read the publication, and publish or fetch",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/publication.ts",
+          "symbol": "architecturePublicationQuery"
+        },
+        "id": "vKEsyHFk#8MLqwolD",
+        "to": "vKEsyHFk/HBlhIeSD#eoaqHAIX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#8MLqwolD",
+      "placement": {
+        "holder": "vKEsyHFk#13Xhxdhs"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AFYtwQCx",
+      "kind": "module",
+      "value": {
+        "order": 1003920,
+        "name": "Source lines",
+        "kind": "function",
+        "responsibility": "Reads the file that an evidence excerpt cuts its lines from",
+        "description": "sourceLinesQuery moved from Model queries to the reading that shows the excerpt (TASK-653.14). The read is cached under the vault's prefix from Model queries.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/source-lines.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#AFYtwQCx"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AFYtwQCx",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#mgj7wHRP",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/source-lines.ts",
+        "symbol": "sourceLinesQuery"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#mgj7wHRP",
+      "placement": {
+        "holder": "vKEsyHFk#AFYtwQCx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#DGjSdYTW",
+      "kind": "module",
+      "value": {
+        "order": 1003930,
+        "name": "Walkthrough query",
+        "kind": "function",
+        "responsibility": "Captures one walkthrough's complete playback target once",
+        "description": "modelWalkthroughQuery moved from Model queries to the reading that plays it (TASK-653.14). It captures through readModel and changes only on an explicit restart.",
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/walkthroughs.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#DGjSdYTW"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#DGjSdYTW",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#v4dlQhtb",
+      "kind": "relationship",
+      "value": {
+        "order": 1004200,
+        "kind": "call",
+        "label": "a walkthrough's complete model",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/walkthroughs.ts",
+          "symbol": "readModel"
+        },
+        "id": "vKEsyHFk#v4dlQhtb",
+        "to": "vKEsyHFk#guvtYApo"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#v4dlQhtb",
+      "placement": {
+        "holder": "vKEsyHFk#DGjSdYTW"
       }
     },
     {
@@ -11382,6 +11867,7 @@
     "vKEsyHFk#0ZhQaQLW",
     "vKEsyHFk#4eKZ6q3Y",
     "vKEsyHFk/yejBBUFY#gIVISpC9",
-    "vKEsyHFk/yejBBUFY#pNlMVRMt"
+    "vKEsyHFk/yejBBUFY#pNlMVRMt",
+    "vKEsyHFk#TjiaPdzb"
   ]
 }
