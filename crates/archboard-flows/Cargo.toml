@@ -10,6 +10,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+archboard-ecma = { path = "../archboard-ecma" }
 # A flowchart is laid out as a picture is, and its lines' crossings counted so.
 archboard-layout = { path = "../archboard-layout" }
 archboard-scene = { path = "../archboard-scene" }

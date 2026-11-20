@@ -1,6 +1,4 @@
 //! The words in a flowchart's diamonds, loops and terminals.
-
-use crate::js;
 use crate::measure::message_lines;
 use crate::sizes::{SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE};
 
@@ -20,9 +18,9 @@ pub struct ShapeWords {
 pub fn shape_words(name: &str, width: f64) -> ShapeWords {
     let lines = message_lines(name, width, SHAPE_TEXT_SIZE, SHAPE_TEXT_LINE);
     ShapeWords {
-        width: lines
-            .iter()
-            .fold(0.0, |widest, line| js::max([widest, line.width])),
+        width: lines.iter().fold(0.0, |widest, line| {
+            archboard_ecma::max([widest, line.width])
+        }),
         height: lines.len() as f64 * SHAPE_TEXT_LINE,
         lines: lines.into_iter().map(|line| line.text).collect(),
     }

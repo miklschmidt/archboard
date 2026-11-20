@@ -7,7 +7,6 @@ use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
 use crate::geometry::{Point, Rect};
-use crate::js;
 use crate::paint::Node;
 use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
@@ -317,8 +316,8 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
         })
         .collect();
     middles.iter().skip(1).fold(middles[0], |nearest, middle| {
-        if js::hypot(middle.x - corner.x, middle.y - corner.y)
-            < js::hypot(nearest.x - corner.x, nearest.y - corner.y)
+        if archboard_ecma::hypot(middle.x - corner.x, middle.y - corner.y)
+            < archboard_ecma::hypot(nearest.x - corner.x, nearest.y - corner.y)
         {
             *middle
         } else {
@@ -342,7 +341,7 @@ pub(super) fn ring(
     shape(
         Shape::path(
             Purpose::Ring,
-            polygon_path(&inset(outline, by), js::max([0.0, radius - by])),
+            polygon_path(&inset(outline, by), archboard_ecma::max([0.0, radius - by])),
         )
         .unfilled()
         .stroked(Styles::of(palette).ring(Some(HALO_WIDTH))),

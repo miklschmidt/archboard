@@ -131,7 +131,7 @@ fn place(shape: &Shape, arrowhead: Spelling, out: &mut Attributes) {
 pub(crate) fn listed(numbers: &[f64]) -> String {
     numbers
         .iter()
-        .map(|number| archboard_scene::js::number(*number))
+        .map(|number| archboard_ecma::number(*number))
         .collect::<Vec<_>>()
         .join(" ")
 }

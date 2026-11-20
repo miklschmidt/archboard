@@ -4,7 +4,6 @@
 //! layer's words stand (TASK-428).
 
 use crate::geometry::round_coord;
-use crate::js;
 use crate::paint::build::{Items, grouped};
 use crate::scene::{Group, Role, Transform};
 use crate::sizes::{FAR_SCALE, HERO_LINE_WIDTH, ICON_CHIP_SIZE, LINE_WIDTH, RAILS};
@@ -29,7 +28,7 @@ pub(super) struct Place {
 
 /// A scale as the picture draws it: to a ten thousandth.
 fn written(value: f64) -> f64 {
-    js::round(value * 10_000.0) / 10_000.0
+    archboard_ecma::round(value * 10_000.0) / 10_000.0
 }
 
 /// A move and a scale about the origin, rounded as the picture draws them.

@@ -4,7 +4,6 @@
 
 use crate::drawing::Emphasis;
 use crate::geometry::{Curve, Point, Rect, Segment, curve_through, round_coord};
-use crate::js;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, concat, group, grouped, lines, point, shape, text};
 use crate::paint::palette::Palette;
@@ -164,7 +163,7 @@ pub(super) struct Crossing {
 /// The clock for a drawing whose turns cross lines of some lengths, in order.
 pub(super) fn exchange_clock(lengths: &[f64], clock: &SequenceClock) -> Crossing {
     let distance = turn_distance(lengths);
-    let speed = js::max([
+    let speed = archboard_ecma::max([
         clock.traffic_speed * PULSE_PACE,
         distance / (clock.cycle_cap_ms / 1000.0),
     ]);

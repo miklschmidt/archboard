@@ -6,7 +6,6 @@ use std::collections::HashMap;
 
 use crate::drawing::DrawingBridge;
 use crate::geometry::{Curve, Point, Rect, Segment, curve_bounds, inflate, round_coord};
-use crate::js;
 use crate::paint::Edge;
 use crate::paint::build::route;
 use crate::paint::junctions::mark_radius;
@@ -81,10 +80,10 @@ fn past_end(piece: &Curve, end: Point, past: f64) -> Curve {
         piece.from
     };
     let to = last.to();
-    let length = js::hypot(to.x - before.x, to.y - before.y);
+    let length = archboard_ecma::hypot(to.x - before.x, to.y - before.y);
     if !matches!(last, Segment::Line { .. })
         || length == 0.0
-        || js::hypot(to.x - end.x, to.y - end.y) > 0.5
+        || archboard_ecma::hypot(to.x - end.x, to.y - end.y) > 0.5
     {
         return piece.clone();
     }
@@ -127,7 +126,7 @@ pub(super) fn trunk_cutouts(routes: &[Edge], double: &impl Fn(&Edge) -> bool) ->
 /// A route short of each end by a distance, where that end is a straight run.
 fn short_of_ends(curve: &Curve, start: f64, end: f64) -> Curve {
     let toward = |from: Point, to: Point, by: f64| {
-        let length = js::hypot(to.x - from.x, to.y - from.y);
+        let length = archboard_ecma::hypot(to.x - from.x, to.y - from.y);
         let share = if length > by { by / length } else { 0.0 };
         Point {
             x: from.x + (to.x - from.x) * share,

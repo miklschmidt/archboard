@@ -6,7 +6,6 @@
 use std::collections::HashMap;
 
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
-use crate::js;
 use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::palette::Palette;
 use crate::paint::styles::stroke_width;
@@ -98,7 +97,7 @@ fn half_at(rect: Rect, x: f64, line: f64, neighbours: &[f64]) -> Option<f64> {
     let apart = neighbours
         .iter()
         .map(|other| ((other - x).abs() - WEB) / 2.0);
-    let half = js::min(
+    let half = archboard_ecma::min(
         [
             line / 2.0 + SOCKET,
             x - rect.x - CORNER_ROOM,
@@ -139,7 +138,7 @@ impl Ports {
         }
         for &x in &places {
             let at: Vec<&Meeting> = here.iter().copied().filter(|one| one.x == x).collect();
-            let line = js::max(at.iter().map(|one| one.line));
+            let line = archboard_ecma::max(at.iter().map(|one| one.line));
             let others: Vec<f64> = places.iter().copied().filter(|other| *other != x).collect();
             if let Some(half) = half_at(rect, x, line, &others) {
                 let port = Port {
@@ -254,7 +253,7 @@ fn outlined(steps: Vec<PathStep>, fill: impl Into<crate::scene::Paint>) -> Items
 
 /// A share of a card's box, spelt finely enough.
 fn share(value: f64) -> f64 {
-    js::fixed(value, 6)
+    archboard_ecma::fixed(value, 6)
 }
 
 /// A port's hole in its card's clip, in shares of the card's box: the slot, and

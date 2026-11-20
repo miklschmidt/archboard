@@ -2,11 +2,11 @@
 //! label, a message's words and a note's lines.
 
 use crate::drawing::{MeasuredLabel, TextRole, TextRun};
-use crate::js::max;
 use crate::measure::cards::{NOTE, Style, runs_for};
 use crate::measure::paragraph;
 use crate::sequence_picture::WordLine;
 use crate::sizes::{ARCHITECTURE_LABEL_PADDING_X, ARCHITECTURE_LABEL_PADDING_Y, PILL_FONT};
+use archboard_ecma::max;
 
 /// A relationship's words on its plate.
 const LABEL: Style = Style {

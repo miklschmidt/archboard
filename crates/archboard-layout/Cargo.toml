@@ -10,8 +10,10 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
-# Points, boxes and the arithmetic and spelling of ECMAScript the layout was
-# first written in: the drawings are held to what the TypeScript engine answered.
+# The arithmetic and spelling of ECMAScript the layout was first written in:
+# the drawings are held to what the TypeScript engine answered.
+archboard-ecma = { path = "../archboard-ecma" }
+# Points and boxes, and the drawing a layout answers.
 archboard-scene = { path = "../archboard-scene" }
 # A Blocks picture's trunks between its blocks are routed round them.
 archboard-router = { path = "../archboard-router" }

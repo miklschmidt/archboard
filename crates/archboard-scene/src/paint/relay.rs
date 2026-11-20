@@ -7,8 +7,8 @@ use std::collections::HashMap;
 
 use crate::drawing::Traffic;
 use crate::geometry::{Point, Rect};
-use crate::js::{self, within};
 use crate::sizes::CARD_RADIUS;
+use archboard_ecma::{self, within};
 
 /// The least distance between two pulses on a line.
 const MIN_SPACING: f64 = 36.0;
@@ -105,13 +105,13 @@ fn chains(lanes: &[Lane]) -> Vec<Vec<&Lane>> {
 /// The distance between two pulses on every line of a chain.
 fn spacing_of(chain: &[&Lane]) -> f64 {
     let Traffic { speed, volume } = chain[0].traffic;
-    let shortest = js::min(
+    let shortest = archboard_ecma::min(
         chain
             .iter()
             .filter(|lane| lane.ride > 0.0)
             .map(|lane| lane.ride),
     );
-    js::max([MIN_SPACING, js::min([speed / volume, shortest])])
+    archboard_ecma::max([MIN_SPACING, archboard_ecma::min([speed / volume, shortest])])
 }
 
 /// Where the pulses of every lane of a chain are at time zero.
@@ -171,8 +171,8 @@ pub(super) fn relay_rhythms(
 ) -> HashMap<String, Rhythm> {
     let mut rhythms = HashMap::new();
     for chain in chains(lanes) {
-        let speed = js::min([
-            js::max([chain[0].traffic.speed * PULSE_PACE, SLOWEST]),
+        let speed = archboard_ecma::min([
+            archboard_ecma::max([chain[0].traffic.speed * PULSE_PACE, SLOWEST]),
             FASTEST,
         ]);
         let spacing = spacing_of(&chain);
@@ -217,7 +217,7 @@ fn corner(centre: Point, radius: f64, from: f64) -> Vec<Point> {
 
 /// A card's edge as a ring of points.
 fn ring_of(rect: Rect) -> Ring {
-    let r = js::min([CARD_RADIUS, rect.width / 2.0, rect.height / 2.0]);
+    let r = archboard_ecma::min([CARD_RADIUS, rect.width / 2.0, rect.height / 2.0]);
     let Rect {
         x,
         y,
@@ -269,7 +269,7 @@ fn ring_of(rect: Rect) -> Ring {
     let mut along = vec![0.0];
     for (index, point) in points.iter().enumerate() {
         let next = points[(index + 1) % points.len()];
-        along.push(along[index] + js::hypot(next.x - point.x, next.y - point.y));
+        along.push(along[index] + archboard_ecma::hypot(next.x - point.x, next.y - point.y));
     }
     let length = along.pop().unwrap_or(0.0);
     Ring {
@@ -291,15 +291,15 @@ fn locate(ring: &Ring, point: Point) -> f64 {
         let t = if size == 0.0 {
             0.0
         } else {
-            js::min([
-                js::max([
+            archboard_ecma::min([
+                archboard_ecma::max([
                     ((point.x - from.x) * dx + (point.y - from.y) * dy) / size,
                     0.0,
                 ]),
                 1.0,
             ])
         };
-        let gap = js::hypot(from.x + dx * t - point.x, from.y + dy * t - point.y);
+        let gap = archboard_ecma::hypot(from.x + dx * t - point.x, from.y + dy * t - point.y);
         if gap < best_gap {
             best_gap = gap;
             best_at = ring.along[index] + t * size.sqrt();
@@ -312,7 +312,7 @@ fn locate(ring: &Ring, point: Point) -> f64 {
 pub(super) fn rim_length(rect: Rect, from: Point, to: Point) -> f64 {
     let ring = ring_of(rect);
     let forward = within(locate(&ring, to) - locate(&ring, from), ring.length);
-    js::min([forward, ring.length - forward])
+    archboard_ecma::min([forward, ring.length - forward])
 }
 
 #[cfg(test)]

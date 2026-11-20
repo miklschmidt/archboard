@@ -7,7 +7,6 @@
 //! spells them as SVG and SMIL.
 
 use archboard_scene::geometry::{Point, Segment, round_coord};
-use archboard_scene::js;
 use archboard_scene::scene::{
     GlowLayer, LegMotion, PathStep, PulseLeg, PulseLook, PulseTrain, TrafficMark, pulse_train,
 };
@@ -192,7 +191,10 @@ fn timecount(seconds: f64) -> String {
 
 /// A point on the cycle, as SMIL spells a key time: clamped, six places.
 fn ratio(value: f64) -> String {
-    js::to_fixed(js::min([js::max([value, 0.0]), 1.0]), 6)
+    archboard_ecma::to_fixed(
+        archboard_ecma::min([archboard_ecma::max([value, 0.0]), 1.0]),
+        6,
+    )
 }
 
 /// How a piece's bar slides over one turn of its train, as SMIL spells it,

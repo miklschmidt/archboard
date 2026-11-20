@@ -1,9 +1,8 @@
 //! The arithmetic and the spelling of ECMAScript that the pictures were first
-//! drawn with. The SVG a picture writes is compared byte for byte with the one
-//! the TypeScript painter wrote (ADR 0059), so a number is rounded and spelt
-//! here exactly as JavaScript rounds and spells it.
-
-use crate::ecma::{is_space, powi};
+//! drawn with, which every crate of the renderer core shares. The SVG a picture
+//! writes is compared byte for byte with the one the TypeScript painter wrote
+//! (ADR 0059), so a number is rounded and spelt here exactly as JavaScript
+//! rounds and spells it.
 
 /// `Math.round`, as JavaScriptCore computes it: the nearest integer, a half
 /// rounded up, and the sign of a zero kept.
@@ -220,6 +219,44 @@ pub fn pow(base: f64, exponent: f64) -> f64 {
 /// `text.trim()`.
 pub fn trim(text: &str) -> &str {
     text.trim_matches(is_space)
+}
+
+/// Whether a character is white space to ECMAScript: `\s` and `trim`.
+pub fn is_space(character: char) -> bool {
+    matches!(
+        character,
+        '\u{0009}'
+            | '\u{000A}'
+            | '\u{000B}'
+            | '\u{000C}'
+            | '\u{000D}'
+            | '\u{0020}'
+            | '\u{00A0}'
+            | '\u{1680}'
+            | '\u{2000}'
+            ..='\u{200A}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202F}'
+                | '\u{205F}'
+                | '\u{3000}'
+                | '\u{FEFF}'
+    )
+}
+
+/// `x ** n` for a small whole exponent, as JavaScriptCore multiplies it out.
+fn powi(base: f64, exponent: u32) -> f64 {
+    let mut result = 1.0;
+    let mut x = base;
+    let mut n = exponent;
+    while n != 0 {
+        if n & 1 == 1 {
+            result *= x;
+        }
+        x *= x;
+        n >>= 1;
+    }
+    result
 }
 
 #[cfg(test)]

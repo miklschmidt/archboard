@@ -1,11 +1,11 @@
 //! The semantics of ECMAScript the layout was first written with, beyond the
-//! arithmetic of `archboard_scene::js`: how a comparator orders a sort, how a
+//! arithmetic of `archboard_ecma`: how a comparator orders a sort, how a
 //! number reads back from its spelling, and how a set of numbers tells two
 //! apart. The layout is held to what the TypeScript engine answered.
 
 use std::cmp::Ordering;
 
-pub(crate) use archboard_scene::js::{hypot, max, min, number, pow, round, sign, to_fixed};
+pub(crate) use archboard_ecma::{hypot, max, min, number, pow, round, sign, to_fixed};
 
 /// What a comparator's answer means to a sort: below zero first, above zero
 /// second, and zero or not a number alike.
@@ -87,7 +87,7 @@ pub(crate) fn sorted_unique(values: &[f64]) -> Vec<f64> {
 /// `Number(text)` for the decimals a layout spells: white space trimmed, the
 /// empty text zero, anything else not a number.
 pub(crate) fn number_of(text: &str) -> f64 {
-    let trimmed = archboard_scene::js::trim(text);
+    let trimmed = archboard_ecma::trim(text);
     if trimmed.is_empty() {
         return 0.0;
     }

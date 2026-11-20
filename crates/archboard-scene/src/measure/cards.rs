@@ -4,7 +4,6 @@
 use archboard_text::Paragraph;
 
 use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun, Toggle};
-use crate::js::{max, min};
 use crate::measure::far::far_name_width;
 use crate::measure::flow_frame::flow_frame;
 use crate::measure::{keep_tail, paragraph, width};
@@ -18,6 +17,7 @@ use crate::sizes::{
     TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP, TAB_MOST, TAB_PADDING, TAB_PATH_GAP, TAB_SHOULDER,
     TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_INSET, TAG_PADDING, TAG_SIZE, TOGGLE_ROOM,
 };
+use archboard_ecma::{max, min};
 
 /// A face, a size, the room a line takes and what the line is.
 #[derive(Clone, Copy, Debug)]
@@ -319,7 +319,7 @@ fn path_parts(path: &str) -> (&str, &str) {
     if path.contains(" · ") {
         return (path, "");
     }
-    let end = crate::ecma::trim_end(path).trim_end_matches('/').len();
+    let end = crate::measure::trim_end(path).trim_end_matches('/').len();
     path[..end]
         .rfind('/')
         .map_or(("", path), |at| path.split_at(at + 1))

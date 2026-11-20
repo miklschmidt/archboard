@@ -12,7 +12,6 @@ use std::collections::{BTreeMap, HashSet};
 
 use crate::drawing::DiagramFont;
 use crate::geometry::{Point, round_coord};
-use crate::js;
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, point, text};
 use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
@@ -87,7 +86,7 @@ struct Placed {
 /// The entries' places with the size they fill: as wide as the widest row
 /// reaches, down to `bottom`, with the margins.
 fn extent(lists: &[Vec<Entry>], at: Vec<Point>, bottom: f64) -> Placed {
-    let right = js::max(
+    let right = archboard_ecma::max(
         std::iter::once(DIAGRAM_MARGIN).chain(
             lists
                 .iter()
@@ -203,13 +202,13 @@ fn with_legend(page: PaintedPage, legend: &Legend, palette: &Palette) -> Painted
         return PaintedPage {
             body: lines(vec![page.body, legend.draw(page.width, 0.0, palette)]),
             width: round_coord(page.width + legend.laid.width),
-            height: js::max([page.height, legend.laid.height]),
+            height: archboard_ecma::max([page.height, legend.laid.height]),
             atlas: page.atlas,
         };
     }
     PaintedPage {
         body: lines(vec![page.body, legend.draw(0.0, page.height, palette)]),
-        width: js::max([page.width, legend.laid.width]),
+        width: archboard_ecma::max([page.width, legend.laid.width]),
         height: round_coord(page.height + legend.laid.height),
         atlas: page.atlas,
     }
@@ -233,7 +232,7 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
             grouped(Group::new(Role::Slot(Slot::ExportTitle), words)),
             grouped(Group::new(Role::Inset, page.body).moved(Transform::translate(0.0, band))),
         ]),
-        width: js::max([
+        width: archboard_ecma::max([
             page.width,
             measure::width(title, CARD_TITLE_FONT, TITLE_SIZE).ceil() + 2.0 * DIAGRAM_MARGIN,
         ]),

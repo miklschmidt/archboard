@@ -4,7 +4,6 @@
 //! is the shape moved ([`translated`]).
 
 use crate::geometry::{Point, round_coord};
-use crate::js;
 use crate::scene::PathStep;
 
 /// A convex outline, its corners clockwise on the page.
@@ -23,10 +22,16 @@ fn rounded_corner(before: Point, corner: Point, after: Point, radius: f64) -> (P
         x: after.x - corner.x,
         y: after.y - corner.y,
     };
-    let lengths = [js::hypot(back.x, back.y), js::hypot(forth.x, forth.y)];
+    let lengths = [
+        archboard_ecma::hypot(back.x, back.y),
+        archboard_ecma::hypot(forth.x, forth.y),
+    ];
     let cosine = (back.x * forth.x + back.y * forth.y) / (lengths[0] * lengths[1]);
-    let half = libm::acos(js::min([js::max([cosine, -1.0]), 1.0])) / 2.0;
-    let reach = js::min([radius / libm::tan(half), lengths[0] / 2.0, lengths[1] / 2.0]);
+    let half = libm::acos(archboard_ecma::min([
+        archboard_ecma::max([cosine, -1.0]),
+        1.0,
+    ])) / 2.0;
+    let reach = archboard_ecma::min([radius / libm::tan(half), lengths[0] / 2.0, lengths[1] / 2.0]);
     (
         Point {
             x: corner.x + (back.x / lengths[0]) * reach,
@@ -130,7 +135,7 @@ fn cut_by(polygon: &[Point], from: Point, to: Point) -> Polygon {
         .filter(|index| {
             let corner = kept[*index];
             let before = kept[(index + count - 1) % count];
-            js::hypot(corner.x - before.x, corner.y - before.y) > TINY
+            archboard_ecma::hypot(corner.x - before.x, corner.y - before.y) > TINY
         })
         .map(|index| kept[index])
         .collect()
@@ -169,7 +174,7 @@ pub(super) fn inset(polygon: &[Point], distance: f64) -> Polygon {
         .enumerate()
         .map(|(index, from)| {
             let to = polygon[(index + 1) % count];
-            let length = js::hypot(to.x - from.x, to.y - from.y);
+            let length = archboard_ecma::hypot(to.x - from.x, to.y - from.y);
             let way = Point {
                 x: (to.x - from.x) / length,
                 y: (to.y - from.y) / length,

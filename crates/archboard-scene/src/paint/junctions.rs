@@ -6,7 +6,6 @@
 use std::collections::HashMap;
 
 use crate::geometry::{Curve, Point, Rect, Segment, round_coord, vertices_of};
-use crate::js;
 use crate::paint::Edge;
 use crate::paint::build::{Items, concat, grouped, point, shape};
 use crate::paint::styles::stroke_width;
@@ -88,8 +87,8 @@ fn stretch_between(
         route,
         across,
         at: if across { a.y } else { a.x },
-        from: js::min([start, end]),
-        to: js::max([start, end]),
+        from: archboard_ecma::min([start, end]),
+        to: archboard_ecma::max([start, end]),
         from_bend: if forward { bends[0] } else { bends[1] },
         to_bend: if forward { bends[1] } else { bends[0] },
         width,
@@ -158,9 +157,9 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     if one.route == other.route || one.across != other.across {
         return None;
     }
-    let near = js::max([f64::midpoint(one.width, other.width), ONWARD]);
-    let from = js::max([one.from, other.from]);
-    let to = js::min([one.to, other.to]);
+    let near = archboard_ecma::max([f64::midpoint(one.width, other.width), ONWARD]);
+    let from = archboard_ecma::max([one.from, other.from]);
+    let to = archboard_ecma::min([one.to, other.to]);
     if (one.at - other.at).abs() > near || to - from <= near {
         return None;
     }
@@ -174,9 +173,9 @@ fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
     };
     let middle = f64::midpoint(from, to);
     let inward = |along: f64, at_from: bool| {
-        js::min([
+        archboard_ecma::min([
             (middle - along).abs(),
-            js::max([one, other].map(|stretch| {
+            archboard_ecma::max([one, other].map(|stretch| {
                 let end = if at_from { stretch.from } else { stretch.to };
                 if (end - along).abs() <= near {
                     if at_from {
@@ -251,8 +250,8 @@ impl Found {
     fn keep(&mut self, junction: Junction) {
         let key = format!(
             "{},{}",
-            js::number(js::round(junction.point.x / 2.0)),
-            js::number(js::round(junction.point.y / 2.0))
+            archboard_ecma::number(archboard_ecma::round(junction.point.x / 2.0)),
+            archboard_ecma::number(archboard_ecma::round(junction.point.y / 2.0))
         );
         match self.places.get(&key) {
             None => {
@@ -353,7 +352,10 @@ fn bends_of(curve: &Curve) -> Vec<f64> {
     let mut radii = vec![0.0];
     for segment in &curve.segments {
         if let Segment::Cubic { to, .. } = segment {
-            radii.push(js::max([(to.x - from.x).abs(), (to.y - from.y).abs()]));
+            radii.push(archboard_ecma::max([
+                (to.x - from.x).abs(),
+                (to.y - from.y).abs(),
+            ]));
         }
         from = segment.to();
     }
@@ -390,8 +392,8 @@ pub fn junction_boxes(routes: &[Edge]) -> Vec<Rect> {
             let until = junction.until.unwrap_or(junction.point);
             let [from, to] = [junction.point, until];
             Rect {
-                x: js::min([from.x, to.x]) - radius,
-                y: js::min([from.y, to.y]) - radius,
+                x: archboard_ecma::min([from.x, to.x]) - radius,
+                y: archboard_ecma::min([from.y, to.y]) - radius,
                 width: (from.x - to.x).abs() + radius * 2.0,
                 height: (from.y - to.y).abs() + radius * 2.0,
             }

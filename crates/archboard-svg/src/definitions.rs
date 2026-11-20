@@ -225,7 +225,7 @@ fn write_gradient(gradient: &Gradient, out: &mut String) {
 
 /// An arrowhead's marker.
 fn write_marker(marker: &Marker, names: &Names, out: &mut String) {
-    let view = archboard_scene::js::number(marker.view);
+    let view = archboard_ecma::number(marker.view);
     let mut attributes = Attributes::new();
     attributes
         .set("id", marker_id(&marker.id))

@@ -2,7 +2,6 @@
 //! and each card's responsibility, title size and height at that width.
 
 use crate::drawing::{DiagramFont, TextRun};
-use crate::js;
 use crate::measure::{CardWords, note_lines, width};
 use crate::sizes::{
     CARD_HEIGHT, CARD_HEIGHT_WITH_NOTE, CARD_NOTE_FONT, CARD_PADDING_X, CARD_TITLE_FONT,
@@ -67,7 +66,7 @@ pub fn sequence_cards(cards: &[CardWords<'_>], limits: ColumnLimits) -> HeadCard
     let asked = cards.iter().map(asked_width);
     // A whole unit: adding measured widths leaves floating-point dust, and a
     // card handed back exactly the width its name measured would cut it.
-    let preferred = js::min([limits.most, largest(asked, limits.least).ceil()]);
+    let preferred = archboard_ecma::min([limits.most, largest(asked, limits.least).ceil()]);
     let notes: Vec<Vec<TextRun>> = cards
         .iter()
         .map(|card| card_notes(card, preferred))
@@ -79,7 +78,7 @@ pub fn sequence_cards(cards: &[CardWords<'_>], limits: ColumnLimits) -> HeadCard
         .iter()
         .map(|card| width(card.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + mark_room(card));
     let insets = preferred - card_text_width(preferred);
-    let column = js::max([
+    let column = archboard_ecma::max([
         preferred,
         (largest(painted, 0.0) + insets).ceil(),
         (largest(names, 0.0) + insets).ceil(),
@@ -115,7 +114,7 @@ pub fn sequence_cards(cards: &[CardWords<'_>], limits: ColumnLimits) -> HeadCard
 
 /// The largest of some numbers, and the floor when there are none.
 fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 {
-    js::max(std::iter::once(floor).chain(values))
+    archboard_ecma::max(std::iter::once(floor).chain(values))
 }
 
 /// The horizontal run a card's words have, after its padding and its kind's chip.
@@ -164,12 +163,12 @@ fn asked_width(card: &CardWords<'_>) -> f64 {
         .unwrap_or("")
         .split(['\r', '\n'])
         .fold(0.0, |widest, line| {
-            js::max([widest, width(line, CARD_NOTE_FONT, NOTE_SIZE)])
+            archboard_ecma::max([widest, width(line, CARD_NOTE_FONT, NOTE_SIZE)])
         });
     CARD_PADDING_X * 2.0
         + ICON_CHIP_SIZE
         + ICON_CHIP_GAP
-        + js::max([
+        + archboard_ecma::max([
             width(card.name, CARD_TITLE_FONT, TITLE_SIZE) + mark_room(card),
             note_width,
         ])
@@ -187,7 +186,7 @@ fn fitted_size(
 ) -> f64 {
     let mut size = earned;
     while size > floor && width(label, font, size) > budget {
-        size = js::max([floor, size - step]);
+        size = archboard_ecma::max([floor, size - step]);
     }
     size
 }

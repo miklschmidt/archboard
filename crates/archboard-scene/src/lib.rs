@@ -13,10 +13,8 @@
 //! from the painter's sizes, which stay the crate's own (ADR 0088).
 
 pub mod drawing;
-mod ecma;
 mod flow_parts;
 pub mod geometry;
-pub mod js;
 mod measure;
 pub mod names;
 pub mod paint;

@@ -1,7 +1,6 @@
 //! A flow's frame: its name and its summary in its tab, settled before layout.
 
 use crate::drawing::{MeasuredNode, TextRole, TextRun};
-use crate::js;
 use crate::measure::CardWords;
 use crate::measure::{truncate, width};
 use crate::sizes::{
@@ -51,7 +50,7 @@ pub(super) fn flow_frame<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
         top + PART_TITLE_SIZE,
     )];
     runs.extend(note);
-    let wide = js::max(runs.iter().map(|run| run.width));
+    let wide = archboard_ecma::max(runs.iter().map(|run| run.width));
     MeasuredNode {
         node,
         width: wide + 2.0 * TAB_PADDING + TAB_SHOULDER,

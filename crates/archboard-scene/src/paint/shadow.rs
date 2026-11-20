@@ -2,7 +2,6 @@
 //! stacked layers for a shape that is not one. No filter, mask or blur.
 
 use crate::geometry::{Point, Rect, round_coord};
-use crate::js;
 use crate::paint::build::{Items, grouped, lines, shape};
 use crate::paint::colour::{light_dark, translucent};
 use crate::paint::palette::Palette;
@@ -44,13 +43,14 @@ const SPREAD_Y: f64 = 0.75;
 
 /// How strong the shadow of a box is at a place along its fall.
 fn falloff_at(position: f64) -> f64 {
-    let scaled = js::min([js::max([position, 0.0]), 1.0]) * (FALLOFF.len() - 1) as f64;
+    let scaled = archboard_ecma::min([archboard_ecma::max([position, 0.0]), 1.0])
+        * (FALLOFF.len() - 1) as f64;
     #[expect(
         clippy::cast_possible_truncation,
         clippy::cast_sign_loss,
         reason = "a whole index from 0 to the falloff's last step, as the clamps make it"
     )]
-    let low = js::min([scaled.floor(), (FALLOFF.len() - 2) as f64]) as usize;
+    let low = archboard_ecma::min([scaled.floor(), (FALLOFF.len() - 2) as f64]) as usize;
     FALLOFF[low] + (FALLOFF[low + 1] - FALLOFF[low]) * (scaled - low as f64)
 }
 
@@ -105,7 +105,7 @@ pub(super) fn smooth_shadow(rect: Rect, radius: f64, reach: f64) -> Items {
     let y = rect.y + spill;
     let width = rect.width + 2.0 * spill;
     let height = rect.height + reach - spill;
-    let r = js::min([radius + reach, width / 2.0, height / 2.0]);
+    let r = archboard_ecma::min([radius + reach, width / 2.0, height / 2.0]);
     let xs = [x, x + r, x + width - r];
     let ys = [y, y + r, y + height - r];
     let widths = [r, width - 2.0 * r, r];

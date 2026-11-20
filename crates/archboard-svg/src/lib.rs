@@ -47,7 +47,7 @@ const LINE_GROUP: &str = "[data-line-dash]";
 const SWAP_EASE: &str = "cubic-bezier(.4,0,.2,1)";
 /// How a picture swaps its cards' near and far views (TASK-428).
 fn far_view_rules(swap_ms: f64) -> Vec<String> {
-    let ms = archboard_scene::js::number(swap_ms);
+    let ms = archboard_ecma::number(swap_ms);
     let fade = format!("opacity {ms}ms {SWAP_EASE}");
     let shown = format!("opacity:1;visibility:visible;transition:{fade},visibility 0s");
     let hidden =
@@ -58,8 +58,8 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         .far_lines
         .iter()
         .map(|&(near, wide)| {
-            let near = archboard_scene::js::number(near);
-            let wide = archboard_scene::js::number(wide);
+            let near = archboard_ecma::number(near);
+            let wide = archboard_ecma::number(wide);
             format!("{far} {LINE_GROUP}>path[stroke-width=\"{near}\"]{{stroke-width:{wide}px}}")
         })
         .collect();

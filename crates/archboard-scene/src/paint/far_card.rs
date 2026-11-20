@@ -5,7 +5,6 @@
 
 use crate::drawing::{NodeFacts, TextRole, TextRun};
 use crate::geometry::Rect;
-use crate::js;
 use crate::measure::{self, FarCard, FarWords, far_words, tag_end};
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
@@ -82,7 +81,7 @@ pub(super) struct NearCard {
 
 /// The gist a heading or a card draws: none where it says nothing but white space.
 fn gist_of(text: Option<&str>) -> Option<&str> {
-    text.filter(|text| !js::trim(text).is_empty())
+    text.filter(|text| !archboard_ecma::trim(text).is_empty())
 }
 
 /// The tags a card draws: none on a card a comparison removed, which is a ghost.
@@ -215,7 +214,7 @@ pub(super) fn heading_runs(name: &str, summary: Option<&str>, tab: Rect) -> (Vec
     let middle = (tab.height - below) / 2.0;
     let mut runs = vec![heading_run(title, NAME_SIZE, middle, false)];
     runs.extend(note.map(|line| heading_run(line, NOTE_SIZE, middle + NOTE_STEP, true)));
-    let wide = js::max(runs.iter().map(|run| run.width));
+    let wide = archboard_ecma::max(runs.iter().map(|run| run.width));
     (runs, wide + 2.0 * TAB_PADDING)
 }
 

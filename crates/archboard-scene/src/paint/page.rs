@@ -2,7 +2,6 @@
 //! planned when nothing it describes is built, and the boxes of its atlas.
 
 use crate::geometry::{Point, Rect, covering, round_coord};
-use crate::js;
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, shape, text};
 use crate::paint::palette::Palette;
@@ -40,11 +39,12 @@ pub(super) fn canvas_for(
             shift_y: 0.0,
         };
     };
-    let shift_x = js::max([0.0, margin - drawn.x]).ceil();
-    let shift_y = js::max([0.0, margin - drawn.y]).ceil();
+    let shift_x = archboard_ecma::max([0.0, margin - drawn.x]).ceil();
+    let shift_y = archboard_ecma::max([0.0, margin - drawn.y]).ceil();
     Canvas {
-        width: (js::max([laid_width, drawn.x + drawn.width + margin]) + shift_x).ceil(),
-        height: (js::max([laid_height, drawn.y + drawn.height + margin]) + shift_y).ceil(),
+        width: (archboard_ecma::max([laid_width, drawn.x + drawn.width + margin]) + shift_x).ceil(),
+        height: (archboard_ecma::max([laid_height, drawn.y + drawn.height + margin]) + shift_y)
+            .ceil(),
         shift_x,
         shift_y,
     }
@@ -146,7 +146,7 @@ fn framed_as_planned(page: PaintedPage, palette: &Palette) -> PaintedPage {
     let dx = PLANNED_FRAME_MARGIN;
     let dy = PLANNED_FRAME_MARGIN + LABEL_RISE;
     let needed = label_width + 2.0 * (PLANNED_FRAME_INSET + LABEL_INDENT + LABEL_CLEARANCE);
-    let width = js::max([page.width + 2.0 * dx, needed]);
+    let width = archboard_ecma::max([page.width + 2.0 * dx, needed]);
     let height = page.height + dx + dy;
     let top = PLANNED_FRAME_INSET + LABEL_RISE;
     let label_x = PLANNED_FRAME_INSET + LABEL_INDENT;

@@ -5,7 +5,6 @@
 //! them takes as many lines of its responsibility as it holds.
 
 use crate::drawing::{DiagramFont, TextRole, TextRun};
-use crate::js::{max, min};
 use crate::measure::cards::{Style, TITLE, path_runs};
 use crate::measure::width;
 use crate::sizes::{
@@ -13,6 +12,7 @@ use crate::sizes::{
     DRILL_MARK_ROOM, FAR_SCALE, FAR_TAG, ICON_CHIP_SIZE, PART_NOTE_SIZE, PART_PATH_SIZE,
     PART_TITLE_SIZE, TAG_BESIDE, TAG_GAP,
 };
+use archboard_ecma::{max, min};
 
 /// Below this scale a card's far words are no larger than its near ones.
 const FAR_FLOOR: f64 = 1.0;
@@ -75,7 +75,7 @@ struct Piece<'a> {
 /// The pieces of a text: its words, a hyphenated one broken after each hyphen.
 fn pieces(text: &str) -> Vec<Piece<'_>> {
     let mut all = Vec::new();
-    for word in crate::ecma::split_spaces(text)
+    for word in crate::measure::split_spaces(text)
         .into_iter()
         .filter(|word| !word.is_empty())
     {

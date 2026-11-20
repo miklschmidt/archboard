@@ -2,7 +2,7 @@
 //! painter's JavaScript spelt it: in a base, padded, rounded to some places,
 //! and as a locale decimal without an exponent.
 
-use archboard_scene::js::{fixed, number};
+use archboard_ecma::{fixed, number};
 
 /// `String(Number(value.toFixed(places)))`: a number rounded to some places and
 /// spelt without trailing zeros.

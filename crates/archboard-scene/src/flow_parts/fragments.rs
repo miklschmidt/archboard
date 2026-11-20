@@ -1,8 +1,6 @@
 //! A decision's or a loop's fragment: the tab its operator stands in, the
 //! narrowest it holds its own words at, and how far it reaches round the ink
 //! it holds.
-
-use crate::js;
 use crate::measure::width;
 use crate::names::word;
 use crate::request::FrameOperator;
@@ -47,7 +45,7 @@ pub fn fragment_head(operator: FrameOperator, words: &str, guards: &[&str]) -> F
     let tab_width = (words_width(word(&operator)) + FRAME_TAB_PADDING * 2.0).ceil();
     let mut widest = tab_width + FRAME_TAB_PADDING + words_width(words) + FRAME_PAD;
     for guard in guards {
-        widest = js::max([widest, words_width(&guard_words(guard)) + FRAME_PAD * 2.0]);
+        widest = archboard_ecma::max([widest, words_width(&guard_words(guard)) + FRAME_PAD * 2.0]);
     }
     FragmentHead {
         tab: Size {
@@ -72,6 +70,6 @@ pub fn fragment_bounds(ink: Option<Span>, columns: Span, head: &FragmentHead) ->
     };
     Span {
         x: left,
-        width: js::max([right - left, head.least_width]),
+        width: archboard_ecma::max([right - left, head.least_width]),
     }
 }

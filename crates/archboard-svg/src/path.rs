@@ -5,7 +5,6 @@
 //! space only inside a point.
 
 use archboard_scene::geometry::Point;
-use archboard_scene::js;
 use archboard_scene::scene::PathStep;
 
 /// How a path is spelt.
@@ -25,7 +24,7 @@ pub(crate) enum Spelling {
 
 /// A number as path data spells it.
 fn number(value: f64) -> String {
-    js::number(value)
+    archboard_ecma::number(value)
 }
 
 /// A point, its two numbers joined as the spelling joins them.

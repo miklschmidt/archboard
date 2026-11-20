@@ -8,7 +8,6 @@ use std::collections::BTreeMap;
 
 use crate::drawing::Emphasis;
 use crate::geometry::{Curve, Point, Segment, segment_start};
-use crate::js;
 use crate::paint::Edge;
 use crate::paint::styles::HEAD_LENGTH;
 use crate::sizes::EPSILON;
@@ -102,7 +101,10 @@ fn fixed_of(run: &Run) -> f64 {
 fn extent_of(run: &Run) -> (f64, f64) {
     let from = get(run.from, run.axis);
     let to = get(run.to, run.axis);
-    (js::min([from, to]), js::max([from, to]))
+    (
+        archboard_ecma::min([from, to]),
+        archboard_ecma::max([from, to]),
+    )
 }
 
 /// Whether two runs of different routes lie on one drawn line.
@@ -133,7 +135,7 @@ fn merged_stretches(stretches: &[(f64, f64)]) -> Vec<(f64, f64)> {
     let mut merged: Vec<(f64, f64)> = Vec::new();
     for stretch in stretches {
         match merged.last_mut() {
-            Some(last) if stretch.0 <= last.1 => last.1 = js::max([last.1, stretch.1]),
+            Some(last) if stretch.0 <= last.1 => last.1 = archboard_ecma::max([last.1, stretch.1]),
             _ => merged.push(*stretch),
         }
     }
@@ -174,8 +176,8 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
         })
         .filter_map(|other| {
             let (their_low, their_high) = extent_of(other);
-            let from = js::max([low, their_low]);
-            let to = js::min([high, their_high]);
+            let from = archboard_ecma::max([low, their_low]);
+            let to = archboard_ecma::min([high, their_high]);
             (to - from > SHARED_INK).then_some((from, to))
         })
         .collect();
@@ -194,7 +196,9 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
 
 /// Whether two turns are the same turn drawn twice: both ends in one place.
 fn same_turn(a: &Curve, b: &Curve) -> bool {
-    let near = |one: Point, other: Point| js::hypot(one.x - other.x, one.y - other.y) <= SHARED_INK;
+    let near = |one: Point, other: Point| {
+        archboard_ecma::hypot(one.x - other.x, one.y - other.y) <= SHARED_INK
+    };
     let (first, last) = (a.from, a.segments[0].to());
     let (start, end) = (b.from, b.segments[0].to());
     (near(first, start) && near(last, end)) || (near(first, end) && near(last, start))

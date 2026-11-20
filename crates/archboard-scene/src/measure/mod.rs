@@ -9,7 +9,6 @@
 use archboard_text::{Face, Paragraph};
 
 use crate::drawing::{DiagramFont, FontFamily};
-use crate::js;
 
 mod cards;
 mod far;
@@ -38,7 +37,7 @@ pub(crate) fn face(font: DiagramFont) -> Face {
 
 /// How wide one line of words is set, to a hundredth of a unit.
 pub(crate) fn width(text: &str, font: DiagramFont, size: f64) -> f64 {
-    js::round(set_width(text, font, size) * 100.0) / 100.0
+    archboard_ecma::round(set_width(text, font, size) * 100.0) / 100.0
 }
 
 /// How wide one line of words is set, as the text crate gives it.
@@ -49,6 +48,32 @@ fn set_width(text: &str, font: DiagramFont, size: f64) -> f64 {
 /// Words prepared to be broken into lines in a face at a size.
 fn paragraph(text: &str, font: DiagramFont, size: f64) -> Paragraph {
     Paragraph::new(face(font), size, text)
+}
+
+/// `text.trimEnd()`.
+fn trim_end(text: &str) -> &str {
+    text.trim_end_matches(archboard_ecma::is_space)
+}
+
+/// `text.split(/\s+/u)`: the pieces between runs of white space, an empty one
+/// at either end where the text starts or ends with white space.
+fn split_spaces(text: &str) -> Vec<&str> {
+    let mut pieces = Vec::new();
+    let mut start = 0;
+    let mut in_space = false;
+    for (at, character) in text.char_indices() {
+        if archboard_ecma::is_space(character) {
+            if !in_space {
+                pieces.push(&text[start..at]);
+                in_space = true;
+            }
+        } else if in_space {
+            start = at;
+            in_space = false;
+        }
+    }
+    pieces.push(if in_space { "" } else { &text[start..] });
+    pieces
 }
 
 /// The ellipsis a cut line ends in.
@@ -78,7 +103,7 @@ pub(crate) fn truncate(text: &str, font: DiagramFont, size: f64, room: f64) -> S
         return ELLIPSIS.to_owned();
     }
     let head: String = characters[..kept].iter().collect();
-    format!("{}{ELLIPSIS}", crate::ecma::trim_end(&head))
+    format!("{}{ELLIPSIS}", trim_end(&head))
 }
 
 /// A path, or as much of its tail as fits the room after an ellipsis. The tail
@@ -103,4 +128,16 @@ fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
     let folder = tail.iter().position(|character| *character == '/');
     let from = folder.unwrap_or(0);
     format!("{ELLIPSIS}{}", tail[from..].iter().collect::<String>())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn splits_on_white_space() {
+        assert_eq!(split_spaces(" a  b "), vec!["", "a", "b", ""]);
+        assert_eq!(split_spaces("a"), vec!["a"]);
+        assert_eq!(split_spaces(""), vec![""]);
+    }
 }

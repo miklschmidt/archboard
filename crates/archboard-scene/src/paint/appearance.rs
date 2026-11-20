@@ -4,7 +4,6 @@
 use std::collections::BTreeMap;
 
 use crate::geometry::Rect;
-use crate::js;
 use crate::paint::build::{Items, concat, shape};
 use crate::paint::colour::{Inked, Share, ToneStep, inked_over, light_dark, mixed, tinted};
 use crate::paint::icons::{drawn_icon, glyph_group};
@@ -73,8 +72,8 @@ pub(super) fn label_look(palette: &Palette) -> SlabLook {
 /// The floor of a tray nested in some containers: a step deeper for each.
 fn floor_at(depth: f64, palette: &Palette) -> Colour {
     let sink = Share {
-        light: js::min([TRAY_SINK_MAX.light, depth * TRAY_SINK.light]),
-        dark: js::min([TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark]),
+        light: archboard_ecma::min([TRAY_SINK_MAX.light, depth * TRAY_SINK.light]),
+        dark: archboard_ecma::min([TRAY_SINK_MAX.dark, depth * TRAY_SINK.dark]),
     };
     tinted(&palette.tray_floor, Some(&palette.tray_sink), sink)
 }

@@ -15,7 +15,7 @@ use std::collections::HashMap;
 use archboard_scene::fragment_head;
 use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameGuard, FrameOperator, Slot};
-use archboard_scene::{js, self_loop};
+use archboard_scene::self_loop;
 
 use crate::content::{Decision, Message, MessageKind, Step};
 use crate::sequence::design::{FRAME_GAP, MAX_PULSES_PER_STEP, MESSAGE_PITCH, STEP_NOTE_GAP};
@@ -230,10 +230,10 @@ pub(super) fn lowest_drawn(steps: &[PlacedStep<'_>], frames: &[FrameRows<'_>], f
             .note
             .as_ref()
             .map_or(0.0, |note| note.bounds.y + note.bounds.height);
-        lowest = js::max([lowest, placed.y + reach, note]);
+        lowest = archboard_ecma::max([lowest, placed.y + reach, note]);
     }
     for frame in frames {
-        lowest = js::max([lowest, frame.bottom]);
+        lowest = archboard_ecma::max([lowest, frame.bottom]);
     }
     lowest
 }

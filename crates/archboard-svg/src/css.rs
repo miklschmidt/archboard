@@ -2,8 +2,6 @@
 //! defines, a named colour as its `--semantic-` property, and each operation
 //! as the CSS function that computes it, so the browser resolves every colour
 //! in the theme the document is shown in.
-
-use archboard_scene::js;
 use archboard_scene::names::word;
 use archboard_scene::scene::{Colour, Paint};
 
@@ -39,9 +37,9 @@ pub(crate) fn css(colour: &Colour) -> String {
         } => format!(
             "oklch(from {} {} calc(min(c, {}) * {}) h)",
             css(ink),
-            js::number(*lightness),
-            js::number(*cap),
-            js::number(*chroma)
+            archboard_ecma::number(*lightness),
+            archboard_ecma::number(*cap),
+            archboard_ecma::number(*chroma)
         ),
         Colour::Shifted {
             ink,
@@ -50,14 +48,14 @@ pub(crate) fn css(colour: &Colour) -> String {
         } => format!(
             "oklch(from {} calc(l + {}) calc(c + {}) h)",
             css(ink),
-            js::number(*lightness),
-            js::number(*chroma)
+            archboard_ecma::number(*lightness),
+            archboard_ecma::number(*chroma)
         ),
         Colour::Held { ink, least, most } => format!(
             "oklch(from {} clamp({}, l, {}) c h)",
             css(ink),
-            js::number(*least),
-            js::number(*most)
+            archboard_ecma::number(*least),
+            archboard_ecma::number(*most)
         ),
     }
 }

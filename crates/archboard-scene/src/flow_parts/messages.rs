@@ -3,7 +3,6 @@
 
 use crate::drawing::TextRun;
 use crate::geometry::{Point, Rect};
-use crate::js;
 use crate::measure::{message_lines, note_lines};
 use crate::request::{MessageKind, WordLine};
 use crate::sizes::{
@@ -65,9 +64,9 @@ pub fn message_plate(label: &str, room: f64) -> MessagePlate {
         UNBOUNDED
     };
     let lines = message_lines(label, limit, PILL_TEXT_SIZE, MESSAGE_LINE_STEP);
-    let widest = lines
-        .iter()
-        .fold(0.0, |widest, line| js::max([widest, line.width]));
+    let widest = lines.iter().fold(0.0, |widest, line| {
+        archboard_ecma::max([widest, line.width])
+    });
     let taller_by = (lines.len() as f64 - 1.0) * MESSAGE_LINE_STEP;
     MessagePlate {
         lines,
@@ -90,7 +89,7 @@ pub fn note_plate(note: &str, wrap: f64) -> NotePlate {
     );
     let widest = lines
         .iter()
-        .fold(0.0, |widest, run| js::max([widest, run.width]));
+        .fold(0.0, |widest, run| archboard_ecma::max([widest, run.width]));
     NotePlate {
         width: widest.ceil() + STEP_NOTE_PADDING_X * 2.0,
         height: lines.len() as f64 * line_height + STEP_NOTE_PADDING_Y * 2.0,

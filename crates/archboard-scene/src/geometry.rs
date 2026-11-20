@@ -1,11 +1,9 @@
 //! Points, boxes and routes, and the one place a coordinate is rounded.
 
-use serde::{Deserialize, Serialize};
-use ts_rs::TS;
-
-use crate::js;
 use crate::route::point_on_segment;
 use crate::sizes::EPSILON;
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// A position in the diagram's own units.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
@@ -78,16 +76,16 @@ impl Curve {
 /// A coordinate to two decimal places, negative zero flattened: every
 /// coordinate the renderer writes goes through here.
 pub fn round_coord(value: f64) -> f64 {
-    let rounded = js::round(value * 100.0) / 100.0;
+    let rounded = archboard_ecma::round(value * 100.0) / 100.0;
     if rounded == 0.0 { 0.0 } else { rounded }
 }
 
 /// The smallest box containing both of them.
 pub fn covering(a: Rect, b: Rect) -> Rect {
-    let left = js::min([a.x, b.x]);
-    let top = js::min([a.y, b.y]);
-    let right = js::max([a.x + a.width, b.x + b.width]);
-    let bottom = js::max([a.y + a.height, b.y + b.height]);
+    let left = archboard_ecma::min([a.x, b.x]);
+    let top = archboard_ecma::min([a.y, b.y]);
+    let right = archboard_ecma::max([a.x + a.width, b.x + b.width]);
+    let bottom = archboard_ecma::max([a.y + a.height, b.y + b.height]);
     Rect {
         x: left,
         y: top,
@@ -127,8 +125,8 @@ pub fn segment_start(curve: &Curve, index: usize) -> Point {
 /// The point a fraction of the way along a route, by its segments.
 fn point_at(curve: &Curve, t: f64) -> Point {
     let count = curve.segments.len();
-    let scaled = js::min([js::max([t, 0.0]), 1.0]) * count as f64;
-    let index = js::min([scaled.floor(), count as f64 - 1.0]);
+    let scaled = archboard_ecma::min([archboard_ecma::max([t, 0.0]), 1.0]) * count as f64;
+    let index = archboard_ecma::min([scaled.floor(), count as f64 - 1.0]);
     if index < 0.0 {
         return curve.from;
     }
@@ -156,13 +154,13 @@ pub fn curve_bounds(curve: &Curve) -> Rect {
         }
         points.push(segment.to());
     }
-    let left = js::min(points.iter().map(|point| point.x));
-    let top = js::min(points.iter().map(|point| point.y));
+    let left = archboard_ecma::min(points.iter().map(|point| point.x));
+    let top = archboard_ecma::min(points.iter().map(|point| point.y));
     Rect {
         x: left,
         y: top,
-        width: js::max(points.iter().map(|point| point.x)) - left,
-        height: js::max(points.iter().map(|point| point.y)) - top,
+        width: archboard_ecma::max(points.iter().map(|point| point.x)) - left,
+        height: archboard_ecma::max(points.iter().map(|point| point.y)) - top,
     }
 }
 
@@ -182,7 +180,7 @@ fn simplify(points: &[Point]) -> Vec<Point> {
     for point in points {
         if kept
             .last()
-            .is_some_and(|last| js::hypot(last.x - point.x, last.y - point.y) < EPSILON)
+            .is_some_and(|last| archboard_ecma::hypot(last.x - point.x, last.y - point.y) < EPSILON)
         {
             continue;
         }
@@ -208,10 +206,10 @@ fn bend_through(
     start: Point,
     fitted: bool,
 ) -> Vec<Segment> {
-    let in_length = js::hypot(vertex.x - previous.x, vertex.y - previous.y);
-    let out_length = js::hypot(next.x - vertex.x, next.y - vertex.y);
+    let in_length = archboard_ecma::hypot(vertex.x - previous.x, vertex.y - previous.y);
+    let out_length = archboard_ecma::hypot(next.x - vertex.x, next.y - vertex.y);
     let radius = if fitted {
-        js::min([BEND_RADIUS, in_length / 2.0, out_length / 2.0])
+        archboard_ecma::min([BEND_RADIUS, in_length / 2.0, out_length / 2.0])
     } else {
         BEND_RADIUS
     };
@@ -242,7 +240,7 @@ fn bend_through(
         },
         to: leave,
     };
-    if js::hypot(arrive.x - start.x, arrive.y - start.y) > EPSILON {
+    if archboard_ecma::hypot(arrive.x - start.x, arrive.y - start.y) > EPSILON {
         vec![Segment::Line { to: arrive }, bend]
     } else {
         vec![bend]
@@ -267,7 +265,8 @@ pub fn curve_through(waypoints: &[Point], fitted: bool) -> Curve {
     }
     if let Some(end) = points.last() {
         let start = segments.last().map_or(first, Segment::to);
-        if segments.is_empty() || js::hypot(end.x - start.x, end.y - start.y) > EPSILON {
+        if segments.is_empty() || archboard_ecma::hypot(end.x - start.x, end.y - start.y) > EPSILON
+        {
             segments.push(Segment::Line { to: *end });
         }
     }
@@ -304,7 +303,7 @@ pub fn label_anchor_of(curve: &Curve) -> Point {
             continue;
         };
         let start = segment_start(curve, index);
-        let length = js::hypot(to.x - start.x, to.y - start.y);
+        let length = archboard_ecma::hypot(to.x - start.x, to.y - start.y);
         if best.is_none_or(|(held, _)| length > held) {
             best = Some((
                 length,

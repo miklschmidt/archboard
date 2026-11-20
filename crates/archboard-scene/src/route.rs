@@ -2,7 +2,6 @@
 //! rides.
 
 use crate::geometry::{Curve, Point, Segment, segment_start};
-use crate::js;
 
 /// How many chords measure a rounded piece.
 const CHORDS: u32 = 16;
@@ -10,13 +9,13 @@ const CHORDS: u32 = 16;
 /// How long one segment is along its ink.
 pub(crate) fn segment_length(from: Point, segment: &Segment) -> f64 {
     if let Segment::Line { to } = segment {
-        return js::hypot(to.x - from.x, to.y - from.y);
+        return archboard_ecma::hypot(to.x - from.x, to.y - from.y);
     }
     let mut length = 0.0;
     let mut previous = from;
     for step in 1..=CHORDS {
         let point = point_on_segment(from, segment, f64::from(step) / f64::from(CHORDS));
-        length += js::hypot(point.x - previous.x, point.y - previous.y);
+        length += archboard_ecma::hypot(point.x - previous.x, point.y - previous.y);
         previous = point;
     }
     length
@@ -32,10 +31,10 @@ pub(crate) fn point_on_segment(from: Point, segment: &Segment, t: f64) -> Point 
         Segment::Cubic { first, second, to } => {
             let inverse = 1.0 - t;
             let weights = [
-                crate::ecma::powi(inverse, 3),
-                3.0 * crate::ecma::powi(inverse, 2) * t,
-                3.0 * inverse * crate::ecma::powi(t, 2),
-                crate::ecma::powi(t, 3),
+                archboard_ecma::pow(inverse, 3.0),
+                3.0 * archboard_ecma::pow(inverse, 2.0) * t,
+                3.0 * inverse * archboard_ecma::pow(t, 2.0),
+                archboard_ecma::pow(t, 3.0),
             ];
             let points = [from, *first, *second, *to];
             let mut x = 0.0;

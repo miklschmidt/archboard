@@ -6,7 +6,6 @@ use std::collections::HashMap;
 
 use crate::drawing::Traffic;
 use crate::geometry::{Curve, Point, Rect};
-use crate::js;
 use crate::paint::Edge;
 use crate::paint::build::{Items, grouped};
 use crate::paint::colour::{Share, tinted};
@@ -96,7 +95,7 @@ pub(super) fn paint_traffic(
         // A card listed twice answers with the last of its boxes, as a map built from the list does.
         match cards.iter().rev().find(|(id, _)| *id == card) {
             Some((_, rect)) => rim_length(*rect, from, to),
-            None => js::hypot(from.x - to.x, from.y - to.y),
+            None => archboard_ecma::hypot(from.x - to.x, from.y - to.y),
         }
     };
     let rhythms = relay_rhythms(&lanes, &across);

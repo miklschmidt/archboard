@@ -1,8 +1,6 @@
 //! A group's attributes: the subject it draws first, then what its role says
 //! of it, as the picture has always written them. The class names here are
 //! the ones the stylesheet toggles and a viewer reaches for.
-
-use archboard_scene::js;
 use archboard_scene::names::word;
 use archboard_scene::request::{NodeAppearance, PaletteColor, TypeKind};
 use archboard_scene::scene::{Group, LineFacts, Role, Slot, Subject, Transform};
@@ -39,12 +37,12 @@ const TOGGLE_ATTRIBUTE: &str = "data-toggle";
 fn placed(transform: Transform, unit: &str) -> String {
     let moved = format!(
         "translate({}{unit},{}{unit})",
-        js::number(transform.x),
-        js::number(transform.y)
+        archboard_ecma::number(transform.x),
+        archboard_ecma::number(transform.y)
     );
     match transform.scale {
         None => moved,
-        Some(scale) => format!("{moved} scale({})", js::number(scale)),
+        Some(scale) => format!("{moved} scale({})", archboard_ecma::number(scale)),
     }
 }
 
@@ -177,7 +175,11 @@ fn page(group: &Group, out: &mut Attributes) -> bool {
             out.maybe(
                 "transform",
                 group.transform.map(|moved| {
-                    format!("translate({} {})", js::number(moved.x), js::number(moved.y))
+                    format!(
+                        "translate({} {})",
+                        archboard_ecma::number(moved.x),
+                        archboard_ecma::number(moved.y)
+                    )
                 }),
             );
         }

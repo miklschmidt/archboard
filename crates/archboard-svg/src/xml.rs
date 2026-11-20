@@ -3,7 +3,6 @@
 //! what it holds.
 
 use archboard_scene::geometry::round_coord;
-use archboard_scene::js;
 
 use crate::spelling;
 
@@ -15,7 +14,7 @@ pub(crate) trait Spelt {
 
 impl Spelt for f64 {
     fn spelt(self) -> String {
-        js::number(self)
+        archboard_ecma::number(self)
     }
 }
 
@@ -33,7 +32,7 @@ impl Spelt for String {
 
 /// A coordinate as the picture writes it: to a hundredth.
 pub(crate) fn coord(value: f64) -> String {
-    js::number(round_coord(value))
+    archboard_ecma::number(round_coord(value))
 }
 
 /// Whether an attribute is paint, written as CSS.

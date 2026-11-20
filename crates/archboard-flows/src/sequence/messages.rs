@@ -10,7 +10,7 @@
 //! the measure's (`archboard_scene::message_ends`, `message_plate`).
 
 use archboard_scene::geometry::{Point, Rect, covering};
-use archboard_scene::{ArrowEnds, js, message_ends, self_loop};
+use archboard_scene::{ArrowEnds, message_ends, self_loop};
 
 use crate::sequence::design::{MESSAGE_LABEL_GAP, NEST_INSET, SELF_LABEL_GAP};
 use crate::sequence::layout::{ActiveAt, PlacedStep};
@@ -86,7 +86,7 @@ fn straight_drawn(placed: &PlacedStep<'_>, start: f64, end: f64) -> (Rect, Rect)
         height: plate.height,
     };
     let arrow = Rect {
-        x: js::min([start, end]),
+        x: archboard_ecma::min([start, end]),
         y: placed.y,
         width: (end - start).abs(),
         height: 0.0,
@@ -136,8 +136,8 @@ pub(super) fn frame_span(
     let mut right = x + width;
     for placed in steps {
         let ink = drawn(placed, active).bounds;
-        left = js::min([left, (ink.x - NEST_INSET).floor()]);
-        right = js::max([right, (ink.x + ink.width + NEST_INSET).ceil()]);
+        left = archboard_ecma::min([left, (ink.x - NEST_INSET).floor()]);
+        right = archboard_ecma::max([right, (ink.x + ink.width + NEST_INSET).ceil()]);
     }
     (left, right - left)
 }

@@ -35,9 +35,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
 
 [[package]]
+name = "archboard-ecma"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "ryu-js",
+]
+
+[[package]]
 name = "archboard-flows"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-layout",
  "archboard-scene",
  "indexmap",
@@ -49,8 +58,8 @@ dependencies = [
 name = "archboard-graphviz"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-layout",
- "archboard-scene",
  "graphviz-pure",
  "libm",
  "serde",
@@ -61,6 +70,7 @@ dependencies = [
 name = "archboard-layout"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-graphviz",
  "archboard-router",
  "archboard-scene",
@@ -107,6 +117,7 @@ dependencies = [
 name = "archboard-render"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-flows",
  "archboard-graphviz",
  "archboard-layout",
@@ -139,9 +150,9 @@ version = "0.0.0"
 name = "archboard-scene"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-text",
  "libm",
- "ryu-js",
  "serde",
  "serde_json",
  "ts-rs",
@@ -151,6 +162,7 @@ dependencies = [
 name = "archboard-svg"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-scene",
  "archboard-text",
  "libm",
