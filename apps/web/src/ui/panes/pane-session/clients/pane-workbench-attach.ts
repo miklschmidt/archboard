@@ -7,6 +7,7 @@ import type {
 	PaneSocketGeneration,
 } from "#ui/panes/pane-session/clients/pane-socket.ts";
 import type { PaneConversation } from "#ui/panes/pane-session/rules/session-contracts.ts";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 import { attachWorkbenchAfterRegistration } from "#ui/panes/pane-session/clients/workbench-socket.ts";
 
 /** What attaching needs from the pane. */
@@ -18,6 +19,11 @@ interface WorkbenchAttachment {
 	readonly live: () => boolean;
 	/** Say what the pane is once the workbench is attached, or failed to. */
 	readonly publishStatus: () => void;
+	/**
+	 * The socket's conversation is attached and still the pane's.
+	 * @param conversation The conversation of this socket generation.
+	 */
+	readonly attached: (conversation: HostedConversation) => void;
 }
 
 /**
@@ -37,11 +43,15 @@ function attachWorkbenchOwner(attachment: WorkbenchAttachment): void {
 			connector.registration() === generation.registration
 		);
 	}
-	/** Say what the pane is once the workbench is attached, or failed to. */
-	function settled(): void {
-		if (isCurrent()) {
-			attachment.publishStatus();
-		}
+	/**
+	 * Hand over the conversation the attach gave while this generation is still the pane's socket,
+	 * and say what the pane is once the workbench is attached, or failed to.
+	 * @param hosted The generation's conversation, or null when superseded or failed.
+	 */
+	function settled(hosted: HostedConversation | null): void {
+		if (!isCurrent()) return;
+		if (hosted !== null) attachment.attached(hosted);
+		attachment.publishStatus();
 	}
 	/**
 	 * Attach the conversation to this generation's socket.
@@ -55,7 +65,7 @@ function attachWorkbenchOwner(attachment: WorkbenchAttachment): void {
 		isCurrent,
 		attach,
 	})
-		.then(settled, settled)
+		.then(settled, () => settled(null))
 		.catch(() => undefined);
 }
 

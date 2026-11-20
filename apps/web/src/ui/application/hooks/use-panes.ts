@@ -38,12 +38,8 @@ interface PaneEvents {
 	readonly onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 	/** A pane's socket came back after being lost; nothing it cached is trustworthy. */
 	readonly onPaneReconnected: (paneId: string) => void;
-	/** A pane's status was published; the workbench re-reads its transport. */
-	readonly onStatusPublished: (paneId: string) => void;
 	/** The server moved a pane onto a model, which the address bar records. */
 	readonly onModelAdopted: NonNullable<PaneSessionOptions["onModelAdopted"]>;
-	/** A pane reported its session, or went. */
-	readonly onSession: (paneId: string, session: PaneSession | null) => void;
 }
 
 /** The session callbacks every pane shares; stable for the application's life. */
@@ -117,7 +113,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 	 */
 	function onStatus(status: PaneStatus): void {
 		patch(status.paneId, { status });
-		events.read().onStatusPublished(status.paneId);
 	}
 	/**
 	 * The server asks for another pane, or for one to go.
@@ -132,13 +127,14 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		}
 	}
 	/**
-	 * A pane reported its session, or went.
+	 * A pane reported its session, or went. The conversation of its socket goes into its record,
+	 * so the shell reads it where it draws.
 	 * @param paneId The pane.
 	 * @param session The session, or null.
 	 */
 	function onSession(paneId: string, session: PaneSession | null): void {
 		handles.setSession(paneId, session);
-		events.read().onSession(paneId, session);
+		if (session !== null) patch(paneId, { conversation: session.conversation });
 	}
 	return {
 		onStatus,

@@ -28,11 +28,10 @@ import { TalkCapture } from "#ui/walkthroughs/recording/clients/talk-capture.ts"
 import { recordingAudioElements } from "#ui/walkthroughs/recording/clients/voice-audio.ts";
 import { bufferVoice, receptionOf } from "#ui/walkthroughs/recording/clients/voice-reception.ts";
 import {
-	agentReadiness,
 	readVoice,
 	type RecordingSources,
-	type RecordingTransport,
 } from "#ui/walkthroughs/recording/rules/voice-sources.ts";
+import type { VoiceTranscript } from "@archboard/agent-surfaces";
 
 /** The page's side of the recording contract, as it is published. */
 type RecordingPage = Parameters<typeof publishRecordingPage>[0];
@@ -187,8 +186,8 @@ class WalkthroughRecorder {
 	#failure: string | null = null;
 	#view: RecordedView;
 	#timer: ReturnType<typeof setInterval> | null = null;
-	/** The transport whose transcript the talk follows, and how to stop following it. */
-	#following: { readonly transport: object; readonly stop: () => void } | null = null;
+	/** The transcript the talk follows, and how to stop following it. */
+	#following: { readonly transcript: VoiceTranscript; readonly stop: () => void } | null = null;
 
 	/**
 	 * A recorder for one page, idle until started.
@@ -213,7 +212,7 @@ class WalkthroughRecorder {
 	 */
 	bind(sources: RecordingSources): void {
 		this.#sources = sources;
-		this.#follow(sources.voice?.transport ?? null);
+		this.#follow(sources.voice.transcript);
 	}
 
 	/**
@@ -308,9 +307,9 @@ class WalkthroughRecorder {
 		this.#hearAll();
 		this.#talk = { kind: "starting", since: performance.now() };
 		const { walkthrough, language, against } = this.#request;
-		sources.setup.talk({
-			walkthrough,
-			recording: { language, ...(against === null ? {} : { against }) },
+		sources.voice.talk(sources.paneId, walkthrough, {
+			language,
+			...(against === null ? {} : { against }),
 		});
 		this.#timer = setInterval(this.#tick.bind(this), durationMs("recording.paceTick"));
 	}
@@ -359,7 +358,7 @@ class WalkthroughRecorder {
 			return { phase: "failed", failure: "The page was opened without a recording target." };
 		}
 		if (this.#sources === null) return LOADING;
-		const agent = agentReadiness(this.#sources.setup);
+		const agent = this.#sources.voice.readiness();
 		if (agent.kind === "refused") return { phase: "failed", failure: agent.reason };
 		return agent.kind === "ready" && requestedPicture(this.#reading, this.#request, this.#view)
 			? READY
@@ -408,19 +407,17 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * Follow what the voice says on a transport, stamping each change into the talk as it arrives.
-	 * @param transport The pane's transport, or null while it has none.
+	 * Follow what the voice says, stamping each change into the talk as it arrives.
+	 * @param transcript What the voice has said, as the agent hears it.
 	 */
-	#follow(transport: RecordingTransport | null): void {
-		if (this.#following?.transport === transport) return;
+	#follow(transcript: VoiceTranscript): void {
+		if (this.#following?.transcript === transcript) return;
 		this.#following?.stop();
-		this.#following = null;
-		if (transport === null) return;
 		/** Stamp what the voice says now. */
 		const heard = (): void => {
-			this.#capture?.said(transport.state().snapshot?.voice.transcript ?? []);
+			this.#capture?.said(transcript.read());
 		};
-		this.#following = { transport, stop: transport.subscribe(heard) };
+		this.#following = { transcript, stop: transcript.subscribe(heard) };
 		heard();
 	}
 
@@ -491,7 +488,7 @@ class WalkthroughRecorder {
 
 	/** Let voice go: the recording no longer needs it. */
 	#stopVoice(): void {
-		void this.#sources?.voice?.session.stop().catch(() => undefined);
+		void this.#sources?.voice.stop().catch(() => undefined);
 	}
 
 	/** Stop the tick. */

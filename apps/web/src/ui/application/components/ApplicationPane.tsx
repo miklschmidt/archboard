@@ -1,17 +1,10 @@
 import { usePublishedNarration } from "#ui/application/hooks/use-published-narration.ts";
 import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 import { useModelArrival } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	type ComponentProps,
-	type JSX,
-	type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentProps, type JSX } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { AgentPane } from "@archboard/agent-surfaces";
 import { RecordedModelStage } from "#ui/walkthroughs/recording/components/RecordedModelStage.tsx";
 import type { Model } from "@archboard/model-rules";
 import { ModelExplanationHost } from "#ui/application/components/ModelExplanationHost.tsx";
@@ -42,8 +35,8 @@ interface ApplicationPaneProps {
 	handles: PaneHandles;
 	/** Narrating this pane's walkthroughs aloud, when the shell can start voice for it. */
 	narration?: WalkthroughNarration | undefined;
-	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
-	overlay?: ReactNode;
+	/** Whether the pane is presented fullscreen, so the agent dock is off screen. */
+	dockless: boolean;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
 	/** The vault the pane opens in, until the server moves it (ADR 0050). */
@@ -200,28 +193,39 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				onReading={reportCanonicalReading}
 				onUserChange={session.userChanged}
 			>
-				{props.recordedArchitecture !== undefined ? (
-					<RecordedModelStage
-						model={props.recordedArchitecture}
-						vault={vault}
-						driven={props.step}
-						reducedMotion={props.reducedMotion}
-						overlay={props.overlay}
-					/>
-				) : (
-					<ArchitectureModelStage
-						arrival={arrival}
-						vault={vault}
-						paneId={paneId}
-						reducedMotion={props.reducedMotion}
-						onCodeTargetNotice={callbacks.onCodeTargetNotice}
-						onTrouble={bound.onReadingTrouble}
-						driven={driven}
-						onPresentationEnd={endPresentation}
-						narration={narration}
-						overlay={props.overlay}
-					/>
-				)}
+				{/* The pane's agent, mounted whatever its stage shows; the voice goes where the picture is. */}
+				<AgentPane
+					paneId={paneId}
+					conversation={session.conversation}
+					recording={props.recording === true}
+					dockless={props.dockless}
+					reducedMotion={props.reducedMotion}
+				>
+					{(voice) =>
+						props.recordedArchitecture !== undefined ? (
+							<RecordedModelStage
+								model={props.recordedArchitecture}
+								vault={vault}
+								driven={props.step}
+								reducedMotion={props.reducedMotion}
+								overlay={voice}
+							/>
+						) : (
+							<ArchitectureModelStage
+								arrival={arrival}
+								vault={vault}
+								paneId={paneId}
+								reducedMotion={props.reducedMotion}
+								onCodeTargetNotice={callbacks.onCodeTargetNotice}
+								onTrouble={bound.onReadingTrouble}
+								driven={driven}
+								onPresentationEnd={endPresentation}
+								narration={narration}
+								overlay={voice}
+							/>
+						)
+					}
+				</AgentPane>
 			</ModelExplanationHost>
 		</div>
 	);

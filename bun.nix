@@ -17,6 +17,7 @@
   "@archboard-app/server" = copyPathToStore ./apps/server;
   "@archboard-app/web" = copyPathToStore ./apps/web;
   "@archboard-app/workbench-example" = copyPathToStore ./apps/workbench-example;
+  "@archboard/agent-surfaces" = copyPathToStore ./packages/agent-surfaces;
   "@archboard/code-binding" = copyPathToStore ./packages/code-binding;
   "@archboard/code-intel" = copyPathToStore ./packages/code-intel;
   "@archboard/code-opener" = copyPathToStore ./packages/code-opener;

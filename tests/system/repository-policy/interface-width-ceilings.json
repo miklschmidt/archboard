@@ -1,4 +1,5 @@
 {
+	"agent-surfaces": 18,
 	"code-binding": 16,
 	"code-intel": 11,
 	"code-opener": 9,
@@ -17,6 +18,6 @@
 	"timing": 10,
 	"ui-kit": 35,
 	"walkthrough": 20,
-	"workbench": 52,
+	"workbench": 16,
 	"workspace": 29
 }
