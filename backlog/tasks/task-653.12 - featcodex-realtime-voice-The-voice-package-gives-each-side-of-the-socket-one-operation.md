@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-20T01:02:00Z'
+updated_date: '2026-11-20T01:18:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -67,6 +67,8 @@ Vault unchanged: anchors now name removed symbols (mountVoiceStartTraceRoute, op
 
 AC1 and AC2 hold in the AMENDED form (owner decision 22, recorded above): ten runtime names over four entries, and agent.connect(socket, route) in place of agent.browser.open(send, route), with the three refusals byte-identical (connect.test.ts). AC6 belongs to the landing pull request: every commit that changes the published package is feat(codex-realtime-voice)! with a BREAKING CHANGE footer, and the README's migration table holds the rows; release PR #133's order decides 0.6.0 or 0.7.0.
 Verification: types, lint:all, format:check, workbench-example, test:modules (5392 pass), test:repository (182 pass), test:system (228 pass, voice-package.test.ts included), test:solo (15 pass), the browser lane (all 50 owners, exit 0 on rerun; canonical-model-reconciliation timed out once under load, unrelated to voice), pack:voice, and archboard check code --fail-shallow-modules --base deepen/module-depth with no finding on codex-realtime-voice. The README quickstart served from the packed tarball against the stand-in Codex: panel screenshots in both schemes under artifacts/t12/shots.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit ae2cc5872a): Agent setup, Archboard narration, Recorder. Open for the final pass: EXPOSED_UNUSED on Voice agent's SocketSurface export; RELATIONSHIP_UNDRAWN Application composition -> Socket conversation (pane-handles.ts unbound); the light panel's missing container and the word 'workhorse' in the panel.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
