@@ -9,12 +9,12 @@ import type {
 	VoiceSessionStatus,
 	VoiceSessionView,
 } from "@archboard/workbench/voice";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
+import type { HostedConversation } from "@archboard/codex-realtime-voice/browser";
 
 import type { SpokenLine, VoiceStanding } from "#ui/walkthroughs/recording/rules/pacing.ts";
 
 /** The recorded pane's transport, as far as a recording reads the voice's transcript from it. */
-type RecordingTransport = Pick<BrowserWorkbenchTransport, "state" | "subscribe">;
+type RecordingTransport = Pick<HostedConversation, "state" | "subscribe">;
 
 /** The server's agent and the voice running for the recorded pane. */
 interface RecordingSources {
