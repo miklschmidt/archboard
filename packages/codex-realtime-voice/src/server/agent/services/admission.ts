@@ -18,7 +18,7 @@ export interface UpgradeRequest {
 }
 
 /** What an admitted upgrade names: its tab session, its chat and the browser id of both. */
-export interface SocketSurface {
+interface SocketSurface {
 	readonly tabSessionId: TabSessionId;
 	readonly chatId: string;
 	readonly browserId: string;

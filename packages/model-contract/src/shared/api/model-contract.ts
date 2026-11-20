@@ -80,7 +80,7 @@ export {
 } from "#shared/schemas/views.ts";
 export type { SemanticWalkthrough, WalkthroughBeat } from "#shared/schemas/walkthrough.ts";
 export type { LegacyListing } from "#shared/protocol/legacy-listing.ts";
-export type { DiagramGrammar, EdgeEmphasis } from "#shared/schemas/vocabulary.ts";
+export type { DiagramGrammar } from "#shared/schemas/vocabulary.ts";
 export type {
 	ChangedField,
 	ReconciliationIssue,

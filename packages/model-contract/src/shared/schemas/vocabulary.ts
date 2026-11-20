@@ -31,7 +31,6 @@ const EdgeKindSchema = VocabularyNameSchema;
  * nothing.
  */
 const EdgeEmphasisSchema = z.enum(["normal", "hero", "muted"]);
-type EdgeEmphasis = z.infer<typeof EdgeEmphasisSchema>;
 
 /**
  * The grammars a variant can be drawn in.
@@ -81,6 +80,5 @@ export {
 	NodeKindSchema,
 	EdgeKindSchema,
 	EdgeEmphasisSchema,
-	type EdgeEmphasis,
 	VariantLifecycleSchema,
 };
