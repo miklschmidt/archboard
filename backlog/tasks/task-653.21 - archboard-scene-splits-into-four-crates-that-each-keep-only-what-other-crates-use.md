@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-20T01:54:00Z'
+updated_date: '2026-11-20T02:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -82,6 +82,8 @@ Gates on the head after merging deepen/module-depth: cargo test --workspace, car
 Paint parity once at the head (paint-parity.ts, windowed google-chrome, light Blocks corpus, --every 3): 540 comparisons over 90 drawings, GPU, WebGL and CPU, near and far; average 0.575% of ink apart, worst 1.24% (far views), the same figures TASK-653.20 recorded. Owed coverage: the traffic view, the dark theme, the Track engine and two thirds of the drawings.
 
 Vault unchanged. Its bindings into crates/archboard-scene/src/{paint,measure,js.rs,geometry.rs} and the anchors into those files now point at moved files (BINDING_PATH_MISSING, ANCHOR_PATH_MISSING), and the anchor of Scene -> ECMAScript numbers names js_max, which the fold removed (ANCHOR_SYMBOL_MISSING): the proposal slice rebinds them.
+
+Merged into deepen/module-depth. Footprint gate: exit 1 with recorded exceptions (proposal commit e6c3ac2691), listed in the merge commit. Unbound: this ticket, Cargo.lock, ADR 0091, skills/archboard-renderer/SKILL.md. Open for the final pass: EXPOSED_UNUSED LabelPlates (Measured text, archboard-painting); EXPOSED_VALUE_COMPUTED header_padding (Block layout and archboard-layout compute w - header_padding()).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
