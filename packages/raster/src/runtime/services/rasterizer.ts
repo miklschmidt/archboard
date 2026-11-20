@@ -16,6 +16,7 @@ import { boundsRefusal } from "#runtime/operations/bounds.ts";
 import {
 	RasterSession,
 	abortReason,
+	messageOf,
 	type Capture,
 	type CaptureJob,
 	type SessionOptions,
@@ -52,15 +53,6 @@ interface RasterizeOptions {
 	readonly signal?: AbortSignal | undefined;
 	/** The Chromium-family executable; the environment and PATH otherwise. */
 	readonly chromiumPath?: string | undefined;
-}
-
-/**
- * The message of anything thrown.
- * @param error What was thrown.
- * @returns Its message.
- */
-function messageOf(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
 }
 
 /**

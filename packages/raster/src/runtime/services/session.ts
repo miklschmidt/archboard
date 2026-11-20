@@ -263,4 +263,11 @@ class RasterSession {
 	}
 }
 
-export { RasterSession, abortReason, type Capture, type CaptureJob, type SessionOptions };
+export {
+	RasterSession,
+	abortReason,
+	messageOf,
+	type Capture,
+	type CaptureJob,
+	type SessionOptions,
+};

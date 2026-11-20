@@ -86,11 +86,4 @@ function coreBuildPath(...segments: string[]): string {
 	return join(CORE_BUILD_DIRECTORY, ...segments);
 }
 
-export {
-	CHECKOUT,
-	CORE_BUILD_COMMAND,
-	CORE_BUILD_DIRECTORY,
-	checkoutPath,
-	coreBuildPath,
-	coreSourceHash,
-};
+export { CORE_BUILD_COMMAND, CORE_BUILD_DIRECTORY, checkoutPath, coreBuildPath, coreSourceHash };
