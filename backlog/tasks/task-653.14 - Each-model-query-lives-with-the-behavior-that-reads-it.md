@@ -4,7 +4,7 @@ title: Each model query lives with the behavior that reads it
 status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-20T17:42:00Z'
+updated_date: '2026-11-20T17:58:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -55,6 +55,8 @@ Built at 4ffa8adb11 on deepen/653-14-model-queries (base ed4cb8b3fb).
 - Decision-18 allowance: the code check counts historyQuery as one function and nothing else; note it in the pull request.
 - Vault left unchanged by instruction. The code check adds only stale-vault warnings: ANCHOR_MISMATCH on Walkthrough capture, Pane composition and Measures -> Model queries; ANCHOR_PATH_MISSING on Model queries -> Code files route and Reading preparation -> Picture cache / Browser drawing; BINDING_PATH_MISSING on Reading preparation. The footprint gate (--fail-outside) fails until the draft sL6y1FLr names Branch footprint, Code exports, Picture supply, Canonical model reader, Model reading, Model explanations, Walkthrough capture, Measures, Model queries, Reading preparation and Reading stage.
 - Lanes: build, types, lint:all, format:check, test:modules (5394 pass), test:repository (184), test:system (228), test:solo (15), test:serial-browser (pass) all pass.
+
+Merged into deepen/module-depth at b68827fdc5 (vault slice 08f1fbf69e); footprint gate exit 0 with no exceptions. The semantic check counts 26 errors before and after this slice (left to TASK-653.22).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
