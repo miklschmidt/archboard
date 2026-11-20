@@ -16,7 +16,7 @@
 import { expect, test } from "bun:test";
 import { act } from "@testing-library/react";
 
-import { cornerWarning, lineWarning } from "@archboard/renderer/picture";
+import { warningMark } from "@archboard/renderer/picture";
 import { cameraNow } from "#tests/ui/support/canvas/camera-probes.ts";
 import {
 	drawing,
@@ -163,7 +163,7 @@ test("a warning wears the picture's own warning where the picture puts one; info
 	expect(marks.length).toBe(1);
 	// The fake card's body is 80 by 40 at the origin: the badge of a subject
 	// nobody has decided stands on its top-right corner, and so does this.
-	expect(centreOf(marks[0]!)).toBe(centreOf(cornerWarning({ x: 0, y: 0, width: 80, height: 40 })));
+	expect(centreOf(marks[0]!)).toBe(centreOf(warningMark({ x: 0, y: 0, width: 80, height: 40 })));
 	// The information about the line draws nothing anywhere.
 	expect(surface().querySelectorAll(MARK).length).toBe(1);
 	// Reading the memory is the whole of what the pane asked: no pass.
@@ -220,12 +220,12 @@ test("each warning stands where the picture puts its own badge, in the group tha
 	});
 	expect(placed.toSorted()).toEqual(
 		[
-			`n1/header ${centreOf(cornerWarning({ x: 20, y: 20, width: 200, height: 120 }))}`,
-			`e1/label ${centreOf(lineWarning({ x: 300, y: 65 }))}`,
+			`n1/header ${centreOf(warningMark({ x: 20, y: 20, width: 200, height: 120 }))}`,
+			`e1/label ${centreOf(warningMark({ x: 300, y: 65 }))}`,
 			// The middle of the longest straight run, as the picture puts the words.
-			`e2/label ${centreOf(lineWarning({ x: 20, y: 200 }))}`,
-			`n2/body ${centreOf(cornerWarning({ x: 250, y: 150, width: 80, height: 40 }))}`,
-			`n2/body ${centreOf(cornerWarning({ x: 250, y: 220, width: 80, height: 40 }))}`,
+			`e2/label ${centreOf(warningMark({ x: 20, y: 200 }))}`,
+			`n2/body ${centreOf(warningMark({ x: 250, y: 150, width: 80, height: 40 }))}`,
+			`n2/body ${centreOf(warningMark({ x: 250, y: 220, width: 80, height: 40 }))}`,
 		].toSorted(),
 	);
 });

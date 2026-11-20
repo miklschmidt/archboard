@@ -3,100 +3,37 @@
 // picture with them, and a subject's tip says with them what the subject is.
 // So do the marks a line and a subject carry beside their kind: how heavy a
 // line is drawn, the pulses that ride it, and the pin a proposal puts on what
-// it changed. A key's symbol is the picture's symbol, or it keys nothing.
+// it changed. A key's symbol is the picture's symbol, or it keys nothing, so
+// every sample but the chip is the renderer's own finished markup.
 
-import { useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
+import { useId, useMemo, type CSSProperties, type JSX } from "react";
 
-import {
-	HEAD_LENGTH,
-	lineInk,
-	OPEN_ARM,
-	neutralPulse,
-	lineWidth,
-	standingMark,
-	type SubjectStanding,
-} from "@archboard/renderer/picture";
+import { markSample, type MarkSample, type SubjectStanding } from "@archboard/renderer/picture";
 import { cn } from "@archboard/ui-kit/components";
 import { uncoloured } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { paletteInk } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
 
-/** How high every line sample is drawn, and where its line runs. */
-const LINE_BOX = { height: 20, middle: 10 } as const;
-
-/** A line the way the picture draws one its author gave no emphasis. */
-const PLAIN_WIDTH = lineWidth("normal");
-/** A rail of a mixed line, and how far each stands from the line's middle. */
-const RAIL_WIDTH = 1.2;
-const RAIL_STEP = 1.2;
-
 /**
- * A line sample's frame: a box as wide as asked, coloured by `color`.
- * @param props Its width, its colour and its strokes.
- * @param props.width How wide the sample is.
- * @param props.color The ink its strokes take through currentColor.
- * @param props.children The strokes.
- * @returns The frame.
+ * One of the renderer's samples, as it finishes it.
+ * @param props The sample, and how wide the place it sits in makes it.
+ * @param props.sample Which sample.
+ * @param props.width How wide a line sample is; the renderer's default when absent.
+ * @returns The sample.
  */
-function LineFrame(props: {
-	readonly width: number;
-	readonly color: string;
-	readonly children: ReactNode;
+function Sample(props: {
+	readonly sample: MarkSample;
+	readonly width?: number | undefined;
 }): JSX.Element {
-	const style = useMemo(() => ({ color: props.color }), [props.color]);
+	const id = useId().replaceAll(":", "");
+	const { sample, width } = props;
+	const markup = useMemo(
+		() => ({ __html: markSample(sample, { width, id }) }),
+		[sample, width, id],
+	);
 	return (
-		<svg
-			aria-hidden="true"
-			width={props.width}
-			height={LINE_BOX.height}
-			viewBox={`0 0 ${props.width} ${LINE_BOX.height}`}
-			className="shrink-0"
-			style={style}
-		>
-			{props.children}
-		</svg>
+		<span aria-hidden="true" className="inline-flex shrink-0" dangerouslySetInnerHTML={markup} />
 	);
-}
-
-/**
- * A sample's line up to where its head starts: two rails for a mixed line, as the
- * picture draws it, and otherwise one line in its dash.
- * @param props Where it ends and its dash.
- * @param props.end Where the line stops.
- * @param props.dash The line's dash.
- * @returns The line.
- */
-function SampleRun(props: {
-	readonly end: number;
-	readonly dash: AppliedAppearance["dash"];
-}): JSX.Element {
-	/**
-	 * One line of the sample.
-	 * @param row How far down the sample it stands.
-	 * @param width How thick it is.
-	 * @param dash How it is broken, if it is.
-	 * @returns The line.
-	 */
-	const run = (row: number, width: number, dash?: string): JSX.Element => (
-		<path
-			key={row}
-			d={`M1 ${row}H${props.end}`}
-			fill="none"
-			stroke="currentColor"
-			strokeWidth={width}
-			strokeDasharray={dash}
-		/>
-	);
-	if (props.dash === "mixed") {
-		return (
-			<>
-				{run(LINE_BOX.middle - RAIL_STEP, RAIL_WIDTH)}
-				{run(LINE_BOX.middle + RAIL_STEP, RAIL_WIDTH)}
-			</>
-		);
-	}
-	const dash = props.dash === "dotted" ? "1 4" : props.dash === "dashed" ? "6 4" : undefined;
-	return run(LINE_BOX.middle, PLAIN_WIDTH, dash);
 }
 
 /**
@@ -110,59 +47,17 @@ function RelationshipSample(props: {
 	readonly appearance: AppliedAppearance;
 	readonly width?: number;
 }): JSX.Element {
-	const { appearance } = props;
-	const width = props.width ?? 36;
-	// Drawn in the picture's own expression for it: a coloured line at its line
-	// strength over the page, the neutral line as it is.
-	const ink = lineInk(appearance.lineColor);
-	const tip = width - 1;
-	const filled = appearance.arrowhead === "filled";
-	// A filled head covers the end of its line. An open head's arms meet where its line ends.
-	const end = filled ? tip - HEAD_LENGTH / 2 : tip;
-	return (
-		<LineFrame width={width} color={ink}>
-			<SampleRun end={end} dash={appearance.dash} />
-			{appearance.arrowhead !== "none" && <ArrowHead filled={filled} tip={tip} />}
-		</LineFrame>
+	const { lineColor, dash, arrowhead } = props.appearance;
+	const sample = useMemo(
+		(): MarkSample => ({ kind: "line", color: lineColor, dash, arrowhead }),
+		[lineColor, dash, arrowhead],
 	);
+	return <Sample sample={sample} width={props.width} />;
 }
 
-/**
- * An arrowhead as the picture draws it: the ten-unit drawing of its marker, in
- * a square as large as the picture's head. A filled head fills the square. An
- * open head's arms run into the tip.
- * @param props Its form and where its tip is.
- * @param props.filled Whether the head is filled.
- * @param props.tip Where its tip is, on the line.
- * @returns The head.
- */
-function ArrowHead(props: { readonly filled: boolean; readonly tip: number }): JSX.Element {
-	return (
-		<svg
-			x={props.tip - HEAD_LENGTH}
-			y={LINE_BOX.middle - HEAD_LENGTH / 2}
-			width={HEAD_LENGTH}
-			height={HEAD_LENGTH}
-			viewBox="0 0 10 10"
-		>
-			{props.filled ? (
-				<path d="M0 0L10 5L0 10Z" fill="currentColor" />
-			) : (
-				<path
-					d="M2 1L10 5L2 9"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth={OPEN_ARM}
-					strokeLinecap="round"
-					strokeLinejoin="round"
-				/>
-			)}
-		</svg>
-	);
-}
-
-/** The neutral line the two line marks are keyed on. */
-const NEUTRAL_LINE = "var(--diagram-edge)";
+/** The heavier line of the most emphasis, and the pulse a line with traffic carries. */
+const EMPHASIS: MarkSample = { kind: "emphasis" };
+const TRAFFIC: MarkSample = { kind: "traffic" };
 
 /**
  * A heavier line than the kinds' samples, at the width the picture draws the
@@ -172,81 +67,18 @@ const NEUTRAL_LINE = "var(--diagram-edge)";
  * @returns The sample.
  */
 function EmphasisSample(props: { readonly width: number }): JSX.Element {
-	return (
-		<LineFrame width={props.width} color={NEUTRAL_LINE}>
-			<path
-				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
-				fill="none"
-				stroke="currentColor"
-				strokeWidth={lineWidth("hero")}
-			/>
-		</LineFrame>
-	);
+	return <Sample sample={EMPHASIS} width={props.width} />;
 }
-
-/** The picture's own proportions of a pulse in small: how thick its core is, and how long its light runs. */
-const PULSE = { width: neutralPulse().breadth, span: 40, glow: 3 } as const;
-
-/** The light of a pulse on the neutral line: the line's colour with white mixed in, as the picture draws it. */
-const PULSE_LIGHT: CSSProperties = { stopColor: neutralPulse().ink };
-
-/**
- * The light of a pulse along its length: nothing, a tail that gathers toward a
- * bright head, and a short soft front.
- */
-const PULSE_STOPS = [
-	[0, 0],
-	[0.35, 0.05],
-	[0.6, 0.2],
-	[0.78, 0.5],
-	[0.9, 1],
-	[1, 0],
-] as const;
 
 /**
  * A line with a pulse on it, the still shape of the beams that fly along a line
- * whose author illustrated its traffic: a gradient of light that gathers toward
- * a head, in a soft glow.
+ * whose author illustrated its traffic.
  * @param props How wide the sample is.
  * @param props.width The width.
  * @returns The sample.
  */
 function TrafficSample(props: { readonly width: number }): JSX.Element {
-	const gradient = `pulse-${useId().replaceAll(":", "")}`;
-	const front = props.width / 2 + PULSE.span / 2;
-	const run = `M${front - PULSE.span} ${LINE_BOX.middle}H${front}`;
-	return (
-		<LineFrame width={props.width} color={NEUTRAL_LINE}>
-			<defs>
-				<linearGradient
-					id={gradient}
-					gradientUnits="userSpaceOnUse"
-					x1={front - PULSE.span}
-					x2={front}
-					y1="0"
-					y2="0"
-				>
-					{PULSE_STOPS.map(([offset, light]) => (
-						<stop key={offset} offset={offset} style={PULSE_LIGHT} stopOpacity={light} />
-					))}
-				</linearGradient>
-			</defs>
-			<path
-				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
-				fill="none"
-				stroke="currentColor"
-				strokeWidth={PLAIN_WIDTH}
-			/>
-			<path
-				d={run}
-				fill="none"
-				stroke={`url(#${gradient})`}
-				strokeOpacity="0.25"
-				strokeWidth={PULSE.width + PULSE.glow}
-			/>
-			<path d={run} fill="none" stroke={`url(#${gradient})`} strokeWidth={PULSE.width} />
-		</LineFrame>
-	);
+	return <Sample sample={TRAFFIC} width={props.width} />;
 }
 
 /**
@@ -328,17 +160,11 @@ function chipPaint(ink: string): CSSProperties {
  * @returns The pin, 12 px across.
  */
 function StandingSample(props: { readonly standing: SubjectStanding }): JSX.Element {
-	const markup = useMemo(() => ({ __html: standingMark(props.standing) }), [props.standing]);
-	return (
-		<svg
-			aria-hidden="true"
-			width="12"
-			height="12"
-			viewBox="-10 -10 20 20"
-			className="shrink-0"
-			dangerouslySetInnerHTML={markup}
-		/>
+	const sample = useMemo(
+		(): MarkSample => ({ kind: "standing", standing: props.standing }),
+		[props.standing],
 	);
+	return <Sample sample={sample} />;
 }
 
 export { EmphasisSample, RelationshipSample, StandingSample, TrafficSample, TypeSample };

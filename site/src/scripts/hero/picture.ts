@@ -8,7 +8,7 @@
 // at more than one scale: the first image holds all of it, and each further image holds a part
 // nearer the eye, finer. The table says how fine each must be.
 
-import { startCpuPainter } from "../../../../packages/renderer/src/ui/clients/painter.ts";
+import { startPainter } from "../../../../packages/renderer/src/ui/clients/painter.ts";
 import paintingUrl from "../../paintings/hero.painting.json?url";
 import { plan } from "./plan";
 
@@ -70,7 +70,7 @@ export async function paintPicture(parts: readonly Part[]): Promise<Level[] | nu
 		const sizes = parts.map(sized);
 		first.width = sizes[0]?.width ?? 1;
 		first.height = sizes[0]?.height ?? 1;
-		const { painter, canvas } = await startCpuPainter(first, true);
+		const { painter, canvas } = await startPainter(first, true, { only: "cpu" });
 		painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 }, trafficShown: false }));
 		painter.arrive(await painting, JSON.stringify({ kind: "cut" }));
 		const levels: Level[] = [];

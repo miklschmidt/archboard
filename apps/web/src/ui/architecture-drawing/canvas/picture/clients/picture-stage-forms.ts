@@ -180,7 +180,7 @@ function sizeCanvas(canvas: HTMLCanvasElement): boolean {
 type StartedPainter = Awaited<ReturnType<typeof startPainter>>;
 
 /** Why a canvas's GPU painter stopped at work, and what comes next. */
-type PainterFailure = NonNullable<Parameters<typeof startPainter>[2]>;
+type PainterFailure = NonNullable<NonNullable<Parameters<typeof startPainter>[2]>["failure"]>;
 
 /** How a painter takes a picture. */
 type PictureHand = (painter: StartedPainter["painter"], painting: string) => void;

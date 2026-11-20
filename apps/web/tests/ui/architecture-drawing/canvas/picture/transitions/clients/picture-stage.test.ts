@@ -71,18 +71,20 @@ await mock.module("@archboard/renderer/browser", () => ({
 	 * Start only when the test allows it, on a fresh canvas after GPU failure.
 	 * @param canvas The canvas.
 	 * @param _dark The theme.
-	 * @param failure The GPU failure, if any.
-	 * @param failure.painter The painter that failed.
-	 * @param failure.reason What went wrong.
-	 * @param failure.retry Whether the GPU gets another try.
+	 * @param options How it starts.
+	 * @param options.failure The GPU failure, if any.
+	 * @param options.failure.painter The painter that failed.
+	 * @param options.failure.reason What went wrong.
+	 * @param options.failure.retry Whether the GPU gets another try.
 	 * @returns The started painter.
 	 */
 	startPainter: (
 		canvas: HTMLCanvasElement,
 		_dark: boolean,
-		failure?: { painter: string; reason: string; retry: boolean },
+		options?: { failure?: { painter: string; reason: string; retry: boolean } },
 	) =>
 		new Promise((resolve, reject) => {
+			const failure = options?.failure;
 			starting.retry = failure?.retry;
 			starting.failed = failure?.painter;
 			/**
