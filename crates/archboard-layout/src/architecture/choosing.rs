@@ -3,7 +3,7 @@
 use super::graph::Graph;
 use super::solving::{Solver, Unsolved};
 use crate::blocks::place::{nesting_option, told_drawing};
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use indexmap::IndexMap;
 use serde::Deserialize;
 

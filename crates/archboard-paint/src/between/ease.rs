@@ -1,7 +1,7 @@
 //! The curves every part of a move follows, and the arithmetic they share.
 //! A card, a line and a label move on one curve and fade on one curve.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Transform;
 
 use crate::timing::{EMPHASISED, phase};
@@ -98,7 +98,7 @@ pub(super) fn then(outer: Transform, inner: Option<Transform>) -> Transform {
 #[cfg(test)]
 mod tests {
     use super::{emphasised, scale_about, then};
-    use archboard_scene::geometry::Rect;
+    use archboard_geometry::Rect;
     use archboard_scene::scene::Transform;
 
     #[test]

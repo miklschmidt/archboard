@@ -6,7 +6,7 @@
 //! size the painter draws by.
 
 /// The space around the page, which the painter frames the page by.
-pub(super) const DIAGRAM_MARGIN: f64 = archboard_scene::paint::diagram_margin();
+pub(super) const DIAGRAM_MARGIN: f64 = archboard_painting::diagram_margin();
 
 /// How far a container's well holds what it holds in from its walls.
 pub(super) const NEST_INSET: f64 = 18.0;

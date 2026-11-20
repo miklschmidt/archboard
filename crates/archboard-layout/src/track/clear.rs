@@ -5,7 +5,7 @@
 
 use std::cell::{Cell, OnceCell};
 
-use crate::ecma::{js_max, sort_by};
+use crate::ecma::{max, sort_by};
 
 /// How many x are tested stretch by stretch before the stretches are merged.
 const ASKED_BEFORE_MERGING: usize = 8;
@@ -92,7 +92,7 @@ fn merged_of(stretches: &[(f64, f64)]) -> Merged {
         // Two open stretches that overlap keep out one open stretch; two that
         // only touch leave the point between them clear.
         match highs.last_mut() {
-            Some(last) if low < *last => *last = js_max(*last, high),
+            Some(last) if low < *last => *last = max([*last, high]),
             _ => {
                 lows.push(low);
                 highs.push(high);

@@ -1,10 +1,8 @@
 //! Where each participant of a sequence is busy: the activation bars its
 //! column draws, from a call that waits to the reply that answers it.
 
-use std::collections::HashSet;
-
-use archboard_scene::js;
 use archboard_scene::request::Activation;
+use std::collections::HashSet;
 
 use crate::content::MessageKind;
 use crate::sequence::design::{BAR_OVERHANG, MESSAGE_PITCH};
@@ -54,7 +52,7 @@ fn last_involvement(steps: &[PlacedStep<'_>], from: usize, node: &str) -> f64 {
     let mut lowest = steps.get(from).map_or(0.0, |step| step.y);
     for candidate in steps.iter().skip(from) {
         if candidate.step.from == node || candidate.step.to == node {
-            lowest = js::js_max(lowest, candidate.y);
+            lowest = archboard_ecma::max([lowest, candidate.y]);
         }
     }
     lowest
@@ -68,7 +66,7 @@ fn merged_bars(bars: Vec<Activation>) -> Vec<Activation> {
     for bar in bars {
         match merged.last_mut() {
             Some(current) if bar.top <= current.bottom => {
-                current.bottom = js::js_max(current.bottom, bar.bottom);
+                current.bottom = archboard_ecma::max([current.bottom, bar.bottom]);
             }
             _ => merged.push(bar),
         }

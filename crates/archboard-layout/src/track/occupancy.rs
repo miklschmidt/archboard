@@ -4,7 +4,7 @@
 
 use std::rc::Rc;
 
-use crate::ecma::{abs, js_max, js_min, or, sorted_by};
+use crate::ecma::{abs, max, min, or, sorted_by};
 use crate::track::chains::{LANE, LaneRun, REGION_CLEARANCE, StationId, Track};
 use crate::track::clear::ClearOf;
 use crate::track::scene::{ItemId, Map, Placement, Set, Spot, WallStretches};
@@ -54,9 +54,9 @@ fn shared_gutter(
     facing.fold((low, high), |(low, high), other| {
         let middle = f64::midpoint(wall, other);
         if side == 0 && other < wall {
-            (js_max(low, js_min(wall - LANE, middle)), high)
+            (max([low, min([wall - LANE, middle])]), high)
         } else if side == 1 && other > wall {
-            (low, js_min(high, js_max(wall + LANE, middle)))
+            (low, min([high, max([wall + LANE, middle])]))
         } else {
             (low, high)
         }
@@ -172,10 +172,9 @@ impl Occupancy {
             bands.iter().fold((low, high), |narrowest, &other| {
                 match self.walls[other].get(wall) {
                     None => narrowest,
-                    Some(&stretch) => (
-                        js_max(narrowest.0, stretch.0),
-                        js_min(narrowest.1, stretch.1),
-                    ),
+                    Some(&stretch) => {
+                        (max([narrowest.0, stretch.0]), min([narrowest.1, stretch.1]))
+                    }
                 }
             })
         });

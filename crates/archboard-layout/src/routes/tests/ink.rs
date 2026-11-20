@@ -1,8 +1,8 @@
 //! The crossing pass and the painter agree on a shared trunk's hop: every
 //! route follows the arc, but only its drawer shows the ink.
 
+use archboard_painting::paint;
 use archboard_scene::drawing::{Bridged, EdgeFacts, PaintedDrawing};
-use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::{Colour, Definition, Geometry, Item, Paint, PathStep, Scene};
 use serde_json::json;

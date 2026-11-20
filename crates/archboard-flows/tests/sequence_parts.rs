@@ -6,10 +6,11 @@
 use std::collections::BTreeMap;
 
 use archboard_flows::sequence::{SequenceRequest, picture};
-use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::paint;
+use archboard_geometry::{Point, Rect};
+use archboard_painting::paint;
 use archboard_scene::request::{
     DocumentRequest, NodeAppearance, PageRequest, Picture, Relief, SequenceClock, SequenceDrawing,
+    TypeKind,
 };
 use archboard_scene::scene::{Geometry, Item, PathStep, Role, SubjectKind};
 
@@ -33,9 +34,9 @@ fn appearance() -> NodeAppearance {
         container: false,
         tags: Vec::new(),
         type_color: None,
-        icon: "RiServerLine".to_owned(),
+        icon: Some("RiServerLine".to_owned()),
         type_name: "Service".to_owned(),
-        type_kind: "service".to_owned(),
+        type_kind: TypeKind::Policy("service".to_owned()),
         drill: None,
     }
 }

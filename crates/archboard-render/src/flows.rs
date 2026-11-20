@@ -61,7 +61,7 @@ pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Result<Out
     );
     let icons: Vec<&str> = appearances
         .values()
-        .map(|look| look.icon.as_str())
+        .filter_map(|look| look.icon.as_deref())
         .collect();
     let icons = icons_of(host, &icons)?;
     Ok(Outline::Paint(Box::new(sequence::picture(

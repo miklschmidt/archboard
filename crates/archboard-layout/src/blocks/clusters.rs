@@ -9,7 +9,7 @@
 //! `label_rules.rs`.
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
-use crate::ecma::{js_min, or, sorted_by};
+use crate::ecma::{min, or, sorted_by};
 use crate::track::graphviz::Join;
 use crate::track::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Node, Value, box_node};
@@ -163,7 +163,7 @@ impl<'t> Clusters<'t> {
             while let Some(cluster) = around {
                 let title = title_of(cluster);
                 let at = place.get(&title).copied().unwrap_or(index as f64);
-                place.insert(title, js_min(at, index as f64));
+                place.insert(title, min([at, index as f64]));
                 around = block.cluster_of.get(cluster);
             }
         }

@@ -35,10 +35,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
 
 [[package]]
+name = "archboard-ecma"
+version = "0.0.0"
+dependencies = [
+ "libm",
+ "ryu-js",
+]
+
+[[package]]
 name = "archboard-flows"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
+ "archboard-geometry",
  "archboard-layout",
+ "archboard-painting",
  "archboard-scene",
  "indexmap",
  "serde",
@@ -46,11 +57,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "archboard-geometry"
+version = "0.0.0"
+dependencies = [
+ "archboard-ecma",
+ "serde",
+ "ts-rs",
+]
+
+[[package]]
 name = "archboard-graphviz"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-layout",
- "archboard-scene",
  "graphviz-pure",
  "libm",
  "serde",
@@ -61,7 +81,10 @@ dependencies = [
 name = "archboard-layout"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
+ "archboard-geometry",
  "archboard-graphviz",
+ "archboard-painting",
  "archboard-router",
  "archboard-scene",
  "indexmap",
@@ -74,6 +97,8 @@ dependencies = [
 name = "archboard-paint"
 version = "0.0.0"
 dependencies = [
+ "archboard-geometry",
+ "archboard-painting",
  "archboard-scene",
  "archboard-text",
  "kurbo",
@@ -87,6 +112,7 @@ dependencies = [
 name = "archboard-painter-wasm"
 version = "0.0.0"
 dependencies = [
+ "archboard-geometry",
  "archboard-paint",
  "archboard-scene",
  "futures-channel",
@@ -104,12 +130,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "archboard-painting"
+version = "0.0.0"
+dependencies = [
+ "archboard-ecma",
+ "archboard-geometry",
+ "archboard-scene",
+ "archboard-text",
+ "libm",
+ "serde_json",
+]
+
+[[package]]
 name = "archboard-render"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
  "archboard-flows",
  "archboard-graphviz",
  "archboard-layout",
+ "archboard-painting",
  "archboard-scene",
  "archboard-svg",
  "indexmap",
@@ -139,11 +179,11 @@ version = "0.0.0"
 name = "archboard-scene"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
+ "archboard-geometry",
  "archboard-text",
  "libm",
- "ryu-js",
  "serde",
- "serde_json",
  "ts-rs",
 ]
 
@@ -151,6 +191,9 @@ dependencies = [
 name = "archboard-svg"
 version = "0.0.0"
 dependencies = [
+ "archboard-ecma",
+ "archboard-geometry",
+ "archboard-painting",
  "archboard-scene",
  "archboard-text",
  "libm",

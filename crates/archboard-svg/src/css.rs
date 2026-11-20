@@ -2,16 +2,15 @@
 //! defines, a named colour as its `--semantic-` property, and each operation
 //! as the CSS function that computes it, so the browser resolves every colour
 //! in the theme the document is shown in.
-
-use archboard_scene::js;
 use archboard_scene::names::word;
 use archboard_scene::scene::{Colour, Paint};
 
 use crate::definitions::gradient_id;
+use crate::spelling;
 
 /// A share as a CSS percentage, to four places.
 fn percent(share: f64) -> String {
-    format!("{}%", js::fixed_number(share * 100.0, 4))
+    format!("{}%", spelling::fixed_number(share * 100.0, 4))
 }
 
 /// A colour as CSS.
@@ -38,9 +37,9 @@ pub(crate) fn css(colour: &Colour) -> String {
         } => format!(
             "oklch(from {} {} calc(min(c, {}) * {}) h)",
             css(ink),
-            js::number(*lightness),
-            js::number(*cap),
-            js::number(*chroma)
+            archboard_ecma::number(*lightness),
+            archboard_ecma::number(*cap),
+            archboard_ecma::number(*chroma)
         ),
         Colour::Shifted {
             ink,
@@ -49,14 +48,14 @@ pub(crate) fn css(colour: &Colour) -> String {
         } => format!(
             "oklch(from {} calc(l + {}) calc(c + {}) h)",
             css(ink),
-            js::number(*lightness),
-            js::number(*chroma)
+            archboard_ecma::number(*lightness),
+            archboard_ecma::number(*chroma)
         ),
         Colour::Held { ink, least, most } => format!(
             "oklch(from {} clamp({}, l, {}) c h)",
             css(ink),
-            js::number(*least),
-            js::number(*most)
+            archboard_ecma::number(*least),
+            archboard_ecma::number(*most)
         ),
     }
 }
@@ -79,7 +78,7 @@ pub(crate) fn colour_id(colour: &Colour) -> String {
             spelt.push(character);
         } else {
             spelt.push('_');
-            spelt.push_str(&js::pad_start(
+            spelt.push_str(&spelling::pad_start(
                 &format!("{:x}", u32::from(character)),
                 2,
                 '0',

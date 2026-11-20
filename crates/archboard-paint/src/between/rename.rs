@@ -70,7 +70,7 @@ pub(super) fn scene(scene: &mut Scene) {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::Rect;
+    use archboard_geometry::Rect;
     use archboard_scene::scene::{
         Atlas, Clip, ClipId, Colour, Definition, Group, Item, Mask, MaskId, Role, Scene, Shape,
     };

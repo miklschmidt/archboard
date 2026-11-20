@@ -256,7 +256,7 @@ pub(crate) struct Showing<'a> {
 #[cfg(test)]
 mod tests {
     use super::{Sweep, Timing};
-    use archboard_scene::geometry::Point;
+    use archboard_geometry::Point;
     use archboard_scene::scene::{
         Atlas, Colour, Item, PathStep, Purpose, Role, Scene, Subject, SubjectKind, Token,
     };

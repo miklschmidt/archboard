@@ -5,9 +5,8 @@
 use std::collections::{BTreeMap, HashSet};
 
 use archboard_layout::{LineLook, Node};
-use archboard_scene::paint::kind_icon;
 use archboard_scene::request::{
-    Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance,
+    Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance, TypeKind,
 };
 
 use crate::request::Policy;
@@ -61,11 +60,11 @@ pub(crate) fn node_appearances(
                     tags_of(node, policy)
                 },
                 type_color: kind.and_then(|kind| kind.color),
-                icon: kind_icon(kind.and_then(|kind| kind.icon.as_deref())),
+                icon: kind.and_then(|kind| kind.icon.clone()),
                 type_name: kind
                     .and_then(|kind| kind.name.clone())
                     .unwrap_or_else(|| node.kind.clone()),
-                type_kind: node.kind.clone(),
+                type_kind: TypeKind::Policy(node.kind.clone()),
                 drill: node
                     .drills
                     .then(|| drill_direction(&node.kind, level, &policy.levels)),

@@ -2,7 +2,7 @@
 //! blocks its lines reach, where packing centred it on the row instead: its
 //! lines then drop straight rather than stepping across the gap.
 
-use crate::ecma::{abs, js_max, js_min, max, min};
+use crate::ecma::{abs, max, min};
 use crate::geometry::{Point, Rect};
 use crate::track::chains::LANE;
 
@@ -109,8 +109,8 @@ impl PackLayout<'_> {
             && to.y >= extent.y - SAME
             && to.y + to.height <= extent.y + extent.height + SAME;
         let room = self.gap - 2.0 * LANE;
-        let (low, high) = (js_min(from.x, to.x), js_max(from.x, to.x) + from.width);
-        let (top, bottom) = (js_min(from.y, to.y), js_max(from.y, to.y) + from.height);
+        let (low, high) = (min([from.x, to.x]), max([from.x, to.x]) + from.width);
+        let (top, bottom) = (min([from.y, to.y]), max([from.y, to.y]) + from.height);
         inside
             && self
                 .block

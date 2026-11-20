@@ -8,7 +8,7 @@
 //! a container onto its straight column where a label stood in its way
 //! before sliding.
 
-use crate::ecma::{abs, js_max, js_min};
+use crate::ecma::{abs, max, min};
 use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
 use crate::track::channels::{End, NetId};
 use crate::track::occupancy::Occupancy;
@@ -41,7 +41,7 @@ impl Track<'_> {
             return centre_x(self.scene.item(one.item.expect("a label")));
         }
         let (low, high) = self.reach_of(station);
-        js_min(high, js_max(low, near))
+        min([high, max([low, near])])
     }
 
     /// Once the labels have slid, move each run of lanes that stands on no one

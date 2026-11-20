@@ -110,7 +110,7 @@ pub(crate) fn drawn_in_order<'a>(items: &'a [Item], seen: &Seen) -> Sequence<'a>
 mod tests {
     use super::drawn_in_order;
     use crate::presentation::Seen;
-    use archboard_scene::request::NodeAppearance;
+    use archboard_scene::request::{NodeAppearance, TypeKind};
     use archboard_scene::scene::{Group, Item, Role, Subject, SubjectKind};
 
     use crate::testing::subject_group;
@@ -128,9 +128,9 @@ mod tests {
             container,
             tags: Vec::new(),
             type_color: None,
-            icon: String::new(),
+            icon: None,
             type_name: String::new(),
-            type_kind: String::new(),
+            type_kind: TypeKind::Policy(String::new()),
             drill: None,
         }
     }

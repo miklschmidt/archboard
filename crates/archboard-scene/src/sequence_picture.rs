@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::{NodeFacts, TextRun};
-use crate::geometry::Rect;
 use crate::request::NodeAppearance;
+use archboard_geometry::Rect;
 
 /// One stretch of a column where its participant is busy.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
@@ -167,12 +167,6 @@ pub struct FrameGuard {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub divider: Option<f64>,
-}
-
-/// How an alternative's label is spelled on its guard row: in brackets, as a
-/// guard reads in UML. The fragment's measure and its painter both spell it here.
-pub(crate) fn guard_words(label: &str) -> String {
-    format!("[{label}]")
 }
 
 /// What a frame's tab says.

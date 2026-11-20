@@ -1,14 +1,14 @@
 //! Small scenes for the tests of a move.
 
-use archboard_scene::drawing::{DiagramFont, Emphasis, FontFamily};
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
+use archboard_scene::drawing::Emphasis;
 use archboard_scene::scene::{
     Atlas, AtlasBox, Boxes, Colour, Group, Head, HeadInk, Item, MarkerId, Pointer, Purpose, Role,
-    Scene, Shape, Subject, SubjectKind, Text, Token,
+    Scene, Shape, Subject, SubjectKind, Token,
 };
 
 use super::phases::Phases;
-use crate::testing::{boxed, stroke, subject_group, traced};
+use crate::testing::{boxed, stroke, subject_group, traced, words_at};
 
 /// The values `@archboard/timing` holds.
 pub(super) const PHASES: Phases = super::phases::fixtures::PHASES;
@@ -28,16 +28,7 @@ pub(super) fn at(x: f64, y: f64) -> Point {
 
 /// A run of words at a place.
 pub(super) fn words(place: f64, words: &str) -> Item {
-    Item::Text(Text::set(
-        at(place, place),
-        DiagramFont {
-            family: FontFamily::Sans,
-            weight: 400,
-        },
-        12.0,
-        Colour::Black,
-        words,
-    ))
+    Item::Text(words_at(at(place, place), false, words))
 }
 
 fn subject(kind: SubjectKind, id: &str) -> Subject {

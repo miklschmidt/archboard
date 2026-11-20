@@ -19,11 +19,12 @@
 
 use std::collections::HashMap;
 
+use archboard_geometry::Rect;
+use archboard_painting::{
+    CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards,
+};
 use archboard_scene::drawing::TextRun;
-use archboard_scene::geometry::Rect;
-use archboard_scene::js;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
-use archboard_scene::{CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards};
 
 use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;
@@ -222,7 +223,7 @@ impl<'a> ActiveAt<'a> {
 
 /// The largest of some numbers, and the floor when there are none.
 pub(super) fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 {
-    values.into_iter().fold(floor, js::js_max)
+    archboard_ecma::max(std::iter::once(floor).chain(values))
 }
 
 /// The node a column stands for. A picture whose flows name nodes it does not

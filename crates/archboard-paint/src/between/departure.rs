@@ -7,7 +7,7 @@
 //! It ends invisible, so a slow draw leaves an empty pane rather than a picture
 //! nobody is reading any more.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Role};
 
 use super::ease::{lerp, scale_about};

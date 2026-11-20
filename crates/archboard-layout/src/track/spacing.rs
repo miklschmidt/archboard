@@ -3,7 +3,7 @@
 //! a block's own edge rows, for the block's inset.
 
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET, REGION_INSET};
-use crate::ecma::{abs, js_max, js_min};
+use crate::ecma::{abs, max, min};
 use crate::track::chains::{LANE, Track};
 use crate::track::channels::NetId;
 use crate::track::scene::{ItemId, Placement, Set};
@@ -32,16 +32,16 @@ pub(crate) struct Rim {
 
 /// How far below its band a channel's first track runs.
 fn first_track(closing: f64, rising: bool) -> f64 {
-    js_max(
+    max([
         closing + TRACK_TOP,
         if rising { TRACK_TOP_RISING } else { 0.0 },
-    )
+    ])
 }
 
 /// How tall a channel is for the tracks it holds, below the containers that end above it.
 pub(crate) fn channel_height(tracks: usize, closing: f64, rising: bool, facing: bool) -> f64 {
     if tracks == 0 {
-        js_max(
+        max([
             EMPTY_CHANNEL,
             closing
                 + if facing {
@@ -49,7 +49,7 @@ pub(crate) fn channel_height(tracks: usize, closing: f64, rising: bool, facing: 
                 } else {
                     BELOW_CONTAINER
                 },
-        )
+        ])
     } else {
         first_track(closing, rising) + (tracks - 1) as f64 * LANE + TRACK_BOTTOM
     }
@@ -143,7 +143,7 @@ impl Track<'_> {
         let net = self.net(id);
         let bx = self.scene.item(item).bx;
         let (low, high) = (bx.x - LANE, bx.x + bx.width + LANE);
-        if js_max(net.top_x, net.bottom_x) <= low || js_min(net.top_x, net.bottom_x) >= high {
+        if max([net.top_x, net.bottom_x]) <= low || min([net.top_x, net.bottom_x]) >= high {
             return true;
         }
         let own =
@@ -208,7 +208,7 @@ impl Track<'_> {
             } else {
                 0.0
             };
-            let shift = js_min(down, js_max(-up, (below - above) / 2.0));
+            let shift = min([down, max([-up, (below - above) / 2.0])]);
             for item in labels {
                 self.scene.item_mut(item).bx.y += shift;
             }

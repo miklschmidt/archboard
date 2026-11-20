@@ -3,7 +3,7 @@
 //! inside a card that the camera flies into. Each holds what it needs from its
 //! start and answers for a moment of the host's clock.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Item, Scene, Transform, Viewport};
 use serde::Deserialize;
 

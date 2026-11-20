@@ -4,8 +4,8 @@
 //! back up runs beside the steps it repeats, or jumps back from the end of a
 //! long body.
 
+use archboard_geometry::Point;
 use archboard_scene::drawing::MeasuredLabel;
-use archboard_scene::geometry::Point;
 use archboard_scene::request::JumpEnd;
 
 use super::{

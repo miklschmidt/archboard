@@ -3,8 +3,8 @@
 
 use std::collections::{HashMap, HashSet};
 
+use archboard_geometry::{Curve, Point, Rect, Segment};
 use archboard_scene::drawing::Toggle;
-use archboard_scene::geometry::{Curve, Point, Rect, Segment};
 use archboard_scene::request::{Arrowhead, Dash, LineAppearance};
 use archboard_scene::scene::{
     Cap, Colour, Definition, Geometry, Group, Item, LineFacts, Mask, MaskId, Painting, PathStep,

@@ -13,7 +13,7 @@
 
 use std::rc::Rc;
 
-use crate::ecma::{abs, js_max, js_min, max, min, sign, sorted_by, unique};
+use crate::ecma::{abs, max, min, sign, sorted_by, unique};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, LANE, StationId, Track};
 use crate::track::scene::{ItemId, Map, Set};
@@ -114,7 +114,7 @@ type Ends = (Option<ItemId>, Option<ItemId>);
 
 /// The stretch of a face a port may stand on, clear of its corners.
 pub(crate) fn port_reach(face: &Rect) -> (f64, f64) {
-    let margin = js_min(PORT_MARGIN, face.width / 2.0);
+    let margin = min([PORT_MARGIN, face.width / 2.0]);
     (face.x + margin, face.x + face.width - margin)
 }
 
@@ -131,21 +131,18 @@ pub(crate) fn spread_ports(face: &Rect, wanted: &[f64]) -> Vec<f64> {
 pub(crate) fn spread_along((low, high): (f64, f64), wanted: &[f64]) -> Vec<f64> {
     let count = wanted.len();
     let gap = if count > 1 {
-        js_min(LANE, (high - low) / (count - 1) as f64)
+        min([LANE, (high - low) / (count - 1) as f64])
     } else {
         0.0
     };
-    let mut ports: Vec<f64> = wanted
-        .iter()
-        .map(|&x| js_min(high, js_max(low, x)))
-        .collect();
+    let mut ports: Vec<f64> = wanted.iter().map(|&x| min([high, max([low, x])])).collect();
     for index in 1..count {
-        ports[index] = js_max(ports[index], ports[index - 1] + gap);
+        ports[index] = max([ports[index], ports[index - 1] + gap]);
     }
     if count > 0 && ports[count - 1] > high {
         ports[count - 1] = high;
         for index in (0..count - 1).rev() {
-            ports[index] = js_min(ports[index], ports[index + 1] - gap);
+            ports[index] = min([ports[index], ports[index + 1] - gap]);
         }
     }
     ports
@@ -300,7 +297,7 @@ impl Track<'_> {
         let net = self.net(net);
         let (a, b) = self.reach_of(net.top);
         let (c, d) = self.reach_of(net.bottom);
-        js_max(a, c) <= js_min(b, d)
+        max([a, c]) <= min([b, d])
     }
 
     /// The nets that share a trunk on one side of their faces.

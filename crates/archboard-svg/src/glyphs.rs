@@ -4,11 +4,9 @@
 //! no font. Its words, in no ink and stretched over the glyphs, are what a
 //! search finds, a copy takes and a screen reader reads.
 
-use std::collections::BTreeSet;
-
-use archboard_scene::js;
 use archboard_scene::scene::{Item, Text};
 use archboard_text::{Face, Segment, outline};
+use std::collections::BTreeSet;
 
 use crate::css::css;
 use crate::xml::{Attributes, close, empty, escape_xml, open};
@@ -85,7 +83,7 @@ fn path_data(steps: &[Segment]) -> String {
             if index > 0 && *number >= 0.0 {
                 data.push(' ');
             }
-            data.push_str(&js::number(*number));
+            data.push_str(&archboard_ecma::number(*number));
         }
     };
     for step in steps {
@@ -114,9 +112,9 @@ pub(crate) fn write_text(text: &Text, out: &mut String) {
             "transform",
             format!(
                 "translate({} {}) scale({})",
-                js::number(text.at.x),
-                js::number(text.at.y),
-                js::number(scale)
+                archboard_ecma::number(text.at.x),
+                archboard_ecma::number(text.at.y),
+                archboard_ecma::number(scale)
             ),
         )
         .set("fill", css(&text.fill))

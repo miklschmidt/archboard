@@ -7,14 +7,13 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
-use crate::js;
-use crate::route::segment_length;
 use crate::scene::colour::Colour;
+use archboard_geometry::segment_length;
+use archboard_geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 
 /// How thick a pulse's core is on a line of one width.
-pub(crate) fn pulse_breadth(line_width: f64) -> f64 {
-    js::js_max(1.5, line_width + 0.6)
+pub fn pulse_breadth(line_width: f64) -> f64 {
+    archboard_ecma::max([1.5, line_width + 0.6])
 }
 
 /// The colours of a pulse and how thick the line it rides is.
@@ -251,7 +250,7 @@ pub fn pulse_slide(motion: &LegMotion, seconds: f64) -> Option<f64> {
             shift,
             period,
             speed,
-        } => Some(shift + js::within(seconds * speed, period)),
+        } => Some(shift + archboard_ecma::within(seconds * speed, period)),
         LegMotion::Turn {
             enters,
             leaves,
@@ -261,7 +260,7 @@ pub fn pulse_slide(motion: &LegMotion, seconds: f64) -> Option<f64> {
             cycle,
             ..
         } => {
-            let moment = js::within(seconds, cycle);
+            let moment = archboard_ecma::within(seconds, cycle);
             (moment >= enters && moment <= leaves).then(|| turn_slide(moment, start, speed, along))
         }
     }
@@ -269,7 +268,7 @@ pub fn pulse_slide(motion: &LegMotion, seconds: f64) -> Option<f64> {
 
 /// How far a turn's clock carries a pulse across lines of some lengths, in
 /// order: the lines, and the room the last pulse's light takes to leave.
-pub(crate) fn turn_distance(lengths: &[f64]) -> f64 {
+pub fn turn_distance(lengths: &[f64]) -> f64 {
     lengths.iter().fold(0.0, |sum, length| sum + length) + (PULSE_SPAN + PULSE_MASK_ROOM)
 }
 
@@ -295,7 +294,7 @@ fn stops_of(span: f64, tail: f64) -> Vec<PulseStop> {
             stops.push(stop(
                 reach - tail * share,
                 false,
-                TAIL_LIGHT * js::pow(share, TAIL_CURVE),
+                TAIL_LIGHT * archboard_ecma::pow(share, TAIL_CURVE),
             ));
         }
     }
@@ -372,7 +371,7 @@ fn leg_of(piece: &Piece, core: f64, span: f64, motion: Motion) -> PulseLeg {
                 height,
             },
             LegMotion::Steady {
-                shift: js::within(phase - along + PULSE_FRONT, span) - span,
+                shift: archboard_ecma::within(phase - along + PULSE_FRONT, span) - span,
                 period: span,
                 speed,
             },
@@ -382,8 +381,10 @@ fn leg_of(piece: &Piece, core: f64, span: f64, motion: Motion) -> PulseLeg {
             cycle,
             start,
         } => {
-            let enters = js::js_max(0.0, turn_moment(-PULSE_SPAN - 1.0, start, speed, along));
-            let leaves = js::js_min(cycle, turn_moment(length + 1.0, start, speed, along));
+            let enters =
+                archboard_ecma::max([0.0, turn_moment(-PULSE_SPAN - 1.0, start, speed, along)]);
+            let leaves =
+                archboard_ecma::min([cycle, turn_moment(length + 1.0, start, speed, along)]);
             (
                 Bar {
                     from: 0.0,
@@ -408,7 +409,7 @@ fn leg_of(piece: &Piece, core: f64, span: f64, motion: Motion) -> PulseLeg {
         segment,
         length,
         turn: libm::atan2(to.y - from.y, to.x - from.x),
-        stretch: js::hypot(to.x - from.x, to.y - from.y) / length,
+        stretch: archboard_ecma::hypot(to.x - from.x, to.y - from.y) / length,
         lead: Point {
             x: from.x - leaving.x * OVERLAP,
             y: from.y - leaving.y * OVERLAP,
@@ -432,19 +433,19 @@ fn room_of(from: Point, segment: &Segment, core: f64) -> Rect {
         points.push(first);
         points.push(second);
     }
-    let x = js::min(points.iter().map(|point| point.x)) - reach;
-    let y = js::min(points.iter().map(|point| point.y)) - reach;
+    let x = archboard_ecma::min(points.iter().map(|point| point.x)) - reach;
+    let y = archboard_ecma::min(points.iter().map(|point| point.y)) - reach;
     Rect {
         x,
         y,
-        width: js::max(points.iter().map(|point| point.x)) + reach - x,
-        height: js::max(points.iter().map(|point| point.y)) + reach - y,
+        width: archboard_ecma::max(points.iter().map(|point| point.x)) + reach - x,
+        height: archboard_ecma::max(points.iter().map(|point| point.y)) + reach - y,
     }
 }
 
 /// The unit direction from one point to another, or none when they are one.
 fn direction_of(from: Point, to: Point) -> Option<Point> {
-    let length = js::hypot(to.x - from.x, to.y - from.y);
+    let length = archboard_ecma::hypot(to.x - from.x, to.y - from.y);
     if length < 1e-9 {
         return None;
     }
@@ -459,8 +460,8 @@ fn sag_of(from: Point, segment: &Segment) -> f64 {
     let Segment::Cubic { first, second, to } = segment else {
         return 0.0;
     };
-    let chord = js::hypot(to.x - from.x, to.y - from.y);
-    js::max([*first, *second].map(|point| {
+    let chord = archboard_ecma::hypot(to.x - from.x, to.y - from.y);
+    archboard_ecma::max([*first, *second].map(|point| {
         (((point.x - from.x) * (to.y - from.y) - (point.y - from.y) * (to.x - from.x)) / chord)
             .abs()
     }))

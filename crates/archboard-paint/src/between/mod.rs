@@ -48,7 +48,7 @@ mod unfold;
 
 use std::collections::HashSet;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, Transform};
 
 use content::shell;

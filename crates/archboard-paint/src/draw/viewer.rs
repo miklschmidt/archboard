@@ -1,9 +1,11 @@
 //! What a viewer adds to a picture: the lines that are drawn on as they light,
-//! the code check's warnings, and the light under a control that the pointer
-//! rests on. The walk draws each where the SVG viewer's layer or class stood.
+//! the code check's warnings, the light under a control that the pointer
+//! rests on, and the lines the far view draws wider. The walk draws each
+//! where the SVG viewer's layer or class stood.
 
-use archboard_scene::geometry::Point;
-use archboard_scene::scene::{Geometry, Group, Item, Role, Transform};
+use archboard_geometry::Point;
+use archboard_painting::ViewerMarks;
+use archboard_scene::scene::{Geometry, Group, Item, Role, Stroke, Transform};
 use kurbo::Affine;
 
 use super::{Inside, Walk};
@@ -13,6 +15,16 @@ use crate::canvas::Canvas;
 const HOVER_LIGHT: f64 = 0.2;
 
 impl<C: Canvas> Walk<'_, C> {
+    /// The width a line's direct stroke grows by in the far view.
+    pub(super) fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
+        match stroke.width {
+            Some(width) if inside.line && matches!(geometry, Geometry::Path { .. }) => {
+                far_line_scale(self.marks, width, self.seen.far)
+            }
+            _ => 1.0,
+        }
+    }
+
     /// Draw the lines that are being drawn on.
     pub(super) fn sweep(&mut self, inside: Inside) {
         let seen = self.seen;
@@ -79,5 +91,16 @@ impl<C: Canvas> Walk<'_, C> {
             light.fill_opacity = Some(HOVER_LIGHT);
         }
         self.items(&items, held);
+    }
+}
+
+/// How much wider the far view draws a line of a stroke width, `far` of the
+/// way from the near view (0) to the far view (1): a line it does not widen
+/// keeps its width.
+fn far_line_scale(marks: &ViewerMarks, width: f64, far: f64) -> f64 {
+    if marks.far_lines.iter().any(|&(near, _)| near == width) {
+        1.0 + (marks.far_scale - 1.0) * far
+    } else {
+        1.0
     }
 }

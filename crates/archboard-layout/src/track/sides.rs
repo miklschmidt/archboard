@@ -5,10 +5,10 @@
 //! container's members. Each wall is pulled in to one inset from the
 //! outermost thing its container holds.
 
-use archboard_scene::paint::header_width_for;
+use archboard_painting::header_padding;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
-use crate::ecma::{abs, js_max, js_min, max, min, sorted_by};
+use crate::ecma::{abs, max, min, sorted_by};
 use crate::geometry::{Point, Rect};
 use crate::track::chains::{LANE, REGION_CLEARANCE};
 use crate::track::containers::{Edges, FrameShape, RegionShape, frame_shapes, region_shapes};
@@ -50,7 +50,7 @@ fn stands_in(point: Point, next: Option<Point>, bx: &Rect) -> bool {
     }
     let (top, bottom) = match next {
         Some(next) if abs(next.x - point.x) < 0.5 => {
-            (js_min(point.y, next.y), js_max(point.y, next.y))
+            (min([point.y, next.y]), max([point.y, next.y]))
         }
         _ => (point.y, point.y),
     };
@@ -74,7 +74,7 @@ fn ends_on(lines: &[&[Point]], bx: &Rect) -> Vec<f64> {
 /// A frame laid out as the region round it, fitted, widened for its region's
 /// caption: round the middle of the frame, inside the box its layout kept.
 fn widened_in(fitted: Rect, width: f64) -> Rect {
-    let wide = js_max(fitted.width, width);
+    let wide = max([fitted.width, width]);
     let x = fitted.x - (wide - fitted.width) / 2.0;
     Rect {
         x,
@@ -143,19 +143,19 @@ fn fit_side(
         },
     );
     let right = bx.x + bx.width;
-    let mut low = js_max(
+    let mut low = max([
         bx.x,
         min(lows.chain(crossing.iter().map(|x| x - LANE - words))),
-    );
+    ]);
     // A compact header keeps its routed endpoints when the frame tightens.
     // Its slab is content too, so the left wall cannot move past it.
     if fitting.fixed {
-        low = js_min(low, heading.x);
+        low = min([low, heading.x]);
     }
-    let mut high = js_min(right, max(highs.iter().copied()));
+    let mut high = min([right, max(highs.iter().copied())]);
     if high - low < narrowest {
-        high = js_min(right, low + narrowest);
-        low = js_max(bx.x, high - narrowest);
+        high = min([right, low + narrowest]);
+        low = max([bx.x, high - narrowest]);
     }
     let fitted = Rect {
         x: low,
@@ -217,7 +217,7 @@ pub(crate) fn fit_sides(
         .map(|frame| {
             let title = scene.titles[frame.id.as_str()];
             let words = scene.words[&title];
-            let narrowest = header_width_for(words);
+            let narrowest = words + header_padding();
             let heading = scene.moved_id(title, left);
             // A frame laid out as the region round it keeps the region's inset too.
             let inset = CONTAINER_INSET + scene.frames[frame.id.as_str()].below.unwrap_or(0.0);

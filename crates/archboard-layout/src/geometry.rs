@@ -1,8 +1,8 @@
 //! Points and boxes, and the few measures of them the layout takes.
 
-pub(crate) use archboard_scene::geometry::{Point, Rect, inflate};
+pub(crate) use archboard_geometry::{Point, Rect, inflate};
 
-use crate::ecma::{js_max, js_min};
+use crate::ecma::{max, min};
 
 /// Which face of a box a line meets.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -71,8 +71,8 @@ impl Axis {
 pub(crate) fn polyline_x(points: &[Point], y: f64) -> Option<f64> {
     for pair in points.windows(2) {
         let (one, other) = (pair[0], pair[1]);
-        let low = js_min(one.y, other.y);
-        let high = js_max(one.y, other.y);
+        let low = min([one.y, other.y]);
+        let high = max([one.y, other.y]);
         if y < low || y > high {
             continue;
         }

@@ -5,7 +5,7 @@
 //! step fewer times, and never to cross more lines.
 
 use crate::constants::LABEL_CARD_CLEARANCE;
-use crate::ecma::{abs, js_max, js_min, or, sorted_by};
+use crate::ecma::{abs, max, min, or, sorted_by};
 use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
 use crate::track::labels::extent_of;
 use crate::track::occupancy::{Occupancy, nearest};
@@ -186,10 +186,10 @@ impl Track<'_> {
         let fits = self.line_fitting(&mut occupancy, stretch);
         let wanted = self.x(labels[0]);
         let (low, high) = (self.reach_of(stretch.before), self.reach_of(stretch.after));
-        let both = (js_max(low.0, high.0), js_min(low.1, high.1));
+        let both = (max([low.0, high.0]), min([low.1, high.1]));
         let mut columns: Vec<f64> = Vec::new();
         if both.0 <= both.1 {
-            columns.push(js_min(both.1, js_max(both.0, wanted)));
+            columns.push(min([both.1, max([both.0, wanted])]));
         }
         columns.extend(stretch.middle.iter().map(|&station| self.x(station)));
         columns.extend([self.x(stretch.after), self.x(stretch.before)]);
