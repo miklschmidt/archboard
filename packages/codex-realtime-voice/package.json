@@ -13,7 +13,6 @@
 		"./contract": "./src/shared/api/contract.ts",
 		"./browser": "./src/ui/api/browser.ts",
 		"./react": "./src/ui/api/react.ts",
-		"./controllers": "./src/ui/api/controllers.ts",
 		"./server": "./src/server/api/server.ts"
 	}
 }
