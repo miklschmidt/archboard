@@ -1,9 +1,16 @@
-// The public receipt for one semantic rasterization: the saved document picture,
-// its selectors and dimensions, and the renderer document that produced it.
-// The CLI writes this shape and evaluation tooling parses the same authority.
+// The receipt of one rasterized picture: the PNG written, its selectors and
+// dimensions, and the SVG it was drawn from. The CLI answers with it and the
+// skill evaluation reads the same shape back.
 
 import { z } from "zod";
-import { modelShape } from "@archboard/model-contract";
+import { ArchitectureRenderResultSchema } from "#shared/canonical-contracts/schemas/model-operations.ts";
+import {
+	DiagramThemeSchema,
+	OfferedViewSchema,
+	PictureReceiptShape,
+	RenderedVariantSchema,
+	StandaloneThemeSchema,
+} from "#shared/protocol/render-reply.ts";
 
 /** The diagram page before bitmap scaling. */
 const SemanticRasterPageSizeSchema = z.object({ width: z.number(), height: z.number() });
@@ -16,13 +23,13 @@ const SemanticRasterRegionSchema = z.object({
 	height: z.int(),
 });
 
-/** The machine-readable receipt for a PNG written by `semantic rasterize`. */
+/** The receipt of a PNG of a legacy board's view, which `semantic rasterize` wrote. */
 const SemanticRasterReceiptSchema = z.object({
 	success: z.literal(true),
 	document: z.string(),
 	version: z.int(),
 	/** What was drawn; ids select it exactly and names are what a person types. */
-	variant: modelShape("renderedVariant"),
+	variant: RenderedVariantSchema,
 	/**
 	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
@@ -31,10 +38,10 @@ const SemanticRasterReceiptSchema = z.object({
 	 * with none, with the one it came from), so the receipt names the other
 	 * side; the bitmap cannot.
 	 */
-	comparedWith: modelShape("renderedVariant").nullable(),
+	comparedWith: RenderedVariantSchema.nullable(),
 	/** The selected view, or null when the whole variant was drawn. */
-	view: modelShape("offeredView").nullable(),
-	theme: modelShape("diagramTheme"),
+	view: OfferedViewSchema.nullable(),
+	theme: DiagramThemeSchema,
 	file: z.string(),
 	/** Bitmap pixels. */
 	width: z.int(),
@@ -49,7 +56,7 @@ const SemanticRasterReceiptSchema = z.object({
 	 * Every node, edge, flow and step the diagram draws, and the counts of the
 	 * marks its key shows: of the whole diagram, also when a region is captured.
 	 */
-	...modelShape("pictureReceipt"),
+	...PictureReceiptShape,
 	/** The exact renderer document and stable presentation state used for capture. */
 	source: z.object({
 		renderer: z.literal("semantic-renderer"),
@@ -58,10 +65,11 @@ const SemanticRasterReceiptSchema = z.object({
 	}),
 });
 
-const ArchitectureRasterReceiptSchema = modelShape("renderSuccess")
+/** The receipt of a PNG of a model reading, which `model rasterize` writes. */
+const ArchitectureRasterReceiptSchema = ArchitectureRenderResultSchema.options[0]
 	.omit({ svg: true, atlas: true })
 	.extend({
-		theme: modelShape("standaloneTheme"),
+		theme: StandaloneThemeSchema,
 		file: z.string(),
 		scale: z.number(),
 		diagram: SemanticRasterPageSizeSchema,
@@ -69,38 +77,4 @@ const ArchitectureRasterReceiptSchema = modelShape("renderSuccess")
 		source: SemanticRasterReceiptSchema.shape.source,
 	});
 
-/** What the rasterizer says about one capture of a legacy board's view. */
-type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
-
-/** What the rasterizer says about one capture of an architecture model. */
-type ArchitectureRasterReceipt = z.infer<typeof ArchitectureRasterReceiptSchema>;
-
-/**
- * The schema of what the rasterizer says about one capture of an architecture model, for a
- * contract that answers with it.
- * @returns The schema.
- */
-function architectureRasterReceiptSchema(): typeof ArchitectureRasterReceiptSchema {
-	return ArchitectureRasterReceiptSchema;
-}
-
-/**
- * The receipt a rasterize command answered with, of either kind.
- * @param answer The command's answer, as parsed JSON.
- * @returns The receipt, or undefined when the answer is none.
- */
-function parseRasterReceipt(
-	answer: unknown,
-): ArchitectureRasterReceipt | SemanticRasterReceipt | undefined {
-	const parsed = z
-		.union([ArchitectureRasterReceiptSchema, SemanticRasterReceiptSchema])
-		.safeParse(answer);
-	return parsed.success ? parsed.data : undefined;
-}
-
-export {
-	architectureRasterReceiptSchema,
-	parseRasterReceipt,
-	type ArchitectureRasterReceipt,
-	type SemanticRasterReceipt,
-};
+export { ArchitectureRasterReceiptSchema, SemanticRasterReceiptSchema };

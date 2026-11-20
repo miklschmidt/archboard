@@ -1,0 +1,59 @@
+import { describe, expect, test } from "bun:test";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { rasterizeAll } from "#runtime/services/rasterizer.ts";
+import { listProcessGroupObservations } from "@archboard/process/observation";
+
+// Startup cancellation needs a process that never opens DevTools. The fake
+// records its real pid/profile so the test can prove the interrupted run
+// settles and removes both before the CLI's forced-exit deadline.
+describe("rasterizer startup ownership", () => {
+	test("cancelling during startup removes the owned group and profile", async () => {
+		const root = mkdtempSync(join(tmpdir(), "archboard-raster-startup-"));
+		const executable = join(root, "chromium");
+		const evidence = join(root, "started");
+		writeFileSync(
+			executable,
+			`#!/bin/sh\ntrap '' TERM\nprintf '%s\\n%s\\n' "$$" "$PWD" > '${evidence}'\nwhile :; do sleep 30; done\n`,
+			{ mode: 0o700 },
+		);
+		const controller = new AbortController();
+		const capture = Array.fromAsync(
+			rasterizeAll([{ svg: "<svg/>", width: 10, height: 10, scale: 1 }], {
+				chromiumPath: executable,
+				signal: controller.signal,
+			}),
+		).catch((error: unknown) => error);
+		let pid: number | undefined;
+		try {
+			const startedDeadline = Date.now() + 9000;
+			while (!existsSync(evidence)) {
+				if (Date.now() > startedDeadline) throw new Error("The startup fixture did not start.");
+				await Bun.sleep(10);
+			}
+			const [pidText, profileRoot] = readFileSync(evidence, "utf8").trim().split("\n");
+			pid = Number(pidText);
+			const began = performance.now();
+			const reason = new Error("cancelled startup");
+			controller.abort(reason);
+			expect(await capture).toBe(reason);
+			expect(performance.now() - began).toBeLessThan(9000);
+			expect(
+				listProcessGroupObservations(pid).filter((member) => member.state !== "zombie"),
+			).toEqual([]);
+			expect(existsSync(profileRoot!)).toBe(false);
+		} finally {
+			controller.abort();
+			await capture;
+			if (pid !== undefined) {
+				try {
+					process.kill(-pid, "SIGKILL");
+				} catch {
+					/* The expected case is an absent group. */
+				}
+			}
+			rmSync(root, { recursive: true, force: true });
+		}
+	});
+});

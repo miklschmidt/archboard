@@ -18,12 +18,8 @@ import {
 } from "@archboard/headless-chromium";
 import { waitUntil } from "@archboard/timing";
 
-import { regionOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
-import {
-	READINESS_SCRIPT,
-	checkedBitmap,
-	checkedReadiness,
-} from "#runtime/rasterizer/services/page.ts";
+import { regionOf, type RasterBounds } from "#runtime/operations/bounds.ts";
+import { READINESS_SCRIPT, checkedBitmap, checkedReadiness } from "#runtime/services/page.ts";
 
 /** What the session was told about time and where Chromium is. */
 interface SessionOptions {
@@ -267,11 +263,4 @@ class RasterSession {
 	}
 }
 
-export {
-	RasterSession,
-	abortReason,
-	type Capture,
-	type CaptureJob,
-	type SessionCleanup,
-	type SessionOptions,
-};
+export { RasterSession, abortReason, type Capture, type CaptureJob, type SessionOptions };

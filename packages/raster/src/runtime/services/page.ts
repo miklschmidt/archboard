@@ -3,7 +3,7 @@
 // size the diagram asks for. The SVG draws its words in glyphs it defines
 // (ADR 0059), so there is no face to wait for.
 
-import { bitmapSizeOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
+import { bitmapSizeOf, type RasterBounds } from "#runtime/operations/bounds.ts";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 import { readPngDimensions } from "@archboard/render-recipe";
 

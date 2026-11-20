@@ -202,7 +202,7 @@ const capacityTests = [
 // A contended machine changes what these real programs answer: Chromium's exact bytes, and
 // whether rust-analyzer answers at all. They run after the parallel lanes, alone.
 const soloTests = [
-	"packages/renderer/tests/runtime/rasterizer/services/rasterizer.test.ts",
+	"packages/raster/tests/runtime/services/rasterizer.test.ts",
 	"packages/code-intel/tests/runtime/language-servers/processes/rust-server.test.ts",
 ];
 

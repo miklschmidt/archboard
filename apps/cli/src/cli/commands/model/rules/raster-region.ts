@@ -2,10 +2,17 @@
 // --region` asks for, and what an embed's recipe keeps for `check embeds --fix`.
 
 import { CliUsageError } from "#cli/contract/protocol/contract.ts";
-import type { PageRegion, SemanticRasterReceipt } from "@archboard/renderer/rasterizer";
+import type { z } from "zod";
+import type { ModelShape } from "@archboard/model-contract";
+
+/** A raster receipt, as the model's contract states it. */
+type RasterReceipt = z.infer<ModelShape<"rasterReceipt">>;
+
+/** A rectangle of the diagram's page, as a receipt states it. */
+type PageRegion = NonNullable<RasterReceipt["region"]>;
 
 /** The diagram's page, as the rasterizer's receipt measures it. */
-type SemanticRasterPageSize = SemanticRasterReceipt["diagram"];
+type SemanticRasterPageSize = RasterReceipt["diagram"];
 
 /**
  * The requested region, refused when it reaches outside the page: a tile

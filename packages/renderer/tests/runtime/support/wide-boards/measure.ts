@@ -41,9 +41,6 @@ const layout = fixtureDocument("layoutEngine", process.env["ENGINE"] ?? defaultL
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
-const rasterizer = pictures
-	? (await import("@archboard/renderer/rasterizer")).createSemanticRasterizer({})
-	: null;
 
 /** One thing to measure: a document's variant, or a fixture. */
 interface Item {
@@ -115,6 +112,8 @@ console.log(
 	`reference pane ${shellSize("referencePane").width}x${shellSize("referencePane").height}`,
 );
 let header = false;
+/** Each drawing to write a picture of, as the measures reach it. */
+const shots: { key: string; svg: string; width: number; height: number }[] = [];
 for (const item of items) {
 	// A fixture authored before subjects carried an order is given one by position.
 	const content = orderedFixture(item.content);
@@ -136,18 +135,17 @@ for (const item of items) {
 		header = true;
 	}
 	console.log([key, reads, page, ...measures.map(shown)].join(" | "));
-	if (rasterizer !== null) {
-		const shot = await rasterizer.rasterize({
-			svg: drawn.svg,
-			width: drawn.width,
-			height: drawn.height,
-			scale: 1,
-		});
-		fs.mkdirSync(out, { recursive: true });
+	if (pictures) shots.push({ key, svg: drawn.svg, width: drawn.width, height: drawn.height });
+}
+if (shots.length > 0) {
+	fs.mkdirSync(out, { recursive: true });
+	const { rasterizeAll } = await import("@archboard/raster");
+	let index = 0;
+	for await (const shot of rasterizeAll(shots.map((one) => ({ ...one, scale: 1 })))) {
+		const { key } = shots[index++]!;
 		fs.writeFileSync(path.join(out, `${key.replace(/[^A-Za-z0-9]+/g, "-")}.png`), shot.png);
 	}
 }
-await rasterizer?.stop();
 
 if (save !== undefined) fs.writeFileSync(save, JSON.stringify(results, null, "\t"));
 

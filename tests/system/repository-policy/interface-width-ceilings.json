@@ -12,6 +12,7 @@
 	"model-rules": 27,
 	"model-store": 20,
 	"process": 13,
+	"raster": 2,
 	"render-recipe": 4,
 	"renderer": 56,
 	"server-lifecycle": 16,

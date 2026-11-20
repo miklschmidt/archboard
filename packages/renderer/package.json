@@ -15,7 +15,6 @@
 		"./browser": "./src/ui/api/browser.ts",
 		"./bun": "./src/runtime/api/bun.ts",
 		"./core": "./src/runtime/api/core.ts",
-		"./rasterizer": "./src/runtime/api/rasterizer.ts",
 		"./theme": "./src/runtime/api/theme.ts",
 		"./assets": "./src/runtime/api/assets.ts",
 		"./theme.css": "./assets/theme.css",

@@ -38,6 +38,7 @@ const LAYERS: Record<string, number> = {
 	"model-rules": 5,
 	"render-recipe": 5,
 	"model-store": 6,
+	raster: 6,
 	"codex-app-server": 7,
 	renderer: 7,
 	"code-intel": 7,

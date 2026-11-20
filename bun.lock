@@ -152,6 +152,10 @@
       "name": "@archboard/process",
       "version": "0.0.0",
     },
+    "packages/raster": {
+      "name": "@archboard/raster",
+      "version": "0.0.0",
+    },
     "packages/render-recipe": {
       "name": "@archboard/render-recipe",
       "version": "0.0.0",
@@ -234,6 +238,8 @@
     "@archboard/model-store": ["@archboard/model-store@workspace:packages/model-store"],
 
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
+
+    "@archboard/raster": ["@archboard/raster@workspace:packages/raster"],
 
     "@archboard/render-recipe": ["@archboard/render-recipe@workspace:packages/render-recipe"],
 
