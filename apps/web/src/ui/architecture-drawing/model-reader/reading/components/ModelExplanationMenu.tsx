@@ -8,7 +8,7 @@ import {
 	RiRouteLine,
 } from "@remixicon/react";
 import { buttonVariants, DropdownMenu } from "@archboard/ui-kit/components";
-import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import type { Model } from "@archboard/model-rules";
 
 type Action = ExplanationInvocation["request"]["action"];

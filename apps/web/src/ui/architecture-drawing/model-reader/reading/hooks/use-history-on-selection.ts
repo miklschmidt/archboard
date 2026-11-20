@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/model-rules";
-import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
+import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/reading/clients/history.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";
 
 /**

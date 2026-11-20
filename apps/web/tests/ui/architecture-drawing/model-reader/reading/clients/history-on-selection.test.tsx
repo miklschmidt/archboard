@@ -26,7 +26,7 @@ const { QueryClient, QueryObserver, focusManager, onlineManager } =
 	await import("@tanstack/react-query");
 const { act, cleanup } = await import("@testing-library/react");
 const { modelHistoryQuery } =
-	await import("#ui/architecture-drawing/model-reader/access/clients/history.ts");
+	await import("#ui/architecture-drawing/model-reader/reading/clients/history.ts");
 
 afterAll(async () => {
 	globalThis.fetch = realFetch;

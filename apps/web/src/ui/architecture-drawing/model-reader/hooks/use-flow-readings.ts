@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Model, projectModel } from "@archboard/model-rules";
 import type { Size } from "@archboard/renderer/shell-geometry";
-import { modelDrawingQuery } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
+import { modelDrawingQuery } from "#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	fittingReading,

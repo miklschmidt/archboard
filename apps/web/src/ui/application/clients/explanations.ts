@@ -6,14 +6,6 @@ import {
 } from "@archboard/workbench/browser-contract";
 import { inVault } from "@archboard/server-requests";
 
-type ExplanationRequest = ExplanationActionRequest;
-type ExplanationResult = ExplanationActionResult;
-type ExplanationAction = Extract<ExplanationResult, { success: true }>["action"];
-type ExplanationInvocation = Omit<
-	Extract<ExplanationRequest, { type: "invoke" }>,
-	"type" | "tabSessionId"
->;
-
 /**
  * Keep one temporary answer query per browser tab, across repository navigation.
  * @param tab The existing tab session identity.
@@ -59,9 +51,9 @@ function explanationQuery(vault: string, tab: string) {
  */
 async function explanationRequest(
 	vault: string,
-	input: ExplanationRequest,
+	input: ExplanationActionRequest,
 	signal?: AbortSignal,
-): Promise<ExplanationResult> {
+): Promise<ExplanationActionResult> {
 	const base = "/api/architecture/explanations";
 	const { type, ...body } = input;
 	let path = base;
@@ -87,4 +79,3 @@ async function explanationRequest(
 }
 
 export { explanationKey, explanationQuery, explanationRequest };
-export type { ExplanationAction, ExplanationInvocation, ExplanationRequest };

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { SourceRefsAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { SourceRefsAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import {
 	RefPicker,
 	type RefChoice,

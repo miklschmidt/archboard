@@ -1,15 +1,13 @@
 import type { z } from "zod";
 import { queryOptions } from "@tanstack/react-query";
 import { inVault, strictReply } from "@archboard/server-requests";
+import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
-	architectureModelKeys,
-	replyReaders,
-} from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
-import type {
-	ModelReply,
-	ModelRequest,
-	ModelShape,
-	ReplyOperation,
+	readModelReply,
+	type ModelReply,
+	type ModelRequest,
+	type ModelShape,
+	type ReplyOperation,
 } from "@archboard/model-contract";
 
 type Publication = ModelReply<"readPublication">;
@@ -38,12 +36,25 @@ async function publicationReply(
 	operation: PublicationOperation,
 	request: Parameters<typeof strictReply>[1],
 ): Promise<Publication> {
-	const { answered, failed } = replyReaders(operation);
 	const result = await strictReply<Publication, Publication | Error>(
 		url,
 		request,
-		answered,
-		failed,
+		{
+			/**
+			 * Read a body that came with a success status as the operation's answer.
+			 * @param body The body as received.
+			 * @returns The answer, or why the body is not one.
+			 */
+			safeParse: (body) => readModelReply(operation, body, "answered"),
+		},
+		{
+			/**
+			 * Read a body that came with an HTTP failure only as the operation's refusal.
+			 * @param body The body as received.
+			 * @returns The refusal, or why the body is not one.
+			 */
+			safeParse: (body) => readModelReply(operation, body, "failed"),
+		},
 		(error) =>
 			error instanceof Error
 				? error
@@ -61,7 +72,7 @@ async function publicationReply(
  */
 function architecturePublicationQuery(vault: string, checkpoint: string) {
 	return queryOptions({
-		queryKey: [...architectureModelKeys.vault(vault), "publication", checkpoint],
+		queryKey: vaultQueryKey(vault, "publication", checkpoint),
 		/**
 		 * Read publication evidence through the local server.
 		 * @param context The query cancellation signal.

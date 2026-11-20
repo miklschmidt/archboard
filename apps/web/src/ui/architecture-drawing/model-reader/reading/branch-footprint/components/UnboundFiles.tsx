@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 
 /**
  * The changed files that no module binds, which no row shows, folded under one line under the

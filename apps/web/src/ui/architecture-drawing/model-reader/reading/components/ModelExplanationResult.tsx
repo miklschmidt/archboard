@@ -2,7 +2,7 @@ import { useCallback, type JSX } from "react";
 import { AgentAnswer } from "@archboard/agent-surfaces";
 import { Button } from "@archboard/ui-kit/components";
 import { RiCloseLine, RiLoader4Line, RiOpenaiFill } from "@remixicon/react";
-import type { ExplanationAction } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import type { ExplanationAction } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 
 const STATUS: Record<ExplanationAction["status"], string> = {
 	captured: "Starting Codex",

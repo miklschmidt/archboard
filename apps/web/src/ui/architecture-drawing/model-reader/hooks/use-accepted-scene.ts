@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { modelDrawingQuery } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
+import { modelDrawingQuery } from "#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts";
 import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import {
 	EMPTY_DRAWING,

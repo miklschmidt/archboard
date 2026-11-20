@@ -16,7 +16,7 @@ const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-libr
 const { ModelChangesWith } =
 	await import("#ui/architecture-drawing/model-reader/reading/components/ModelChangesWith.tsx");
 const { modelHistoryQuery } =
-	await import("#ui/architecture-drawing/model-reader/access/clients/history.ts");
+	await import("#ui/architecture-drawing/model-reader/reading/clients/history.ts");
 
 type Props = ComponentProps<typeof ModelChangesWith>;
 type HistoryAnswer = Extract<

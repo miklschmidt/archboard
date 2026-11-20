@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { codeFileSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { inVault } from "@archboard/server-requests";
-import { architectureModelKeys } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
 	excerptOf,
 	type SourceExcerpt,
@@ -26,14 +26,7 @@ type EvidencePlace = Pick<
 function sourceLinesQuery(vault: string, place: EvidencePlace, checkedAt: string) {
 	const { repo, path, line } = place;
 	return queryOptions({
-		queryKey: [
-			...architectureModelKeys.vault(vault),
-			"source-lines",
-			repo,
-			path,
-			line,
-			checkedAt,
-		] as const,
+		queryKey: vaultQueryKey(vault, "source-lines", repo, path, line, checkedAt),
 		/**
 		 * Read the lines.
 		 * @param context The query cancellation signal.

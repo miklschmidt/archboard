@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import type { Model } from "@archboard/model-rules";
 import {
-	invalidateVaultQueries,
+	invalidateModelQueries,
 	architectureModelQuery,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
@@ -23,7 +23,7 @@ function useModelComparison(vault: string, model: Model) {
 	});
 	const client = useQueryClient();
 	const refresh = useCallback((): void => {
-		void invalidateVaultQueries(client, vault);
+		void invalidateModelQueries(client, vault);
 	}, [client, vault]);
 	const status = referenceStatus(query, model);
 	return {

@@ -1,6 +1,6 @@
 // The lists of a branch footprint, from the plan outward (ADR 0045).
 
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 
 /** One module the footprint read. */
 type FootprintModule = Extract<BranchFootprintAnswer, { proposal: null }>["changed"][number];

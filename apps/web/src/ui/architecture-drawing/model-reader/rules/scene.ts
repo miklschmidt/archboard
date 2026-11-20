@@ -4,7 +4,7 @@ import {
 	parseDocument,
 } from "@archboard/model-contract";
 import type { Model, ModelFilters, projectModel } from "@archboard/model-rules";
-import type { ModelDrawing } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
+import type { ModelDrawing } from "#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts";
 import type {
 	Departure,
 	DepartureSide,
