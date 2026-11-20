@@ -16,7 +16,6 @@
 		"./bun": "./src/runtime/api/bun.ts",
 		"./core": "./src/runtime/api/core.ts",
 		"./theme": "./src/runtime/api/theme.ts",
-		"./assets": "./src/runtime/api/assets.ts",
 		"./theme.css": "./assets/theme.css",
 		"./fonts/Onest-wght-v1.000.ttf": "./assets/fonts/Onest-wght-v1.000.ttf",
 		"./fonts/MapleMonoNL-Regular-Subset-v7.9.ttf": "./assets/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf",
