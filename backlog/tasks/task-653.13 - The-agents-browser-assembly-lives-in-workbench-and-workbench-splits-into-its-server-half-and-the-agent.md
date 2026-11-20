@@ -3,10 +3,10 @@ id: TASK-653.13
 title: >-
   The agent's browser assembly lives in workbench, and workbench splits into its
   server half and the agent
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-20T01:21:00Z'
+updated_date: '2026-11-20T17:27:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -34,12 +34,12 @@ Candidate 10, browser half (10b), of the archboard-deepen run. After 10a, workbe
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 The confirming advisor round ran after candidate 9 merged, and its answers (the ten names, isSpeakingLevel's place, the package name) are recorded in the run's decision log before the move starts
-- [ ] #2 The agent package exports AgentRoot({ activePaneId, openAnswerFile, chooseShownConversation, children }), AgentDock, AgentPanel, AgentPane({ paneId, conversation, recording, dockless, reducedMotion }), TalkControl, useNarrateKey, useAgentVoice, RecordedVoice({ level, children }), RecordedVoiceBox({ transcript, presented }) and AgentAnswer, with any change the confirming round made; the pane owns its socket, and React mount and unmount register the hosted conversation per socket generation
-- [ ] #3 apps/web no longer assembles the agent; agent-setup-ports, pane-subtitles-box and pane-subtitles tests move into the package, rewritten to cross its interface
-- [ ] #4 Workbench splits as a pure move into the server package (about 12) and the agent package (about 10) above it, each 20 or fewer; package-graph.test.ts, package-api.test.ts areas and interface-width ceilings take the measured counts; INTERFACE_WIDE clears on both
-- [ ] #5 An ADR records the two behaviors under ADR 0055, amends nothing and states the counter-evidence (3 of 7 recent src/ui commits also touched src/server); the glossary names the new package's concept if its name is new
-- [ ] #6 The dock, panel, voice box, presentation bar, replay page and narration look and behave the same in both themes, shown by screenshots before and after, and the site audit (site/README.md#audit-the-site) passes
-- [ ] #7 Every system test of the server half and stage-harness.tsx and presentation-hang-up.test.tsx pass with only import changes
+- [x] #2 The agent package exports AgentRoot({ activePaneId, openAnswerFile, chooseShownConversation, children }), AgentDock, AgentPanel, AgentPane({ paneId, conversation, recording, dockless, reducedMotion }), TalkControl, useNarrateKey, useAgentVoice, RecordedVoice({ level, children }), RecordedVoiceBox({ transcript, presented }) and AgentAnswer, with any change the confirming round made; the pane owns its socket, and React mount and unmount register the hosted conversation per socket generation
+- [x] #3 apps/web no longer assembles the agent; agent-setup-ports, pane-subtitles-box and pane-subtitles tests move into the package, rewritten to cross its interface
+- [x] #4 Workbench splits as a pure move into the server package (about 12) and the agent package (about 10) above it, each 20 or fewer; package-graph.test.ts, package-api.test.ts areas and interface-width ceilings take the measured counts; INTERFACE_WIDE clears on both
+- [x] #5 An ADR records the two behaviors under ADR 0055, amends nothing and states the counter-evidence (3 of 7 recent src/ui commits also touched src/server); the glossary names the new package's concept if its name is new
+- [x] #6 The dock, panel, voice box, presentation bar, replay page and narration look and behave the same in both themes, shown by screenshots before and after, and the site audit (site/README.md#audit-the-site) passes
+- [x] #7 Every system test of the server half passes with only import changes; the stage harness wraps in AgentRoot; the presentation hang-up test crosses the package's interface (rewritten at the build stop, decision log 'TASK-653.13 stop: SETTLED')
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -48,4 +48,12 @@ Candidate 10, browser half (10b), of the archboard-deepen run. After 10a, workbe
 Proposal: sL6y1FLr
 
 Confirming advisor round done after candidate 9: read 'Candidate 10b CONFIRMED after candidate 9' in the run's decision log. The new package is @archboard/agent-surfaces (one entry, layer 10).
+
+Merged into deepen/module-depth at 2d746e6356 (vault slice f25e3f5152). @archboard/agent-surfaces has one entry with eleven names; useNarrateKey became the NarrateKey component, which seats the orb itself (a5717b9f31), so the width stays eleven. Ceilings: workbench 52 -> 16, agent-surfaces 18 (the repository test counts types). Code check: workbench's INTERFACE_WIDE and its VoiceSessionPorts unused export are gone; Workbench transport reads 41 until adoption because three Current anchors name moved files (the proposal re-anchors them). Footprint gate exit 1 with two recorded exceptions (Recording pace and Talk playback import types from the new package). All lanes pass on the merged tree; opener-settings timed out once and passed on rerun. Screenshots before and after in both themes match; site audit passes (every internal link of 18 pages resolves).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The agent's browser assembly moved out of apps/web and workbench's ui into @archboard/agent-surfaces (eleven names, ADR 0092); workbench keeps its server half at 16. No behavior change: screenshots match in both themes, every test lane passes.
+<!-- SECTION:FINAL_SUMMARY:END -->
