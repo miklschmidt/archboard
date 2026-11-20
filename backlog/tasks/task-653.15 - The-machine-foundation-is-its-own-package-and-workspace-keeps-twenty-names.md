@@ -4,7 +4,7 @@ title: The machine foundation is its own package, and workspace keeps twenty nam
 status: Done
 assignee: []
 created_date: '2026-11-19T17:34:00Z'
-updated_date: '2026-11-20T18:12:00Z'
+updated_date: '2026-11-20T18:33:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -58,6 +58,8 @@ Widths: @archboard/machine 7 names (installation; browserUrl, defaultArchboardUr
 Records: package-graph.test.ts LAYERS machine: 1; package-api.test.ts adopter machine (runtime); interface-width-ceilings.json; both .oxlintrc messages name @archboard/machine/installation; .github/workflows/site.yml path filters add packages/machine/** (site/scripts/reference.ts reads RELEASE_PORT from it); bun.lock and bun.nix gain the package.
 Vault left unchanged: the bindings of Installation (4FdKQJqK), State directory (Q1jP0WbC), Atomic file replacement (qTv7HuBw) and Source checkout (NG7OXLv9) and the Taking argv flow anchors still name packages/workspace paths (BINDING_PATH_MISSING, ANCHOR_PATH_MISSING) until the slice rebinds them and adds a machine package module.
 Lanes: build, types, lint:all, format:check, bun-nix, test:modules (5393 pass, 1 skip), test:repository (187), test:system (228; voice-client-socket failed once under parallel load, passed alone 3x and on the rerun of the lane), test:solo (15), test:serial-browser (50 files) all pass. check code --fail-shallow-modules --base deepen/module-depth: no finding on workspace or machine; it exits 1 on INTERFACE_WIDE of Workbench transport, ui-kit and renderer, which the TASK-653.13 gate already reported.
+
+Merged into deepen/module-depth at 009bb2b790 (vault slice 6844b0c971); footprint gate exit 1 with 19 import-path-only exceptions recorded in the proposal and the merge commit.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
