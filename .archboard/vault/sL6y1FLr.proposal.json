@@ -107,6 +107,10 @@
     },
     {
       "type": "remove",
+      "subject": "vKEsyHFk/yejBBUFY#gIVISpC9"
+    },
+    {
+      "type": "remove",
       "subject": "vKEsyHFk/0T9enjhi#E7pOpTZi"
     },
     {
@@ -116,6 +120,10 @@
     {
       "type": "remove",
       "subject": "vKEsyHFk/HBlhIeSD#epRLrdt6"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/yejBBUFY#pNlMVRMt"
     },
     {
       "type": "remove",
@@ -451,6 +459,100 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#PFXyjBr4",
+      "kind": "module",
+      "value": {
+        "order": 100,
+        "name": "Agent provider",
+        "kind": "ui",
+        "responsibility": "AgentRoot: takes the shell's facts (the focused pane, the file opener, the conversation chooser) and offers the agent, the orb's stage and the answers' file opener to what is drawn inside",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#PFXyjBr4"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PFXyjBr4",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx",
+        "symbol": "OrbStageProvider"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
+      "placement": {
+        "holder": "vKEsyHFk#PFXyjBr4"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#P7DhuPRz",
+      "kind": "relationship",
+      "value": {
+        "order": 960076,
+        "kind": "render",
+        "label": "answers' file links open through the shell",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx",
+          "symbol": "AnswerFilesProvider"
+        },
+        "id": "vKEsyHFk#P7DhuPRz",
+        "to": "vKEsyHFk#3MpdOmsk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#P7DhuPRz",
+      "placement": {
+        "holder": "vKEsyHFk#PFXyjBr4"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#NN4puiyE",
+      "kind": "relationship",
+      "value": {
+        "order": 960083,
+        "kind": "render",
+        "label": "offers the agent through the root's contexts",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx",
+          "symbol": "SurfaceContext"
+        },
+        "id": "vKEsyHFk#NN4puiyE",
+        "to": "vKEsyHFk#1URZo0r1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#NN4puiyE",
+      "placement": {
+        "holder": "vKEsyHFk#PFXyjBr4"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#U4Q7nid1",
       "field": "description",
@@ -524,6 +626,108 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#WVL8uCK3",
+      "kind": "module",
+      "value": {
+        "order": 150,
+        "name": "Agent owners",
+        "kind": "function",
+        "responsibility": "useAgentOwners: the conversations the panes register, the owners over the focused one, one setup for the server, and the voice session kept on the pane it started from",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/hooks/use-agent-owners.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#WVL8uCK3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#WVL8uCK3",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#md5cpNZV",
+      "field": "label",
+      "value": "one setup for the server: send, Talk, narrate"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#md5cpNZV",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/hooks/use-agent-owners.ts",
+        "symbol": "createAgentSetup"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#md5cpNZV",
+      "placement": {
+        "holder": "vKEsyHFk#WVL8uCK3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#xlZkbGQs",
+      "kind": "relationship",
+      "value": {
+        "order": 960087,
+        "kind": "call",
+        "label": "the owners over the focused pane, the voice store, focus",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/hooks/use-agent-owners.ts",
+          "symbol": "createWorkbenchOwners"
+        },
+        "id": "vKEsyHFk#xlZkbGQs",
+        "to": "vKEsyHFk#3dIPCHbC"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#xlZkbGQs",
+      "placement": {
+        "holder": "vKEsyHFk#WVL8uCK3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1URZo0r1",
+      "kind": "module",
+      "value": {
+        "order": 200,
+        "name": "Agent reads",
+        "kind": "function",
+        "responsibility": "useAgentVoice and useAgentPanel: the voice and the panel as the shell reads them, with the fast-changing values as reading functions",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/hooks/use-agent.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#1URZo0r1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1URZo0r1",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#G67025jN",
       "kind": "module",
       "value": {
@@ -544,6 +748,108 @@
       "subject": "vKEsyHFk#G67025jN",
       "placement": {
         "holder": "vKEsyHFk#9gGvxWHp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#6D1rYDAd",
+      "kind": "module",
+      "value": {
+        "order": 300,
+        "name": "Dock, panel and Talk key",
+        "kind": "ui",
+        "responsibility": "AgentDock, AgentPanel and TalkControl: the dock, the conversation panel and a presentation's Talk key, each reading what it shows from the root",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#6D1rYDAd"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#6D1rYDAd",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#II8BSvFW",
+      "kind": "relationship",
+      "value": {
+        "order": 960077,
+        "kind": "render",
+        "label": "the dock, over the agent's view and actions",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx",
+          "symbol": "DockSurface"
+        },
+        "id": "vKEsyHFk#II8BSvFW",
+        "to": "vKEsyHFk#UoblaIEv"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#II8BSvFW",
+      "placement": {
+        "holder": "vKEsyHFk#6D1rYDAd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#AGy0C1n5",
+      "kind": "relationship",
+      "value": {
+        "order": 960078,
+        "kind": "render",
+        "label": "the Talk key of a presentation's bar",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx",
+          "symbol": "TalkKey"
+        },
+        "id": "vKEsyHFk#AGy0C1n5",
+        "to": "vKEsyHFk#ZTh8T7Ym"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#AGy0C1n5",
+      "placement": {
+        "holder": "vKEsyHFk#6D1rYDAd"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#z4N3xvmQ",
+      "kind": "relationship",
+      "value": {
+        "order": 960085,
+        "kind": "call",
+        "label": "the surfaces' state: view, actions, draft, panel",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx",
+          "symbol": "useSurfaceState"
+        },
+        "id": "vKEsyHFk#z4N3xvmQ",
+        "to": "vKEsyHFk#1URZo0r1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#z4N3xvmQ",
+      "placement": {
+        "holder": "vKEsyHFk#6D1rYDAd"
       }
     },
     {
@@ -797,6 +1103,182 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#Y2VCuHs5",
+      "kind": "module",
+      "value": {
+        "order": 400,
+        "name": "Agent pane",
+        "kind": "ui",
+        "responsibility": "A pane's part of the agent: registers its current socket's conversation, says when it is presented fullscreen, and lays the voice over its picture while voice runs for it",
+        "groups": [
+          "agent",
+          "voice"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#Y2VCuHs5"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Y2VCuHs5",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx",
+        "symbol": "VoiceSubtitles"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "placement": {
+        "holder": "vKEsyHFk#Y2VCuHs5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#idQ75B2d",
+      "kind": "relationship",
+      "value": {
+        "order": 960079,
+        "kind": "render",
+        "label": "the voice box over the pane",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx",
+          "symbol": "VoiceBox"
+        },
+        "id": "vKEsyHFk#idQ75B2d",
+        "to": "vKEsyHFk#ZTh8T7Ym"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#idQ75B2d",
+      "placement": {
+        "holder": "vKEsyHFk#Y2VCuHs5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#An4DLYr1",
+      "kind": "relationship",
+      "value": {
+        "order": 960084,
+        "kind": "call",
+        "label": "the panes' registry and the voice's words",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx",
+          "symbol": "usePaneVoice"
+        },
+        "id": "vKEsyHFk#An4DLYr1",
+        "to": "vKEsyHFk#1URZo0r1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#An4DLYr1",
+      "placement": {
+        "holder": "vKEsyHFk#Y2VCuHs5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#C43O57X3",
+      "kind": "module",
+      "value": {
+        "order": 500,
+        "name": "Agent root",
+        "kind": "module",
+        "responsibility": "Holds the agent of a page over its panes and offers it to every surface drawn below: the owners, one setup, the voice session, the actions, the draft and the panel",
+        "description": "The assembly apps/web made before TASK-653.13 (use-workbench, use-agent*, use-voice-view, the voice store, the owners, agent focus, the setup's ports, the subtitled transcript, the snapshot cache and the progress clock). The panes' conversations arrive by registration from AgentPane; the voice session stays with the pane voice was started from until it ends. The narrator starts voice once it has followed the pane a narration was asked for.",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#C43O57X3",
+      "placement": {
+        "holder": "vKEsyHFk/9ncuT5DP#tzyaOHwF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#TKYuk0lc",
+      "kind": "module",
+      "value": {
+        "order": 500,
+        "name": "Narrate key",
+        "kind": "ui",
+        "responsibility": "The key at a presented walkthrough's foot that has it narrated, launches the orb from its seat, and hangs the voice up while the orb is in the voice box",
+        "groups": [
+          "agent",
+          "voice"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/NarrateKey.tsx"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#TKYuk0lc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#TKYuk0lc",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Ir9xrvKN",
+      "kind": "relationship",
+      "value": {
+        "order": 960080,
+        "kind": "render",
+        "label": "the orb's seat in the key",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/agent-root/components/NarrateKey.tsx",
+          "symbol": "OrbSlot"
+        },
+        "id": "vKEsyHFk#Ir9xrvKN",
+        "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Ir9xrvKN",
+      "placement": {
+        "holder": "vKEsyHFk#TKYuk0lc"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk#GqMdZbTF",
       "field": "binding",
@@ -941,7 +1423,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#HggZR41l",
       "field": "description",
-      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents. Each pane gets one socket conversation from the pane handles, which its session attaches to each of its sockets; the voice store makes the voice session over that conversation's media."
+      "value": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents. Each pane gets one socket conversation from the pane handles, which its session attaches to each of its sockets and hands to the pane's agent. The agent itself is @archboard/agent-surfaces: the shell is drawn inside its root and reads the voice and the panel from it (TASK-653.13)."
     },
     {
       "type": "assign",
@@ -1920,7 +2402,16 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
       "field": "description",
-      "value": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs, waits for your approval or waits for your answer, in text and not in colour alone; a pick shows that workhorse's conversation in every pane. The list is one named group of buttons that the Up and Down arrows move through. It reads one AgentView and acts through one AgentActions, both composed by the application over the agent setup, the focused pane's hosted conversation and its controllers, and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live. It keeps the timeline projection (timeline/) and the speaking predicate isSpeakingLevel (voice/rules/speaking.ts), which moved here from the voice package (TASK-653.12)."
+      "value": "The dock lists the tab's workhorses by repository and checkout, once there are two, with the shown one picked and a word for each that runs, waits for your approval or waits for your answer, in text and not in colour alone; a pick shows that workhorse's conversation in every pane. The list is one named group of buttons that the Up and Down arrows move through. It reads one AgentView and acts through one AgentActions, both composed by the agent root over the agent setup, the focused pane's hosted conversation and its controllers, and the voice session. While the person wants subtitles, and always in a fullscreen presentation, where no dock is on screen, it also draws the voice box, a capsule round the orb with mute and the subtitles control as two keys at its end, which carries the voice the dock otherwise shows. The box is free over the voice's pane, or in the pill at the foot of a presented walkthrough's box, where the pill is its skin. The dock hands the voice over only to a box that the orb's stage says is on the page, and places the orb after its own motion so the orb leaves from where it was seen. The bar of a fullscreen presentation holds one key of the client: Talk, which reads End voice while the voice is live. It keeps the timeline projection (timeline/) and the speaking predicate isSpeakingLevel (voice/rules/speaking.ts)."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#0x47EMoO",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client"
+      }
     },
     {
       "type": "add",
@@ -2039,7 +2530,16 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
       "field": "description",
-      "value": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to the media owner of that pane's socket conversation, negotiated over the pane's hosted conversation. Whether the voice is audible is workbench's own speaking predicate."
+      "value": "Made by the agent root's voice store for the pane voice runs for. The peer connection and the audio element belong to the media owner of that pane's socket conversation, negotiated over the pane's hosted conversation. Whether the voice is audible is the package's own speaking predicate, which stays private."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session"
+      }
     },
     {
       "type": "add",
@@ -2804,6 +3304,41 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+      "field": "description",
+      "value": "One setup for the server, outliving focus: both panes share the tab's conversation. Each held message says what it waits on. A failure stays on it with the reason, and nothing is retried behind the user's back. It speaks through ports the agent root wires to the focused pane's thread link, composer and voice session."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zs2QxCu7",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#FWzvKaC4",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "createConversation"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#UBmrpsBg",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "startVoice"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#hKrzJUPf",
       "field": "description",
       "value": "A software WebGPU adapter, or none, sends the canvas to WebGL2. WebGL2 refuses a context with a major performance caveat and a renderer whose name says it draws in software, and the rule reads no frame back. A WebGPU painter that fails at work gets one more try, and a second failure soon after sends the canvas to WebGL2. A WebGL2 painter that fails or loses its context gives way to the CPU painter. Each new painter takes a fresh canvas, because a canvas that held a GPU context never takes a 2D one. Every painter it starts takes the page's pace at birth: the phases of a move and the longest step of its clock, read from timing (ADR 0085). The caller shows which painter draws, and why WebGPU and WebGL2 do not."
@@ -2996,6 +3531,35 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#0yb2VbKc",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/subtitles"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#1LB0Qkb3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/subtitles/hooks/use-subtitle-fade.ts",
+        "symbol": "frameClock"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#dAbW4tjz",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/subtitles/rules/measured-lines.ts",
+        "symbol": "prepareWithSegments"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
       "field": "responsibility",
       "value": "Finds a command's vault and, when asked, registers what holds it unless the registry knows it; a registry that cannot be written, or a holder it refuses, is said in the answer"
@@ -3122,6 +3686,25 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-painting/src/paint/tray.rs",
         "symbol": "ink_of"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#t5Wy06ua",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/orb"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/vKEsyHFk#yRl53uvR",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/orb/components/VoiceOrb.tsx",
+        "symbol": "cn"
       }
     },
     {
@@ -3840,6 +4423,31 @@
       "subject": "vKEsyHFk/yejBBUFY#zkDth8gp",
       "field": "description",
       "value": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.\n\nIt hands the pane's session the pane's socket conversation from the pane handles; it makes no socket owner or transport itself."
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#daoQ6MAE",
+      "kind": "relationship",
+      "value": {
+        "order": 960073,
+        "kind": "render",
+        "label": "the pane's agent: its socket's conversation, the voice",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
+          "symbol": "AgentPane"
+        },
+        "id": "vKEsyHFk#daoQ6MAE",
+        "to": "vKEsyHFk#Y2VCuHs5"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#daoQ6MAE",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#zkDth8gp"
+      }
     },
     {
       "type": "assign",
@@ -4580,13 +5188,77 @@
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#sw4oFps0",
       "field": "responsibility",
-      "value": "Archboard's host of the voice package: model context, domain tools, narration, the panes (registry, rules, routes, socket, registry follow, agent activity), explanations and the shell"
+      "value": "Archboard's host of the voice package on the server: model context, domain tools, narration, the panes (registry, rules, routes, socket, registry follow, agent activity) and explanations"
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/vKEsyHFk#sw4oFps0",
       "field": "description",
       "value": "The server half is seven operations in ./server: mountWorkbenchRoutes(app, hooks), acceptPaneSocket(ws, req, vault), followRegistry(), prepareWorkbench(signal, address), closeBrowserOwners(accepted), stopWorkbench() and admittedClientCount(); ./browser-contract keeps shownConversationPath and the two explanation schemas. ./panes and ./host are gone (TASK-653.09). The workbench owns the registry follow with its watch private (started last in prepare, closed first at stop), the agent activity (private), the explanation routes, and write observation as the mount's first middleware on /api/architecture. stopWorkbench shares one stop per application generation: it disposes the activity before the shutdown and clears that generation's memories and wiring in finally. The server lends requireVault, vaultOfRequest, statedVault, its mutation lease, its refusal status and { port, httpUrl } through WorkbenchHooks, and passes the sockets it accepted to closeBrowserOwners."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "order",
+      "value": 36500
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "name",
+      "value": "agent-surfaces"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "kind",
+      "value": "package"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "responsibility",
+      "value": "The agent of a page over its panes, as the shell places it: the root that holds it, the dock, the conversation panel, the voice over a pane, the Talk and Narrate keys, and a recorded talk's voice"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "formerNames",
+      "value": [
+        "Browser pane",
+        "Workbench browser"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "description",
+      "value": "@archboard/agent-surfaces, one entry (src/ui/api/agent-surfaces.ts) at the layer above workbench, split from workbench's browser half and from the assembly apps/web made of it (ADR 0092, TASK-653.13). Its eleven names: AgentRoot({ activePaneId, openAnswerFile, chooseShownConversation, children }), AgentDock, AgentPanel, AgentPane({ paneId, conversation, recording, dockless, reducedMotion }), TalkControl, NarrateKey (with the Narrate key's hook inside), useAgentVoice, useAgentPanel, RecordedVoice({ level, children }), RecordedVoiceBox({ transcript, presented }) and AgentAnswer, with their types. The shell passes only its own facts; the root composes the owners, the setup, the voice session, the actions, the draft and the panel. The pane session keeps each socket and its conversation; AgentPane registers the current generation's conversation as it mounts and withdraws that same registration when a newer socket replaces it or the pane goes. useAgentVoice and useAgentPanel hand out reading functions, so a reply does not draw the shell again. isSpeakingLevel stays private. From workbench it takes only the type of what a page asks voice to narrate, through ./browser-contract."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "field": "groups",
+      "value": [
+        "agent",
+        "packages"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+      "placement": {
+        "holder": "vKEsyHFk#EuaJBisP"
+      }
     },
     {
       "type": "assign",
@@ -5467,7 +6139,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#5y8UuVhP",
       "field": "label",
-      "value": "live and audible yet; stop"
+      "value": "how the voice stands, whether it is audible, what it said"
     },
     {
       "type": "assign",
@@ -5478,6 +6150,12 @@
         "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
         "symbol": "readVoice"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#5y8UuVhP",
+      "field": "to",
+      "value": "vKEsyHFk#1URZo0r1"
     },
     {
       "type": "assign",
@@ -5558,6 +6236,22 @@
       "subject": "vKEsyHFk/Oi6SBIAM#HO533F7P",
       "field": "to",
       "value": "vKEsyHFk#kucowX1d"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#FYKw5y8U",
+      "field": "label",
+      "value": "the talk's voice: its orb, and its box with the lines said"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#FYKw5y8U",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
+        "symbol": "RecordedVoice"
+      }
     },
     {
       "type": "assign",
@@ -5943,6 +6637,15 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#gYvouMDV",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/rules/binding.ts"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#RZTsoQN5",
       "field": "binding",
       "value": {
@@ -6167,6 +6870,25 @@
       "value": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-store/src/runtime/canonical"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#sOSPdXJh",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/voice/hooks/use-voice-box-presence.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#294aYIvD",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/voice/hooks/use-voice-box-presence.ts",
+        "symbol": "frameClock"
       }
     },
     {
@@ -7843,6 +8565,63 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
+      "field": "label",
+      "value": "Talk as a recording; whether voice can start; its words"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
+      "field": "to",
+      "value": "vKEsyHFk#1URZo0r1"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ZTh8T7Ym",
+      "field": "responsibility",
+      "value": "The voice box, the voice control, the Talk control, and the voice of a recorded talk with its box"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#ZTh8T7Ym",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/voice/components"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#MmIPovT7",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/voice/components/VoiceControl.tsx",
+        "symbol": "OrbHost"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#5fWy6ymA",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/voice/components/VoiceBox.tsx",
+        "symbol": "SubtitleWords"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#gu53WGgU",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/voice/components/VoiceBox.tsx",
+        "symbol": "useVoiceBoxPresence"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#EyYNaZT0",
       "field": "binding",
       "value": {
@@ -7888,6 +8667,15 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#rG1FeuCg",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#DTRtWKab",
       "field": "label",
       "value": "the pane's hosted conversation: agent state, capabilities"
@@ -7895,8 +8683,53 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#DTRtWKab",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
+        "symbol": "capabilities"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#DTRtWKab",
       "field": "to",
       "value": "vKEsyHFk#o0NC4h92"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#bFY85rkM",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
+        "symbol": "start"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#HQDb9kqA",
+      "kind": "relationship",
+      "value": {
+        "order": 960082,
+        "kind": "call",
+        "label": "whether the model is audible now",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
+          "symbol": "isSpeakingLevel"
+        },
+        "id": "vKEsyHFk#HQDb9kqA",
+        "to": "vKEsyHFk#K1BARYL1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#HQDb9kqA",
+      "placement": {
+        "holder": "vKEsyHFk#rG1FeuCg"
+      }
     },
     {
       "type": "assign",
@@ -7907,14 +8740,40 @@
     {
       "type": "assign",
       "subject": "vKEsyHFk#x1I9VaDn",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/clients/agent-actions.ts"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#x1I9VaDn",
       "field": "description",
       "value": "The running turn is read from the timeline's own turns, not from the voice package's timeline projection."
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#x1I9VaDn",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
     },
     {
       "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#kZtsu0nq",
       "field": "label",
       "value": "the focused pane's hosted conversation and controllers"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/clients/agent-actions.ts",
+        "symbol": "state"
+      }
     },
     {
       "type": "assign",
@@ -8236,9 +9095,113 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#mlSnLR16",
+      "field": "responsibility",
+      "value": "Lays out the desktop frame inside the agent's root and mounts what stands around the panes: the catalogue, the agent's dock and panel, and the settings"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "field": "label",
+      "value": "the dock, the conversation panel and the Talk key"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "AgentDock"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "field": "to",
+      "value": "vKEsyHFk#6D1rYDAd"
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Z2EQi9WX",
+      "kind": "relationship",
+      "value": {
+        "order": 960071,
+        "kind": "render",
+        "label": "the agent's root: focused pane, file opener, chooser",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/application/components/Application.tsx",
+          "symbol": "AgentRoot"
+        },
+        "id": "vKEsyHFk#Z2EQi9WX",
+        "to": "vKEsyHFk#PFXyjBr4"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Z2EQi9WX",
+      "placement": {
+        "holder": "vKEsyHFk#mlSnLR16"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#CN0Ww2f3",
+      "kind": "relationship",
+      "value": {
+        "order": 960072,
+        "kind": "call",
+        "label": "the panel's open, close, ask, fill; voice to narrate, record",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/application/components/Application.tsx",
+          "symbol": "useAgentPanel"
+        },
+        "id": "vKEsyHFk#CN0Ww2f3",
+        "to": "vKEsyHFk#1URZo0r1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#CN0Ww2f3",
+      "placement": {
+        "holder": "vKEsyHFk#mlSnLR16"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#3dIPCHbC",
       "field": "responsibility",
-      "value": "Holds the page's agent setup, its voice session, and the focused pane's hosted conversation with its controllers"
+      "value": "The state the root holds: the controllers over the focused pane's hosted conversation with their caches and progress clock, the voice store that makes the voice session, and the focus"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#3dIPCHbC",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/state"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#3dIPCHbC",
+      "placement": {
+        "holder": "vKEsyHFk#C43O57X3"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#qKwYD1B2",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/state/voice-store.ts",
+        "symbol": "createVoiceSession"
+      }
     },
     {
       "type": "assign",
@@ -8252,7 +9215,7 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/state/workbench-owners.ts",
+        "path": "packages/agent-surfaces/src/ui/agent-root/state/workbench-owners.ts",
         "symbol": "createWorkbenchOwners"
       }
     },
@@ -8597,6 +9560,95 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk#UoblaIEv",
+      "field": "binding",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "showConversation"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#GIO0Gciq",
+      "kind": "relationship",
+      "value": {
+        "order": 960081,
+        "kind": "call",
+        "label": "where the dock offers and places the orb",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+          "symbol": "useOrbPlacement"
+        },
+        "id": "vKEsyHFk#GIO0Gciq",
+        "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#GIO0Gciq",
+      "placement": {
+        "holder": "vKEsyHFk#UoblaIEv"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#v4dda8hS",
+      "kind": "relationship",
+      "value": {
+        "order": 960086,
+        "kind": "call",
+        "label": "how long the dock's moves and a wait last",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+          "symbol": "durationMs"
+        },
+        "id": "vKEsyHFk#v4dda8hS",
+        "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#v4dda8hS",
+      "placement": {
+        "holder": "vKEsyHFk#UoblaIEv"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#tJGMgOeT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "SubtitlesToggle"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#pzWBfyor",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "VoiceControl"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "field": "to",
       "value": "vKEsyHFk#WgFarzeW"
@@ -8618,6 +9670,165 @@
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model-contract/src/shared/canonical-contracts/schemas/model-snapshot.ts",
         "symbol": "ModelSnapshotSchema"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#3MpdOmsk",
+      "kind": "module",
+      "value": {
+        "order": 960400,
+        "name": "Conversation thread",
+        "kind": "ui",
+        "responsibility": "The conversation's turns, an agent's answer with the files it names, and how a named file opens",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/workbench-client/thread"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#3MpdOmsk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#3MpdOmsk",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0x47EMoO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#K1BARYL1",
+      "kind": "module",
+      "value": {
+        "order": 960410,
+        "name": "Speaking level",
+        "kind": "function",
+        "responsibility": "isSpeakingLevel: whether a voice's output level is speech, which the voice session and the voice keys read; private to the package",
+        "groups": [
+          "voice"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/agent-surfaces/src/ui/workbench-client/voice/rules/speaking.ts"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#K1BARYL1"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#K1BARYL1",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#0x47EMoO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#H0pnrorZ",
+      "kind": "module",
+      "value": {
+        "order": 960500,
+        "name": "Presentation foot",
+        "kind": "ui",
+        "responsibility": "The foot of a presented walkthrough's column: the agent's Narrate key, for as long as the shell has a voice to offer",
+        "groups": [
+          "voice",
+          "walkthrough"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#H0pnrorZ"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#H0pnrorZ",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#jGsOMj25",
+      "kind": "relationship",
+      "value": {
+        "order": 960074,
+        "kind": "render",
+        "label": "the Narrate key at a presented walkthrough's foot",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx",
+          "symbol": "NarrateKey"
+        },
+        "id": "vKEsyHFk#jGsOMj25",
+        "to": "vKEsyHFk#TKYuk0lc"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#jGsOMj25",
+      "placement": {
+        "holder": "vKEsyHFk#H0pnrorZ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#nT2UAqsi",
+      "kind": "module",
+      "value": {
+        "order": 960510,
+        "name": "Explanation result",
+        "kind": "ui",
+        "responsibility": "One captured local answer as Codex gives it: where it stands, the answer with the files it names, and cancel",
+        "groups": [
+          "agent"
+        ],
+        "binding": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelExplanationResult.tsx"
+        },
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#nT2UAqsi"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#nT2UAqsi",
+      "placement": {
+        "holder": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#Yav1RSmc",
+      "kind": "relationship",
+      "value": {
+        "order": 960075,
+        "kind": "render",
+        "label": "a local answer, with the files it names",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelExplanationResult.tsx",
+          "symbol": "AgentAnswer"
+        },
+        "id": "vKEsyHFk#Yav1RSmc",
+        "to": "vKEsyHFk#3MpdOmsk"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#Yav1RSmc",
+      "placement": {
+        "holder": "vKEsyHFk#nT2UAqsi"
       }
     },
     {
@@ -9871,6 +11082,254 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#j71M2dfg",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/yejBBUFY#0x47EMoO",
+        "vKEsyHFk#x1I9VaDn",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#941UBxya",
+        "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#Bt9yZ1aM",
+      "field": "to",
+      "value": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#Bt9yZ1aM",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/panel/components/AgentComposer.tsx",
+        "symbol": "onSend"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#SspC7Ppw",
+      "field": "from",
+      "value": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#SspC7Ppw",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/clients/agent-actions.ts",
+        "symbol": "agentActions"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#zvbHcVwO",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "pump"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#q8TMVvzj",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "failWaiting"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#jeYZcNFT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "askSignIn"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#FDThA7Cn",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "advance"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#fIw319hX",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "link"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#4x3MoJUq",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "deliverNext"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#aEcZxj5U",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "connect"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#VkyD4NyT",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "prune"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#rJ0zWUg4",
+      "field": "participants",
+      "value": [
+        "vKEsyHFk/yejBBUFY#0x47EMoO",
+        "vKEsyHFk#x1I9VaDn",
+        "vKEsyHFk/yejBBUFY#zs2QxCu7",
+        "vKEsyHFk/yejBBUFY#0SRnYXnC",
+        "vKEsyHFk/yejBBUFY#941UBxya"
+      ]
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#8thZNEWh",
+      "field": "to",
+      "value": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#8thZNEWh",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/rules/circle-state.ts",
+        "symbol": "talk"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#kweFucYD",
+      "field": "from",
+      "value": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#kweFucYD",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/clients/agent-actions.ts",
+        "symbol": "agentActions"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#MybRaYS0",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "startVoice"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#0bxGsdmF",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "startTalk"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#xotU2OOc",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/rules/binding.ts",
+        "symbol": "captureBinding"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#Ubg9ruhn",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/rules/binding.ts",
+        "symbol": "captureBinding"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#5xoUw1IZ",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
+        "symbol": "startNew"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#QGoYmz4Z",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
+        "symbol": "run"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#lQDfj83Y",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/rules/binding.ts",
+        "symbol": "captureBinding"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#Ioy0fSZ3",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
+        "symbol": "startTalk"
+      }
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/yejBBUFY#SiHTZh57",
       "field": "label",
       "value": "is the voice live, and is it audible"
@@ -9921,6 +11380,8 @@
     "vKEsyHFk/9ncuT5DP#tef70baL",
     "vKEsyHFk#e3WuFSSK",
     "vKEsyHFk#0ZhQaQLW",
-    "vKEsyHFk#4eKZ6q3Y"
+    "vKEsyHFk#4eKZ6q3Y",
+    "vKEsyHFk/yejBBUFY#gIVISpC9",
+    "vKEsyHFk/yejBBUFY#pNlMVRMt"
   ]
 }
