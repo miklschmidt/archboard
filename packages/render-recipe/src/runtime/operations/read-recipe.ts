@@ -1,10 +1,10 @@
 // The render recipe a file carries, read from its bytes alone: a PNG by its
 // text chunk, anything else as text that may hold an SVG's recipe element.
 
-import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
-import { embedRecipeInPng, pngRecipeText } from "#runtime/recipe/operations/png-recipe.ts";
-import { AnyRenderRecipeSchema, type AnyRenderRecipe } from "#runtime/recipe/operations/schema.ts";
-import { replaceRecipeInSvg, svgRecipeText } from "#runtime/recipe/operations/svg-recipe.ts";
+import { readPngDimensions } from "#runtime/operations/png.ts";
+import { embedRecipeInPng, pngRecipeText } from "#runtime/operations/png-recipe.ts";
+import { AnyRenderRecipeSchema, type AnyRenderRecipe } from "#runtime/operations/schema.ts";
+import { replaceRecipeInSvg, svgRecipeText } from "#runtime/operations/svg-recipe.ts";
 
 /**
  * What a file says about how it was drawn: its recipe, no recipe at all, or a
@@ -92,10 +92,11 @@ function issueLine(issue: {
 }
 
 /**
- * A file that carries a recipe, with another recipe in its place and every
- * other byte as it was: what refreshes the recipe of a picture that has not
- * changed, whatever a post-processor did to it.
- * @param bytes The file, which carries a recipe.
+ * A file with another recipe in place of the one it carries and every other
+ * byte as it was: what refreshes the recipe of a picture that has not changed,
+ * whatever a post-processor did to it. A PNG takes the recipe whether or not it
+ * carried one, which is how a bitmap gets its recipe.
+ * @param bytes The file: a PNG, or an SVG that carries a recipe.
  * @param recipe The recipe it carries from now on.
  * @returns The file's new bytes.
  * @throws {Error} When an SVG carries no recipe element or the bytes are no PNG or SVG.

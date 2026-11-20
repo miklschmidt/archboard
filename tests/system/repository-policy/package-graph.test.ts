@@ -36,6 +36,7 @@ const LAYERS: Record<string, number> = {
 	"server-requests": 3,
 	"model-contract": 4,
 	"model-rules": 5,
+	"render-recipe": 5,
 	"model-store": 6,
 	"codex-app-server": 7,
 	renderer: 7,

@@ -1,8 +1,8 @@
 import type { z } from "zod";
 import { type ArchitectureModelRead, type ModelShape } from "@archboard/model-contract";
-import { ArchitectureRecipeSchema } from "#runtime/recipe/operations/schema.ts";
-import { inputFingerprint, sha256Of } from "#runtime/recipe/operations/digest.ts";
-import { embedRecipeInSvg } from "#runtime/recipe/operations/svg-recipe.ts";
+import { ArchitectureRecipeSchema } from "#runtime/operations/schema.ts";
+import { inputFingerprint, sha256Of } from "#runtime/operations/digest.ts";
+import { embedRecipeInSvg } from "#runtime/operations/svg-recipe.ts";
 /**
  * Record exact canonical selectors through the existing render metadata owner.
  * @param svg The rendered SVG before metadata.

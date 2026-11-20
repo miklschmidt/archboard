@@ -10,7 +10,7 @@ import {
 	RENDER_RECIPE_MARK,
 	RENDER_RECIPE_NAMESPACE,
 	type AnyRenderRecipe,
-} from "#runtime/recipe/operations/schema.ts";
+} from "#runtime/operations/schema.ts";
 
 /** The recipe element's prefix and local name, from its qualified name. */
 const PREFIX = RENDER_RECIPE_MARK.slice(0, RENDER_RECIPE_MARK.indexOf(":"));

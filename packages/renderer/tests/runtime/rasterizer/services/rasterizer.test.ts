@@ -10,7 +10,7 @@ import {
 	createSemanticRasterizer,
 	type SemanticRasterizer,
 } from "#runtime/rasterizer/services/rasterizer.ts";
-import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
+import { readPngDimensions } from "@archboard/render-recipe";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/rasterizer/services/cold-start-timing.ts";
 import { pngRgbCounts } from "#tests/runtime/rasterizer/services/png-colors.ts";
 import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";

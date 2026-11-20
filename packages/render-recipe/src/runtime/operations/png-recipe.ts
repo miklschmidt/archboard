@@ -3,8 +3,8 @@
 // because tEXt is Latin-1 and a document's name need not be.
 
 import { crc32 } from "node:zlib";
-import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
-import { RENDER_RECIPE_MARK, type AnyRenderRecipe } from "#runtime/recipe/operations/schema.ts";
+import { readPngDimensions } from "#runtime/operations/png.ts";
+import { RENDER_RECIPE_MARK, type AnyRenderRecipe } from "#runtime/operations/schema.ts";
 
 /** The PNG signature's length, where the first chunk starts. */
 const SIGNATURE_LENGTH = 8;

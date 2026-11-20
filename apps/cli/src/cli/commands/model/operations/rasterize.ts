@@ -6,7 +6,7 @@ import {
 	createSemanticRasterizer,
 	rasterScaleSchema,
 } from "@archboard/renderer/rasterizer";
-import { readRenderRecipe, embedRecipeInPng } from "@archboard/renderer/recipe";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/render-recipe";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import {
@@ -61,7 +61,7 @@ async function captureArchitecture(
 		throw new Error("The canonical picture carries no reproducible recipe.");
 	const recipe = { ...read.recipe, raster: { scale, region: region ?? null } };
 	return {
-		png: embedRecipeInPng(capture.png, recipe),
+		png: replaceRenderRecipe(capture.png, recipe),
 		width: capture.width,
 		height: capture.height,
 		source: {

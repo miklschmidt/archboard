@@ -10,7 +10,7 @@ import {
 	editArchitectureModule,
 	readArchitectureModel,
 } from "@archboard/model-store";
-import { readRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe } from "@archboard/render-recipe";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";

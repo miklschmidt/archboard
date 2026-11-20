@@ -5,7 +5,7 @@
 
 import { bitmapSizeOf, type RasterBounds } from "#runtime/rasterizer/operations/bounds.ts";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
-import { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
+import { readPngDimensions } from "@archboard/render-recipe";
 
 /** How the page sat before the shot was taken. */
 interface PageReadiness {

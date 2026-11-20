@@ -1,7 +1,7 @@
 // A picture to a bitmap in a private headless Chromium, and the receipt of the capture.
 export { rasterScaleSchema } from "#runtime/rasterizer/operations/bounds.ts";
 export type { PageRegion } from "#runtime/rasterizer/operations/bounds.ts";
-export { readPngDimensions } from "#runtime/rasterizer/operations/png.ts";
+export { readPngDimensions } from "@archboard/render-recipe";
 export {
 	architectureRasterReceiptSchema,
 	parseRasterReceipt,

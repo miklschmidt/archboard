@@ -35,6 +35,7 @@ const ADOPTERS: {
 	{ name: "process", areas: ["runtime"] },
 	{ name: "machine", areas: ["runtime"] },
 	{ name: "headless-chromium", areas: ["runtime"] },
+	{ name: "render-recipe", areas: ["runtime"] },
 ];
 
 function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {

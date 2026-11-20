@@ -30,6 +30,7 @@
   "@archboard/model-rules" = copyPathToStore ./packages/model-rules;
   "@archboard/model-store" = copyPathToStore ./packages/model-store;
   "@archboard/process" = copyPathToStore ./packages/process;
+  "@archboard/render-recipe" = copyPathToStore ./packages/render-recipe;
   "@archboard/renderer" = copyPathToStore ./packages/renderer;
   "@archboard/server-lifecycle" = copyPathToStore ./packages/server-lifecycle;
   "@archboard/server-requests" = copyPathToStore ./packages/server-requests;

@@ -1,4 +1,4 @@
-import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/render-recipe";
 import { crc32 } from "node:zlib";
 import { readFlow } from "@archboard/model-contract";
 import { z } from "zod";

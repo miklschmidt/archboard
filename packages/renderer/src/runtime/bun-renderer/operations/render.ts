@@ -12,19 +12,12 @@ import {
 	type SemanticViewRenderRequest,
 } from "#shared/protocol/render-request.ts";
 import {
-	drawLegacyBoard,
+	renderLegacyBoard as renderLegacyBoardIn,
 	type LegacyRenderChoices,
 	type LegacyRenderOutcome,
-	type DrawnInput,
 } from "#shared/render/rules/legacy-board.ts";
-import {
-	type LegacyBoard,
-	type SemanticPolicy,
-	type SemanticRenderReply,
-} from "@archboard/model-contract";
+import { type LegacyBoard, type SemanticPolicy } from "@archboard/model-contract";
 import { installBunHost } from "#runtime/bun-renderer/services/bun-host.ts";
-import { legacyRecipe, type RecipeVault } from "#runtime/recipe/operations/legacy-recipe.ts";
-import { embedRecipeInSvg } from "#runtime/recipe/operations/svg-recipe.ts";
 
 /**
  * A semantic architecture in, one self-contained SVG plus its geometry out.
@@ -55,46 +48,15 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
  * @param document The document, as read.
  * @param choices The variant, view, theme and faces asked for.
  * @param policy The vault's presentation policy.
- * @param recipe For a document render that stands alone, the vault its recipe names; the SVG then
- * carries its render recipe (ADR 0057).
- * @param recipe.vault The vault.
  * @returns The answer, or which name the document does not have.
  */
 async function renderLegacyBoard(
 	document: LegacyBoard,
 	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
-	recipe?: { readonly vault: RecipeVault },
 ): Promise<LegacyRenderOutcome> {
 	installBunHost();
-	const drawing = await drawLegacyBoard(document, choices, policy);
-	if (!drawing.ok) return drawing;
-	const reply =
-		recipe === undefined
-			? drawing.reply
-			: carryingRecipe(document, choices, drawing.reply, drawing.input, recipe.vault);
-	return { ok: true, reply };
-}
-
-/**
- * A drawn answer whose SVG carries its render recipe.
- * @param document The document, as read.
- * @param choices What the render asked for.
- * @param reply What the render answered.
- * @param input What the picture was drawn from.
- * @param vault The vault the recipe names.
- * @returns The answer, its SVG carrying the recipe; an answer with no picture as it was.
- */
-function carryingRecipe(
-	document: LegacyBoard,
-	choices: LegacyRenderChoices,
-	reply: SemanticRenderReply,
-	input: DrawnInput,
-	vault: RecipeVault,
-): SemanticRenderReply {
-	if (!("svg" in reply)) return reply;
-	const recipe = legacyRecipe(document, choices, reply, input, vault);
-	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
+	return renderLegacyBoardIn(document, choices, policy);
 }
 
 export { renderArchitecture, renderLegacyBoard, renderSemanticView };
