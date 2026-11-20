@@ -68,20 +68,7 @@
         "symbol": "vaultOfRequest"
       },
       "id": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 108000,
-      "kind": "call",
-      "label": "derive the checkpoint request contract",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
-        "symbol": "architectureCheckpointRequestSchema"
-      },
-      "id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
-      "to": "vKEsyHFk#8539szQJ"
+      "to": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "order": 108000,
@@ -120,18 +107,6 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#Io53QUgK",
       "to": "vKEsyHFk/HBlhIeSD#gRG7JEPt"
-    },
-    {
-      "order": 124000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/model-routes.ts",
-        "symbol": "mountArchitectureModelRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#WaYJBOUv",
-      "to": "vKEsyHFk/HBlhIeSD#QboPNrzG"
     },
     {
       "order": 130000,

@@ -1,0 +1,57 @@
+{
+  "order": 100,
+  "name": "Agent provider",
+  "kind": "ui",
+  "responsibility": "AgentRoot: takes the shell's facts (the focused pane, the file opener, the conversation chooser) and offers the agent, the orb's stage and the answers' file opener to what is drawn inside",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#PFXyjBr4",
+  "parent": "vKEsyHFk#C43O57X3",
+  "outgoing": [
+    {
+      "order": 43000,
+      "kind": "render",
+      "label": "the stage the one orb is flown on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx",
+        "symbol": "OrbStageProvider"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "order": 960076,
+      "kind": "render",
+      "label": "answers' file links open through the shell",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx",
+        "symbol": "AnswerFilesProvider"
+      },
+      "id": "vKEsyHFk#P7DhuPRz",
+      "to": "vKEsyHFk#3MpdOmsk"
+    },
+    {
+      "order": 960083,
+      "kind": "render",
+      "label": "offers the agent through the root's contexts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentRoot.tsx",
+        "symbol": "SurfaceContext"
+      },
+      "id": "vKEsyHFk#NN4puiyE",
+      "to": "vKEsyHFk#1URZo0r1"
+    }
+  ]
+}

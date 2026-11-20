@@ -3,6 +3,7 @@
   "name": "Session composition",
   "kind": "function",
   "responsibility": "Starts one initialized session: wires its gate, its identities and its answers over the transport",
+  "description": "TASK-653.11: private; openCodexSession calls it with the connection's transport and identity authority and listener ownership composition, and it returns the session and the control the caller owns.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/session/services/session.ts",

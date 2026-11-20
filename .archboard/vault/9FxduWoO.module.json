@@ -3,7 +3,7 @@
   "name": "Picture stage",
   "kind": "function",
   "responsibility": "Owns the canvas of one surface and its painter, hands the painter what the page says, and asks the frame clock for frames only while something moves",
-  "description": "Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct picture. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why WebGPU and WebGL2 do not in data-painter-reason.",
+  "description": "It states each change to the painter whole: how the picture is seen as a presentation that names only what changed, a picture's arrival (a cut, a carry, an entrance or a flight into a card) and a departure (a leaving, a stay, a clear or out of a card), each timed one with the frame clock's moment. A frame says what moves after it, so the stage asks for another only while something moves, and on a strip canvas that moves traffic alone it rests as long as the last frame took. Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct picture. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas, briefed with the held presentation and then the picture. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why WebGPU and WebGL2 do not in data-painter-reason.",
   "groups": [
     "drawing"
   ],
@@ -31,7 +31,7 @@
     {
       "order": 2000,
       "kind": "call",
-      "label": "the picture, how it arrives, how it is seen, and the time",
+      "label": "how the picture is seen, what arrives and departs, frames",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

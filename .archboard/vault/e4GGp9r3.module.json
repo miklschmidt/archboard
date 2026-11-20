@@ -1,0 +1,15 @@
+{
+  "order": 60,
+  "name": "Page margin",
+  "kind": "function",
+  "responsibility": "Answers the margin every picture keeps clear around its drawing, which each layout leaves when it sizes the page",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painting/src/paint/page.rs",
+    "symbol": "diagram_margin"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#e4GGp9r3",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": []
+}

@@ -214,14 +214,15 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
       "name": "A person chooses a repository's checkout",
-      "summary": "Makes one known checkout with a vault the repository's chosen one. Panes left in an unchosen checkout move with their model, and every tab hears repositories_changed.",
+      "summary": "Makes one known checkout with a vault the repository's chosen one: workspace chooses it, or says why not, for the 404 and 422 refusals. The workbench then follows the registry: panes left in an unchosen checkout move with their model, and every tab hears repositories_changed.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-        "vKEsyHFk/HBlhIeSD#nLp2hILd",
+        "vKEsyHFk/0T9enjhi#klNuMiwC",
+        "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+        "vKEsyHFk#qhpG7ofG",
         "vKEsyHFk/HBlhIeSD#KLt72lWa",
         "vKEsyHFk#CgXCbunb",
-        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw"
       ],
       "steps": [
@@ -240,49 +241,49 @@
         {
           "id": "vKEsyHFk/HBlhIeSD#Yyk0IoPZ",
           "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-          "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
-          "label": "the checkouts the registry knows",
+          "to": "vKEsyHFk/0T9enjhi#klNuMiwC",
+          "label": "choose the checkout",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-            "symbol": "listRegistry"
-          }
-        },
-        {
-          "id": "vKEsyHFk/HBlhIeSD#myGzl930",
-          "from": "vKEsyHFk/HBlhIeSD#nLp2hILd",
-          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-          "label": "each checkout, with whether it exists",
-          "kind": "return",
-          "anchor": {
-            "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-            "symbol": "listRegistry"
+            "symbol": "chooseCheckout"
           }
         },
         {
           "id": "vKEsyHFk/HBlhIeSD#IXevfcB3",
-          "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-          "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-          "label": "does the checkout have a vault",
+          "from": "vKEsyHFk/0T9enjhi#klNuMiwC",
+          "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+          "label": "does the checkout hold a vault",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+            "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
             "symbol": "vaultIn"
           }
         },
         {
           "id": "vKEsyHFk/HBlhIeSD#vgoiHzwl",
-          "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "from": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+          "to": "vKEsyHFk/0T9enjhi#klNuMiwC",
           "label": "the vault, or none",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workspace/src/server/projections/repository-listing.ts",
+            "path": "packages/workspace/src/runtime/services/vault-finder.ts",
             "symbol": "vaultIn"
+          }
+        },
+        {
+          "id": "vKEsyHFk/HBlhIeSD#myGzl930",
+          "from": "vKEsyHFk/0T9enjhi#klNuMiwC",
+          "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+          "label": "chosen, or unknown, gone or without a vault",
+          "kind": "return",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+            "symbol": "chooseCheckout"
           }
         },
         {
@@ -302,7 +303,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "refuseUnknownCheckout"
+                    "symbol": "refuseChoice"
                   }
                 }
               ]
@@ -319,7 +320,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "statedChoice"
+                    "symbol": "refuseChoice"
                   }
                 }
               ]
@@ -328,15 +329,15 @@
               "label": "usable",
               "steps": [
                 {
-                  "id": "vKEsyHFk/HBlhIeSD#nGUygMX9",
+                  "id": "vKEsyHFk#pI5sNqzy",
                   "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                  "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
-                  "label": "choose a known checkout of the registry",
+                  "to": "vKEsyHFk#qhpG7ofG",
+                  "label": "follow the registry",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "chooseKnownCheckout"
+                    "symbol": "followRegistry"
                   }
                 },
                 {
@@ -346,20 +347,20 @@
                   "steps": [
                     {
                       "id": "vKEsyHFk/HBlhIeSD#ZNWAp2rJ",
-                      "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                      "from": "vKEsyHFk#qhpG7ofG",
                       "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
                       "label": "where the pane's vault belongs now",
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                        "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                         "symbol": "placeOfVault"
                       }
                     },
                     {
                       "id": "vKEsyHFk/HBlhIeSD#kqxOzNTs",
                       "from": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                      "to": "vKEsyHFk#qhpG7ofG",
                       "label": "its home vault and repository",
                       "kind": "return",
                       "anchor": {
@@ -378,13 +379,13 @@
                           "steps": [
                             {
                               "id": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
-                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "from": "vKEsyHFk#qhpG7ofG",
                               "to": "vKEsyHFk#CgXCbunb",
                               "label": "move the pane out, with its model",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                                "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                                 "symbol": "movePaneVault"
                               }
                             }
@@ -395,13 +396,13 @@
                           "steps": [
                             {
                               "id": "vKEsyHFk/HBlhIeSD#4CvAnVr8",
-                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "from": "vKEsyHFk#qhpG7ofG",
                               "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                               "label": "tell the pane where it is again",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                                "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                                 "symbol": "sendKeylessToPane"
                               }
                             }
@@ -413,14 +414,14 @@
                 },
                 {
                   "id": "vKEsyHFk/HBlhIeSD#T6XUtqQp",
-                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                  "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                  "from": "vKEsyHFk#qhpG7ofG",
+                  "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                   "label": "repositories_changed to every tab",
                   "kind": "async",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "broadcastEverywhere"
+                    "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+                    "symbol": "sendToEveryClient"
                   }
                 },
                 {

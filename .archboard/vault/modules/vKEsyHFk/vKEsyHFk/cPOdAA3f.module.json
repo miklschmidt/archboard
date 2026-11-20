@@ -3,7 +3,7 @@
   "name": "Archboard server",
   "kind": "service",
   "responsibility": "Hosts the local HTTP and socket service for architecture and local agents",
-  "description": "One server app serves canonical model operations, code evidence, exports, retained playback, repository selection, and pane routing. Its route and lifecycle children own those details. Reader and rendering roles do not create separate copies of this app.",
+  "description": "One server app serves canonical model operations, code evidence, exports, retained playback, repository selection, and pane routing. Its route and lifecycle children own those details. Reader and rendering roles do not create separate copies of this app. It mounts the workbench's routes and lends them its mutation lease, refusal status, request-vault adapter and listen address, which it keeps private (TASK-653.09).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server"

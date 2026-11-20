@@ -5,7 +5,7 @@
   "responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/sequence.rs"
+    "path": "crates/archboard-painting/src/paint/sequence.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#CtoOMxca",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/sequence.rs",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
         "symbol": "atlas_boxes"
       },
       "id": "vKEsyHFk/gbyqW4H3#KgeoU8Mf",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/sequence_messages.rs",
+        "path": "crates/archboard-painting/src/paint/sequence_messages.rs",
         "symbol": "curve_through"
       },
       "id": "vKEsyHFk/gbyqW4H3#FQBxwNeT",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
         "symbol": "slab_seat"
       },
       "id": "vKEsyHFk/gbyqW4H3#HDZqKmN4",
@@ -57,7 +57,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
         "symbol": "tab_view"
       },
       "id": "vKEsyHFk/gbyqW4H3#qtD8CVTd",
@@ -70,7 +70,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
         "symbol": "paint_heading_views"
       },
       "id": "vKEsyHFk/gbyqW4H3#t5CUCz5T",
@@ -83,11 +83,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "path": "crates/archboard-painting/src/paint/sequence_frames.rs",
         "symbol": "subject"
       },
       "id": "vKEsyHFk/gbyqW4H3#XVvCNvvX",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    },
+    {
+      "order": 73000,
+      "kind": "call",
+      "label": "an activation bar's span",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/sequence.rs",
+        "symbol": "activation_boxes"
+      },
+      "id": "vKEsyHFk#fJHzqH3q",
+      "to": "vKEsyHFk#RYix4PQl"
     }
   ]
 }

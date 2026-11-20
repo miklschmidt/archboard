@@ -2,11 +2,11 @@
   "order": 26000,
   "name": "Legend entries",
   "kind": "function",
-  "responsibility": "Reads from a drawn scene what its legend lists, for the page's legend and an exported one alike",
-  "description": "entries_of keeps one sample of each node and relationship kind in drawing order, and mark_counts counts a comparison's marks on the subjects a drawing placed. archboard-svg spells each applied appearance as the document writes it. One reader, so the page's legend and an exported legend cannot list different things.",
+  "responsibility": "Lists the entries of an exported picture's legend: the comparison marks counted on the subjects it placed, and the samples of the picture's key",
+  "description": "entries_of keeps one sample of each node and relationship kind in drawing order, from the key Picture legend reads back from the scene, and mark_counts counts a comparison's marks on the subjects a drawing placed.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/legend/entries.rs"
+    "path": "crates/archboard-painting/src/paint/legend/entries.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
@@ -14,5 +14,19 @@
   "formerNames": [
     "Picture key"
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "the picture's key, read back from its scene",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/legend/entries.rs",
+        "symbol": "entries_of"
+      },
+      "id": "vKEsyHFk#6VfgaBJY",
+      "to": "vKEsyHFk#WgFarzeW"
+    }
+  ]
 }

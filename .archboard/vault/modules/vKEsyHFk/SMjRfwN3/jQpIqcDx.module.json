@@ -16,7 +16,7 @@
       "order": 20000,
       "kind": "call",
       "label": "evaluate in the page, stream its Blob",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "description": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -107,10 +107,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
-        "symbol": "recorderMs"
+        "symbol": "durationMs"
       },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#Y3nWPghd"
+      "id": "vKEsyHFk#Y3nWPghd",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }

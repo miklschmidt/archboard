@@ -2,8 +2,8 @@
   "order": 26500,
   "name": "Pane marks",
   "kind": "module",
-  "responsibility": "What a pane draws beside a picture without the core: line inks, standing pins and code warnings",
-  "description": "Their inks, sizes and markup are generated from the core's painter by `bun run build:core`, so a pane holds no copy of the painter's rules. Only the placement of a warning is written here.",
+  "responsibility": "The marks a pane draws beside or over a picture, finished, without the core: the key's samples of a line, of its emphasis and traffic and of a standing pin, and the warning a code finding raises",
+  "description": "markSample takes a closed union of samples and warningMark a place; both answer finished markup. Their inks, sizes and markup are generated from the core's painter by bun run build:core, so a pane holds no copy of the painter's rules: it places the markup this module finishes (TASK-653.16).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/render/rules/marks.ts"

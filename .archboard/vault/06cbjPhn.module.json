@@ -20,7 +20,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-app-server/src/runtime/services/executable.ts",
-        "symbol": "codexSessionMs"
+        "symbol": "durationMs"
       },
       "id": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
@@ -35,8 +35,8 @@
         "path": "packages/codex-app-server/src/runtime/services/executable.ts",
         "symbol": "codexProtocolVersion"
       },
-      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
-      "id": "vKEsyHFk#bobdaYcV"
+      "id": "vKEsyHFk#bobdaYcV",
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
     }
   ]
 }

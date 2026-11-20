@@ -16,7 +16,7 @@
       "order": 34000,
       "kind": "call",
       "label": "one per page, in software, 1920x1080; stop them all",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "description": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -30,7 +30,7 @@
       "order": 36000,
       "kind": "call",
       "label": "evaluate in the page; screenshot each frame as JPEG q92",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "description": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches.",
       "emphasis": "normal",
       "traffic": {
         "speed": 40,
@@ -95,6 +95,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#uJ0o2UWM",
       "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
+    },
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "the viewport each page's window is sized to",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/recorder/operations/render-talk.ts",
+        "symbol": "shell"
+      },
+      "id": "vKEsyHFk#xpeisrdS",
+      "to": "vKEsyHFk#PwpfcGFH"
     }
   ]
 }

@@ -6,7 +6,7 @@
   "description": "paint_card_views uses shared_chip and moving_words from far_view.rs: the chip sits outside both word layers, and the words share their first baseline while moving and scaling. From far the chip grows into a tile at the top of the face, where it stands near, and the far words start level with it. A sequence participant uses the same card construction. paint_heading_views draws a flow heading without a chip. The SVG painter supplies the swap rules.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/far_card.rs"
+    "path": "crates/archboard-painting/src/paint/far_card.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#8jYL9wH6",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/far_card.rs",
+        "path": "crates/archboard-painting/src/paint/far_card.rs",
         "symbol": "far_words"
       },
       "id": "vKEsyHFk/OjRLKb74#lQFfcKXc",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/far_card.rs",
+        "path": "crates/archboard-painting/src/paint/far_card.rs",
         "symbol": "standing_palette"
       },
       "id": "vKEsyHFk#qnIHdYgf",

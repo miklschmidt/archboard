@@ -3,7 +3,7 @@
   "name": "Codex session",
   "kind": "module",
   "responsibility": "Owns one initialized protocol session and its reviewed operations",
-  "description": "The session performs the handshake and owns request identity serialization, response adoption, reverse requests, and failure classification. Coordinator and workhorse callers share this same implementation boundary.",
+  "description": "The session performs the handshake and owns request identity serialization, response adoption, reverse requests, and failure classification. Coordinator and workhorse callers share this same implementation boundary. TASK-653.11: callers open it with openCodexSession on a Codex connection and get { session, control }; createCodexSession and codexSessionControl leave the interface, and a mutation failure is read as kind mutation through readCodexFailure.",
   "groups": [
     "child"
   ],

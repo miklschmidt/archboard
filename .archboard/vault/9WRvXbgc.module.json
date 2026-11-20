@@ -1,0 +1,42 @@
+{
+  "order": 16,
+  "name": "Codex failures",
+  "kind": "module",
+  "responsibility": "Reads what went wrong in Codex from a thrown value, and makes the error Codex would throw for a failure a caller states",
+  "description": "TASK-653.11, ./failure. readCodexFailure(error) returns a CodexFailure: a mutation with its method and outcome, a refused write, a remote error with its method and JSON-RPC code, a process failure with its code and whether it is terminal, an executable failure or an identity refusal with its code, each with the error's message; anything else is null. It reads only the value it is given and walks no cause or aggregate member: a mutation failure is caused by a transport error, so a walk would change answers. createCodexFailure(spec, cause?) makes the error for the mutation, process, refused-write and remote kinds with the message the spec states, and reads back as its spec. The seven error classes that callers tested with instanceof are private and keep their names and messages (ADR 0089).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/failures"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#9WRvXbgc",
+  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "dependency",
+      "label": "the process failure it reads and makes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/failures/rules/failures.ts",
+        "symbol": "CodexProcessError"
+      },
+      "id": "vKEsyHFk#Y5RRhS9k",
+      "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
+    },
+    {
+      "order": 20,
+      "kind": "dependency",
+      "label": "the transport failures it reads and makes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/failures/rules/failures.ts",
+        "symbol": "CodexTransportRemoteError"
+      },
+      "id": "vKEsyHFk#kaCP8FDl",
+      "to": "vKEsyHFk#Q2Jc26oO"
+    }
+  ]
+}

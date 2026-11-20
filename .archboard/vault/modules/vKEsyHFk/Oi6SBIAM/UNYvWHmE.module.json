@@ -1,21 +1,22 @@
 {
   "order": 12000,
-  "name": "Model announcements",
+  "name": "Agent activity",
   "kind": "module",
-  "responsibility": "Publishes complete canonical subject-claim and durable action snapshots with explicit vault identity to panes.",
-  "description": "Consumes the public model feed and sends complete vault snapshots through the existing pane broadcast. Multiple subject claims may coexist. Only a durable operation receipt supplies writer and doing attribution. After the last claim ends, a durable action lingers briefly and then the tracker sends an empty snapshot.",
+  "responsibility": "Publishes complete canonical subject-claim and durable action snapshots with explicit vault identity to every pane; private to the workbench",
+  "description": "Consumes the public model feed for the vaults a connected pane can show: the registry's readable vaults, each pane's own vault and every vault a write named. Multiple subject claims may coexist. Only a durable operation receipt supplies writer and doing attribution. After the last claim ends, a durable action lingers briefly and then the tracker sends an empty snapshot. Moved from the server into the workbench, which disposes it before the voice agent's shutdown (TASK-653.09).",
   "groups": [
     "panes"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/panes/announcements/state/agent-activity.ts"
+    "path": "packages/workbench/src/server/panes/services/agent-activity.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
-  "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "formerNames": [
-    "Board announcements"
+    "Board announcements",
+    "Model announcements"
   ],
   "documents": [
     {
@@ -29,5 +30,32 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 970130,
+      "kind": "call",
+      "label": "send each vault's snapshot to every pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/agent-activity.ts",
+        "symbol": "sendToEveryClient"
+      },
+      "id": "vKEsyHFk#ZYnBClPj",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 970140,
+      "kind": "call",
+      "label": "watch the vaults a connected pane can show",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/agent-activity.ts",
+        "symbol": "watchArchitectureModel"
+      },
+      "id": "vKEsyHFk#PxNrfkib",
+      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
+    }
+  ]
 }

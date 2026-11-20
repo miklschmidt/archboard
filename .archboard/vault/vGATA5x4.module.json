@@ -1,0 +1,18 @@
+{
+  "order": 70,
+  "name": "Junction boxes",
+  "kind": "function",
+  "responsibility": "Answers the boxes the junction marks of finished routes take, where routes join and part on a shared lane, so a layout keeps labels off them",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painting/src/paint/junctions.rs",
+    "symbol": "junction_boxes"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#vGATA5x4",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "formerNames": [
+    "Junction marks"
+  ],
+  "outgoing": []
+}

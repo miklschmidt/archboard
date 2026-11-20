@@ -2,7 +2,8 @@
   "order": 960150,
   "name": "Model queries",
   "kind": "function",
-  "responsibility": "The query options of a model, its history, its walkthroughs and its explanations, and the requests behind them",
+  "responsibility": "A model's readings, records, claims, checkpoints and modules as cached queries, the one query of a history analysis, the vault's query keys and its live feed",
+  "description": "TASK-653.14: 13 names. architectureModelQuery, architectureRecordQuery, architectureSummaryQuery, architectureClaimsQuery, architectureCheckpointsQuery, architectureModuleQuery, retainedModuleQuery, readModel, historyQuery, ArchitectureReadError, vaultQueryKey, invalidateModelQueries(client, vault?), which absorbs invalidateVaultQueries, and architectureFeed. The key table, readReply and createFeedSocket are private; readReply reads each model reply through model-contract's reply reader. historyQuery(vault, request, { key, accept }) takes a request typed from code-intel's history request schema and spells its query string in field order, so no caller builds one. It owns the route, the refusal as ArchitectureReadError, the wrong-analysis sentence, the freshness options and the read without a signal; each caller keeps its key tail and checks or narrows the answer in accept, inside the read. vaultQueryKey puts a behavior's own read under the vault's prefix, so invalidateModelQueries reads it again. Every other query lives with the behavior that reads it: locality, publication, source lines and walkthroughs in parts of Model reading; the footprint, the source refs and the merge base in Branch footprint; exports in Code exports; explanations in Explanation requests; drawing in Reading preparation.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients"
@@ -14,8 +15,13 @@
     {
       "order": 90,
       "kind": "http",
-      "label": "read the branch footprint and the source refs",
+      "label": "one history analysis, from locality to the merge base",
       "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/queries.ts",
+        "symbol": "historyQuery"
+      },
       "id": "vKEsyHFk#tLRnKy0B",
       "to": "vKEsyHFk#75K8M1QX"
     },
@@ -35,19 +41,6 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
-    },
-    {
-      "order": 40000,
-      "kind": "http",
-      "label": "read the file an evidence excerpt cuts its lines from",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/source-lines.ts",
-        "symbol": "sourceLinesQuery"
-      },
-      "id": "vKEsyHFk#mgj7wHRP",
-      "to": "vKEsyHFk#fCXk4gkF"
     },
     {
       "order": 67000,

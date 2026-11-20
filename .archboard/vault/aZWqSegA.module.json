@@ -1,0 +1,25 @@
+{
+  "order": 40250,
+  "name": "archboard-painting",
+  "kind": "package",
+  "responsibility": "Measures every word a layout places and paints a settled drawing into the scene that every painter draws",
+  "description": "The archboard-painting crate (ADR 0091), 20 names: the ten Flow part measures, paint, viewer_marks, junction_boxes, own_icons, measure_node, measure_label, diagram_margin, straight_card_top_contains, tab_width and header_padding. The measurer stays with the painter because they share the size sheet (sizes.rs), which is private to the crate: other crates learn a part's size from Flow part measures (ADR 0088) and the few answers above, never from the sheet. Its scene builders are its own, so no other crate sets a run of words.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painting"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#aZWqSegA",
+  "parent": "vKEsyHFk#HgZPVIE2",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
+    }
+  ],
+  "outgoing": []
+}

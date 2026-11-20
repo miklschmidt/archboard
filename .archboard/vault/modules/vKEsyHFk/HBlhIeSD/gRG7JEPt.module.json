@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 30000,
+      "kind": "call",
+      "label": "record the flow picture's recipe in its SVG",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
+        "symbol": "recordArchitectureRecipe"
+      },
+      "id": "vKEsyHFk#CTux08cL",
+      "to": "vKEsyHFk#Jx3qP5zW"
+    },
+    {
       "order": 120000,
       "kind": "call",
       "label": "renderArchitecture with grammar",
@@ -70,7 +83,7 @@
         "symbol": "mountArchitectureFlowRoutes"
       },
       "id": "vKEsyHFk/HBlhIeSD#7fKX6THX",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+      "to": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "order": 184000,
@@ -88,12 +101,12 @@
     {
       "order": 1008030,
       "kind": "call",
-      "label": "name the vault of a checkout",
+      "label": "the identity of the vault's own checkout, for the recipe",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/flow-routes.ts",
-        "symbol": "vaultIdentity"
+        "symbol": "checkoutsReadFrom"
       },
       "id": "vKEsyHFk#OFwD2rtg",
       "to": "vKEsyHFk/0T9enjhi#klNuMiwC"

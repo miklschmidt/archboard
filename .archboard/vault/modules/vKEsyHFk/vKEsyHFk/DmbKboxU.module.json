@@ -1,20 +1,23 @@
 {
   "order": 29000,
-  "name": "model",
+  "name": "model-store",
   "kind": "package",
-  "responsibility": "The canonical model contract and its rules, the coherent reader and durable writer, the signed archive of its history, and legacy decoding for migration and retained originals",
+  "responsibility": "Reads and writes a vault under Bun: the coherent reader and durable writer, claims, proposals, the signed archive of its history, publication, migration and the vault check",
+  "description": "Layer 6, the top of the three model packages that packages/model became: contract < rules < store (ADR 0086). Twenty operations: readArchitectureModel, watchArchitectureModel, readModuleNavigation, readRetainedModule, editArchitectureModule, recoverArchitectureModel, installArchitectureModel(vault, Initialize | Import), exportArchitectureModel, initializeArchitectureArchive, migrateArchitectureModel, readLegacyInventory, saveLegacyMappingPlan, readArchitectureClaims, changeArchitectureClaims, readArchitecturePublication, changeArchitecturePublication, retainArchitectureCheckpoint, listArchitectureCheckpoints(vault, \"rows\" | \"full\"), checkArchitectureVault, which absorbs the /api/vault/check assembly, and forgetModelMemory. Its records (the checkpoint and archive records, the journal, the claims state, the publication configuration) are the contract's shapes, read through parseDocument; the store keeps its paths, its failures and every file it touches, and the filesystem half of the pane keys stays private here. The split deleted the dead vaultPathFor and listedLegacyBoard, and moved the single-caller helpers to their callers: diagnosticLine and vaultsBoundTo to the CLI, drillDirection to the web picture clients, the draft refs to code-intel's history lens, and findView, nothingBuilt and drawnSubjects to the renderer's legacy board answer.",
   "groups": [
     "packages",
     "writes"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model"
+    "path": "packages/model-store"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
-    "board"
+    "board",
+    "model"
   ],
   "documents": [
     {
@@ -22,6 +25,45 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "mint ids, compare values and variants, name subjects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "mintId"
+      },
+      "id": "vKEsyHFk#WkplpfiH",
+      "to": "vKEsyHFk#zJxdsk87"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "resolve the variant an original names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/shared/legacy-inventory/rules/evidence.ts",
+        "symbol": "resolveVariant"
+      },
+      "id": "vKEsyHFk#b2N8FmIo",
+      "to": "vKEsyHFk#vZUWUgyb"
+    },
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "compare two states' interfaces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/shared/compare/rules/interfaces.ts",
+        "symbol": "inspectContainer"
+      },
+      "id": "vKEsyHFk#G8bTrBWb",
+      "to": "vKEsyHFk#DKzh4lMo"
+    }
+  ]
 }

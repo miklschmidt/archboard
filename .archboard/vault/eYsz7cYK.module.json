@@ -1,0 +1,71 @@
+{
+  "order": 10500,
+  "name": "Workbench routes",
+  "kind": "route",
+  "responsibility": "mountWorkbenchRoutes(app, hooks): mounts every route the workbench answers, panes and explanations, behind one first middleware that requires a vault and observes each write",
+  "description": "The middleware on /api/architecture is installed first, so it also holds the server's later model and history routes to a vault and observes their writes for the agent activity; vaultWritten is not exported. WorkbenchHooks is what the server lends: runMutation, refusalStatus, requireVault, vaultOfRequest, statedVault and its address { port, httpUrl } (TASK-653.09).",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#eYsz7cYK",
+  "parent": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
+  "outgoing": [
+    {
+      "order": 909,
+      "kind": "call",
+      "label": "serve the last voice starts at /api/voice/start-trace",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+        "symbol": "mountWorkbenchRoutes"
+      },
+      "id": "vKEsyHFk#JMErAyt1",
+      "to": "vKEsyHFk#kucowX1d"
+    },
+    {
+      "order": 970020,
+      "kind": "dependency",
+      "label": "mounts the pane routes with the server's hooks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+        "symbol": "mountPaneRoutes"
+      },
+      "id": "vKEsyHFk#oAOh6DQs",
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
+      "order": 970030,
+      "kind": "dependency",
+      "label": "mounts the explanation routes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+        "symbol": "mountExplanationRoutes"
+      },
+      "id": "vKEsyHFk#m29snNpc",
+      "to": "vKEsyHFk/HBlhIeSD#QboPNrzG"
+    },
+    {
+      "order": 970040,
+      "kind": "call",
+      "label": "each write under /api/architecture names a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/routes/workbench-routes.ts",
+        "symbol": "observeWrite"
+      },
+      "id": "vKEsyHFk#zKOR7EE4",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    }
+  ]
+}

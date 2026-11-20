@@ -2,7 +2,8 @@
   "order": 45000,
   "name": "Archboard tab adapter",
   "kind": "module",
-  "responsibility": "Forward pane registration and browser activation to core-owned tab state",
+  "responsibility": "Reads a pane's tab and its shown conversation from the installed voice agent's tab projection",
+  "description": "Pane registration notes no tab here: the agent notes a socket's tab when it connects, and forgets it when the connection closes (TASK-653.12).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/panes/services/tab-sessions.ts"
@@ -20,15 +21,15 @@
     {
       "order": 78000,
       "kind": "call",
-      "label": "forward pane presence and shown-conversation operations",
+      "label": "the browser tabs as the agent's sockets name them",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
-        "symbol": "installWorkbenchTabSessions"
+        "symbol": "requireTabs"
       },
       "id": "vKEsyHFk/Oi6SBIAM#HO533F7P",
-      "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+      "to": "vKEsyHFk#kucowX1d"
     }
   ]
 }

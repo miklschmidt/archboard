@@ -1,0 +1,29 @@
+{
+  "order": 36000,
+  "name": "Request vault",
+  "kind": "module",
+  "responsibility": "The vault a request names, read one way for every route (?vault= first, else the body's vault field); refuses one naming none or an unreadable one, and remembers the canonical vault",
+  "description": "The Express end of ADR 0049's request-vault contract, private to the server: requireVault, vaultOfRequest, statedVault and queryString. The server lends the first three to the workbench's routes through WorkbenchHooks, so a route either side mounts reads the same remembered vault (TASK-653.09).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http/middleware/request-vault.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#9KeBXIBQ",
+  "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
+  "outgoing": [
+    {
+      "order": 970010,
+      "kind": "call",
+      "label": "make the stated vault canonical, or the refusal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/middleware/request-vault.ts",
+        "symbol": "resolveVault"
+      },
+      "id": "vKEsyHFk#ZDqomga8",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    }
+  ]
+}

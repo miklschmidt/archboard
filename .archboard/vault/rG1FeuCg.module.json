@@ -2,10 +2,10 @@
   "order": 913000,
   "name": "Voice session state",
   "kind": "module",
-  "responsibility": "Owns the live voice of a tab: start, stop, level and mute",
+  "responsibility": "Owns the live voice of a tab: start, stop, level, whether it is audible, and mute",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/voice-session/state/session.ts"
+    "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#rG1FeuCg",
@@ -31,15 +31,15 @@
     {
       "order": 26000,
       "kind": "data",
-      "label": "the pane's agent and media state",
+      "label": "the pane's hosted conversation: agent state, capabilities",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/voice-session/state/session.ts",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
         "symbol": "capabilities"
       },
       "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+      "to": "vKEsyHFk#o0NC4h92"
     },
     {
       "order": 64000,
@@ -48,11 +48,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/voice-session/state/session.ts",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
         "symbol": "start"
       },
       "id": "vKEsyHFk/yejBBUFY#bFY85rkM",
       "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
+    },
+    {
+      "order": 960082,
+      "kind": "call",
+      "label": "whether the model is audible now",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/voice-session/state/session.ts",
+        "symbol": "isSpeakingLevel"
+      },
+      "id": "vKEsyHFk#HQDb9kqA",
+      "to": "vKEsyHFk#K1BARYL1"
     }
   ]
 }

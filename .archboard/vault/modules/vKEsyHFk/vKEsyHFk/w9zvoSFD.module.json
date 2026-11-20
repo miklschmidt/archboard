@@ -3,6 +3,7 @@
   "name": "code-binding",
   "kind": "package",
   "responsibility": "A node's code binding and where its path lives in a checkout",
+  "description": "It resolves a binding in the checkouts that workspace's checkoutsReadFrom gives for the vault, and reads each checkout through workspace's inspectCheckout. The rule of which checkouts a vault reads moved to workspace with vault-checkout.ts (TASK-653.10).",
   "groups": [
     "code",
     "packages"
@@ -13,12 +14,26 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": [
+    {
+      "order": 28500,
+      "kind": "call",
+      "label": "the checkouts a vault reads, to resolve its bindings in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "id": "vKEsyHFk#vQSaWHTG",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    }
+  ]
 }

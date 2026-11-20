@@ -50,6 +50,19 @@
       },
       "id": "vKEsyHFk#uOcot5Gw",
       "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+    },
+    {
+      "order": 40000,
+      "kind": "call",
+      "label": "the checkout the release is built from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "installation"
+      },
+      "id": "vKEsyHFk#4Mk2WepQ",
+      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

@@ -1,0 +1,33 @@
+{
+  "order": 28900,
+  "name": "render-recipe",
+  "kind": "package",
+  "responsibility": "The render recipe a picture file carries: read from an SVG's or a PNG's bytes, replaced in place, and recorded into a model render's SVG, so the picture can be drawn again",
+  "description": "Layer 5, @archboard/render-recipe (TASK-653.16): the renderer's recipe folder and its PNG reader, moved out. Width 4: readRenderRecipe, replaceRenderRecipe, recordArchitectureRecipe and readPngDimensions. embedRecipeInPng is private behind replaceRenderRecipe, and the test-only legacy recipe writer is gone. A recipe's schema composes model-contract's shapes. The CLI's model rasterize and embeds check, the server's flow pictures, raster and the skill grader call it.",
+  "groups": [
+    "drawing",
+    "packages"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/render-recipe"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#uQ2UEbuS",
+  "parent": "vKEsyHFk#EuaJBisP",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "dependency",
+      "label": "the shapes a recipe composes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/schema.ts",
+        "symbol": "modelShape"
+      },
+      "id": "vKEsyHFk#j8z6R0Tw",
+      "to": "vKEsyHFk#QsBnI8Ja"
+    }
+  ]
+}

@@ -5,7 +5,7 @@
   "responsibility": "Paints a measured architecture card through the shared card and word helpers",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/measured_cards.rs"
+    "path": "crates/archboard-painting/src/paint/measured_cards.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#Man3LVIp",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs",
         "symbol": "words_in"
       },
       "id": "vKEsyHFk/gbyqW4H3#WBfvIs2I",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs",
         "symbol": "standing_palette"
       },
       "id": "vKEsyHFk/gbyqW4H3#djrx53Aq",
@@ -44,7 +44,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "path": "crates/archboard-painting/src/paint/measured_cards.rs",
         "symbol": "tag_top"
       },
       "id": "vKEsyHFk#QT3hte5K",

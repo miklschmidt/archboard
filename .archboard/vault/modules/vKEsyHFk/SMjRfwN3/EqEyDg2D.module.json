@@ -1,17 +1,35 @@
 {
-  "order": 9000,
-  "name": "Receipt",
+  "order": 960140,
+  "name": "Raster receipt",
   "kind": "function",
   "responsibility": "What was drawn, at what scale, and from which SVG",
+  "description": "The shapes behind modelShape's keys rasterReceipt and legacyRasterReceipt (TASK-653.16), moved out of the renderer's rasterizer. The CLI's model rasterize answers one, assembling its source and file, and skill evaluation reads both.",
   "groups": [
     "drawing"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/rasterizer/operations/receipt.ts"
+    "path": "packages/model-contract/src/shared/protocol/raster-receipt.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
-  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
-  "outgoing": []
+  "parent": "vKEsyHFk#QsBnI8Ja",
+  "formerNames": [
+    "Receipt"
+  ],
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "dependency",
+      "label": "the render result a model raster receipt extends",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/raster-receipt.ts",
+        "symbol": "ArchitectureRenderResultSchema"
+      },
+      "id": "vKEsyHFk#iwKJdNZW",
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    }
+  ]
 }

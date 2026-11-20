@@ -6,12 +6,12 @@
   "description": "The decoder is used by legacy inventory and retained-original readers. It keeps source text for comparison and recovery and does not persist ordinary schema upgrades.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/legacy-boards/reading/format/store/decode.ts",
+    "path": "packages/model-contract/src/shared/coherence/rules/decode.ts",
     "symbol": "decodeLegacyBoard"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#R3ldC44x",
-  "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "parent": "vKEsyHFk#QsBnI8Ja",
   "formerNames": [
     "Decode board bytes"
   ],

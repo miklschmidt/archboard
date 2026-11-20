@@ -5,7 +5,7 @@
   "responsibility": "Draws the warning badges and standing marks of a subject",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/standing.rs"
+    "path": "crates/archboard-painting/src/paint/standing.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#vbRNGERE",
@@ -18,11 +18,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/standing.rs",
+        "path": "crates/archboard-painting/src/paint/standing.rs",
         "symbol": "Palette"
       },
-      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
-      "id": "vKEsyHFk#6kjJSJqv"
+      "id": "vKEsyHFk#6kjJSJqv",
+      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy"
     }
   ]
 }

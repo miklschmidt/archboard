@@ -364,7 +364,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/cli/src/cli/routing/operations/addressed-vault.ts",
-                    "symbol": "findAndRegisterVault"
+                    "symbol": "findVault"
                   }
                 },
                 {
@@ -376,7 +376,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/workspace/src/runtime/services/vault-address.ts",
-                    "symbol": "findVault"
+                    "symbol": "locateVault"
                   }
                 },
                 {
@@ -388,7 +388,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/workspace/src/runtime/services/vault-finder.ts",
-                    "symbol": "findVault"
+                    "symbol": "locateVault"
                   }
                 },
                 {

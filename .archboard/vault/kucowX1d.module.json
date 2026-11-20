@@ -1,0 +1,29 @@
+{
+  "order": 302,
+  "name": "Installed voice agent",
+  "kind": "module",
+  "responsibility": "The voice agent this server runs, from its creation until its stop: the pane sockets connect to it, the panes read their tabs from it, and the start trace route reads its last voice starts",
+  "description": "While no agent runs, a pane socket gets no voice connection, the tabs read as none and the trace is empty.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/panes/services/voice-agent.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#kucowX1d",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 907,
+      "kind": "call",
+      "label": "connect, tabs and the last voice starts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/voice-agent.ts",
+        "symbol": "connectVoice"
+      },
+      "id": "vKEsyHFk#uhUNewEY",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    }
+  ]
+}

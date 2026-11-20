@@ -1,0 +1,18 @@
+{
+  "order": 28600,
+  "name": "model-contract",
+  "kind": "package",
+  "responsibility": "The model's shapes behind parse operations: documents, requests, replies, the printed schemas, the pane keys and the model's defaults, which every side reads",
+  "description": "Layer 4, the bottom of the three model packages: contract < rules < store (ADR 0086). It exports twenty functions and no schema. parseDocument(kind, raw) reads a document of a closed set of kinds (a vault's files, the store's records, the readings a pane or a picture is handed, single values) and answers zod's safe-parse shape. parseModelRequest(operation, body) reads a request and the vault it names, and carries the INVALID_REQUEST refusal a server answers. readModelReply(operation, body, delivery) reads an answer, and an answer that came with an HTTP failure only as a refusal. describeModelSchema(name) prints the eight JSON Schemas. modelShape(key) is its one keyed getter (owner decision 18): each key is a shape that another contract composes into a schema of its own. It also holds readFlow and nestedSteps, subjectsOf, the variant lookups (resolveVariant, findVariant, variantNamed, addressedVariant), everythingView, normalizeGroupIds, defaultSemanticPolicy and defaultLayoutEngine, and the pane keys. The legacy board's shapes, its coherence check and its byte decoder are the contract's, so no package serves the legacy board alone. A browser build carries no icon names: the #installed-icons import lists every RemixIcon component under Bun and resolves to an empty list under the browser condition, because no browser reads a vault's configuration.",
+  "groups": [
+    "packages"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-contract"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#QsBnI8Ja",
+  "parent": "vKEsyHFk#EuaJBisP",
+  "outgoing": []
+}

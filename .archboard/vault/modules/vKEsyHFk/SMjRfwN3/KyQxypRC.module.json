@@ -2,14 +2,14 @@
   "order": 2000,
   "name": "Rasterizer",
   "kind": "module",
-  "responsibility": "Admits one job at a time, starts a browser only when there is work, and retires one that failed a capture",
-  "description": "Nothing is started until a job arrives, and the session is stopped with the rasterizer, so no browser outlives the command that needed it. A Chromium that failed one capture is closed rather than trusted with the next.",
+  "responsibility": "Draws a run of pictures to PNGs in order: starts one Chromium when the first job needs it, shares it across the run, and awaits proof of its shutdown when the run ends, fails or is left early",
+  "description": "rasterizeAll takes jobs as an iterable or an async iterable and pulls the next only after the last capture is handed out. The run ends on its first failure: the per-job recovery of the old rasterizer is gone on purpose, because no caller carried on. A stop that cannot be proved fails as \"The rasterizer did not stop cleanly:\".",
   "groups": [
     "drawing"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts"
+    "path": "packages/raster/src/runtime/services/rasterizer.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#KyQxypRC",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
         "symbol": "boundsRefusal"
       },
       "id": "vKEsyHFk/SMjRfwN3#7gIxznvp",
@@ -39,7 +39,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
         "symbol": "RasterSession"
       },
       "id": "vKEsyHFk/SMjRfwN3#IiA7nIxT",
@@ -49,11 +49,10 @@
       "order": 14000,
       "kind": "call",
       "label": "which Chromium",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
         "symbol": "discoveredChromiumPath"
       },
       "id": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
@@ -66,11 +65,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
-        "symbol": "rasterMs"
+        "path": "packages/raster/src/runtime/services/rasterizer.ts",
+        "symbol": "durationMs"
       },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#zAZwER1T"
+      "id": "vKEsyHFk#zAZwER1T",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }

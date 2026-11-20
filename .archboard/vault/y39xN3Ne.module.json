@@ -3,7 +3,7 @@
   "name": "Branch footprint",
   "kind": "ui",
   "responsibility": "Shows which modules the commits from a base to a head changed, against the proposal at that head",
-  "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the branch changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent in the model that the footprint read: the head's branch reading when the footprint read the vault at that ref, else the vault on disk. It selects each changed module it draws and each drawn module that holds one.",
+  "description": "The Measures view What this branch changed. Searchable base, head and against pickers choose the range and the state; the lists say which modules the branch changed against the proposal, with skipped modules and unbound files. Show on picture opens the nearest shared parent in the model that the footprint read: the head's branch reading when the footprint read the vault at that ref, else the vault on disk. It selects each changed module it draws and each drawn module that holds one. Its queries live in its clients: branchFootprintQuery, sourceRefsQuery and mergeBaseQuery, each one historyQuery of Model queries with its key tail and its check of the answer (TASK-653.14).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint"
@@ -15,8 +15,13 @@
     {
       "order": 10,
       "kind": "call",
-      "label": "the footprint, the source refs and the states at head",
+      "label": "the footprint, the source refs and the merge base",
       "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts",
+        "symbol": "historyQuery"
+      },
       "id": "vKEsyHFk#MTXzrty6",
       "to": "vKEsyHFk#guvtYApo"
     },

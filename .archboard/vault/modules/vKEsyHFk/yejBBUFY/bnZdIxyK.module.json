@@ -2,7 +2,7 @@
   "order": 43000,
   "name": "Recording voice source",
   "kind": "module",
-  "responsibility": "Reads voice readiness, status and output level for the recorder",
+  "responsibility": "Reads voice readiness, status and whether the voice is audible for the recorder",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts"
@@ -28,15 +28,15 @@
     {
       "order": 30000,
       "kind": "call",
-      "label": "live and loud yet; stop",
+      "label": "how the voice stands, whether it is audible, what it said",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
-        "symbol": "level"
+        "symbol": "readVoice"
       },
       "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",
-      "to": "vKEsyHFk#rG1FeuCg"
+      "to": "vKEsyHFk#1URZo0r1"
     }
   ]
 }

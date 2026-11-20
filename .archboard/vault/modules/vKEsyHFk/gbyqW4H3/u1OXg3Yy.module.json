@@ -5,7 +5,7 @@
   "responsibility": "Names every drawn colour as a token of the page's theme, or a mix of tokens",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/palette.rs"
+    "path": "crates/archboard-painting/src/paint/palette.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "path": "crates/archboard-painting/src/paint/mod.rs",
         "symbol": "of_page"
       },
       "id": "vKEsyHFk/gbyqW4H3#I1lGjMES",

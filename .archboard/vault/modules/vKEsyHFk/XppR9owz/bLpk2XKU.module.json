@@ -3,7 +3,7 @@
   "name": "Commands",
   "kind": "module",
   "responsibility": "Every command family's contracts and handlers",
-  "description": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers.",
+  "description": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers. vault/rules/diagnostic-line.ts writes a diagnostic as one line for vault check and the code check, and names its subject through the rules' describeSubject.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands"
@@ -32,5 +32,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "describe a diagnostic's subject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/vault/rules/diagnostic-line.ts",
+        "symbol": "describeSubject"
+      },
+      "id": "vKEsyHFk#jb2m0ZwA",
+      "to": "vKEsyHFk#zJxdsk87"
+    }
+  ]
 }

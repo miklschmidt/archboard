@@ -1,0 +1,28 @@
+{
+  "order": 960300,
+  "name": "Page fit",
+  "kind": "function",
+  "responsibility": "Moves every engine's settled drawing to the margin and cuts its page to what it draws, so every side keeps the same margin",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-layout/src/architecture/page.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#tpDrhmZh",
+  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "the margin each side keeps",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/architecture/page.rs",
+        "symbol": "diagram_margin"
+      },
+      "id": "vKEsyHFk#QSyFoNlp",
+      "to": "vKEsyHFk#e4GGp9r3"
+    }
+  ]
+}

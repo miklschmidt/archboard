@@ -5,10 +5,10 @@
   "responsibility": "Says where this machine keeps Archboard's state",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workspace/src/runtime/services/state-dir.ts"
+    "path": "packages/machine/src/runtime/services/state-dir.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Q1jP0WbC",
+  "parent": "vKEsyHFk#WXIezSNF",
   "outgoing": []
 }

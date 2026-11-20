@@ -2,10 +2,11 @@
   "order": 33000,
   "name": "HTTP listener",
   "kind": "module",
-  "responsibility": "The one Express application and the HTTP server that answers for it",
+  "responsibility": "The one Express application, the HTTP server that answers for it, and where it listens: its address, the refusal beside a server on the other loopback address, and listener errors",
+  "description": "listener-address.ts moved here from the workbench and stays private to the server; the server passes { port, httpUrl } to the workbench rather than the workbench reading it (TASK-653.09, ADR 0058 ceilings).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/http/listener/wiring/server-app.ts"
+    "path": "apps/server/src/server/http/listener"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#WEawqdWG",

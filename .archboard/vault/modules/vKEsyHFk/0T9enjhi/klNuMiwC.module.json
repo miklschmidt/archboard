@@ -1,16 +1,19 @@
 {
   "order": 26000,
-  "name": "Vault checkouts",
-  "kind": "function",
-  "responsibility": "Which checkout holds each repository identity for one vault, and which identity the vault's own checkout holds",
-  "description": "The one rule that every reader of a vault resolves a repository identity by (ADR 0049): the vault's own checkout for its own identity, the chosen checkout for any other. The binding checks use it to find a bound file, and the drill-down checks use it to find the vault a link into another repository opens, and to tell a link that names the vault's own repository from one that leaves it.",
+  "name": "Checkout questions",
+  "kind": "module",
+  "responsibility": "Which checkout of a repository this machine reads, choosing a known checkout, and which checkout holds each repository identity for one vault",
+  "description": "The one rule that every reader of a vault resolves a repository identity by (ADR 0049): checkoutsReadFrom(vault) gives the chosen checkout of every identity, with the vault's own checkout in place of its own identity, and own, that checkout and its identity, so no caller filters for it. It computes eagerly. checkoutOf(repository) answers chosen, unchosen with the known roots, or unknown with the repositories that have a chosen checkout. chooseCheckout(repository, root) answers chosen (changed, replaced), unknown, gone or no-vault, from which the server sends 404 CHECKOUT_UNKNOWN and 422 CHECKOUT_UNUSABLE. Moved from code-binding's vault-checkout.ts with the registry filters of its callers (TASK-653.10).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/code-binding/src/runtime/services/vault-checkout.ts"
+    "path": "packages/workspace/src/runtime/services/checkout-questions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#klNuMiwC",
-  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "formerNames": [
+    "Vault checkouts"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -34,43 +37,43 @@
   ],
   "outgoing": [
     {
-      "order": 25000,
-      "kind": "dependency",
-      "label": "the chosen checkouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
-      "order": 66000,
-      "kind": "call",
-      "label": "the checkouts the registry knows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "listRegistry"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
       "order": 26000,
       "kind": "call",
       "label": "which checkout holds the vault",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
         "symbol": "gitCheckoutOfVault"
       },
-      "to": "vKEsyHFk#IvTUZ8Hk",
-      "id": "vKEsyHFk#Zv6ZZwJP"
+      "id": "vKEsyHFk#Zv6ZZwJP",
+      "to": "vKEsyHFk#IvTUZ8Hk"
+    },
+    {
+      "order": 27000,
+      "kind": "call",
+      "label": "whether a known checkout holds a vault the server serves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+        "symbol": "vaultIn"
+      },
+      "id": "vKEsyHFk#4Ep1Qw4V",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "every checkout, the chosen among them",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/checkout-questions.ts",
+        "symbol": "listRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     }
   ]
 }

@@ -5,7 +5,7 @@
   "responsibility": "Starts one Chromium, connects to it, opens pages and exact-size windows, and stops it with proof the group and root are gone",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts"
+    "path": "packages/headless-chromium/src/runtime/processes/launch.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#6uHnaygd",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
+        "path": "packages/headless-chromium/src/runtime/processes/launch.ts",
         "symbol": "spawnChromium"
       },
       "id": "vKEsyHFk/SMjRfwN3#De1J26nB",
@@ -31,11 +31,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
+        "path": "packages/headless-chromium/src/runtime/processes/launch.ts",
         "symbol": "DevTools"
       },
       "id": "vKEsyHFk/SMjRfwN3#ZP5lfDZ6",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
+    },
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "wait for the DevTools port",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/headless-chromium/src/runtime/processes/launch.ts",
+        "symbol": "waitUntil"
+      },
+      "id": "vKEsyHFk#43TCPDtg",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }

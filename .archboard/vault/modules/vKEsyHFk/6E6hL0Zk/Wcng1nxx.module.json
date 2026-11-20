@@ -3,6 +3,11 @@
   "name": "Start and stop",
   "kind": "module",
   "responsibility": "Starts the server from the entry that archboard start spawns and stops it in order: the pidfile, the listener and the admitted writes that a stop waits for.",
+  "description": "The resources record the pidfile once the listener runs and release it at stop. Nothing tracks whether this process owns the file, because the release compares the bytes.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/start-stop"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
   "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
@@ -22,9 +27,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/start-stop"
-  }
+  "outgoing": [
+    {
+      "order": 90,
+      "kind": "call",
+      "label": "read each cause it walks for the startup sentence",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/startup-error.ts",
+        "symbol": "readCodexFailure"
+      },
+      "id": "vKEsyHFk#FCvpt6SV",
+      "to": "vKEsyHFk#9WRvXbgc"
+    }
+  ]
 }

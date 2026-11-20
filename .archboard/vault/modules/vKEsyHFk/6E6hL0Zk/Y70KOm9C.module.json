@@ -3,10 +3,14 @@
   "name": "Route handlers",
   "kind": "module",
   "responsibility": "Routes canonical model read, initialization, edit, migration, archive, render, code, repository, and pane operations through their owners.",
-  "description": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy board content, writer, claim, rename, discard, and move routes are no longer mounted.",
+  "description": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy board content, writer, claim, rename, discard, and move routes are no longer mounted. Each model route reads its request through requestOf, which asks the contract's parseModelRequest for the request and the vault it names, and answers its INVALID_REQUEST refusal with status 400.",
   "groups": [
     "drawing"
   ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http/handlers"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
   "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
@@ -29,9 +33,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/http/handlers"
-  }
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "read a request and the vault it names, or its refusal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/routes/model-response.ts",
+        "symbol": "parseModelRequest"
+      },
+      "id": "vKEsyHFk#PACCuNBM",
+      "to": "vKEsyHFk#QsBnI8Ja"
+    }
+  ]
 }

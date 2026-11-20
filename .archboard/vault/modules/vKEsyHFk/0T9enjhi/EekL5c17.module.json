@@ -2,11 +2,11 @@
   "order": 48000,
   "name": "Legacy board documents",
   "kind": "module",
-  "responsibility": "Decodes legacy board documents only for explicit migration inventory and exact retained-original readings.",
-  "description": "Retains the legacy decoder for explicit migration and exact originals. Legacy public authoring, ownership, moves, and automatic schema persistence retire.",
+  "responsibility": "Inventories legacy board documents, which the contract decodes, only for explicit migration and exact retained-original readings.",
+  "description": "Retains the legacy inventory for explicit migration and exact originals; the decoder and the board's shapes are the contract's (ADR 0086). Legacy public authoring, ownership, moves, and automatic schema persistence retire.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/legacy-boards"
+    "path": "packages/model-store/src/runtime/legacy-boards"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#EekL5c17",

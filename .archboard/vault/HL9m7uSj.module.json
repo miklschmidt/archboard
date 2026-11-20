@@ -8,10 +8,23 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-paint/src/warnings.rs"
   },
-  "parent": "vKEsyHFk#NFwqWgrm",
   "schemaVersion": 1,
   "id": "vKEsyHFk#HL9m7uSj",
+  "parent": "vKEsyHFk#NFwqWgrm",
   "outgoing": [
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "where a line's warning mark stands",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/warnings.rs",
+        "symbol": "label_anchor_of"
+      },
+      "id": "vKEsyHFk#bIzYpLka",
+      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+    },
     {
       "order": 4000,
       "kind": "call",

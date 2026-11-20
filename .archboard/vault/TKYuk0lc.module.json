@@ -1,0 +1,32 @@
+{
+  "order": 500,
+  "name": "Narrate key",
+  "kind": "ui",
+  "responsibility": "The key at a presented walkthrough's foot that has it narrated, launches the orb from its seat, and hangs the voice up while the orb is in the voice box",
+  "groups": [
+    "agent",
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/agent-surfaces/src/ui/agent-root/components/NarrateKey.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#TKYuk0lc",
+  "parent": "vKEsyHFk#C43O57X3",
+  "outgoing": [
+    {
+      "order": 960080,
+      "kind": "render",
+      "label": "the orb's seat in the key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/NarrateKey.tsx",
+        "symbol": "OrbSlot"
+      },
+      "id": "vKEsyHFk#Ir9xrvKN",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    }
+  ]
+}

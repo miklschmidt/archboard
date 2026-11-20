@@ -2,7 +2,8 @@
   "order": 960040,
   "name": "Host wiring",
   "kind": "function",
-  "responsibility": "Builds the voice agent for one server and joins it to the panes, the model news and the context sources",
+  "responsibility": "Builds the voice agent for one server and joins it to the panes, the model news and the context sources; prepareWorkbench and stopWorkbench",
+  "description": "prepareWorkbench(signal, address) takes the address the server listens on and watches the registry last. stopWorkbench shares one stop promise per application generation: it disposes the agent activity before the shutdown, and clears that generation's memories and wiring in finally, so overlapping stops and a failed shutdown clean up once (TASK-653.09).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/workbench-host/services"
@@ -11,6 +12,19 @@
   "id": "vKEsyHFk#OY4JPr8G",
   "parent": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
   "outgoing": [
+    {
+      "order": 908,
+      "kind": "call",
+      "label": "install the agent it creates; uninstall it at stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+        "symbol": "installVoiceAgent"
+      },
+      "id": "vKEsyHFk#m6RzSGdL",
+      "to": "vKEsyHFk#kucowX1d"
+    },
     {
       "order": 18000,
       "kind": "data",
@@ -90,6 +104,19 @@
       "to": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
     },
     {
+      "order": 70060,
+      "kind": "call",
+      "label": "the vault a thread's checkout holds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+        "symbol": "vaultIn"
+      },
+      "id": "vKEsyHFk#hJaOWiEr",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
       "order": 73000,
       "kind": "call",
       "label": "the repository of a thread's vault",
@@ -97,7 +124,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
-        "symbol": "repositoryOfVault"
+        "symbol": "placeOfVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#ouRI3SQQ",
       "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
@@ -116,6 +143,19 @@
       "to": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
     },
     {
+      "order": 79000,
+      "kind": "dependency",
+      "label": "watch the registry file last in prepare",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+        "symbol": "watchRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
+      "to": "vKEsyHFk#qhpG7ofG"
+    },
+    {
       "order": 123000,
       "kind": "call",
       "label": "host Archboard on the voice agent; start and stop it",
@@ -127,6 +167,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#xV2HMQ01",
       "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "order": 970120,
+      "kind": "call",
+      "label": "dispose the activity before the shutdown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
+        "symbol": "agentActivity"
+      },
+      "id": "vKEsyHFk#QecAle7i",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
     },
     {
       "order": 980190,
@@ -177,8 +230,8 @@
         "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
         "symbol": "archboardAppBinding"
       },
-      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x",
-      "id": "vKEsyHFk#JS1Rhgqh"
+      "id": "vKEsyHFk#JS1Rhgqh",
+      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
     }
   ]
 }

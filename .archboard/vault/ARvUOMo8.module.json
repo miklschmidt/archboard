@@ -1,0 +1,42 @@
+{
+  "order": 15,
+  "name": "Codex connection",
+  "kind": "module",
+  "responsibility": "Opens one Codex child's connection, its epoch, identity authorities and transport, and opens sessions on it",
+  "description": "TASK-653.11, ./connection. openCodexConnection({ child, recordPrefix }) returns a plain-data CodexConnection (child, epoch, identity, transport) with no function-valued member: a fresh child and epoch from the record prefix, the authorities that name identities in them, and the transport over the child's stdio. A child that already exited yields a closed transport, so the host registers its dynamic dispatchers after open and only while the transport is open, and no namespace TypeError is thrown. openCodexSession(connection, options) returns { session, control }; the caller owns the control, which delivers the transport's notifications and server requests to the session and disposes of it. One connection belongs to one child and one epoch; the process that yields the children stays apart (ADR 0089).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/connection"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ARvUOMo8",
+  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
+  "outgoing": [
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "the transport over the child's stdio",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/connection/services/connection.ts",
+        "symbol": "createCodexTransport"
+      },
+      "id": "vKEsyHFk#WiFrPqkM",
+      "to": "vKEsyHFk#Q2Jc26oO"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "open a session on the connection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/connection/services/connection.ts",
+        "symbol": "createCodexSession"
+      },
+      "id": "vKEsyHFk#qqULqekg",
+      "to": "vKEsyHFk#W7H379Zc"
+    }
+  ]
+}

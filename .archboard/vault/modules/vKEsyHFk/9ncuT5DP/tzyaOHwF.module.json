@@ -1,17 +1,23 @@
 {
-  "order": 11000,
-  "name": "Workbench browser",
-  "kind": "ui",
-  "responsibility": "Presents the agent, conversation, and voice controls over the browser transport",
+  "order": 36500,
+  "name": "agent-surfaces",
+  "kind": "package",
+  "responsibility": "The agent of a page over its panes, as the shell places it: the root that holds it, the dock, the conversation panel, the voice over a pane, the Talk and Narrate keys, and a recorded talk's voice",
+  "description": "@archboard/agent-surfaces, one entry (src/ui/api/agent-surfaces.ts) at the layer above workbench, split from workbench's browser half and from the assembly apps/web made of it (ADR 0092, TASK-653.13). Its eleven names: AgentRoot({ activePaneId, openAnswerFile, chooseShownConversation, children }), AgentDock, AgentPanel, AgentPane({ paneId, conversation, recording, dockless, reducedMotion }), TalkControl, NarrateKey (with the Narrate key's hook inside), useAgentVoice, useAgentPanel, RecordedVoice({ level, children }), RecordedVoiceBox({ transcript, presented }) and AgentAnswer, with their types. The shell passes only its own facts; the root composes the owners, the setup, the voice session, the actions, the draft and the panel. The pane session keeps each socket and its conversation; AgentPane registers the current generation's conversation as it mounts and withdraws that same registration when a newer socket replaces it or the pane goes. useAgentVoice and useAgentPanel hand out reading functions, so a reply does not draw the shell again. isSpeakingLevel stays private. From workbench it takes only the type of what a page asks voice to narrate, through ./browser-contract.",
+  "groups": [
+    "agent",
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui"
+    "path": "packages/agent-surfaces"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
-    "Browser pane"
+    "Browser pane",
+    "Workbench browser"
   ],
   "documents": [
     {

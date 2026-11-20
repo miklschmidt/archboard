@@ -2,11 +2,11 @@
   "order": 18003,
   "name": "Vault address",
   "kind": "function",
-  "responsibility": "Finds a command's vault and registers what holds it unless the registry knows it, as one answer; a registry that cannot be written is said in the answer, never refused",
+  "responsibility": "Finds a command's vault and, when asked, registers what holds it unless the registry knows it; a registry that cannot be written, or a holder it refuses, is said in the answer",
+  "description": "findVault(search, { register }) absorbs findAndRegisterVault (TASK-653.10). The answer carries the found vault on found, beside registered or unregistered.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workspace/src/runtime/services/vault-address.ts",
-    "symbol": "findAndRegisterVault"
+    "path": "packages/workspace/src/runtime/services/vault-address.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
@@ -20,7 +20,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workspace/src/runtime/services/vault-address.ts",
-        "symbol": "findVault"
+        "symbol": "locateVault"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
       "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"

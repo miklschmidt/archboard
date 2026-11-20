@@ -3,15 +3,16 @@
   "name": "archboard-layout",
   "kind": "package",
   "responsibility": "Lays out an architecture picture: one solve of a measured graph by Track or Blocks, and the choice between the solves",
+  "description": "Its ECMAScript semantics beyond archboard-ecma's arithmetic (ecma.rs) and the few measures of boxes it takes (geometry.rs) are its own; so is the geometry only the layout uses, a route read backwards and route equality at drawn precision (routes/curves.rs, ADR 0091). From archboard-painting it reads only the page margin, the boxes junction marks take, where a card's top runs straight, and a frame's tab width and header padding.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-layout"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#ld6jjHND",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Layout and measuring"
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": []
 }

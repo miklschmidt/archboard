@@ -2,8 +2,8 @@
   "order": 1000,
   "name": "Painter stage",
   "kind": "function",
-  "responsibility": "Holds one canvas's picture, how it is seen and everything that moves on it, and draws a frame of it for the time a host gives",
-  "description": "The host hands it a picture, how the picture arrives, the camera, the light, the far view, the marks and the traffic. It also holds the sweeps, the warnings and the traffic clock. Everything that changes over time is worked out from the clock the host gives, so a stepped clock records it frame by frame.",
+  "responsibility": "Holds one canvas's picture, how it is seen and everything that moves on it, takes the page's decisions whole, and draws a frame at a moment of its own clock",
+  "description": "Seven names (ADR 0085): Stage::new(theme, size, Pace), present(Presentation), arrive(Painting, Arrival), depart(Departure), draw(Surface, now) -> Motion and pick. The pace, a move's phases and the longest step of the clock, comes at birth. A presentation states only what changed: each value it states replaces the last, and a value it leaves out stays. An arrival is a cut, a carry, an entrance or a flight into a card; a departure is a leaving, a stay, a clear or the end of a flight into a card, so the page states each decision once and in no required order within a turn. The stage owns its clock. Each timed value carries its own moment (the camera, the awaited step, the light, a sweep, an entrance, a flight into a card and a leaving), and the stage reads the clock once for each such moment and once for each frame, so a stepped clock records it frame by frame. A cut, a carry, a stay, a clear and a sweep with no lines name no moment and read nothing. Each draw says whether to keep a strip canvas's parts: Surface::Strips wraps the canvas in the stage's part store and culls to the stage's size, and Surface::Direct draws whole, as the GPU canvas, a recording canvas and a counting canvas need. A frame answers its Motion: still, traffic alone or moving.",
   "groups": [
     "drawing"
   ],
@@ -16,16 +16,42 @@
   "parent": "vKEsyHFk#NFwqWgrm",
   "outgoing": [
     {
-      "order": 1000,
+      "order": 900,
       "kind": "call",
-      "label": "a whole picture's move, as a flight",
+      "label": "the viewer's marks, read once for the stage",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-paint/src/flight.rs",
-        "symbol": "Between"
+        "path": "crates/archboard-paint/src/stage/mod.rs",
+        "symbol": "viewer_marks"
+      },
+      "id": "vKEsyHFk#zPfKik87",
+      "to": "vKEsyHFk#GqMdZbTF"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "carries the last picture into the next",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/stage/mod.rs",
+        "symbol": "Between.carry"
       },
       "id": "vKEsyHFk#xalAnyTh",
+      "to": "vKEsyHFk#9jix9Dsx"
+    },
+    {
+      "order": 1010,
+      "kind": "call",
+      "label": "brings a picture in part by part",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-paint/src/stage/arrival.rs",
+        "symbol": "Between.enter"
+      },
+      "id": "vKEsyHFk#FVToL0Td",
       "to": "vKEsyHFk#9jix9Dsx"
     },
     {
@@ -64,8 +90,8 @@
         "path": "crates/archboard-paint/src/stage/mod.rs",
         "symbol": "find_warnings"
       },
-      "to": "vKEsyHFk#HL9m7uSj",
-      "id": "vKEsyHFk#f9M5SCfi"
+      "id": "vKEsyHFk#f9M5SCfi",
+      "to": "vKEsyHFk#HL9m7uSj"
     },
     {
       "order": 4200,
@@ -77,8 +103,8 @@
         "path": "crates/archboard-paint/src/stage/mod.rs",
         "symbol": "Stage"
       },
-      "to": "vKEsyHFk#UuRNEE2Z",
-      "id": "vKEsyHFk#5png0N2k"
+      "id": "vKEsyHFk#5png0N2k",
+      "to": "vKEsyHFk#UuRNEE2Z"
     }
   ]
 }

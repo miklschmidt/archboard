@@ -3,6 +3,7 @@
   "name": "Host role instructions",
   "kind": "module",
   "responsibility": "Compose domain instructions and the host's toolset with core coordination and approval rules into each role's immutable profile",
+  "description": "composeRoleInstructions(role, { text, sha256 }) on ./server composes one role's instructions from an authored document and its digest, so a host such as workbench reads the composed text and digest as module constants before any agent exists.",
   "groups": [
     "agent"
   ],

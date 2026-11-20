@@ -19,12 +19,64 @@
   ],
   "outgoing": [
     {
+      "order": 300,
+      "kind": "call",
+      "label": "print the viewer's marks as constants for the pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/bin/export-marks.rs",
+        "symbol": "main"
+      },
+      "id": "vKEsyHFk#d0AyIVw1",
+      "to": "vKEsyHFk#GqMdZbTF"
+    },
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "spell the viewer's marks as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/bin/export-marks.rs",
+        "symbol": "number"
+      },
+      "id": "vKEsyHFk#28YEM8uk",
+      "to": "vKEsyHFk#1UxryIji"
+    },
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "the painting a render answers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/lib.rs",
+        "symbol": "Painting"
+      },
+      "id": "vKEsyHFk#C8R5Fr61",
+      "to": "vKEsyHFk#U4Q7nid1"
+    },
+    {
       "order": 900,
       "kind": "dependency",
       "label": "Graphviz for the native test's solves",
       "emphasis": "normal",
       "id": "vKEsyHFk#GdOLnrJz",
       "to": "vKEsyHFk#dg6URhSn"
+    },
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "the icons the core draws without the host's set",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/lib.rs",
+        "symbol": "own_icons"
+      },
+      "id": "vKEsyHFk#zDZM4ASX",
+      "to": "vKEsyHFk#MsqEgypi"
     },
     {
       "order": 1000,
@@ -119,32 +171,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#RSHH7EN4",
       "to": "vKEsyHFk/gbyqW4H3#0idmUHd2"
-    },
-    {
-      "order": 61000,
-      "kind": "dependency",
-      "label": "the icon a card falls back to",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-render/src/appearance.rs",
-        "symbol": "node_appearances"
-      },
-      "id": "vKEsyHFk#gJg0IMG5",
-      "to": "vKEsyHFk#w44DwfpV"
-    },
-    {
-      "order": 300,
-      "kind": "call",
-      "label": "print the viewer's marks as constants for the pane",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-render/src/bin/export-marks.rs",
-        "symbol": "main"
-      },
-      "id": "vKEsyHFk#d0AyIVw1",
-      "to": "vKEsyHFk#GqMdZbTF"
     }
   ]
 }

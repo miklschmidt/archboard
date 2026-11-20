@@ -1,0 +1,32 @@
+{
+  "order": 960500,
+  "name": "Presentation foot",
+  "kind": "ui",
+  "responsibility": "The foot of a presented walkthrough's column: the agent's Narrate key, for as long as the shell has a voice to offer",
+  "groups": [
+    "voice",
+    "walkthrough"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#H0pnrorZ",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 960074,
+      "kind": "render",
+      "label": "the Narrate key at a presented walkthrough's foot",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/PresentationFoot.tsx",
+        "symbol": "NarrateKey"
+      },
+      "id": "vKEsyHFk#jGsOMj25",
+      "to": "vKEsyHFk#TKYuk0lc"
+    }
+  ]
+}

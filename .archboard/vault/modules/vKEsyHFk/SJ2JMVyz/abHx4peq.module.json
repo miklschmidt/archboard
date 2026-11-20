@@ -3,13 +3,14 @@
   "name": "Wait graph",
   "kind": "module",
   "responsibility": "The wait edges every waiting tool registers, so a wait cannot close a cycle",
+  "description": "Moved from the voice package's workhorses into workbench's thread tool calls (TASK-653.12): only workbench's waiting tools register edges.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/workhorses/wait-graph/state"
+    "path": "packages/workbench/src/runtime/dynamic-tools/wait-graph/state"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SJ2JMVyz#abHx4peq",
-  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

@@ -28,15 +28,15 @@
     {
       "order": 58000,
       "kind": "dependency",
-      "label": "interpret rasterization receipts",
+      "label": "the raster receipt shapes, by modelShape key",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/skills/src/runtime/evaluation/run-checks/operations/captures.ts",
-        "symbol": "parseRasterReceipt"
+        "symbol": "modelShape"
       },
       "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
-      "to": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
+      "to": "vKEsyHFk#QsBnI8Ja"
     }
   ]
 }

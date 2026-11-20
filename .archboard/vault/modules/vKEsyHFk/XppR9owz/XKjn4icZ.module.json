@@ -71,6 +71,19 @@
       },
       "id": "vKEsyHFk#sYoTKyHa",
       "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
+      "order": 58000,
+      "kind": "call",
+      "label": "the repository a canvas address names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
+        "symbol": "placeOfVault"
+      },
+      "id": "vKEsyHFk#xOJ6QtXJ",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     }
   ]
 }

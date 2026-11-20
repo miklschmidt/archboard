@@ -1,0 +1,18 @@
+{
+  "order": 26500,
+  "name": "machine",
+  "kind": "package",
+  "responsibility": "This installation on this machine: which Archboard runs, where its machine-local state lives, how a file is replaced durably, and how a command reaches another checkout's source",
+  "description": "Layer 1, @archboard/machine (TASK-653.15). Seven names over four subpaths: ./installation (installation), ./source-checkout (browserUrl, defaultArchboardUrl, handOff), ./state-dir (stateDir) and ./atomic-write (writeFileAtomic, unlinkDurably); its outcome types stay unexported. It left workspace as a pure move, so behavior, the files written and the CLI's output are unchanged. Workspace calls it for the registry file and the language server files, and the model store, the CLI, the server, workbench, code-opener, code-intel, server-lifecycle, telemetry, the renderer and walkthrough call it directly.",
+  "groups": [
+    "packages"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/machine"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#WXIezSNF",
+  "parent": "vKEsyHFk#EuaJBisP",
+  "outgoing": []
+}

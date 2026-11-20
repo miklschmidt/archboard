@@ -17,6 +17,7 @@
     {
       "order": 52000,
       "kind": "call",
+      "label": "the size of each graded image",
       "description": "Reads captured picture dimensions when grading",
       "emphasis": "normal",
       "anchor": {

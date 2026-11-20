@@ -3,13 +3,14 @@
   "name": "Reading preparation",
   "kind": "function",
   "responsibility": "Prepares a projected reading for the local renderer and the picture cache",
+  "description": "modelDrawingQuery and retryFailedDrawings. It moved from Model access to Picture supply with the drawing it prepares (TASK-653.14); the model reader's scene hooks and its stage call it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/drawing.ts"
+    "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#65P5jbnZ",
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
   "outgoing": [
     {
       "order": 70017,
@@ -18,7 +19,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/drawing.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts",
         "symbol": "browserPictureStorage"
       },
       "id": "vKEsyHFk#f0RC9khM",
@@ -31,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/drawing.ts",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts",
         "symbol": "prepareContentHere"
       },
       "id": "vKEsyHFk/yejBBUFY#uykc1ukm",

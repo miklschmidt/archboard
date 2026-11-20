@@ -2,7 +2,8 @@
   "order": 27000,
   "name": "workspace",
   "kind": "package",
-  "responsibility": "Which installation runs, where a vault, a checkout and the state directory are, and the atomic write",
+  "responsibility": "Where a vault and a checkout are: which checkout of a repository this machine reads, which checkouts a vault reads, the repository registry, the Git lookups and each repository's language servers",
+  "description": "TASK-653.10: workspace answers the place questions its callers assembled from the registry. ./checkouts: repoRootOf, repoIdentityAt, inspectCheckout (with the branch and commit that checkoutHead gave), listRegistry (never throws; the registry file's path and the sorted, distinct, existing holders of the vaults this machine reads), declareDirectory (a refusal is an outcome with its sentence; a record carries the registry file), forgetDirectory, checkoutOf, chooseCheckout, checkoutsReadFrom (returns own), readServers, setServer, passServers. ./vault: findVault ({ register } absorbs findAndRegisterVault), vaultIn, placeOfVault (absorbs both repositoryOfVault names), checkoutOfVault, vaultDirectory. ./shapes: workspaceShape, the one keyed getter (repositoryListing, checkoutChoice, languageServers, vaultOrigin, configurableLanguage), replaces ./repositories and ./languages. isVaultLayout, registryPath, RepoRegistryError, chosenCheckouts, chooseKnownCheckout and gitCheckoutOfVault are private. TASK-653.15: the machine foundation (installation, the state directory, the atomic write and the source checkout) left for @archboard/machine, which the registry file and the language server files call; no re-export stays. Twenty names under a ceiling of 22.",
   "groups": [
     "packages"
   ],
@@ -12,12 +13,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

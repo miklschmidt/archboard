@@ -14,7 +14,7 @@
     {
       "order": 8000,
       "kind": "call",
-      "label": "drawLegacyBoard on the core",
+      "label": "renderLegacyBoard on the core",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -23,7 +23,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
-        "symbol": "drawLegacyBoard"
+        "symbol": "renderLegacyBoardIn"
       },
       "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
       "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
@@ -40,19 +40,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
-    },
-    {
-      "order": 73000,
-      "kind": "call",
-      "label": "the recipe of a render that stands alone",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
-        "symbol": "carryingRecipe"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
-      "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
     },
     {
       "order": 130030,

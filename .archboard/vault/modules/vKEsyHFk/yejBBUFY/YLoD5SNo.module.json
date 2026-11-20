@@ -3,7 +3,7 @@
   "name": "Model explanations",
   "kind": "module",
   "responsibility": "Shows one captured local answer and its progress across navigation",
-  "description": "Owns only dismissal and result presentation. The backend identifies the latest action in the tab. Toolbar, context menu, keyboard, typed requests, and voice use one backend action. The existing query cache holds result snapshots. The answer names its captured model and state. Progress, unavailable agents, cancellation, failure, and exact captured retry remain visible. Answers become architecture only through an explicit later agent write.",
+  "description": "Owns only dismissal and result presentation. The backend identifies the latest action in the tab. Toolbar, context menu, keyboard, typed requests, and voice use one backend action. The existing query cache holds result snapshots. The answer names its captured model and state. Progress, unavailable agents, cancellation, failure, and exact captured retry remain visible. Answers become architecture only through an explicit later agent write. It reads and controls the answer through Explanation requests (TASK-653.14).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx"
@@ -44,8 +44,13 @@
       "kind": "call",
       "label": "read and control the temporary answer",
       "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/ModelExplanationHost.tsx",
+        "symbol": "explanationRequest"
+      },
       "id": "vKEsyHFk/yejBBUFY#RaEm0Enu",
-      "to": "vKEsyHFk#guvtYApo"
+      "to": "vKEsyHFk#dDVY1Iqe"
     },
     {
       "order": 85000,

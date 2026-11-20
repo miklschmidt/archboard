@@ -39,7 +39,59 @@
         "symbol": "appearances"
       },
       "id": "vKEsyHFk#baNgC045",
-      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+      "to": "vKEsyHFk#WgFarzeW"
+    },
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "each traffic mark's pulse train, spelled as SVG",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/pulse.rs",
+        "symbol": "write_traffic"
+      },
+      "id": "vKEsyHFk#6OgjwUVz",
+      "to": "vKEsyHFk#94vxmg9V"
+    },
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "a line's weight, arrowhead and ink, as style rules",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/lib.rs",
+        "symbol": "viewer_marks"
+      },
+      "id": "vKEsyHFk#DwTGGY15",
+      "to": "vKEsyHFk#GqMdZbTF"
+    },
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "spell every number as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/css.rs",
+        "symbol": "number"
+      },
+      "id": "vKEsyHFk#KEp94Akf",
+      "to": "vKEsyHFk#1UxryIji"
+    },
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "round each coordinate it writes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-svg/src/xml.rs",
+        "symbol": "round_coord"
+      },
+      "id": "vKEsyHFk#wQ1qhuYS",
+      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
     }
   ]
 }

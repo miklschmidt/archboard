@@ -30,7 +30,7 @@
     {
       "order": 36000,
       "kind": "dependency",
-      "label": "pane registrations and messages",
+      "label": "how a pane is addressed and laid out",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

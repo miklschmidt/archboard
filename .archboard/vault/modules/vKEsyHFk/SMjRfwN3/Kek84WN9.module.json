@@ -31,7 +31,7 @@
     {
       "order": 35000,
       "kind": "call",
-      "label": "install the stepped clock; step it each frame",
+      "label": "its stepped clock; each frame, what moved outside it",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

@@ -69,10 +69,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/runtime/instructions/rules/context.ts",
-        "symbol": "semanticSubjectKindSchema"
+        "symbol": "modelShape"
       },
       "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",
-      "to": "vKEsyHFk#qOrTIIKT"
+      "to": "vKEsyHFk#QsBnI8Ja"
     }
   ]
 }

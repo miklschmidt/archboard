@@ -1,0 +1,61 @@
+{
+  "order": 7100,
+  "name": "Flow part measures",
+  "kind": "function",
+  "responsibility": "Answers the size of each part a sequence or a flowchart places, measured from the sizes the painter draws it with, so a flow layout never reads the painter's sizes",
+  "description": "Ten operations, re-exported from lib.rs over a private folder module (ADR 0088): sequence_cards(cards, ColumnLimits) -> HeadCards { width, lifeline_drop, cards } fits each participant's title (the title steps and ICON_MIN_CARD_WIDTH live here, fitted_size is private) under the column policy the layout passes; message_plate(label, room) and note_plate(note, wrap) wrap and size a message's and a step note's plate; message_ends(kind, from_x, to_x, busy) takes the column centres and answers where an arrow starts and stops, standoff and head included; activation_span(centre) is a getter with an argument (the layout reads a bar's half width from it); self_loop(start) -> Rect; fragment_head(operator, words, guards) -> FragmentHead is measured once where a frame is placed and carried in its rows; fragment_bounds(ink, columns, head) -> Span applies the side padding and the head's least width, so side padding never leaves the measure; flow_tab(frame_width, has_summary) answers the tab and the heading; shape_words(name, width) wraps a flowchart shape's words. The sizes come from the crate-private sheet (sizes.rs) that the painter draws by. TASK-653.20.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painting/src/flow_parts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#RYix4PQl",
+  "parent": "vKEsyHFk#aZWqSegA",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "wrap and set a part's words",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/flow_parts/messages.rs",
+        "symbol": "message_plate"
+      },
+      "id": "vKEsyHFk#miWGCiDX",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "a frame's tab width",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/flow_parts/tab.rs",
+        "symbol": "flow_tab"
+      },
+      "id": "vKEsyHFk#TTMTr7uY",
+      "to": "vKEsyHFk#n2J80LO7"
+    },
+    {
+      "order": 300,
+      "kind": "call",
+      "label": "round and compare as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/flow_parts/cards.rs",
+        "symbol": "largest"
+      },
+      "id": "vKEsyHFk#4qLy4yQD",
+      "to": "vKEsyHFk#1UxryIji"
+    }
+  ]
+}

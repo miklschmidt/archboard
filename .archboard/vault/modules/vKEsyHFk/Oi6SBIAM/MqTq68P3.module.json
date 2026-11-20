@@ -2,17 +2,18 @@
   "order": 9000,
   "name": "Pane routes",
   "kind": "route",
-  "responsibility": "What each pane shows and where, pushed by the browser, which answers a report naming a vault the pane left as not registered; the CLI opens, closes and shows panes through it",
+  "responsibility": "The routes a pane and the CLI reach: what each pane shows and where, the panes report, open, close and show, and the semantic-context routes",
+  "description": "A report naming a vault the pane left answers not registered. Open and close are whole private operations of the pane arrivals: the refusal checks, the waiter installed before the request is sent, the send, a cancel when the send fails, and the settle. mountWorkbenchRoutes mounts them with the hooks the server lends: its mutation lease, its refusal status for a model read, its request-vault adapter and its URL (TASK-653.09).",
   "groups": [
     "panes"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts"
+    "path": "packages/workbench/src/server/panes/routes/pane-routes.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
-  "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -33,47 +34,21 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "registerPane"
       },
       "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
       "to": "vKEsyHFk#r2iFMYJk"
     },
     {
-      "order": 22000,
-      "kind": "call",
-      "label": "the pane's focus, for its agent",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "publishPaneContext"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
-      "to": "vKEsyHFk#OY4JPr8G"
-    },
-    {
-      "order": 40000,
-      "kind": "call",
-      "label": "requires a vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "requireVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#hDNka8yA",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
       "order": 61000,
-      "kind": "dependency",
-      "label": "mounts the panes report",
+      "kind": "call",
+      "label": "what every pane on screen shows",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "getPanesRoute"
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
+        "symbol": "panesReport"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wX9a448V",
       "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
@@ -85,7 +60,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "showPaneRoute"
       },
       "id": "vKEsyHFk#wvK4SWe1",
@@ -98,24 +73,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "shownConversationRoute"
       },
       "id": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
       "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
-    },
-    {
-      "order": 70029,
-      "kind": "call",
-      "label": "wrap addressed pane requests",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "asyncEndpoint"
-      },
-      "id": "vKEsyHFk#kEIA3Iaa",
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
     },
     {
       "order": 71000,
@@ -124,7 +86,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "createBrowserOriginGuard"
       },
       "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
@@ -137,7 +99,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "staleFrontend"
       },
       "id": "vKEsyHFk#4gRaPRO3",
@@ -150,24 +112,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "path": "packages/workbench/src/server/panes/routes/pane-routes.ts",
         "symbol": "browserUrl"
       },
       "id": "vKEsyHFk#vTfr79yF",
       "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
-    },
-    {
-      "order": 92000,
-      "kind": "call",
-      "label": "the panes on screen; ask the answering pane to open one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "sendKeylessToPane"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#lncCBP74"
     }
   ]
 }

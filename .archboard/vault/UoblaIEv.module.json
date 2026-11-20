@@ -5,7 +5,7 @@
   "responsibility": "The dock: the agent's state, Talk, the composer and the tab's workhorses",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx"
+    "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#UoblaIEv",
@@ -18,11 +18,37 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
       "to": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "order": 960081,
+      "kind": "call",
+      "label": "where the dock offers and places the orb",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "useOrbPlacement"
+      },
+      "id": "vKEsyHFk#GIO0Gciq",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "order": 960086,
+      "kind": "call",
+      "label": "how long the dock's moves and a wait last",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "durationMs"
+      },
+      "id": "vKEsyHFk#v4dda8hS",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     },
     {
       "order": 980220,
@@ -31,7 +57,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
         "symbol": "SubtitlesToggle"
       },
       "id": "vKEsyHFk#tJGMgOeT",
@@ -44,7 +70,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/dock/components/AgentDock.tsx",
         "symbol": "VoiceControl"
       },
       "id": "vKEsyHFk#pzWBfyor",

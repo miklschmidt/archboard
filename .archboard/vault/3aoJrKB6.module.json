@@ -1,0 +1,18 @@
+{
+  "order": 90,
+  "name": "Straight card top",
+  "kind": "function",
+  "responsibility": "Answers whether a card's top runs straight above a point, clear of its rounded corners, so a layout jogs a line only where it meets the flat edge",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painting/src/paint/cards.rs",
+    "symbol": "straight_card_top_contains"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#3aoJrKB6",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "formerNames": [
+    "Card shapes"
+  ],
+  "outgoing": []
+}

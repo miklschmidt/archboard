@@ -6,12 +6,12 @@
   "description": "Scans chosen checkouts and registered untracked vaults, then reads canonical model and proposal modules. LEGACY_AUTHORITY produces no match; discovery does not decode or rewrite legacy board files.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+    "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
     "symbol": "vaultsBoundTo"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#mYtOhgML",
-  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -37,11 +37,11 @@
     {
       "order": 21000,
       "kind": "call",
-      "label": "the chosen checkouts and untracked vaults",
+      "label": "the holders of the vaults this machine reads",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
         "symbol": "listRegistry"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
@@ -50,28 +50,15 @@
     {
       "order": 22000,
       "kind": "call",
-      "label": "the vault layout",
+      "label": "the vault each holder holds",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
-        "symbol": "isVaultLayout"
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
+        "symbol": "vaultIn"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
       "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
-      "order": 39000,
-      "kind": "data",
-      "label": "find vaults through the chosen checkouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     },
     {
       "order": 76000,
@@ -80,7 +67,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+        "path": "apps/cli/src/cli/routing/operations/bound-vaults.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",

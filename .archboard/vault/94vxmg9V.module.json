@@ -1,0 +1,30 @@
+{
+  "order": 10,
+  "name": "Pulse train",
+  "kind": "function",
+  "responsibility": "Computes a traffic mark's pulse train once for every painter: its legs, glow layers, gradient stops and each leg's motion",
+  "description": "pulse_train(&TrafficMark) answers the train as plain data with public fields: the core, span, repeats, cycle, stops, four glow layers and the legs, each with its bar and its motion, steady or turning. It follows the SVG painter's math operation for operation, so SVG bytes stay identical. pulse_slide(&LegMotion, seconds) maps a moment to a leg's position: the painter owns the clock and the scene answers where a pulse is at that moment (ADR 0071). pulse_breadth(line_width) and turn_distance(lengths) answer the two pulse numbers Painting needs. The constants, the leg cutting and the former traffic functions stay private.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/scene/traffic.rs",
+    "symbol": "pulse_train"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#94vxmg9V",
+  "parent": "vKEsyHFk#U4Q7nid1",
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "call",
+      "label": "a route's length and the part a pulse rides",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/scene/traffic.rs",
+        "symbol": "round_coord"
+      },
+      "id": "vKEsyHFk#GwDt9WAe",
+      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+    }
+  ]
+}

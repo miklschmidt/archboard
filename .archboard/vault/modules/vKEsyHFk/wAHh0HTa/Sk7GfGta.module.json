@@ -3,6 +3,7 @@
   "name": "Codex protocol",
   "kind": "module",
   "responsibility": "The pinned app-server contract every request and response is decoded against",
+  "description": "TASK-653.11: 8 names used outside it. decodeFrame(line) reads a line's envelope evidence only and returns the inbound frame; decodeFrameBody(frame, method?) decodes a notification's, request's or response's body as a result, not a throw; encodeFrame(frame, maximumBytes) returns the encoded line or its refusal reason (unencodable, too-large). The session reads decodeClientRequestParams, decodeResponse, ProtocolDecodeError and isClientRequestMethodWithoutParams; the executable and the release build read codexProtocolVersion. It no longer depends on the transport: the wire's errors are the transport's to make from a refusal.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/protocol"

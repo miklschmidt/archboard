@@ -30,15 +30,16 @@
     {
       "order": 1000,
       "kind": "dependency",
-      "label": "mounts the pane routes",
+      "label": "mounts the workbench's routes first, lending its hooks",
+      "description": "It lends its mutation lease, its refusal status for a model read, requireVault, vaultOfRequest, statedVault and where it listens, { port, httpUrl }.",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountPaneRoutes"
+        "symbol": "mountWorkbenchRoutes"
       },
       "id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
-      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+      "to": "vKEsyHFk#eYsz7cYK"
     },
     {
       "order": 3000,
@@ -90,7 +91,7 @@
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+      "to": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "order": 43000,
@@ -143,19 +144,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
       "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
-      "order": 124000,
-      "kind": "dependency",
-      "label": "mount the voice agent's start trace route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountVoiceStartTraceRoute"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
-      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
     }
   ]
 }

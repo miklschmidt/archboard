@@ -1,0 +1,55 @@
+{
+  "order": 300,
+  "name": "Socket conversation",
+  "kind": "module",
+  "responsibility": "createSocketConversation: one chat's conversation over sockets the host owns, one socket generation at a time, with a fresh transport and fresh controllers for each attached socket",
+  "description": "attach(socket), called after the host registered the socket, returns the hosted conversation of that generation: its state, snapshot, subscribe, capabilities, controllers and media. The transport attaches before the media, and the media detaches before the transport is disposed; retirements run one after another, and an attach that a later attach, a detach or a dispose superseded publishes nothing. The media owner is the conversation's and follows each generation, and the controllers stay keyed on transport identity. The host owns the socket: the conversation never closes it (ADR 0090).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/ui/socket-conversation"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#o0NC4h92",
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "outgoing": [
+    {
+      "order": 903,
+      "kind": "call",
+      "label": "a fresh transport for each attached socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/socket-conversation/clients/socket-conversation.ts",
+        "symbol": "openSocketConversation"
+      },
+      "id": "vKEsyHFk#vhRHlCPW",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 904,
+      "kind": "call",
+      "label": "its media owner follows each generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/socket-conversation/clients/socket-conversation.ts",
+        "symbol": "openSocketConversation"
+      },
+      "id": "vKEsyHFk#gBAbkHJa",
+      "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
+    },
+    {
+      "order": 905,
+      "kind": "call",
+      "label": "fresh controllers over each generation's transport",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/socket-conversation/clients/socket-conversation.ts",
+        "symbol": "openSocketConversation"
+      },
+      "id": "vKEsyHFk#JnF5NLSC",
+      "to": "vKEsyHFk/yejBBUFY#hO56iL2W"
+    }
+  ]
+}

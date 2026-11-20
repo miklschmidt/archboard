@@ -79,7 +79,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-realtime-voice/src/runtime/approvals/services/broker.ts",
-        "symbol": "codexApprovalExpiresAt"
+        "symbol": "deadline"
       },
       "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"

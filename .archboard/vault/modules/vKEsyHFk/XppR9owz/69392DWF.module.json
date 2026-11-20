@@ -40,14 +40,40 @@
   ],
   "outgoing": [
     {
-      "order": 1008010,
+      "order": 20000,
       "kind": "call",
-      "label": "draw a recipe to PNG",
+      "label": "the scales a caller may ask for",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
-        "symbol": "createSemanticRasterizer"
+        "symbol": "rasterScaleSchema"
+      },
+      "id": "vKEsyHFk#FxiFVi9W",
+      "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "read the picture's recipe and carry it into the PNG",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
+        "symbol": "replaceRenderRecipe"
+      },
+      "id": "vKEsyHFk#6LIflBm3",
+      "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+    },
+    {
+      "order": 1008010,
+      "kind": "call",
+      "label": "capture the picture to PNG in a private Chromium",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/rasterize.ts",
+        "symbol": "rasterizeAll"
       },
       "id": "vKEsyHFk#inbTEHtR",
       "to": "vKEsyHFk/SMjRfwN3#KyQxypRC"

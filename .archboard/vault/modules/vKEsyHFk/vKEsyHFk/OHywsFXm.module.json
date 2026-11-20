@@ -2,8 +2,8 @@
   "order": 30000,
   "name": "renderer",
   "kind": "package",
-  "responsibility": "Draws a model as a picture, in the browser or under Bun",
-  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours. A page paints a picture on a canvas with Vello, on WebGPU, on WebGL2 or on the CPU, from the same scene. The SVG stays the product of exports, PNGs and README assets, and stays in the page as the semantic layer. Recordings paint on the CPU.",
+  "responsibility": "Draws a model as a picture, in the browser or under Bun, hands a pane the finished marks and the shell's measures, and builds the renderer core",
+  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours. A page paints a picture on a canvas with Vello, on WebGPU, on WebGL2 or on the CPU, from the same scene. The SVG stays the product of exports, PNGs and README assets, and stays in the page as the semantic layer. Recordings paint on the CPU. Layer 7, width 16 over five subpaths (TASK-653.16): ./browser (startBrowserRenderer, prepareContentHere, drawLegacyBoardHere, startPainter), ./bun (renderArchitecture, diagramIconPaths, policyIconPaths), ./core (buildCore, coreSourceHash), ./picture (markSample, warningMark, lineMarks, markCounts, scopedDrawingKey) and ./shell-geometry (shell(key), its one keyed getter, and fit); ./theme.css and the fonts stay, and the ./theme code entry is gone. Moved jobs, with no new ADR because ADR 0055 already calls the two hosts execution areas of one behavior: headless Chromium went to @archboard/headless-chromium, render recipes to @archboard/render-recipe, rasterizing to @archboard/raster, and the raster receipt shapes to model-contract's modelShape keys.",
   "groups": [
     "drawing",
     "packages"
@@ -14,6 +14,7 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "parent": "vKEsyHFk#EuaJBisP",
   "formerNames": [
     "Semantic renderer"
   ],
@@ -42,6 +43,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

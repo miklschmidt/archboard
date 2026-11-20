@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/workbench-client/subtitles/components"
+    "path": "packages/agent-surfaces/src/ui/workbench-client/subtitles"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#0yb2VbKc",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/subtitles/hooks/use-subtitle-fade.ts",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/subtitles/hooks/use-subtitle-fade.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/yejBBUFY#1LB0Qkb3",
@@ -49,7 +49,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/subtitles/rules/measured-lines.ts",
+        "path": "packages/agent-surfaces/src/ui/workbench-client/subtitles/rules/measured-lines.ts",
         "symbol": "prepareWithSegments"
       },
       "id": "vKEsyHFk#dAbW4tjz",

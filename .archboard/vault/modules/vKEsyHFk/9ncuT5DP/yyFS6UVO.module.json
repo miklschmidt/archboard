@@ -3,6 +3,7 @@
   "name": "Application policy",
   "kind": "module",
   "responsibility": "Archboard's options for the voice agent: identity and tool names, domain instructions, context, tools, storage, Codex environment, admitted checkouts and their labels, and its context announcer",
+  "description": "Takes the address the server lends, the port its Codex state is kept under and its URL, rather than reading the listener itself (TASK-653.09).",
   "groups": [
     "agent"
   ],
@@ -46,32 +47,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#3494fDAK",
       "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
-    },
-    {
-      "order": 82000,
-      "kind": "dependency",
-      "label": "project each tab workhorse for the visual shell",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/workbench-host/services/wiring.ts",
-        "symbol": "liveWorkhorseCheckouts"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#tef70baL",
-      "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8"
-    },
-    {
-      "order": 83000,
-      "kind": "dependency",
-      "label": "attach pane registration to core-owned tab presence",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/workbench-host/services/production.ts",
-        "symbol": "installWorkbenchTabSessions"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#UE6yrRV7",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
       "order": 84000,

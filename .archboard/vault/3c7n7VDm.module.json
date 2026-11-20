@@ -1,0 +1,29 @@
+{
+  "order": 40000,
+  "name": "Core build",
+  "kind": "module",
+  "responsibility": "Builds the renderer core and its painter to WebAssembly from the checkout's crates when the build is stale, and writes the contract's types, the pane's marks and the theme colours beside it",
+  "description": "buildCore keeps a complete build of the checkout's sources, so a run without a change needs no Rust tools; one that lacks them builds again inside the checkout's nix develop shell. bun run build:core and the release compile call it (TASK-653.16: it left scripts/build-core.ts).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/operations/build-core.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#3c7n7VDm",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "whether the build of these sources is current",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/build-core.ts",
+        "symbol": "loadCore"
+      },
+      "id": "vKEsyHFk#hXbAI4Fh",
+      "to": "vKEsyHFk#jY4mqBJe"
+    }
+  ]
+}

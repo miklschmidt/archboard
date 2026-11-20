@@ -2,7 +2,8 @@
   "order": 4100,
   "name": "Pane socket lifecycle",
   "kind": "module",
-  "responsibility": "Registers each accepted pane socket, hands its pane's authority to the newest socket, notes its tab, opens and closes its Codex browser, and retires it on close or at stop",
+  "responsibility": "Registers each accepted pane socket, hands its pane's authority to the newest socket, connects it to the voice agent with the chat and checkout it shows, and retires it on close or at stop",
+  "description": "At stop, closeBrowserOwners(accepted) closes the registry watch first, then the browser owners and every socket the server passes, feed sockets included, at the same point in the shutdown order as before; it keeps no tracking set of its own (TASK-653.09).",
   "groups": [
     "panes"
   ],
@@ -30,15 +31,15 @@
     {
       "order": 200,
       "kind": "call",
-      "label": "accept and close the pane's Codex browser",
+      "label": "connect each socket with its chat and checkout; close it",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
-        "symbol": "acceptCodexBrowser"
+        "symbol": "connectPaneVoice"
       },
       "id": "vKEsyHFk#Tr8wcPNp",
-      "to": "vKEsyHFk#OY4JPr8G"
+      "to": "vKEsyHFk#kucowX1d"
     },
     {
       "order": 300,
@@ -54,17 +55,17 @@
       "to": "vKEsyHFk#r2iFMYJk"
     },
     {
-      "order": 19000,
+      "order": 970110,
       "kind": "call",
-      "label": "note the pane's tab, and forget it on close",
+      "label": "close the registry watch first at stop",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/services/pane-sockets.ts",
-        "symbol": "noteTabSession"
+        "symbol": "unwatchRegistry"
       },
-      "id": "vKEsyHFk/Oi6SBIAM#1MfDpq9X",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+      "id": "vKEsyHFk#da0cTPeu",
+      "to": "vKEsyHFk#qhpG7ofG"
     }
   ]
 }

@@ -2,27 +2,28 @@
   "order": 915000,
   "name": "Agent actions",
   "kind": "module",
-  "responsibility": "What the dock does: send, Talk and narrate over the focused pane's transport",
+  "responsibility": "What the dock does: send, Talk and narrate over the focused pane's hosted conversation",
+  "description": "The running turn is read from the timeline's own turns, not from the voice package's timeline projection.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/application/clients/agent-actions.ts"
+    "path": "packages/agent-surfaces/src/ui/agent-root/clients/agent-actions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#x1I9VaDn",
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "parent": "vKEsyHFk#C43O57X3",
   "outgoing": [
     {
       "order": 21000,
       "kind": "call",
-      "label": "controllers over the focused pane's",
+      "label": "the focused pane's hosted conversation and controllers",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/clients/agent-actions.ts",
+        "path": "packages/agent-surfaces/src/ui/agent-root/clients/agent-actions.ts",
         "symbol": "state"
       },
       "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+      "to": "vKEsyHFk#o0NC4h92"
     }
   ]
 }

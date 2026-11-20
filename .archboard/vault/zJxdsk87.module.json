@@ -1,0 +1,32 @@
+{
+  "order": 28800,
+  "name": "model-rules",
+  "kind": "package",
+  "responsibility": "Projects, compares and inspects a model from the contract's types, and holds no schema",
+  "description": "Layer 5, between the contract and the store (ADR 0086). Eighteen functions: projectModel and modelContent, projectFlow, moduleForest, doorEndpoints, describeSubject, nodeSubject and edgeSubjects, compareVariants and comparedWith, changeOf, inspectContainer and inspectGroups, mintId, sameSemanticValue, containersOf, overviewLines and scopedContent. It reads the contract's types and its flow and variant readers, and runs in the browser and under Bun alike.",
+  "groups": [
+    "packages"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-rules"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#zJxdsk87",
+  "parent": "vKEsyHFk#EuaJBisP",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "resolve the variants a drawing compares",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-rules/src/shared/compare/rules/drawing.ts",
+        "symbol": "resolveVariant"
+      },
+      "id": "vKEsyHFk#rZtTWSgd",
+      "to": "vKEsyHFk#vZUWUgyb"
+    }
+  ]
+}
