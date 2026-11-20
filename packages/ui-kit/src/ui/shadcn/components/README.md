@@ -32,6 +32,11 @@ correctness and accessibility checks stay on; authored-code style,
 module-layout and file-length rules are off. Regenerate that list when a
 component is added or removed.
 
+A registry item that one module draws and that no other file here imports lives beside that
+module, with a short README of its digest ([ADR 0093](../../../../../../docs/adr/0093-a-registry-item-with-one-caller-lives-beside-it.md)):
+`checkbox` beside `SemanticChanges.tsx` in apps/web, and `radio-group` beside
+`OpenerChoiceGroup.tsx` in code-opener.
+
 ## Registry digests
 
 SHA-256 (first 16 hex) of each item's file content as served by
@@ -53,8 +58,6 @@ SHA-256 (first 16 hex) of each item's file content as served by
 | `select`        | `registry/base-nova/ui/select.tsx`        | `6918ba753234e510` |
 | `combobox`      | `registry/base-nova/ui/combobox.tsx`      | `0df11848e07ee063` |
 | `input-group`   | `registry/base-nova/ui/input-group.tsx`   | `d6c74e82a2aa0298` |
-| `checkbox`      | `registry/base-nova/ui/checkbox.tsx`      | `0cc30ddee3fa9381` |
-| `radio-group`   | `registry/base-nova/ui/radio-group.tsx`   | `f779542f2370b82f` |
 | `tabs`          | `registry/base-nova/ui/tabs.tsx`          | `958b817b256cffae` |
 | `toggle-group`  | `registry/base-nova/ui/toggle-group.tsx`  | `143ec051e67e2d31` |
 | `dropdown-menu` | `registry/base-nova/ui/dropdown-menu.tsx` | `ba92acc16e141ad7` |

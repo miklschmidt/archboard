@@ -4,7 +4,8 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerCommand, OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
-import { Badge, Dialog, Field, RadioGroup } from "@archboard/ui-kit/components";
+import { Badge, Dialog, Field } from "@archboard/ui-kit/components";
+import { RadioGroup, RadioGroupItem } from "#ui/components/radio-group.tsx";
 import { choiceOfSelection, presetChoice } from "#ui/rules/custom-command.ts";
 import { formatCommand } from "#ui/rules/format-command.ts";
 import type { OpenerChoice } from "#ui/state/opener-settings-contracts.ts";
@@ -84,7 +85,7 @@ function OpenerOption(props: OpenerOptionProps): JSX.Element {
 	const id = useId();
 	return (
 		<Field orientation="horizontal">
-			<RadioGroup.Item id={id} value={props.value} disabled={props.disabled} />
+			<RadioGroupItem id={id} value={props.value} disabled={props.disabled} />
 			<Field.Content>
 				<Field.Label htmlFor={id} className="items-center gap-2">
 					{props.label}
