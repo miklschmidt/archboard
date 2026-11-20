@@ -3,10 +3,11 @@ id: TASK-653.12
 title: >-
   feat(codex-realtime-voice)!: The voice package gives each side of the socket
   one operation
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-11-19T17:33:00Z'
-updated_date: '2026-11-19T22:22:00Z'
+updated_date: '2026-11-20T00:16:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -41,6 +42,16 @@ Candidate 9 of the archboard-deepen run, a breaking npm release of @archboard/co
 - [ ] #6 The landing pull request is titled feat(codex-realtime-voice)!: and carries a BREAKING CHANGE footer listing this candidate's removed and renamed published names; the release version follows whether release PR #133 merged first
 - [ ] #7 One ADR records the one-operation-per-side design and why openVoiceClient keeps its own ordering; CONTEXT.md gains no Voice chat term
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. D5 moves to workbench (wait graph, timeline projection, speaking predicate, JSON parse, walkthrough id rule); composeRoleInstructions; ./runtime ./schemas ./realtime fold.
+2. Server: agent.connect(socket, route) over a registry kept across generations, three refusals, loopback origin default; bunHandlers over connect; Archboard pane sockets connect per socket; remove attach, factories, ledger, four extensions.
+3. Browser: self-connecting client (pagehide/pageshow, approvals bound to their snapshot), createSocketConversation per socket generation, mountVoice panel, useVoiceState(client); Archboard and the example migrate (delegated host migration).
+4. README two-file quickstart, migration table, packed-consumer test, ADR 0090, releasing.md, ceiling 62 -> 50.
+5. Gates: lanes, pack, check code, quickstart screenshots.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
