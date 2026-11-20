@@ -89,6 +89,9 @@ correctness check rather than a style rule.
   official variants, and a `count` variant, the low slab of a number; every
   official variant is untouched.
 - `tabs.tsx`: the `underline` and `edge` variants beside the official ones.
+- `button.tsx`: with `href`, the button draws a plain `<a>` with the same classes and no Base UI
+  primitive, because Base UI gives an element that is not a native button `role="button"`, and a
+  link must stay a link. `buttonVariants` stays private to the package.
 - `select.tsx` and `dropdown-menu.tsx`: their classes draw the shell's raised
   trigger and its `menu-motion` popover in place of the registry's animation.
 - Every file: corners and floating surfaces follow the site's ladder

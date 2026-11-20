@@ -16,7 +16,7 @@ export { Tabs } from "#ui/components/Tabs.tsx";
 export { ToggleGroup } from "#ui/components/ToggleGroup.tsx";
 export { Tooltip } from "#ui/components/Tooltip.tsx";
 export { Badge } from "#ui/shadcn/components/badge.tsx";
-export { Button, buttonVariants } from "#ui/shadcn/components/button.tsx";
+export { Button } from "#ui/shadcn/components/button.tsx";
 export { Input } from "#ui/shadcn/components/input.tsx";
 export { Separator } from "#ui/shadcn/components/separator.tsx";
 export { cn } from "#ui/rules/class-names.ts";
