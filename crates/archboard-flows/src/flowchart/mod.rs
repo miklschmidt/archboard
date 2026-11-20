@@ -23,12 +23,12 @@ mod layout;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+use archboard_geometry::curve_through;
 use archboard_layout::Node as GraphNode;
 use archboard_scene::drawing::{
     ArchitectureDrawing, Bridged, DrawingEdge, DrawingNode, EdgeFacts, Emphasis, MeasuredLabel,
     MeasuredNode, NodeFacts, Painted, PaintedDrawing, PlacedLabel, ReadingDirection,
 };
-use archboard_scene::geometry::curve_through;
 use archboard_scene::names::word;
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,

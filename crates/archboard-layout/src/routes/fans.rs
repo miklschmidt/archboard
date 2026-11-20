@@ -5,8 +5,8 @@
 
 use std::collections::BTreeSet;
 
+use archboard_geometry::{Point, Rect};
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts};
-use archboard_scene::geometry::{Point, Rect};
 
 use crate::constants::EPSILON;
 

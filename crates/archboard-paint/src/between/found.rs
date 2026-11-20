@@ -8,7 +8,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Geometry, Group, Item, Role, Scene, Subject, SubjectKind, Transform};
 
 use super::ease::then;

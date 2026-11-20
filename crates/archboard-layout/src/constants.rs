@@ -1,7 +1,7 @@
 //! The distances the layout keeps, in diagram units, and its target page shape.
 //! Shared sizes come from the scene that the layout places.
 
-use archboard_scene::geometry::bend_radius;
+use archboard_geometry::bend_radius;
 
 /// The radius of every bend a route takes.
 pub(crate) const BEND_RADIUS: f64 = bend_radius();

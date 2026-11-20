@@ -1,9 +1,7 @@
 //! How near a route's ink lies to other things, and whether a completed route
 //! has the room its fixed bends and head need.
 
-use archboard_scene::geometry::{
-    Curve, Point, Rect, Segment, curve_bounds, segment_start, vertices_of,
-};
+use archboard_geometry::{Curve, Point, Rect, Segment, curve_bounds, segment_start, vertices_of};
 
 use crate::constants::EPSILON;
 

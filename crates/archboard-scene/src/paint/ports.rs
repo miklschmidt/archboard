@@ -5,7 +5,6 @@
 
 use std::collections::HashMap;
 
-use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::palette::Palette;
 use crate::paint::styles::stroke_width;
@@ -15,6 +14,7 @@ use crate::scene::{
     Pointer, Purpose, Role, Shape, Stop, Stroke,
 };
 use crate::sizes::{CARD_THICKNESS, SLAB_RADIUS};
+use archboard_geometry::{Curve, Point, Rect, Segment, round_coord};
 
 const SOCKET: f64 = 2.1;
 const LID: f64 = 0.6;

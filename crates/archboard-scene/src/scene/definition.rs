@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::Emphasis;
-use crate::geometry::{Point, Rect};
 use crate::request::PaletteColor;
 use crate::scene::colour::Colour;
 use crate::scene::shape::{PathStep, Shape};
+use archboard_geometry::{Point, Rect};
 
 /// The two forms of arrowhead a line can end in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]

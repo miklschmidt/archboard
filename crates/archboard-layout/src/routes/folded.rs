@@ -6,8 +6,8 @@
 
 use std::collections::BTreeSet;
 
+use archboard_geometry::{Point, Rect, curve_through, inflate, vertices_of};
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::{Point, Rect, curve_through, inflate, vertices_of};
 
 use crate::constants::EPSILON;
 use crate::routes::curves::same_rounded_curve;

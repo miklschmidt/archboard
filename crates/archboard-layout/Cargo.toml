@@ -13,7 +13,9 @@ workspace = true
 # The arithmetic and spelling of ECMAScript the layout was first written in:
 # the drawings are held to what the TypeScript engine answered.
 archboard-ecma = { path = "../archboard-ecma" }
-# Points and boxes, and the drawing a layout answers.
+# Points, boxes and the routes between them.
+archboard-geometry = { path = "../archboard-geometry" }
+# The drawing a layout answers, and the painter's measures it keeps room for.
 archboard-scene = { path = "../archboard-scene" }
 # A Blocks picture's trunks between its blocks are routed round them.
 archboard-router = { path = "../archboard-router" }

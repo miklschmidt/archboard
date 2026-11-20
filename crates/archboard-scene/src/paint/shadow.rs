@@ -1,7 +1,6 @@
 //! The soft shadow a block casts: nine patches of shared gradients for a box,
 //! stacked layers for a shape that is not one. No filter, mask or blur.
 
-use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, grouped, lines, shape};
 use crate::paint::colour::{light_dark, translucent};
 use crate::paint::palette::Palette;
@@ -11,6 +10,7 @@ use crate::scene::{
     Stop,
 };
 use crate::sizes::CARD_RADIUS;
+use archboard_geometry::{Point, Rect, round_coord};
 /// How far a shadow spills past a block's sides, per unit of its reach below.
 const SPILL: f64 = 0.5;
 /// Shared gradient samples.

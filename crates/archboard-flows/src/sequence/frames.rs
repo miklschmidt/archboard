@@ -13,7 +13,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::{Rect, covering, union};
+use archboard_geometry::{Rect, covering, union};
 use archboard_scene::{Span, activation_span, fragment_bounds};
 
 use crate::sequence::design::NEST_INSET;

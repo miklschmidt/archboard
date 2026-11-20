@@ -7,7 +7,7 @@
 //! description that did is one element leaving and one arriving, and the
 //! title beside it is not disturbed.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform};
 
 /// Whether a group of a card is one a move parks until it lands.

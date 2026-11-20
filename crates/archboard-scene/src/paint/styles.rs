@@ -3,7 +3,6 @@
 //! Every lettering that sets a size also sets the face that measured the string.
 
 use crate::drawing::{DiagramFont, Emphasis};
-use crate::geometry::Point;
 use crate::paint::appearance::semantic_ink;
 use crate::paint::colour::{Share, tinted};
 use crate::paint::palette::Palette;
@@ -15,6 +14,7 @@ use crate::sizes::{
     PART_NOTE_SIZE, PART_TITLE_SIZE, PILL_FONT, PILL_TEXT_SIZE,
 };
 use crate::sizes::{HERO_LINE_WIDTH, LINE_WIDTH};
+use archboard_geometry::Point;
 
 /// Every weight, loudest first.
 pub(super) const WEIGHTS: [Emphasis; 3] = [Emphasis::Hero, Emphasis::Normal, Emphasis::Muted];

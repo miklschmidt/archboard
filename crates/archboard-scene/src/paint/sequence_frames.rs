@@ -2,7 +2,6 @@
 //! and summary, and each decision's or loop's fragment with its operator tab,
 //! its guards and its dividers.
 
-use crate::geometry::{Rect, round_coord};
 use crate::names::word;
 use crate::paint::appearance::tray_look;
 use crate::paint::build::{Items, group, lines, point, shape, text};
@@ -27,6 +26,7 @@ use crate::sizes::{
     BAND_RADIUS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, TAB_PADDING,
 };
 use archboard_ecma::min;
+use archboard_geometry::{Rect, round_coord};
 
 const MARK_SPACING: f64 = 24.0;
 const FRAGMENT_RADIUS: f64 = 3.0;

@@ -5,7 +5,6 @@
 use std::collections::HashMap;
 
 use crate::drawing::DrawingBridge;
-use crate::geometry::{Curve, Point, Rect, Segment, curve_bounds, inflate, round_coord};
 use crate::paint::Edge;
 use crate::paint::build::route;
 use crate::paint::junctions::mark_radius;
@@ -15,6 +14,7 @@ use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, stroke_width};
 use crate::scene::pulse_breadth;
 use crate::scene::{Cap, Colour, Definition, Mask, MaskId, Purpose, Shape, Stroke};
 use crate::sizes::{PILL_RADIUS, RAILS};
+use archboard_geometry::{Curve, Point, Rect, Segment, curve_bounds, inflate, round_coord};
 
 /// A restrained sliver of clear space on each side of the upper arc.
 const BRIDGE_INK_GAP: f64 = 1.5;

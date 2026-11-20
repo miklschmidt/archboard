@@ -2,7 +2,6 @@
 //! bar a busy column stands as, and a message to itself's loop.
 
 use crate::drawing::TextRun;
-use crate::geometry::{Point, Rect};
 use crate::measure::{message_lines, note_lines};
 use crate::request::{MessageKind, WordLine};
 use crate::sizes::{
@@ -10,6 +9,7 @@ use crate::sizes::{
     SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH, STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y,
     TEXT_LINE_HEIGHT, arrow_standoff,
 };
+use archboard_geometry::{Point, Rect};
 
 use super::Span;
 

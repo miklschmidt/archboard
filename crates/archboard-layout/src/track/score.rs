@@ -1,6 +1,6 @@
 //! Geometry measures for local packing, folding and rank wrapping.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 
 use crate::constants::fit_in;
 use crate::ecma::{abs, max, min, number_key, pow, round, via_text};

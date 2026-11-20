@@ -12,8 +12,8 @@
 
 use std::collections::HashMap;
 
+use archboard_geometry::Point;
 use archboard_scene::fragment_head;
-use archboard_scene::geometry::Point;
 use archboard_scene::request::{FrameGuard, FrameOperator, Slot};
 use archboard_scene::self_loop;
 

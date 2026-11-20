@@ -9,10 +9,10 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::DiagramFont;
-use crate::geometry::{Point, Rect};
 use crate::measure;
 use crate::scene::Item;
 use crate::scene::colour::Colour;
+use archboard_geometry::{Point, Rect};
 
 /// One glyph of a run: the glyph in its face, and where its origin stands
 /// from the run's point, in font units (every face has 1000 to the em).

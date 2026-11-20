@@ -7,7 +7,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Transform};
 use kurbo::Shape as _;
 
@@ -229,7 +229,7 @@ impl Inside {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::Rect;
+    use archboard_geometry::Rect;
 
     use super::Unfold;
 

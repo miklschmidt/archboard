@@ -1,11 +1,11 @@
 //! Measured lines painted where measurement placed them. No fitting happens here.
 
 use crate::drawing::{TextRole, TextRun};
-use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, text};
 use crate::paint::colour::translucent;
 use crate::paint::palette::Palette;
 use crate::scene::{Colour, Text};
+use archboard_geometry::{Point, Rect, round_coord};
 
 /// Measured lines, unchanged in content, font and placement.
 pub(super) fn paint_text_runs(

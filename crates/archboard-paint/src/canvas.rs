@@ -1,7 +1,7 @@
 //! What a painter draws on. The draw walk knows this contract and no renderer,
 //! so that Vello on a GPU and Vello on the CPU draw one picture.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use kurbo::{Affine, BezPath};
 use peniko::{Color, Gradient};
 

@@ -8,8 +8,8 @@
 //! module builds, so two of them are one where the TypeScript compared them by
 //! identity.
 
+use archboard_geometry::{Curve, Point, Segment, segment_start};
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Emphasis};
-use archboard_scene::geometry::{Curve, Point, Segment, segment_start};
 
 use crate::constants::{APPROACH_STRAIGHT, EPSILON};
 use crate::ecma::{max, min, sign};

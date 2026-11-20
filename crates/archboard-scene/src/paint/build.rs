@@ -3,13 +3,13 @@
 //! each shape, stroke, group and run of words with the setters here. The
 //! scene's types are data; these builders are Painting's own vocabulary.
 
-use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::measure;
 use crate::request::PaletteColor;
 use crate::scene::{
     Cap, Colour, Geometry, Group, Item, Join, Paint, PathStep, Pointer, Purpose, Role, Shape,
     Stroke, Subject, Text, Transform,
 };
+use archboard_geometry::{Curve, Point, Rect, Segment, round_coord};
 
 /// What a painter returns: some items in order, possibly none.
 pub(super) type Items = Vec<Item>;
@@ -278,8 +278,8 @@ impl Colour {
 mod tests {
     use super::text;
     use crate::drawing::{DiagramFont, FontFamily};
-    use crate::geometry::Point;
     use crate::scene::{Colour, Item, Text};
+    use archboard_geometry::Point;
 
     #[test]
     fn centred_text_reaches_the_scene_at_its_final_coordinates() {

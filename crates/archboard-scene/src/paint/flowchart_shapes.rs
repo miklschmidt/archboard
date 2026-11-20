@@ -6,7 +6,6 @@
 use std::collections::BTreeMap;
 use std::f64::consts::PI;
 
-use crate::geometry::{Point, Rect};
 use crate::paint::Node;
 use crate::paint::build::{Items, concat, group, lines, point, shape, text};
 use crate::paint::cards::{HALO_INSET, HALO_WIDTH};
@@ -25,6 +24,7 @@ use crate::sizes::SHADOW_REACH;
 use crate::sizes::{
     CARD_THICKNESS, JUMP_FONT, JUMP_TEXT_SIZE, PILL_FONT, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
 };
+use archboard_geometry::{Point, Rect};
 
 const CORNER: f64 = 5.0;
 const END_SIDES: u32 = 16;

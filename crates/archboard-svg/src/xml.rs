@@ -2,7 +2,7 @@
 //! written as one `style`, text made safe, and the id a definition takes from
 //! what it holds.
 
-use archboard_scene::geometry::round_coord;
+use archboard_geometry::round_coord;
 
 use crate::spelling;
 

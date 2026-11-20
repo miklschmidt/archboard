@@ -4,7 +4,6 @@
 //! with what its box holds (`measure::far_words`).
 
 use crate::drawing::{NodeFacts, TextRole, TextRun};
-use crate::geometry::Rect;
 use crate::measure::{self, FarCard, FarWords, far_words, tag_end};
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
@@ -19,6 +18,7 @@ use crate::paint::text_runs::paint_text_runs;
 use crate::request::{GroupTag, NodeAppearance, Standing};
 use crate::scene::SubjectKind;
 use crate::sizes::{CARD_NOTE_FONT, CARD_TITLE_FONT, ICON_CHIP_SIZE, TAB_FAR_NAME, TAB_PADDING};
+use archboard_geometry::Rect;
 
 /// How much larger a drill mark stands on a far card.
 const MARK_SCALE: f64 = 1.2;

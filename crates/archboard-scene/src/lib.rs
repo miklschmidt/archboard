@@ -14,12 +14,10 @@
 
 pub mod drawing;
 mod flow_parts;
-pub mod geometry;
 mod measure;
 pub mod names;
 pub mod paint;
 pub mod request;
-mod route;
 pub mod scene;
 mod sequence_picture;
 mod sizes;

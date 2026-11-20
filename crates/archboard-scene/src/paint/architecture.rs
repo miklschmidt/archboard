@@ -4,7 +4,6 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::drawing::Painted;
-use crate::geometry::{Rect, curve_bounds, inflate, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, lines};
 use crate::paint::crossings::{
@@ -31,6 +30,7 @@ use crate::paint::{Edge, Node};
 use crate::request::{Dash, LineAppearance, NodeAppearance, Standing};
 use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 use crate::sizes::{DIAGRAM_MARGIN, SLAB_RADIUS};
+use archboard_geometry::{Rect, curve_bounds, inflate, union};
 
 /// Boxes by subject id, in the order they were found.
 type Boxed<'edge> = Vec<(&'edge str, Rect)>;

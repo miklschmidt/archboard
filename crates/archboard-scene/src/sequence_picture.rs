@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::{NodeFacts, TextRun};
-use crate::geometry::Rect;
 use crate::request::NodeAppearance;
+use archboard_geometry::Rect;
 
 /// One stretch of a column where its participant is busy.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]

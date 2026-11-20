@@ -6,9 +6,9 @@
 use std::collections::HashMap;
 
 use crate::drawing::Traffic;
-use crate::geometry::{Point, Rect};
 use crate::sizes::CARD_RADIUS;
 use archboard_ecma::{self, within};
+use archboard_geometry::{Point, Rect};
 
 /// The least distance between two pulses on a line.
 const MIN_SPACING: f64 = 36.0;
@@ -325,7 +325,7 @@ mod tests {
 
     use super::{Lane, relay_rhythms, rim_length, within};
     use crate::drawing::Traffic;
-    use crate::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
 
     const SAME: Traffic = Traffic {
         speed: 40.0,

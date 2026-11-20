@@ -1,7 +1,7 @@
 //! A route read backwards, and route equality at the precision a picture
 //! draws: the two ways the crossing pass compares and turns the routes it moves.
 
-use archboard_scene::geometry::{Curve, Point, Segment, round_coord, segment_start};
+use archboard_geometry::{Curve, Point, Segment, round_coord, segment_start};
 
 /// A line read backwards: the same pieces, from its end to its start.
 pub(super) fn reversed(curve: &Curve) -> Curve {

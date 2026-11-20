@@ -3,7 +3,6 @@
 //! casts under every line.
 
 use crate::drawing::Emphasis;
-use crate::geometry::{Point, label_anchor_of, round_coord};
 use crate::paint::Edge;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, route, shape};
@@ -25,6 +24,7 @@ use crate::scene::{
     Role, Shape, Stroke, SubjectKind,
 };
 use crate::sizes::{PILL_RADIUS, RAILS};
+use archboard_geometry::{Point, label_anchor_of, round_coord};
 
 /// Width added to a connection's unseen stroke, which takes the pointer. Its
 /// label wears the selection ring.

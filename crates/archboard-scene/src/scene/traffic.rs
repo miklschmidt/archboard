@@ -7,9 +7,9 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
-use crate::route::segment_length;
 use crate::scene::colour::Colour;
+use archboard_geometry::segment_length;
+use archboard_geometry::{Curve, Point, Rect, Segment, round_coord, segment_start};
 
 /// How thick a pulse's core is on a line of one width.
 pub(crate) fn pulse_breadth(line_width: f64) -> f64 {

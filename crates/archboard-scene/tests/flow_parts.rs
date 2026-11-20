@@ -2,7 +2,7 @@
 //! painter draws it from, so the layout and the painter agree without sharing a
 //! size. Each test states the agreement its measure exists for.
 
-use archboard_scene::geometry::Point;
+use archboard_geometry::Point;
 use archboard_scene::request::{FrameOperator, MessageKind};
 use archboard_scene::{
     CardWords, ColumnLimits, HeadCard, Part, Span, activation_span, flow_tab, fragment_bounds,

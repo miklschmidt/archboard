@@ -5,10 +5,10 @@
 
 use std::collections::BTreeSet;
 
-use crate::geometry::Point;
 use crate::paint::colour::light_dark;
 use crate::request::PaletteColor;
 use crate::scene::{Colour, Definition, Gradient, GradientForm, GradientId, Stop, Token};
+use archboard_geometry::Point;
 
 /// The ink on a finish: the deep tone of its hue.
 const INK: (f64, f64) = (0.2, 0.03);

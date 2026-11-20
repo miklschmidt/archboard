@@ -4,7 +4,7 @@
 //! that moment. The spark then runs both ways round the edge of the card, so a
 //! picture reads as one current going through its parts.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{
     Cap, Colour, Geometry, Group, Item, Paint, Role, Shape, Stroke, Token,
 };
@@ -356,7 +356,7 @@ impl DrawOn {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::scene::{Geometry, Item, Purpose, Role, Subject, SubjectKind, Token};
 
     use super::super::found::found;

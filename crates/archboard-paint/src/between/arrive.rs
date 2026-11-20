@@ -4,7 +4,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Pointer, Role, Transform};
 
 use super::circuit::{Spans, label_span};

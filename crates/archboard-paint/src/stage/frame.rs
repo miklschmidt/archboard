@@ -1,7 +1,7 @@
 //! One frame of a stage: its ground, the picture, the picture inside a card, and
 //! over them what is left of the last picture.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Item;
 use kurbo::{Affine, RoundedRect, Shape as _};
 

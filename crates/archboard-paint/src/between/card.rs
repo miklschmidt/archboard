@@ -12,7 +12,7 @@
 //! frame riding over the new. Content is clipped to the frame only while the
 //! frame changes size, which is when it spills.
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform, Viewport};
 
 use super::content::{Paired, look, pair_content, shell, split};

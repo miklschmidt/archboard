@@ -4,7 +4,7 @@
 //! comes within that space; where every arc a crossing could have is
 //! crowded, the one that keeps the most stands (`crossings`).
 
-use archboard_scene::geometry::{Curve, Point, Rect, curve_bounds, inflate, segment_start};
+use archboard_geometry::{Curve, Point, Rect, curve_bounds, inflate, segment_start};
 
 use crate::ecma::{max, min, sign};
 

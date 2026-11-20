@@ -5,9 +5,9 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::{Point, Rect};
 use crate::scene::colour::Paint;
 use crate::scene::definition::{ClipId, MarkerId};
+use archboard_geometry::{Point, Rect};
 
 /// What a shape is to the picture. A painter that only draws reads the
 /// geometry and the paint; the SVG painter also writes each sort as the

@@ -12,6 +12,8 @@ workspace = true
 [dependencies]
 # Numbers rounded, compared and spelt as ECMAScript does them.
 archboard-ecma = { path = "../archboard-ecma" }
+# Points, boxes and routes.
+archboard-geometry = { path = "../archboard-geometry" }
 # Words are shaped and broken by the core's own text, in the bundled faces.
 archboard-text = { path = "../archboard-text" }
 # The deterministic software libm: the same transcendental results on every

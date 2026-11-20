@@ -3,8 +3,8 @@
 //! a loop's condition), so it is drawn whole under the message it qualifies,
 //! never cut, and the message's row grows to hold it.
 
+use archboard_geometry::{Point, Rect};
 use archboard_scene::drawing::TextRun;
-use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::{MessagePlate, activation_span, message_plate, note_plate, self_loop};
 
 use crate::content::{Flow, Message, MessageKind, messages_of};

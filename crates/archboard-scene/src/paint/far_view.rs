@@ -3,10 +3,10 @@
 //! each layer's words stand in a group a viewer moves to where the other
 //! layer's words stand (TASK-428).
 
-use crate::geometry::round_coord;
 use crate::paint::build::{Items, grouped};
 use crate::scene::{Group, Role, Transform};
 use crate::sizes::{FAR_SCALE, HERO_LINE_WIDTH, ICON_CHIP_SIZE, LINE_WIDTH, RAILS};
+use archboard_geometry::round_coord;
 
 /// The line widths a far view draws wider: a line of normal weight, of hero
 /// weight, and a double line's rails.

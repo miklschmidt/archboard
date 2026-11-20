@@ -4,7 +4,7 @@
 
 use std::collections::{BTreeMap, HashMap};
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind};
 
 use super::arrive::{Ground, LABEL_GONE_BY, Leave, Swap, arriving, ready_cards};

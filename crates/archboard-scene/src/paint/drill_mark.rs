@@ -2,11 +2,11 @@
 //! that says which way the other picture lies, in the top-right corner inside the
 //! card or the container's header, near and far alike.
 
-use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, concat, grouped, shape};
 use crate::request::DrillDirection;
 use crate::scene::{Colour, Geometry, Group, PathStep, Purpose, Role, Shape, Stroke, Transform};
 use crate::sizes::DRILL_MARK_RADIUS;
+use archboard_geometry::{Point, Rect, round_coord};
 
 /// The ring's stroke.
 const RING_STROKE: f64 = 1.2;

@@ -1,13 +1,13 @@
 //! A route measured along its ink, and shortened: the part of a line a pulse
 //! rides.
 
-use crate::geometry::{Curve, Point, Segment, segment_start};
+use crate::{Curve, Point, Segment, segment_start};
 
 /// How many chords measure a rounded piece.
 const CHORDS: u32 = 16;
 
 /// How long one segment is along its ink.
-pub(crate) fn segment_length(from: Point, segment: &Segment) -> f64 {
+pub fn segment_length(from: Point, segment: &Segment) -> f64 {
     if let Segment::Line { to } = segment {
         return archboard_ecma::hypot(to.x - from.x, to.y - from.y);
     }
@@ -76,7 +76,7 @@ fn segment_up_to(from: Point, segment: &Segment, t: f64) -> Segment {
 }
 
 /// The route with a length taken off its end, or none when that is all of it.
-pub(crate) fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
+pub fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
     let mut left = distance;
     for index in (0..curve.segments.len()).rev() {
         let from = segment_start(curve, index);
@@ -97,7 +97,7 @@ pub(crate) fn shortened_by(curve: &Curve, distance: f64) -> Option<Curve> {
 }
 
 /// How long a route is along its ink.
-pub(crate) fn route_length(curve: &Curve) -> f64 {
+pub fn route_length(curve: &Curve) -> f64 {
     curve
         .segments
         .iter()

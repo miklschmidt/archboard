@@ -20,8 +20,8 @@
 
 use std::collections::BTreeMap;
 
+use archboard_geometry::Curve;
 use archboard_scene::drawing::{ArchitectureDrawing, Bridged, DrawingBridge, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::Curve;
 use archboard_scene::request::Dash;
 
 use crate::constants::BEND_RADIUS;

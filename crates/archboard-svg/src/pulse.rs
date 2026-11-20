@@ -6,7 +6,7 @@
 //! The scene answers every number of the pulses (`pulse_train`); this file
 //! spells them as SVG and SMIL.
 
-use archboard_scene::geometry::{Point, Segment, round_coord};
+use archboard_geometry::{Point, Segment, round_coord};
 use archboard_scene::scene::{
     GlowLayer, LegMotion, PathStep, PulseLeg, PulseLook, PulseTrain, TrafficMark, pulse_train,
 };

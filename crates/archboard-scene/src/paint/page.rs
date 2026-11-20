@@ -1,7 +1,6 @@
 //! The page a painting is drawn on: moved clear of the canvas edge, framed as
 //! planned when nothing it describes is built, and the boxes of its atlas.
 
-use crate::geometry::{Point, Rect, covering, round_coord};
 use crate::measure;
 use crate::paint::build::{Items, grouped, lines, shape, text};
 use crate::paint::palette::Palette;
@@ -9,6 +8,7 @@ use crate::scene::{
     Atlas, AtlasBox, Boxes, Group, Purpose, Role, Shape, Slot, Stroke, Text, Transform,
 };
 use crate::sizes::{DIAGRAM_MARGIN, PILL_FONT, PLANNED_FRAME_INSET, PLANNED_FRAME_MARGIN};
+use archboard_geometry::{Point, Rect, covering, round_coord};
 
 /// The page a picture is drawn on, and how far its content had to move onto it.
 #[derive(Clone, Copy, Debug, PartialEq)]

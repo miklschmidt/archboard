@@ -1,7 +1,6 @@
 //! The selection ring every subject carries, the card a part is drawn as in
 //! either grammar, and the cards and frame headings of a message sequence.
 
-use crate::geometry::{Rect, round_coord};
 use crate::measure;
 use crate::paint::Ctx;
 use crate::paint::appearance::card_look;
@@ -22,6 +21,7 @@ use crate::sizes::{
     ICON_CHIP_GAP, ICON_CHIP_SIZE, NOTE_BASELINE, NOTE_SIZE, PART_NOTE_SIZE, PART_TITLE_LINE,
     PART_TITLE_SIZE, SLAB_RADIUS, TITLE_BASELINE_WITH_NOTE,
 };
+use archboard_geometry::{Rect, round_coord};
 
 /// How far outside its subject a selection ring sits.
 pub(super) const HALO_INSET: f64 = 3.0;

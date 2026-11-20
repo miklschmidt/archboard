@@ -25,8 +25,8 @@
 
 use std::collections::HashMap;
 
+use archboard_geometry::{Point, Rect, bend_radius};
 use archboard_scene::drawing::MeasuredLabel;
-use archboard_scene::geometry::{Point, Rect, bend_radius};
 use archboard_scene::request::JumpEnd;
 
 use super::graph::Block;

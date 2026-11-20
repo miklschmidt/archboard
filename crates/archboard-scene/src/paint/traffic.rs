@@ -5,14 +5,14 @@
 use std::collections::HashMap;
 
 use crate::drawing::Traffic;
-use crate::geometry::{Curve, Point, Rect};
 use crate::paint::Edge;
 use crate::paint::build::{Items, grouped};
 use crate::paint::colour::{Share, tinted};
 use crate::paint::palette::Palette;
 use crate::paint::relay::{Lane, relay_rhythms, rim_length};
-use crate::route::{route_length, shortened_by};
 use crate::scene::{Colour, Group, Item, Motion, PulseLook, Role, TrafficMark};
+use archboard_geometry::{Curve, Point, Rect};
+use archboard_geometry::{route_length, shortened_by};
 
 /// The air between the base of an arrowhead and the pulse that sinks into it.
 const AIR: f64 = 1.0;

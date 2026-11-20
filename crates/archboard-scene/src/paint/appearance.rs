@@ -3,7 +3,6 @@
 
 use std::collections::BTreeMap;
 
-use crate::geometry::Rect;
 use crate::paint::build::{Items, concat, shape};
 use crate::paint::colour::{Inked, Share, ToneStep, inked_over, light_dark, mixed, tinted};
 use crate::paint::icons::{drawn_icon, glyph_group};
@@ -16,6 +15,7 @@ use crate::sizes::{
     CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
     SLAB_RADIUS,
 };
+use archboard_geometry::Rect;
 
 /// One named palette colour.
 pub(super) fn semantic_ink(color: Option<PaletteColor>) -> Option<Colour> {

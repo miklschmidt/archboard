@@ -2,7 +2,7 @@
 //! keeps, how a picture arrives and what becomes of the last; and what a frame
 //! is drawn on and what it answers.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use serde::Deserialize;
 
 use crate::between::Phases;

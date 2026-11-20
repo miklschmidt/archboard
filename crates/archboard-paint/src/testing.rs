@@ -4,7 +4,7 @@
 
 use std::collections::BTreeMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{
     Atlas, Colour, Geometry, Group, Item, Paint, Painting, PathStep, Purpose, Role, Scene, Shape,
     Stroke, Subject,

@@ -3,10 +3,10 @@
 
 use std::collections::BTreeMap;
 
-use crate::geometry::round_coord;
 use crate::paint::build::{Items, grouped};
 use crate::request::{NodeAppearance, TypeKind};
 use crate::scene::{Colour, Group, Icon, Item, Role, Transform};
+use archboard_geometry::round_coord;
 
 /// The icon drawn for a name the icon set does not have.
 pub(super) const FALLBACK_ICON: &str = "RiQuestionLine";

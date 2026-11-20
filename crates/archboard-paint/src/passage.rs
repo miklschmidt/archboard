@@ -8,7 +8,7 @@
 //! where the reader is between them. Nothing about a plane is staged by itself,
 //! so the two can never drift apart.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use kurbo::{Affine, Point};
 use serde::Deserialize;
 use std::f64::consts::PI;
@@ -214,7 +214,7 @@ pub(crate) fn place_at(from: f64, share: f64) -> f64 {
 mod tests {
     use kurbo::Point;
 
-    use archboard_scene::geometry::Rect;
+    use archboard_geometry::Rect;
 
     use super::{Axis, Heading, Plane, Side, first_step, place_at};
 

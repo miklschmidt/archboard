@@ -3,8 +3,8 @@
 //! inside an outline and a selection ring outside it ([`inset`]), and a shadow
 //! is the shape moved ([`translated`]).
 
-use crate::geometry::{Point, round_coord};
 use crate::scene::PathStep;
+use archboard_geometry::{Point, round_coord};
 
 /// A convex outline, its corners clockwise on the page.
 pub(super) type Polygon = Vec<Point>;

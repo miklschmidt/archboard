@@ -4,7 +4,7 @@
 //! line crossing its cluster, all bulging one way (TASK-570). Where every
 //! such arc is crowded, the one that keeps the most clear space stands.
 
-use archboard_scene::geometry::{Curve, curve_bounds, inflate, segment_start};
+use archboard_geometry::{Curve, curve_bounds, inflate, segment_start};
 
 use super::super::crowding::{
     CROSSWISE_CLEARANCE, facing_crowding, facing_hops, forced_crowding, knot_crowding,

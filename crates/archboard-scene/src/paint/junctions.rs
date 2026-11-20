@@ -5,11 +5,11 @@
 
 use std::collections::HashMap;
 
-use crate::geometry::{Curve, Point, Rect, Segment, round_coord, vertices_of};
 use crate::paint::Edge;
 use crate::paint::build::{Items, concat, grouped, point, shape};
 use crate::paint::styles::stroke_width;
 use crate::scene::{Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke};
+use archboard_geometry::{Curve, Point, Rect, Segment, round_coord, vertices_of};
 
 /// How far a junction mark reaches past the line it sits on.
 const JUNCTION_REACH: f64 = 1.6;
@@ -457,7 +457,7 @@ mod tests {
     //! two lines, are not marked.
 
     use super::{JoinRoute, Junction, gathered, joins_of};
-    use crate::geometry::Point;
+    use archboard_geometry::Point;
 
     /// A line as thick as an ordinary relationship's.
     const WIDTH: f64 = 1.4;

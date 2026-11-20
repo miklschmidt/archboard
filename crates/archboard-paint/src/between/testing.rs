@@ -1,7 +1,7 @@
 //! Small scenes for the tests of a move.
 
+use archboard_geometry::{Point, Rect};
 use archboard_scene::drawing::{DiagramFont, Emphasis, FontFamily};
-use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{
     Atlas, AtlasBox, Boxes, Colour, Group, Head, HeadInk, Item, MarkerId, Pointer, Purpose, Role,
     Scene, Shape, Subject, SubjectKind, Text, Token,

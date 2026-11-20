@@ -10,6 +10,7 @@ publish.workspace = true
 workspace = true
 
 [dependencies]
+archboard-geometry = { path = "../archboard-geometry" }
 archboard-scene = { path = "../archboard-scene" }
 # A picture's glyphs are drawn from the outlines of the core's own faces.
 archboard-text = { path = "../archboard-text" }

@@ -9,8 +9,8 @@
 use std::cell::OnceCell;
 use std::collections::BTreeMap;
 
+use archboard_geometry::{Curve, Point, Rect, Segment, curve_bounds, segment_start};
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, segment_start};
 use archboard_scene::paint::junction_boxes;
 use archboard_scene::request::{Arrowhead, Dash};
 

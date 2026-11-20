@@ -4,7 +4,7 @@
 //! number; a port's slot with no spaces at all; and a legend's sample with a
 //! space only inside a point.
 
-use archboard_scene::geometry::Point;
+use archboard_geometry::Point;
 use archboard_scene::scene::PathStep;
 
 /// How a path is spelt.
@@ -97,7 +97,7 @@ pub(crate) fn path_data(steps: &[PathStep], spelling: Spelling) -> String {
 #[cfg(test)]
 mod tests {
     use super::{Spelling, path_data};
-    use archboard_scene::geometry::Point;
+    use archboard_geometry::Point;
     use archboard_scene::scene::PathStep;
 
     const fn at(x: f64, y: f64) -> Point {

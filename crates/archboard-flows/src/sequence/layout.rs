@@ -19,8 +19,8 @@
 
 use std::collections::HashMap;
 
+use archboard_geometry::Rect;
 use archboard_scene::drawing::TextRun;
-use archboard_scene::geometry::Rect;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
 use archboard_scene::{CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards};
 

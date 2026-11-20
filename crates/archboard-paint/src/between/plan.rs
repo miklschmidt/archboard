@@ -3,7 +3,7 @@
 //! left as it is. Each frame clones what is still and asks each mover for its
 //! moment.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Mask, Role, Transform};
 
 use super::arrive::{Ground, Grow, Leave, Swap};

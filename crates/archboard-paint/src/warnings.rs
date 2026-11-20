@@ -11,7 +11,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use archboard_scene::geometry::{Curve, Point, Rect, Segment, label_anchor_of};
+use archboard_geometry::{Curve, Point, Rect, Segment, label_anchor_of};
 use archboard_scene::paint::ViewerMarks;
 use archboard_scene::scene::{Geometry, Group, Item, PathStep, Purpose, Role, Scene, SubjectKind};
 
@@ -194,7 +194,7 @@ impl Warnings {
 #[cfg(test)]
 mod tests {
     use super::Warnings;
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::paint::viewer_marks;
     use archboard_scene::scene::{
         Atlas, Colour, Group, Item, PathStep, Purpose, Role, Scene, Subject, SubjectKind, Token,

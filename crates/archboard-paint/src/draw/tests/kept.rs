@@ -2,8 +2,8 @@
 
 use std::collections::{HashMap, HashSet};
 
+use archboard_geometry::Point;
 use archboard_scene::drawing::{DiagramFont, FontFamily};
-use archboard_scene::geometry::Point;
 use archboard_scene::scene::{Colour, Group, Item, Role, Slot, SubjectKind, Text, Transform};
 use kurbo::{Affine, BezPath};
 

@@ -9,7 +9,6 @@
 //! it. One closed path goes round the tab and the well, with one radius at every
 //! corner, and the tab's left side is the well's. A tray casts no shadow.
 
-use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, point, shape};
 use crate::paint::flowchart_shapes::ring;
 use crate::paint::palette::Palette;
@@ -23,6 +22,7 @@ use crate::scene::{
     Shape, Stroke,
 };
 use crate::sizes::{BAND_RADIUS, TRAY_LIP, TRAY_WALL};
+use archboard_geometry::{Point, Rect, round_coord};
 
 /// How a tray looks: its floor, its tab and the line round it.
 #[derive(Clone, Debug, PartialEq)]

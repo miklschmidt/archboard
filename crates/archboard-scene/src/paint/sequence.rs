@@ -4,7 +4,6 @@
 //! every message. The layer order is load-bearing. Pulses share one clock.
 
 use crate::flow_parts::activation_span;
-use crate::geometry::{Rect, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, group, grouped, lines, point, shape};
 use crate::paint::cards::paint_card;
@@ -28,6 +27,7 @@ use crate::scene::{
     Atlas, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
 };
 use crate::sizes::{DIAGRAM_MARGIN, LIFELINE_GAP, PILL_RADIUS, SHADOW_REACH, SLAB_RADIUS};
+use archboard_geometry::{Rect, union};
 
 const ACTIVATION_RADIUS: f64 = 3.0;
 const BAR_THICKNESS: f64 = 2.5;

@@ -257,7 +257,7 @@ pub(crate) fn place_run(scene: &mut Placement, sliders: &[Slider], low: f64, hig
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::Rect;
+    use archboard_geometry::Rect;
 
     use super::*;
     use crate::track::scene::Item;

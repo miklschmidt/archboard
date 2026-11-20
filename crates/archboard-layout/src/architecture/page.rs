@@ -2,8 +2,8 @@
 //! settled drawing is moved to the margin and its page cut to what it draws,
 //! so every side keeps the same margin.
 
+use archboard_geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingNode, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::{Curve, Point, Rect, Segment, curve_bounds, union};
 use archboard_scene::paint::diagram_margin;
 
 /// A point moved.

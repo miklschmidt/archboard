@@ -6,7 +6,7 @@
 //! The fixture keeps icon names without their paths because scene painting
 //! reads only which icons are available.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::paint::paint;
 use archboard_scene::request::PaintRequest;
 use archboard_scene::scene::{

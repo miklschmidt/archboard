@@ -1,9 +1,16 @@
-//! Points, boxes and routes, and the one place a coordinate is rounded.
+//! Points, boxes and routes, and the one place a coordinate is rounded: the
+//! geometry the renderer core's layouts route by and its painters draw by.
 
-use crate::route::point_on_segment;
-use crate::sizes::EPSILON;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
+
+mod route;
+
+use route::point_on_segment;
+pub use route::{route_length, segment_length, shortened_by};
+
+/// How close two points must be to be one, and the least a turn may move.
+const EPSILON: f64 = 0.01;
 
 /// A position in the diagram's own units.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]

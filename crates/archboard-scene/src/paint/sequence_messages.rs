@@ -3,7 +3,6 @@
 //! words, label chip and note, with the tint a comparison lays over its row.
 
 use crate::drawing::Emphasis;
-use crate::geometry::{Curve, Point, Rect, Segment, curve_through, round_coord};
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, concat, group, grouped, lines, point, shape, text};
 use crate::paint::palette::Palette;
@@ -24,6 +23,7 @@ use crate::sizes::{
     MESSAGE_LINE_STEP, PILL_HEIGHT, PILL_RADIUS, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
     STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, arrow_standoff, step_head,
 };
+use archboard_geometry::{Curve, Point, Rect, Segment, curve_through, round_coord};
 
 const STEP_WEIGHT: Emphasis = Emphasis::Normal;
 const STEP_HALO_EXTRA: f64 = 5.0;
@@ -128,7 +128,7 @@ pub(super) fn step_ride(placed: &SequenceStep) -> Option<(Curve, f64)> {
             ],
             false,
         );
-        let length = crate::route::route_length(&curve);
+        let length = archboard_geometry::route_length(&curve);
         return Some((curve, length));
     }
     let direction = f64::from(placed.travel);

@@ -5,7 +5,7 @@
 
 use std::cell::OnceCell;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::max;

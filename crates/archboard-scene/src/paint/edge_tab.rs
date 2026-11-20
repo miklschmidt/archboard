@@ -4,7 +4,6 @@
 //! tab's group as the title of the picture's file.
 
 use crate::drawing::TextRun;
-use crate::geometry::Rect;
 use crate::measure::{tab_far, tab_runs};
 use crate::paint::Ctx;
 use crate::paint::Node;
@@ -25,6 +24,7 @@ use crate::sizes::{
     ARCHITECTURE_HEADER_PADDING, BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP,
     TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
+use archboard_geometry::Rect;
 
 /// How much larger a drill mark stands in a tab seen from far away.
 const FAR_MARK: f64 = 1.2;

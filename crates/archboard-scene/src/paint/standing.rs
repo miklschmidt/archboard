@@ -9,7 +9,6 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::geometry::{Point, Rect, round_coord, union};
 use crate::paint::build::{Items, concat, grouped, shape};
 use crate::paint::palette::Palette;
 use crate::request::Standing;
@@ -17,6 +16,7 @@ use crate::scene::{
     Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke, Subject,
     SubjectKind, Transform,
 };
+use archboard_geometry::{Point, Rect, round_coord, union};
 
 /// How far in from a subject's corner its pin sits, and how big the pin is.
 pub(super) const PIN_INSET: f64 = 3.0;

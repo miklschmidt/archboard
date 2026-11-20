@@ -13,6 +13,7 @@ workspace = true
 archboard-ecma = { path = "../archboard-ecma" }
 # A flowchart is laid out as a picture is, and its lines' crossings counted so.
 archboard-layout = { path = "../archboard-layout" }
+archboard-geometry = { path = "../archboard-geometry" }
 archboard-scene = { path = "../archboard-scene" }
 indexmap = "2"
 serde = { version = "1", features = ["derive"] }

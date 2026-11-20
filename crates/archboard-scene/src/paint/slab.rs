@@ -6,7 +6,6 @@
 //! removal. A part opens with its seat, its box unpainted, which takes the
 //! pointer.
 
-use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, grouped, lines, shape};
 use crate::paint::colour::{Share, light_dark, tinted, translucent};
 use crate::paint::palette::Palette;
@@ -19,6 +18,7 @@ use crate::scene::{
     Pointer, Purpose, Role, ShadowOf, Shape, Stop, Stroke,
 };
 use crate::sizes::SHADOW_REACH;
+use archboard_geometry::{Point, Rect, round_coord};
 
 /// How a block looks: its two tones, how thick it is and how round its corners are.
 #[derive(Clone, Debug, PartialEq)]

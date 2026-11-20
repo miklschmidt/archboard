@@ -5,7 +5,6 @@
 //! open module. This is the one place a door's look lives.
 
 use crate::drawing::{DoorWay, TextRun, Toggle};
-use crate::geometry::{Point, Rect, round_coord};
 use crate::measure::door_far_runs;
 use crate::paint::Ctx;
 use crate::paint::Node;
@@ -32,6 +31,7 @@ use crate::sizes::{
     DOOR_ARROW_INSET, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON, DOOR_PADDING, DOOR_RADIUS,
     ICON_CHIP_SIZE, TOGGLE_ROOM,
 };
+use archboard_geometry::{Point, Rect, round_coord};
 
 /// How heavy a door's rim is.
 const RIM: f64 = 1.0;

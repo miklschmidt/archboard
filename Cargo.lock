@@ -47,11 +47,21 @@ name = "archboard-flows"
 version = "0.0.0"
 dependencies = [
  "archboard-ecma",
+ "archboard-geometry",
  "archboard-layout",
  "archboard-scene",
  "indexmap",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "archboard-geometry"
+version = "0.0.0"
+dependencies = [
+ "archboard-ecma",
+ "serde",
+ "ts-rs",
 ]
 
 [[package]]
@@ -71,6 +81,7 @@ name = "archboard-layout"
 version = "0.0.0"
 dependencies = [
  "archboard-ecma",
+ "archboard-geometry",
  "archboard-graphviz",
  "archboard-router",
  "archboard-scene",
@@ -84,6 +95,7 @@ dependencies = [
 name = "archboard-paint"
 version = "0.0.0"
 dependencies = [
+ "archboard-geometry",
  "archboard-scene",
  "archboard-text",
  "kurbo",
@@ -97,6 +109,7 @@ dependencies = [
 name = "archboard-painter-wasm"
 version = "0.0.0"
 dependencies = [
+ "archboard-geometry",
  "archboard-paint",
  "archboard-scene",
  "futures-channel",
@@ -151,6 +164,7 @@ name = "archboard-scene"
 version = "0.0.0"
 dependencies = [
  "archboard-ecma",
+ "archboard-geometry",
  "archboard-text",
  "libm",
  "serde",
@@ -163,6 +177,7 @@ name = "archboard-svg"
 version = "0.0.0"
 dependencies = [
  "archboard-ecma",
+ "archboard-geometry",
  "archboard-scene",
  "archboard-text",
  "libm",

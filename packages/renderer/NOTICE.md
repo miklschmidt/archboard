@@ -10,7 +10,7 @@ Retained code includes the layout of sequence diagrams, call/reply matching,
 route geometry, coordinate rounding, XML escaping, and helpers that write SVG elements.
 The renderer core (`crates/`) holds all of it now, ported to Rust under this
 notice too: the sequence layout in `crates/archboard-flows`, the route geometry
-in `crates/archboard-layout` and `crates/archboard-scene`, and the coordinate
+in `crates/archboard-layout` and `crates/archboard-geometry`, and the coordinate
 rounding, the XML escaping and the element writing in `crates/archboard-svg`.
 
 Bundled fonts use the SIL Open Font License 1.1.

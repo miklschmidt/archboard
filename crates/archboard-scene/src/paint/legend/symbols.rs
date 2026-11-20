@@ -3,7 +3,6 @@
 //! its kind, its emphasis and its traffic, each drawn as the picture draws it.
 
 use crate::drawing::Emphasis;
-use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::edge_line::arrowhead;
@@ -20,6 +19,7 @@ use crate::scene::{
 };
 use crate::sizes::ICON_CHIP_SIZE;
 use crate::sizes::RAILS;
+use archboard_geometry::{Point, Rect, round_coord};
 
 /// The height of one legend row.
 pub(super) const ROW: f64 = 28.0;

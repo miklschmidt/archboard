@@ -3,7 +3,7 @@
 //! rests on, and the lines the far view draws wider. The walk draws each
 //! where the SVG viewer's layer or class stood.
 
-use archboard_scene::geometry::Point;
+use archboard_geometry::Point;
 use archboard_scene::paint::ViewerMarks;
 use archboard_scene::scene::{Geometry, Group, Item, Role, Stroke, Transform};
 use kurbo::Affine;

@@ -2,8 +2,8 @@
 
 use std::collections::BTreeMap;
 
+use archboard_geometry::Point;
 use archboard_scene::drawing::{DiagramFont, FontFamily};
-use archboard_scene::geometry::Point;
 use archboard_scene::request::{DocumentRequest, StandaloneTheme, ThemeColors};
 use archboard_scene::scene::{Atlas, Group, Item, Role, Scene, Text, Token};
 
