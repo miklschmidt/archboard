@@ -529,16 +529,39 @@ fn a_reading_no_placement_routes_is_drawn_unplanned_by_its_legacy_placement() {
     }));
 }
 
-/// A Graphviz that refuses every graph.
-struct Refusing;
+#[derive(Default)]
+struct CountedGraphviz {
+    calls: usize,
+    fail_at: Option<usize>,
+}
 
-impl archboard_layout::Graphviz for Refusing {
-    fn render(&mut self, _graph: &str) -> Result<String, String> {
-        Err("syntax error".to_owned())
+impl archboard_layout::Graphviz for CountedGraphviz {
+    fn render(&mut self, graph: &str) -> Result<String, String> {
+        self.calls += 1;
+        if self.fail_at == Some(self.calls) {
+            return Err("Graphviz test failure".to_owned());
+        }
+        archboard_layout::Graphviz::render(&mut archboard_graphviz::InCore, graph)
     }
 }
 
 #[test]
 fn a_reading_the_planner_refuses_still_fails_when_graphviz_fails() {
-    lay_out_picture(&crowded_card(), &mut Refusing).unwrap_err();
+    let graph = crowded_card();
+    let mut host = CountedGraphviz::default();
+    lay_out_picture(&graph, &mut host).expect("the legacy placement succeeds");
+
+    // The first call belongs to the planner. The last belongs to the legacy
+    // placement, which uses a fresh Graphviz engine after the planner refuses.
+    assert!(host.calls > 1);
+    for fail_at in [1, host.calls] {
+        let mut host = CountedGraphviz {
+            fail_at: Some(fail_at),
+            ..CountedGraphviz::default()
+        };
+        assert_eq!(
+            lay_out_picture(&graph, &mut host).unwrap_err(),
+            "Graphviz test failure"
+        );
+    }
 }
