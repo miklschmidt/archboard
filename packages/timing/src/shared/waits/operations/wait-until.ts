@@ -99,6 +99,7 @@ function refusedBefore(run: Run, look: number): Refusal | null {
  * @returns The refusal, or null to go on.
  */
 function refusedAfter(run: Run): Refusal | null {
+	if (run.signal?.aborted === true) return "aborted";
 	return run.policy.check === "afterProbe" && past(run) ? "bound" : null;
 }
 
@@ -166,6 +167,21 @@ function refusal(run: Run, reason: Refusal | null): WaitOutcome<never> | undefin
 }
 
 /**
+ * Check cancellation immediately before calling the probe.
+ * @param run The wait.
+ * @param probe The look.
+ * @returns The result when cancelled or the probe found a value.
+ */
+async function probeOutcome<T>(
+	run: Run,
+	probe: () => T | undefined | PromiseLike<T | undefined>,
+): Promise<WaitOutcome<T> | undefined> {
+	if (run.signal?.aborted === true) return refusal(run, "aborted");
+	const value = await answerOf(probe);
+	return value === undefined ? undefined : { ok: true, value };
+}
+
+/**
  * One pass of a wait: its checks, its sleep and one look.
  * @param run The wait.
  * @param probe The look.
@@ -179,8 +195,8 @@ async function pass<T>(
 ): Promise<WaitOutcome<T> | undefined> {
 	const before = refusal(run, refusedBefore(run, look) ?? (await rest(run, "before")));
 	if (before !== undefined) return before;
-	const value = await answerOf(probe);
-	if (value !== undefined) return { ok: true, value };
+	const found = await probeOutcome(run, probe);
+	if (found !== undefined) return found;
 	return refusal(run, refusedAfter(run) ?? (await rest(run, "after")));
 }
 

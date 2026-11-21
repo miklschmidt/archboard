@@ -165,11 +165,29 @@ describe("waitUntil", () => {
 		expect(clock.now()).toBe(100);
 	});
 
+	test("an abort as the sleep ends prevents the next look", async () => {
+		const controller = new AbortController();
+		const { probe, looks } = nothing(() => 0);
+		const outcome = await waitUntil("pane.browserConnect", probe, {
+			signal: controller.signal,
+			clock: {
+				now: () => 0,
+				after: (_ms, run) => {
+					run();
+					controller.abort();
+					return () => {};
+				},
+			},
+		});
+		expect(outcome).toMatchObject({ ok: false, reason: "aborted" });
+		expect(looks).toEqual([]);
+	});
+
 	test("cancellation wins over a bound that passed too", async () => {
 		const clock = fakeClock(0);
 		const controller = new AbortController();
 		const outcome = waitUntil(
-			"serverLifecycle.stopConfirm",
+			"serverLifecycle.stopPidfileWait",
 			() => {
 				clock.spend(10_000);
 				controller.abort();
