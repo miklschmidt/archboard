@@ -7,6 +7,7 @@ import {
 	parseModelRequest,
 	type RequestOperation,
 } from "@archboard/model-contract";
+import { z } from "zod";
 
 /**
  * Read a document the store holds as bytes it wrote itself, or refuse it as the schema does.
@@ -28,6 +29,9 @@ function requireDocument<K extends DocumentKind>(
 
 /**
  * Read an intent a caller hands the store again before it writes, or refuse it as the route did.
+ *
+ * The store is told its vault, so an intent that names one too is refused as the strict schema
+ * refuses a key it does not know, before any write.
  * @param operation The operation asked for.
  * @param input The intent as the caller wrote it.
  * @returns The intent, defaults filled.
@@ -36,6 +40,15 @@ function requireDocument<K extends DocumentKind>(
 function requireRequest<O extends RequestOperation>(operation: O, input: unknown): ModelRequest<O> {
 	const result = parseModelRequest(operation, input);
 	if (!result.success) throw result.error;
+	if (result.vault !== undefined)
+		throw new z.ZodError([
+			{
+				code: "unrecognized_keys",
+				keys: ["vault"],
+				path: [],
+				message: 'Unrecognized key: "vault"',
+			},
+		]);
 	return result.data;
 }
 

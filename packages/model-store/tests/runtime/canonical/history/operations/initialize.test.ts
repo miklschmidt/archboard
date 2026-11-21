@@ -1,7 +1,8 @@
 import { tmpdir } from "node:os";
 import { afterEach, expect, test } from "bun:test";
-import { rmSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { rmSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { modelShape, parseModelRequest } from "@archboard/model-contract";
 import { installArchitectureModel, readArchitectureModel } from "@archboard/model-store";
 import { fixture, git, disposeFixtures } from "#tests/runtime/canonical/edit/operations/fixture.ts";
 
@@ -45,6 +46,27 @@ test("initialization creates one canonical planning model, retains its identity 
 	expect(
 		await installArchitectureModel(vault, { ...request, operationId: "replace" }),
 	).toMatchObject({ success: false, code: "TARGET_CHANGED" });
+});
+
+test("a direct initialization that names a vault is refused as the strict schema refuses it, though a route reads it", async () => {
+	const { vault } = fixture();
+	rmSync(vault, { recursive: true });
+	mkdirSync(vault);
+	const named = {
+		vault,
+		name: "Shop",
+		operationId: "init",
+		writer: "agent",
+		doing: "Initialize architecture",
+	};
+	expect(parseModelRequest("initialize", named)).toMatchObject({ success: true, vault });
+	const strict = modelShape("initializationRequest").safeParse(named);
+	if (strict.success) throw new Error("The strict schema read a stray vault.");
+	await expect(installArchitectureModel(vault, named)).rejects.toMatchObject({
+		name: "ZodError",
+		issues: strict.error.issues,
+	});
+	expect(readdirSync(vault)).toEqual([]);
 });
 
 test("initialization refuses legacy authority without rewriting its exact bytes", async () => {
