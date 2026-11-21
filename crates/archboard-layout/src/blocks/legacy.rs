@@ -282,7 +282,8 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, Stri
     Ok(chosen)
 }
 
-/// The retained placement path for Track and unmigrated Blocks classes.
+/// The retained placement path: Track's, and Blocks' for a reading that no planned placement
+/// routes.
 pub(super) fn place(
     graph: &Node,
     nesting: Nesting,
