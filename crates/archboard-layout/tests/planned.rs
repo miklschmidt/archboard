@@ -506,7 +506,9 @@ fn crowded_card() -> String {
 
 #[test]
 fn a_reading_no_placement_routes_is_drawn_unplanned_by_its_legacy_placement() {
-    let answer = lay_out_picture(&crowded_card(), &mut archboard_graphviz::InCore)
+    let mut graph: Value = serde_json::from_str(&crowded_card()).unwrap();
+    graph["layoutOptions"]["archboard.blocks.planned"] = json!("true");
+    let answer = lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore)
         .expect("a drawing of a reading the planner refuses");
     let answer: Value = serde_json::from_str(&answer).expect("an answer");
     let options = &answer["layoutOptions"];
