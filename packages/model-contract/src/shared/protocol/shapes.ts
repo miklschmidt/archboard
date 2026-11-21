@@ -41,7 +41,6 @@ import {
 	LayoutEngineSchema,
 	LegendLayoutSchema,
 	OfferedViewSchema,
-	PictureReceiptShape,
 	RenderedVariantSchema,
 	StandaloneThemeSchema,
 	SubjectStandingSchema,
@@ -52,7 +51,6 @@ import { ArchitectureInitializationRequestSchema } from "#shared/schemas/model-p
 import { ReconciliationKindSchema } from "#shared/schemas/reconciliation.ts";
 import {
 	EvidenceKindSchema,
-	PaletteColorSchema,
 	SemanticPolicySchema,
 	VaultCheckSchema,
 	VaultDiagnosticSchema,
@@ -92,7 +90,6 @@ const SHAPES = {
 	renderedVariant: RenderedVariantSchema,
 	offeredView: OfferedViewSchema,
 	subjectStanding: SubjectStandingSchema,
-	pictureReceipt: PictureReceiptShape,
 	// What a rasterized picture's receipt says: of a model reading, and of a legacy board's view.
 	rasterReceipt: ArchitectureRasterReceiptSchema,
 	legacyRasterReceipt: SemanticRasterReceiptSchema,
@@ -106,7 +103,6 @@ const SHAPES = {
 	semanticSubjectKind: SemanticSubjectKindSchema,
 	reconciliationKind: ReconciliationKindSchema,
 	evidenceKind: EvidenceKindSchema,
-	paletteColor: PaletteColorSchema,
 	// A vault's policy and what its check says.
 	semanticPolicy: SemanticPolicySchema,
 	codeCheckRules: SemanticPolicySchema.shape.codeCheck.unwrap().shape.rules,

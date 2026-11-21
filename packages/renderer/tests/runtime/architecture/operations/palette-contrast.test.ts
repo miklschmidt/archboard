@@ -12,11 +12,11 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { APCA, lightnessContrast, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { modelShape, type DiagramTheme } from "@archboard/model-contract";
+import { type DiagramTheme } from "@archboard/model-contract";
 import { themeColor } from "#runtime/theme/store/source.ts";
-import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
+import { fixtureDocument, paletteColours } from "#tests/runtime/support/model-documents.ts";
 
-const COLOURS = modelShape("paletteColor").options;
+const COLOURS = paletteColours();
 const THEMES: DiagramTheme[] = ["light", "dark"];
 
 /** One card for each colour: in a group of that colour, of a kind of that colour, and a line of it to the next. */

@@ -22,6 +22,6 @@ pub use flow_parts::{
 };
 pub use measure::{CardWords, Part, measure_label, measure_node};
 pub use paint::{
-    ViewerMarks, diagram_margin, junction_boxes, own_icons, paint,
-    straight_card_top_contains, tab_width, viewer_marks,
+    ViewerMarks, diagram_margin, junction_boxes, own_icons, paint, straight_card_top_contains,
+    tab_width, viewer_marks,
 };

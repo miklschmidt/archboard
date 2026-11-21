@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
 	changeArchitectureClaims,
 	editArchitectureModule,
+	readArchitectureClaims,
 	readArchitectureModel,
 } from "@archboard/model-store";
 import {
@@ -13,6 +14,24 @@ import {
 } from "#tests/runtime/canonical/edit/operations/fixture.ts";
 
 afterEach(disposeFixtures);
+
+test("a direct claim that names a vault is refused before it claims anything", async () => {
+	const { vault } = fixture();
+	const before = readArchitectureModel(vault);
+	if (!before.success || before.manifest.current === null) throw new Error(JSON.stringify(before));
+	const named = {
+		vault,
+		target: { model: before.manifest.id, state: before.manifest.current.id },
+		writer: "agent",
+		reason: "changing module structure",
+		subjects: ["Shop#Gateway"],
+	};
+	await expect(changeArchitectureClaims(vault, "claim", named)).rejects.toMatchObject({
+		name: "ZodError",
+		issues: [{ code: "unrecognized_keys", keys: ["vault"], path: [] }],
+	});
+	expect(readArchitectureClaims(vault)).toEqual({ success: true, claims: [] });
+});
 
 test("a module rename preserves its identity, former names and every unrelated file", async () => {
 	const { vault } = fixture();

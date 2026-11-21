@@ -6,7 +6,6 @@
 //! box and the region drawn round it; a line that stopped on the region's wall
 //! is carried on to the card's face.
 
-
 use crate::constants::{HEADER_PADDING, REGION_INSET};
 use crate::ecma::{abs, max, min, number_of, sorted_by};
 use crate::geometry::{Point, Rect};

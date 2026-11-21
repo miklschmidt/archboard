@@ -264,7 +264,8 @@ fn a_part_whose_icon_is_missing_draws_the_fallback_icon() {
 
 #[test]
 fn a_container_with_the_policy_kind_flow_omits_its_tab_chip() {
-    let mut request: PaintRequest = serde_json::from_str(REQUEST).expect("the fixture is a request");
+    let mut request: PaintRequest =
+        serde_json::from_str(REQUEST).expect("the fixture is a request");
     let Picture::Architecture(picture) = &mut request.picture else {
         panic!("the fixture draws an architecture");
     };
