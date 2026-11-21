@@ -367,3 +367,84 @@ fn a_sparse_frame_closes_and_its_lines_stay_on_their_cards_walls() {
         "the tray below closes"
     );
 }
+
+#[test]
+fn a_run_only_lands_on_an_unambiguous_endpoint_wall() {
+    let mut upper = card("upper", 100.0, 923.408);
+    upper.bx.height = 112.602;
+    let wall = upper.bx.y + upper.bx.height;
+    let frame = card("frame", 200.0, wall);
+    let mut far_frame = card("far-frame", 400.0, upper.bx.y);
+    far_frame.bx.height = upper.bx.height;
+    let down = |id: &str, x, y| PlacedLine {
+        id: id.into(),
+        points: vec![Point { x, y }, Point { x, y: y + 100.0 }],
+        label: None,
+    };
+    let mut into_frame = down("frame-end", 450.0, wall);
+    into_frame.points.reverse();
+    let mut drawing = Placed {
+        width: 600.0,
+        height: 2200.0,
+        cards: vec![upper],
+        frames: vec![frame, far_frame],
+        regions: Vec::new(),
+        edges: vec![
+            down("card", 190.0, wall),
+            down("coincident", 250.0, wall),
+            down("near", 175.0, wall + 1e-9),
+            PlacedLine {
+                id: "passing".into(),
+                points: vec![
+                    Point {
+                        x: 120.0,
+                        y: 1100.0,
+                    },
+                    Point { x: 120.0, y: wall },
+                    Point { x: 180.0, y: wall },
+                    Point {
+                        x: 180.0,
+                        y: 1100.0,
+                    },
+                ],
+                label: None,
+            },
+            into_frame,
+        ],
+        titles: Vec::new(),
+        routed: None,
+    };
+    let sheet = Sheet::of(&drawing, Axis::Y, &[]);
+    let shift = -900.0;
+    let shifts = vec![shift; sheet.movers];
+    sheet.apply_boxes(&mut drawing, Axis::Y, &shifts);
+    sheet.apply_lines(&mut drawing, Axis::Y, &shifts);
+    let upper = drawing.cards[0].bx;
+    let far_frame = drawing.frames[1].bx;
+    let passing = &drawing.edges[3].points;
+    assert_eq!(
+        [
+            drawing.edges[0].points[0].y,
+            drawing.edges[1].points[0].y,
+            drawing.edges[2].points[0].y,
+            passing[1].y,
+            passing[2].y,
+            drawing.edges[4].points[1].y,
+        ],
+        [
+            upper.y + upper.height,
+            wall + shift,
+            (wall + 1e-9) + shift,
+            wall + shift,
+            wall + shift,
+            far_frame.y + far_frame.height,
+        ]
+    );
+    assert!(
+        drawing
+            .edges
+            .iter()
+            .flat_map(|line| line.points.windows(2))
+            .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y)
+    );
+}

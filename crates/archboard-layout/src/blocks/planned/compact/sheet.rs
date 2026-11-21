@@ -354,25 +354,47 @@ impl Sheet {
     /// moves its corner and keeps its size, so its far wall can land a rounding away from a point
     /// that took the same shift, and the guard would read that line as running into the box.
     fn landed(&self, drawing: &Placed, axis: Axis, shifts: &[f64]) -> Vec<Option<f64>> {
-        let mut landed = vec![None; self.movers];
-        let runs = (self.pieces.iter()).filter(|piece| piece.kind == Kind::Line);
-        for run in runs {
-            let on = |wall: &&Wall| {
-                wall.at == run.low
-                    && shifts[wall.mover] == shifts[run.mover]
-                    && run.from <= wall.to
-                    && wall.from <= run.to
-            };
-            landed[run.mover] = self.walls.iter().find(on).map(|wall| {
-                let bx = match wall.held {
-                    Held::Card(at) => drawing.cards[at].bx,
-                    Held::Frame(at) => drawing.frames[at].bx,
-                };
-                let (low, high) = axis.span(bx);
-                if wall.high { high } else { low }
-            });
+        let mut walls = vec![Vec::new(); self.movers];
+        for (line, movers) in drawing.edges.iter().zip(&self.lines) {
+            let points = &line.points;
+            if points.len() < 2 {
+                continue;
+            }
+            let last = points.len() - 1;
+            for (end, next) in [(0, 1), (last, last - 1)] {
+                let point = points[end];
+                let at = axis.of(point);
+                if at == axis.of(points[next]) {
+                    continue;
+                }
+                let across = axis.across().of(point);
+                walls[movers[end]].extend(
+                    self.walls
+                        .iter()
+                        .filter(|wall| wall.at == at && (wall.from..=wall.to).contains(&across)),
+                );
+            }
         }
-        landed
+
+        walls
+            .into_iter()
+            .zip(shifts)
+            .map(|(walls, &shift)| {
+                let mut positions = walls.into_iter().map(|wall| {
+                    let bx = match wall.held {
+                        Held::Card(at) => drawing.cards[at].bx,
+                        Held::Frame(at) => drawing.frames[at].bx,
+                    };
+                    let (low, high) = axis.span(bx);
+                    (shifts[wall.mover], if wall.high { high } else { low })
+                });
+                let (wall_shift, at) = positions.next()?;
+                // Coincident walls can round differently or move apart. The run has one
+                // coordinate, so only correct it when all its endpoint walls agree.
+                (wall_shift == shift && positions.all(|position| position == (shift, at)))
+                    .then_some(at)
+            })
+            .collect()
     }
 
     /// Move the lines and their words, after `apply_boxes` moved the boxes they stand on.
