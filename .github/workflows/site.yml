@@ -51,7 +51,7 @@ on:
       - packages/model-rules/**
       - packages/model-store/**
       - packages/renderer/**
-      - packages/workbench/package.json
+      - packages/agent-surfaces/package.json
       - packages/agent-surfaces/src/ui/workbench-client/orb/clients/**
       - packages/agent-surfaces/src/ui/workbench-client/orb/rules/**
       - packages/agent-surfaces/src/ui/workbench-client/orb/state/**
@@ -84,7 +84,7 @@ on:
       - packages/model-rules/**
       - packages/model-store/**
       - packages/renderer/**
-      - packages/workbench/package.json
+      - packages/agent-surfaces/package.json
       - packages/agent-surfaces/src/ui/workbench-client/orb/clients/**
       - packages/agent-surfaces/src/ui/workbench-client/orb/rules/**
       - packages/agent-surfaces/src/ui/workbench-client/orb/state/**
