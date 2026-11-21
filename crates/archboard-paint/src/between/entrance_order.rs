@@ -2,7 +2,7 @@
 
 use archboard_scene::scene::{Group, Item, Purpose, Role, Scene, Subject, SubjectKind};
 
-use super::departure::visible_at;
+use super::departure::departing;
 use super::testing::{PHASES, card, drawing, label, line, rect, scene, shadow};
 use super::tests::solid;
 use super::{Between, Handover};
@@ -129,9 +129,13 @@ fn a_card_the_last_picture_drew_flies_from_where_it_stood() {
     let flying = drawing(&start.0, "middle")[0];
     let moved = flying.transform.expect("it stands where it stood");
     assert_eq!((10.0 + moved.x, 110.0 + moved.y), (was.x, was.y));
+    let [Item::Group(drawn)] = &departing(last.body.clone(), (last.width, last.height), gone)[..]
+    else {
+        panic!("the last picture is drawn as one group");
+    };
     assert_eq!(
         solid(flying),
-        visible_at(gone),
+        solid(drawn),
         "it shows as the last picture does"
     );
     assert_eq!(solid(drawing(&start.0, "top")[0]), 0.0, "the rest bloom");
