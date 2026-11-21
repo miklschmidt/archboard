@@ -280,10 +280,16 @@ async function writeThemeColors(): Promise<void> {
  * hosts read beside it: the contract's types, the marks a pane draws and the theme colours. A
  * complete build of the checkout's sources is kept, so a run without a change needs no Rust
  * tools; one that needs them and lacks them builds inside the checkout's `nix develop` shell.
- * @throws {Error} When a tool is missing or fails, or the panic boundary of the glue changed.
+ * @param options How to handle the existing build.
+ * @param options.requireCurrent Validate the existing core without rebuilding it.
+ * @throws {Error} When validation fails or the core cannot be built.
  */
-async function buildCore(): Promise<void> {
+async function buildCore(options: { readonly requireCurrent?: boolean } = {}): Promise<void> {
 	const hash = coreSourceHash();
+	if (options.requireCurrent) {
+		loadCore(hash);
+		return;
+	}
 	if (currentBuild(hash)) {
 		console.error(`The renderer core is built from these sources (${hash}).`);
 	} else if (needsNixShell()) {

@@ -245,7 +245,7 @@ async function compileRelease(target: Target, directory: string): Promise<Compil
 	if (!existsSync(path.join(frontend, "index.html"))) {
 		refuse(`${frontend} holds no browser bundle. Run \`bun run build\`, then compile.`);
 	}
-	await buildCore();
+	await buildCore({ requireCurrent: true });
 	const marker = releaseMarker();
 	rmSync(directory, { recursive: true, force: true });
 	const executable = path.join(directory, "bin", "archboard");
