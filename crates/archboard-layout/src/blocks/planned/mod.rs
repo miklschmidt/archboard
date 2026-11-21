@@ -57,23 +57,22 @@ pub(super) fn widens(graph: &crate::graph::Node, drawn: bool, complete_repair: b
     }
 }
 
-#[derive(Debug)]
+/// Why the planner refused a placement: the lines it found no clear channel for. A refused
+/// reading is drawn by its legacy placement, so no one reads why; the words at each refusal say
+/// it to the code's reader.
+#[derive(Debug, Default)]
 pub(super) struct Refused {
-    pub message: String,
     /// Endpoint pairs, with the latest refused relationship first.
     pub blocked: Vec<[String; 2]>,
 }
 impl From<String> for Refused {
-    fn from(message: String) -> Self {
-        Self {
-            message,
-            blocked: Vec::new(),
-        }
+    fn from(_why: String) -> Self {
+        Self::default()
     }
 }
 impl From<&str> for Refused {
-    fn from(message: &str) -> Self {
-        message.to_owned().into()
+    fn from(_why: &str) -> Self {
+        Self::default()
     }
 }
 
@@ -87,7 +86,7 @@ pub(super) fn route_candidates(
     graph: &crate::graph::Node,
     mut candidates: crate::blocks::legacy::Candidates<'_>,
 ) -> Result<Result<crate::blocks::assembly::Placed, Refused>, String> {
-    let mut failure = Refused::from("No guarded Blocks drawing");
+    let mut failure = Refused::default();
     let mut reference = None;
     let mut best = None;
     let mut score = (usize::MAX, u64::MAX);
