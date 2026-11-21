@@ -60,6 +60,12 @@ browser and the backend draw and compare it, and only Bun code reads and writes 
 Widths (functions and values, ADR 0082): contract 20, rules 18, store 20. The contract and the
 store have no headroom: a new operation in either reopens the finding.
 
+The store's 20 rests on two keyed folds, and its honest width is 24. `changeArchitectureClaims`
+chooses claim, release or take-back, and `changeArchitecturePublication` chooses configure,
+publish or fetch, each by a literal that every caller passes. They are dispatchers, not deeper
+operations. No design that reaches 20 is known, and unfolding them needs a ceiling of 24. The
+owner decides which; until then the folds stay.
+
 ## Considered options
 
 A keyed getter of about 100 shapes, through which the store would build its own formats, only
