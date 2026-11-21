@@ -18,8 +18,8 @@ use crate::paint::standing::{standing_palette, standing_pin, subject, warning_ba
 use crate::paint::toggle::{quiet_rule, toggle_end};
 use crate::paint::tray::{Well, tab_view, well_body};
 use crate::sizes::{
-    BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP,
-    TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
+    BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
+    TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
 use archboard_geometry::Rect;
 use archboard_scene::drawing::TextRun;
@@ -197,7 +197,6 @@ pub(super) fn paint_measured_header(
 pub fn tab_width(frame_width: f64) -> f64 {
     frame_width - TAB_SHOULDER
 }
-
 
 #[cfg(test)]
 mod tests {
