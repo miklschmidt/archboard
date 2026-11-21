@@ -3,9 +3,8 @@ import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 // Live model discovery belongs to the public canonical runtime owner.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { LegacyBoardSchema, type LegacyBoard } from "@archboard/model/legacy-board";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
-import { readVaultConfiguration } from "@archboard/model/vault-policy";
+import { parseDocument, type LegacyBoard } from "@archboard/model-contract";
+import { relationshipKindsOf } from "#tests/runtime/support/relationship-kinds.ts";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 /**
  * Load static evidence fixtures for the language engine.
@@ -18,11 +17,12 @@ function evidence(vault: string, variant?: string, every = false) {
 	const states: Array<Omit<StateToCheck, "document"> & { document: LegacyBoard }> = [];
 	const skipped: CodeCheckSkip[] = [];
 	const drafts = new Set<string>();
-	const relationshipKinds =
-		readVaultConfiguration(vault).configuration.relationshipKinds ??
-		defaultSemanticPolicy().relationshipKinds;
+	const relationshipKinds = relationshipKindsOf(vault);
 	for (const file of readdirSync(vault).filter((name) => name.endsWith(".semantic.json"))) {
-		const parsed = LegacyBoardSchema.safeParse(JSON.parse(readFileSync(join(vault, file), "utf8")));
+		const parsed = parseDocument(
+			"legacyBoard",
+			JSON.parse(readFileSync(join(vault, file), "utf8")),
+		);
 		if (!parsed.success) {
 			skipped.push({ reason: "model-unreadable", model: file });
 			continue;

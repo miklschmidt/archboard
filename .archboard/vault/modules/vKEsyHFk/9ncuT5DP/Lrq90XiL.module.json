@@ -3,7 +3,7 @@
   "name": "Voice client",
   "kind": "module",
   "responsibility": "The package's browser client for a host page: one socket on the host's path with its tab session, one frozen state and the page's actions, and a new socket after a lost one",
-  "description": "createVoiceClient owns the socket, the tab session id, the transport and media owners and the state a page draws; an uncertain delivery stays visible as a failure. ./react reads it through VoiceClientProvider, useVoiceClient and useVoiceState. A host that owns its sockets, as Archboard does, builds on ./controllers instead.",
+  "description": "createVoiceClient({ url }) owns the socket, the tab session id, the transport and media owners and the state a page draws, and connects by itself; an uncertain delivery stays visible as a failure. It always retries, releases the socket and the microphone on pagehide and opens again on pageshow. Each approval is bound to the command intent of the server state that delivered it, and an answer to an approval from before the current socket is refused here. It keeps one transport for the page's life and its own reconnect ordering (ADR 0090). ./react reads it through useVoiceState. A host that owns its sockets, as Archboard does, builds on createSocketConversation instead.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/ui/voice-client/clients"

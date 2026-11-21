@@ -1,14 +1,13 @@
 // Requests for pane registration, canonical navigation, and conversation activation.
 
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
-import type { z } from "zod";
-import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
 	shownConversationPath,
 	type ShownConversationReply,
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
 import { inVault, requestJson } from "@archboard/server-requests";
+import type { ModelDocumentInput } from "@archboard/model-contract";
 
 /** What one pane tells the server it has in front of the human. */
 interface PaneReport {
@@ -90,7 +89,7 @@ function loadedBundle(): string | undefined {
 function showModel(
 	vault: string,
 	pane: string,
-	reading: z.input<ReturnType<typeof architecturePaneReadingSchema>>,
+	reading: ModelDocumentInput<"paneReading">,
 ): Promise<Pick<PaneModelRequest, "repository"> & { readonly model?: string }> {
 	return requestJson(inVault("/api/panes/show", vault), {
 		method: "POST",

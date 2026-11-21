@@ -16,7 +16,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import type * as CodeCheckRun from "#runtime/api/code-check-run.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import { git as fixtureGit, register, write } from "#tests/runtime/support/code-check/fixture.ts";
@@ -226,6 +226,8 @@ test("a C# project's exports are counted by kind, a static member as an export o
 		["Shop.Timing.Durations.JitterMs", "function"],
 		["Shop.Timing.Durations.Send", "function"],
 		["Shop.Timing.IWindow", "type"],
+		// An interface's method counts once, for the interface.
+		["Shop.Timing.IWindow.Span", "method"],
 		["Shop.Timing.Mode", "type"],
 		["Shop.Timing.Handler", "type"],
 		// A struct or a record with no method is a type that holds data.

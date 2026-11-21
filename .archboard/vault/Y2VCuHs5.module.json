@@ -1,0 +1,58 @@
+{
+  "order": 400,
+  "name": "Agent pane",
+  "kind": "ui",
+  "responsibility": "A pane's part of the agent: registers its current socket's conversation, says when it is presented fullscreen, and lays the voice over its picture while voice runs for it",
+  "groups": [
+    "agent",
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Y2VCuHs5",
+  "parent": "vKEsyHFk#C43O57X3",
+  "outgoing": [
+    {
+      "order": 27000,
+      "kind": "render",
+      "label": "over voice's pane, or the presented one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx",
+        "symbol": "VoiceSubtitles"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "order": 960079,
+      "kind": "render",
+      "label": "the voice box over the pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx",
+        "symbol": "VoiceBox"
+      },
+      "id": "vKEsyHFk#idQ75B2d",
+      "to": "vKEsyHFk#ZTh8T7Ym"
+    },
+    {
+      "order": 960084,
+      "kind": "call",
+      "label": "the panes' registry and the voice's words",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentPane.tsx",
+        "symbol": "usePaneVoice"
+      },
+      "id": "vKEsyHFk#An4DLYr1",
+      "to": "vKEsyHFk#1URZo0r1"
+    }
+  ]
+}

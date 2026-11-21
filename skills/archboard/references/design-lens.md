@@ -189,7 +189,7 @@ Clear each finding at its seam. Never silence one.
 - `INTERFACE_UNDECLARED` (information): a folder module that declares no interface, where some names are used only by another of its files, which keeps them from `EXPOSED_UNUSED`.
   It says how many of its names files outside it use, and how many only its own files import, naming the first five.
   Declare the interface with what callers use, in an entry file (`index.ts`, `__init__.py` or `mod.rs`) or in the package's `exports` in `package.json`, and the rest stays inside.
-- `INTERFACE_WIDE`: callers must learn more than 20 names of the module: its exported functions, classes, public methods and values, getters included. Exported types do not count.
+- `INTERFACE_WIDE`: callers must learn more than 20 names of the module: its exported functions, classes, public methods and values, getters included. Exported types do not count. In a folder module that declares no interface, only the names a file outside it uses count.
 - `MODULE_SHALLOW`: every export of the module that is not a type has `EXPOSED_VALUE`, `EXPOSED_VALUE_COMPUTED` or a pass-through finding, or the module has at least 8 such names with fewer than 4 pieces of logic behind each. A class stands for its public methods.
   The message gives the evidence of each ground. A getter over a constant narrows nothing.
 

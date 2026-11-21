@@ -3,13 +3,13 @@
   "name": "Voice session",
   "kind": "module",
   "responsibility": "The live voice this tab holds for one pane: availability, start and stop, mute, recovery",
-  "description": "Made by the application's VoiceStore for the pane voice runs for. The peer connection and the audio element belong to that pane's media owner, negotiated over the pane's workbench transport.",
+  "description": "Made by the agent root's voice store for the pane voice runs for. The peer connection and the audio element belong to the media owner of that pane's socket conversation, negotiated over the pane's hosted conversation. Whether the voice is audible is the package's own speaking predicate, which stays private.",
   "groups": [
     "voice"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/voice-session"
+    "path": "packages/agent-surfaces/src/ui/voice-session"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#0SRnYXnC",

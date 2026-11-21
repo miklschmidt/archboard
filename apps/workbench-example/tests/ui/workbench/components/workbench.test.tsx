@@ -6,7 +6,6 @@ import {
 	type VoiceClient,
 	type VoiceClientSnapshot,
 } from "@archboard/codex-realtime-voice/browser";
-import { VoiceClientProvider } from "@archboard/codex-realtime-voice/react";
 import { Workbench } from "#ui/workbench/components/Workbench.tsx";
 import { ApprovalCard } from "#ui/workbench/components/ApprovalCard.tsx";
 import { exampleSnapshot, commandApproval, settledApproval } from "#tests/ui/support/snapshot.ts";
@@ -35,7 +34,7 @@ type PageClient = VoiceClient & {
  * @returns The page client.
  */
 function pageClient(running = false, busy = false): PageClient {
-	const original = createVoiceClient({ socketPath: "/api/workbench" });
+	const original = createVoiceClient({ url: "/api/workbench" });
 	const state: VoiceClientSnapshot = {
 		...original.snapshot(),
 		connection: "connected",
@@ -62,11 +61,7 @@ function pageClient(running = false, busy = false): PageClient {
  * @returns The rendered page.
  */
 function renderPage(client: VoiceClient) {
-	return dom.render(
-		<VoiceClientProvider client={client}>
-			<Workbench checkout="/checkout" />
-		</VoiceClientProvider>,
-	);
+	return dom.render(<Workbench client={client} checkout="/checkout" />);
 }
 
 test("voice and work stops remain separate while another action is pending", async () => {

@@ -1,7 +1,7 @@
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import type { JSX } from "react";
-import { everyStep, stepWords, isMessage, type FlowStep } from "@archboard/model/flow";
-import type { Model, ModelFlow } from "@archboard/model/content";
+import { type FlowStep, readFlow } from "@archboard/model-contract";
+import type { Model, ModelFlow } from "@archboard/model-rules";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 
@@ -23,7 +23,8 @@ interface ModelFlowDetailsProps {
  */
 function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
 	const { brief, bare } = props;
-	const steps = everyStep(props.flow.steps).map((step, index) => ({ step, number: index + 1 }));
+	const { every, words } = readFlow(props.flow.steps);
+	const steps = every.map((step, index) => ({ step, number: index + 1 }));
 	return (
 		<section data-slot="model-flow-details" className="space-y-6">
 			{bare !== true && <h3 className="text-title font-semibold">{props.flow.name}</h3>}
@@ -35,7 +36,7 @@ function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
 				{steps
 					.filter(({ step }) => brief !== true || props.selection.ids.has(step.id))
 					.map(({ step, number }) => (
-						<FlowStepDetails key={step.id} step={step} number={number} {...props} />
+						<FlowStepDetails key={step.id} step={step} number={number} words={words} {...props} />
 					))}
 			</ol>
 		</section>
@@ -63,7 +64,11 @@ const STEP_GRID =
  * @returns One selectable step without altering flow order.
  */
 function FlowStepDetails(
-	props: ModelFlowDetailsProps & { step: FlowStep; number: number },
+	props: ModelFlowDetailsProps & {
+		step: FlowStep;
+		number: number;
+		words: ReadonlyMap<string, string>;
+	},
 ): JSX.Element {
 	const { step, selection } = props;
 	const pick = useModelPick(step.id, selection.select);
@@ -80,9 +85,9 @@ function FlowStepDetails(
 					{props.number}
 				</span>
 				<span data-slot="model-flow-step-words" className="min-w-0 [overflow-wrap:anywhere]">
-					{stepWords(step)}
+					{props.words.get(step.id)}
 				</span>
-				{isMessage(step) ? (
+				{step.kind !== "decision" && step.kind !== "loop" ? (
 					<MessageDetails step={step} model={props.model} reference={props.reference} />
 				) : (
 					<span className="hidden @min-[860px]/sheet:block" />

@@ -1,9 +1,6 @@
 import type { BrowserWorkbenchActions } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import type {
-	ControlledCodexSession,
-	SessionLoginParams,
-} from "@archboard/codex-app-server/session";
+import type { CodexSession, SessionLoginParams } from "@archboard/codex-app-server/session";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { ServerBrowserBindingState } from "#server/chat-conversations/gateway/services/browser-gateway.ts";
 import type { CodexWorkbenchComponents } from "#server/generation/services/workbench.ts";
@@ -15,7 +12,7 @@ type BrowserLogin = Parameters<BrowserWorkbenchActions["account"]["login"]>[0]["
 type BrowserLoginCancel = Parameters<BrowserWorkbenchActions["account"]["loginCancel"]>[0];
 
 /** What Codex answers a sign-in start with. */
-type AccountLoginResult = Awaited<ReturnType<ControlledCodexSession["accountLogin"]>>;
+type AccountLoginResult = Awaited<ReturnType<CodexSession["accountLogin"]>>;
 
 /** The answer that hands back a continuation to finish sign-in in a browser. */
 type PendingLoginResult = Extract<AccountLoginResult, Record<"loginId", unknown>>;
@@ -27,7 +24,7 @@ type LoginCompletedParams = Extract<
 >["params"];
 
 /** What one account read answered. */
-type AccountReadResponse = Awaited<ReturnType<ControlledCodexSession["accountRead"]>>;
+type AccountReadResponse = Awaited<ReturnType<CodexSession["accountRead"]>>;
 
 /**
  * A ChatGPT sign-in as the session takes it, carrying only the options the

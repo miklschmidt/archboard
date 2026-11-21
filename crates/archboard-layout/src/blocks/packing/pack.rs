@@ -7,7 +7,7 @@
 //! trunks in `slides.rs`.
 
 use crate::constants::BEND_RADIUS;
-use crate::ecma::{abs, js_max, max, min, or, sorted_by};
+use crate::ecma::{abs, max, min, or, sorted_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::scene::{Map, Set};
@@ -84,10 +84,10 @@ impl<'t> PackLayout<'t> {
             .unwrap_or(0);
         let insets = if ports > 0 {
             Insets {
-                side: js_max(
+                side: max([
                     insets.side,
                     (ports + 1) as f64 * LANE + 2.0 * TRUNK_CLEARANCE,
-                ),
+                ]),
                 ..insets
             }
         } else {
@@ -206,7 +206,7 @@ impl<'t> PackLayout<'t> {
             0.0
         };
         if header > 0.0 || ports > 0.0 || self.outer_top > 0.0 {
-            js_max(header, ports) + js_max(self.port_room(Side::Top), self.outer_top)
+            max([header, ports]) + max([self.port_room(Side::Top), self.outer_top])
         } else {
             0.0
         }
@@ -217,10 +217,10 @@ impl<'t> PackLayout<'t> {
     /// columns on one left edge, so their ports line up.
     fn place(&mut self, packing: &Packing) {
         self.gap = packing.gap.unwrap_or(PACK_GAP);
-        self.margin = js_max(
+        self.margin = max([
             packing.margin.unwrap_or(TRUNK_CLEARANCE),
             self.left_room(packing),
-        );
+        ]);
         self.header = least_header(self.block);
         self.outer_top = self.top_room(packing);
         let top = self.insets.top + self.head_room();
@@ -276,10 +276,10 @@ impl<'t> PackLayout<'t> {
         else {
             return;
         };
-        let width = js_max(
-            js_max(size.width, least.width) + 2.0 * side + self.margin,
+        let width = max([
+            max([size.width, least.width]) + 2.0 * side + self.margin,
             self.held,
-        );
+        ]);
         let edge = (side, width - side);
         let beside: Vec<f64> = self
             .block
@@ -473,10 +473,10 @@ impl<'t> PackLayout<'t> {
         } else {
             inner_points(self.block, &self.lines)
         };
-        let short = js_max(
+        let short = max([
             0.0,
             self.insets.side - min(inner.iter().map(|point| point.x)),
-        );
+        ]);
         if room <= self.gap && short == 0.0 {
             return (laid, packing.clone());
         }
@@ -484,7 +484,7 @@ impl<'t> PackLayout<'t> {
         again.settled.clone_from(&self.settled);
         again.held = self.held;
         let wider = Packing {
-            gap: Some(js_max(room, self.gap)),
+            gap: Some(max([room, self.gap])),
             margin: Some(packing.margin.unwrap_or(TRUNK_CLEARANCE) + short),
             ..packing.clone()
         };
@@ -503,12 +503,12 @@ impl<'t> PackLayout<'t> {
         let size = self.size_of(packing);
         let Insets { side, top, .. } = self.insets;
         let header = self.header.map_or(0.0, |header| header.size.width);
-        let width = js_max(
-            js_max(js_max(size.width, header), self.block.port_width(header))
+        let width = max([
+            max([max([size.width, header]), self.block.port_width(header)])
                 + 2.0 * side
                 + self.margin,
             self.held,
-        );
+        ]);
         let ended = self.block.has_bottom_port();
         let items = top + self.head_room();
         let low = items
@@ -537,7 +537,7 @@ impl<'t> PackLayout<'t> {
             })
             .chain(self.lines.values().flatten().copied());
         let (right, foot) = reach.fold((width, bottom), |(right, foot), point| {
-            (js_max(right, point.x + side), js_max(foot, point.y))
+            (max([right, point.x + side]), max([foot, point.y]))
         });
         let height = if ended {
             let boxes = self
@@ -547,10 +547,10 @@ impl<'t> PackLayout<'t> {
                 .map(|(_, one)| one.y + one.height);
             let points = inner_points(self.block, &self.lines);
             let body = max(boxes.chain(points.iter().map(|point| point.y)));
-            js_max(
+            max([
                 foot,
                 body + super::super::legacy::insets_of(self.block).side,
-            )
+            ])
         } else {
             foot + self.insets.bottom
         };

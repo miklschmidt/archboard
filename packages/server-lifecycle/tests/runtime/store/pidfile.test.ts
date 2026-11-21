@@ -11,10 +11,13 @@ import {
 import {
 	pidFilePath,
 	readPidFile,
+	recordServerPid,
+	releaseServerPid,
+	removePidFileOf,
 	sweepDeadPidFiles,
 	writePidFile,
 } from "#runtime/store/pidfile.ts";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 
 const HOME_VARIABLES = ["HOME", "USERPROFILE", "LOCALAPPDATA", "XDG_STATE_HOME"] as const;
 const CHILD_BOUND_MS = 5_000;
@@ -131,6 +134,43 @@ pidfileTest("a sweep removes the pidfiles of gone servers and keeps live ones", 
 	expect(readPidFile(4104)).toBe(process.pid);
 	expect(existsSync(join(directory, "unrelated.pid"))).toBeTrue();
 });
+
+pidfileTest(
+	"a release keeps a pidfile another process recorded and removes this process's own",
+	async () => {
+		isolatedState();
+		const other = Bun.spawn(["sleep", "30"]);
+		try {
+			// A concurrent start lost the port and never recorded it: the winner's file stays.
+			writePidFile(4201, other.pid);
+			releaseServerPid(4201);
+			expect(readPidFile(4201)).toBe(other.pid);
+
+			// This server recorded the port, and another took it once this one closed its socket.
+			recordServerPid(4202);
+			writePidFile(4202, other.pid);
+			releaseServerPid(4202);
+			expect(readPidFile(4202)).toBe(other.pid);
+
+			// The launcher removes a pidfile only for the server it knows.
+			removePidFileOf(4202, process.pid);
+			expect(readPidFile(4202)).toBe(other.pid);
+			removePidFileOf(4202, other.pid);
+			expect(existsSync(pidFilePath(4202))).toBeFalse();
+
+			// What this server recorded, it removes, once.
+			recordServerPid(4203);
+			releaseServerPid(4203);
+			expect(existsSync(pidFilePath(4203))).toBeFalse();
+			writePidFile(4203, other.pid);
+			releaseServerPid(4203);
+			expect(readPidFile(4203)).toBe(other.pid);
+		} finally {
+			other.kill();
+			await other.exited;
+		}
+	},
+);
 
 let originalUrl: string | undefined;
 let silentPort: Promise<{ port: number; stopServer: () => Promise<unknown> }> | undefined;

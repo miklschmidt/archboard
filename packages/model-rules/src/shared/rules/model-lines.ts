@@ -1,0 +1,104 @@
+// The lines a reading draws.
+//
+// One line joins a pair of drawn parts, with an arrow at each end when its
+// relationships run both ways. Every relationship has a line, except one between
+// an open module and a part that it holds, which the nesting already shows
+// (ADR 0052). A door's line ends on the part that owns it, and wears its words
+// beside that part.
+
+import type { ChangeKind } from "#shared/compare/rules/variants.ts";
+import { containersOf, overviewLines, type OverviewLine } from "#shared/rules/scope.ts";
+import type { VariantContent } from "@archboard/model-contract";
+
+type Standing = Readonly<Record<string, ChangeKind>>;
+type Edge = VariantContent["edges"][number];
+
+/**
+ * The visible modules at a relationship's two ends.
+ * @param edge The relationship.
+ * @param drawnAs The visible representative of each endpoint.
+ * @returns Both ends.
+ */
+function drawnEnds(edge: Edge, drawnAs: ReadonlyMap<string, string>): readonly [string, string] {
+	return [drawnAs.get(edge.from) ?? edge.from, drawnAs.get(edge.to) ?? edge.to];
+}
+
+/**
+ * One line joins a pair of drawn parts, and distinct comparison states stay separate lines.
+ * @param complete The full model content.
+ * @param edges Relationships included by this reading.
+ * @param endsOf Where each relationship's line runs.
+ * @param open Containers whose authored self-connections remain visible.
+ * @param standing Exact comparison states.
+ * @returns Every drawn line with all original relationships.
+ */
+function joinedLines(
+	complete: VariantContent,
+	edges: readonly Edge[],
+	endsOf: (edge: Edge) => readonly [string, string],
+	open: ReadonlySet<string>,
+	standing: Standing,
+): OverviewLine[] {
+	const groups = new Map<string, Edge[]>();
+	for (const edge of edges) {
+		const key = standing[edge.id] ?? "unchanged";
+		groups.set(key, [...(groups.get(key) ?? []), edge]);
+	}
+	return [...groups.values()]
+		.flatMap((group) => overviewLines({ ...complete, edges: group }, open, endsOf))
+		.toSorted((one, other) => one.line.order - other.line.order);
+}
+
+/**
+ * The lines a picture draws, which leave out each line between an open module and a part that it
+ * holds. A reading keeps those relationships in `allConnections`, so the panel and About still list
+ * them. A door that holds the open module is not open, so it keeps its line.
+ * @param complete The full model content.
+ * @param lines The joined lines of a reading.
+ * @param open The modules that the reading opens.
+ * @returns The lines to draw.
+ */
+function drawnLines(
+	complete: VariantContent,
+	lines: readonly OverviewLine[],
+	open: ReadonlySet<string>,
+): OverviewLine[] {
+	const parentOf = new Map(complete.nodes.map((node) => [node.id, node.parent]));
+	/**
+	 * Whether a module is open and holds a part, at any depth.
+	 * @param module The module.
+	 * @param part The part.
+	 * @returns True when the nesting already shows the line between them.
+	 */
+	const nested = (module: string, part: string) =>
+		open.has(module) && containersOf(parentOf, part).includes(module);
+	return lines.filter(({ line: { from, to } }) => !nested(from, to) && !nested(to, from));
+}
+
+/**
+ * The cards at the ends of some lines.
+ * @param lines The lines.
+ * @returns Both ends of each line.
+ */
+function lineEnds(lines: readonly OverviewLine[]): string[] {
+	return lines.flatMap(({ line }) => [line.from, line.to]);
+}
+
+/**
+ * The cards that a filter takes off a picture: each drew a line before the reader hid a kind, and
+ * draws none now. A card that never drew a line stays, and so does a frame, which holds parts.
+ * @param every The lines that the reading draws with no kind hidden.
+ * @param shown The lines that it draws.
+ * @param frames The modules that the picture draws as frames.
+ * @returns The cards to leave out.
+ */
+function strandedCards(
+	every: readonly OverviewLine[],
+	shown: readonly OverviewLine[],
+	frames: ReadonlySet<string>,
+): ReadonlySet<string> {
+	const kept = new Set([...lineEnds(shown), ...frames]);
+	return new Set(lineEnds(every).filter((id) => !kept.has(id)));
+}
+
+export { drawnEnds, drawnLines, joinedLines, strandedCards };

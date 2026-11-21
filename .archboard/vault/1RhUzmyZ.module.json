@@ -5,7 +5,7 @@
   "responsibility": "Writes and reads the signed checkpoint objects of the independent archive",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts"
+    "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#1RhUzmyZ",
@@ -17,8 +17,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
-        "symbol": "ArchitectureCheckpointSchema"
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "ArchitectureCheckpoint"
       },
       "id": "vKEsyHFk/0T9enjhi#1RheXFhl",
       "to": "vKEsyHFk#8539szQJ"
@@ -29,24 +29,37 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#WjLC9RCr",
       "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
     },
     {
-      "order": 160000,
+      "order": 106500,
       "kind": "call",
-      "label": "ArchitectureModuleEditSchema",
+      "label": "the identity of the checkout's repository",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
-        "symbol": "RecordedModuleEditSchema"
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "repoIdentityAt"
+      },
+      "id": "vKEsyHFk#tkEAQFva",
+      "to": "vKEsyHFk#7OhD3Pyx"
+    },
+    {
+      "order": 160000,
+      "kind": "call",
+      "label": "read the archive's records",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "requireDocument"
       },
       "id": "vKEsyHFk/0T9enjhi#2fr60kVw",
-      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+      "to": "vKEsyHFk#cxOsPb1d"
     },
     {
       "order": 171000,
@@ -55,7 +68,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/archive/store/model-archive-location.ts",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive-location.ts",
         "symbol": "archiveContext"
       },
       "id": "vKEsyHFk/0T9enjhi#QrFo5jjd",
@@ -68,7 +81,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "captureBoundSources"
       },
       "id": "vKEsyHFk/0T9enjhi#kn7RIsa6",
@@ -82,11 +95,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/archive/store/model-archive.ts",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
         "symbol": "checkpointBlobs"
       },
       "id": "vKEsyHFk/0T9enjhi#108U3Rhl",
       "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "the registered checkout a source names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "resolveRegisteredCheckout"
+      },
+      "to": "vKEsyHFk#T01An9xZ",
+      "id": "vKEsyHFk#5kwssESq"
     }
   ]
 }

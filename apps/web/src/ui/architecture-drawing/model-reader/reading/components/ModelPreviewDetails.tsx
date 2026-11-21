@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 /**
  * Keep legacy authority and exact input evidence visible beside the candidate.

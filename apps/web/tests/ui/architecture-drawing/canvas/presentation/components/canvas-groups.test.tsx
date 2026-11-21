@@ -6,7 +6,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import { announceModelChange } from "#ui/architecture-drawing/canvas/picture/reads/state/model-changes.ts";
-import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model-contract";
 import {
 	PANE_VAULT,
 	chooseVariantInShell,

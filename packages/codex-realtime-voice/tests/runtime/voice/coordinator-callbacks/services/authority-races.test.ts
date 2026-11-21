@@ -7,6 +7,7 @@ import {
 	link,
 	operationEvent,
 	contextEvent,
+	priorEpoch,
 } from "#tests/runtime/voice/coordinator-callbacks/services/support.ts";
 
 /**
@@ -87,16 +88,14 @@ describe("coordinator callback live authority", () => {
 			running: { status: "active" },
 			thread: { threadId: "codex:thread:s616e6f74686572" },
 			child: { childId: "codex:child:h33333333333333333333333333333333" },
-			epoch: {
-				epoch: "codex:epoch:h11111111111111111111111111111111.h44444444444444444444444444444444",
-			},
+			epoch: { epoch: "prior" },
 		} as const;
 		await Promise.all(
 			Object.entries(scenarios).map(async ([scenario, change]) => {
 				const h = harness(true);
 				const live = structuredClone(h.state.classification);
 				for (const [field, value] of Object.entries(change)) {
-					Reflect.set(live.link, field, value);
+					Reflect.set(live.link, field, value === "prior" ? priorEpoch(h.ids) : value);
 				}
 				h.state.classification = live;
 				const delivery = await h.callbacks.enqueue(contextEvent(h.ids));

@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import { LINE_MARKS, markCounts } from "#shared/render/rules/key-marks.ts";
-import type { DrawnPicture } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type DrawnPicture } from "@archboard/model-contract";
 import { exported } from "#tests/runtime/support/export-picture.ts";
 
 // A render answers each subject's appearance and the picture's key beside the

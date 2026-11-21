@@ -7,9 +7,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/clients/git-sync.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "schemaVersion": 1,
   "id": "vKEsyHFk#IvTUZ8Hk",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "outgoing": [
     {
       "order": 100,
@@ -19,10 +19,23 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workspace/src/runtime/clients/git-sync.ts",
-        "symbol": "gitMs"
+        "symbol": "durationMs"
       },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#jY19Jvh2"
+      "id": "vKEsyHFk#jY19Jvh2",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "order": 200,
+      "kind": "call",
+      "label": "the repository a remote names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/clients/git-sync.ts",
+        "symbol": "repoIdentityFor"
+      },
+      "id": "vKEsyHFk#TJgty8nf",
+      "to": "vKEsyHFk#7OhD3Pyx"
     }
   ]
 }

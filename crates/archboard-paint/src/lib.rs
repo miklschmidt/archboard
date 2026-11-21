@@ -1,7 +1,8 @@
 //! The painter (ADR 0071): a scene and its presentation go in, and one frame
 //! comes out. It holds no renderer of its own. `archboard-painter-wasm` gives
 //! it Vello on WebGPU and Vello GPU on WebGL2, and `cpu` gives it Vello on the
-//! CPU. `parts` keeps for both strip canvases what the GPU canvas keeps.
+//! CPU. The stage keeps for both strip canvases, through `parts`, what the GPU
+//! canvas keeps.
 
 mod between;
 mod canvas;
@@ -26,11 +27,8 @@ mod timing;
 mod traffic;
 mod warnings;
 
-pub use canvas::{Canvas, Count, Ink, Lens, PartKey};
-pub use clock::StageClock;
+pub use canvas::{Canvas, Ink, Layer, Lens, PartKey};
 pub use cpu::CpuCanvas;
-pub use flight::DiveWay;
 pub use palette::Theme;
-pub use parts::Keeper;
-pub use presentation::{Camera, Light, Marks};
-pub use stage::Stage;
+pub use presentation::{Camera, Presentation, Timed};
+pub use stage::{Arrival, Departure, Motion, Pace, Stage, Surface};

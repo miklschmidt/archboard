@@ -1,11 +1,13 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { DiagramGrammar } from "@archboard/model/views";
+import {
+	defaultSemanticPolicy,
+	type DiagramBox,
+	type DiagramGrammar,
+} from "@archboard/model-contract";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, spanFits } from "#tests/runtime/support/drawn-text.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const content = orderedFixture({
 	nodes: [

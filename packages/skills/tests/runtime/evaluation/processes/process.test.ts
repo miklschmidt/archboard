@@ -5,7 +5,6 @@ import path from "node:path";
 import { ownProcess, runProcess } from "#runtime/evaluation/processes/process.ts";
 import { startServer } from "#runtime/evaluation/run-world/processes/server.ts";
 import { readProcessObservation } from "@archboard/process/observation";
-import { skillEvalMs } from "@archboard/timing";
 
 const env = { PATH: process.env["PATH"] ?? "" };
 const cwd = process.cwd();
@@ -22,7 +21,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["true"],
 				cwd,
 				env,
-				timeoutMs: skillEvalMs("healthRequest"),
+				timeoutMs: 1000,
 			});
 			expect(result.exitCode).toBe(0);
 		}
@@ -32,7 +31,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			argv: ["sh", "-c", "sleep 60 & echo $!; echo problem >&2; exit 7"],
 			cwd,
 			env,
-			timeoutMs: skillEvalMs("healthRequest"),
+			timeoutMs: 1000,
 		});
 		expect(result).toMatchObject({
 			exitCode: 7,
@@ -52,7 +51,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["sh", "-c", "sleep 60 & echo $!; wait"],
 				cwd,
 				env,
-				timeoutMs: skillEvalMs("healthRequest"),
+				timeoutMs: 1000,
 				signal: controller.signal,
 				onStdout: (chunk) => {
 					descendant = Number(chunk.trim());
@@ -82,7 +81,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			stdout: "pipe",
 			stderr: "ignore",
 		});
-		const owner = await ownProcess(child, skillEvalMs("healthPoll"));
+		const owner = await ownProcess(child, 100);
 		try {
 			const reader = child.stdout.getReader();
 			const { value } = await reader.read();
@@ -107,7 +106,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 					argv: ["touch", output],
 					cwd,
 					env,
-					timeoutMs: skillEvalMs("healthRequest"),
+					timeoutMs: 1000,
 					signal: AbortSignal.abort(),
 				}),
 			).rejects.toBeInstanceOf(Error);
@@ -135,7 +134,7 @@ test("cancelled server readiness stops the exact fake server and its inherited c
 	try {
 		timer = setInterval(() => {
 			if (existsSync(pids)) controller.abort();
-		}, skillEvalMs("healthPoll"));
+		}, 100);
 		await expect(
 			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal),
 		).rejects.toBeInstanceOf(Error);

@@ -15,7 +15,7 @@
 // still runs or could not be read, the workhorse takes no new work. After it ends all work, no
 // coordinator turn that asked for a stop starts work either, so only a fresh request does.
 
-import { codexSessionMs } from "@archboard/timing";
+import { deadline, pause, type Clock } from "@archboard/timing";
 import type { ThreadId, TurnId } from "@archboard/codex-app-server/identity";
 import type { CoordinatorToolWorkhorse } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import { boundRemainingWork } from "#runtime/voice/coordinator/tools-and-work/tool-contract/protocol/tool-results.ts";
@@ -35,30 +35,6 @@ import {
 
 /** Where a workhorse's last stop stands, as inspection reports it. */
 type WorkhorseStopReport = ReturnType<CoordinatorToolWorkhorse["lastStop"]>;
-
-/** How a stop tells time and waits between its passes; tests pass their own. */
-interface WorkTreeStopClock {
-	readonly now: () => number;
-	readonly wait: (ms: number) => Promise<void>;
-}
-
-/** The clock of a running server. */
-const SYSTEM_CLOCK: WorkTreeStopClock = Object.freeze({
-	/**
-	 * The time now.
-	 * @returns Milliseconds since the epoch.
-	 */
-	now: () => Date.now(),
-	/**
-	 * Wait.
-	 * @param ms How long.
-	 */
-	wait: async (ms: number) => {
-		await new Promise<void>((resolve) => {
-			setTimeout(resolve, ms);
-		});
-	},
-});
 
 /**
  * The refusal of new work for a workhorse that is stopping, or whose stop did not end all work,
@@ -212,16 +188,21 @@ function ended(checkout: string, acted: boolean): WorkhorseStop {
  * @param checkout The workhorse's checkout.
  * @param root The workhorse thread.
  * @param session Reads and stops the tree.
- * @param clock Tells time and waits between passes.
+ * @param clock Tells time and waits between passes; the runtime's when none.
  * @returns What the stop observed.
  */
 async function settle(
 	checkout: string,
 	root: ThreadId,
 	session: WorkTreeStopSession,
-	clock: WorkTreeStopClock,
+	clock: Clock | undefined,
 ): Promise<WorkhorseStop> {
-	const deadline = clock.now() + codexSessionMs("workTreeStopSettle");
+	/**
+	 * The time now.
+	 * @returns Milliseconds on the stop's clock.
+	 */
+	const now = (): number => clock?.now() ?? Date.now();
+	const settleBy = deadline("codexSession.workTreeStopSettle", now());
 	const interrupted = new Set<TurnId>();
 	let acted = false;
 	let confirming = false;
@@ -237,14 +218,14 @@ async function settle(
 			continue;
 		}
 		confirming = false;
-		if (acted && clock.now() >= deadline) {
+		if (acted && now() >= settleBy) {
 			return stopOf(checkout, unsettledOutcome(remaining), remaining);
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the effects of a pass finish before the next pass reads
 		await act(session, tree, interrupted);
 		acted = true;
 		// oxlint-disable-next-line no-await-in-loop -- the next pass waits for Codex to report what the interrupts ended
-		await clock.wait(codexSessionMs("workTreeStopPoll"));
+		await pause("codexSession.workTreeStopPoll", { clock });
 	}
 }
 
@@ -258,7 +239,7 @@ async function settle(
 function observeStop(
 	workhorse: CodexWorkbenchWorkhorse,
 	session: WorkTreeStopSession,
-	clock: WorkTreeStopClock,
+	clock: Clock | undefined,
 ): Promise<WorkhorseStop> {
 	const { checkout } = workhorse;
 	const root = workhorse.components.workhorse.snapshot().threadId;
@@ -284,7 +265,7 @@ async function stopWorkTree(
 	workhorse: CodexWorkbenchWorkhorse,
 	session: WorkTreeStopSession,
 	askedBy: TurnId | null,
-	clock: WorkTreeStopClock = SYSTEM_CLOCK,
+	clock?: Clock,
 ): Promise<WorkhorseStop> {
 	const { state } = workhorse;
 	if (askedBy !== null) {
@@ -501,5 +482,4 @@ export {
 	stopReport,
 	stopWorkTree,
 	WorkhorseStopRefusal,
-	type WorkTreeStopClock,
 };

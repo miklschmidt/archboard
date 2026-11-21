@@ -17,12 +17,12 @@ import {
 	type ThreadLinkStatus,
 } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import {
-	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthority,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexThreadContextDelivery } from "#runtime/workhorses/thread-context/services/delivery.ts";
 import { createCodexThreadContextController } from "#runtime/workhorses/thread-context/services/controller.ts";
 import {
@@ -181,7 +181,7 @@ function unboundLink(): ThreadLinkSnapshot {
 	});
 }
 function createHarness(options: HarnessOptions = {}): Harness {
-	const authority = createIdentityAuthorities().identity;
+	const authority = testAuthorities().identity;
 	const childId = authority.validator.childId;
 	const epoch = authority.validator.epoch;
 	const threadId = authority.decoder.adoptThreadId("workhorse");

@@ -3,7 +3,7 @@
   "name": "History lens",
   "kind": "module",
   "responsibility": "Relates canonical modules to explicit local Git evidence",
-  "description": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed.",
+  "description": "The branch footprint can read the working tree as its head, so a gate run before a commit sees what the branch changed. rules/draft-ref.ts holds the draft refs, which only code-intel reads; they left the model with the split (ADR 0086).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/history-lens"
@@ -53,6 +53,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
       "to": "vKEsyHFk#NVlMWCWO"
+    },
+    {
+      "order": 70050,
+      "kind": "call",
+      "label": "the checkouts a vault reads, and its own",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/history-lens/operations/source-refs.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "id": "vKEsyHFk#BY6QrV1Z",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
     },
     {
       "order": 113000,

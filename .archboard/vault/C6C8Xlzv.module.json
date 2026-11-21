@@ -28,7 +28,7 @@
     {
       "order": 29000,
       "kind": "call",
-      "label": "Talk as a recording, in its own tab session",
+      "label": "Talk as a recording; whether voice can start; its words",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -36,7 +36,7 @@
         "symbol": "talk"
       },
       "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
-      "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
+      "to": "vKEsyHFk#1URZo0r1"
     },
     {
       "order": 30000,
@@ -63,19 +63,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
       "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
-    },
-    {
-      "order": 40000,
-      "kind": "event",
-      "label": "each change of the voice's transcript",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/recording/state/recorder.ts",
-        "symbol": "subscribe"
-      },
-      "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "name": "Voice session actions",
   "kind": "module",
   "responsibility": "Admits voice starts and awaits the host narrative before creating the existing realtime offer",
-  "description": "The host narrative adapter can prepare synchronously or asynchronously. A cancelled or replaced start cannot create an offer after preparation. The existing voice owner keeps lifecycle, cleanup, and command authority.",
+  "description": "The host narrative adapter can prepare synchronously or asynchronously. A cancelled or replaced start cannot create an offer after preparation. The existing voice owner keeps lifecycle, cleanup, and command authority. The start trace is read through voiceStartAttempts, which the agent hands out as voiceStartTrace; the host mounts its own route.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/voice"

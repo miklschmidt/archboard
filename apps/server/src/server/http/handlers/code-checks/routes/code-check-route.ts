@@ -41,7 +41,11 @@
 
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import {
+	queryString,
+	requireVault,
+	vaultOfRequest,
+} from "#server/http/middleware/request-vault.ts";
 import {
 	createCodeFindingsMemory,
 	type CodeFindingsMemory,

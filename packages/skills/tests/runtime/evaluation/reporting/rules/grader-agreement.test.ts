@@ -2,7 +2,7 @@
 // one section per grader and the agreement between them, and the version
 // pins are rewritten from what is on PATH without touching anything else.
 import { expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

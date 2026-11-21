@@ -7,7 +7,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import type { z } from "zod";
 import type { rememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";

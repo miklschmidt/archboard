@@ -1,6 +1,5 @@
 import type { BrowserDynamicApproval } from "#shared/dynamic-approval/schemas/approval.ts";
 import {
-	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type IdentityAuthorities,
@@ -8,6 +7,7 @@ import {
 	type TurnId,
 	type BrowserCommandId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserOwnerProjection } from "#server/projection/protocol/projection-contract.ts";
@@ -101,7 +101,7 @@ export interface GatewayHarnessOptions {
 }
 
 export function createGatewayHarness(
-	authorities: IdentityAuthorities = createIdentityAuthorities(),
+	authorities: IdentityAuthorities = testAuthorities(),
 	lifecycle?: BrowserLifecyclePort,
 	onProjectionDisconnect?: BrowserProjectionPort["onBrowserDisconnect"],
 	options: GatewayHarnessOptions = {},

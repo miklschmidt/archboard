@@ -13,11 +13,8 @@ import {
 	type FootprintPart,
 } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
-import {
-	currentVariant,
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-} from "@archboard/model/legacy-board";
+import { resolveVariant } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-symbol-history-"));
@@ -111,8 +108,8 @@ const bindings = [
 	),
 ] as const;
 
-const document = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const document = legacyBoard({
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "board1",
 	name: "Shop",
@@ -322,7 +319,7 @@ beforeAll(async () => {
 	for (let at = 0; at < 31; at += 1) write(`bulk/${at}.txt`, "bulk\n");
 	large = commit("change second resource in a large commit");
 	const lens: typeof LensModule = await import("#tests/runtime/support/history-lens/lens.ts");
-	const current = currentVariant(document);
+	const current = resolveVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	locality = LocalityAnswerSchema.parse(
 		await lens.createVariantLocality().read(scratch, document, current, new Date("2000-01-01")),

@@ -9,11 +9,8 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
-import {
-	currentVariant,
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-} from "@archboard/model/legacy-board";
+import { resolveVariant } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-project-history-"));
@@ -27,8 +24,8 @@ process.env["ARCHBOARD_REPOS"] = registry;
 let lens: typeof LensModule;
 let base = "";
 
-const document = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const document = legacyBoard({
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "board1",
 	name: "Shop",
@@ -129,7 +126,7 @@ afterAll(() => {
 });
 
 test("hotspots and coupling use the project directory and omit overlapping bindings", async () => {
-	const current = currentVariant(document);
+	const current = resolveVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = LocalityAnswerSchema.parse(
 		await lens.createVariantLocality().read(vault, document, current, new Date("2000-01-01")),
@@ -141,7 +138,7 @@ test("hotspots and coupling use the project directory and omit overlapping bindi
 });
 
 test("a footprint includes source-only and settings changes in a project directory", async () => {
-	const current = currentVariant(document);
+	const current = resolveVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({ vault, document, against: current, base }),

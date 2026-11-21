@@ -1,10 +1,11 @@
 import { relative } from "node:path";
 import { z } from "zod";
 import {
-	architectureModelReadSchema,
-	modelSnapshotSchema,
+	modelShape,
+	parseDocument,
 	type ArchitectureModelRead,
-} from "@archboard/model/contract";
+	type ModelDocument,
+} from "@archboard/model-contract";
 import { readArchitectureModelOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { checkSemanticVaultOnServer } from "#cli/server-access/clients/vault-check.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
@@ -104,12 +105,24 @@ async function readStates({ flow, ...selection }: z.output<typeof SelectionSchem
 }
 
 /**
+ * The snapshot a reading and its check make.
+ * @param raw The snapshot as assembled.
+ * @returns The snapshot, as its format holds it.
+ * @throws {z.ZodError} When the assembled snapshot is not one of its format.
+ */
+function snapshotOf(raw: unknown): ModelDocument<"modelSnapshot"> {
+	const parsed = parseDocument("modelSnapshot", raw);
+	if (!parsed.success) throw parsed.error;
+	return parsed.data;
+}
+
+/**
  * What the command answers about the file it wrote.
  * @param file The written file.
  * @param snapshot The snapshot in it.
  * @returns The receipt.
  */
-function receiptOf(file: string, snapshot: z.output<ReturnType<typeof modelSnapshotSchema>>) {
+function receiptOf(file: string, snapshot: ModelDocument<"modelSnapshot">) {
 	return {
 		success: true as const,
 		file,
@@ -149,11 +162,11 @@ const modelSnapshotContract = defineCommand({
 		z.strictObject({
 			success: z.literal(true),
 			file: z.string(),
-			format: modelSnapshotSchema().shape.format,
+			format: modelShape("modelSnapshot").shape.format,
 			revision: z.string(),
 			comparisonRevision: z.string().nullable(),
 		}),
-		architectureModelReadSchema().options[1],
+		modelShape("refusal"),
 	]),
 	output: {
 		cases: [
@@ -205,7 +218,7 @@ const modelSnapshotContract = defineCommand({
 		const check = await checkSemanticVaultOnServer(context.signal, checkTarget?.id);
 		// Loaded here, not with the command table: the icon set is large and only this command reads it.
 		const { policyIconPaths } = await import("@archboard/renderer/bun");
-		const snapshot = modelSnapshotSchema().parse({
+		const snapshot = snapshotOf({
 			format: 1,
 			cliVersion: packageVersion(),
 			...states,

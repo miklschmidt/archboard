@@ -58,6 +58,19 @@
       },
       "id": "vKEsyHFk#KpH0k8PU",
       "to": "vKEsyHFk#fEJJNr2X"
+    },
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "which checkout of a repository is chosen",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/repo/operations/language-server.ts",
+        "symbol": "checkoutOf"
+      },
+      "id": "vKEsyHFk#ALiDA38p",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
     }
   ]
 }

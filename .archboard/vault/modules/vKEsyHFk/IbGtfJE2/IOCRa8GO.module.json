@@ -3,7 +3,7 @@
   "name": "Evaluation inputs",
   "kind": "config",
   "responsibility": "The scenarios, fixtures, pins, grader settings, coverage and rubric, kept outside every skill package on purpose",
-  "description": "An author reads whatever the installed skill carries. Authors that could read the scenario, the fixture and the rubric they were being measured against read them. graders.json is left out of a batch's input digest: a grader is chosen when grading runs.",
+  "description": "An author reads whatever the installed skill carries. Authors that could read the scenario, the fixture and the rubric they were being measured against read them. graders.json is left out of a batch's input digest: a grader is chosen when grading runs. It also holds the frozen baseline skill, evals/baseline/archboard, that pins.json names as the arm the candidate is measured against; an author's read of it counts as a read of a skill package, not of the inputs.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "evals"

@@ -7,7 +7,7 @@
 // About page fetches no icon of its own, and a kind the picture does not draw
 // has no icon here and is drawn with a plain mark.
 
-import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model-contract";
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 
 /** How a relationship kind is drawn as a chip: its words, its line colour and its dash. */

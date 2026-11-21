@@ -17,7 +17,7 @@
 use rustc_hash::FxHashSet;
 
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
-use crate::ecma::{abs, js_max, js_min, number_key, round, sign, via_text};
+use crate::ecma::{abs, max, min, number_key, round, sign, via_text};
 use crate::geometry::{Point, Rect, inflate};
 use crate::track::chains::{LANE, REGION_CLEARANCE};
 use crate::track::scene::Map;
@@ -61,8 +61,8 @@ fn span_of(from: Point, to: Point) -> Span {
     Span {
         level,
         at: if level { from.y } else { from.x },
-        low: js_min(one, other),
-        high: js_max(one, other),
+        low: min([one, other]),
+        high: max([one, other]),
     }
 }
 
@@ -73,7 +73,7 @@ fn spans_of(points: &[Point]) -> impl Iterator<Item = Span> {
 
 /// How far along two spans share; negative when they are apart.
 fn shared(one: &Span, other: &Span) -> f64 {
-    js_min(one.high, other.high) - js_max(one.low, other.low)
+    min([one.high, other.high]) - max([one.low, other.low])
 }
 
 /// Whether two spans lie on one line and share some of it.
@@ -90,11 +90,11 @@ fn uncovered(span: Span, cover: &[Span]) -> Vec<Span> {
             .flat_map(|piece| {
                 [
                     Span {
-                        high: js_min(piece.high, one.low),
+                        high: min([piece.high, one.low]),
                         ..piece
                     },
                     Span {
-                        low: js_max(piece.low, one.high),
+                        low: max([piece.low, one.high]),
                         ..piece
                     },
                 ]
@@ -272,7 +272,7 @@ fn crowds(span: &Span, others: &[Span]) -> bool {
         if other.level == span.level {
             return beside(span, other);
         }
-        let near_end = js_min(abs(span.at - other.low), abs(span.at - other.high));
+        let near_end = min([abs(span.at - other.low), abs(span.at - other.high)]);
         crosses(span, other) && near_end < LANE + BEND_RADIUS
     })
 }

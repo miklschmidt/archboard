@@ -6,25 +6,26 @@ import type { CodexCoordinatorOptions } from "#runtime/voice/coordinator/protoco
 import type { CodexSpokenApprovalGateOptions } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/protocol/contract.ts";
 import type { CodexEpochStoreOptions } from "#runtime/epoch/store/contract.ts";
 import type { CodexProcessOptions } from "@archboard/codex-app-server/process";
-import type { CodexSessionOptions } from "@archboard/codex-app-server/session";
+import type {
+	CodexConnection,
+	CodexConnectionSessionOptions,
+	OpenedCodexSession,
+} from "@archboard/codex-app-server/connection";
 import type { CodexRealtimeAdapterOptions } from "#runtime/voice/realtime/services/contract.ts";
 import type { CodexWorkbenchDomain } from "#server/generation/protocol/domain.ts";
 import type { CodexThreadContextControllerOptions } from "#runtime/workhorses/thread-context/services/contract.ts";
 import type { CodexThreadLinkOptions } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
-import type {
-	CodexTransportOptions,
-	DynamicServerRequest,
-} from "@archboard/codex-app-server/transport";
+import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { WorkhorseOperationOptions } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import type { CodexWorkhorseStartOptions } from "#runtime/workhorses/workhorse-start/protocol/contract.ts";
 import type { WorkhorseQueueOptions } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
-import type { IdentityLedger, OperationId } from "@archboard/codex-app-server/identity";
+import type { OperationId } from "@archboard/codex-app-server/identity";
 import type { CodexWorkbenchGatewayOptions } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import type { VoiceNarrativeAdapter } from "#server/voice/services/narrative.ts";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
-	CodexWorkbenchGenerationInput,
+	CodexWorkbenchChildInput,
 } from "#server/owner/services/lifecycle.ts";
 import type { CodexWorkbenchSharedComponents } from "#server/generation/services/lifecycle.ts";
 import type {
@@ -38,16 +39,19 @@ import type {
 /** One component of the graph, by the name the graph knows it under. */
 type ComponentName = keyof CodexWorkbenchComponents;
 
+/** One factory per component; the session's also hands back the control its owner drives. */
 type CodexWorkbenchComponentFactories = {
-	readonly [Name in ComponentName]: (
+	readonly [Name in Exclude<ComponentName, "session">]: (
 		created: Readonly<Partial<CodexWorkbenchComponents>>,
 	) => CodexWorkbenchComponents[Name];
+} & {
+	readonly session: (created: Readonly<Partial<CodexWorkbenchComponents>>) => OpenedCodexSession;
 };
 
 interface ComposeCodexWorkbenchGenerationOptions {
 	readonly factories: CodexWorkbenchComponentFactories;
-	readonly identityLedger: IdentityLedger;
-	readonly ownsTransport?: boolean;
+	/** The connection to the child this generation runs over; its owner owns the transport. */
+	readonly connection: CodexConnection;
 	readonly activate?: boolean;
 	readonly hooks: CodexWorkbenchGenerationHooks;
 	readonly assertActivationCurrent?: () => void;
@@ -131,10 +135,7 @@ interface ProductionCodexWorkbenchBindings {
 		readonly manifestHash: string;
 	}[];
 	readonly epoch: ComponentBuilder<CodexEpochStoreOptions>;
-	readonly transport: ComponentBuilder<Omit<CodexTransportOptions, "identity">>;
-	readonly session: ComponentBuilder<
-		Omit<CodexSessionOptions, "transport" | "identity" | "listenerOwnership">
-	>;
+	readonly session: ComponentBuilder<CodexConnectionSessionOptions>;
 	readonly threadLink: ComponentBuilder<Omit<CodexThreadLinkOptions, "session" | "epoch">>;
 	readonly approvals: ComponentBuilder<
 		Omit<CodexApprovalBrokerOptions, "transport" | "identity" | "listenerOwnership">
@@ -165,8 +166,8 @@ interface ProductionCodexWorkbenchBindings {
 /** What installing the one production workbench for a server lifetime needs. */
 interface InstallProductionCodexWorkbenchOptions {
 	readonly process: CodexProcessOptions;
-	readonly bindings: (input: CodexWorkbenchGenerationInput) => ProductionCodexWorkbenchBindings;
-	readonly hooks: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchGenerationHooks;
+	readonly bindings: (input: CodexWorkbenchChildInput) => ProductionCodexWorkbenchBindings;
+	readonly hooks: (input: CodexWorkbenchChildInput) => CodexWorkbenchGenerationHooks;
 }
 
 export type {

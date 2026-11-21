@@ -7,8 +7,8 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 // it, so "two nodes removed" and "four subjects removed" describe the same
 // proposal, and a check may state either.
 
-import { comparedWith, compareVariants } from "@archboard/model/comparison";
-import type { SemanticVariant } from "@archboard/model/legacy-board";
+import type { SemanticVariant } from "@archboard/model-contract";
+import { comparedWith, compareVariants } from "@archboard/model-rules";
 import {
 	finding,
 	located,

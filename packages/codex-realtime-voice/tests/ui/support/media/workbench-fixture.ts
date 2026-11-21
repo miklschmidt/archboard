@@ -1,21 +1,18 @@
 // A complete, schema-parsed workbench snapshot for the media owner tests,
-// minted through the real identity authorities so no test asserts a plain
+// branded through the browser model so no test asserts a plain
 // string into an identity type.
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { browserIdentities } from "#tests/shared/support/browser-identities.ts";
 import { BROWSER_IDLE_SPOKEN_APPROVAL } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 
-const authorities = createIdentityAuthorities();
-const authority = authorities.identity;
-const model = createCodexBrowserModel(authorities);
-const childId = model.ChildIdSchema.parse(authority.validator.childId);
-const epoch = model.ChildEpochSchema.parse(authority.validator.epoch);
-const threadId = model.ThreadIdSchema.parse(authority.decoder.adoptThreadId("thread-media"));
-const coordinatorThreadId = model.ThreadIdSchema.parse(
-	authority.decoder.adoptThreadId("coordinator-media"),
-);
+const ids = browserIdentities();
+const model = createCodexBrowserModel();
+const childId = model.ChildIdSchema.parse(ids.child);
+const epoch = model.ChildEpochSchema.parse(ids.epoch);
+const threadId = model.ThreadIdSchema.parse(ids.thread("thread-media"));
+const coordinatorThreadId = model.ThreadIdSchema.parse(ids.thread("coordinator-media"));
 
 /** The voice states the fixture can publish. */
 type FixtureVoiceState = BrowserSnapshot["voice"]["state"];
@@ -88,7 +85,7 @@ function workbenchSnapshot(
 function mediaLease(expiresAtMs: number): BrowserCommandLease {
 	return model.BrowserCommandLeaseSchema.parse({
 		kind: "command_lease",
-		commandId: authority.issuer.mintBrowserCommandId(),
+		commandId: ids.browserCommand(),
 		chatId: "chat-media",
 		childId,
 		epoch,

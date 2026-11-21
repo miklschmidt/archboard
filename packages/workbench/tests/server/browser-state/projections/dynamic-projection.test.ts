@@ -2,13 +2,10 @@ import { expect, test } from "bun:test";
 
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { type DynamicToolApprovalRequest } from "#runtime/dynamic-tools/protocol/contract.ts";
-import { codexApprovalExpiresAt } from "@archboard/timing";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
-import {
-	createIdentityAuthorities,
-	IdentityValidationError,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
+import type { IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectDynamicApproval } from "#server/browser-state/projections/dynamic-approval-projection.ts";
 import {
 	type DynamicApprovalOwnerRequest,
@@ -90,7 +87,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"a".repeat(64)}`,
 		createdAtMs: 100,
-		expiresAtMs: codexApprovalExpiresAt(100),
+		expiresAtMs: 100 + 90_000,
 		privatePath: PRIVATE_PATHS[0],
 	};
 	const create = ownerRequest(createSource);
@@ -120,7 +117,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"b".repeat(64)}`,
 		createdAtMs: 200,
-		expiresAtMs: codexApprovalExpiresAt(200),
+		expiresAtMs: 200 + 90_000,
 		privatePath: PRIVATE_PATHS[1],
 	};
 	const fork = ownerRequest(forkSource);
@@ -146,7 +143,7 @@ function ownerViews(authorities: IdentityAuthorities): readonly DynamicApprovalO
 		},
 		effectHash: `sha256:${"c".repeat(64)}`,
 		createdAtMs: 300,
-		expiresAtMs: codexApprovalExpiresAt(300),
+		expiresAtMs: 300 + 90_000,
 		privatePath: PRIVATE_PATHS[2],
 	};
 	const send = ownerRequest(sendSource);
@@ -192,7 +189,7 @@ function selfForkOwner(authorities: IdentityAuthorities): DynamicApprovalOwnerVi
 		},
 		effectHash: `sha256:${"d".repeat(64)}`,
 		createdAtMs: 400,
-		expiresAtMs: codexApprovalExpiresAt(400),
+		expiresAtMs: 400 + 90_000,
 	});
 	return {
 		request,
@@ -223,7 +220,7 @@ function projectApprovals(
 }
 
 test("the projection closes all three dynamic approval presentations", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const owners = ownerViews(authorities);
 	const projected = projectApprovals(authorities, owners);
 	expect(projected.map((approval) => approval.effect.tool)).toEqual([
@@ -300,7 +297,7 @@ test("the projection closes all three dynamic approval presentations", () => {
 });
 
 test("self-fork projection keeps the requested and effective boundaries distinct", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const owner = selfForkOwner(authorities);
 	const effect = projectApprovals(authorities, [owner])[0]?.effect;
 	if (effect?.tool !== "fork_thread") {
@@ -314,10 +311,10 @@ test("self-fork projection keeps the requested and effective boundaries distinct
 });
 
 test("effective fork boundaries refuse canonical wrong-domain and unissued identities", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const model = createCodexBrowserModel(authorities);
 	const owner = ownerViews(authorities)[1]!;
-	const foreignAuthorities = createIdentityAuthorities();
+	const foreignAuthorities = testAuthorities();
 	const boundaries = [
 		{
 			value: String(authorities.identity.decoder.adoptThreadId("wrong-boundary-domain")),
@@ -334,11 +331,7 @@ test("effective fork boundaries refuse canonical wrong-domain and unissued ident
 			authorities.identity.decoder.parseTurnId(boundary.value);
 			throw new Error("invalid boundary unexpectedly parsed");
 		} catch (error) {
-			expect(error).toBeInstanceOf(IdentityValidationError);
-			if (!(error instanceof IdentityValidationError)) {
-				throw error;
-			}
-			expect(error.code).toBe(boundary.code);
+			expect(readCodexFailure(error)).toMatchObject({ kind: "identity", code: boundary.code });
 		}
 		if (owner.request.effect.tool !== "fork_thread") {
 			throw new Error("other-fork fixture changed tools");
@@ -354,8 +347,12 @@ test("effective fork boundaries refuse canonical wrong-domain and unissued ident
 				},
 			},
 		};
-		expect(() => projectDynamicApproval(model, authorities.identity.decoder, invalidOwner)).toThrow(
-			IdentityValidationError,
-		);
+		let refused: unknown;
+		try {
+			projectDynamicApproval(model, authorities.identity.decoder, invalidOwner);
+		} catch (error) {
+			refused = error;
+		}
+		expect(readCodexFailure(refused)).toMatchObject({ kind: "identity", code: boundary.code });
 	}
 });

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
+import { type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	parseTabSessionId,
 	workhorseLinkKey,
@@ -74,7 +75,7 @@ const SHOP = "/work/shop";
 
 /** A store of two tab sessions, whose scopes and workhorse threads the test can reach. */
 function twoSessions() {
-	const identity = createIdentityAuthorities();
+	const identity = testAuthorities();
 	const { decoder } = identity.identity;
 	const events: string[] = [];
 	const responses: { readonly owner: string; readonly response: unknown }[] = [];
@@ -96,8 +97,10 @@ function twoSessions() {
 		// Each stop poll passes at once, so no case waits on the system clock.
 		stopClock: {
 			now: () => now,
-			wait: async (ms) => {
+			after: (ms, run) => {
 				now += ms;
+				run();
+				return () => {};
 			},
 		},
 		resolveCheckout: (named) => named,

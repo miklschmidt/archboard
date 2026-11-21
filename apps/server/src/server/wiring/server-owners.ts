@@ -1,6 +1,4 @@
-import { createAgentActivity } from "#server/panes/announcements/state/agent-activity.ts";
-import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
-import { serverLifecycleMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
 	type ServerMutationLease,
@@ -11,7 +9,7 @@ import { createCodeCheck } from "@archboard/code-intel/code-check-run";
 
 /** Admits mutation requests while the server is running and drains them when it stops. */
 const mutationAdmission = createServerMutationAdmission({
-	drainTimeoutMs: serverLifecycleMs("mutationDrain"),
+	drainTimeoutMs: durationMs("serverLifecycle.mutationDrain"),
 });
 
 /** The lease each admitted mutation request holds, so its later work can be tracked. */
@@ -23,7 +21,4 @@ const checkoutWork = createCheckoutWorkOwner();
 /** The server's one code check, so its facts and its memory of behind serve every route that reads code. */
 const codeCheck = createCodeCheck();
 
-/** Owns canonical activity subscriptions, snapshots, and idle timers. */
-const agentActivity = createAgentActivity(broadcastEverywhere);
-
-export { admittedMutations, checkoutWork, codeCheck, mutationAdmission, agentActivity };
+export { admittedMutations, checkoutWork, codeCheck, mutationAdmission };

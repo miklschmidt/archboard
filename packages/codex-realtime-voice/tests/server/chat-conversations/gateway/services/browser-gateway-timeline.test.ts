@@ -2,11 +2,8 @@ import { TEST_CONTEXT_CODEC, testContextFixture } from "#tests/runtime/support/h
 import { expect, test } from "bun:test";
 
 import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-	type ThreadId,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities, type ThreadId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { type BrowserProjectionContext } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import { type CodexTimelineProjectionInput } from "#server/projection/protocol/projection-contract.ts";
@@ -38,7 +35,7 @@ function executableLink(
 }
 
 test("server gateway binds exact connection reads and retires it at disconnect", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("gateway-timeline-thread");
 	const link = executableLink(authorities, threadId);
 	const connection = {};
@@ -201,7 +198,7 @@ function timelineFor(threadId: ThreadId): CodexTimelineProjectionInput {
 }
 
 test("a chat's snapshot carries its own tab's coordinator turns, never another tab's", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const workhorseLink = executableLink(authorities, decoder.adoptThreadId("workhorse-thread"));
 	const coordinatorThreads = new Map([

@@ -18,7 +18,6 @@ import {
 } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import { createCodexCoordinatorTools } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/services/dispatcher.ts";
 import {
-	createIdentityAuthorities,
 	type DynamicToolCallId,
 	type IdentityAuthority,
 	type IdentityAuthorities,
@@ -28,6 +27,7 @@ import {
 	type ThreadId,
 	type TurnId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	bindingFor,
 	readyAuthority,
@@ -127,7 +127,7 @@ const CHECKOUT = "/work/payments";
  * @returns The fixture.
  */
 function fixture(
-	authorities: IdentityAuthorities = createIdentityAuthorities(),
+	authorities: IdentityAuthorities = testAuthorities(),
 	checkouts: readonly string[] = [CHECKOUT],
 ): CoordinatorToolsFixture {
 	const identity = authorities.identity;

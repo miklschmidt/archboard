@@ -1,0 +1,17 @@
+{
+  "order": 960410,
+  "name": "Speaking level",
+  "kind": "function",
+  "responsibility": "isSpeakingLevel: whether a voice's output level is speech, which the voice session and the voice keys read; private to the package",
+  "groups": [
+    "voice"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/agent-surfaces/src/ui/workbench-client/voice/rules/speaking.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#K1BARYL1",
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": []
+}

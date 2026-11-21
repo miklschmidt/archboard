@@ -1,6 +1,6 @@
 import { useCallback, type JSX, type MouseEvent } from "react";
 import { Button, cn } from "@archboard/ui-kit/components";
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { EmptyList } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/components/EmptyList.tsx";

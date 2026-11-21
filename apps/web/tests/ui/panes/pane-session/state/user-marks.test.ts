@@ -5,11 +5,9 @@ import {
 	createReadingPublisher,
 	type PaneReading,
 } from "#ui/panes/pane-session/state/pane-reading.ts";
-import { paneMs } from "@archboard/timing";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
 
 // Which parts of a report are said to be the user's own doing (ADR 0034). What these catch is
 // the feedback loop of 2026-09-20 coming back: a change nobody's hand made being told to the
@@ -25,7 +23,7 @@ afterEach(() => {
 
 /** Advance the debounce and drain the send and rejection promises. */
 async function settled(): Promise<void> {
-	jest.advanceTimersByTime(paneMs("selectionDebounce"));
+	jest.advanceTimersByTime(150);
 	await Promise.resolve();
 	await Promise.resolve();
 }

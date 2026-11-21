@@ -4,9 +4,9 @@ use std::collections::BTreeMap;
 use std::future::{Future, Ready, ready};
 use std::task::{Context, Poll, Waker};
 
+use archboard_geometry::{Point, Rect};
 use archboard_layout::{Content, Engine, Measured, Solver, Unsolved, draw, lay_out_picture};
 use archboard_scene::drawing::{MeasuredNode, Painted};
-use archboard_scene::geometry::{Point, Rect};
 use serde_json::{Value, json};
 
 /// Every solve laid out here, with the core's own Graphviz.

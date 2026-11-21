@@ -5,10 +5,10 @@
   "responsibility": "The subjects and the context that a pane reports about what it shows",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/shared/protocol/pane-context.ts"
+    "path": "packages/model-contract/src/shared/protocol/pane-context.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#qOrTIIKT",
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "parent": "vKEsyHFk#QsBnI8Ja",
   "outgoing": []
 }

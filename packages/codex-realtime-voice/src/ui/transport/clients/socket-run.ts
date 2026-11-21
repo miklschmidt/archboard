@@ -2,7 +2,7 @@
 // the snapshot it has reduced so far. The transport owns at most one run at a
 // time; a retired run answers nothing and touches nothing.
 
-import { codexSessionMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import {
 	BrowserWorkbenchTransportError,
@@ -19,7 +19,7 @@ import {
 	parseBrowserResponse,
 	type BrowserWorkbenchResponseEnvelope,
 } from "#ui/wire/clients/wire-results.ts";
-import { BrowserWorkbenchWireError } from "#ui/wire/clients/wire-identity.ts";
+import { BrowserWorkbenchWireError } from "#shared/browser/schemas/wire-identity.ts";
 
 const SOCKET_OPEN = 1;
 const SOCKET_CLOSING = 2;
@@ -227,7 +227,7 @@ function sendRequest(run: SocketRun, ports: SocketRunPorts, spec: RequestSpec): 
 	run.pending.set(requestId, pending);
 	pending.timer = setTimeout(
 		() => expirePending(run, requestId, pending),
-		codexSessionMs("requestSettlement"),
+		durationMs("codexSession.requestSettlement"),
 	);
 	try {
 		run.socket.send(JSON.stringify(request));

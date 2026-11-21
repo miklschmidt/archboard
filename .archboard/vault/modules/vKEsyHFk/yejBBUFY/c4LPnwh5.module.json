@@ -3,7 +3,7 @@
   "name": "Shell",
   "kind": "ui",
   "responsibility": "Connects repository navigation, local agents, and canonical panes",
-  "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Model ownership and level controls are retired.",
+  "description": "The desktop frame keeps the repository navigator, local agent controls, conversation, and canonical panes. Repository actions open current modules through the shared router. Unmigrated repositories show their migration state. Model ownership and level controls are retired. The resizable columns are its own (components/Resizable.tsx, ADR 0093): the navigator and the side column are its only callers. A notice's GitHub action is a Button with an href, a plain link.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/shell"

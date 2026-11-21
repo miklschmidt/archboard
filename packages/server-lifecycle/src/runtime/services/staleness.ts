@@ -20,7 +20,7 @@
 
 import fs from "fs";
 import path from "path";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 // When this server process loaded its module graph. A guarded restart moves it
 // forward; editing source in a running process does not.
@@ -202,4 +202,15 @@ function staleFrontend(loadedBuild: string | null | undefined): FrontendState | 
 	return state.stale ? state : undefined;
 }
 
-export { type SourceState, sourceState, frontendBuild, frontendState, staleFrontend };
+/**
+ * Which code this server runs: whether its source is the source on disk now, and which build the
+ * frontend has been rebuilt to. A long-lived process has no symptom of its own for either, so the
+ * health check asks (TASK-056). It stats every source file the process loaded, so a tab's question
+ * goes to `staleFrontend` instead.
+ * @returns The source state and the entry script of the built frontend, or null when none is built.
+ */
+function serverCodeState(): { source: SourceState; frontendBuild: string | null } {
+	return { source: sourceState(), frontendBuild: frontendBuild() };
+}
+
+export { type SourceState, frontendBuild, serverCodeState, staleFrontend };

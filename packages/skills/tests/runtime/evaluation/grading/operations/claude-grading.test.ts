@@ -4,7 +4,7 @@
 // per-call usage, refuses a wrong version, and files a call that read outside
 // the workspace or returned no answer as an error.
 import { afterEach, expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

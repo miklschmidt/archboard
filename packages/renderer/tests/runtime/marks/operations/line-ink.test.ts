@@ -12,9 +12,8 @@ import { describe, expect, test } from "bun:test";
 import { renderArchitecture, renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { APCA, lightnessContrast, seenIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, type DiagramTheme } from "@archboard/model-contract";
 import { themeColor } from "#runtime/theme/store/source.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** Three neutral lines of each emphasis inside a container, and one exchange. */
 const CONTENT = orderedFixture({

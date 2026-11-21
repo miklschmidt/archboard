@@ -6,7 +6,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { readRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe } from "@archboard/render-recipe";
 import { gitOutput } from "#cli/commands/vault/embeds/clients/git-output.ts";
 type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 

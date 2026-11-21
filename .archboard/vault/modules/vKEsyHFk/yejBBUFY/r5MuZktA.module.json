@@ -3,7 +3,7 @@
   "name": "Walkthrough capture",
   "kind": "module",
   "responsibility": "Keeps the ordinary reader while one immutable narrative opens and offers explicit restart",
-  "description": "Preview playback uses the same capture, including exact original state and checkpoint. A bookmark does not replace the narrative definition or its captured target.",
+  "description": "Preview playback uses the same capture, including exact original state and checkpoint. A bookmark does not replace the narrative definition or its captured target. It reads its playback target through Walkthrough query (TASK-653.14).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelWalkthroughReader.tsx"
@@ -37,7 +37,7 @@
         "symbol": "modelWalkthroughQuery"
       },
       "id": "vKEsyHFk/yejBBUFY#tEO0oHDD",
-      "to": "vKEsyHFk#guvtYApo"
+      "to": "vKEsyHFk#DGjSdYTW"
     },
     {
       "order": 91000,

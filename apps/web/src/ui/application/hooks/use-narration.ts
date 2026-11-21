@@ -5,26 +5,17 @@
 // pane is active and whatever voice is doing. Talk sets up whatever is missing,
 // so a narration needs no voice to be ready first. It cannot start while a
 // session runs, because that session was started for something else, and the
-// panes say so instead of withdrawing the control. Which pane voice is started
-// for, and when, is the narrator's (narrator.ts).
+// panes say so instead of withdrawing the control. A narration asked for in a
+// pane that is not active makes that pane active first; the agent starts it
+// once the voice has followed.
 
 import { useEffect, useMemo, useState } from "react";
 
-import { voiceMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
-import type { AgentSetup } from "@archboard/workbench/agent";
-import { narrate } from "#ui/application/clients/agent-setup-ports.ts";
-import { createNarrator, offerNarration } from "#ui/application/rules/narrator.ts";
+import { useAgentVoice, type VoiceStage } from "@archboard/agent-surfaces";
+import { offerNarration } from "#ui/application/rules/narration-offer.ts";
 import type { WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
-import type { AgentVoiceView, VoiceStage } from "@archboard/workbench/voice";
-
-/** What narrating reads of the agent over the panes. */
-interface NarrationSources {
-	/** The agent setup, which Talk starts voice through. */
-	readonly setup: Pick<AgentSetup, "snapshot" | "talk">;
-	/** The voice session, which follows one pane, or null while its pane has none. */
-	readonly voice: { readonly paneId: string } | null;
-}
 
 /** What every pane is offered. */
 interface Narration {
@@ -67,7 +58,7 @@ function useVoiceStarting(stage: VoiceStage): boolean {
 		if (connecting || settled) return undefined;
 		const timer = setTimeout(() => {
 			setSettled(true);
-		}, voiceMs("firstStepSettle"));
+		}, durationMs("voice.firstStepSettle"));
 		return (): void => {
 			clearTimeout(timer);
 		};
@@ -77,43 +68,26 @@ function useVoiceStarting(stage: VoiceStage): boolean {
 
 /**
  * Narration for every pane.
- * @param workbench What narrating reads of the agent over the panes.
- * @param voice The voice as the agent dock shows it.
- * @param activePaneId The active pane.
  * @param selectPane Make a pane the active one.
  * @returns What every pane is offered; the same object until voice starts or ends.
  */
-function useNarration(
-	workbench: NarrationSources,
-	voice: AgentVoiceView,
-	activePaneId: string,
-	selectPane: (paneId: string) => void,
-): Narration {
-	const { setup } = workbench;
-	const idle = voice.stage === "idle";
-	const held = voice.stage === "idle" ? null : HELD_WORDS[voice.stage];
-	const starting = useVoiceStarting(voice.stage);
-	const followed = workbench.voice?.paneId ?? null;
-	const narrator = useMemo(
-		() =>
-			createNarrator({
-				/**
-				 * Start voice for the pane it follows.
-				 * @param walkthrough The walkthrough's id.
-				 */
-				talk: (walkthrough) => {
-					narrate(setup, walkthrough);
-				},
-				select: selectPane,
-			}),
-		[setup, selectPane],
-	);
-	useEffect(() => {
-		narrator.sync({ active: activePaneId, followed, idle });
-	}, [narrator, activePaneId, followed, idle]);
+function useNarration(selectPane: (paneId: string) => void): Narration {
+	const { stage, talk } = useAgentVoice();
+	const held = stage === "idle" ? null : HELD_WORDS[stage];
+	const starting = useVoiceStarting(stage);
 	return useMemo(
-		() => ({ forPane: offerNarration(narrator, held, starting) }),
-		[narrator, held, starting],
+		() => ({
+			forPane: offerNarration(
+				(paneId, walkthrough) => {
+					if (held !== null) return;
+					selectPane(paneId);
+					talk(paneId, walkthrough);
+				},
+				held,
+				starting,
+			),
+		}),
+		[talk, selectPane, held, starting],
 	);
 }
 

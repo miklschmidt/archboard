@@ -3,7 +3,7 @@
   "name": "Reading stage",
   "kind": "ui",
   "responsibility": "Mounts a reader for the current or a retained reading, and holds its surface, its tree and its shared controls",
-  "description": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording.",
+  "description": "Shows the reading on screen. A branch reading names its ref in the heading, follows no live feed, and offers no edit, claim, publication or walkthrough recording. It reads a vault's resources again through invalidateModelQueries, and retries failed drawings through Reading preparation (TASK-653.14).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx"
@@ -24,6 +24,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
       "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "order": 69100,
+      "kind": "call",
+      "label": "retry the drawings that failed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
+        "symbol": "retryFailedDrawings"
+      },
+      "id": "vKEsyHFk#lyU6KWmI",
+      "to": "vKEsyHFk#65P5jbnZ"
     },
     {
       "order": 70016,
@@ -78,6 +91,14 @@
       "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
     },
     {
+      "order": 970000,
+      "kind": "call",
+      "label": "in Code mode, list the files and show the open one",
+      "emphasis": "normal",
+      "id": "vKEsyHFk#VelaZ2cn",
+      "to": "vKEsyHFk#2EpLFgGU"
+    },
+    {
       "order": 980280,
       "kind": "render",
       "label": "a narrative beside the reader",
@@ -102,14 +123,6 @@
       },
       "id": "vKEsyHFk#3ooGgy80",
       "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
-    },
-    {
-      "order": 970000,
-      "kind": "call",
-      "label": "in Code mode, list the files and show the open one",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#VelaZ2cn",
-      "to": "vKEsyHFk#2EpLFgGU"
     }
   ]
 }

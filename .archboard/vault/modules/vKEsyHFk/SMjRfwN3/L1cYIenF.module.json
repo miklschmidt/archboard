@@ -15,7 +15,7 @@
       "order": 18000,
       "kind": "call",
       "label": "which Chromium",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "description": "The caller imports @archboard/headless-chromium (TASK-653.16). The target implements the exported launchHeadlessChromium, DevTools methods or discoveredChromiumPath, so it is the entry point the call reaches.",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

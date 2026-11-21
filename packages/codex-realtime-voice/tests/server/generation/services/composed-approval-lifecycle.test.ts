@@ -20,7 +20,7 @@ test("composed child exit publishes one settled approval before closing presente
 	fixture.replaceApprovals(approvals);
 	fixture.replaceGateway(gateway);
 	const generation = await composeCodexWorkbenchGeneration({
-		identityLedger: fixture.identityLedger,
+		connection: fixture.connection,
 		factories: fixture.factories,
 		hooks: fixture.hooks,
 	});

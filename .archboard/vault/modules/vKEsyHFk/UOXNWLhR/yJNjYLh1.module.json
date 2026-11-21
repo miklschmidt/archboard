@@ -3,13 +3,13 @@
   "name": "Picture supply",
   "kind": "module",
   "responsibility": "Caches and draws captured diagram content through the local renderer",
-  "description": "Picture identity follows its captured content. Canonical drawing reuses the picture cache while retained readers supply their original content through an explicit provider.",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
-  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
-  "outgoing": [],
+  "description": "Picture identity follows its captured content. Canonical drawing reuses the picture cache while retained readers supply their original content through an explicit provider. It holds the model reader's drawing query, Reading preparation (TASK-653.14).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply"
-  }
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "outgoing": []
 }

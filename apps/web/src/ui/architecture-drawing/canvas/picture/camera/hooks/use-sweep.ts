@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from "react";
 
-import { exploringMs, reachHopDelayMs } from "@archboard/timing";
+import { durationMs, reachHopDelayMs } from "@archboard/timing";
 import type { StagedPicture } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-picture-transition.ts";
 import { stageOf } from "#ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts";
 
@@ -47,7 +47,11 @@ function useSweep(
 		 */
 		const wait = (id: string): number => reachHopDelayMs(reach?.get(id) ?? 1);
 		const delays = Object.fromEntries([...newIn(light, before)].map((id) => [id, wait(id)]));
-		stage.sweep(delays, exploringMs("sweepShortest"), exploringMs("sweepLongest"));
+		stage.sweep(
+			delays,
+			durationMs("exploring.sweepShortest"),
+			durationMs("exploring.sweepLongest"),
+		);
 		return () => {
 			stage.clearSweep();
 		};

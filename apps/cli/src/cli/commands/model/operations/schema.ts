@@ -4,26 +4,8 @@
 // skill has to carry them.
 
 import { z } from "zod";
-import {
-	architectureModelReadSchema,
-	architectureInitializationRequestSchema,
-	architectureModuleEditSchema,
-	architectureImportRequestSchema,
-	architectureMigrationRequestSchema,
-} from "@archboard/model/contract";
-import { vaultConfigurationSchema } from "@archboard/model/vault-policy";
+import { describeModelSchema, type ModelSchemaName } from "@archboard/model-contract";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
-
-const model = architectureModelReadSchema().options[0];
-
-/** The JSON that `model edit` reads. `--doing` gives the doing line, so the JSON leaves it out. */
-const [correction, proposal, description, batch] = architectureModuleEditSchema().options;
-const ModelEditRequestSchema = z.union([
-	correction.omit({ doing: true }),
-	proposal.omit({ doing: true }),
-	description.omit({ doing: true }),
-	batch.omit({ doing: true }),
-]);
 
 /** The schemas, by the names that the skill uses. */
 const SCHEMA_NAMES = [
@@ -35,44 +17,7 @@ const SCHEMA_NAMES = [
 	"model-import",
 	"model-migrate",
 	"vault-config",
-] as const;
-type SchemaName = (typeof SCHEMA_NAMES)[number];
-
-/** Each schema by its name: its title and the Zod authority it renders. */
-const SCHEMAS: Readonly<Record<SchemaName, readonly [string, z.ZodType]>> = {
-	"model-manifest": ["Canonical model manifest", model.shape.manifest],
-	module: ["Canonical module definition", model.shape.modules.element.omit({ file: true })],
-	flows: ["Independent flow collection", model.shape.collections.element.omit({ file: true })],
-	"model-initialize": [
-		"Canonical initialization intent",
-		architectureInitializationRequestSchema(),
-	],
-	"model-edit": ["Claimed canonical edit intent", ModelEditRequestSchema],
-	"model-import": ["Portable canonical installation", architectureImportRequestSchema()],
-	"model-migrate": ["Explicit legacy migration intent", architectureMigrationRequestSchema()],
-	"vault-config": ["Shared semantic vocabulary", vaultConfigurationSchema()],
-};
-
-/**
- * One JSON Schema, as an editor or a validator reads it: the input that the runtime accepts.
- * @param name The schema's name.
- * @returns The JSON Schema.
- */
-function jsonSchema(name: SchemaName): Record<string, unknown> {
-	const [title, schema] = SCHEMAS[name];
-	return {
-		$id: `https://archboard.local/schemas/${name}.schema.json`,
-		title,
-		...z.toJSONSchema(schema, { io: "input" }),
-		"x-archboard": {
-			runtimeObligations: [
-				"The complete canonical candidate must be coherent.",
-				"Continuing identities remain stable.",
-				"A write requires its complete revision, intent, and claim.",
-			],
-		},
-	};
-}
+] as const satisfies readonly ModelSchemaName[];
 
 const SchemaListSchema = z.object({
 	schemas: z.array(z.object({ name: z.enum(SCHEMA_NAMES), title: z.string() })),
@@ -125,11 +70,9 @@ const modelSchemaContract = defineCommand({
 	 * @returns The list or the schema.
 	 */
 	async handler(input) {
-		if (input.name !== undefined) return { result: jsonSchema(input.name) };
-		return {
-			result: { schemas: SCHEMA_NAMES.map((name) => ({ name, title: SCHEMAS[name][0] })) },
-		};
+		if (input.name !== undefined) return { result: describeModelSchema(input.name) };
+		return { result: { schemas: describeModelSchema() } };
 	},
 });
 
-export { SCHEMA_NAMES, jsonSchema, modelSchemaContract };
+export { SCHEMA_NAMES, modelSchemaContract };

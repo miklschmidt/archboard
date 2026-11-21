@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
 import { type EpochStageInput } from "#runtime/epoch/store/contract.ts";
 
@@ -20,7 +20,7 @@ describe("codex epoch settlement", () => {
 		mkdirSync(codexHome, { recursive: true, mode: 0o700 });
 		mkdirSync(sqliteHome, { recursive: true, mode: 0o700 });
 		try {
-			const authority = createIdentityAuthorities().identity;
+			const authority = testAuthorities().identity;
 			const store = createCodexEpochStore({
 				rootDirectory: root,
 				codexHome,
@@ -70,7 +70,7 @@ describe("codex epoch settlement", () => {
 		mkdirSync(codexHome, { recursive: true, mode: 0o700 });
 		mkdirSync(sqliteHome, { recursive: true, mode: 0o700 });
 		try {
-			const authority = createIdentityAuthorities().identity;
+			const authority = testAuthorities().identity;
 			const store = createCodexEpochStore({
 				rootDirectory: root,
 				codexHome,
@@ -122,7 +122,7 @@ describe("codex epoch settlement", () => {
 });
 
 function input(
-	authority: ReturnType<typeof createIdentityAuthorities>["identity"],
+	authority: ReturnType<typeof testAuthorities>["identity"],
 	operationId: string,
 	kind: string,
 	expected?: EpochStageInput["expected"],

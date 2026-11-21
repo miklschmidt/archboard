@@ -6,7 +6,7 @@ import {
 	type JSX,
 	type ReactNode,
 } from "react";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";

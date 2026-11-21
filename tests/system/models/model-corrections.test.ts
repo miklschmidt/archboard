@@ -2,13 +2,10 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import {
-	architectureModelReadSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-correction-surface-"));
@@ -58,7 +55,8 @@ async function post(path: string, input: object) {
 test("CLI and HTTP share explicit corrections, audit comparisons, refusal status and exact retry", async () => {
 	if (server === undefined) throw new Error("The server did not start.");
 	const query = new URLSearchParams({ vault });
-	const current = architectureModelReadSchema().parse(
+	const current = parsedReply(
+		"read",
 		await (await fetch(`${server.base}/api/architecture/model?${query}`)).json(),
 	);
 	if (!current.success) throw new Error(JSON.stringify(current));
@@ -71,7 +69,8 @@ test("CLI and HTTP share explicit corrections, audit comparisons, refusal status
 			subjects: ["Shop", "Current"],
 		})
 	).json();
-	const created = architectureModuleEditResultSchema().parse(
+	const created = parsedReply(
+		"edit",
 		await (
 			await post("module", {
 				target,
@@ -96,7 +95,8 @@ test("CLI and HTTP share explicit corrections, audit comparisons, refusal status
 			subjects: ["Shop", "Shop#Gateway", selectedTarget.state],
 		})
 	).json();
-	const shelved = architectureModuleEditResultSchema().parse(
+	const shelved = parsedReply(
+		"edit",
 		await (
 			await post("module", {
 				target: selectedTarget,
@@ -155,11 +155,11 @@ test("CLI and HTTP share explicit corrections, audit comparisons, refusal status
 	});
 	expect(cli.status, cli.stderr).toBe(0);
 	const { vault: _address, ...raw } = JSON.parse(cli.stdout);
-	const corrected = architectureModuleEditResultSchema().parse(raw);
+	const corrected = parsedReply("edit", raw);
 	if (!corrected.success) throw new Error(JSON.stringify(corrected));
 	const retry = await post("module", { ...request, doing: "Correct the recorded routing" });
 	expect(retry.status).toBe(200);
-	expect(architectureModuleEditResultSchema().parse(await retry.json())).toEqual(corrected);
+	expect(parsedReply("edit", await retry.json())).toEqual(corrected);
 	const stale = await post("module", {
 		...request,
 		operationId: crypto.randomUUID(),
@@ -182,7 +182,7 @@ test("CLI and HTTP share explicit corrections, audit comparisons, refusal status
 	});
 	expect(comparison.status, comparison.stderr).toBe(0);
 	const { vault: _comparisonVault, ...compared } = JSON.parse(comparison.stdout);
-	expect(architectureModelReadSchema().parse(compared)).toMatchObject({
+	expect(parsedReply("read", compared)).toMatchObject({
 		success: true,
 		selectedState: { lifecycle: "shelved", corrections: [{ checkpoint: corrected.checkpoint.id }] },
 		comparison: { corrections: { selected: [{ previous: shelved.checkpoint.id }], against: [] } },

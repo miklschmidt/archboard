@@ -3,6 +3,7 @@
   "name": "Workbench example",
   "kind": "app",
   "responsibility": "An independent host on Bun.serve that uses only the voice package's public entries, without a model or vault",
+  "description": "Its page makes one createVoiceClient({ url }), which connects by itself and lets go of its socket and microphone while the page is hidden, and reads it through useVoiceState(client); its own page-lifecycle client and the provider are gone (TASK-653.12).",
   "groups": [
     "agent"
   ],
@@ -35,7 +36,7 @@
     {
       "order": 90000,
       "kind": "call",
-      "label": "createVoiceClient, read through the React hooks",
+      "label": "createVoiceClient, read through useVoiceState(client)",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

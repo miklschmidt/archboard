@@ -2,12 +2,12 @@ import path from "path";
 import { recordError } from "@archboard/telemetry/record";
 import type { Express, NextFunction, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
-import { installation } from "@archboard/workspace/installation";
-import { frontendState, sourceState } from "@archboard/server-lifecycle/server-host";
+import { installation } from "@archboard/machine/installation";
+import { serverCodeState } from "@archboard/server-lifecycle/server-process";
 import { mutationAdmission } from "#server/wiring/server-owners.ts";
 import { serverPhase } from "#server/start-stop/lifecycle/server-startup.ts";
 import { FRONTEND_DIRECTORY } from "#server/http/frontend/store/frontend-directory.ts";
-import { admittedClientCount } from "@archboard/workbench/panes";
+import { admittedClientCount } from "@archboard/workbench/server";
 
 /**
  * Serve the frontend's page.
@@ -57,8 +57,7 @@ function healthRoute(_req: Request, res: Response): void {
 		// Whether this process is running the source that is on disk now, and
 		// which build the frontend has been rebuilt to. A long-lived process has no
 		// symptom of its own for either, so it has to be asked (TASK-056).
-		source: sourceState(),
-		frontendBuild: frontendState(null).current,
+		...serverCodeState(),
 	});
 }
 
@@ -80,6 +79,23 @@ function syncStatusRoute(_req: Request, res: Response): void {
 }
 
 /**
+ * The refusal of a renderer core that cannot draw, known by its code alone, so the caller reads
+ * the command that rebuilds the core. Its diagnostic is where the CLI prints a code.
+ * @param err The error.
+ * @returns The refusal, or undefined for any other error.
+ */
+function coreBuildRefusal(err: Error) {
+	const code: unknown = "code" in err ? err.code : undefined;
+	if (typeof code !== "string" || !code.startsWith("CORE_BUILD_")) return undefined;
+	return {
+		success: false,
+		code,
+		error: err.message,
+		diagnostics: [{ code, message: "The server cannot draw with its renderer core." }],
+	};
+}
+
+/**
  * Answer an error no route handled, and record it for usage telemetry (ADR 0079).
  * @param err The error.
  * @param req The request.
@@ -98,7 +114,7 @@ function unhandledErrorRoute(err: Error, req: Request, res: Response, _next: Nex
 	if (res.headersSent || res.destroyed) {
 		return;
 	}
-	res.status(500).json({ success: false, error: "Internal server error" });
+	res.status(500).json(coreBuildRefusal(err) ?? { success: false, error: "Internal server error" });
 }
 
 /**

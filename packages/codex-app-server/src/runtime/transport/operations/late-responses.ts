@@ -1,6 +1,7 @@
 import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
-import { decodeJsonRpcError, decodeResponseEnvelope } from "#runtime/protocol/protocol-decoder.ts";
+import { decodeFrameBody, type ResponseFrame } from "#runtime/protocol/frames.ts";
 import type { ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
+import type { ResponsePayloads } from "#runtime/protocol/protocol-decoder.ts";
 import { redactRemoteError } from "#runtime/transport/clients/transport-errors.ts";
 import type { RequestTombstone } from "#runtime/transport/clients/transport-internals.ts";
 import type {
@@ -9,7 +10,6 @@ import type {
 	TransportLateResponseFor,
 } from "#runtime/transport/clients/transport-types.ts";
 import { cloneAndFreeze, jsonByteLength } from "#runtime/transport/operations/public-values.ts";
-import { responseKind } from "#runtime/protocol/wire.ts";
 
 type RetainedTombstone = Readonly<
 	Omit<RequestTombstone, "correlation"> & {
@@ -51,55 +51,39 @@ function lateContext(tombstone: RetainedTombstone): LateContext {
 /**
  * Builds the record for a late result, redacting a result larger than the record bound.
  * @param context The shared fields.
- * @param value The response frame.
+ * @param result The decoded result.
  * @returns The result, redacted, or malformed record.
  */
-function resultRecord(context: LateContext, value: Readonly<Record<string, unknown>>): LateRecord {
+function resultRecord(context: LateContext, result: ResponsePayloads[ResponseMethod]): LateRecord {
 	try {
-		const result = cloneAndFreeze(decodeResponseEnvelope(context.method, value).result);
-		const resultBytes = jsonByteLength(result);
+		const retained = cloneAndFreeze(result);
+		const resultBytes = jsonByteLength(retained);
 		return resultBytes > CODEX_APP_SERVER_CAPACITY.retention.lateResponseRecordBytes
 			? {
 					...context,
 					kind: "redacted",
 					payload: { reason: "retained-size", byteLength: resultBytes },
 				}
-			: { ...context, kind: "result", payload: result };
+			: { ...context, kind: "result", payload: retained };
 	} catch {
 		return { ...context, ...MALFORMED };
 	}
 }
 
 /**
- * Builds the record for a late JSON-RPC error.
+ * Builds the late record a response frame deserves: its result, its JSON-RPC error, or
+ * malformed when it carries neither or does not decode for the tombstone's method.
  * @param context The shared fields.
- * @param value The response frame.
- * @returns The error record, or a malformed record when the error does not decode.
- */
-function errorRecord(context: LateContext, value: Readonly<Record<string, unknown>>): LateRecord {
-	try {
-		const { error } = decodeJsonRpcError(value, context.method);
-		return { ...context, kind: "error", payload: redactRemoteError(error) };
-	} catch {
-		return { ...context, ...MALFORMED };
-	}
-}
-
-/**
- * Builds the late record a response frame deserves.
- * @param context The shared fields.
- * @param value The response frame.
+ * @param frame The response frame.
  * @returns The record classified by what the frame carried.
  */
-function lateRecord(context: LateContext, value: Readonly<Record<string, unknown>>): LateRecord {
-	switch (responseKind(value)) {
-		case "result":
-			return resultRecord(context, value);
-		case "error":
-			return errorRecord(context, value);
-		default:
-			return { ...context, ...MALFORMED };
-	}
+function lateRecord(context: LateContext, frame: ResponseFrame): LateRecord {
+	if (frame.outcome === "malformed") return { ...context, ...MALFORMED };
+	const body = decodeFrameBody(frame, context.method);
+	if (!body.ok) return { ...context, ...MALFORMED };
+	return body.value.outcome === "result"
+		? resultRecord(context, body.value.result)
+		: { ...context, kind: "error", payload: redactRemoteError(body.value.error) };
 }
 
 /**
@@ -126,7 +110,7 @@ function boundedRecord(late: LateRecord, context: LateContext): LateRecord {
 
 interface LateResponseStore {
 	readonly values: readonly TransportLateResponse[];
-	readonly retain: (tombstone: RetainedTombstone, value: Readonly<Record<string, unknown>>) => void;
+	readonly retain: (tombstone: RetainedTombstone, frame: ResponseFrame) => void;
 }
 
 /**
@@ -143,11 +127,11 @@ function createLateResponseStore(
 	/**
 	 * Retains a late response against its tombstone and raises the issue.
 	 * @param tombstone The settled request's tombstone.
-	 * @param value The response frame.
+	 * @param frame The response frame.
 	 */
-	const retain = (tombstone: RetainedTombstone, value: Readonly<Record<string, unknown>>): void => {
+	const retain = (tombstone: RetainedTombstone, frame: ResponseFrame): void => {
 		const context = lateContext(tombstone);
-		const late = boundedRecord(lateRecord(context, value), context);
+		const late = boundedRecord(lateRecord(context, frame), context);
 		if (values.length >= CODEX_APP_SERVER_CAPACITY.retention.lateResponses) {
 			values.shift();
 		}

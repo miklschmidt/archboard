@@ -3,11 +3,11 @@
 
 use std::collections::BTreeMap;
 
+use archboard_geometry::{Curve, Point, Rect, curve_through};
 use archboard_scene::drawing::{
     ArchitectureDrawing, DrawingEdge, DrawingNode, EdgeFacts, NodeFacts, PlacedLabel,
     ReadingDirection,
 };
-use archboard_scene::geometry::{Curve, Point, Rect, curve_through};
 
 use super::choosing::Placed;
 use super::content::Content;

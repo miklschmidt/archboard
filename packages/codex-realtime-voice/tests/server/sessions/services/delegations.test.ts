@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities, type TurnId } from "@archboard/codex-app-server/identity";
+import { type TurnId } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	coordinatorTurnsShownIn,
 	MAX_DELEGATIONS,
@@ -11,7 +12,7 @@ import {
 } from "#server/sessions/services/delegations.ts";
 
 test("a delegate's workhorse turn is recorded against the coordinator turn that asked, and a steer's is not", () => {
-	const { decoder } = createIdentityAuthorities().identity;
+	const { decoder } = testAuthorities().identity;
 	const delegations = new Map<TurnId, TurnId>();
 	const record = recordDelegations(delegations);
 	const coordinatorTurnId = decoder.adoptTurnId("voice-turn");
@@ -28,7 +29,7 @@ test("a delegate's workhorse turn is recorded against the coordinator turn that 
 });
 
 test("a session remembers its newest delegations only", () => {
-	const { decoder } = createIdentityAuthorities().identity;
+	const { decoder } = testAuthorities().identity;
 	const delegations = new Map<TurnId, TurnId>();
 	const record = recordDelegations(delegations);
 	const coordinatorTurnId = decoder.adoptTurnId("voice-turn");
@@ -48,7 +49,7 @@ const SHOP = "/work/shop";
 const DOCS = "/work/docs";
 
 test("a coordinator turn shows where it gave work, else where the tab was when it started, and an unknown turn everywhere", () => {
-	const { decoder } = createIdentityAuthorities().identity;
+	const { decoder } = testAuthorities().identity;
 	const homes = new Map<TurnId, CoordinatorTurnHome>();
 	const [gave, spoke, idle, unknown] = ["gave", "spoke", "idle", "unknown"].map((raw) =>
 		decoder.adoptTurnId(raw),
@@ -96,7 +97,7 @@ test("a coordinator turn shows where it gave work, else where the tab was when i
 });
 
 test("a session remembers where its newest coordinator turns show only", () => {
-	const { decoder } = createIdentityAuthorities().identity;
+	const { decoder } = testAuthorities().identity;
 	const homes = new Map<TurnId, CoordinatorTurnHome>();
 	const record = recordGivenWork(homes, PAYMENTS);
 	const turnIds = Array.from({ length: MAX_DELEGATIONS + 5 }, (_, index) =>

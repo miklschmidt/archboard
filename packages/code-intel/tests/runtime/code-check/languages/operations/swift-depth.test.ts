@@ -103,10 +103,12 @@ afterAll(() => {
 test("a Swift target's exports count by kind: a protocol, an alias and a struct or an enum with no method are types, an enum with a method in an extension is a class, and a class counts its methods but its initializer and hash(into:)", () => {
 	const timing = depthByModule(answer).get("Timing");
 	expect(timing?.languages).toEqual(["swift"]);
-	expect(timing?.exports).toEqual({ functions: 4, classes: 2, methods: 3, values: 2, types: 3 });
+	// A protocol's requirement counts once, for the protocol.
+	expect(timing?.exports).toEqual({ functions: 4, classes: 2, methods: 4, values: 2, types: 3 });
 	expect(timing?.names.map(({ name, kind }) => `${name} ${kind}`).toSorted()).toEqual(
 		[
 			"Clock type",
+			"Clock.now method",
 			"Millis type",
 			"Mode class",
 			"Mode.label method",

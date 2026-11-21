@@ -2,7 +2,7 @@
   "order": 30000,
   "name": "Session lifecycle",
   "kind": "module",
-  "responsibility": "Keeps a pane session mounted and publishes its React state",
+  "responsibility": "Keeps a pane session mounted and publishes its React state and its current socket's hosted conversation",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/pane-session/hooks/use-pane-session.ts"

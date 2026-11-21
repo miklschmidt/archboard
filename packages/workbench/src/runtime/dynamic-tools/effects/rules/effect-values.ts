@@ -1,15 +1,18 @@
 import type { LogicalToolCallCorrelation } from "@archboard/codex-app-server/identity";
 import {
-	canonicalDynamicApprovalJson,
-	dynamicApprovalHashForCanonicalJson,
+	createCodexBrowserModel,
 	type DynamicApprovalCanonicalEffect,
-} from "@archboard/codex-realtime-voice/schemas";
+} from "@archboard/codex-realtime-voice/contract";
 import {
 	CodexDynamicToolsError,
 	type DynamicApprovalIdentity,
 	type DynamicImmutableEffect,
 	type DynamicMutationToolName,
 } from "#runtime/dynamic-tools/protocol/contract.ts";
+
+/** The voice wire's canonical JSON and hash of an approval's identity and effect. */
+const { canonicalDynamicApprovalJson, dynamicApprovalHashForCanonicalJson } =
+	createCodexBrowserModel();
 
 /** The longest visual summary an approval request carries. */
 const SUMMARY_MAX_UTF8_BYTES = 512;

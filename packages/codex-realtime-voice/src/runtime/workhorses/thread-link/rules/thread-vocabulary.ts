@@ -1,6 +1,6 @@
 import { ADDITIONAL_CONTEXT_POLICY } from "#runtime/workhorses/instructions/rules/context-policy.ts";
 import type { SessionThread } from "@archboard/codex-app-server/session";
-import { isCodexThreadStatusType } from "@archboard/codex-app-server/contract";
+import { codexFieldSchema } from "@archboard/codex-app-server/contract";
 import {
 	CodexThreadLinkError,
 	type ThreadLinkAllowedSource,
@@ -36,7 +36,7 @@ function assertPolicyConformance(): void {
 		reasons.size !== REASON_PRECEDENCE.length ||
 		NON_EXECUTABLE_STATUS_SET.size !== 1 ||
 		!NON_EXECUTABLE_STATUS_SET.has("systemError") ||
-		[...NON_EXECUTABLE_STATUS_SET].some((status) => !isCodexThreadStatusType(status))
+		[...NON_EXECUTABLE_STATUS_SET].some((status) => !isThreadLinkStatus(status))
 	) {
 		throw new Error(
 			"additional-context thread-link policy has drifted from its classifier contract",
@@ -136,7 +136,7 @@ function sourceOf(thread: SessionThread): ThreadLinkSource {
  * @returns True for a known status type.
  */
 function isThreadLinkStatus(value: unknown): value is ThreadLinkStatus {
-	return isCodexThreadStatusType(value);
+	return codexFieldSchema("threadStatusType").safeParse(value).success;
 }
 
 /**

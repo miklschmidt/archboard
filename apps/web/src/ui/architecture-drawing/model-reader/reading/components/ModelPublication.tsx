@@ -1,14 +1,14 @@
 import { useCallback, useState, type JSX } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
-import { invalidateVaultQueries } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
+import { invalidateModelQueries } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
 	architecturePublicationQuery,
 	changeArchitecturePublication,
 	type Destination,
 	type PublicationCommand,
 	type Publication,
-} from "#ui/architecture-drawing/model-reader/access/clients/publication.ts";
+} from "#ui/architecture-drawing/model-reader/reading/clients/publication.ts";
 import { PublicationDestination } from "#ui/architecture-drawing/model-reader/reading/components/PublicationDestination.tsx";
 import {
 	PublicationDetails,
@@ -49,7 +49,7 @@ function ModelPublication(props: ModelPublicationProps): JSX.Element {
 		 * Refresh local status and exact-reading metadata after any attempted exchange.
 		 * @returns The refreshed active model queries.
 		 */
-		onSettled: () => invalidateVaultQueries(client, vault),
+		onSettled: () => invalidateModelQueries(client, vault),
 	});
 	const { mutate, reset } = operation;
 	const configure = useCallback(

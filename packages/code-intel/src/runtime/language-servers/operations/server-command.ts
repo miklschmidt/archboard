@@ -29,7 +29,7 @@ import { z } from "zod";
 import type { Language } from "#runtime/language-servers/operations/languages.ts";
 import type { ServerTypescript } from "#shared/protocol/code-check.ts";
 import type { passServers } from "@archboard/workspace/checkouts";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 /** The server one language uses in a checkout, or why it has none. */
 type LanguageServer =

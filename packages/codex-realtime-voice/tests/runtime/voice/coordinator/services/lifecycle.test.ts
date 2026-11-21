@@ -1,7 +1,7 @@
 import { TEST_INSTRUCTIONS } from "#tests/runtime/support/host.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { describe, expect, jest, test } from "bun:test";
 
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	type CodexCoordinatorError,
 	type CoordinatorEffectiveSettings,
@@ -14,8 +14,7 @@ import {
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { codexSessionMs } from "@archboard/timing";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	WORKING_DIRECTORY,
 	coordinatorModel,
@@ -80,7 +79,7 @@ describe("coordinator lifecycle", () => {
 
 	test("starts the exact capable coordinator and records effective preserved settings", async () => {
 		const fixtureValue = fixture({
-			staleNotificationAuthority: createIdentityAuthorities().identity,
+			staleNotificationAuthority: testAuthorities().identity,
 		});
 		const snapshot = await ready(fixtureValue);
 		const coordinatorPersistence = persistence(snapshot);
@@ -155,11 +154,12 @@ describe("coordinator lifecycle", () => {
 
 	test("rolls back a known not-delivered thread/start without an automatic retry", async () => {
 		const fixtureValue = fixture({
-			startError: new CodexSessionMutationError(
-				"thread/start",
-				"not_delivered",
-				"fixture delivery failure",
-			),
+			startError: createCodexFailure({
+				kind: "mutation",
+				method: "thread/start",
+				outcome: "not_delivered",
+				message: "fixture delivery failure",
+			}),
 		});
 		const snapshot = await fixtureValue.coordinator.ensure({ operationId: "not-delivered" });
 
@@ -172,11 +172,12 @@ describe("coordinator lifecycle", () => {
 
 	test("quarantines an unknown thread/start outcome and refuses a second start", async () => {
 		const fixtureValue = fixture({
-			startError: new CodexSessionMutationError(
-				"thread/start",
-				"outcome_unknown",
-				"fixture settlement timeout",
-			),
+			startError: createCodexFailure({
+				kind: "mutation",
+				method: "thread/start",
+				outcome: "outcome_unknown",
+				message: "fixture settlement timeout",
+			}),
 		});
 		const first = await fixtureValue.coordinator.ensure({ operationId: "unknown-operation" });
 		const second = await fixtureValue.coordinator.ensure({ operationId: "retry-operation" });
@@ -191,11 +192,12 @@ describe("coordinator lifecycle", () => {
 
 	test("quarantines a settings/update loss and never retries the one update", async () => {
 		const fixtureValue = fixture({
-			updateError: new CodexSessionMutationError(
-				"thread/settings/update",
-				"outcome_unknown",
-				"fixture settings settlement timeout",
-			),
+			updateError: createCodexFailure({
+				kind: "mutation",
+				method: "thread/settings/update",
+				outcome: "outcome_unknown",
+				message: "fixture settings settlement timeout",
+			}),
 		});
 		const first = await fixtureValue.coordinator.ensure({ operationId: "settings-unknown" });
 		const second = await fixtureValue.coordinator.ensure({ operationId: "settings-retry" });
@@ -215,7 +217,7 @@ describe("coordinator lifecycle", () => {
 		try {
 			const pending = fixtureValue.coordinator.ensure({ operationId: "settings-timeout" });
 			await flushMicrotasks();
-			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+			jest.advanceTimersByTime(30_000);
 			const snapshot = await pending;
 			const retry = await fixtureValue.coordinator.ensure({
 				operationId: "settings-timeout-retry",
@@ -248,7 +250,7 @@ describe("coordinator lifecycle", () => {
 			await flushMicrotasks();
 			expect(fixtureValue.session.updateParams).toHaveLength(1);
 
-			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+			jest.advanceTimersByTime(30_000);
 			await flushMicrotasks();
 			expect(fixtureValue.epoch.unknownCalls).toBe(0);
 

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
-import { exportArchitectureModel, importArchitectureModel } from "@archboard/model/store-write";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
+import { exportArchitectureModel, installArchitectureModel } from "@archboard/model-store";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import {
@@ -45,7 +45,7 @@ test("imported planning models remain readable through exact history and compari
 	mkdirSync(vault, { recursive: true });
 	initializeSource(target);
 	fixtureGit(target, "config", "commit.gpgsign", "false");
-	const imported = await importArchitectureModel(vault, {
+	const imported = await installArchitectureModel(vault, {
 		bundle: exported.bundle,
 		expectedRevision: {
 			files: [],

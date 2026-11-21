@@ -1,12 +1,9 @@
 import { createCodexProcess } from "@archboard/codex-app-server/process";
-import { createCodexTransport } from "@archboard/codex-app-server/transport";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-} from "@archboard/codex-app-server/identity";
+import { openCodexConnection } from "@archboard/codex-app-server/connection";
 import {
 	CODEX_WORKBENCH_OWNER,
 	installCodexWorkbenchOwnerLifecycle,
+	type CodexWorkbenchChildInput,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationFactory,
 	type CodexWorkbenchGenerationHooks,
@@ -27,7 +24,7 @@ import { composeCodexWorkbenchGeneration } from "#server/generation/services/com
 
 /**
  * Build one generation of the production workbench: the components a running
- * child owns, over whichever kernel the owner handed down.
+ * child owns, over the connection the owner opened to it.
  * @param options What the production owner was installed with.
  * @returns The factory the owner calls for each generation.
  */
@@ -36,18 +33,13 @@ function productionGenerationFactory(
 ): CodexWorkbenchGenerationFactory {
 	return async (input) => {
 		const bindings = options.bindings(input);
-		const identityLedger =
-			input.kernel?.identityLedger ?? createIdentityLedger(bindings.recordPrefix);
 		return composeCodexWorkbenchGeneration({
 			factories: createProductionCodexWorkbenchFactories(
 				bindings,
-				input.kernel,
+				input.connection,
 				input.adoptedSession,
-				identityLedger,
-				input.initialIdentity,
 			),
-			identityLedger,
-			ownsTransport: input.kernel === null,
+			connection: input.connection,
 			activate: false,
 			hooks: options.hooks(input),
 			assertActivationCurrent: input.assertActivationCurrent,
@@ -56,29 +48,28 @@ function productionGenerationFactory(
 }
 
 /**
- * Build the kernel that outlives one child: the identity ledger and the
- * transport, so a restarted child rejoins the same names it left.
+ * Open the connection to one child as it arrives, and register this
+ * workbench's dynamic dispatchers on it while its transport is open.
  * @param options What the production owner was installed with.
- * @returns The factory the owner calls when it needs a kernel.
+ * @returns The factory the owner calls for each child.
  */
 function productionKernelFactory(
 	options: InstallProductionCodexWorkbenchOptions,
-): NonNullable<CodexWorkbenchOwnerOptions["createKernel"]> {
+): CodexWorkbenchOwnerOptions["createKernel"] {
 	return (input) => {
 		const bindings = options.bindings(input);
-		const identityLedger = createIdentityLedger(bindings.recordPrefix);
-		const identity = createIdentityAuthorities(identityLedger);
-		const transport = createCodexTransport({
-			...bindings.transport({ identity }),
-			identity: identity.identity,
+		const connection = openCodexConnection({
+			child: input.child,
+			recordPrefix: bindings.recordPrefix,
 		});
-		if (transport.inspect().state === "open") {
-			installDynamicRegistrations(transport, bindings.tools, bindings.dynamicRegistrations);
+		if (connection.transport.inspect().state === "open") {
+			installDynamicRegistrations(
+				connection.transport,
+				bindings.tools,
+				bindings.dynamicRegistrations,
+			);
 		}
-		return Object.freeze({
-			kernel: Object.freeze({ identityLedger, transport }),
-			identity,
-		});
+		return connection;
 	};
 }
 
@@ -114,6 +105,7 @@ function installCodexWorkbenchOwner(options: CodexWorkbenchOwnerOptions): CodexW
 
 export {
 	CODEX_WORKBENCH_OWNER,
+	type CodexWorkbenchChildInput,
 	type CodexWorkbenchComponents,
 	type CodexWorkbenchGenerationHooks,
 	type CodexWorkbenchGenerationInput,

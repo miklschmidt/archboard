@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as ApiModule from "#runtime/api/history-lens.ts";
 import { ArchitectureHistoryResultSchema } from "#shared/protocol/canonical-history.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-source-refs-"));

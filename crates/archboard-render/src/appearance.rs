@@ -5,9 +5,8 @@
 use std::collections::{BTreeMap, HashSet};
 
 use archboard_layout::{LineLook, Node};
-use archboard_scene::paint::design::fallback_icon;
 use archboard_scene::request::{
-    Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance,
+    Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance, TypeKind,
 };
 
 use crate::request::Policy;
@@ -61,13 +60,11 @@ pub(crate) fn node_appearances(
                     tags_of(node, policy)
                 },
                 type_color: kind.and_then(|kind| kind.color),
-                icon: kind
-                    .and_then(|kind| kind.icon.clone())
-                    .unwrap_or_else(|| fallback_icon().to_owned()),
+                icon: kind.and_then(|kind| kind.icon.clone()),
                 type_name: kind
                     .and_then(|kind| kind.name.clone())
                     .unwrap_or_else(|| node.kind.clone()),
-                type_kind: node.kind.clone(),
+                type_kind: TypeKind::Policy(node.kind.clone()),
                 drill: node
                     .drills
                     .then(|| drill_direction(&node.kind, level, &policy.levels)),
@@ -78,7 +75,7 @@ pub(crate) fn node_appearances(
 }
 
 /// The kind a joined line wears when its relationships differ
-/// (`MIXED_KIND` in `@archboard/model/views`). No vocabulary name holds a space.
+/// (`MIXED_KIND` in `@archboard/model-rules`'s scope rules). No vocabulary name holds a space.
 const MIXED_KIND: &str = "mixed kinds";
 
 /// How a line reads: a flow's step dashed with an open head in the neutral

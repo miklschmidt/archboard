@@ -1,36 +1,41 @@
 import { createHash } from "node:crypto";
-import { parseTabSessionId } from "#server/tab-session/rules/tab-session.ts";
-import {
-	createServerCodexBrowserSocketSend,
-	type ServerCodexBrowserWebSocket,
-} from "#server/browser-socket/services/socket.ts";
-import type { createCodexWorkbench } from "#server/owner/services/workbench.ts";
+import { parseTabSessionId, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 
-// The one admission rule of the agent's browser sockets, which the `node:http` and the Bun.serve
-// adapters both apply: which upgrades are this path's, which are refused before they become a
-// socket, and how an accepted socket's frames reach the browser port.
-
-export type BrowserPort = ReturnType<typeof createCodexWorkbench>["browser"];
+// The one admission rule of a socket whose identity comes from its upgrade request: which
+// origins may open it, and the tab session, chat and browser id its URL names. `connect` applies
+// it to a `{ request }` route, and the Bun adapter applies it before the upgrade, so a refusal is
+// the same rule in both places.
 
 const CHAT_ID = /^[a-zA-Z0-9_-]{1,128}$/;
+const LOOPBACK_HOSTNAMES = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
-/** A socket the browser port can register: what its send needs, and a close with a code. */
-export interface AdmittedConnection extends ServerCodexBrowserWebSocket {
-	readonly close: (code: number, reason: string) => void;
+/** The parts of an upgrade request that admission reads. */
+export interface UpgradeRequest {
+	/** The request URL, absolute, as the server received it. */
+	readonly url: string;
+	/** The request headers. `Host` and `Origin` are read. */
+	readonly headers: Headers | Readonly<Record<string, string | string[] | undefined>>;
 }
 
-/** What an upgrade on this path names: its chat, its tab session and the browser id of both. */
-export interface SocketSurface {
-	readonly tabSessionId: NonNullable<ReturnType<typeof parseTabSessionId>>;
+/** What an admitted upgrade names: its tab session, its chat and the browser id of both. */
+interface SocketSurface {
+	readonly tabSessionId: TabSessionId;
 	readonly chatId: string;
 	readonly browserId: string;
 }
 
-/** The parts of an upgrade request that admission reads, as each adapter receives them. */
-export interface UpgradeRequest {
-	readonly url: string;
-	readonly host: string | undefined;
-	readonly origin: string | undefined;
+/**
+ * Refuse an origin that is not exactly an HTTP(S) origin: one with a path or a trailing slash
+ * would refuse every browser.
+ * @param origin An origin the agent admits.
+ * @throws {TypeError} When it cannot match a browser socket.
+ */
+export function assertSocketOrigin(origin: string): void {
+	const url = URL.canParse(origin) ? new URL(origin) : null;
+	if (url === null || !["http:", "https:"].includes(url.protocol) || url.origin !== origin)
+		throw new TypeError(
+			`Name an origin exactly, such as https://voice.example.com, with no path, not ${origin}.`,
+		);
 }
 
 /**
@@ -40,30 +45,80 @@ export interface UpgradeRequest {
  */
 export function assertSocketPath(path: string): void {
 	if (!path.startsWith("/"))
-		throw new TypeError(`Name an absolute socket path, such as /api/voice, not ${path}.`);
+		throw new TypeError(`Name an absolute socket path, such as /voice, not ${path}.`);
 }
 
 /**
- * Refuse an origin that is not exactly an HTTP(S) origin. An unparseable origin would refuse
- * every upgrade on every path, and one with a path or a trailing slash would refuse every browser.
- * @param origin The listener's HTTP origin.
- * @throws {TypeError} When it cannot match a browser socket.
+ * One header of a request, whichever way its headers are held.
+ * @param headers The headers.
+ * @param name The header, in lower case.
+ * @returns Its value, or undefined when it is absent.
  */
-export function assertSocketOrigin(origin: string): void {
-	const url = URL.canParse(origin) ? new URL(origin) : null;
-	if (url === null || !["http:", "https:"].includes(url.protocol) || url.origin !== origin)
-		throw new TypeError(
-			`Name the listener's own origin, such as http://127.0.0.1:4100, with no path, not ${origin}.`,
-		);
+function header(headers: UpgradeRequest["headers"], name: string): string | undefined {
+	if (headers instanceof Headers) return headers.get(name) ?? undefined;
+	const value = headers[name];
+	return Array.isArray(value) ? value[0] : value;
 }
 
 /**
- * Read the tab session and chat a socket URL names, and derive the browser id from both, so a
- * reconnecting chat replaces its earlier socket.
- * @param url The socket URL.
+ * The hostname of a `Host` header value, with its port and brackets kept as written.
+ * @param host The `Host` header.
+ * @returns The hostname, or null when the value is no host.
+ */
+function hostnameOf(host: string): string | null {
+	return URL.canParse(`http://${host}`) ? new URL(`http://${host}`).hostname : null;
+}
+
+/**
+ * Whether an upgrade comes from a page this agent admits. A loopback `Host` admits its own
+ * origin exactly, scheme and port included. Each listed origin admits itself and its host. An
+ * upgrade without an `Origin` header, such as a local script's, passes when its `Host` does.
+ * @param request The upgrade request.
+ * @param origins The origins the agent admits beside its loopback default.
+ * @returns True when the upgrade may open a socket.
+ */
+export function admitsOrigin(request: UpgradeRequest, origins: ReadonlySet<string>): boolean {
+	const host = header(request.headers, "host");
+	if (host === undefined || !URL.canParse(request.url)) return false;
+	const loopback = isLoopback(host);
+	if (!loopback && ![...origins].some((origin) => new URL(origin).host === host)) return false;
+	const own = loopback ? `${new URL(request.url).protocol}//${host}` : null;
+	return pageAdmitted(header(request.headers, "origin"), own, origins);
+}
+
+/**
+ * Whether a `Host` header names a loopback address.
+ * @param host The `Host` header.
+ * @returns True for `127.0.0.1`, `localhost` and `[::1]`, on any port.
+ */
+function isLoopback(host: string): boolean {
+	return LOOPBACK_HOSTNAMES.has(hostnameOf(host) ?? "");
+}
+
+/**
+ * Whether an upgrade's `Origin` names a page the agent admits.
+ * @param origin The `Origin` header, absent for a client that is no page.
+ * @param own The request's own origin when its `Host` is a loopback address, else null.
+ * @param origins The listed origins.
+ * @returns True for no `Origin`, the own origin or a listed one.
+ */
+function pageAdmitted(
+	origin: string | undefined,
+	own: string | null,
+	origins: ReadonlySet<string>,
+): boolean {
+	return origin === undefined || origin === own || origins.has(origin);
+}
+
+/**
+ * Read the tab session and chat an upgrade's URL names, and derive the browser id from both, so a
+ * chat that connects again replaces its earlier socket.
+ * @param request The upgrade request.
  * @returns The surface, or null when either is missing or malformed.
  */
-function surfaceIn(url: URL): SocketSurface | null {
+export function surfaceOf(request: UpgradeRequest): SocketSurface | null {
+	if (!URL.canParse(request.url)) return null;
+	const url = new URL(request.url);
 	const tabSessionId = parseTabSessionId(url.searchParams.get("tabSessionId"));
 	const chatId = url.searchParams.get("chatId");
 	if (tabSessionId === null || chatId === null || !CHAT_ID.test(chatId)) return null;
@@ -71,109 +126,4 @@ function surfaceIn(url: URL): SocketSurface | null {
 		.update(JSON.stringify([tabSessionId, chatId]))
 		.digest("hex");
 	return { tabSessionId, chatId, browserId };
-}
-
-/**
- * Compare an upgrade's `Host` and `Origin` headers to the exact listener origin.
- * @param request The upgrade request.
- * @param origin The listener's HTTP origin.
- * @returns Whether the request comes from the listener's own page.
- */
-function sameOrigin(request: UpgradeRequest, origin: string): boolean {
-	return (
-		request.host === new URL(origin).host &&
-		(request.origin === undefined || request.origin === origin)
-	);
-}
-
-/**
- * Decide what an upgrade asks for: another path, a refusal, or a surface on this path. The
- * `Host` header must name the origin's host, and an `Origin` header, when present, the origin.
- * @param request The upgrade request.
- * @param path The socket path.
- * @param origin The listener's HTTP origin.
- * @returns `"other"`, the refusal status, or the socket's surface.
- */
-export function admitUpgrade(
-	request: UpgradeRequest,
-	path: string,
-	origin: string,
-): "other" | 400 | 403 | SocketSurface {
-	let url: URL;
-	try {
-		url = new URL(request.url, origin);
-	} catch {
-		return 400;
-	}
-	if (url.pathname !== path) return "other";
-	if (!sameOrigin(request, origin)) return 403;
-	return surfaceIn(url) ?? 400;
-}
-
-/** One accepted socket's frames and its end, as the adapter hands them over. */
-export interface BrowserSocketSession {
-	/**
-	 * Hand one complete frame to the browser port. A binary frame or text that is not JSON closes
-	 * the socket with 1003; a request the port cannot finish closes it with 1011.
-	 * @param text The frame's text, or null for a binary frame.
-	 */
-	readonly receive: (text: string | null) => void;
-	/**
-	 * Release the socket in the browser port, once. A later call is the first one's outcome.
-	 * @returns Resolves when the port forgot the socket; never rejects.
-	 */
-	readonly end: () => Promise<void>;
-}
-
-/**
- * Register an upgraded socket in the browser port. When the agent is not ready the port refuses,
- * and the socket is closed with 1011.
- * @param browser The agent's browser port.
- * @param connection The open socket, which is also its exact instance in the port.
- * @param surface The socket's chat, tab session and browser id.
- * @param checkout The admitted checkout of this path.
- * @returns The socket's session, or null when the port refused it.
- */
-export function openBrowserSocket(
-	browser: BrowserPort,
-	connection: AdmittedConnection,
-	surface: SocketSurface,
-	checkout: string,
-): BrowserSocketSession | null {
-	const { tabSessionId, chatId, browserId } = surface;
-	try {
-		browser.accept(connection, browserId, { chatId, tabSessionId, checkout });
-	} catch {
-		connection.close(1011, "The voice agent is unavailable. Restart the server.");
-		return null;
-	}
-	const send = createServerCodexBrowserSocketSend(connection);
-	let ended: Promise<void> | undefined;
-	return {
-		/**
-		 * Parse one frame and hand it to the port.
-		 * @param text The frame's text, or null for a binary frame.
-		 */
-		receive: (text) => {
-			let input: unknown;
-			try {
-				if (text === null) throw new Error("binary message");
-				input = JSON.parse(text);
-			} catch {
-				connection.close(1003, "Send a JSON request.");
-				return;
-			}
-			void browser
-				.handle(connection, browserId, input, send)
-				.catch(() => connection.close(1011, "The connection ended. Reconnect to read its state."));
-		},
-		/**
-		 * Release the socket in the port, once.
-		 * @returns Resolves when the port forgot it.
-		 */
-		end: () =>
-			(ended ??= browser
-				.close(connection, browserId)
-				.catch((error: unknown) => console.error(error))),
-	};
 }

@@ -25,8 +25,8 @@ use std::collections::{BTreeMap, HashMap};
 
 use archboard_layout::Node as GraphNode;
 use archboard_scene::drawing::NodeFacts;
-use archboard_scene::paint::design::flow_kind;
-use archboard_scene::request::FlowchartShape;
+use archboard_scene::names::word;
+use archboard_scene::request::{FlowchartShape, TypeKind};
 
 use crate::content::{Flow, Message, Node, Step};
 
@@ -351,7 +351,7 @@ impl Building<'_> {
             flow.id.clone(),
             self.nodes.len(),
             flow.name.clone(),
-            flow_kind().to_owned(),
+            word(&TypeKind::Flow).to_owned(),
             None,
             flow.summary.clone(),
         ));

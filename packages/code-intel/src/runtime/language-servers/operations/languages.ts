@@ -19,7 +19,7 @@ import { goWorkspaceOf } from "#runtime/language-servers/operations/go-workspace
 import { dotnetProjectOf } from "#runtime/language-servers/operations/dotnet-solution.ts";
 import { pythonProjectOf } from "#runtime/language-servers/operations/python-environment.ts";
 import { swiftPackageOf } from "#runtime/language-servers/operations/swift-package.ts";
-import { configurableLanguages } from "@archboard/workspace/languages";
+import { workspaceShape } from "@archboard/workspace/shapes";
 
 /** The project a server answers about for a file. */
 interface Project {
@@ -78,7 +78,7 @@ interface LanguageRow {
 }
 
 /** A language a server can resolve. */
-type Language = ReturnType<typeof configurableLanguages>[number];
+type Language = ReturnType<typeof workspaceShape<"configurableLanguage">>["options"][number];
 
 /** What each language needs. */
 const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
@@ -170,7 +170,7 @@ const LANGUAGES: Readonly<Record<Language, LanguageRow>> = {
  */
 function languageOf(file: string): { language: Language; languageId: string } | undefined {
 	const extension = path.extname(file);
-	for (const language of configurableLanguages()) {
+	for (const language of workspaceShape("configurableLanguage").options) {
 		const languageId = LANGUAGES[language].languageIds[extension];
 		if (languageId !== undefined) return { language, languageId };
 	}

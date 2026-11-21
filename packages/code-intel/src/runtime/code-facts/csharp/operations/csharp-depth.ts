@@ -2,7 +2,8 @@
 // around the names other files define, through C#'s syntax table, and what a
 // declaration's syntax says of its depth.
 //
-// - An interface, an enum and a delegate declare a type alone.
+// - An interface, an enum and a delegate declare a type alone. An interface
+//   is a contract, whose methods module depth counts once (TASK-651).
 // - A `static` or `const` member belongs to its type, and callers read it
 //   through the type's name, as they read a module-level name elsewhere.
 // - A property with a body (`=> expression`, or an accessor with a block) is
@@ -222,11 +223,12 @@ function passesParameters(call: Node, method: Node): boolean {
 }
 
 /**
- * What a type declaration declares: a type alone, or a type that holds data.
+ * What a type declaration declares: a type alone, a contract, or a type that holds data.
  * @param node The declaration.
  * @returns The mark, or nothing.
  */
-function typeTraits(node: Node): Pick<Definition, "type" | "data"> {
+function typeTraits(node: Node): Pick<Definition, "type" | "contract" | "data"> {
+	if (node.type === "interface_declaration") return { type: true, contract: "declared" };
 	if (TYPES.has(node.type)) return { type: true };
 	return DATA.has(node.type) ? { data: true } : {};
 }

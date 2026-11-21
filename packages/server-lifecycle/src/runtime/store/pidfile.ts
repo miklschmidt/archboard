@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { logger } from "@archboard/diagnostics/logger";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { stateDir } from "@archboard/machine/state-dir";
 import {
 	ownerRecord,
 	recordedOwnerIsGone,
@@ -29,16 +29,27 @@ function pidFilePath(port: number): string {
  * rather than thrown: a server that cannot write its pidfile still serves.
  * @param port The port the server binds.
  * @param pid The Archboard server's pid.
+ * @returns The bytes written, or null when nothing was written.
  */
-function writePidFile(port: number, pid: number): void {
+function writePidFile(port: number, pid: number): string | null {
 	try {
 		const file = pidFilePath(port);
+		const record = ownerRecord(pid);
 		fs.mkdirSync(path.dirname(file), { recursive: true });
-		fs.writeFileSync(file, ownerRecord(pid), "utf-8");
+		fs.writeFileSync(file, record, "utf-8");
+		return record;
 	} catch (error) {
 		logger().warn("Failed to write server pidfile:", errorMessage(error));
+		return null;
 	}
 }
+
+/**
+ * The pidfile this process wrote as a server, and its bytes, until it releases it. Only this
+ * process's own record may be removed by it: a server that bound the port after this one closed
+ * its socket, or the winner of a concurrent start this one lost, owns the file now.
+ */
+let recorded: { port: number; record: string } | null = null;
 
 /**
  * The pid recorded for a port, if the pidfile exists and holds a positive integer.
@@ -54,15 +65,29 @@ function readPidFile(port: number): number | null {
 }
 
 /**
- * Delete the pidfile for a port, tolerating one that is already gone.
+ * Delete the pidfile for a port when it still holds a record, tolerating one that is gone.
  * @param port The port the server binds.
+ * @param owns Whether the record it holds now is one the caller may remove.
  */
-function removePidFile(port: number): void {
+function removePidFileWhen(port: number, owns: (record: string) => boolean): void {
+	const file = pidFilePath(port);
 	try {
-		fs.unlinkSync(pidFilePath(port));
+		if (owns(fs.readFileSync(file, "utf-8"))) {
+			fs.unlinkSync(file);
+		}
 	} catch {
 		/* already gone */
 	}
+}
+
+/**
+ * Delete the pidfile for a port when it records the server the launcher knows, so a launcher
+ * never removes the record of a server that started after the one it watched.
+ * @param port The port the server binds.
+ * @param pid The pid of the server the launcher started or stopped.
+ */
+function removePidFileOf(port: number, pid: number): void {
+	removePidFileWhen(port, (record) => recordedOwnerPid(record) === pid);
 }
 
 /**
@@ -136,20 +161,41 @@ function pidFileRecordsStartTime(port: number): boolean {
  * @param port The port this server binds.
  */
 function recordServerPid(port: number): void {
-	writePidFile(port, process.pid);
+	const record = writePidFile(port, process.pid);
+	recorded = record === null ? null : { port, record };
 	const swept = sweepDeadPidFiles();
 	if (swept > 0) {
 		logger().debug(`Removed ${swept} pidfiles of servers that are gone`);
 	}
 }
 
+/**
+ * Remove the pidfile this process recorded for a port, and only while it still holds the bytes
+ * this process wrote. A process that never recorded the port keeps whatever is there: a
+ * concurrent-start loser exiting on EADDRINUSE leaves the winner's file. So does a server whose
+ * port another server bound once this one closed its socket. Synchronous, so it can run in the
+ * process's `exit` handler, and safe at stop, at exit and after a failed start: it never throws
+ * and releases once. The read and the removal are two calls, and a server that writes the file
+ * between them still loses it; every such interleaving lost the file before this check too.
+ * @param port The port this server bound.
+ */
+function releaseServerPid(port: number): void {
+	const own = recorded;
+	if (own === null || own.port !== port) {
+		return;
+	}
+	recorded = null;
+	removePidFileWhen(port, (record) => record === own.record);
+}
+
 export {
 	pidFilePath,
 	pidFileRecordsStartTime,
 	recordServerPid,
+	releaseServerPid,
 	writePidFile,
 	readPidFile,
-	removePidFile,
 	removePidFileIfOwnerGone,
+	removePidFileOf,
 	sweepDeadPidFiles,
 };

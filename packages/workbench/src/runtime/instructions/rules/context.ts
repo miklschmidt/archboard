@@ -3,11 +3,8 @@ import { z } from "zod";
 import {
 	additionalContextPolicy,
 	type OperationOutcome,
-} from "@archboard/codex-realtime-voice/runtime";
-import { diagramGrammarSchema } from "@archboard/model/views";
-import { variantLifecycleSchema } from "@archboard/model/legacy-board";
-import { reconciliationKindSchema } from "@archboard/model/reconciliation";
-import { semanticSubjectKindSchema } from "@archboard/model/pane-context";
+} from "@archboard/codex-realtime-voice/server";
+import { modelShape } from "@archboard/model-contract";
 
 /**
  * UTF-8 byte length of a string, the unit every context size limit is written in.
@@ -60,7 +57,7 @@ const DoingSchema = boundedUtf8Text(512, "doing");
  * is no spelling here for anything that was merely drawn, because there is
  * nothing an agent could be asked to do about a lane or a label (ADR 0023).
  */
-const SubjectKindSchema = semanticSubjectKindSchema();
+const SubjectKindSchema = modelShape("semanticSubjectKind");
 
 const SelectedSubjectSchema = z.strictObject({
 	kind: SubjectKindSchema,
@@ -80,7 +77,7 @@ const SelectedSubjectSchema = z.strictObject({
 const ReconciliationIssueSchema = z.strictObject({
 	subject: SubjectIdSchema,
 	what: SubjectNameSchema,
-	kind: reconciliationKindSchema(),
+	kind: modelShape("reconciliationKind"),
 	field: SubjectNameSchema.nullable(),
 	repair: boundedUtf8Text(512, "repair"),
 });
@@ -183,7 +180,7 @@ const ArchboardContextRawSchema = z.strictObject({
 		.strictObject({
 			id: SubjectIdSchema,
 			name: SubjectNameSchema,
-			lifecycle: variantLifecycleSchema(),
+			lifecycle: modelShape("variantLifecycle"),
 		})
 		.nullable(),
 	/** Which of its views, or null when the variant is read whole. */
@@ -191,7 +188,7 @@ const ArchboardContextRawSchema = z.strictObject({
 		.strictObject({
 			id: SubjectIdSchema,
 			name: SubjectNameSchema,
-			grammar: diagramGrammarSchema(),
+			grammar: modelShape("diagramGrammar"),
 		})
 		.nullable(),
 	/**

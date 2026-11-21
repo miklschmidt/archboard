@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { BrowserGatewayMessage } from "#shared/protocol/gateway-envelope.ts";
 import type {
 	BrowserOwnerProjection,
@@ -8,7 +8,7 @@ import type {
 } from "#server/projection/protocol/projection-contract.ts";
 import { createGatewayHarness } from "#tests/server/support/gateway/support.ts";
 
-type Authorities = ReturnType<typeof createIdentityAuthorities>;
+type Authorities = ReturnType<typeof testAuthorities>;
 
 function timelineOf(
 	authorities: Authorities,
@@ -38,7 +38,7 @@ function timelineOf(
 }
 
 test("the coordinator's turns ride the snapshot, and only the recorded workhorse turn names its delegator", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const coordinatorThread = decoder.adoptThreadId("coordinator-thread");
 	const voiceTurn = decoder.adoptTurnId("voice-turn");

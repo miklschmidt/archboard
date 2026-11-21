@@ -12,6 +12,11 @@ The one architecture that one vault holds, assembled from its modules, relations
 It has a stable identity and a name, and every reading derives from it.
 _Avoid_: board, document, drawing, diagram, whiteboard, sketch
 
+**Model contract**:
+The shapes that every side of a model exchanges and keeps: its files, its requests and answers, and the records the store writes beside them.
+A caller reads them only through the contract's parse operations, and builds its own contract from the shapes it hands out (ADR 0086).
+_Avoid_: schema, wire format, protocol
+
 **Manifest**:
 The record that gives a model its stable identity, its name and its optional current designation.
 It holds no copy of the modules.
@@ -289,6 +294,11 @@ _Avoid_: scene (that is what the renderer core answers), board, workspace, sessi
 
 **Left column**:
 The column that lists where to go: Find, the repository switcher, the keys that open the `History` and `Measures` dialogs, one list with the sections `Modules`, `Flows` and `Walkthroughs`, and Talk.
+
+**Agent surfaces**:
+Everything of the agent that the browser draws over a page's panes: the agent dock, the conversation panel, the voice box over a pane, the Talk key of a presentation and its Narrate key.
+One root holds the agent's state for every pane, and the shell places the surfaces and passes only its own facts, such as which pane has focus.
+_Avoid_: agent shell (the shell is the web app), workbench (that is the server's side of the agent), agent UI
 
 **Measures**:
 The dialog that checks the reading on screen against its code and its history. It shows where the model and its code disagree, one finding at a time. It also lists every module of the model on show in two tables, sorted by one count at a time. One table holds its interface measures. The other holds its commits, the modules it changes with and its unjoined pairs.
@@ -720,6 +730,21 @@ What turns a scene into what a frontend shows.
 The SVG painter is part of the renderer core, and a native frontend paints the list itself.
 _Avoid_: rasterizer (that makes a PNG from SVG), backend
 
+**Presentation**:
+What a page says about how a painter's picture is seen, never the picture itself: the theme, the camera, the marks, the light, the far line, the held heads, the warnings, whether the next picture is awaited and whether traffic runs.
+A value it states replaces the last, and one it leaves out stays; a timed value names the moment it starts (ADR 0085).
+_Avoid_: presentation state (the older words of ADR 0071), presentation bar
+
+**Arrival**:
+How a picture comes onto a painter's stage: a cut, carried from the last, entered part by part, or into the card the camera flies into.
+The page decides it, and the stage moves it (ADR 0071, ADR 0085).
+_Avoid_: transition for the cut, show
+
+**Pulse train**:
+The numbers of one traffic mark's pulses that every painter draws: the pieces of its route with their frames, light boxes and bars, the glow, the gradient, and where each piece's bar stands at a moment.
+The scene answers it; each painter spells it and runs the clock (ADR 0084).
+_Avoid_: beam, glow or bar for the whole train (each names one part of it)
+
 ### Commits
 
 **Locality**:
@@ -835,7 +860,7 @@ A folder module that declares no interface, with no file that stands for it (suc
 _Avoid_: missing barrel, missing index
 
 **Module width**:
-The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. It differs from the interface width of ADR 0058, which counts types.
+The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. It differs from the interface width of ADR 0058, which counts types. In a folder module that declares no interface, it counts only the names a file outside it uses: a name only its own files import, or that nothing uses, costs a caller nothing. Each name counts once, however many public paths reach it, and a contract's methods (a Rust trait, a Swift protocol, a C# or Go interface) count once, for the contract, not again for each exported type that implements it.
 _Avoid_: export count, surface area
 
 **Wide interface**:
@@ -917,6 +942,11 @@ The voice model and the coordinator are both told, because neither asked for it.
 _Avoid_: external edit, foreign write, third-party change
 
 ### Working
+
+**Codex connection**:
+The identities and the transport of one Codex child for one epoch, which every session on that child is opened on.
+A new child gets a new connection, so nothing named in one connection can be used in another.
+_Avoid_: kernel, client, channel, session (that is opened on a connection)
 
 **Tab session**:
 The work of one browser tab with Codex: one voice coordinator for the whole app and one workhorse for each checkout that the tab works in.

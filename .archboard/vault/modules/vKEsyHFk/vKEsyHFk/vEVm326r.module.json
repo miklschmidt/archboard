@@ -3,6 +3,7 @@
   "name": "codex-app-server",
   "kind": "package",
   "responsibility": "One private Codex app-server session over stdio",
+  "description": "TASK-653.11: 16 functions, and no class, across eight entries. ./connection: openCodexConnection, openCodexSession. ./failure: readCodexFailure, createCodexFailure. ./process: createCodexProcess (it absorbs createProcessOwner, whose options let tests replace the spawn, the file system and the clock), resolveCodexExecutable. ./session: isQueuedSubmission, parseCodexServerResponse, parseSupportedLoginAccountParams, codexSessionThreadSource. ./contract: codexPendingReverseRequestLimit, codexFieldSchema (thread status callers parse its threadStatusType field in place of isCodexThreadStatusType), createCodexCommandExecutionApprovalDecisionSchema. ./identity: logicalToolCallKey, canonicalItemIdMaxLength. ./protocol: codexProtocolVersion. ./transport hands out types only. The seven error classes, createCodexTransport, createCodexSession, codexSessionControl and the identity ledger and authority factories are private: callers open a connection and read a failure. The process stays apart from the connection, because one process yields many children and a connection belongs to one child and epoch (ADR 0089).",
   "groups": [
     "child",
     "packages"
@@ -13,12 +14,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#vEVm326r",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

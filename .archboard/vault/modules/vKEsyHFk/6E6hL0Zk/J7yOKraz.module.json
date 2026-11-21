@@ -3,6 +3,7 @@
   "name": "Application lifetime",
   "kind": "module",
   "responsibility": "Boots and stops the server, which needs no vault: the loopback refusal, the pidfile, the ordered shutdown",
+  "description": "It releases the pidfile at stop and at exit, which removes the file only while it holds this process's record, and reports the startup's end straight to the writer, whose latch keeps the first report.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts"
@@ -39,7 +40,7 @@
     {
       "order": 1000,
       "kind": "dependency",
-      "label": "owns listener",
+      "label": "owns the listener, its address and the loopback refusal",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -52,15 +53,28 @@
     {
       "order": 12000,
       "kind": "dependency",
-      "label": "start and stop",
+      "label": "prepare at the listen address; stop once per generation",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "prepareCodexWorkbench"
+        "symbol": "prepareWorkbench"
       },
       "id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
       "to": "vKEsyHFk#OY4JPr8G"
+    },
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "close every browser owner, given every accepted socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "closeBrowserOwners"
+      },
+      "id": "vKEsyHFk#CS6jFAYA",
+      "to": "vKEsyHFk#Zse70SS2"
     },
     {
       "order": 70045,
@@ -89,19 +103,6 @@
       "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
     },
     {
-      "order": 79000,
-      "kind": "dependency",
-      "label": "watch the registry file while the server runs",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-        "symbol": "watchRegistry"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
-      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
-    },
-    {
       "order": 90000,
       "kind": "call",
       "label": "starts the usage sender",
@@ -121,6 +122,19 @@
       },
       "id": "vKEsyHFk#25xiZ6jI",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "name a failed startup in one line",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+        "symbol": "serverStartupFailureMessage"
+      },
+      "to": "vKEsyHFk#iFbRQihw",
+      "id": "vKEsyHFk#G6hoxefI"
     }
   ]
 }

@@ -1,16 +1,13 @@
 import { z } from "zod";
-import {
-	architectureRenderRequestSchema,
-	architectureRenderResultSchema,
-} from "@archboard/model/contract";
-import { standaloneThemeSchema } from "@archboard/model/render-reply";
+import { modelShape } from "@archboard/model-contract";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
-const InputSchema = architectureRenderRequestSchema().extend({
+const renderRequest = modelShape("renderRequest");
+const InputSchema = renderRequest.extend({
 	out: z.string(),
-	theme: standaloneThemeSchema().default("auto"),
+	theme: modelShape("standaloneTheme").default("auto"),
 });
 /**
  * Refuse a flow that the architecture grammar would silently ignore.
@@ -76,7 +73,7 @@ const modelRenderContract = defineCommand({
 			spellings: ["--grammar"],
 			value: "required",
 			placeholder: "grammar",
-			choices: architectureRenderRequestSchema().shape.grammar.removeDefault().options,
+			choices: renderRequest.shape.grammar.removeDefault().options,
 			description: "Draw `sequence` or `flowchart`",
 		},
 		{
@@ -103,7 +100,7 @@ const modelRenderContract = defineCommand({
 			spellings: ["--legend"],
 			value: "required",
 			placeholder: "layout",
-			choices: architectureRenderRequestSchema().shape.legend.removeDefault().options,
+			choices: renderRequest.shape.legend.removeDefault().options,
 			default: "horizontal",
 			description:
 				"Draw the legend under the picture, beside it (`vertical`), or not at all (`none`)",
@@ -120,10 +117,8 @@ const modelRenderContract = defineCommand({
 	],
 	input: { ingress: InputSchema },
 	result: z.union([
-		architectureRenderResultSchema()
-			.options[0].omit({ svg: true, atlas: true })
-			.extend({ file: z.string() }),
-		architectureRenderResultSchema().options[1],
+		modelShape("renderSuccess").omit({ svg: true, atlas: true }).extend({ file: z.string() }),
+		modelShape("refusal"),
 	]),
 	output: {
 		cases: [

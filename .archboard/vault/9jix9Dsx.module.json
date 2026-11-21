@@ -2,8 +2,8 @@
   "order": 2000,
   "name": "Picture motion",
   "kind": "function",
-  "responsibility": "Turns one scene into the next as a pure function of a progress value: it pairs groups by subject id and mixes their typed geometry, opacity and transforms",
-  "description": "The entrance, the departure, the far swap and the flight into a card follow the same rule. Nothing here draws, reads a clock or keeps state between frames, so the same inputs give the same items. The durations come from @archboard/timing through the page. flight.rs holds what moves a whole picture: a flight from the last picture, a part-by-part entrance, a leaving picture, the ghost of one that left, and the model inside a card that the camera flies into.",
+  "responsibility": "Turns one scene into the next as one Between, made by a carry or an entrance and sampled by progress: it pairs groups by subject id and mixes their typed geometry, opacity and transforms",
+  "description": "Twelve names, all on one Between (ADR 0087): carry(from, to, shift, phases) carries the last picture into the next, and enter(to, phases, handover) brings a picture in part by part and, when subjects fly over, answers the last picture's body without them for its ghost. at(progress) answers the in-between body and the masks of the lines that move, and definitions() answers the carry's definitions apart, so the move keeps no state between samples (ADR 0071). seen_at, focus, holder_at and rebase answer the rest; departing sends the last scene off, and frame_of finds a subject's frame. The kind stays private: a carry ignores rebase and answers no holder, flown subjects or tray, and an entrance moves no mask and opens no door. Nothing here draws or reads a clock, and the phases come from @archboard/timing through the page. The stage's Arriving (flight.rs) owns the time, turning a moment into progress, and keeps the definitions index; the dive samples the move by the camera's path. phase lives in timing.rs and Heading beside the passage's Side, so the passage and Picture motion no longer import each other.",
   "groups": [
     "drawing"
   ],
@@ -14,5 +14,11 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#9jix9Dsx",
   "parent": "vKEsyHFk#NFwqWgrm",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0087-a-pictures-move-is-one-between-sampled-by-progress.md"
+    }
+  ],
   "outgoing": []
 }

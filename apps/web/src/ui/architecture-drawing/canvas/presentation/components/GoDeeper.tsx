@@ -25,7 +25,7 @@ import {
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant, SemanticNode } from "@archboard/model-contract";
 import { Button, cn } from "@archboard/ui-kit/components";
 import {
 	drillWay,
@@ -42,7 +42,6 @@ import type {
 	OpenDown,
 	OtherRepository,
 } from "#ui/architecture-drawing/canvas/picture/rules/drill-target.ts";
-import type { SemanticNode } from "@archboard/model/content";
 
 type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 

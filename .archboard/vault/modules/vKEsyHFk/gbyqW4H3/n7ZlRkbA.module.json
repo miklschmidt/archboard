@@ -14,27 +14,14 @@
     {
       "order": 54000,
       "kind": "call",
-      "label": "draw the subject warning badge",
+      "label": "draw the warning mark on a subject and on a code line",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
-        "symbol": "cornerWarning"
+        "symbol": "warningMark"
       },
       "id": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "draw the code warning glyph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/code-marks.ts",
-        "symbol": "lineWarning"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
       "to": "vKEsyHFk#Ut8M2UHc"
     },
     {

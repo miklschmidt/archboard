@@ -7,7 +7,7 @@
 /// reach the reader finished. So one step of this clock is never longer than a
 /// longest step, and all that moves waits for the frames that show it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct StageClock {
+pub(crate) struct StageClock {
     /// The latest moment the host named, in milliseconds.
     host: Option<f64>,
     /// How much of the host's time the stalls took.
@@ -17,15 +17,19 @@ pub struct StageClock {
 }
 
 impl StageClock {
-    /// Say how long a step can be, in milliseconds.
-    pub fn set_longest(&mut self, ms: f64) {
-        self.longest = Some(ms);
+    /// A clock whose steps are at most a longest step, in milliseconds. With
+    /// none, nothing is lost.
+    pub(crate) fn new(longest: Option<f64>) -> StageClock {
+        StageClock {
+            longest,
+            ..StageClock::default()
+        }
     }
 
     /// The stage's moment for a moment of the host. A moment earlier than the
     /// latest counts as the latest: a frame's stamp is older than a change that
     /// a long task made in its turn.
-    pub fn at(&mut self, host: f64) -> f64 {
+    pub(crate) fn at(&mut self, host: f64) -> f64 {
         let last = self.host.unwrap_or(host);
         let host = host.max(last);
         if let Some(longest) = self.longest {
@@ -67,16 +71,6 @@ impl TrafficClock {
         self.shown.then_some(self.seconds)
     }
 
-    /// Where the clock stands, in seconds.
-    pub(crate) fn seconds(&self) -> f64 {
-        self.seconds
-    }
-
-    /// Stand the clock somewhere.
-    pub(crate) fn set_seconds(&mut self, seconds: f64) {
-        self.seconds = seconds;
-    }
-
     /// Whether the clock moves, so that every frame differs from the last.
     pub(crate) fn runs(&self) -> bool {
         self.shown
@@ -92,18 +86,7 @@ impl TrafficClock {
 
 #[cfg(test)]
 mod tests {
-    use super::{StageClock, TrafficClock};
-
-    #[test]
-    fn a_stall_costs_no_more_than_a_longest_step() {
-        let mut clock = StageClock::default();
-        clock.set_longest(50.0);
-        assert_eq!(clock.at(1000.0), 1000.0);
-        assert_eq!(clock.at(1016.0), 1016.0);
-        assert_eq!(clock.at(1416.0), 1066.0);
-        assert_eq!(clock.at(1432.0), 1082.0);
-        assert_eq!(clock.at(1420.0), 1082.0);
-    }
+    use super::TrafficClock;
 
     #[test]
     fn hidden_traffic_asks_for_no_frames_and_shows_no_time() {

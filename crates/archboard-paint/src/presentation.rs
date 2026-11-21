@@ -1,16 +1,18 @@
-//! What a picture shows besides its scene. The scene says what is drawn. This
-//! says how it is seen right now, so that one scene answers the hand with no
-//! new scene. A painter takes a scene and this, and one frame comes out.
+//! What a picture shows besides its scene. The scene says what is drawn. A
+//! page's presentation says how it wants it seen, and the stage works out how
+//! it is seen at each moment, so that one scene answers the hand with no new
+//! scene. A painter takes a scene and this, and one frame comes out.
 
 use std::collections::{HashMap, HashSet};
 
 use serde::Deserialize;
 
+use crate::palette::Theme;
 use crate::sweep::Sweep;
 use crate::warnings::Warnings;
 
 /// Where the picture lies on the canvas, in canvas pixels.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 pub struct Camera {
     /// The canvas position of the picture's left edge.
     pub x: f64,
@@ -51,9 +53,10 @@ impl Default for Recede {
     }
 }
 
-/// How a picture is seen in one frame.
+/// How a picture is seen in one frame: where each value the page stated stands
+/// at that moment.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub(crate) struct Presentation {
+pub(crate) struct Seen {
     /// Where the picture lies.
     pub camera: Camera,
     /// How far the picture has stepped back for the next, from 0 to 1.
@@ -83,7 +86,7 @@ pub(crate) struct Presentation {
     pub warnings: Warnings,
 }
 
-impl Presentation {
+impl Seen {
     /// How far a flow's head is held down.
     pub(crate) fn drop_of(&self, flow: &str) -> f64 {
         self.heads.get(flow).copied().unwrap_or(0.0)
@@ -111,6 +114,8 @@ pub struct Light {
     pub subjects: HashMap<String, Shine>,
     /// How long the change takes, in milliseconds.
     pub duration: f64,
+    /// The moment of the page's clock the change starts, in milliseconds.
+    pub at: f64,
 }
 
 /// What a page marks on a picture, whole, each time any of it changes. The
@@ -121,4 +126,87 @@ pub struct Marks {
     pub selected: HashSet<String>,
     /// The relationships lit along their whole route.
     pub whole: HashSet<String>,
+}
+
+/// A value a page states over a time: where it goes, how long it takes to
+/// get there in milliseconds, and the moment of the page's clock it starts.
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
+pub struct Timed<T> {
+    /// Where the value goes.
+    pub to: T,
+    /// How long it takes, in milliseconds. At 0 it stands there at once.
+    pub ms: f64,
+    /// The moment of the page's clock it starts, in milliseconds.
+    pub at: f64,
+}
+
+/// The scale of the camera where the far view begins, in canvas pixels to a
+/// unit, and how long a swap takes, in milliseconds. A picture with no far view
+/// has its line at 0.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
+pub struct FarLine {
+    /// The scale at the line.
+    pub scale: f64,
+    /// How long a swap takes.
+    pub ms: f64,
+}
+
+/// The lines a page draws on as they light, each after its delay in
+/// milliseconds, by relationship id. A line takes its length over a speed,
+/// between the shortest and the longest time. With no delays nothing is drawn
+/// on.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct LineSweep {
+    /// How long each line waits, by relationship id.
+    pub delays: HashMap<String, f64>,
+    /// The shortest a line takes, in milliseconds.
+    pub shortest_ms: f64,
+    /// The longest a line takes, in milliseconds.
+    pub longest_ms: f64,
+    /// The moment of the page's clock the sweep starts, in milliseconds.
+    pub at: f64,
+}
+
+/// Which control the pointer rests on.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+pub struct Hovered {
+    /// The subject whose control it is, or none.
+    pub toggle: Option<String>,
+}
+
+/// What a page says about how its picture is seen, never the picture itself.
+/// A value it states replaces the last, in the order the fields are written,
+/// and one it leaves out stays as it was. A timed value starts over from where
+/// it stands each time it is stated.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Presentation {
+    /// The theme the picture is drawn in.
+    pub theme: Option<Theme>,
+    /// The size of the canvas, in canvas pixels.
+    pub size: Option<(f64, f64)>,
+    /// Whether traffic runs: a person who asked for no motion sees none.
+    pub traffic_shown: Option<bool>,
+    /// How far each flow's head is held down from where the picture drew it,
+    /// in the picture's units, by flow. The heads follow the camera, so a page
+    /// says them apart from the marks.
+    pub heads: Option<HashMap<String, f64>>,
+    /// The subjects the code check warns about.
+    pub warnings: Option<HashSet<String>>,
+    /// What is marked on the picture.
+    pub marks: Option<Marks>,
+    /// Which control the pointer rests on.
+    pub hovered: Option<Hovered>,
+    /// Where the camera goes.
+    pub camera: Option<Timed<Camera>>,
+    /// Where the far view begins.
+    pub far_line: Option<FarLine>,
+    /// Whether the next picture is on its way: the picture on the stage steps
+    /// back for it, or forward again.
+    pub awaited: Option<Timed<bool>>,
+    /// How the picture stands in the light.
+    pub light: Option<Light>,
+    /// The lines drawn on as they light. It replaces any sweep that runs.
+    pub sweep: Option<LineSweep>,
 }

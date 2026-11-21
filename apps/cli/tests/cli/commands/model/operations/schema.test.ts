@@ -6,11 +6,7 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import {
-	architectureInitializationRequestSchema,
-	architectureModuleEditSchema,
-	architectureImportRequestSchema,
-} from "@archboard/model/contract";
+import { describeModelSchema, parseModelRequest } from "@archboard/model-contract";
 
 const asked: string[] = [];
 const server = Bun.serve({
@@ -28,10 +24,7 @@ const environment = {
 process.env["ARCHBOARD_URL"] = `http://127.0.0.1:${server.port}`;
 process.env["ARCHBOARD_NO_AUTOSTART"] = "1";
 // Imported only now, because the CLI reads where its server is as it loads.
-const [{ runCli }, { jsonSchema }] = await Promise.all([
-	import("#cli/routing/operations/run.ts"),
-	import("#cli/commands/model/operations/schema.ts"),
-]);
+const { runCli } = await import("#cli/routing/operations/run.ts");
 const outside = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "archboard-schema-")));
 
 afterAll(async () => {
@@ -96,15 +89,14 @@ test("the printed input schemas accept and refuse the same expressible input as 
 	const cases = [
 		{
 			name: "model-initialize" as const,
-			accepts: (input: object) =>
-				architectureInitializationRequestSchema().safeParse(input).success,
+			accepts: (input: object) => parseModelRequest("initialize", input).success,
 			input: { name: "Shop", operationId: "init", writer: "agent", doing: "Initialize model" },
 		},
 		{
 			// `model edit` takes the doing line from `--doing` and adds it to the JSON it read.
 			name: "model-edit" as const,
 			accepts: (input: object) =>
-				architectureModuleEditSchema().safeParse({ ...input, doing: "Add initial state" }).success,
+				parseModelRequest("edit", { ...input, doing: "Add initial state" }).success,
 			input: {
 				target: { model: "Shop", state: null },
 				expectedRevision: { digest: "abc", files: [] },
@@ -117,14 +109,14 @@ test("the printed input schemas accept and refuse the same expressible input as 
 		},
 	];
 	for (const item of cases) {
-		const validate = ajv.compile(jsonSchema(item.name));
+		const validate = ajv.compile(describeModelSchema(item.name));
 		expect(item.accepts(item.input)).toBe(true);
 		expect(validate(item.input)).toBe(true);
 		const invalid = { ...item.input, operationId: 42 };
 		expect(item.accepts(invalid)).toBe(false);
 		expect(validate(invalid)).toBe(false);
 	}
-	const validatePortable = ajv.compile(jsonSchema("model-import"));
+	const validatePortable = ajv.compile(describeModelSchema("model-import"));
 	const encodings = [
 		["", true],
 		["AAAA", true],
@@ -161,14 +153,14 @@ test("the printed input schemas accept and refuse the same expressible input as 
 			writer: "agent",
 			doing: "Import model",
 		};
-		expect(architectureImportRequestSchema().safeParse(input).success).toBe(accepted);
+		expect(parseModelRequest("import", input).success).toBe(accepted);
 		expect(validatePortable(input)).toBe(accepted);
 		input.bundle.inputs = [];
 		const historyInput = {
 			...input,
 			bundle: { ...input.bundle, history: { tips: [], bundle: bytes } },
 		};
-		expect(architectureImportRequestSchema().safeParse(historyInput).success).toBe(accepted);
+		expect(parseModelRequest("import", historyInput).success).toBe(accepted);
 		expect(validatePortable(historyInput)).toBe(accepted);
 	}
 });

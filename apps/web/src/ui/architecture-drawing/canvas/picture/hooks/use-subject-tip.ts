@@ -11,8 +11,8 @@
 import { pickedTarget } from "#ui/architecture-drawing/canvas/picture/camera/clients/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
-import { exploringMs } from "@archboard/timing";
-import { frameClock } from "@archboard/ui-kit/frame-clock";
+import { durationMs } from "@archboard/timing";
+import { frameClock } from "@archboard/ui-clocks/frame-clock";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	tipTargetAt,
@@ -116,7 +116,7 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 			forget();
 			waiting.current = {
 				target,
-				timer: frameClock().after(exploringMs("subjectTip"), () => {
+				timer: frameClock().after(durationMs("exploring.subjectTip"), () => {
 					waiting.current = null;
 					setOpen({ target, drawing, at: pointer.current });
 				}),

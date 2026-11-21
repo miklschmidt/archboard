@@ -3,7 +3,7 @@ import type { TransportServerNotification } from "@archboard/codex-app-server/tr
 import type { WorkhorseOperationBinding } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import type {
 	CodexWorkbenchComponents,
-	CodexWorkbenchGenerationInput,
+	CodexWorkbenchChildInput,
 } from "#server/generation/services/workbench.ts";
 import type {
 	CodexWorkbenchSessionComponents,
@@ -29,7 +29,7 @@ interface GenerationOwners {
 
 /** Keeps one owner record per live generation, and retires the ones replaced. */
 interface GenerationOwnerStore {
-	readonly for: (input: CodexWorkbenchGenerationInput) => GenerationOwners;
+	readonly for: (input: CodexWorkbenchChildInput) => GenerationOwners;
 }
 
 /**

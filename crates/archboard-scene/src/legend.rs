@@ -1,0 +1,270 @@
+//! What a picture's key lists, read back from its drawn scene: the appearance
+//! each subject was drawn with, and the distinct samples among them
+//! (TASK-468). Every painter and an exported legend read a picture's key here.
+
+use crate::names::word;
+use crate::request::{Arrowhead, Dash, NodeAppearance, PaletteColor, TypeKind};
+use crate::scene::{Group, Icon, Item, LineFacts, Role};
+
+/// How the picture drew a subject: as a part of some appearance, or as a
+/// relationship's line.
+#[derive(Clone, Debug)]
+pub enum Drawn {
+    /// A part, a card or a container.
+    Part(NodeAppearance),
+    /// A relationship's line.
+    Line(LineFacts),
+}
+
+/// What a picture draws a subject as, read back from the drawn scene.
+#[derive(Clone, Debug)]
+pub struct Applied {
+    /// How it was drawn.
+    pub drawn: Drawn,
+    /// The icon its chip draws, when it draws one.
+    pub icon: Option<Icon>,
+}
+
+/// What two subjects share when one sample keys them both: the icon's name,
+/// the kind, its name, the kind's colour, the line's colour, dash and
+/// arrowhead. Not the icon's size and ink: a card, a container's header and a
+/// door draw one kind's icon at different sizes and inks, and the legend
+/// redraws it at its own.
+type SampleKey<'a> = (
+    Option<&'a str>,
+    &'a str,
+    &'a str,
+    Option<PaletteColor>,
+    Option<PaletteColor>,
+    Dash,
+    Arrowhead,
+);
+
+/// A kind as the picture spells it: a policy's key, or the flow's own word.
+fn kind_word(kind: &TypeKind) -> &str {
+    match kind {
+        TypeKind::Policy(key) => key,
+        flow @ TypeKind::Flow => word(flow),
+    }
+}
+
+impl Applied {
+    /// What the subject's kind is called.
+    pub fn type_name(&self) -> &str {
+        match &self.drawn {
+            Drawn::Part(appearance) => &appearance.type_name,
+            Drawn::Line(facts) => &facts.appearance.name,
+        }
+    }
+
+    /// What two subjects share when one sample keys them both.
+    fn sample_key(&self) -> SampleKey<'_> {
+        let icon = self.icon.as_ref().map(|icon| icon.name.as_str());
+        match &self.drawn {
+            Drawn::Part(appearance) => (
+                icon,
+                kind_word(&appearance.type_kind),
+                &appearance.type_name,
+                appearance.type_color,
+                None,
+                Dash::Solid,
+                Arrowhead::Filled,
+            ),
+            Drawn::Line(facts) => (
+                icon,
+                &facts.kind,
+                &facts.appearance.name,
+                None,
+                facts.appearance.color,
+                facts.appearance.dash,
+                facts.appearance.arrowhead,
+            ),
+        }
+    }
+}
+
+/// How a group says its subject was drawn, when it says so.
+fn drawn_by(group: &Group) -> Option<Drawn> {
+    match &group.role {
+        Role::Card(appearance) | Role::Header(appearance) | Role::Frame(Some(appearance)) => {
+            Some(Drawn::Part(appearance.as_ref().clone()))
+        }
+        Role::Line(Some(facts)) => Some(Drawn::Line(facts.as_ref().clone())),
+        _ => None,
+    }
+}
+
+/// The scene as it is walked: the subjects of the open groups, and every
+/// subject met.
+struct Walk {
+    open: Vec<Option<usize>>,
+    met: Vec<(String, Applied)>,
+}
+
+impl Walk {
+    /// One item, inside an icon's group or not.
+    fn visit(&mut self, item: &Item, in_icon: bool) {
+        match item {
+            Item::Group(group) => self.group(group),
+            Item::Viewport(viewport) => {
+                for child in &viewport.items {
+                    self.visit(child, false);
+                }
+            }
+            Item::Icon(icon) if in_icon => {
+                for at in self.open.iter().flatten() {
+                    self.met[*at].1.icon.get_or_insert_with(|| icon.clone());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// A group and what it holds, the subject it draws met if it says how it was drawn.
+    fn group(&mut self, group: &Group) {
+        let subject = group
+            .subject
+            .as_ref()
+            .zip(drawn_by(group))
+            .map(|(subject, drawn)| {
+                self.met
+                    .push((subject.id.clone(), Applied { drawn, icon: None }));
+                self.met.len() - 1
+            });
+        self.open.push(subject);
+        let icon = matches!(group.role, Role::Icon(Some(_)));
+        for child in &group.items {
+            self.visit(child, icon);
+        }
+        self.open.pop();
+    }
+}
+
+/// Every subject the scene draws with an appearance, and the icon inside it.
+fn picture_appearances(body: &[Item]) -> Vec<(String, Applied)> {
+    let mut walk = Walk {
+        open: Vec::new(),
+        met: Vec::new(),
+    };
+    for item in body {
+        walk.visit(item, false);
+    }
+    // One entry per subject, where it was first met, with what it was last drawn as.
+    let mut appearances: Vec<(String, Applied)> = Vec::new();
+    for (id, applied) in walk.met {
+        match appearances.iter_mut().find(|(held, _)| *held == id) {
+            Some(entry) => entry.1 = applied,
+            None => appearances.push((id, applied)),
+        }
+    }
+    appearances
+}
+
+/// One sample of each distinct appearance, where it was first met, as it was last met.
+fn distinct_samples(appearances: Vec<(String, Applied)>) -> Vec<(String, Applied)> {
+    let mut samples: Vec<(String, Applied)> = Vec::new();
+    for sample in appearances {
+        match samples
+            .iter_mut()
+            .find(|held| held.1.sample_key() == sample.1.sample_key())
+        {
+            Some(entry) => *entry = sample,
+            None => samples.push(sample),
+        }
+    }
+    samples
+}
+
+/// What a picture's key lists, read back from its scene: each subject it
+/// draws with an appearance, in the order it draws them, and one sample of
+/// each distinct part kind and relationship kind among them.
+#[derive(Clone, Debug)]
+pub struct PictureLegend {
+    /// Each subject and what it was drawn as, where it was first met, as it was last met.
+    pub subjects: Vec<(String, Applied)>,
+    /// One sample of each distinct part kind drawn, and the last subject drawn so.
+    pub kinds: Vec<(String, Applied)>,
+    /// One sample of each distinct relationship kind drawn, likewise.
+    pub relationships: Vec<(String, Applied)>,
+}
+
+/// What a picture's key lists, read back from the items of its body.
+pub fn picture_legend(body: &[Item]) -> PictureLegend {
+    let subjects = picture_appearances(body);
+    let of = |part: bool| {
+        distinct_samples(
+            subjects
+                .iter()
+                .filter(|(_, one)| matches!(one.drawn, Drawn::Part(_)) == part)
+                .cloned()
+                .collect(),
+        )
+    };
+    let kinds = of(true);
+    let relationships = of(false);
+    PictureLegend {
+        subjects,
+        kinds,
+        relationships,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scene::Colour;
+
+    /// A package of one kind, its icon drawn at some size and ink.
+    fn package(id: &str, container: bool, size: f64, ink: Colour) -> (String, Applied) {
+        let appearance = NodeAppearance {
+            container,
+            tags: Vec::new(),
+            type_color: Some(PaletteColor::Purple),
+            icon: Some("archive".to_owned()),
+            type_name: "Package".to_owned(),
+            type_kind: TypeKind::Policy("package".to_owned()),
+            drill: None,
+        };
+        let icon = Icon {
+            name: "archive".to_owned(),
+            size,
+            ink,
+        };
+        (
+            id.to_owned(),
+            Applied {
+                drawn: Drawn::Part(appearance),
+                icon: Some(icon),
+            },
+        )
+    }
+
+    #[test]
+    fn one_kind_keys_once_however_its_icon_is_drawn() {
+        let card = package(
+            "a",
+            false,
+            18.0,
+            Colour::Palette {
+                color: PaletteColor::Purple,
+            },
+        );
+        let header = package(
+            "b",
+            true,
+            20.0,
+            Colour::Palette {
+                color: PaletteColor::Purple,
+            },
+        );
+        let door = package(
+            "c",
+            false,
+            14.0,
+            Colour::Palette {
+                color: PaletteColor::Amber,
+            },
+        );
+        assert_eq!(distinct_samples(vec![card, header, door]).len(), 1);
+    }
+}

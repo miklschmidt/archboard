@@ -3,7 +3,7 @@
   "name": "Commands",
   "kind": "module",
   "responsibility": "Every command family's contracts and handlers",
-  "description": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers.",
+  "description": "Each command family keeps its contracts and handlers in a folder of src/cli/commands; the command table in routing/operations/run.ts registers them, and Contract execution calls the handlers. vault/rules/diagnostic-line.ts writes a diagnostic as one line for vault check and the code check, and names its subject through the rules' describeSubject.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands"

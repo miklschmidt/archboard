@@ -1,16 +1,19 @@
 {
   "order": 37000,
-  "name": "Vault requirement",
+  "name": "Vault resolution",
   "kind": "module",
-  "responsibility": "Refuses a call or a socket that names no vault, or one the server cannot read, including a directory whose real path is not <dir>/.archboard/vault, and hands a route the canonical vault it named",
-  "description": "ADR 0049: the server has no working directory and no default vault, and it starts without one.",
+  "responsibility": "resolveVault: the vault a call or a socket upgrade names, made canonical once, or the refusal that says how to name one; only an upgrade recovers the chosen checkout's vault",
+  "description": "The server end of ADR 0049's request-vault contract, beside the browser end that names the vault: the server has no working directory and no default vault, and it starts without one. A directory whose real path is not <dir>/.archboard/vault is refused. Moved from the workbench, which lent it to the server as ./host (TASK-653.09).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/server/request/services/vault.ts"
+    "path": "packages/server-requests/src/server/services/vault.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "parent": "vKEsyHFk/vKEsyHFk#29kIWfHH",
+  "formerNames": [
+    "Vault requirement"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -35,11 +38,24 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/request/services/vault.ts",
+        "path": "packages/server-requests/src/server/services/vault.ts",
         "symbol": "placeOfVault"
       },
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-      "id": "vKEsyHFk#KBBwvHf9"
+      "id": "vKEsyHFk#KBBwvHf9",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "order": 70070,
+      "kind": "call",
+      "label": "whether a named directory is the vault its holder holds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/server/services/vault.ts",
+        "symbol": "vaultIn"
+      },
+      "id": "vKEsyHFk#dIVa8Cp4",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
     }
   ]
 }

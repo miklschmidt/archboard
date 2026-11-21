@@ -9,9 +9,9 @@ import {
 } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
-import { modelWalkthroughQuery } from "#ui/architecture-drawing/model-reader/access/clients/walkthroughs.ts";
+import { modelWalkthroughQuery } from "#ui/architecture-drawing/model-reader/reading/clients/walkthroughs.ts";
 import { ModelWalkthrough } from "#ui/architecture-drawing/model-reader/reading/components/ModelWalkthrough.tsx";
 
 type PlaybackRequest = Parameters<typeof modelWalkthroughQuery>[1];

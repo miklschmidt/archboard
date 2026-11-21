@@ -1,7 +1,7 @@
 // Which subjects of a reading the agents claim, and what for. A claim holds exact subjects in the
 // state it names, so a reading of another state, or of a retained checkpoint, shows none of them.
 
-import type { ArchitectureClaim } from "@archboard/model/contract";
+import type { ArchitectureClaim } from "@archboard/model-contract";
 
 /** The purpose of the claim that holds each subject, by the subject. */
 type ClaimedSubjects = ReadonlyMap<string, string>;

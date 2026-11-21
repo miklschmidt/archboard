@@ -35,6 +35,8 @@ interface Holder {
 	/** Whether every declaration takes that level, as an enum's cases and a protocol's requirements do. */
 	readonly imposed: boolean;
 	readonly exposed: boolean;
+	/** The last names of the types the declaration's inheritance clause names, for a type or an extension. */
+	readonly conforms?: readonly string[];
 }
 
 /** What holds the declarations at file level. */
@@ -52,7 +54,8 @@ const KINDS: Readonly<Record<string, Definition["kind"]>> = {
 
 /**
  * The declarations that declare a type and nothing a caller runs: a protocol,
- * an alias and an associated type. A struct and an enum hold data, and are
+ * an alias and an associated type. A protocol is a contract, whose
+ * requirements module depth counts once (TASK-651). A struct and an enum hold data, and are
  * types unless their module gives them a method (typeDefinitions).
  */
 const TYPES = new Set([
@@ -124,10 +127,11 @@ function firstLabel(node: Node): string | undefined {
 function moreOf(
 	node: Node,
 	name: string,
-): Pick<Definition, "type" | "calledByLanguage" | "passes"> {
+): Pick<Definition, "type" | "contract" | "calledByLanguage" | "passes"> {
 	const passes = swiftPassesTo(node);
 	return {
 		...(TYPES.has(node.type) ? { type: true } : {}),
+		...(node.type === "protocol_declaration" ? { contract: "declared" as const } : {}),
 		...(calledByLanguage(node, name) ? { calledByLanguage: true } : {}),
 		...(passes === undefined ? {} : { passes }),
 	};
@@ -178,7 +182,18 @@ function defined(node: Node, name: string, holder: Holder): Definition {
 		visibility: level,
 		exposed: EXPOSED.has(level) && holder.exposed,
 		...moreOf(node, name),
+		...conformsOf(holder),
 	};
+}
+
+/**
+ * What a member carries of the names its type's or extension's inheritance clause names.
+ * @param holder What holds it.
+ * @returns The names, or nothing where the clause names none.
+ */
+function conformsOf(holder: Holder): Pick<Definition, "conforms"> {
+	const { conforms = [] } = holder;
+	return conforms.length === 0 ? {} : { conforms };
 }
 
 /**
@@ -237,6 +252,7 @@ function typeDefinitions(node: Node, holder: Holder): Definition[] {
 		level,
 		imposed: false,
 		exposed: own.exposed,
+		conforms: inherited(node),
 	};
 	const held = members(node, inner, own.visibility);
 	// A struct or an enum holds data. With no method, wherever an extension
@@ -244,6 +260,20 @@ function typeDefinitions(node: Node, holder: Holder): Definition[] {
 	// compiler's exhaustive checks (Definition.data).
 	const data = DATA_KINDS.has(node.childForFieldName("declaration_kind")?.text ?? "");
 	return [data ? { ...own, data: true } : own, ...held];
+}
+
+/**
+ * The last name of each type a type's or an extension's inheritance clause
+ * names: `Canvas` of `Ink.Canvas` and of `Canvas<Int>`.
+ * @param node The declaration.
+ * @returns The names.
+ */
+function inherited(node: Node): string[] {
+	return node.namedChildren.flatMap((child) => {
+		if (child.type !== "inheritance_specifier") return [];
+		const names = child.childForFieldName("inherits_from")?.namedChildren ?? [];
+		return names.findLast((name) => name.type === "type_identifier")?.text ?? [];
+	});
 }
 
 /**
@@ -258,7 +288,7 @@ function extensionDefinitions(node: Node): Definition[] {
 	const symbol = names.length === 0 ? type.text : names.map((name) => name.text).join(".");
 	const written = writtenLevel(node) ?? "internal";
 	const level = written === "private" ? "fileprivate" : written;
-	return members(node, { symbol, level, imposed: false, exposed: true });
+	return members(node, { symbol, level, imposed: false, exposed: true, conforms: inherited(node) });
 }
 
 /**

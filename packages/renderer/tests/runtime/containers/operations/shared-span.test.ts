@@ -9,7 +9,7 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import sharedSpan from "#tests/runtime/support/fixtures/shared-span.json";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 
 /** The narrowest shared span a straight line keeps its nudging distance in. */
 const SHARED_SPAN = 24;

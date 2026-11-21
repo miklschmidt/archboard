@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-	architectureExportResultSchema,
-	architectureImportRequestSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
+import { modelShape } from "@archboard/model-contract";
 import {
 	exportArchitectureModelOnServer,
 	importArchitectureModelOnServer,
@@ -11,7 +7,7 @@ import {
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
-import { statedJson } from "#cli/commands/model/operations/input.ts";
+import { requestOf, statedJson } from "#cli/commands/model/operations/input.ts";
 const unavailable = {
 	id: "unavailable",
 	exit: 2,
@@ -44,7 +40,7 @@ const modelExportContract = defineCommand({
 			model: z.string(),
 			revision: z.string(),
 		}),
-		architectureExportResultSchema().options[1],
+		modelShape("refusal"),
 	]),
 	output: {
 		cases: [
@@ -123,7 +119,7 @@ const modelImportContract = defineCommand({
 		},
 	],
 	input: { ingress: z.strictObject({ input: z.string().optional() }) },
-	result: architectureModuleEditResultSchema(),
+	result: modelShape("editResult"),
 	output: {
 		cases: [
 			{
@@ -160,7 +156,7 @@ const modelImportContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model import");
 		const result = await importArchitectureModelOnServer(
-			context.parse(architectureImportRequestSchema(), await statedJson(input, context)),
+			context.parse(requestOf("import"), await statedJson(input, context)),
 		);
 		return {
 			result,

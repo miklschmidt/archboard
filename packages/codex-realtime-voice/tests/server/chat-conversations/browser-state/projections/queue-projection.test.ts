@@ -1,10 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexApprovalBroker } from "#runtime/approvals/services/broker.ts";
 import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools-and-work/spoken-approval/state/state.ts";
 import type { ThreadLinkSnapshot } from "#runtime/workhorses/thread-link/rules/contract.ts";
@@ -14,7 +12,7 @@ import type {
 	CodexQueueProjectionInput,
 } from "#server/projection/protocol/projection-contract.ts";
 
-const authorities = createIdentityAuthorities();
+const authorities = testAuthorities();
 const identity = authorities.identity;
 const model = createCodexBrowserModel(authorities);
 const RAW_THREAD_ID = "queue-thread";
@@ -218,7 +216,7 @@ function authoritiesForOwnership(): IdentityAuthorities {
 }
 
 test("the queue projection never invents an operation this authority did not issue", () => {
-	const other = createIdentityAuthorities();
+	const other = testAuthorities();
 	const foreign = other.operation.decoder.serializeOperationId(
 		other.operation.issuer.mintOperationId(),
 	);

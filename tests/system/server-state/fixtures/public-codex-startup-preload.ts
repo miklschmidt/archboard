@@ -5,6 +5,13 @@ import { resolve } from "node:path";
 import { CODEX_PROCESS_MODULE_PATH as modulePath } from "../../support/codex-process-module.ts";
 
 const actual = await import(modulePath);
+// The executable failure is not one a caller makes, so the stand-in throws the package's own.
+const { CodexExecutableError } = await import(
+	resolve(
+		import.meta.dir,
+		"../../../../packages/codex-app-server/src/runtime/services/executable.ts",
+	)
+);
 // Mocking updates the imported namespace in place, so the stand-in keeps the real function.
 const { resolveCodexExecutable } = actual;
 const executable = process.env["ARCHBOARD_TEST_PUBLIC_CODEX_EXECUTABLE"];
@@ -15,7 +22,7 @@ if (executable !== undefined) {
 			resolveCodexExecutable:
 				process.env["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] === "verification_timeout"
 					? () => {
-							throw new actual.CodexExecutableError({
+							throw new CodexExecutableError({
 								code: "verification_timeout",
 								executablePath: executable,
 								message: `Codex codex-cli ${codexProtocolVersion()} did not answer the bounded --version proof. Run bun install to restore the exact package-local runtime, then retry.`,
@@ -60,13 +67,19 @@ const readinessTimeoutMs = Number(process.env["ARCHBOARD_TEST_PUBLIC_READINESS_T
 if (Number.isFinite(readinessTimeoutMs) && readinessTimeoutMs > 0) {
 	const timingPath = "@archboard/timing";
 	const actualTiming = await import(timingPath);
-	// Mocking updates the imported namespace in place, so the stand-in keeps the real getter.
-	const { serverLifecycleMs } = actualTiming;
+	// Mocking updates the imported namespace in place, so the stand-in keeps the real wait.
+	const { waitUntil } = actualTiming;
 	await Promise.resolve(
 		mock.module(timingPath, () => ({
 			...actualTiming,
-			serverLifecycleMs: (key: string) =>
-				key === "startupReadiness" ? readinessTimeoutMs : serverLifecycleMs(key),
+			waitUntil: (wait: string, probe: unknown, options: { boundMs?: number } = {}) =>
+				waitUntil(
+					wait,
+					probe,
+					wait === "serverLifecycle.startupReadiness" && options.boundMs === undefined
+						? { ...options, boundMs: readinessTimeoutMs }
+						: options,
+				),
 		})),
 	);
 }

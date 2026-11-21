@@ -6,10 +6,8 @@
 //! box and the region drawn round it; a line that stopped on the region's wall
 //! is carried on to the card's face.
 
-use archboard_scene::paint::design::header_words_width;
-
-use crate::constants::REGION_INSET;
-use crate::ecma::{abs, js_max, js_min, number_of, sorted_by};
+use crate::constants::{HEADER_PADDING, REGION_INSET};
+use crate::ecma::{abs, max, min, number_of, sorted_by};
 use crate::geometry::{Point, Rect};
 use crate::graph::{DOOR, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
 use crate::placed::FrameRow;
@@ -189,7 +187,7 @@ pub(crate) fn frame_header(node: &Node, band: f64) -> Result<Header, String> {
     let header = number_of(node.option("archboard.header.size").unwrap_or("0"));
     Ok(Header {
         width: node.w(),
-        height: js_max(1.0, header) + band,
+        height: max([1.0, header]) + band,
         steps: steps_of(node, band)?,
     })
 }
@@ -202,7 +200,7 @@ pub(crate) fn card_as(node: &Node, lone: Option<&Lone>) -> Card {
         return card;
     };
     Card {
-        width: js_max(card.width + 2.0 * REGION_INSET, caption_width(lone)),
+        width: max([card.width + 2.0 * REGION_INSET, caption_width(lone)]),
         height: card.height + band_of(lone) + REGION_INSET,
         ..card
     }
@@ -223,7 +221,7 @@ pub(crate) fn card_in(region: Rect, lone: &Lone) -> Rect {
 pub(crate) fn side_room(width: f64, lone: &Lone) -> f64 {
     match lone.width {
         None => room_of(lone),
-        Some(own) => js_max(REGION_INSET, (width - own) / 2.0),
+        Some(own) => max([REGION_INSET, (width - own) / 2.0]),
     }
 }
 
@@ -256,7 +254,7 @@ pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> F
         steps: head.steps.map(|steps| {
             steps
                 .iter()
-                .map(|step| (header_words_width(step.width), step.height))
+                .map(|step| (step.width - HEADER_PADDING, step.height))
                 .collect()
         }),
         above: lone.map_or(0.0, band_of),
@@ -281,7 +279,7 @@ pub(crate) fn frame_shape(shape: FrameShape, lone: Option<&Lone>) -> FrameShape 
 pub(crate) fn title_width(header: &Header, lone: Option<&Lone>, inset: f64) -> f64 {
     match lone {
         None => header.width,
-        Some(lone) => js_max(header.width, caption_width(lone) - 2.0 * inset),
+        Some(lone) => max([header.width, caption_width(lone) - 2.0 * inset]),
     }
 }
 
@@ -294,10 +292,10 @@ fn on_wall(one: f64, other: f64) -> bool {
 /// to its card's side, level, stepping clear of the caption band and the
 /// corners when it stopped beside them.
 fn carried_level(end: Point, x: f64, card: Rect) -> Vec<Point> {
-    let y = js_min(
-        js_max(end.y, card.y + CORNER_ROOM),
+    let y = min([
+        max([end.y, card.y + CORNER_ROOM]),
         card.y + card.height - CORNER_ROOM,
-    );
+    ]);
     if on_wall(y, end.y) {
         return vec![Point { x, y }];
     }
@@ -363,8 +361,8 @@ fn crossing_band(region: Rect, band: f64, lines: &[&[Point]]) -> Vec<f64> {
         .flat_map(|points| {
             points.windows(2).filter_map(move |pair| {
                 let (previous, point) = (pair[0], pair[1]);
-                let spans = js_min(previous.y, point.y) < region.y + band
-                    && js_max(previous.y, point.y) > region.y;
+                let spans = min([previous.y, point.y]) < region.y + band
+                    && max([previous.y, point.y]) > region.y;
                 let within = point.x > region.x && point.x < region.x + region.width;
                 (on_wall(previous.x, point.x) && spans && within).then_some(point.x)
             })

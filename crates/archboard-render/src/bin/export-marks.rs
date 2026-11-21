@@ -3,11 +3,9 @@
 //! standing's pin and the warning, as the painter draws them in a picture.
 //! `scripts/build-core.ts` writes them beside the WebAssembly build, so a pane
 //! that draws a key, a pin or a warning holds no copy of the painter's rules.
-
-use archboard_scene::js;
+use archboard_painting::own_icons;
+use archboard_painting::viewer_marks;
 use archboard_scene::names::word;
-use archboard_scene::paint::design::own_icons;
-use archboard_scene::paint::viewer_marks;
 use archboard_scene::request::PaletteColor;
 use archboard_scene::scene::Colour;
 use archboard_svg::{colour, markup};
@@ -51,23 +49,23 @@ fn main() {
                 marks
                     .line_widths
                     .iter()
-                    .map(|(weight, width)| (word(weight), js::number(*width))),
+                    .map(|(weight, width)| (word(weight), archboard_ecma::number(*width))),
             ),
         ),
         (
             "How long an arrowhead is from its base to its tip, at every weight; it is as wide.",
             "HEAD_LENGTH",
-            js::number(marks.head_length),
+            archboard_ecma::number(marks.head_length),
         ),
         (
             "How thick an open arrowhead's arms are, in the ten-unit square it is drawn in.",
             "OPEN_ARM",
-            js::number(marks.open_arm),
+            archboard_ecma::number(marks.open_arm),
         ),
         (
             "How thick a pulse's core is on a line of no emphasis.",
             "PULSE_BREADTH",
-            js::number(marks.pulse_breadth),
+            archboard_ecma::number(marks.pulse_breadth),
         ),
         (
             "The ink a line of each colour is drawn in.",
@@ -97,7 +95,7 @@ fn main() {
         (
             "How far in from a box's corner its pin and its warning stand.",
             "CORNER_INSET",
-            js::number(marks.corner_inset),
+            archboard_ecma::number(marks.corner_inset),
         ),
         (
             "Every icon a picture can draw whatever the policy says.",

@@ -2,7 +2,7 @@
 // state it names, and a mark says each purpose once.
 
 import { expect, test } from "bun:test";
-import type { ArchitectureClaim } from "@archboard/model/contract";
+import type { ArchitectureClaim } from "@archboard/model-contract";
 import {
 	claimedSubjects,
 	claimsOn,

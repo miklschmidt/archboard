@@ -1,4 +1,5 @@
-import type { Model, ModelFlow, VariantContent } from "@archboard/model/content";
+import type { VariantContent } from "@archboard/model-contract";
+import type { Model, ModelFlow } from "@archboard/model-rules";
 import {
 	reachOf,
 	relevantFlows,

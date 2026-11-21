@@ -3,7 +3,7 @@
 // repository a model can lie in, and the act of opening one. Where one
 // drill-down leads is read by `use-drill-target.ts`.
 
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 
 /** A repository a drill-down can name, as this machine lists it. */
 type RepositoryPlace = Pick<RepositoryEntry, "vault" | "state">;

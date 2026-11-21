@@ -10,9 +10,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#r2iFMYJk",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "outgoing": [
     {
       "order": 100,
@@ -24,21 +24,47 @@
         "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
         "symbol": "panes"
       },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#qtFUIpvR"
+      "id": "vKEsyHFk#qtFUIpvR",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
       "order": 200,
-      "kind": "dependency",
-      "label": "how long a layout request waits",
+      "kind": "call",
+      "label": "wait for the panes to settle; the layout timeout",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
-        "symbol": "paneMs"
+        "symbol": "waitUntil"
       },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#N2puYRTF"
+      "id": "vKEsyHFk#N2puYRTF",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "which pane a request names; whether the screen is full",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "resolvePane"
+      },
+      "id": "vKEsyHFk#qKqXup5o",
+      "to": "vKEsyHFk#PmExcyj9"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "the pane's focus, for its agent",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "publishPaneContext"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+      "to": "vKEsyHFk#OY4JPr8G"
     }
   ]
 }

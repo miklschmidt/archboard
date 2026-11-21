@@ -1,4 +1,4 @@
-import { architecturePaneReadingSchema } from "@archboard/model/pane-context";
+import { modelShape } from "@archboard/model-contract";
 import { statedJson } from "#cli/commands/model/operations/input.ts";
 import { z } from "zod";
 import {
@@ -8,12 +8,23 @@ import {
 	showModelInPane,
 	type ShowModelResponse,
 } from "#cli/server-access/clients/panes.ts";
-import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
 import { stagedTokens } from "#cli/commands/pane/rules/staged-tokens.ts";
 import { openCanvas } from "#cli/contract/clients/prerequisites.ts";
+
+/**
+ * A pane's place, in a sentence.
+ *
+ * `place` is a phrase, not a word — "left", but also "the only pane" — so
+ * dropping it into "in the ... pane" produced "in the the only pane pane".
+ * @param place The pane's place, as the server named it.
+ * @returns The phrase, as it reads in a sentence.
+ */
+function paneWords(place: string): string {
+	return place.startsWith("the ") ? place : `the ${place} pane`;
+}
 
 /** A pane as the server names it. */
 const PaneRefSchema = z.looseObject({
@@ -387,14 +398,14 @@ function choiceLine(result: Pick<ShowModelResponse, "chose">): string[] {
 	];
 }
 
-const ShowInputSchema = architecturePaneReadingSchema().extend({
+const ShowInputSchema = modelShape("paneReading").extend({
 	pane: z.string().optional(),
 	input: z.string().optional(),
 });
 const ShowResultSchema = z.looseObject({
 	success: z.literal(true),
 	model: z.string(),
-	reading: architecturePaneReadingSchema(),
+	reading: modelShape("paneReading"),
 	revision: z.unknown(),
 	repository: z.string().nullable(),
 	checkout: z.string(),
@@ -525,10 +536,7 @@ const browserShowContract = defineCommand({
 		const reading =
 			file === undefined
 				? flags
-				: context.parse(
-						architecturePaneReadingSchema(),
-						await statedJson({ input: file }, context),
-					);
+				: context.parse(modelShape("paneReading"), await statedJson({ input: file }, context));
 		const opened = await openCanvas(context.vault?.path ?? null, "Show architecture");
 		const result = await showModelInPane(reading, pane ?? opened ?? undefined);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };

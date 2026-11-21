@@ -1,9 +1,9 @@
 import type { WorkbenchVoiceInput } from "#runtime/host/protocol/context-source.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import { afterEach, describe, expect, test } from "bun:test";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { serverNotification } from "#tests/runtime/support/server-notification.ts";
 import { parseRealtimeItemId } from "#shared/protocol/realtime-contract.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import {
 	COORDINATOR_WIRE_THREAD_ID,
 	LINKED_WIRE_THREAD_ID,
@@ -324,11 +324,12 @@ describe("Codex realtime adapter", () => {
 			outcome: "delivered",
 		});
 		expect(h.session.texts).toHaveLength(1);
-		h.session.appendSpeechFailure = new CodexSessionMutationError(
-			"thread/realtime/appendSpeech",
-			"outcome_unknown",
-			"lost",
-		);
+		h.session.appendSpeechFailure = createCodexFailure({
+			kind: "mutation",
+			method: "thread/realtime/appendSpeech",
+			outcome: "outcome_unknown",
+			message: "lost",
+		});
 		expect(await h.adapter.appendSpeech({ ...browser, text: "speech" })).toMatchObject({
 			outcome: "outcome_unknown",
 			reason: "response_lost",
@@ -367,7 +368,7 @@ describe("Codex realtime adapter", () => {
 		if (!start?.realtimeSessionId) {
 			throw new Error("Start request missing.");
 		}
-		const other = createIdentityAuthorities().identity;
+		const other = testAuthorities().identity;
 		h.adapter.onNotification(
 			notificationEvent(
 				h,

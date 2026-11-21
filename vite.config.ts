@@ -38,7 +38,8 @@ const RENDERER_SOURCES = [
 	"packages/renderer/src/shared",
 	"packages/renderer/src/ui",
 	"packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
-	"packages/model/src/shared",
+	"packages/model-contract/src/shared",
+	"packages/model-rules/src/shared",
 	"packages/code-binding/src/shared",
 	"packages/timing/src",
 	"node_modules/@chenglou/pretext/package.json",
@@ -201,7 +202,7 @@ const capacityTests = [
 // A contended machine changes what these real programs answer: Chromium's exact bytes, and
 // whether rust-analyzer answers at all. They run after the parallel lanes, alone.
 const soloTests = [
-	"packages/renderer/tests/runtime/rasterizer/services/rasterizer.test.ts",
+	"packages/raster/tests/runtime/services/rasterizer.test.ts",
 	"packages/code-intel/tests/runtime/language-servers/processes/rust-server.test.ts",
 ];
 
@@ -455,9 +456,9 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/services/diagnostics.test.ts",
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
-					"packages/renderer/tests/runtime/headless-chromium/processes/startup.test.ts",
-					"packages/model/tests/runtime/canonical/read/operations/model-read.test.ts",
-					"packages/model/tests/runtime/canonical/edit/operations/structure.test.ts",
+					"packages/headless-chromium/tests/runtime/processes/startup.test.ts",
+					"packages/model-store/tests/runtime/canonical/read/operations/model-read.test.ts",
+					"packages/model-store/tests/runtime/canonical/edit/operations/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
 					"packages/workbench/tests/server/workbench-host/services/production-initialization.test.ts",
 					"packages/workbench/tests/server/actions/services/dynamic-approval-sessions.test.ts",
@@ -550,7 +551,7 @@ export default defineConfig({
 						},
 						{
 							name: "controls",
-							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|cn))[\\/]/,
+							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|ui-clocks|cn))[\\/]/,
 							entriesAware: true,
 						},
 						{
@@ -560,7 +561,7 @@ export default defineConfig({
 						},
 						{
 							name: "agent",
-							test: /packages[\\/](?:workbench|codex-realtime-voice)[\\/]/,
+							test: /packages[\\/](?:agent-surfaces|workbench|codex-realtime-voice)[\\/]/,
 							entriesAware: true,
 						},
 					],

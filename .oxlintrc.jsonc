@@ -105,7 +105,7 @@
 					{
 						"group": ["**/source-checkout", "**/source-checkout.ts"],
 						"importNames": ["SOURCE_CHECKOUT"],
-						"message": "Ask installation() from @archboard/workspace/installation. It decides once whether this process runs a checkout or a release, and names the root and every location in it (ADR 0076).",
+						"message": "Ask installation() from @archboard/machine/installation. It decides once whether this process runs a checkout or a release, and names the root and every location in it (ADR 0076).",
 					},
 				],
 			},
@@ -199,37 +199,37 @@
 			// recording can render it frame by frame against a clock it steps
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
-				// The canvas of apps/web and the subtitles of the workbench. Behavior first
+				// The canvas of apps/web and the subtitles of the agent's surfaces. Behavior first
 				// (ADR 0075), each is one behavior folder.
 				"apps/web/src/ui/architecture-drawing/canvas/**",
-				"packages/workbench/src/ui/workbench-client/subtitles/**",
+				"packages/agent-surfaces/src/ui/workbench-client/subtitles/**",
 			],
 			"rules": {
 				"no-restricted-globals": [
 					"error",
 					{
 						"name": "requestAnimationFrame",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"name": "cancelAnimationFrame",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"name": "setTimeout",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"name": "clearTimeout",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"name": "setInterval",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"name": "clearInterval",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 				],
 				"no-restricted-properties": [
@@ -237,72 +237,72 @@
 					{
 						"object": "window",
 						"property": "requestAnimationFrame",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "window",
 						"property": "cancelAnimationFrame",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "window",
 						"property": "setTimeout",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "window",
 						"property": "clearTimeout",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "window",
 						"property": "setInterval",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "window",
 						"property": "clearInterval",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "globalThis",
 						"property": "requestAnimationFrame",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "globalThis",
 						"property": "cancelAnimationFrame",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "globalThis",
 						"property": "setTimeout",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "globalThis",
 						"property": "clearTimeout",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "globalThis",
 						"property": "setInterval",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "globalThis",
 						"property": "clearInterval",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "performance",
 						"property": "now",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 					{
 						"object": "Date",
 						"property": "now",
-						"message": "Ask frameClock() from @archboard/ui-kit/frame-clock, so a recording can render this frame by frame (TASK-381).",
+						"message": "Ask frameClock() from @archboard/ui-clocks/frame-clock, so a recording can render this frame by frame (TASK-381).",
 					},
 				],
 			},
@@ -319,7 +319,7 @@
 				"packages/ui-kit/src/ui/shadcn/components/alert.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/badge.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/button.tsx",
-				"packages/ui-kit/src/ui/shadcn/components/checkbox.tsx",
+				"apps/web/src/ui/architecture-drawing/canvas/presentation/components/checkbox.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/command.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/dialog.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/dropdown-menu.tsx",
@@ -328,7 +328,7 @@
 				"packages/ui-kit/src/ui/shadcn/components/input.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/label.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/popover.tsx",
-				"packages/ui-kit/src/ui/shadcn/components/radio-group.tsx",
+				"packages/code-opener/src/ui/components/radio-group.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/select.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/separator.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/tabs.tsx",
@@ -336,10 +336,10 @@
 				"packages/ui-kit/src/ui/shadcn/components/toggle-group.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/toggle.tsx",
 				"packages/ui-kit/src/ui/shadcn/components/tooltip.tsx",
-				// TASK-150.05: official assistant-ui base-nova registry source (packages/workbench/src/ui/workbench-client/thread/components/README.md)
-				"packages/workbench/src/ui/workbench-client/thread/components/markdown-text.tsx",
-				"packages/workbench/src/ui/workbench-client/thread/components/tooltip-icon-button.tsx",
-				"packages/workbench/src/ui/workbench-client/thread/hooks/use-copy-to-clipboard.ts",
+				// TASK-150.05: official assistant-ui base-nova registry source (packages/agent-surfaces/src/ui/workbench-client/thread/components/README.md)
+				"packages/agent-surfaces/src/ui/workbench-client/thread/components/markdown-text.tsx",
+				"packages/agent-surfaces/src/ui/workbench-client/thread/components/tooltip-icon-button.tsx",
+				"packages/agent-surfaces/src/ui/workbench-client/thread/hooks/use-copy-to-clipboard.ts",
 			],
 			"rules": {
 				"complexity": "off",

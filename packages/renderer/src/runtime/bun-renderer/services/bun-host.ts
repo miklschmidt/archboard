@@ -17,7 +17,7 @@
 import { availableParallelism } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { THEME_COLORS } from "#shared/protocol/generated/core/theme-colors.ts";
 import { installRendererHost } from "#shared/render/rules/host.ts";
 import {

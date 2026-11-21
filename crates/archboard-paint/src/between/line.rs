@@ -11,18 +11,18 @@
 //! morphed beside it, the two cross-fading. A swipe that appears or disappears
 //! morphs with the stroke, fading in or out.
 
-use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::paint::design::rail_gap;
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{
     Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };
 
 use super::content::look;
-use super::ease::{ease_in_out, emphasised, phase, receded};
+use super::ease::{ease_in_out, emphasised, receded};
 use super::found::Found;
 use super::morph::{Morph, length, route_of};
 use super::phases::Transition;
 use crate::path::path_of;
+use crate::timing::phase;
 
 /// How far a line recedes when it travels far, so that the eye stays on the cards.
 const DEEPEST: f64 = 0.5;
@@ -224,8 +224,7 @@ struct Ghost {
 
 /// Whether a shape of a mask is the core of a double line.
 fn is_core(shape: &Shape) -> bool {
-    shape.purpose == Purpose::Cutout
-        && shape.stroke.as_ref().and_then(|stroke| stroke.width) == Some(rail_gap())
+    shape.purpose == Purpose::Core
 }
 
 /// A cut this much of the way in.

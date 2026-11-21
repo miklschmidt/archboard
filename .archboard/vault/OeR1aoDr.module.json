@@ -3,12 +3,13 @@
   "name": "Shared components",
   "kind": "ui",
   "responsibility": "The composite components and the class-name rule that every surface draws with",
+  "description": "The twenty names of ui-kit's ./components entry: one composite per job over the shadcn Base UI items, a family's parts on its root (Dialog.Content, Select.Item), with cn, the platform's command key and a repository's shown name beside them. buttonVariants is private behind Button (TASK-653.17): the Base UI triggers render a Button, and Button's href branch draws a plain link with the same classes and no Base UI primitive, because Base UI gives a non-native element role=button; the shell's notices use it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/ui-kit/src/ui"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
   "schemaVersion": 1,
   "id": "vKEsyHFk#OeR1aoDr",
+  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
   "outgoing": []
 }

@@ -3,6 +3,7 @@
   "name": "Inbound protocol router",
   "kind": "module",
   "responsibility": "Routes decoded child requests and notifications to their registered owners",
+  "description": "TASK-653.11: decodes each line with decodeFrame, checks the pending capacity, then decodes the body with decodeFrameBody, which returns a result. It keeps its state and every issue text; one transport test sends a frame that breaks several rules and asserts which refusal wins.",
   "groups": [
     "child"
   ],
@@ -54,12 +55,12 @@
     {
       "order": 22000,
       "kind": "dependency",
-      "label": "decode each inbound frame",
+      "label": "decode each frame, then its body after the capacity check",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-app-server/src/runtime/transport/operations/inbound-router.ts",
-        "symbol": "decodeServerNotification"
+        "symbol": "decodeFrame"
       },
       "id": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
       "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"

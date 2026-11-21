@@ -1,6 +1,6 @@
 import { useCallback, useId, type FormEvent, type JSX } from "react";
 import { Button, Field, Input } from "@archboard/ui-kit/components";
-import type { Destination } from "#ui/architecture-drawing/model-reader/access/clients/publication.ts";
+import type { Destination } from "#ui/architecture-drawing/model-reader/reading/clients/publication.ts";
 
 interface PublicationDestinationProps {
 	destination: Destination | undefined;

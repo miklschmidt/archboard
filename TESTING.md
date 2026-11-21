@@ -3,7 +3,6 @@
 This file is for a developer or an agent who works in this checkout. It shows
 how to run a server of your own, write and read a model, see it in a browser,
 and test a change. [INSTALL.md](INSTALL.md) covers installation on a machine.
-[docs/agents/test-suite.md](docs/agents/test-suite.md) covers the test lanes.
 `./bin/archboard --help` and the `--help` of each command describe the flags.
 
 ## 1. Prepare the checkout
@@ -150,7 +149,7 @@ out=$(mktemp -d)
 
 Write temporary pictures outside the checkout.
 Structural renders use the selected scope. Sequence and flowchart renders also name an authored flow and grammar.
-`model rasterize` accepts the same reading selectors and needs Chromium, as [INSTALL.md](INSTALL.md#rendering-to-a-bitmap) describes.
+`model rasterize` accepts the same reading selectors and needs Chromium, as [the install guide](https://usearchboard.dev/docs/install/#pictures-and-recordings) describes.
 Render recipes retain exact architecture references for reproducible output.
 `check embeds` discovers tracked artifacts through Git and reads their embedded recipes.
 It needs no tracking list in the model.
@@ -186,8 +185,7 @@ a narration can be silent. The [README FAQ](README.md#faq) explains why.
 
 ## 7. Test a change
 
-`bun run check` is the complete gate. [docs/agents/test-suite.md](docs/agents/test-suite.md)
-describes its lanes, what each lane needs, and which test owns which behavior.
+`bun run check` is the complete gate.
 On macOS, use Chrome for Testing. Before every local lane or gate, set
 `AGENT_BROWSER_EXECUTABLE_PATH` and `ARCHBOARD_RENDERER_CHROMIUM` to its absolute
 executable path in the command environment. Keep these values out of `.env` files.
@@ -206,16 +204,11 @@ Three facts decide whether the gate can run to its end:
   A missing prerequisite ends the lane with code 2.
 - A new worktree needs `bun install` and `bun run build` first.
 
-Some checks need a person, because they need a real voice, a microphone and
-speakers:
-
-- [The voice acceptance](docs/design/codex-workbench-voice-acceptance.md), for
-  a change to the Codex workbench or its voice path.
-- [The recording acceptance](docs/design/walkthrough-recording-acceptance.md),
-  for a change to `model record` or `model replay`. Its automated owners
-  run a real headless Chromium with a fake ffmpeg.
-  `tests/system/server-state/canonical-walkthrough-recording.test.ts` records against a
-  fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
+A change to the Codex workbench's voice path, or to `model record` or `model replay`, also needs
+a person to try it with a real voice, a microphone and speakers. The recording's automated owners
+run a real headless Chromium with a fake ffmpeg.
+`tests/system/server-state/canonical-walkthrough-recording.test.ts` records against a
+fake Codex, and `canonical-walkthrough-replay.test.ts` beside it renders a kept talk.
 
 Run `bun run benchmark` for the separate, uncached renderer corpus.
 It draws the current repository root and every module with children, plus three fixed fixtures, on both layout engines.
@@ -229,8 +222,8 @@ This command retains drawing assertions and speed limits outside the normal gate
 - The answer of a command is JSON on stdout. The reason for a failure is on
   stderr.
 - The server log is `archboard.log` in the state directory.
-  [INSTALL.md](INSTALL.md#machine-state-and-logs) gives the directory for each
-  system.
+  [The install guide](https://usearchboard.dev/docs/install/#machine-state-and-logs) gives the
+  directory for each system.
 - The Codex state of each server is in `codex-workbench/canvases/<port>` in the
   state directory. If the Codex of a server cannot start, the server stops with
   "The production Codex workbench did not become ready".

@@ -3,7 +3,7 @@
   "name": "Conversation controllers",
   "kind": "function",
   "responsibility": "The thread link and sign-in, composer, queue and approvals controllers of one pane, made together over the pane's transport",
-  "description": "The voice package owns the controllers and makes them in one operation, so a host that draws its own conversation takes them whole. The application makes them for the focused pane and adds the caches the cards read.",
+  "description": "The voice package owns the controllers and makes them in one operation. The socket conversation makes a fresh set for each socket generation, keyed on its transport, and hands them out with the hosted conversation; the application adds the caches the cards read.",
   "groups": [
     "agent"
   ],

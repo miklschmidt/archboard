@@ -2,8 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtempSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { codexRealtimeMs } from "@archboard/timing";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	createDefaultWorkbenchHost,
 	type DefaultWorkbenchHostInput,
@@ -34,7 +33,7 @@ function contextSource() {
 
 function harness(options: Partial<DefaultWorkbenchHostInput> = {}) {
 	const root = realpathSync(mkdtempSync(join(tmpdir(), "workbench-host-")));
-	const ids = createIdentityAuthorities();
+	const ids = testAuthorities();
 	const identity = ids.identity;
 	const childId = identity.validator.childId;
 	const epoch = identity.validator.epoch;
@@ -207,9 +206,7 @@ describe("the default workbench host", () => {
 			expect(context.child).toEqual({ id: h.authority.childId, epoch: h.authority.epoch });
 			expect(context.workhorse.threadId).toBe(h.authority.threadId);
 			expect(context.brief.text).toBe("The actual host task.");
-			expect(context.brief.freshUntilMs - context.brief.capturedAtMs).toBe(
-				codexRealtimeMs("contextFreshness"),
-			);
+			expect(context.brief.freshUntilMs - context.brief.capturedAtMs).toBe(30_000);
 			expect(context.operation).toEqual({ ...OPERATION, outcome: null });
 			expect(Object.isFrozen(context.brief)).toBe(true);
 			expect(h.proofRequests).toHaveLength(2);

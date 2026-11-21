@@ -4,7 +4,7 @@
 
 use serde::Deserialize;
 
-use crate::ecma::{abs, js_max, js_min, max, min, number_of, via_text};
+use crate::ecma::{abs, max, min, number_of, via_text};
 use crate::geometry::{Point, Rect};
 use crate::track::scene::{Map, Set};
 use crate::track::{hold_slots, wrap_columns};
@@ -206,8 +206,8 @@ fn through(from: Point, to: Point, at: &Rect) -> bool {
             continue;
         }
         let (one, other) = ((least - start) / step, (most - start) / step);
-        low = js_max(low, js_min(one, other));
-        high = js_min(high, js_max(one, other));
+        low = max([low, min([one, other])]);
+        high = min([high, max([one, other])]);
     }
     low < high
 }

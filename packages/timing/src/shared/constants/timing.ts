@@ -1,55 +1,45 @@
-// Every duration in Archboard, grouped by the subsystem that owns it.
+// Every duration, grouped by the subsystem that owns it, and the waiting that
+// callers would otherwise write around them.
 //
 // A duration used to sit next to the code that consumed it. Read one at a time
 // they all look independent, and they are not. So they live here, with what pulls against what written
 // beside them, and the reasons are the point: the next person to halve one of
 // these should not have to discover by accident what else they halved.
 //
-// Each owner has one frozen group, such as `MODEL_LOCK_MS` or `CODEX_PROCESS_MS`,
-// in a file of its own beside this one, and the group stays inside. A caller
-// asks the owner's function for one duration by its key, such as
-// `paneMs("report")`. Where callers would compute from a duration, the owner's
-// file holds that computation as one function, such as `codexRestartDelayMs`
-// or `codexApprovalExpiresAt`, and callers call it.
+// Each owner has one frozen group, such as `CODEX_PROCESS_MS`, in a file of its
+// own beside this one, and the group stays inside. A duration is named by its
+// owner and its key, such as `"codexRealtime.stop"`. Callers do not do the
+// waiting themselves (ADR 0083):
 //
-// This module is imported by the pane, the server, the CLI and the checks, so
-// it stays free of `process`, `node:` imports and anything a browser does not
-// have. Where a value can be overridden from the environment, the default is
-// here and the override stays at the point of use, in the process that has an
-// environment to read.
+// - `waitUntil` polls a probe on a named wait, which keeps that wait's bound,
+//   cadence and how it meets its bound.
+// - `pause` sleeps one named cadence for a loop that keeps its own decisions.
+// - `deadline` ends a named duration from a moment, under an optional cap; an
+//   age check compares the time now with it.
+// - `durationMs` reads a duration as a number, only for what takes a number and
+//   is not a wait: a stylesheet, a physics constant, a timer, a library's option
+//   or the words of a message.
+//
+// Where callers would compute from a duration, the owner's file holds that
+// computation as one function, such as `codexRestartDelayMs`, and callers call it.
+//
+// The names and the policies live in two halves (`tables/`): the published half
+// that published packages reach, and the host half, which a build under the
+// `published` condition leaves out. There, a name of the host half throws.
+//
+// This module is imported by browser code as well as by processes, so it stays
+// free of `process`, `node:` imports and anything a browser does not have. Where
+// a value can be overridden from the environment, the default is here and the
+// override stays at the point of use, in the process that has an environment to
+// read.
 
-// ── The server and its processes ─────────────────────────────────────────
-export { modelLockMs, claimMs } from "#shared/constants/model-locks.ts";
-export { serverLifecycleMs } from "#shared/constants/server-lifecycle.ts";
-export { gitGroupCleanupDeadline, gitMs } from "#shared/constants/git.ts";
-export { processGroupPollMs } from "#shared/constants/process-groups.ts";
-export {
-	codexApprovalExpiresAt,
-	codexApprovalMs,
-	codexContextFreshUntil,
-	codexProcessMs,
-	codexRealtimeMs,
-	codexRestartDelayMs,
-	codexSessionMs,
-} from "#shared/constants/codex.ts";
-export { rasterMs } from "#shared/constants/raster.ts";
-export { checkMs } from "#shared/constants/checks.ts";
+export { waitUntil } from "#shared/waits/operations/wait-until.ts";
+export { pause } from "#shared/waits/operations/pause.ts";
+export { deadline } from "#shared/durations/rules/deadline.ts";
+export { durationMs } from "#shared/durations/rules/duration-ms.ts";
+export { codexRestartDelayMs } from "#shared/constants/codex.ts";
 export { localityDefaultSinceSeconds } from "#shared/constants/history-lens.ts";
-export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
-export {
-	recorderMs,
-	recorderPageReadyDeadline,
-	recorderPageReadySeconds,
-	recordingMs,
-} from "#shared/constants/walkthrough-recording.ts";
-export { replayMs } from "#shared/constants/walkthrough-replay.ts";
-export { skillEvalMs } from "#shared/constants/skill-eval.ts";
-export { telemetryMs } from "#shared/constants/telemetry.ts";
-
-// ── The browser ──────────────────────────────────────────────────────────
-export { paneMs } from "#shared/constants/pane.ts";
-export { modelCacheMs, shellClockMs } from "#shared/constants/shell.ts";
-export { columnMs, columnSlideSettledMs, sidebarMs } from "#shared/constants/column-motion.ts";
-export { exploringMs, reachHopDelayMs } from "#shared/constants/exploring.ts";
-export { painterPhasesJson, pictureMs, presentationMs } from "#shared/constants/diagram-motion.ts";
-export { subtitleMs, voiceMs } from "#shared/constants/voice-motion.ts";
+export { columnSlideSettledMs } from "#shared/constants/column-motion.ts";
+export { reachHopDelayMs } from "#shared/constants/exploring.ts";
+export { painterPhasesJson } from "#shared/constants/diagram-motion.ts";
+export type { Clock } from "#shared/waits/clients/clock.ts";

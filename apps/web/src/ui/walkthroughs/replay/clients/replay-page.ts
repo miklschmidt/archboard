@@ -18,7 +18,7 @@ import { createElement } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 
-import { replayMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	talkSamplesMs,
 	talkClock,
@@ -30,7 +30,7 @@ import {
 	createSteppedClock,
 	driveFramesFrom,
 	type SteppedClock,
-} from "@archboard/ui-kit/frame-clock";
+} from "@archboard/ui-clocks/frame-clock";
 import { chooseLayoutEngine } from "#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts";
 import {
 	pictureSource,
@@ -52,7 +52,7 @@ type ReplayRenderer = Parameters<typeof publishReplayPage>[0];
 const FRAME_MS = talkSamplesMs(talkClock("samplesPerFrame"));
 
 /** The frames before the talk's first, drawn and not captured, as whole frames. */
-const PREROLL_FRAMES = Math.ceil(replayMs("preroll") / FRAME_MS);
+const PREROLL_FRAMES = Math.ceil(durationMs("replay.preroll") / FRAME_MS);
 
 /** A talk on the page, and where its rendering has got to. */
 interface Rendering {
@@ -162,10 +162,14 @@ function stepPending(rendering: Rendering): string | null {
 /**
  * What moved outside the frame clock, or was read outside the talk, in words.
  * @param rendering The rendering.
+ * @param outside What moved outside the clock so far, as standing its animations last answered.
  * @returns The violations.
  */
-function violationsOf(rendering: Rendering): readonly string[] {
-	const moved = rendering.clock.violations().map((violation) => violation.what);
+function violationsOf(
+	rendering: Rendering,
+	outside: ReturnType<SteppedClock["syncAnimations"]>,
+): readonly string[] {
+	const moved = outside.map((violation) => violation.what);
 	const read = rendering.foreign.map((model) => `The model ${model} was read, not the talk's.`);
 	return [...moved, ...read];
 }
@@ -193,9 +197,9 @@ async function draw(rendering: Rendering, index: number): Promise<void> {
 	await readiness.until(pending, index);
 	clock.runFrame();
 	await readiness.until(pending, index);
-	clock.syncAnimations(document);
+	const outside = clock.syncAnimations(document);
 	await clock.paint();
-	const violations = violationsOf(rendering);
+	const violations = violationsOf(rendering, outside);
 	if (violations.length > 0) {
 		throw new Error(`Frame ${index} cannot be rendered from the talk: ${violations.join(" ")}`);
 	}
@@ -228,9 +232,8 @@ class WalkthroughReplay {
 		const { theme, layout, levels } = options;
 		document.documentElement.dataset["theme"] = theme;
 		chooseLayoutEngine(layout);
-		const clock = createSteppedClock(-PREROLL_FRAMES * FRAME_MS);
+		const clock = createSteppedClock(-PREROLL_FRAMES * FRAME_MS, window);
 		driveFramesFrom(clock);
-		clock.install(window);
 		const rendering: Rendering = {
 			talk,
 			clock,

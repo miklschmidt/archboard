@@ -106,6 +106,12 @@ An agent states what an architecture is through the CLI. Archboard stores that s
 		An exact retained copy of the model's inputs, held in Git. A walkthrough or a recording that you
 		share points at one.
 	</dd>
+	<dt>Archive</dt>
+	<dd>
+		The Git history that holds the checkpoints, apart from the source history. A source push does
+		not send it. `model publish` sends it to a remote that you configure, and `model fetch` gets it
+		back.
+	</dd>
 	<dt>Claim</dt>
 	<dd>
 		A writer's visible hold on the subjects that it changes. Every pane shows who holds it and why,

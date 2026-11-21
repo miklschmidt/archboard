@@ -55,7 +55,7 @@ The browser offers text messages, account controls, approval answers and live vo
 Stop voice ends the voice session. The workhorse continues its work.
 Stop work interrupts the current workhorse turn. Voice stays active.
 The example can decline requests for broader permission and requests for structured data. It never grants them.
-If the browser denies the microphone, allow it in the browser's site settings and select Reconnect.
+If the browser denies the microphone, allow it in the browser's site settings and reload the page.
 
 ## Host inputs
 

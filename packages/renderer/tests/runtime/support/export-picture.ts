@@ -3,15 +3,14 @@
 // held to both grammars and to a comparison.
 
 import {
-	LegacyBoardSchema,
-	LEGACY_BOARD_SCHEMA_VERSION,
+	defaultSemanticPolicy,
+	type DrawnPicture,
 	type LegacyBoard,
-} from "@archboard/model/legacy-board";
-import type { DrawnPicture } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+} from "@archboard/model-contract";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { type LegacyRenderChoices } from "#shared/render/rules/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /** The built architecture. */
 const BUILT = {
@@ -52,8 +51,8 @@ const DRAFT = {
 };
 
 /** The document. */
-const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const EXPORT_DOCUMENT: LegacyBoard = fixtureDocument("legacyBoard", {
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "document",
 	name: "Ingest",

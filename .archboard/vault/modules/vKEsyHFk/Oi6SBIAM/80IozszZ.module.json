@@ -66,19 +66,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
       "to": "vKEsyHFk#OY4JPr8G"
-    },
-    {
-      "order": 72000,
-      "kind": "call",
-      "label": "the vault the call names, which the pane must be in",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/shown-conversation.ts",
-        "symbol": "vaultOfRequest"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#5odPEFwu",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     }
   ]
 }

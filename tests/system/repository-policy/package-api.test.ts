@@ -8,29 +8,36 @@ import { sourceOf } from "./support/package-sources.ts";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const packagesRoot = path.join(repoRoot, "packages");
 
-// An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
-// "Packages"). A package that adopts it points the `exports` of an area only into that area's
+// An `api/` folder is a package's interface over private implementation (ADR 0058). A package that adopts it points the `exports` of an area only into that area's
 // `api/`, and nothing private reaches back up into it. Each package lists the areas it adopts it
 // for.
 const ADOPTERS: {
 	name: string;
 	areas: string[];
 }[] = [
-	{ name: "model", areas: ["shared", "runtime"] },
+	{ name: "model-contract", areas: ["shared"] },
+	{ name: "model-rules", areas: ["shared"] },
+	{ name: "model-store", areas: ["shared", "runtime"] },
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
 	{ name: "workspace", areas: ["shared", "runtime", "server"] },
 	{ name: "code-binding", areas: ["shared", "runtime"] },
 	{ name: "ui-kit", areas: ["ui"] },
-	{ name: "server-requests", areas: ["ui"] },
+	{ name: "ui-clocks", areas: ["ui"] },
+	{ name: "server-requests", areas: ["server", "ui"] },
 	{ name: "code-intel", areas: ["shared", "runtime"] },
 	{ name: "renderer", areas: ["shared", "runtime", "ui"] },
 	{ name: "code-opener", areas: ["shared", "server", "ui"] },
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
-	{ name: "server-lifecycle", areas: ["shared", "runtime"] },
-	{ name: "workbench", areas: ["shared", "runtime", "server", "ui"] },
+	{ name: "server-lifecycle", areas: ["runtime"] },
+	{ name: "workbench", areas: ["shared", "runtime", "server"] },
+	{ name: "agent-surfaces", areas: ["ui"] },
 	{ name: "codex-realtime-voice", areas: ["shared", "runtime", "server", "ui"] },
 	{ name: "process", areas: ["runtime"] },
+	{ name: "machine", areas: ["runtime"] },
+	{ name: "headless-chromium", areas: ["runtime"] },
+	{ name: "render-recipe", areas: ["runtime"] },
+	{ name: "raster", areas: ["runtime"] },
 ];
 
 function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {

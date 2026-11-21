@@ -1,0 +1,18 @@
+{
+	"name": "@archboard/machine",
+	"version": "0.0.0",
+	"private": true,
+	"description": "This installation on this machine: which Archboard runs, where its machine-local state lives, how a file is replaced durably, and how a command reaches another checkout's source.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./installation": "./src/runtime/api/installation.ts",
+		"./source-checkout": "./src/runtime/api/source-checkout.ts",
+		"./atomic-write": "./src/runtime/api/atomic-write.ts",
+		"./state-dir": "./src/runtime/api/state-dir.ts"
+	}
+}

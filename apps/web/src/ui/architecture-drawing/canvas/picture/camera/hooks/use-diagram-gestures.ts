@@ -18,7 +18,7 @@ import {
 	type PointerEvent,
 } from "react";
 
-import type { DiagramBox } from "@archboard/model/render-reply";
+import type { DiagramBox } from "@archboard/model-contract";
 import type { SemanticAtlas } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { Gesture } from "#ui/architecture-drawing/canvas/presentation/components/CameraSurface.tsx";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";

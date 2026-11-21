@@ -1,14 +1,24 @@
 {
-  "order": 200,
-  "name": "ECMAScript numbers",
-  "kind": "function",
+  "order": 40150,
+  "name": "archboard-ecma",
+  "kind": "package",
   "responsibility": "Rounds and spells numbers exactly as JavaScript does, so the core draws what the TypeScript painter drew",
+  "description": "The archboard-ecma crate (ADR 0091), 12 names: round, number, to_fixed, fixed, within, hypot, min, max, sign, pow, trim and is_space; powi stays private. js_min and js_max fold into min and max, bit for bit. The SVG spellers (a base, padding, plain decimals) live in archboard-svg's private spelling.rs, since only the SVG writes them. archboard-graphviz depends on this crate alone.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/js.rs"
+    "path": "crates/archboard-ecma"
   },
-  "parent": "vKEsyHFk#9gGvxWHp",
   "schemaVersion": 1,
   "id": "vKEsyHFk#1UxryIji",
+  "parent": "vKEsyHFk#HgZPVIE2",
+  "formerNames": [
+    "ECMAScript numbers"
+  ],
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
+    }
+  ],
   "outgoing": []
 }

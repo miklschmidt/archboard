@@ -5,9 +5,9 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::geometry::{Point, Rect};
 use crate::scene::colour::Paint;
 use crate::scene::definition::{ClipId, MarkerId};
+use archboard_geometry::{Point, Rect};
 
 /// What a shape is to the picture. A painter that only draws reads the
 /// geometry and the paint; the SVG painter also writes each sort as the
@@ -47,6 +47,9 @@ pub enum Purpose {
     Port,
     /// A piece of ink a line's mask cuts away where its trunk draws it.
     Cutout,
+    /// The core a double line's mask cuts down its middle, between its two
+    /// rails. It is written as a cutout is.
+    Core,
     /// An arrowhead, drawn in its marker's own ten-unit square.
     Arrowhead,
     /// A line drawn across a box at one height, which takes no pointer.
@@ -258,120 +261,4 @@ pub struct Shape {
     pub start_marker: Option<MarkerId>,
     /// The subjects it stands with, which a viewer lights and recedes it with.
     pub members: Vec<String>,
-}
-
-impl Shape {
-    /// A shape of some purpose and geometry, painted with nothing yet.
-    pub fn new(purpose: Purpose, geometry: Geometry) -> Self {
-        Shape {
-            purpose,
-            geometry,
-            fill: None,
-            fill_opacity: None,
-            stroke: None,
-            pointer: None,
-            clip: None,
-            marker: None,
-            start_marker: None,
-            members: Vec::new(),
-        }
-    }
-
-    /// A box of some purpose, its corners rounded by a radius when it has one.
-    pub fn rect(purpose: Purpose, rect: Rect, radius: Option<f64>) -> Self {
-        Shape::new(purpose, Geometry::Rect { rect, radius })
-    }
-
-    /// A path of some purpose.
-    pub fn path(purpose: Purpose, steps: Vec<PathStep>) -> Self {
-        Shape::new(purpose, Geometry::Path { steps })
-    }
-
-    /// The shape filled.
-    #[must_use]
-    pub fn filled(mut self, paint: impl Into<Paint>) -> Self {
-        self.fill = Some(paint.into());
-        self
-    }
-
-    /// The shape unfilled.
-    #[must_use]
-    pub fn unfilled(mut self) -> Self {
-        self.fill = Some(Paint::None);
-        self
-    }
-
-    /// The shape stroked.
-    #[must_use]
-    pub fn stroked(mut self, stroke: Stroke) -> Self {
-        self.stroke = Some(stroke);
-        self
-    }
-
-    /// The shape taking the pointer or not.
-    #[must_use]
-    pub fn pointer(mut self, pointer: Pointer) -> Self {
-        self.pointer = Some(pointer);
-        self
-    }
-}
-
-impl Stroke {
-    /// A stroke in some paint, its width unstated.
-    pub fn plain(paint: impl Into<Paint>) -> Self {
-        Stroke {
-            paint: paint.into(),
-            width: None,
-            opacity: None,
-            cap: None,
-            join: None,
-            dashes: Vec::new(),
-            dash_offset: None,
-        }
-    }
-
-    /// A stroke in some paint, its width stated.
-    pub fn new(paint: impl Into<Paint>, width: f64) -> Self {
-        Stroke {
-            width: Some(width),
-            ..Stroke::plain(paint)
-        }
-    }
-
-    /// The stroke with round ends and corners.
-    #[must_use]
-    pub fn rounded(self) -> Self {
-        Stroke {
-            cap: Some(Cap::Round),
-            join: Some(Join::Round),
-            ..self
-        }
-    }
-
-    /// The stroke with its ends drawn one way.
-    #[must_use]
-    pub fn capped(self, cap: Cap) -> Self {
-        Stroke {
-            cap: Some(cap),
-            ..self
-        }
-    }
-
-    /// The stroke at a strength.
-    #[must_use]
-    pub fn at(self, opacity: f64) -> Self {
-        Stroke {
-            opacity: Some(opacity),
-            ..self
-        }
-    }
-
-    /// The stroke broken into dashes.
-    #[must_use]
-    pub fn dashed(self, dashes: &[f64]) -> Self {
-        Stroke {
-            dashes: dashes.to_vec(),
-            ..self
-        }
-    }
 }

@@ -146,15 +146,6 @@ const EXPLORING_MS = durations({
 });
 
 /**
- * One duration of exploring a model.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function exploringMs(key: keyof typeof EXPLORING_MS): number {
-	return EXPLORING_MS[key];
-}
-
-/**
  * How long a part that a trace reaches waits before it lights: one hop's wait
  * for each hop beyond the first.
  * @param hops How many hops away the part is, 1 for a direct neighbour.
@@ -164,4 +155,4 @@ function reachHopDelayMs(hops: number): number {
 	return (hops - 1) * EXPLORING_MS.reachHop;
 }
 
-export { exploringMs, reachHopDelayMs };
+export { reachHopDelayMs, EXPLORING_MS };

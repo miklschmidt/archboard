@@ -8,7 +8,6 @@ import { WebSocket } from "ws";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, onlyVault, waitFor } from "./support/http.ts";
-import { semanticPaneContextRoute } from "@archboard/model/pane-context";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -118,7 +117,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			// socket is, so retiring one has to retire the other.
 			expect(
 				(
-					await request(semanticPaneContextRoute(), {
+					await request("/api/panes/semantic-context", {
 						method: "POST",
 						doing: false,
 						body: {
@@ -158,7 +157,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			// it had already said it was reading, which is what "without erasing
 			// current authority" means from the agent's side.
 			const carried = await request<{ panes: Array<{ clientId: string; selection: unknown[] }> }>(
-				semanticPaneContextRoute(),
+				"/api/panes/semantic-context",
 			);
 			expect(carried.body.panes.find((report) => report.clientId === clientId)).toMatchObject({
 				selection: [{ id: "picked-by-replacement" }],
@@ -175,7 +174,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			// The report went with the pane: a closed tab must not leave a
 			// true-looking answer standing about what somebody is looking at.
 			const reports = await request<{ panes: Array<{ clientId: string }> }>(
-				semanticPaneContextRoute(),
+				"/api/panes/semantic-context",
 			);
 			expect(reports.status).toBe(200);
 			expect(reports.body.panes.some((report) => report.clientId === clientId)).toBeFalse();

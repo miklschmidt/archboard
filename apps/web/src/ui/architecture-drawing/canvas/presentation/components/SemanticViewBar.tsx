@@ -23,13 +23,13 @@
 
 import { useCallback, type JSX } from "react";
 
-import { everythingView } from "@archboard/model/views";
 import type { SemanticOfferedView } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import {
 	SidebarChoice,
 	SidebarChoices,
 	SidebarLabel,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSidebarParts.tsx";
+import { everythingView } from "@archboard/model-contract";
 
 /** Inputs for the view bar. */
 interface SemanticViewBarProps {
@@ -54,10 +54,11 @@ const OVERVIEW: SemanticOfferedView = Object.freeze({
 });
 
 /** Every part and every relationship, offered as the view of that name. */
+const EVERYTHING_READING = everythingView();
 const EVERYTHING: SemanticOfferedView = Object.freeze({
-	id: everythingView().id,
-	name: everythingView().name,
-	grammar: everythingView().grammar,
+	id: EVERYTHING_READING.id,
+	name: EVERYTHING_READING.name,
+	grammar: EVERYTHING_READING.grammar,
 });
 
 /** One view's choice. */

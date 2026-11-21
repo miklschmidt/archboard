@@ -8,10 +8,10 @@
 // corridor how long two routes run side by side. The invariants at the end
 // must stay zero.
 //
-// Read by docs/design/wide-board-layout-fixtures/measure.ts, which prints it
+// Read by wide-boards/measure.ts, which prints it
 // for every document and compares two runs measure by measure.
 
-import type { VariantContent } from "@archboard/model/content";
+import { type VariantContent } from "@archboard/model-contract";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import {
 	fitOf,

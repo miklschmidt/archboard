@@ -1,24 +1,19 @@
 import { mountArchitecturePortableRoutes } from "#server/http/handlers/architecture-writes/routes/portable-routes.ts";
-import { mountArchitectureExplanationRoutes } from "#server/http/handlers/reads/routes/explanation-routes.ts";
 import { mountArchitectureFlowRoutes } from "#server/http/handlers/reads/routes/flow-routes.ts";
 import { mountArchitecturePublicationRoutes } from "#server/http/handlers/reads/routes/publication-routes.ts";
 import type { Express } from "express";
 import { z } from "zod";
 import {
+	initializeArchitectureArchive,
+	listArchitectureCheckpoints,
 	readArchitectureModel,
 	readModuleNavigation,
-	listArchitectureCheckpoints,
-	listArchitectureCheckpointRows,
 	readRetainedModule,
-} from "@archboard/model/store-read";
-import {
 	retainArchitectureCheckpoint,
-	initializeArchitectureArchive,
-} from "@archboard/model/store-write";
-import { architectureCheckpointRequestSchema } from "@archboard/model/contract";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
+} from "@archboard/model-store";
+import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import { mountArchitectureEditRoutes } from "#server/http/handlers/architecture-writes/routes/model-edit-routes.ts";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
 const QuerySchema = z
@@ -84,18 +79,13 @@ const ModuleQuerySchema = z
 			.optional(),
 	})
 	.strict();
-const InitializeBodySchema = z.object({ vault: z.string().optional() }).strict();
 const ListQuerySchema = z.object({ vault: z.string() }).strict();
 const RetainedModuleQuerySchema = ListQuerySchema.extend({ module: z.string().min(1) }).strict();
-const RetainBodySchema = architectureCheckpointRequestSchema().safeExtend({
-	vault: z.string().optional(),
-});
 /**
  * Expose the shared current and retained architecture contracts.
  * @param app The server application.
  */
 function mountArchitectureModelRoutes(app: Express): void {
-	mountArchitectureExplanationRoutes(app);
 	mountArchitecturePublicationRoutes(app);
 	mountArchitecturePortableRoutes(app);
 	mountArchitectureEditRoutes(app);
@@ -104,13 +94,7 @@ function mountArchitectureModelRoutes(app: Express): void {
 		"/api/architecture/archive/init",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = InitializeBodySchema.safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
+			if (requestOf(res, "initializeArchive", req.body) === undefined) return;
 			respond(res, await initializeArchitectureArchive(vaultOfRequest(req)));
 		}),
 	);
@@ -148,7 +132,7 @@ function mountArchitectureModelRoutes(app: Express): void {
 				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
 			return;
 		}
-		respond(res, await listArchitectureCheckpointRows(vaultOfRequest(req)));
+		respond(res, await listArchitectureCheckpoints(vaultOfRequest(req), "rows"));
 	});
 	app.get("/api/architecture/checkpoints", requireVault, async (req, res) => {
 		const query = ListQuerySchema.safeParse(req.query);
@@ -158,7 +142,7 @@ function mountArchitectureModelRoutes(app: Express): void {
 				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
 			return;
 		}
-		respond(res, await listArchitectureCheckpoints(vaultOfRequest(req)));
+		respond(res, await listArchitectureCheckpoints(vaultOfRequest(req), "full"));
 	});
 	app.get("/api/architecture/retained-module", requireVault, async (req, res) => {
 		const query = RetainedModuleQuerySchema.safeParse(req.query);
@@ -174,14 +158,8 @@ function mountArchitectureModelRoutes(app: Express): void {
 		"/api/architecture/checkpoints",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = RetainBodySchema.safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
-			const { vault: _vault, ...input } = parsed.data;
+			const input = requestOf(res, "retainCheckpoint", req.body);
+			if (input === undefined) return;
 			respond(res, await retainArchitectureCheckpoint(vaultOfRequest(req), input));
 		}),
 	);

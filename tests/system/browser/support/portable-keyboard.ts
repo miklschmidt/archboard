@@ -1,4 +1,5 @@
-import { DevTools, isJsonRecord, type JsonRecord } from "@archboard/renderer/headless-chromium";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
+import { DevTools } from "@archboard/headless-chromium";
 
 import type { BrowserCommandOptions } from "./agent-browser.ts";
 
@@ -32,7 +33,7 @@ const MODIFIERS: Readonly<Record<string, number>> = {
 };
 
 /** Portable CDP fields for the key chords used by the browser owners. */
-function keyFields(chord: string): JsonRecord {
+function keyFields(chord: string): Record<string, unknown> {
 	const pieces = chord.split("+");
 	const key = pieces.pop() ?? "";
 	let modifiers = 0;
@@ -105,15 +106,10 @@ async function activePage(
 	const targets: unknown = await response.json();
 	if (!Array.isArray(targets)) throw new Error("Owned browser target discovery returned no list.");
 	const pages = targets.filter(
-		(target: unknown) =>
-			isJsonRecord(target) && target["type"] === "page" && target["url"] === pageUrl,
+		(target: unknown) => isRecord(target) && target["type"] === "page" && target["url"] === pageUrl,
 	);
 	const page: unknown = pages[0];
-	if (
-		pages.length !== 1 ||
-		!isJsonRecord(page) ||
-		typeof page["webSocketDebuggerUrl"] !== "string"
-	) {
+	if (pages.length !== 1 || !isRecord(page) || typeof page["webSocketDebuggerUrl"] !== "string") {
 		throw new Error("Owned browser target discovery did not identify exactly one active page.");
 	}
 	const pageEndpoint = new URL(page["webSocketDebuggerUrl"]);

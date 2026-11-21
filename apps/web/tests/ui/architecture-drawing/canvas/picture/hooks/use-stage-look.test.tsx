@@ -1,6 +1,5 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, expect, mock, test } from "bun:test";
-import { pictureMs } from "@archboard/timing";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -60,7 +59,7 @@ test("reduced motion removes the pending picture step without a return animation
 		{ initialProps: { reducedMotion: false } },
 	);
 	try {
-		expect(awaited).toHaveBeenLastCalledWith(true, pictureMs("awaitIn"));
+		expect(awaited).toHaveBeenLastCalledWith(true, 160);
 		hook.rerender({ reducedMotion: true });
 		expect(awaited).toHaveBeenLastCalledWith(false, 0);
 	} finally {

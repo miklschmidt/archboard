@@ -1,14 +1,15 @@
 import { expect, test } from "bun:test";
 import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readArchitectureModel, readLegacyInventory } from "@archboard/model/store-read";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
 	migrateArchitectureModel,
+	readArchitectureModel,
+	readLegacyInventory,
 	saveLegacyMappingPlan,
-} from "@archboard/model/store-write";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+} from "@archboard/model-store";
 import {
 	createOpenerFixture,
 	jsonBody,
@@ -86,7 +87,7 @@ test("canonical code activation opens the selected draft binding instead of curr
 	if (!current.success || current.manifest.current === null)
 		throw new Error(JSON.stringify(current));
 	const target = { model: "Shop", state: current.manifest.current.id };
-	const claim = await claimArchitectureSubjects(vault, {
+	const claim = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "fixture-agent",
 		reason: "Planning another code location",

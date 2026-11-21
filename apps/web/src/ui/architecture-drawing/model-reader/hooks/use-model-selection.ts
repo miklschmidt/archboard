@@ -1,6 +1,6 @@
 import { useCallback, useContext, useMemo, useState } from "react";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
-import type { projectModel } from "@archboard/model/content";
+import type { projectModel } from "@archboard/model-rules";
 
 type Projection = ReturnType<typeof projectModel>;
 

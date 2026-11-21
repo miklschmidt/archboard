@@ -9,7 +9,7 @@ import { build } from "vite-plus/pack";
 import { z } from "zod";
 
 /** What the bundle may import at run time: its dependencies, its peers and Bun's own modules. */
-const DEPENDENCIES = ["zod", "ws"] as const;
+const DEPENDENCIES = ["zod"] as const;
 // The browser hooks import React.
 const OPTIONAL_PEERS = ["react"] as const;
 // The declarations of `bunHandlers` name Bun's global types, which only a TypeScript consumer needs.
@@ -113,6 +113,9 @@ await build({
 	),
 	format: "esm",
 	platform: "node",
+	// Under `published`, a workspace package resolves only the half of its private tables that
+	// the published code reaches, so the bundle leaves out the host's own names.
+	inputOptions: { resolve: { conditionNames: ["published", "node", "import", "default"] } },
 	// The runtime imports its reviewed manifests and instruction texts `with { type: "text" }`, so
 	// the bundle inlines their exact text. The package imports no JSON as data.
 	loader: { ".json": "text", ".txt": "text" },

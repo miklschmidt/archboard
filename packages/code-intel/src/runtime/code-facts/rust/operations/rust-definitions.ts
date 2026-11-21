@@ -26,7 +26,9 @@
 // declare the type.
 //
 // For module depth (TASK-646.10): a trait, a type alias and an associated
-// type declare a type and nothing a caller runs or reads. A struct, an enum
+// type declare a type and nothing a caller runs or reads. A trait is a
+// contract, whose methods module depth counts once, and the members of an
+// `impl` of a trait are its implementation (TASK-651). A struct, an enum
 // and a union hold data, and are types unless their module gives them a
 // public method (`Definition.data`, TASK-651). A `const` or
 // `static` of a function pointer's type can be called, so it is a function.
@@ -216,6 +218,7 @@ function definition(
 		symbol,
 		...shape,
 		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
+		...(node.type === "trait_item" ? { contract: "declared" as const } : {}),
 		...(DATA_ITEMS.has(node.type) ? { data: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
 		...hostCalled(node),
@@ -282,6 +285,16 @@ function languageCalled(trait: Node | null): Pick<Definition, "calledByLanguage"
 }
 
 /**
+ * What the members of an `impl` block of a trait carry: each implements the
+ * trait, and the language calls some.
+ * @param trait The trait the block implements, if any.
+ * @returns The marks, or nothing for a block of the type's own.
+ */
+function implementing(trait: Node | null): Pick<Definition, "calledByLanguage" | "implementation"> {
+	return trait === null ? {} : { ...languageCalled(trait), implementation: true };
+}
+
+/**
  * The members of an `impl` block, spelled under its type.
  * @param node The block.
  * @param scope Where it is.
@@ -293,7 +306,7 @@ function implMembers(node: Node, scope: Scope, walk: Walk): void {
 	if (type === undefined || body === null) return;
 	const trait = node.childForFieldName("trait");
 	const ofTrait = trait !== null;
-	const called = { ...languageCalled(trait), ...hostCalled(node) };
+	const called = { ...implementing(trait), ...hostCalled(node) };
 	const holder = [...scope.prefix, type].join(".");
 	const open = scope.open && walk.types.get(holder) !== false;
 	for (const member of body.namedChildren) {

@@ -1,17 +1,16 @@
 import { readFileSync } from "node:fs";
-import type { DiagramTheme } from "@archboard/model/render-reply";
+import { type DiagramTheme } from "@archboard/model-contract";
 import { THEME_STYLESHEET } from "#runtime/store/assets.ts";
 import { readThemeColors } from "#runtime/theme/store/read.ts";
 import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 
 /**
- * The colours of both themes that a stylesheet sets, each resolved for a standalone picture.
- * @param stylesheet The stylesheet's text; the shared stylesheet the shell and the pictures
- *   are painted with when none is given.
+ * The colours of both themes that the shared stylesheet sets, which the shell and the pictures are
+ * painted with, each resolved for a standalone picture.
  * @returns The colours, by theme and custom property.
  */
-function themeColors(stylesheet: string = readFileSync(THEME_STYLESHEET, "utf8")): ThemeColors {
-	return readThemeColors(stylesheet);
+function themeColors(): ThemeColors {
+	return readThemeColors(readFileSync(THEME_STYLESHEET, "utf8"));
 }
 
 const colors = themeColors();

@@ -1,19 +1,19 @@
 //! The draw walk: one scene under one presentation, onto one canvas. It reads
 //! the scene as the SVG writer does, and does what the SVG's stylesheet did.
 
-use archboard_scene::paint::design::{far_line_scale, widens_far};
+use archboard_painting::ViewerMarks;
 use archboard_scene::scene::{
-    Colour, Geometry, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
-    Transform, Viewport,
+    Colour, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token, Transform,
+    Viewport,
 };
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 
-use crate::canvas::{Canvas, Ink, PartKey};
+use crate::canvas::{Canvas, Ink, Layer, PartKey};
 use crate::definitions::Definitions;
 use crate::outlines::Outlines;
 use crate::palette::Palette;
 use crate::path::{end_of, outline_of, path_of, placed, rect_of, straightened, stroke_of};
-use crate::presentation::{Presentation, Recede};
+use crate::presentation::{Recede, Seen};
 use crate::raise::drawn_in_order;
 use crate::sweep::{holds_lines, is_part, only_moves};
 use crate::traffic::{draw_traffic, holds_traffic};
@@ -93,7 +93,8 @@ struct Walk<'a, C: Canvas> {
     palette: &'a Palette,
     definitions: &'a Definitions,
     outlines: &'a mut Outlines,
-    presentation: &'a Presentation,
+    seen: &'a Seen,
+    marks: &'a ViewerMarks,
     still: Option<u64>,
     /// The next retained item, numbered across every top-level move and inset.
     next_part: usize,
@@ -120,7 +121,9 @@ pub(crate) fn draw_ground<C: Canvas>(
 pub(crate) struct Inks<'a> {
     pub(crate) palette: &'a Palette,
     pub(crate) outlines: &'a mut Outlines,
-    pub(crate) presentation: &'a Presentation,
+    pub(crate) seen: &'a Seen,
+    /// The marks the painter draws a viewer's lines by, the far view's widths among them.
+    pub(crate) marks: &'a ViewerMarks,
     /// What a picture that stands still from frame to frame is known by.
     pub(crate) still: Option<u64>,
 }
@@ -138,7 +141,8 @@ pub(crate) fn draw_items<C: Canvas>(
         palette: inks.palette,
         definitions,
         outlines: &mut *inks.outlines,
-        presentation: inks.presentation,
+        seen: inks.seen,
+        marks: inks.marks,
         still: inks.still,
         next_part: 0,
     };
@@ -208,9 +212,9 @@ impl<C: Canvas> Walk<'_, C> {
     /// lines that are drawn on as they light go between the lines and the
     /// first part, and a line with no words wears its warning after the rest.
     fn items(&mut self, items: &[Item], inside: Inside) {
-        let home = inside.top && self.presentation.sweep.is_some() && holds_lines(items);
+        let home = inside.top && self.seen.sweep.is_some() && holds_lines(items);
         let mut swept = !home;
-        for item in drawn_in_order(items, self.presentation) {
+        for item in drawn_in_order(items, self.seen) {
             if !swept && is_part(item) {
                 self.sweep(inside);
                 swept = true;
@@ -242,7 +246,7 @@ impl<C: Canvas> Walk<'_, C> {
         if !swept {
             self.sweep(inside);
         }
-        if self.presentation.warnings.has_bare() {
+        if self.seen.warnings.has_bare() {
             self.bare_marks(items, inside);
         }
     }
@@ -256,7 +260,7 @@ impl<C: Canvas> Walk<'_, C> {
             Item::Icon(icon) => self.icon(icon, inside),
             Item::Viewport(viewport) => self.viewport(viewport, inside),
             Item::Traffic(mark) => {
-                if let Some(seconds) = self.presentation.traffic {
+                if let Some(seconds) = self.seen.traffic {
                     draw_traffic(self.canvas, self.palette, inside.transform, mark, seconds);
                 }
             }
@@ -266,7 +270,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// The opacity the far swap gives a group, or none when it is out of sight.
     fn far_opacity(&self, group: &Group) -> Option<f64> {
-        let far = self.presentation.far;
+        let far = self.seen.far;
         match group.role {
             Role::NearView => (far < 1.0).then_some(1.0 - far),
             Role::FarView => (far > 0.0).then_some(far),
@@ -276,7 +280,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Where a group sits, in the swap between the near and the far view.
     fn place_of(&self, group: &Group, view: View) -> Option<Transform> {
-        let far = self.presentation.far;
+        let far = self.seen.far;
         match (&group.role, view) {
             (Role::Chip { far: place }, _) => {
                 Some(between(group.transform.unwrap_or(STILL), *place, far))
@@ -289,7 +293,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// How far a group recedes behind what is lit, and whether it is lit.
     fn recede_of(&self, group: &Group, inside: Inside) -> (f64, bool) {
-        let recede = &self.presentation.recede;
+        let recede = &self.seen.recede;
         let id = match &group.role {
             Role::Traffic(id) => Some(id.as_str()),
             _ => group.subject.as_ref().map(|subject| subject.id.as_str()),
@@ -317,7 +321,7 @@ impl<C: Canvas> Walk<'_, C> {
     /// How much of a mark shows that stands with its members: as much as the
     /// brightest of them. Any other shape shows as its group does.
     fn shown_with_members(&self, shape: &Shape) -> f64 {
-        let recede = &self.presentation.recede;
+        let recede = &self.seen.recede;
         shape
             .members
             .iter()
@@ -335,7 +339,7 @@ impl<C: Canvas> Walk<'_, C> {
             return;
         };
         let subject = group.subject.as_ref().map(|subject| subject.id.as_str());
-        let selected = subject.is_some_and(|id| self.presentation.selected.contains(id));
+        let selected = subject.is_some_and(|id| self.seen.selected.contains(id));
         let (recede, lit) = self.recede_of(group, inside);
         let held = self.held_by(group, inside, selected, lit);
         let spoken = matches!(
@@ -343,7 +347,7 @@ impl<C: Canvas> Walk<'_, C> {
             Role::NearView | Role::FarView | Role::Chip { .. }
         );
         let words = if spoken { inside.words } else { 1.0 };
-        let waiting = awaiting(self.presentation.awaited, &group.role);
+        let waiting = awaiting(self.seen.awaited, &group.role);
         let opacity = group.opacity.unwrap_or(1.0) * swap * recede * words * waiting;
         // Nothing of it shows, and the cuts of a mask must not run on what is under it.
         if opacity <= 0.0 {
@@ -355,7 +359,7 @@ impl<C: Canvas> Walk<'_, C> {
             .filter(|_| !selected)
             .and_then(|mask| self.definitions.mask(&mask.line));
         if let Some(mask) = mask {
-            let whole = subject.is_some_and(|id| self.presentation.whole.contains(id));
+            let whole = subject.is_some_and(|id| self.seen.whole.contains(id));
             self.masked(group, mask, opacity, whole, held);
         } else {
             self.layered(group, opacity, held);
@@ -389,7 +393,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// How much of what a group's direct views say shows.
     fn words_of(&self, group: &Group, inside: Inside) -> f64 {
-        match (&self.presentation.fading_words, &group.subject) {
+        match (&self.seen.fading_words, &group.subject) {
             (Some((card, words)), Some(subject)) if inside.top && subject.id == *card => *words,
             _ => 1.0,
         }
@@ -398,14 +402,14 @@ impl<C: Canvas> Walk<'_, C> {
     /// How far a flow's head is held down from where the picture drew it.
     fn drop_of(&self, group: &Group) -> f64 {
         match &group.role {
-            Role::FlowHead(flow) => self.presentation.drop_of(flow),
+            Role::FlowHead(flow) => self.seen.drop_of(flow),
             _ => 0.0,
         }
     }
 
     /// Whether a group is inside the subject whose control the pointer rests on.
     fn hovers(&self, group: &Group, inside: Inside) -> bool {
-        let hovered = self.presentation.hovered_toggle.as_deref();
+        let hovered = self.seen.hovered_toggle.as_deref();
         group.subject.as_ref().map_or(inside.hovered, |subject| {
             Some(subject.id.as_str()) == hovered
         })
@@ -415,7 +419,10 @@ impl<C: Canvas> Walk<'_, C> {
     fn layered(&mut self, group: &Group, opacity: f64, held: Inside) {
         if opacity < 1.0 {
             self.canvas.set_transform(held.transform);
-            self.canvas.push(None, opacity_of(opacity));
+            self.canvas.push(Layer::Over {
+                clip: None,
+                opacity: opacity_of(opacity),
+            });
             self.inner(group, held);
             self.canvas.pop();
         } else {
@@ -430,7 +437,7 @@ impl<C: Canvas> Walk<'_, C> {
         } else {
             self.items(&group.items, held);
         }
-        if !self.presentation.warnings.is_empty() {
+        if !self.seen.warnings.is_empty() {
             self.marks(group, held);
         }
     }
@@ -443,7 +450,10 @@ impl<C: Canvas> Walk<'_, C> {
         let y = frame.y + (frame.height - view.height * scale) / 2.0 - view.y * scale;
         let clip = rect_of(frame).to_path(BOX_TOLERANCE);
         self.canvas.set_transform(inside.transform);
-        self.canvas.push(Some((&clip, false)), 1.0);
+        self.canvas.push(Layer::Over {
+            clip: Some((&clip, false)),
+            opacity: 1.0,
+        });
         let held = Inside {
             transform: inside.transform * placed(x, y, Some(scale)),
             ..inside
@@ -461,18 +471,6 @@ impl<C: Canvas> Walk<'_, C> {
         }
     }
 
-    /// The width a line's direct stroke grows by in the far view.
-    fn far_scale(&self, stroke: &Stroke, geometry: &Geometry, inside: Inside) -> f64 {
-        let grows = inside.line
-            && matches!(geometry, Geometry::Path { .. })
-            && stroke.width.is_some_and(widens_far);
-        if grows {
-            far_line_scale(self.presentation.far)
-        } else {
-            1.0
-        }
-    }
-
     /// Draw a shape, its markers with it.
     fn shape(&mut self, shape: &Shape, inside: Inside) {
         let ring = matches!(
@@ -487,7 +485,10 @@ impl<C: Canvas> Walk<'_, C> {
         self.canvas.set_transform(inside.transform);
         let clip = self.clip_of(shape, bounds);
         if let Some(clip) = &clip {
-            self.canvas.push(Some((clip, true)), 1.0);
+            self.canvas.push(Layer::Over {
+                clip: Some((clip, true)),
+                opacity: 1.0,
+            });
         }
         self.paint(shape, &path, bounds, ring, inside);
         if clip.is_some() {

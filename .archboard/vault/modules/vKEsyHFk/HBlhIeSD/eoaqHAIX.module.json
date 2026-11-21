@@ -39,7 +39,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/publication-routes.ts",
-        "symbol": "publishArchitectureHistory"
+        "symbol": "changeArchitecturePublication"
       },
       "id": "vKEsyHFk/HBlhIeSD#iq4BoP3P",
       "to": "vKEsyHFk#EyYNaZT0"
@@ -54,7 +54,7 @@
         "symbol": "requireVault"
       },
       "id": "vKEsyHFk/HBlhIeSD#ofrMAblk",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+      "to": "vKEsyHFk#9KeBXIBQ"
     },
     {
       "order": 119000,

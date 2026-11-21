@@ -8,12 +8,12 @@
 //! where the reader is between them. Nothing about a plane is staged by itself,
 //! so the two can never drift apart.
 
+use archboard_geometry::Rect;
 use kurbo::{Affine, Point};
 use serde::Deserialize;
 use std::f64::consts::PI;
 
-use crate::between::phase;
-use crate::timing::{EASE_OUT, EMPHASISED};
+use crate::timing::{EASE_OUT, EMPHASISED, phase};
 
 /// Which way along the strip of pictures the reader travels.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
@@ -33,6 +33,26 @@ impl Side {
             Side::Right => 1.0,
         }
     }
+}
+
+/// Where the reader went, as far as the picture leaving is concerned.
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
+#[serde(tag = "way", rename_all = "camelCase")]
+pub enum Heading {
+    /// Into the picture a card opens. The picture grows about that card, or
+    /// about the middle of its page when the card is not known.
+    Into {
+        /// The card opened, as it stands in the picture leaving.
+        toward: Option<Rect>,
+    },
+    /// Back to the picture above.
+    Out,
+    /// To a picture at the same depth, on the side `side` says, or anywhere else.
+    Across {
+        /// Which way the picture stands, when it stands beside this one.
+        #[serde(default)]
+        side: Option<Side>,
+    },
 }
 
 /// How much further in one picture stands than the next, as a scale.
@@ -194,7 +214,9 @@ pub(crate) fn place_at(from: f64, share: f64) -> f64 {
 mod tests {
     use kurbo::Point;
 
-    use super::{Axis, Plane, Side, first_step, place_at};
+    use archboard_geometry::Rect;
+
+    use super::{Axis, Heading, Plane, Side, first_step, place_at};
 
     const SIZE: (f64, f64) = (1000.0, 500.0);
     const ABOUT: Point = Point::new(300.0, 200.0);
@@ -269,5 +291,34 @@ mod tests {
         assert!(step > 0.0 && step < 0.1);
         assert_eq!(place_at(step, 0.0), step);
         assert_eq!(place_at(step, 1.0), 1.0);
+    }
+
+    #[test]
+    fn the_host_hands_over_its_heading_as_json() {
+        let heading: Heading =
+            serde_json::from_str(r#"{"way":"into","toward":{"x":1,"y":2,"width":3,"height":4}}"#)
+                .expect("a heading");
+        assert_eq!(
+            heading,
+            Heading::Into {
+                toward: Some(Rect {
+                    x: 1.0,
+                    y: 2.0,
+                    width: 3.0,
+                    height: 4.0
+                })
+            }
+        );
+        assert_eq!(
+            serde_json::from_str::<Heading>(r#"{"way":"across"}"#).expect("a heading"),
+            Heading::Across { side: None }
+        );
+        assert_eq!(
+            serde_json::from_str::<Heading>(r#"{"way":"across","side":"left"}"#)
+                .expect("a heading"),
+            Heading::Across {
+                side: Some(Side::Left)
+            }
+        );
     }
 }

@@ -1,0 +1,32 @@
+{
+  "order": 1003900,
+  "name": "Locality query",
+  "kind": "function",
+  "responsibility": "The one locality read of a revision, which Measures, a selection and Changes with share",
+  "description": "modelHistoryQuery moved from Model queries to the reading that reads it (TASK-653.14). It is one historyQuery of Model queries, and it keeps the answer only when the answer reads the model on screen.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/history.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HjyF6Ilp",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "formerNames": [
+    "Reading queries"
+  ],
+  "outgoing": [
+    {
+      "order": 1004100,
+      "kind": "call",
+      "label": "a revision's locality, through the one history query",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/history.ts",
+        "symbol": "historyQuery"
+      },
+      "id": "vKEsyHFk#kWrbB2T3",
+      "to": "vKEsyHFk#guvtYApo"
+    }
+  ]
+}

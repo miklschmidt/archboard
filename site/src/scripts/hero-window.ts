@@ -7,11 +7,10 @@
 // hold the page. Without script, with reduced motion, or where the painter does not start, the
 // renderer's SVG of the same picture stands whole.
 
-import { pictureMs } from "@archboard/timing";
-import { startCpuPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
+import { durationMs } from "@archboard/timing";
+import { startPainter } from "../../../packages/renderer/src/ui/clients/painter.ts";
 import shop from "../paintings/shop.json";
 import paintingUrl from "../paintings/shop.painting.json?url";
-import { PHASES } from "./painter-phases";
 import { animate, whileVisible } from "./reveal";
 import { typeLine } from "./type-line";
 
@@ -26,7 +25,7 @@ const REPLAY_AFTER = 2200;
 
 /** The painter of the window's picture, with the shop's painting. */
 interface Shop {
-	painter: Awaited<ReturnType<typeof startCpuPainter>>["painter"];
+	painter: Awaited<ReturnType<typeof startPainter>>["painter"];
 	painting: string;
 }
 
@@ -38,15 +37,13 @@ interface Shop {
 async function paintShop(canvas: HTMLCanvasElement): Promise<Shop | null> {
 	try {
 		const [{ painter }, painting] = await Promise.all([
-			startCpuPainter(canvas, true),
+			startPainter(canvas, true, { only: "cpu" }),
 			fetch(paintingUrl).then((answer) => {
 				if (!answer.ok) throw new Error(`The painting did not load (HTTP ${answer.status}).`);
 				return answer.text();
 			}),
 		]);
-		painter.setPhases(PHASES);
-		painter.setLongestStep(pictureMs("longestStep"));
-		painter.setFarLine(0, 0);
+		painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 } }));
 		return { painter, painting };
 	} catch (cause) {
 		console.warn("The window's painter did not start.", cause);
@@ -76,7 +73,8 @@ export function mountHeroWindow(): void {
 	let visible = false;
 	let next = 0;
 	const loop = (now: number) => {
-		next = visible && painted?.painter.frame(now) ? requestAnimationFrame(loop) : 0;
+		const moves = visible && painted !== null && painted.painter.frame(now) !== "still";
+		next = moves ? requestAnimationFrame(loop) : 0;
 	};
 	const wake = () => {
 		if (visible && painted && next === 0) next = requestAnimationFrame(loop);
@@ -147,7 +145,7 @@ export function mountHeroWindow(): void {
 			const text = line.querySelector<HTMLElement>(".text");
 			if (text) text.textContent = "";
 		}
-		painted?.painter.clear();
+		painted?.painter.depart(JSON.stringify({ kind: "cleared" }));
 		wake();
 	};
 
@@ -159,7 +157,9 @@ export function mountHeroWindow(): void {
 		const ready = await painting;
 		signal.throwIfAborted();
 		if (!ready) return;
-		ready.painter.enter(ready.painting, "null", pictureMs("entry"), 0, 0, performance.now());
+		const ms = durationMs("picture.entry");
+		const entered = { kind: "entered", heading: null, ms, moved: [0, 0], at: performance.now() };
+		ready.painter.arrive(ready.painting, JSON.stringify(entered));
 		wake();
 	};
 

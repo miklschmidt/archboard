@@ -6,7 +6,7 @@
   "description": "Paints neutral frame wells, member-tagged shadows, lines and port interiors, traffic, card bodies, doors, labels and edge tabs in that order. Ports clip a card in its own box coordinates and traffic runs to the lid. Every card shadow lies below every line and card.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/architecture.rs",
+    "path": "crates/archboard-painting/src/paint/architecture.rs",
     "symbol": "paint_architecture"
   },
   "schemaVersion": 1,
@@ -20,7 +20,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "atlas_boxes"
       },
       "id": "vKEsyHFk/gbyqW4H3#WMtzvSOO",
@@ -33,7 +33,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "shadow_under"
       },
       "id": "vKEsyHFk/gbyqW4H3#xKJERQyv",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "ports_of"
       },
       "id": "vKEsyHFk/gbyqW4H3#pYtAAlpK",
@@ -59,7 +59,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "paint_measured_card"
       },
       "id": "vKEsyHFk/gbyqW4H3#s3eeTdzY",
@@ -72,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "marked_box"
       },
       "id": "vKEsyHFk/gbyqW4H3#Mi41O26J",
@@ -85,7 +85,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "paint_measured_frame"
       },
       "id": "vKEsyHFk#7xW4xT94",
@@ -98,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "path": "crates/archboard-painting/src/paint/architecture.rs",
         "symbol": "paint_door"
       },
       "id": "vKEsyHFk#0Cf3WQEw",

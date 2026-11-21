@@ -1,0 +1,42 @@
+{
+  "order": 6000,
+  "name": "Architecture vault check",
+  "kind": "module",
+  "responsibility": "Checks one vault: whether its configuration is valid, which policy applies, and what its model or a named state says about its own structure",
+  "description": "checkArchitectureVault answers the vault check whole, so the server's /api/vault/check route and the layout measurements call one operation. A model that cannot be read answers its refusal as errors.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-store/src/runtime/check"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#V0iTeueR",
+  "parent": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "read the model or the named state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/check/operations/vault-check.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk#eOjYVfRV",
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "the configuration and the policy it applies",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/check/operations/vault-check.ts",
+        "symbol": "readVaultConfiguration"
+      },
+      "id": "vKEsyHFk#5fa1k81R",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    }
+  ]
+}

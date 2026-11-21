@@ -6,15 +6,14 @@
 
 use std::collections::BTreeSet;
 
+use archboard_geometry::{Point, Rect, curve_through, inflate, vertices_of};
 use archboard_scene::drawing::{ArchitectureDrawing, DrawingEdge, EdgeFacts, NodeFacts};
-use archboard_scene::geometry::{
-    Point, Rect, curve_through, inflate, same_rounded_curve, vertices_of,
-};
 
 use crate::constants::EPSILON;
+use crate::routes::curves::same_rounded_curve;
 
 use crate::constants::{LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
-use crate::ecma::{js_max, js_min, sign};
+use crate::ecma::{max, min, sign};
 
 use super::clearance::lacks_clearance;
 use super::drawn_lines::{Axis, straight_axis};
@@ -78,15 +77,15 @@ enum Crowd {
 
 /// Whether a value lies strictly between two others, in either order.
 pub(super) fn between(value: f64, a: f64, b: f64) -> bool {
-    value > js_min(a, b) + EPSILON && value < js_max(a, b) - EPSILON
+    value > min([a, b]) + EPSILON && value < max([a, b]) - EPSILON
 }
 
 /// Whether a straight piece, or a box given by two corners, reaches into a box's interior.
 pub(super) fn enters(bounds: Rect, from: Point, to: Point) -> bool {
-    js_max(from.x, to.x) > bounds.x + EPSILON
-        && js_min(from.x, to.x) < bounds.x + bounds.width - EPSILON
-        && js_max(from.y, to.y) > bounds.y + EPSILON
-        && js_min(from.y, to.y) < bounds.y + bounds.height - EPSILON
+    max([from.x, to.x]) > bounds.x + EPSILON
+        && min([from.x, to.x]) < bounds.x + bounds.width - EPSILON
+        && max([from.y, to.y]) > bounds.y + EPSILON
+        && min([from.y, to.y]) < bounds.y + bounds.height - EPSILON
 }
 
 /// Whether one box reaches into another.
@@ -329,9 +328,7 @@ fn swept_by(legs: [&Leg; 2]) -> Rect {
         row.of(legs[1].corner),
         row.of(legs[1].far),
     ];
-    let min = |values: &[f64]| values.iter().copied().fold(f64::INFINITY, js_min);
-    let max = |values: &[f64]| values.iter().copied().fold(f64::NEG_INFINITY, js_max);
-    box_on(axis, min(&lanes), max(&lanes), min(&rows), max(&rows))
+    box_on(axis, min(lanes), max(lanes), min(rows), max(rows))
 }
 
 /// The four sides of a frame.

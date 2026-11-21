@@ -4,17 +4,18 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Group, Item, Pointer, Role, Transform};
 
 use super::circuit::{Spans, label_span};
-use super::ease::{ease_in_out, ease_out, emphasised, phase, scale_about, then};
+use super::ease::{ease_in_out, ease_out, emphasised, scale_about, then};
 use super::found::{Form, Found, Pairing};
 use super::open::{Opening, Way};
 use super::phases::Transition;
 use super::plan::Mover;
 use super::spark::DrawOn;
 use super::unfold::{Doors, Inside};
+use crate::timing::phase;
 
 /// How much a card leaving shrinks to.
 const LEAVE_SCALE: f64 = 0.96;

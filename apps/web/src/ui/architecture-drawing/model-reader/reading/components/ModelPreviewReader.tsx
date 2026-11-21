@@ -2,7 +2,7 @@ import { useCallback, useMemo, type ComponentProps, type JSX } from "react";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	ArchitectureReadError,
-	invalidateVaultQueries,
+	invalidateModelQueries,
 	architectureModelQuery,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
@@ -50,7 +50,7 @@ function ModelPreviewReader(props: PreviewProps): JSX.Element {
 	const client = useQueryClient();
 	const { vault } = props;
 	const refresh = useCallback((): void => {
-		void invalidateVaultQueries(client, vault);
+		void invalidateModelQueries(client, vault);
 	}, [client, vault]);
 	const model = query.isError ? undefined : query.data;
 	const problem = previewProblem(query.error, model?.manifest.id, location.model);

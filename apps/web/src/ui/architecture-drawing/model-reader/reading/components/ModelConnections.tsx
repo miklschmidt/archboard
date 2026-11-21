@@ -4,7 +4,7 @@ import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/con
 import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
 import type { JSX, ReactNode } from "react";
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
-import type { Model, projectModel } from "@archboard/model/content";
+import type { Model, projectModel } from "@archboard/model-rules";
 
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";

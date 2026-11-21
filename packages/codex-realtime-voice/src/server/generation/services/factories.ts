@@ -3,15 +3,9 @@ import { TELL_COORDINATOR_OWNER } from "#runtime/voice/coordinator-callbacks/ser
 import { coordinatorDynamicDispatchers } from "#runtime/voice/coordinator/tools-and-work/coordinator-tools/protocol/contract.ts";
 import type { VoiceToolset } from "#runtime/host/toolset/rules/toolset.ts";
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
-import { createCodexSession } from "@archboard/codex-app-server/session";
 import { createCodexThreadLink } from "#runtime/workhorses/thread-link/rules/thread-link.ts";
-import { createCodexTransport, type CodexTransport } from "@archboard/codex-app-server/transport";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-	type IdentityAuthorities,
-	type IdentityLedger,
-} from "@archboard/codex-app-server/identity";
+import type { CodexTransport } from "@archboard/codex-app-server/transport";
+import { openCodexSession, type CodexConnection } from "@archboard/codex-app-server/connection";
 import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
 import { CodexWorkbenchCompositionError } from "#server/generation/rules/error.ts";
 import {
@@ -22,7 +16,6 @@ import { createCodexWorkbenchSessions } from "#server/sessions/services/sessions
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationInput,
-	CodexWorkbenchStableKernel,
 } from "#server/owner/services/lifecycle.ts";
 import type {
 	CodexWorkbenchComponentFactories,
@@ -84,46 +77,26 @@ function requireComponent<Name extends ComponentName>(
 }
 
 /**
- * The ledger a generation names itself from: the kernel's when a kernel
- * outlives this child, so a restarted child rejoins the names it left, and a
- * fresh one with the host's record prefix otherwise.
- * @param kernel The kernel this generation runs over, or null when it has none.
- * @param recordPrefix The host's record prefix.
- * @returns The ledger.
- */
-function ledgerFor(
-	kernel: CodexWorkbenchStableKernel | null,
-	recordPrefix: string,
-): IdentityLedger {
-	return kernel?.identityLedger ?? createIdentityLedger(recordPrefix);
-}
-
-/**
  * One factory per component of the production graph, each built from the
- * bindings the caller supplied and the components built before it.
+ * bindings the caller supplied, the connection to the child, and the
+ * components built before it.
  * @param bindings What each component is configured with.
- * @param kernel The kernel outliving this child, or null when this generation
- * owns its own transport and ledger.
+ * @param connection The connection to the child this generation runs over.
  * @param adoptedSession A readiness this generation adopts instead of waiting
  * for its own, or null.
- * @param identityLedger The ledger names are minted from.
- * @param initialIdentity Authorities the owner already made over that ledger,
- * or null to make them here.
  * @returns The factories.
  */
 function createProductionCodexWorkbenchFactories(
 	bindings: ProductionCodexWorkbenchBindings,
-	kernel: CodexWorkbenchStableKernel | null = null,
+	connection: CodexConnection,
 	adoptedSession: CodexWorkbenchGenerationInput["adoptedSession"] = null,
-	identityLedger: IdentityLedger = ledgerFor(kernel, bindings.recordPrefix),
-	initialIdentity: IdentityAuthorities | null = null,
 ): CodexWorkbenchComponentFactories {
 	return Object.freeze({
 		/**
 		 * The authorities every other component names itself through.
-		 * @returns The authorities.
+		 * @returns The connection's authorities.
 		 */
-		identity: () => initialIdentity ?? createIdentityAuthorities(identityLedger),
+		identity: () => connection.identity,
 		/**
 		 * The store that says which child epoch a message belongs to.
 		 * @param created What the graph has built so far.
@@ -131,36 +104,19 @@ function createProductionCodexWorkbenchFactories(
 		 */
 		epoch: (created) => createCodexEpochStore(bindings.epoch(created)),
 		/**
-		 * The stdio transport to the app-server child. A kernel's transport
-		 * outlives the child, so it is re-identified rather than replaced.
-		 * @param created What the graph has built so far.
-		 * @returns The transport.
+		 * The stdio transport to the app-server child.
+		 * @returns The connection's transport.
 		 */
-		transport: (created) => {
-			const identity = requireComponent(created, "identity").identity;
-			if (kernel !== null) {
-				kernel.transport.replaceIdentity(identity);
-				return kernel.transport;
-			}
-			const transport = createCodexTransport({
-				...bindings.transport(created),
-				identity,
-			});
-			installDynamicRegistrations(transport, bindings.tools, bindings.dynamicRegistrations);
-			return transport;
-		},
+		transport: () => connection.transport,
 		/**
-		 * The session that carries requests over the transport, adopting an
+		 * The session that carries requests over the connection, adopting an
 		 * existing readiness when the owner handed one down.
 		 * @param created What the graph has built so far.
-		 * @returns The session.
+		 * @returns The session and its control.
 		 */
 		session: (created) =>
-			createCodexSession({
+			openCodexSession(connection, {
 				...bindings.session(created),
-				transport: requireComponent(created, "transport"),
-				identity: requireComponent(created, "identity").identity,
-				listenerOwnership: "composition",
 				...(adoptedSession === null ? {} : { adoptedReadiness: adoptedSession }),
 			}),
 		/**

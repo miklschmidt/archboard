@@ -26,13 +26,13 @@
     },
     {
       "order": 23000,
-      "kind": "dependency",
-      "label": "cleanup durations",
+      "kind": "call",
+      "label": "drain a killed group; pause between censuses",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/process/src/runtime/processes/group-cleanup.ts",
-        "symbol": "codexProcessMs"
+        "symbol": "waitUntil"
       },
       "id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
       "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"

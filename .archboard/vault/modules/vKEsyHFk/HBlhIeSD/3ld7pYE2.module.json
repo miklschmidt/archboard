@@ -83,12 +83,12 @@
     {
       "order": 121000,
       "kind": "call",
-      "label": "whether source and bundle are current",
+      "label": "which code the server runs",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "sourceState"
+        "symbol": "serverCodeState"
       },
       "id": "vKEsyHFk#hhuZHtcv",
       "to": "vKEsyHFk#apyQZjM7"

@@ -3,17 +3,17 @@
   "name": "Atomic file replacement",
   "kind": "function",
   "responsibility": "Durably replaces or removes one file",
-  "description": "The workspace owner writes exact bytes and fsyncs changes. Canonical model installation coordinates these file operations through its journal before reporting completion.",
+  "description": "It writes exact bytes and fsyncs changes. Canonical model installation coordinates these file operations through its journal before reporting completion.",
   "groups": [
     "writes"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workspace/src/runtime/store/atomic-write.ts"
+    "path": "packages/machine/src/runtime/store/atomic-write.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#qTv7HuBw",
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "parent": "vKEsyHFk#WXIezSNF",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

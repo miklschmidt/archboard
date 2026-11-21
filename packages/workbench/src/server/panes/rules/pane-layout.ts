@@ -1,0 +1,340 @@
+// What the panes are and where they sit.
+//
+// A pane is known to the server only while its socket is open (see server.ts):
+// a closed tab or an unsplit takes its registration with it, so there are no
+// ghosts. No pane at all is the normal state of a headless server, not an
+// error.
+
+import type { LegacyIdentity, ModelDocument } from "@archboard/model-contract";
+
+/** A rectangle in page coordinates. */
+interface Rect {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+
+/**
+ * What one pane tells the server about itself.
+ *
+ * The pane reports the model key it *adopted*, never the server's idea of what
+ * it should be holding. That is what makes this report a description of the
+ * scene rather than a restatement of server state: if a pane were somehow
+ * rendering a model the server did not think it had, this would say so.
+ */
+interface PaneRegistration {
+	/** The pane's identity to the server: also its websocket and selection key. */
+	clientId: string;
+	/** Stable within the tab, and what the human sees on the pane tab. */
+	paneId: string;
+	/**
+	 * The vault this pane shows models of: the directory it named when its socket
+	 * connected (ADR 0049). A model key means a model of this vault and no other.
+	 */
+	vault: string;
+	/**
+	 * Model key, e.g. `payments` or `payments@option-a`; null when the pane is
+	 * showing no model. A pane exists as long as its socket does, whether or not
+	 * there is anything on it — a fresh vault holds no model, and a pane that
+	 * could not register until one existed could never be shown the first one.
+	 */
+	paneKey: string | null;
+	/** Is this the first pane in reading order, the one that speaks for the tab? */
+	primary: boolean;
+	/** Is this the pane the user last interacted with? */
+	focused: boolean;
+	/** Where the pane sits in the page, in CSS pixels. */
+	rect: Rect;
+	/**
+	 * The entry script this tab loaded, e.g. `./assets/index-B1qk9.js`. Absent
+	 * from a tab served by the vite dev server, and from any client that is not
+	 * a browser (TASK-056).
+	 */
+	build?: string;
+	/**
+	 * Present only on the pane of a recording page (TASK-304): a headless page nobody sees, so
+	 * nobody may address it. It is reached by its client id alone, and left out of everything
+	 * that picks, counts or lists panes for somebody who did not name it that way.
+	 */
+	recording?: true;
+	at: string;
+}
+
+/**
+ * What one pane is reading, as the pane itself last reported it.
+ *
+ * Semantic identities and nothing drawn: an agent asked to change what the
+ * person is looking at is handed the same ids the edit command takes
+ * (ADR 0023).
+ */
+interface PaneReading {
+	/** The variant on screen, or null before the pane has drawn one. */
+	variant: { id: string; name: string; lifecycle: string } | null;
+	/** The named view it is read through, or null for the whole variant. */
+	view: { id: string; name: string; grammar: string } | null;
+	/** The subjects the person picked out, capped so a report stays cheap. */
+	selection: Array<{ id: string; kind?: string; name?: string }>;
+	moreSelected: number;
+	/** One phrase, e.g. `2 nodes — "Gateway", "Payments"`. */
+	summary: string;
+	/** The model version the pane drew, or null. */
+	version: number | null;
+	at: string | null;
+}
+
+interface PaneReport {
+	paneId: string;
+	clientId: string;
+	/** 1-based, in reading order. */
+	position: number;
+	/** Where it is, said the way a human would: `left`, `right`, `top`… */
+	place: string;
+	focused: boolean;
+	primary: boolean;
+	/** The model it is showing, or null when it is showing none. */
+	paneKey: string | null;
+	/** What that model is, or null when there is no model. */
+	identity: LegacyIdentity | null;
+	/** The vault the model is in. */
+	vault: string;
+	/**
+	 * The repository the vault is in, by identity or an untracked vault's
+	 * registry name, or null when no registered directory holds it.
+	 */
+	repository: string | null;
+	/** The checkout that holds the vault, or the directory of an untracked vault. */
+	checkout: string;
+	/** Whether the vault is the one the caller's own command finds. */
+	own: boolean;
+	rect: Rect;
+	reading: PaneReading;
+	/** The model reading it last reported, or null when it has reported none. */
+	architecture: ModelDocument<"paneContext">["architecture"] | null;
+	/** When this pane last told the server about itself. */
+	at: string;
+}
+
+/** Where a vault is: its repository and its checkout. */
+interface VaultWhereabouts {
+	readonly repository: string | null;
+	readonly checkout: string;
+}
+
+type Arrangement =
+	| "none"
+	| "single"
+	| "side-by-side"
+	| "stacked"
+	| "grid"
+	/**
+	 * Two panes in the same place: separate tabs or windows, not a split. Worth
+	 * its own name because "the left one" means nothing here, and an agent that
+	 * assumed a split would point the human at the wrong screen.
+	 */
+	| "overlapping";
+
+interface PanesReport {
+	paneCount: number;
+	arrangement: Arrangement;
+	/** paneId of the pane the user last interacted with. */
+	focused: string | null;
+	/** Are all panes showing the same model? */
+	samePaneKey: boolean;
+	panes: PaneReport[];
+	summary: string;
+	text: string;
+}
+
+/** What the report needs from the server, without importing the server. */
+interface PaneContext {
+	/** The identity a model key spells. */
+	identity(paneKey: string): LegacyIdentity | null;
+	/** What this pane last reported reading, or null when it has said nothing. */
+	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
+	/** The model reading this pane last reported, or null when it has reported none. */
+	architecture(clientId: string): PaneReport["architecture"];
+	/** The repository and the checkout of a vault. */
+	whereabouts(vault: string): VaultWhereabouts;
+	/** The vault the caller's command finds, or null when it finds none. */
+	caller: string | null;
+	/** Where to open the canvas, for the no-pane case. */
+	serverUrl?: string;
+}
+
+/** One pane, with where it sits and what that place is called. */
+type PlacedPane = { pane: PaneRegistration; position: number; place: string };
+
+/** Panes within this many pixels of each other are in the same row or column. */
+const BAND = 24;
+
+/** Beyond this many picked subjects, the report says how many rather than which. */
+const MAX_IDS = 20;
+
+/**
+ * Reading order for panes: top to bottom in rows, then left to right, which
+ * is the order a person names them in.
+ * @param a One pane.
+ * @param b The other.
+ * @returns Negative when the first comes first.
+ */
+const readingOrder = (a: PaneRegistration, b: PaneRegistration): number =>
+	Math.abs(a.rect.y - b.rect.y) > BAND ? a.rect.y - b.rect.y : a.rect.x - b.rect.x;
+
+/**
+ * Distinct positions along one axis, collapsing anything within a band: two
+ * panes a few pixels apart are in the same row or column, not two.
+ * @param values The positions.
+ * @returns The distinct ones, ascending.
+ */
+function bands(values: number[]): number[] {
+	const sorted = [...values].toSorted((a, b) => a - b);
+	const out: number[] = [];
+	for (const value of sorted) {
+		if (out.length === 0 || value - out[out.length - 1]! > BAND) {
+			out.push(value);
+		}
+	}
+	return out;
+}
+
+/**
+ * Which band a position falls in.
+ * @param edges The bands' leading edges.
+ * @param value The position.
+ * @returns The band's index.
+ */
+const bandIndex = (edges: number[], value: number): number => {
+	let index = 0;
+	edges.forEach((edge, i) => {
+		if (value - edge > -BAND) {
+			index = i;
+		}
+	});
+	return index;
+};
+
+/**
+ * How the panes are laid out, in the words a report uses.
+ * @param panes The panes on screen.
+ * @returns The arrangement.
+ */
+function arrangementOf(panes: PaneRegistration[]): Arrangement {
+	if (panes.length < 2) {
+		return panes.length === 0 ? "none" : "single";
+	}
+	const rows = bands(panes.map((p) => p.rect.y)).length;
+	const columns = bands(panes.map((p) => p.rect.x)).length;
+	return gridArrangement(rows, columns);
+}
+
+/**
+ * What a grid of rows and columns is called. One of each is two panes in the
+ * same place — separate tabs on one server, not a split.
+ * @param rows How many rows the panes fall in.
+ * @param columns How many columns.
+ * @returns The arrangement.
+ */
+function gridArrangement(rows: number, columns: number): Arrangement {
+	if (rows === 1) {
+		return columns === 1 ? "overlapping" : "side-by-side";
+	}
+	return columns === 1 ? "stacked" : "grid";
+}
+
+const ROW_NAMES = ["top", "middle", "bottom"];
+const COLUMN_NAMES = ["left", "middle", "right"];
+
+/**
+ * What one pane is called: the phrase a person would use to point at it, and
+ * the phrase `--pane` accepts back.
+ * @param pane The pane.
+ * @param index Where it sits in reading order.
+ * @param panes Every pane on screen.
+ * @param arrangement How they are laid out.
+ * @returns The phrase.
+ */
+function placeOf(
+	pane: PaneRegistration,
+	index: number,
+	panes: PaneRegistration[],
+	arrangement: Arrangement,
+): string {
+	switch (arrangement) {
+		case "single":
+			return "the only pane";
+		case "side-by-side":
+			return alongAxis(index, panes.length, COLUMN_NAMES, "column");
+		case "stacked":
+			return alongAxis(index, panes.length, ROW_NAMES, "row");
+		case "overlapping":
+			return `tab ${index + 1} of ${panes.length}`;
+		default:
+			return gridPlace(pane, panes);
+	}
+}
+
+/**
+ * Where one pane sits along a single axis: the two-pane words, the three-pane
+ * words, and a numbered place past that.
+ * @param index Where it sits in reading order.
+ * @param count How many panes there are.
+ * @param names What the three-pane places are called.
+ * @param axis What a numbered place is called.
+ * @returns The phrase.
+ */
+function alongAxis(index: number, count: number, names: readonly string[], axis: string): string {
+	if (count === 2) {
+		return index === 0 ? names[0]! : names[2]!;
+	}
+	if (count === 3) {
+		return names[index]!;
+	}
+	return `${axis} ${index + 1} of ${count}`;
+}
+
+/**
+ * Where one pane sits in a grid, as a row and a column.
+ * @param pane The pane.
+ * @param panes Every pane on screen.
+ * @returns The phrase.
+ */
+function gridPlace(pane: PaneRegistration, panes: PaneRegistration[]): string {
+	const rows = bands(panes.map((p) => p.rect.y));
+	const columns = bands(panes.map((p) => p.rect.x));
+	return `row ${bandIndex(rows, pane.rect.y) + 1}, column ${bandIndex(columns, pane.rect.x) + 1}`;
+}
+
+/**
+ * The panes in reading order, each with the phrase that names where it is.
+ *
+ * Shared on purpose: the report and pane addressing (`--pane right`) have to
+ * agree about which one "right" is, and they can only be guaranteed to agree
+ * by asking the same function.
+ * @param registrations The panes on screen.
+ * @returns Each pane, its position and the phrase that names where it is.
+ */
+function panesInOrder(
+	registrations: PaneRegistration[],
+): Array<{ pane: PaneRegistration; position: number; place: string }> {
+	const ordered = [...registrations].toSorted(readingOrder);
+	const arrangement = arrangementOf(ordered);
+	return ordered.map((pane, index) => ({
+		pane,
+		position: index + 1,
+		place: placeOf(pane, index, ordered, arrangement),
+	}));
+}
+
+export {
+	type Arrangement,
+	type PaneContext,
+	type PaneRegistration,
+	type PaneReading,
+	type PaneReport,
+	type PanesReport,
+	type PlacedPane,
+	MAX_IDS,
+	arrangementOf,
+	panesInOrder,
+};

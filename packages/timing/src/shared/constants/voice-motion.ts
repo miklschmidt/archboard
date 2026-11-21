@@ -226,22 +226,4 @@ const SUBTITLE_MS = durations({
 	linger: 2500,
 });
 
-/**
- * One duration of the voice motion.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function voiceMs(key: keyof typeof VOICE_MS): number {
-	return VOICE_MS[key];
-}
-
-/**
- * One duration of the subtitles.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function subtitleMs(key: keyof typeof SUBTITLE_MS): number {
-	return SUBTITLE_MS[key];
-}
-
-export { voiceMs, subtitleMs };
+export { VOICE_MS, SUBTITLE_MS };

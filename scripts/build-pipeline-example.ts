@@ -1,18 +1,17 @@
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-	initializeArchitectureModel,
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
-} from "@archboard/model/store-write";
-import { readArchitectureModel } from "@archboard/model/store-read";
+	installArchitectureModel,
+	readArchitectureModel,
+} from "@archboard/model-store";
 const named = process.argv[2];
 if (named === undefined)
 	throw new Error("Name the destination vault: bun scripts/build-pipeline-example.ts <vault>.");
 const vault = resolve(named);
 mkdirSync(vault, { recursive: true });
-const initialized = await initializeArchitectureModel(vault, {
+const initialized = await installArchitectureModel(vault, {
 	name: "Pipeline example",
 	operationId: "pipeline-example-init",
 	writer: "example",
@@ -25,7 +24,7 @@ if (model.proposals.some((proposal) => proposal.name === "Initial pipeline")) {
 	console.log(JSON.stringify(model));
 } else {
 	const target = { model: model.manifest.id, state: model.manifest.current?.id ?? null };
-	const claimed = await claimArchitectureSubjects(vault, {
+	const claimed = await changeArchitectureClaims(vault, "claim", {
 		target,
 		writer: "example",
 		reason: "Build the canonical pipeline example",
@@ -89,6 +88,9 @@ if (model.proposals.some((proposal) => proposal.name === "Initial pipeline")) {
 		if (!result.success) throw new Error(JSON.stringify(result));
 		console.log(JSON.stringify(result));
 	} finally {
-		await releaseArchitectureClaim(vault, { claim: claimed.claim.id, writer: "example" });
+		await changeArchitectureClaims(vault, "release", {
+			claim: claimed.claim.id,
+			writer: "example",
+		});
 	}
 }

@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
   "outgoing": [
     {
+      "order": 90,
+      "kind": "call",
+      "label": "a mutation's outcome, else its own not_delivered default",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/dynamic-tools/dispatch/mutation/operations/mutation-staging.ts",
+        "symbol": "readCodexFailure"
+      },
+      "id": "vKEsyHFk#bEaZPJ6O",
+      "to": "vKEsyHFk#9WRvXbgc"
+    },
+    {
       "order": 13000,
       "kind": "call",
       "label": "the generation that may act",

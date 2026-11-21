@@ -7,20 +7,15 @@
 // up on a pane that is only slow.
 
 import { describe, expect, jest, test } from "bun:test";
-import { paneMs } from "@archboard/timing";
 import {
 	createPanePresentations,
 	type UserPresentationChange,
 } from "#server/panes/services/presentation.ts";
-import type { panePresentRequestSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePresentation = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["presentation"]
->;
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
-type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
+type SemanticPanePresentation = NonNullable<ModelDocument<"paneContext">["presentation"]>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
+type PanePresentRequest = ModelDocument<"panePresentRequest">;
 
 /** One port over one live pane, keeping what the pane was sent and what a user did. */
 function harness(live = true) {
@@ -129,14 +124,14 @@ describe("a walkthrough step asked of a pane", () => {
 			const asked = port.present({ clientId: "client-a", walkthrough: "w1", beat: 0 });
 			const request = sent[0]!.request;
 			says(at(0, false, request));
-			jest.advanceTimersByTime(paneMs("presentationPaneCheck") * 3);
+			jest.advanceTimersByTime(8000 * 3);
 			says(at(0, true, request));
 			expect(await asked).toEqual({ kind: "arrived", presentation: at(0, true, request) });
 			expect(changes).toHaveLength(1);
 
 			const lost = port.present({ clientId: "client-a", walkthrough: "w1", beat: 1 });
 			gone();
-			jest.advanceTimersByTime(paneMs("presentationPaneCheck"));
+			jest.advanceTimersByTime(8000);
 			expect(await lost).toEqual({ kind: "refused", reason: "no_pane" });
 		} finally {
 			jest.useRealTimers();

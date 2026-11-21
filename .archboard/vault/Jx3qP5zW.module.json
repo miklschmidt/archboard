@@ -1,0 +1,31 @@
+{
+  "order": 1000,
+  "name": "Model render recipe",
+  "kind": "function",
+  "responsibility": "Records a model render's recipe in its SVG: the model, the reading, the exact input revision and the picture's digest",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/render-recipe/src/runtime/operations/model-recipe.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Jx3qP5zW",
+  "parent": "vKEsyHFk#uQ2UEbuS",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "the architecture recipe's shape",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/render-recipe/src/runtime/operations/model-recipe.ts",
+        "symbol": "ArchitectureRecipeSchema"
+      },
+      "to": "vKEsyHFk#L56TWpZC",
+      "id": "vKEsyHFk#F9UPcoeS"
+    }
+  ]
+}

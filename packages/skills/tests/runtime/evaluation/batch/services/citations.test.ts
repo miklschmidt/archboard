@@ -4,7 +4,7 @@
 // rather than graded. None of this runs a model.
 
 import { describe, expect, test } from "bun:test";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";

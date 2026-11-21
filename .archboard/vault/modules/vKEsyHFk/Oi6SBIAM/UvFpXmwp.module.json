@@ -2,7 +2,11 @@
   "order": 26002,
   "name": "Pane connections",
   "kind": "module",
-  "responsibility": "Accepts each page's socket and pane, keeps which pane shows what in which tab, reports what the panes show, and moves a pane to the checkout a person chooses",
+  "responsibility": "Accepts each page's socket, serves the architecture feed and broadcasts news about the machine to every tab; the panes themselves are the workbench's",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/panes/connections"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
   "parent": "vKEsyHFk/6E6hL0Zk#cuOguqkZ",
@@ -18,9 +22,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/server/src/server/panes/connections"
-  }
+  "outgoing": []
 }

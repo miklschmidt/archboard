@@ -3,6 +3,7 @@
   "name": "Codex transport",
   "kind": "module",
   "responsibility": "The wire under the session: one newline-framed JSON object at a time, each way",
+  "description": "TASK-653.11: the transport decodes and encodes frames only through decodeFrame, decodeFrameBody and encodeFrame, and frame-lines.ts makes the transport error for a frame the encoder refused. A client request is refused in its old order: closed, method, params, then the pending-request cap, and only then is an id minted, so a malformed request on a full queue gets the usage refusal and mints nothing.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/transport"

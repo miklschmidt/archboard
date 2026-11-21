@@ -6,10 +6,8 @@ import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/voice/coordinator/tools
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
 import { BROWSER_TIMELINE_LIMITS } from "#shared/browser/schemas/vocabulary.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import {
 	type BrowserProjectionInput,
@@ -73,7 +71,7 @@ function browserProjectionInput(
 const bytes = (value: string | null): number => new TextEncoder().encode(value ?? "").byteLength;
 
 test("long outputs, sprawling patches and large arguments are cut to their wire bounds", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const threadId = decoder.adoptThreadId("bounds-thread");
 	const lines = Array.from({ length: 5_000 }, (_, index) => `line ${index} ✓`);
@@ -192,7 +190,7 @@ const usageBreakdown = (totalTokens: number) => ({
 });
 
 test("plan and token usage reports republish the timeline without re-reading history", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const threadId = decoder.adoptThreadId("live-thread");
 	const wireThreadId = decoder.serializeCodexIdentity(threadId);
@@ -299,7 +297,7 @@ test("plan and token usage reports republish the timeline without re-reading his
 });
 
 test("the projection keeps within its byte budget with long outputs, plans and many turns", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const threadId = decoder.adoptThreadId("budget-thread");
 	const wireThreadId = decoder.serializeCodexIdentity(threadId);
@@ -398,7 +396,7 @@ test("the projection keeps within its byte budget with long outputs, plans and m
 });
 
 test("one long running turn over the byte budget keeps the item the agent is on now", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const threadId = decoder.adoptThreadId("long-turn-thread");
 	const itemCount = 250;

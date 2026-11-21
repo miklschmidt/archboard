@@ -1,21 +1,14 @@
 import { usePublishedNarration } from "#ui/application/hooks/use-published-narration.ts";
 import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
 import { useModelArrival } from "#ui/architecture-drawing/model-reader/hooks/use-model-arrival.ts";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	type ComponentProps,
-	type JSX,
-	type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentProps, type JSX } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { AgentPane } from "@archboard/agent-surfaces";
 import { RecordedModelStage } from "#ui/walkthroughs/recording/components/RecordedModelStage.tsx";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { ModelExplanationHost } from "#ui/application/components/ModelExplanationHost.tsx";
-import { explanationKey } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import { explanationKey } from "#ui/application/clients/explanations.ts";
 import { tabSessionId } from "#ui/panes/tab-session/clients/tab-session.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { useVaultPolicyRefresh } from "#ui/vault-diagnostics/hooks/use-vault-check.ts";
@@ -25,19 +18,12 @@ import type { PaneHandles } from "#ui/application/state/pane-handles.ts";
 import { NOTHING_READ } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { usePaneSession } from "#ui/panes/pane-session/hooks/use-pane-session.ts";
 import {
+	type PaneConversation,
 	type PaneSessionOptions,
 	type PaneTheme,
 } from "#ui/panes/pane-session/rules/session-contracts.ts";
-import {
-	createPaneWorkbenchSocketOwner,
-	type PaneWorkbenchSocketOwner,
-} from "#ui/panes/pane-session/clients/workbench-socket.ts";
 import { ArchitectureModelStage } from "#ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx";
 import { type WalkthroughNarration } from "#ui/architecture-drawing/canvas/picture/rules/narration.ts";
-import {
-	createBrowserWorkbenchTransport,
-	type BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/controllers";
 
 /** Inputs for one application pane. */
 interface ApplicationPaneProps {
@@ -49,8 +35,8 @@ interface ApplicationPaneProps {
 	handles: PaneHandles;
 	/** Narrating this pane's walkthroughs aloud, when the shell can start voice for it. */
 	narration?: WalkthroughNarration | undefined;
-	/** What the shell lays over this pane's picture, such as subtitles of the voice running for it. */
-	overlay?: ReactNode;
+	/** Whether the pane is presented fullscreen, so the agent dock is off screen. */
+	dockless: boolean;
 	/** Whether the person asked for reduced motion. */
 	reducedMotion: boolean;
 	/** The vault the pane opens in, until the server moves it (ADR 0050). */
@@ -73,7 +59,7 @@ interface BoundCallbacks {
 	onModelError: (error: string) => void;
 	onReadingTrouble: (trouble: ReadingTrouble | null) => void;
 	onLayoutRequest: (request: "open" | "close") => void;
-	createWorkbenchSockets: () => PaneWorkbenchSocketOwner<BrowserWorkbenchTransport>;
+	conversation: () => PaneConversation;
 }
 
 /**
@@ -82,10 +68,7 @@ interface BoundCallbacks {
  * @param bound The pane-bound callbacks.
  * @returns The options.
  */
-function optionsFor(
-	props: ApplicationPaneProps,
-	bound: BoundCallbacks,
-): PaneSessionOptions<BrowserWorkbenchTransport> {
+function optionsFor(props: ApplicationPaneProps, bound: BoundCallbacks): PaneSessionOptions {
 	const { callbacks } = props;
 	return {
 		paneId: props.paneId,
@@ -102,7 +85,7 @@ function optionsFor(
 		onRepositoriesChanged: callbacks.onRepositoriesChanged,
 		onModelAdopted: callbacks.onModelAdopted,
 		onLayoutRequest: bound.onLayoutRequest,
-		createWorkbenchSockets: bound.createWorkbenchSockets,
+		conversation: bound.conversation,
 	};
 }
 
@@ -125,17 +108,13 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 		(request: "open" | "close"): void => callbacks.onLayoutRequest(paneId, request),
 		[callbacks, paneId],
 	);
-	const createWorkbenchSockets = useCallback(
-		(): PaneWorkbenchSocketOwner<BrowserWorkbenchTransport> =>
-			createPaneWorkbenchSocketOwner({
-				media: handles.media(paneId),
-				createTransport: createBrowserWorkbenchTransport,
-			}),
+	const conversation = useCallback(
+		(): PaneConversation => handles.conversation(paneId),
 		[handles, paneId],
 	);
 	return useMemo(
-		() => ({ onModelError, onReadingTrouble, onLayoutRequest, createWorkbenchSockets }),
-		[onModelError, onReadingTrouble, onLayoutRequest, createWorkbenchSockets],
+		() => ({ onModelError, onReadingTrouble, onLayoutRequest, conversation }),
+		[onModelError, onReadingTrouble, onLayoutRequest, conversation],
 	);
 }
 
@@ -214,28 +193,39 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 				onReading={reportCanonicalReading}
 				onUserChange={session.userChanged}
 			>
-				{props.recordedArchitecture !== undefined ? (
-					<RecordedModelStage
-						model={props.recordedArchitecture}
-						vault={vault}
-						driven={props.step}
-						reducedMotion={props.reducedMotion}
-						overlay={props.overlay}
-					/>
-				) : (
-					<ArchitectureModelStage
-						arrival={arrival}
-						vault={vault}
-						paneId={paneId}
-						reducedMotion={props.reducedMotion}
-						onCodeTargetNotice={callbacks.onCodeTargetNotice}
-						onTrouble={bound.onReadingTrouble}
-						driven={driven}
-						onPresentationEnd={endPresentation}
-						narration={narration}
-						overlay={props.overlay}
-					/>
-				)}
+				{/* The pane's agent, mounted whatever its stage shows; the voice goes where the picture is. */}
+				<AgentPane
+					paneId={paneId}
+					conversation={session.conversation}
+					recording={props.recording === true}
+					dockless={props.dockless}
+					reducedMotion={props.reducedMotion}
+				>
+					{(voice) =>
+						props.recordedArchitecture !== undefined ? (
+							<RecordedModelStage
+								model={props.recordedArchitecture}
+								vault={vault}
+								driven={props.step}
+								reducedMotion={props.reducedMotion}
+								overlay={voice}
+							/>
+						) : (
+							<ArchitectureModelStage
+								arrival={arrival}
+								vault={vault}
+								paneId={paneId}
+								reducedMotion={props.reducedMotion}
+								onCodeTargetNotice={callbacks.onCodeTargetNotice}
+								onTrouble={bound.onReadingTrouble}
+								driven={driven}
+								onPresentationEnd={endPresentation}
+								narration={narration}
+								overlay={voice}
+							/>
+						)
+					}
+				</AgentPane>
 			</ModelExplanationHost>
 		</div>
 	);

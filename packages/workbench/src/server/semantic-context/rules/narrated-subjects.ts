@@ -7,22 +7,22 @@
 // against that one, as the picture marks it, and a changed one says what moved, so the voice can
 // explain the difference the viewer is looking at.
 
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import {
+	readFlow,
+	type ArchitectureModelRead,
+	type LegacyBoard,
+	type SemanticVariant,
+	type VariantContent,
+	type WalkthroughBeat,
+} from "@archboard/model-contract";
 import type { StepSubject } from "#runtime/realtime/rules/presentation-mode.ts";
 import {
 	changeOf,
 	compareVariants,
-	type FieldChange,
 	comparedWith,
-} from "@archboard/model/comparison";
-import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
-import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import type { VariantContent } from "@archboard/model/content";
-import type { WalkthroughBeatSchema } from "@archboard/model/content";
-import type { z } from "zod";
-
-type VariantComparison = ReturnType<typeof compareVariants>;
-type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
+	type FieldChange,
+	type VariantComparison,
+} from "@archboard/model-rules";
 
 /** A value a moved field had that is longer than this is said to have changed, not what it was. */
 const MOVED_VALUE_MAX_CHARS = 120;
@@ -52,11 +52,14 @@ function namesOf(
 		...parts,
 		...content.edges.map((edge) => [edge.id, between(edge)] as const),
 		...content.flows.map((flow) => [flow.id, `the sequence ${flow.name}`] as const),
-		...content.flows.flatMap((flow) =>
-			everyStep(flow.steps).map(
-				(step) => [step.id, isMessage(step) ? between(step) : stepWords(step)] as const,
-			),
-		),
+		...content.flows.flatMap((flow) => {
+			const { every, words } = readFlow(flow.steps);
+			return every.flatMap((step) => {
+				const name =
+					step.kind === "decision" || step.kind === "loop" ? words.get(step.id) : between(step);
+				return name === undefined ? [] : [[step.id, name] as const];
+			});
+		}),
 	]);
 }
 

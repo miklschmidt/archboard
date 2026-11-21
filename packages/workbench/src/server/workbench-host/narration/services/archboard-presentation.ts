@@ -1,5 +1,6 @@
+import { z } from "zod";
+
 import type { VoiceNarrativeAdapter } from "#runtime/voice/protocol/extension.ts";
-import { parseJsonValue } from "@archboard/codex-realtime-voice/schemas";
 import { ArchboardVoicePresentationSchema } from "#shared/schemas/voice-presentation.ts";
 import {
 	narrationFor,
@@ -29,9 +30,11 @@ export const ARCHBOARD_VOICE_PRESENTATION: VoiceNarrativeAdapter =
 		 */
 		prepare: async (input, browserId) => {
 			const presentation = ArchboardVoicePresentationSchema.parse(input);
-			const captured = parseJsonValue(
-				await narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
-			);
+			const captured = z
+				.json()
+				.parse(
+					await narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
+				);
 			if (captured === null) throw new Error("The Archboard presentation is empty.");
 			return captured;
 		},

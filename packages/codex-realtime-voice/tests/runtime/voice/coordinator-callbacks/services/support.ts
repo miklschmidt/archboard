@@ -1,4 +1,5 @@
 import { createCodexCoordinatorCallbacks } from "#runtime/voice/coordinator-callbacks/services/callbacks.ts";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 import type { ContextAnnouncementSource } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
 import { createCoordinatorCallbackRealtimePort } from "#runtime/voice/coordinator-callbacks/services/realtime.ts";
 import {
@@ -12,12 +13,11 @@ import {
 	type CoordinatorCallbackTurnPort,
 } from "#runtime/voice/coordinator-callbacks/protocol/contract.ts";
 import { COORDINATOR_CAPABILITY_POLICY } from "#runtime/voice/coordinator/protocol/contract.ts";
-import { type EpochExecutionProof } from "#runtime/epoch/store/contract.ts";
-import { type EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
-import { type ThreadLinkClassification } from "#runtime/workhorses/thread-link/rules/contract.ts";
+import type { EpochExecutionProof } from "#runtime/epoch/store/contract.ts";
+import type { EpochOperationRecord } from "#runtime/epoch/store/manifest-contract.ts";
+import type { ThreadLinkClassification } from "#runtime/workhorses/thread-link/rules/contract.ts";
 import type { ReverseResponse } from "@archboard/codex-app-server/transport";
-import { type WorkhorseOperationEvent } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
+import type { WorkhorseOperationEvent } from "#runtime/workhorses/workhorse-operations/protocol/contract.ts";
 import {
 	type IdentityAuthorities,
 	type LogicalToolCallCorrelation,
@@ -26,7 +26,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
-import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 
 interface Identities {
 	readonly authorities: IdentityAuthorities;
@@ -44,11 +44,7 @@ interface Identities {
 }
 
 function identities(): Identities {
-	const childId = "codex:child:h11111111111111111111111111111111";
-	const authorities = restoreIdentityAuthorities({
-		childId,
-		epoch: "codex:epoch:h11111111111111111111111111111111.h22222222222222222222222222222222",
-	});
+	const authorities = testAuthorities();
 	const identity = authorities.identity;
 	const coordinator = identity.decoder.adoptThreadId("coordinator");
 	const workhorse = identity.decoder.adoptThreadId("workhorse");
@@ -308,7 +304,13 @@ function harness(active = true): Harness {
 		realtimeRequests.push(request);
 		mutationHook?.();
 		const method = "thread/realtime/appendText";
-		if (mode === "rejected") throw new CodexSessionMutationError(method, "not_delivered", "x");
+		if (mode === "rejected")
+			throw createCodexFailure({
+				kind: "mutation",
+				method: method,
+				outcome: "not_delivered",
+				message: "x",
+			});
 		if (mode === "lost") throw new Error("lost");
 		return {};
 	};
@@ -393,10 +395,21 @@ function close(value: Harness): void {
 	value.callbacks.dispose();
 }
 
+/**
+ * Another epoch of the harness's child, spelled as Codex would spell a prior one.
+ * @param ids The harness identities.
+ * @returns The epoch.
+ */
+function priorEpoch(ids: Identities): Identities["epoch"] {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a forged epoch of the same child, for the refusal under test
+	return ids.epoch.replace(/[^.]+$/u, "h44444444444444444444444444444444") as Identities["epoch"];
+}
+
 export {
 	type Answer,
 	type Identities,
 	identities,
+	priorEpoch,
 	link,
 	type CallbackSourceType,
 	operationEvent,

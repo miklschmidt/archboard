@@ -7,7 +7,7 @@
 // cumulative usage, not its own.
 
 import { describe, expect, test } from "bun:test";
-import { LegacyBoardSchema } from "@archboard/model/legacy-board";
+import { legacyBoardOf } from "#tests/runtime/support/legacy-board.ts";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { callUsageFrom, sessionUsage } from "#runtime/evaluation/grading/protocol/grader-usage.ts";
 import { countDirectVaultWrites } from "#runtime/evaluation/run-checks/audit/rules/guardrails.ts";
@@ -36,10 +36,7 @@ const CONTEXT = {
 	exposure: {
 		evaluationInputs: `${CHECKOUT}/evals`,
 		harnessSource: `${CHECKOUT}/packages/skills`,
-		skillPackages: [
-			`${CHECKOUT}/skills/archboard`,
-			`${CHECKOUT}/docs/design/skill-evals/baseline/archboard`,
-		],
+		skillPackages: [`${CHECKOUT}/skills/archboard`, `${CHECKOUT}/evals/baseline/archboard`],
 		batchRoot: BATCH,
 		world: WORLD,
 		exists: (): boolean => true,
@@ -60,7 +57,7 @@ function classified(command: string): ClassifiedCommand {
 	return one;
 }
 
-const DOCUMENT = LegacyBoardSchema.parse(
+const DOCUMENT = legacyBoardOf(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -336,7 +333,7 @@ describe("evaluation-material exposure", () => {
 	test("either arm's package in the checkout is exposure, the skill installed in the run's world is not", () => {
 		for (const script of [
 			`cat ${CHECKOUT}/skills/archboard/SKILL.md`,
-			`rg -n variant ${CHECKOUT}/docs/design/skill-evals/baseline/archboard/references/edit.md`,
+			`rg -n variant ${CHECKOUT}/evals/baseline/archboard/references/edit.md`,
 		]) {
 			expect(classified(`bash -lc '${script}'`).exposure, script).toBe("skill-package");
 		}

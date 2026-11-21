@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import { type CodexDynamicTools } from "#runtime/dynamic-tools/protocol/contract.ts";
 import {
@@ -58,7 +58,7 @@ describe("codex dynamic quarantine fail-closed ownership", () => {
 		await reachQuarantine(tools);
 
 		fixture.lifecycle.completeShutdownWith(
-			createIdentityAuthorities().identity.validator.childId,
+			testAuthorities().identity.validator.childId,
 			caller.epoch,
 		);
 		await Promise.resolve();

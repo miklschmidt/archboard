@@ -1,0 +1,18 @@
+{
+  "order": 24050,
+  "name": "ui-clocks",
+  "kind": "package",
+  "responsibility": "The clocks the browser UI reads: the frame clock that motion steps on, stepped frame by frame for a replay or a test, and time as text",
+  "description": "Layer 0, area ui, @archboard/ui-clocks (TASK-653.17): ui-kit's frame clock and time as text, moved out whole, because tests and recordings drive frames and draw nothing with ui-kit. Two entries and no root, width 16. ./frame-clock (13): frameClock, driveFramesFrom, createSteppedClock(start, takeFramesOf?), and class SteppedClock with now, requestFrame, cancelFrame, after, cancelAfter, advanceTo, runFrame, syncAnimations and paint. ./time (3): useClock, shortAge, clockDuration. The web app, agent-surfaces and the system motion fixture call it; it calls nothing of ours. The built page keeps it in the controls chunk.",
+  "groups": [
+    "packages"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/ui-clocks"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#UX6KRQDf",
+  "parent": "vKEsyHFk#EuaJBisP",
+  "outgoing": []
+}

@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DrawnPicture } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type DrawnPicture } from "@archboard/model-contract";
 import { markCounts } from "#shared/render/rules/key-marks.ts";
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { type LegacyRenderChoices } from "#shared/render/rules/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 // What a picture's key counts, and what its answer says it draws, are what the
 // picture marks (TASK-497, TASK-496). A view's reading holds more than its
@@ -60,8 +59,8 @@ const DRAFT = {
 	],
 };
 
-const DOCUMENT = LegacyBoardSchema.parse({
-	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+const DOCUMENT = fixtureDocument("legacyBoard", {
+	schemaVersion: "2.5.0",
 	kind: "semantic-board",
 	id: "document",
 	name: "Ingest",

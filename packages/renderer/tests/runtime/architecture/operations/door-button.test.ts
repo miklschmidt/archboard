@@ -3,10 +3,10 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { themeColor } from "#runtime/theme/store/source.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
-import { projectModel, type Model } from "@archboard/model/content";
-import { paletteColorSchema, semanticPolicySchema } from "@archboard/model/policy";
+import { type Model, projectModel } from "@archboard/model-rules";
+import { fixtureDocument, paletteColours } from "#tests/runtime/support/model-documents.ts";
 
-const policy = semanticPolicySchema().parse({
+const policy = fixtureDocument("semanticPolicy", {
 	levels: ["service"],
 	nodeKinds: {
 		service: { name: "Service", icon: "RiServerLine", color: "blue" },
@@ -77,7 +77,7 @@ test("a door takes its group's colour, or else its kind's, in a picture that sta
 });
 
 test("a door's colours are the bright values of the dark theme, on both themes", () => {
-	for (const color of paletteColorSchema().options) {
+	for (const color of paletteColours()) {
 		for (const theme of ["light", "dark"] as const) {
 			expect(themeColor(theme, `--bright-${color}`)).toBe(
 				themeColor("dark", `--semantic-${color}`),

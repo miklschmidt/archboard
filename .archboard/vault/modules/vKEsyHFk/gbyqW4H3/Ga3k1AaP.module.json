@@ -6,12 +6,25 @@
   "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. An edge tab and a door take their selection seats here. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/slab.rs"
+    "path": "crates/archboard-painting/src/paint/slab.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "outgoing": [
+    {
+      "order": 100,
+      "kind": "call",
+      "label": "round a corner as JavaScript does",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-painting/src/paint/slab.rs",
+        "symbol": "max"
+      },
+      "id": "vKEsyHFk#prq41gkQ",
+      "to": "vKEsyHFk#1UxryIji"
+    },
     {
       "order": 38000,
       "kind": "dependency",
@@ -19,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/slab.rs",
+        "path": "crates/archboard-painting/src/paint/slab.rs",
         "symbol": "Palette"
       },
       "id": "vKEsyHFk/gbyqW4H3#lW0CBEfj",
@@ -32,24 +45,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/slab.rs",
+        "path": "crates/archboard-painting/src/paint/slab.rs",
         "symbol": "ink_of"
       },
       "id": "vKEsyHFk/gbyqW4H3#OVkwk7CO",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
-    },
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "round a corner as JavaScript does",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/slab.rs",
-        "symbol": "js_max"
-      },
-      "to": "vKEsyHFk#1UxryIji",
-      "id": "vKEsyHFk#prq41gkQ"
     }
   ]
 }

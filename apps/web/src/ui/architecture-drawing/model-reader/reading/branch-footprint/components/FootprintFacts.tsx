@@ -1,17 +1,17 @@
 import type { JSX } from "react";
 import { RiInformationLine } from "@remixicon/react";
-import { buttonVariants, Popover } from "@archboard/ui-kit/components";
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import { Button, Popover } from "@archboard/ui-kit/components";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import {
 	NOT_READ,
 	type FootprintSkip,
 } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/rules/footprint-lists.ts";
 
+/** The key's look: a small outline key, as `Refresh` beside it is. */
+const KEY = <Button variant="outline" size="icon-xs" />;
+
 /** The length of a commit as a line shows it. */
 const SHORT = 7;
-
-/** The key's look: a small outline key, as `Refresh` beside it is. */
-const KEY = buttonVariants({ variant: "outline", size: "icon-xs" });
 
 /** The popover's heading, which names it. */
 const HEADING = "footprint-facts-heading";
@@ -36,7 +36,7 @@ function FootprintFacts(props: {
 				aria-label="What the lists cover"
 				data-slot="footprint-facts"
 				data-vault-read={answer?.vaultRead.at}
-				className={KEY}
+				render={KEY}
 			>
 				<RiInformationLine aria-hidden="true" />
 			</Popover.Trigger>

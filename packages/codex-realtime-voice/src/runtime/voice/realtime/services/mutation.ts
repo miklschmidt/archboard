@@ -1,5 +1,5 @@
 import type { AppendOutcome, RealtimeCorrelation } from "#shared/protocol/realtime-contract.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import { realtimeErrorMessage } from "#runtime/voice/realtime/services/binding.ts";
 
 /**
@@ -10,13 +10,14 @@ import { realtimeErrorMessage } from "#runtime/voice/realtime/services/binding.t
  * @returns The outcome to report.
  */
 function failureOutcome(request: RealtimeCorrelation, error: unknown): AppendOutcome {
-	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered") {
+	const failure = readCodexFailure(error);
+	if (failure?.kind === "mutation" && failure.outcome === "not_delivered") {
 		return { ...request, outcome: "not_delivered", reason: "rejected" };
 	}
 	return {
 		...request,
 		outcome: "outcome_unknown",
-		reason: error instanceof CodexSessionMutationError ? "response_lost" : "transport_failure",
+		reason: failure?.kind === "mutation" ? "response_lost" : "transport_failure",
 	};
 }
 

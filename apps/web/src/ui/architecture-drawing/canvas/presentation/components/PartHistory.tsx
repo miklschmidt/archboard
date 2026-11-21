@@ -1,7 +1,7 @@
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import type { SemanticNode } from "@archboard/model/content";
+import type { SemanticNode } from "@archboard/model-contract";
 import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	SidebarChoice,

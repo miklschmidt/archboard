@@ -1,7 +1,7 @@
 //! A picture's flows and nodes, as the layout reads them from the picture's own
-//! JSON (`@archboard/model/flow`, `@archboard/model/content`). A flow is a tree
-//! told in order: a decision holds its alternatives' steps, and a loop holds
-//! the steps it repeats (ADR 0053).
+//! JSON (`readFlow` in `@archboard/model-contract`, `projectModel` in
+//! `@archboard/model-rules`). A flow is a tree told in order: a decision holds
+//! its alternatives' steps, and a loop holds the steps it repeats (ADR 0053).
 
 use serde::{Deserialize, Deserializer};
 

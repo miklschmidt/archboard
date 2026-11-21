@@ -1,12 +1,11 @@
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
 import {
-	claimArchitectureSubjects,
+	changeArchitectureClaims,
 	editArchitectureModule,
-	releaseArchitectureClaim,
+	readArchitectureModel,
 	retainArchitectureCheckpoint,
-} from "@archboard/model/store-write";
+} from "@archboard/model-store";
 import { startOwnedServer } from "../../support/owned-server.ts";
 import { productionServer } from "./production-server.ts";
 import {
@@ -18,13 +17,9 @@ import {
 	productionPane,
 } from "./codex-production.ts";
 import { createRequester } from "./http.ts";
-import {
-	semanticPaneContextRoute,
-	type semanticPaneContextSchema,
-} from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type Report = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type Report = ModelDocument<"paneContext">;
 
 export async function canonicalNarration(resources: AsyncDisposableStack, proposal = false) {
 	const fixture = prepareProductionFixture(
@@ -55,7 +50,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 	});
 	if (!retained.success) throw new Error(JSON.stringify(retained));
 	const target = { model: initial.manifest.id, state: initial.selectedState!.id };
-	const claim = await claimArchitectureSubjects(fixture.vault, {
+	const claim = await changeArchitectureClaims(fixture.vault, "claim", {
 		target,
 		writer: "agent",
 		reason: "Author canonical narration",
@@ -115,7 +110,10 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 		],
 	});
 	if (!authored.success) throw new Error(JSON.stringify(authored));
-	await releaseArchitectureClaim(fixture.vault, { claim: claim.claim.id, writer: "agent" });
+	await changeArchitectureClaims(fixture.vault, "release", {
+		claim: claim.claim.id,
+		writer: "agent",
+	});
 	const model = await readArchitectureModel(fixture.vault, undefined, undefined, {
 		walkthrough: "Canonical tour",
 		state: authored.target.state!,
@@ -159,7 +157,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 		reading: { focus: [], relationshipKinds: [], grammar: "architecture" },
 	};
 	const report = (presentation: Report["presentation"], capture = architecture) =>
-		request(semanticPaneContextRoute(), {
+		request("/api/panes/semantic-context", {
 			method: "POST",
 			doing: false,
 			body: {

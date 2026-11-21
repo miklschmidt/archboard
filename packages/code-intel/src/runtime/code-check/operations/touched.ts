@@ -15,7 +15,7 @@
 // read nothing. A model's policy alone never refuses the pass, which a pane
 // also starts: its reading lists every part as unread, and the CLI refuses.
 
-import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import type { DepthRecord } from "#runtime/code-check/interfaces/operations/interfaces.ts";
 import type { StateToCheck } from "#runtime/code-check/operations/states.ts";
 import { moduleOf, within } from "#runtime/code-facts/modules/operations/module-exposure.ts";
@@ -64,8 +64,7 @@ interface Footprint {
  */
 async function baseOf(request: TouchedRequest): Promise<string | undefined> {
 	if (request.base !== undefined) return request.base;
-	const own = vaultIdentity(request.vault);
-	const root = checkoutsReadFrom(request.vault).find((checkout) => checkout.repo === own)?.root;
+	const root = checkoutsReadFrom(request.vault).own?.root;
 	if (root === undefined) return undefined;
 	return (await defaultBaseOf(root, { signal: request.signal })) ?? undefined;
 }

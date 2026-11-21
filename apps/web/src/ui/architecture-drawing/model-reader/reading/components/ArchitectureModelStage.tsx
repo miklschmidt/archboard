@@ -27,12 +27,12 @@ import {
 	useQueryClient,
 	type UseQueryResult,
 } from "@tanstack/react-query";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import { shownRepository } from "@archboard/ui-kit/components";
 import {
 	ArchitectureReadError,
 	architectureModelQuery,
-	invalidateVaultQueries,
+	invalidateModelQueries,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import { ModelComparisonSelector } from "#ui/architecture-drawing/model-reader/reading/components/ModelComparisonSelector.tsx";
 import { ModelStateDetails } from "#ui/architecture-drawing/model-reader/reading/components/ModelStateDetails.tsx";
@@ -46,7 +46,7 @@ import { useModelLocation } from "#ui/panes/reading-routing/hooks/use-model-loca
 import { useModelVault } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-vault.ts";
 
 import { useArchitectureFeed } from "#ui/architecture-drawing/model-reader/access/hooks/use-architecture-feed.ts";
-import { retryFailedDrawings } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
+import { retryFailedDrawings } from "#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts";
 import { comparisonIntent } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import { useTroubleReport } from "#ui/architecture-drawing/model-reader/reading/hooks/use-trouble-report.ts";
 import {
@@ -187,7 +187,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const unread = isUnread(query.error);
 	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
-		void invalidateVaultQueries(client, vault);
+		void invalidateModelQueries(client, vault);
 		void retryFailedDrawings(client);
 	}, [client, vault]);
 	if (differentModel(resolvedId, requestedModel)) {

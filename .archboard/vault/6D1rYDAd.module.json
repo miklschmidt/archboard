@@ -1,0 +1,57 @@
+{
+  "order": 300,
+  "name": "Dock, panel and Talk key",
+  "kind": "ui",
+  "responsibility": "AgentDock, AgentPanel and TalkControl: the dock, the conversation panel and a presentation's Talk key, each reading what it shows from the root",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#6D1rYDAd",
+  "parent": "vKEsyHFk#C43O57X3",
+  "outgoing": [
+    {
+      "order": 960077,
+      "kind": "render",
+      "label": "the dock, over the agent's view and actions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx",
+        "symbol": "DockSurface"
+      },
+      "id": "vKEsyHFk#II8BSvFW",
+      "to": "vKEsyHFk#UoblaIEv"
+    },
+    {
+      "order": 960078,
+      "kind": "render",
+      "label": "the Talk key of a presentation's bar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx",
+        "symbol": "TalkKey"
+      },
+      "id": "vKEsyHFk#AGy0C1n5",
+      "to": "vKEsyHFk#ZTh8T7Ym"
+    },
+    {
+      "order": 960085,
+      "kind": "call",
+      "label": "the surfaces' state: view, actions, draft, panel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/agent-surfaces/src/ui/agent-root/components/AgentSurfaces.tsx",
+        "symbol": "useSurfaceState"
+      },
+      "id": "vKEsyHFk#z4N3xvmQ",
+      "to": "vKEsyHFk#1URZo0r1"
+    }
+  ]
+}

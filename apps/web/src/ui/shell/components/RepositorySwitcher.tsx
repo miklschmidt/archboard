@@ -17,7 +17,7 @@ import {
 	type Ref,
 } from "react";
 
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import { Badge, cn, Popover, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
 import { ClaimMark, MarkerClaim, MarkerLamp } from "#ui/shell/components/ActivityLamp.tsx";
 import { PaneChips } from "#ui/shell/components/PaneChips.tsx";

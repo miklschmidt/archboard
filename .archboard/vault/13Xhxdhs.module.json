@@ -1,0 +1,29 @@
+{
+  "order": 1003910,
+  "name": "Publication queries",
+  "kind": "function",
+  "responsibility": "Reads a vault's archive publication, and publishes or fetches it",
+  "description": "architecturePublicationQuery and changeArchitecturePublication moved from Model queries to the reading that shows publication (TASK-653.14). The read is cached under the vault's prefix from Model queries.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/publication.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#13Xhxdhs",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 41000,
+      "kind": "http",
+      "label": "read the publication, and publish or fetch",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/clients/publication.ts",
+        "symbol": "architecturePublicationQuery"
+      },
+      "id": "vKEsyHFk#8MLqwolD",
+      "to": "vKEsyHFk/HBlhIeSD#eoaqHAIX"
+    }
+  ]
+}

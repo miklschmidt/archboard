@@ -1,0 +1,15 @@
+{
+  "order": 27050,
+  "name": "Git lookups",
+  "kind": "module",
+  "responsibility": "Asks Git which repository a directory belongs to, what that repository is called on every machine, and what a checkout has out",
+  "description": "repoRootOf, repoIdentityAt and inspectCheckout (the branch, commit and worktrees of a checkout) go out through ./checkouts. The registry, the vault finder and the vault's Git checkout read it inside workspace, and the model store asks it for the root of a checkout and the identity of its repository (TASK-653.15).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/clients/git.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#7OhD3Pyx",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "outgoing": []
+}

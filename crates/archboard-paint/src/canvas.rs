@@ -1,7 +1,7 @@
 //! What a painter draws on. The draw walk knows this contract and no renderer,
 //! so that Vello on a GPU and Vello on the CPU draw one picture.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use kurbo::{Affine, BezPath};
 use peniko::{Color, Gradient};
 
@@ -52,6 +52,24 @@ pub struct Lens {
     pub smear: f64,
 }
 
+/// A layer a canvas starts: what follows lands on it until the layer ends.
+#[derive(Clone, Copy, Debug)]
+pub enum Layer<'a> {
+    /// A layer laid over the one under it, clipped to a path when there is one
+    /// (filled even-odd when its flag says so), at an opacity.
+    Over {
+        /// The path the layer is clipped to, and whether it fills even-odd.
+        clip: Option<(&'a BezPath, bool)>,
+        /// How opaque the layer lands, from 0 to 1.
+        opacity: f32,
+    },
+    /// A layer that removes what it covers from the layer under it. A
+    /// picture's masks are cuts in a white ground, so a cut is all they need.
+    Cut,
+    /// A layer that keeps of the layer under it only what it covers.
+    Keep,
+}
+
 /// A surface that takes one frame's drawing.
 pub trait Canvas {
     /// Set the transform of everything drawn from now on.
@@ -60,13 +78,8 @@ pub trait Canvas {
     fn fill(&mut self, path: &BezPath, ink: &Ink, even_odd: bool);
     /// Stroke a path.
     fn stroke(&mut self, path: &BezPath, stroke: &kurbo::Stroke, ink: &Ink);
-    /// Start a layer: what follows lands on it, clipped and at an opacity.
-    fn push(&mut self, clip: Option<(&BezPath, bool)>, opacity: f32);
-    /// Start a layer that removes what it covers from the layer under it.
-    /// A picture's masks are cuts in a white ground, so a cut is all they need.
-    fn push_cut(&mut self);
-    /// Start a layer that keeps of the layer under it only what it covers.
-    fn push_keep(&mut self);
+    /// Start a layer. A clipped layer is clipped under the transform that stands.
+    fn push(&mut self, layer: Layer<'_>);
     /// End the last layer.
     fn pop(&mut self);
     /// Draw again what is kept under a key, under a transform. A canvas that
@@ -85,42 +98,4 @@ pub trait Canvas {
     /// See this frame through a lens, the picture sinking into a ground. A canvas
     /// with no lens shows the frame as drawn.
     fn look_through(&mut self, _lens: Lens, _ground: Color) {}
-}
-
-/// A canvas that only counts, for tests of what a frame draws.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Count {
-    /// The paths that were filled.
-    pub fills: usize,
-    /// The paths that were stroked.
-    pub strokes: usize,
-    /// The layers that were started.
-    pub layers: usize,
-    /// The layers that are open.
-    pub open: usize,
-}
-
-impl Canvas for Count {
-    fn set_transform(&mut self, _: Affine) {}
-    fn fill(&mut self, _: &BezPath, _: &Ink, _: bool) {
-        self.fills += 1;
-    }
-    fn stroke(&mut self, _: &BezPath, _: &kurbo::Stroke, _: &Ink) {
-        self.strokes += 1;
-    }
-    fn push(&mut self, _: Option<(&BezPath, bool)>, _: f32) {
-        self.layers += 1;
-        self.open += 1;
-    }
-    fn push_cut(&mut self) {
-        self.layers += 1;
-        self.open += 1;
-    }
-    fn push_keep(&mut self) {
-        self.layers += 1;
-        self.open += 1;
-    }
-    fn pop(&mut self) {
-        self.open -= 1;
-    }
 }

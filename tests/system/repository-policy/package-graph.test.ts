@@ -20,32 +20,40 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const packagesRoot = path.join(repoRoot, "packages");
 const appsRoot = path.join(repoRoot, "apps");
 
-// The agreed layer order of ADR 0055 and docs/agents/boundaries.md. A package
+// The agreed layer order of ADR 0055. A package
 // imports only a lower layer. Nothing imports an app, and the apps share
 // the top layer. App ids include their prefix to distinguish them from packages.
 const LAYERS: Record<string, number> = {
 	timing: 0,
 	diagnostics: 0,
 	"ui-kit": 0,
-	"server-requests": 0,
+	"ui-clocks": 0,
 	process: 1,
+	machine: 1,
 	workspace: 2,
+	"headless-chromium": 2,
 	"code-binding": 3,
 	telemetry: 3,
-	model: 4,
-	"codex-app-server": 5,
-	renderer: 5,
-	"code-intel": 5,
-	"server-lifecycle": 6,
-	"code-opener": 6,
-	walkthrough: 6,
-	"codex-realtime-voice": 6,
-	workbench: 7,
-	skills: 7,
-	"apps/cli": 8,
-	"apps/server": 8,
-	"apps/web": 8,
-	"apps/workbench-example": 8,
+	"server-requests": 3,
+	"model-contract": 4,
+	"model-rules": 5,
+	"render-recipe": 5,
+	"model-store": 6,
+	raster: 6,
+	"codex-app-server": 7,
+	renderer: 7,
+	"code-intel": 7,
+	"server-lifecycle": 8,
+	"code-opener": 8,
+	walkthrough: 8,
+	"codex-realtime-voice": 8,
+	workbench: 9,
+	skills: 9,
+	"agent-surfaces": 10,
+	"apps/cli": 11,
+	"apps/server": 11,
+	"apps/web": 11,
+	"apps/workbench-example": 11,
 };
 
 interface Edge {
@@ -189,14 +197,14 @@ describe("the package graph", () => {
 		expect(owners.filter(({ id }) => LAYERS[id] === undefined).map(({ id }) => id)).toEqual([]);
 	});
 
-	test("the apps share layer 8 above every package, and the graph does not need them to exist", () => {
+	test("the apps share layer 11 above every package, and the graph does not need them to exist", () => {
 		const appLayers = Object.entries(LAYERS).filter(([id]) => id.startsWith("apps/"));
 		const packageLayers = Object.entries(LAYERS).filter(([id]) => !id.startsWith("apps/"));
 		expect(new Set(appLayers.map(([id]) => id))).toEqual(
 			new Set(appDirectories().map(({ id }) => id)),
 		);
-		expect(new Set(appLayers.map(([, layer]) => layer))).toEqual(new Set([8]));
-		expect(Math.max(...packageLayers.map(([, layer]) => layer))).toBeLessThan(8);
+		expect(new Set(appLayers.map(([, layer]) => layer))).toEqual(new Set([11]));
+		expect(Math.max(...packageLayers.map(([, layer]) => layer))).toBeLessThan(11);
 		expect(appDirectories(path.join(appsRoot, "missing"))).toEqual([]);
 		expect(readEdges([])).toEqual([]);
 	});
@@ -233,7 +241,7 @@ describe("the package graph", () => {
 				'import { clip } from "@archboard-app/cli/src/runtime/clipboard.ts";\n',
 			);
 			fs.writeFileSync(pathed, 'await import("../../apps/web/src/main.tsx");\n');
-			fs.writeFileSync(clean, 'import { id } from "@archboard/model/ids";\n');
+			fs.writeFileSync(clean, 'import { id } from "@archboard/model-contract";\n');
 			expect(rootImportsOfApps([named, pathed, clean])).toHaveLength(2);
 		} finally {
 			fs.rmSync(scratch, { recursive: true, force: true });
@@ -243,14 +251,14 @@ describe("the package graph", () => {
 	test("a specifier names its owner, and an edge into an app is an upward edge", () => {
 		// Catches a graph that cannot see an app: nothing imports one, so every edge into an app
 		// must be found by its name or its path and must break the layer order.
-		expect(ownerOfSpecifier("@archboard/model/ids")).toBe("model");
+		expect(ownerOfSpecifier("@archboard/model-contract/ids")).toBe("model-contract");
 		expect(ownerOfSpecifier("@archboard-app/web")).toBe("apps/web");
 		expect(ownerOfSpecifier("../../../apps/cli/src/runtime/clipboard.js")).toBe("apps/cli");
 		expect(ownerOfSpecifier("node_modules/@archboard-app/web/src/x.ts")).toBeUndefined();
 		expect(ownerOfSpecifier("node:fs")).toBeUndefined();
 
 		const ok = [
-			edge("apps/web", "model"),
+			edge("apps/web", "model-contract"),
 			edge("apps/cli", "workbench"),
 			edge("apps/server", "ui-kit"),
 		];
@@ -260,13 +268,16 @@ describe("the package graph", () => {
 			LAYERS,
 		);
 		expect(bad).toHaveLength(3);
-		expect(bad[0]).toContain("layer 7 (workbench) takes in layer 8 (apps/web)");
+		expect(bad[0]).toContain("layer 9 (workbench) takes in layer 11 (apps/web)");
 
-		const exported = { model: [".", "./ids"] };
+		const exported = { "model-contract": [".", "./ids"] };
 		const reached = [
-			{ ...edge("apps/web", "model"), specifier: "@archboard/model" },
-			{ ...edge("apps/web", "model"), specifier: "@archboard/model/ids" },
-			{ ...edge("apps/web", "model"), specifier: "@archboard/model/src/shared/ids.ts" },
+			{ ...edge("apps/web", "model-contract"), specifier: "@archboard/model-contract" },
+			{ ...edge("apps/web", "model-contract"), specifier: "@archboard/model-contract/ids" },
+			{
+				...edge("apps/web", "model-contract"),
+				specifier: "@archboard/model-contract/src/shared/ids.ts",
+			},
 		];
 		expect(privateImports(reached, exported)).toHaveLength(1);
 	});
@@ -282,7 +293,10 @@ describe("the package graph", () => {
 			"workspace",
 			"process",
 		]);
-		const upward = layerViolations([edge("process", "workspace"), edge("model", "model")], LAYERS);
+		const upward = layerViolations(
+			[edge("process", "workspace"), edge("model-contract", "model-contract")],
+			LAYERS,
+		);
 		expect(upward).toHaveLength(2);
 		expect(upward[0]).toContain("process/src/a.ts");
 		expect(upward[0]).toContain("@archboard/workspace");

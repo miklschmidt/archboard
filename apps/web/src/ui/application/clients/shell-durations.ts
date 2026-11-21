@@ -1,4 +1,4 @@
-import { columnMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 
 /**
  * Put the durations of a popover on the root element. A select or a menu stands in a portal, outside
@@ -6,8 +6,8 @@ import { columnMs } from "@archboard/timing";
  * @param root The root element of the page.
  */
 function applyShellDurations(root: HTMLElement): void {
-	root.style.setProperty("--popover-in-ms", `${columnMs("popoverIn")}ms`);
-	root.style.setProperty("--popover-out-ms", `${columnMs("popoverOut")}ms`);
+	root.style.setProperty("--popover-in-ms", `${durationMs("column.popoverIn")}ms`);
+	root.style.setProperty("--popover-out-ms", `${durationMs("column.popoverOut")}ms`);
 }
 
 export { applyShellDurations };

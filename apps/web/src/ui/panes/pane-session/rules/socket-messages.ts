@@ -8,23 +8,19 @@
 // layout, which step of a walkthrough somebody narrating it asked for, and that
 // a checkout was chosen somewhere.
 
-import {
-	panePresentRequestSchema,
-	architecturePaneReadingSchema,
-} from "@archboard/model/pane-context";
 import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import type {
 	AgentActivityEntry,
 	LegacyIdentity,
 	WebSocketMessage,
 } from "#ui/panes/pane-session/rules/session-types.ts";
-import type { z } from "zod";
+import { type ModelDocument, parseDocument } from "@archboard/model-contract";
 
-type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
+type PanePresentRequest = ModelDocument<"panePresentRequest">;
 
 /** Canonical navigation resolved by the shared runtime before it reaches a pane. */
 interface PaneModelRequest {
-	readonly reading: z.infer<ReturnType<typeof architecturePaneReadingSchema>> & { model: string };
+	readonly reading: ModelDocument<"paneReading"> & { model: string };
 	readonly repository: string | null;
 }
 
@@ -88,7 +84,7 @@ function panePlaced(context: MessageContext, data: WebSocketMessage): void {
  */
 function paneModel(context: MessageContext, data: WebSocketMessage): void {
 	if (typeof data.model !== "string" || typeof data.vault !== "string") return;
-	const parsed = architecturePaneReadingSchema().safeParse(data.reading);
+	const parsed = parseDocument("paneReading", data.reading);
 	if (!parsed.success) return;
 	const repository = data.repository ?? null;
 	context.adoptModel(null, null, { vault: data.vault, repository });
@@ -157,7 +153,7 @@ function repositoriesChanged(context: MessageContext): void {
  * @param data The message.
  */
 function panePresent(context: MessageContext, data: WebSocketMessage): void {
-	const request = panePresentRequestSchema().safeParse(data);
+	const request = parseDocument("panePresentRequest", data);
 	if (request.success) {
 		context.onPresentRequest?.(request.data);
 	}

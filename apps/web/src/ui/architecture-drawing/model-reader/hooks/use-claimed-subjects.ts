@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 import { architectureClaimsQuery } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
 	claimedSubjects,

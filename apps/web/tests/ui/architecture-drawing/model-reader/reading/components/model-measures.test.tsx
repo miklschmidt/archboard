@@ -10,7 +10,7 @@ import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import type { architectureHistoryResultSchema } from "@archboard/code-intel/history";
 import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import type { z } from "zod";
 
 GlobalRegistrator.register();

@@ -3,6 +3,7 @@
   "name": "Frame transport",
   "kind": "module",
   "responsibility": "Writes and reads newline-framed JSON over the stdio of the child, and tells each owner what arrived",
+  "description": "TASK-653.11: createCodexTransport is private; openCodexConnection opens it over the child's stdio with the connection's identity authority. It writes each frame through encodeFrame and turns a refusal into its write error (a usage error for a value with no JSON form, else frame-too-large). replaceIdentity, its dead call and the ?? fallbacks are gone from CodexTransport (owner decision 22). Its error classes stay inside, under their names and messages, and callers read them through readCodexFailure.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/transport/clients"

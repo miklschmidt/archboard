@@ -11,7 +11,7 @@
 import { useMemo, type JSX } from "react";
 
 import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { lineWarning } from "@archboard/renderer/picture";
+import { warningMark } from "@archboard/renderer/picture";
 import {
 	SidebarGlyph,
 	SidebarSection,
@@ -37,7 +37,7 @@ interface CodeStanding {
  * @returns The mark.
  */
 function WarningGlyph(): JSX.Element {
-	const markup = useMemo(() => ({ __html: lineWarning({ x: 0, y: 0 }) }), []);
+	const markup = useMemo(() => ({ __html: warningMark({ x: 0, y: 0 }) }), []);
 	return (
 		<svg
 			aria-hidden="true"

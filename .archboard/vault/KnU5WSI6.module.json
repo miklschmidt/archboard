@@ -1,0 +1,122 @@
+{
+  "order": 4100,
+  "name": "Pane socket handler",
+  "kind": "module",
+  "responsibility": "acceptPaneSocket(ws, req, vault): one pane's socket for its whole life: registers it, tells it its vault, repository and starting model, admits it to its vault's news and passes its agent messages on",
+  "description": "A socket that names a canonical reading starts with no legacy board. It preserves explicit model and preview addresses without reading or upgrading an unrelated legacy document.",
+  "groups": [
+    "panes"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#KnU5WSI6",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 4000,
+      "kind": "event",
+      "label": "hand each parsed frame to the socket's voice connection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "listenForCodexRequests"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "order": 6000,
+      "kind": "event",
+      "label": "model and agent news; the vault a pane is in",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "sendStartingPlace"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
+      "to": "vKEsyHFk#iORmkZrI"
+    },
+    {
+      "order": 12000,
+      "kind": "call",
+      "label": "hold its vault followed; send it every snapshot",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "agentActivity"
+      },
+      "id": "vKEsyHFk#soCnft73",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    },
+    {
+      "order": 15000,
+      "kind": "call",
+      "label": "register the page's socket; admit it once it knows its place",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "registerSocket"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
+      "to": "vKEsyHFk#Zse70SS2"
+    },
+    {
+      "order": 22000,
+      "kind": "call",
+      "label": "whether a returning pane's vault is still readable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "resolveVault"
+      },
+      "id": "vKEsyHFk#FgFSdDi2",
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 53000,
+      "kind": "call",
+      "label": "name the repository the pane starts in",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "placeOfVault"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "order": 84000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "parsePaneKey"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
+      "to": "vKEsyHFk#9VahN2IU"
+    },
+    {
+      "order": 1009000,
+      "kind": "call",
+      "label": "a returning pane's vault; a new pane's model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
+        "symbol": "paneVaultOf"
+      },
+      "id": "vKEsyHFk#yO0Gg6Lz",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    }
+  ]
+}

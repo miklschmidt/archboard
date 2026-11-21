@@ -26,6 +26,32 @@
       "to": "vKEsyHFk#nAfoKoOs"
     },
     {
+      "order": 900,
+      "kind": "call",
+      "label": "the margin around the chart",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/frames.rs",
+        "symbol": "diagram_margin"
+      },
+      "id": "vKEsyHFk#CjdR92X9",
+      "to": "vKEsyHFk#e4GGp9r3"
+    },
+    {
+      "order": 900,
+      "kind": "data",
+      "label": "the drawing it answers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/mod.rs",
+        "symbol": "PaintedDrawing"
+      },
+      "id": "vKEsyHFk#lYQUYv7k",
+      "to": "vKEsyHFk#G67025jN"
+    },
+    {
       "order": 56000,
       "kind": "call",
       "label": "measure the boxes",
@@ -52,17 +78,17 @@
       "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
     },
     {
-      "order": 60000,
-      "kind": "dependency",
-      "label": "the kind a flow's node is drawn as",
+      "order": 61000,
+      "kind": "call",
+      "label": "a shape's wrapped words and their size",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/design.rs",
-        "symbol": "flow_kind"
+        "path": "crates/archboard-flows/src/flowchart/mod.rs",
+        "symbol": "shape_size"
       },
-      "id": "vKEsyHFk#PLVZZKxC",
-      "to": "vKEsyHFk#w44DwfpV"
+      "id": "vKEsyHFk#uGqkHqkP",
+      "to": "vKEsyHFk#RYix4PQl"
     }
   ]
 }

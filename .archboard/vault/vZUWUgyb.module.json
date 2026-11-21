@@ -5,11 +5,11 @@
   "responsibility": "The schema of a legacy board with its variants, and the variant that an address names",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/shared/schemas/legacy-board.ts"
+    "path": "packages/model-contract/src/shared/schemas/legacy-board.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#vZUWUgyb",
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "parent": "vKEsyHFk#QsBnI8Ja",
   "formerNames": [
     "Board document schema"
   ],
@@ -21,7 +21,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/schemas/content.ts",
+        "path": "packages/model-contract/src/shared/schemas/content.ts",
         "symbol": "codeBindingSchema"
       },
       "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",

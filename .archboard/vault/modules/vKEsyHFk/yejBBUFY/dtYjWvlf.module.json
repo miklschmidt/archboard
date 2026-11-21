@@ -3,7 +3,7 @@
   "name": "Picture clients",
   "kind": "module",
   "responsibility": "Supplies cached pictures, subject interaction, and transitions for architecture readings",
-  "description": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider.",
+  "description": "Canonical and retained readers share these drawing clients. The clients keep picture caches and camera transitions separate from authored model state. Retained document reads stay inside their explicit captured provider. picture-stage-forms.ts holds the forms that the painter reads, the presentation, the arrival and the departure, and the held presentation that a painter starting late takes: briefPainter states it in one presentation, then the picture's arrival, or a cleared departure when there is no picture. The pace is no longer theirs to hand on: the painter choice gives it to every painter. drill-direction.ts holds drillDirection, which only drill-way.ts reads; it left the model with the split (ADR 0086).",
   "groups": [
     "drawing"
   ],

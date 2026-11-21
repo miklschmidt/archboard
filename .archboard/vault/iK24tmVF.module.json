@@ -13,6 +13,32 @@
   "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
   "outgoing": [
     {
+      "order": 900,
+      "kind": "call",
+      "label": "fit the page to what is drawn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/architecture/mod.rs",
+        "symbol": "fitted_page"
+      },
+      "id": "vKEsyHFk#F4k8wufh",
+      "to": "vKEsyHFk#tpDrhmZh"
+    },
+    {
+      "order": 900,
+      "kind": "data",
+      "label": "the settled drawing it answers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/architecture/mod.rs",
+        "symbol": "PaintedDrawing"
+      },
+      "id": "vKEsyHFk#LfEO4AuW",
+      "to": "vKEsyHFk#G67025jN"
+    },
+    {
       "order": 2000,
       "kind": "call",
       "label": "round the routed polylines",

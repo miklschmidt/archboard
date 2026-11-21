@@ -11,12 +11,10 @@ import {
 	readingNoticeId,
 } from "#ui/application/rules/notices.ts";
 import type { ReadingTrouble } from "#ui/architecture-drawing/model-reader/reading/rules/reading-freshness.ts";
-import type { PaneSession } from "#ui/application/state/pane-handles.ts";
 import type { AgentActivity } from "#ui/application/hooks/use-agent-activity.ts";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import type { PaneReadings } from "#ui/application/hooks/use-pane-reading.ts";
 import type { PaneEvents } from "#ui/application/hooks/use-panes.ts";
-import type { useWorkbench } from "#ui/application/hooks/use-workbench.ts";
 import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
 import type { AgentActivityEntry } from "#ui/panes/pane-session/rules/session-types.ts";
 
@@ -25,7 +23,6 @@ interface PaneEventOwners {
 	readonly notices: NoticeStack;
 	readonly catalog: ModelCatalog;
 	readonly readings: PaneReadings;
-	readonly workbench: ReturnType<typeof useWorkbench>;
 	readonly activity: AgentActivity;
 }
 
@@ -35,27 +32,8 @@ interface PaneEventOwners {
  * @returns The events.
  */
 function paneEvents(owners: PaneEventOwners): PaneEvents {
-	const { notices, catalog, workbench } = owners;
+	const { notices, catalog } = owners;
 	return {
-		/**
-		 * A pane published its status: its transport may have changed.
-		 * @param paneId The pane.
-		 */
-		onStatusPublished: (paneId: string): void => {
-			workbench.paneReported(paneId);
-		},
-		/**
-		 * A pane reported its session, or went.
-		 * @param paneId The pane.
-		 * @param session The session, or null.
-		 */
-		onSession: (paneId: string, session: PaneSession | null): void => {
-			if (session === null) {
-				workbench.paneGone(paneId);
-			} else {
-				workbench.paneReported(paneId);
-			}
-		},
 		/**
 		 * A model could not be shown.
 		 * @param paneId The pane.

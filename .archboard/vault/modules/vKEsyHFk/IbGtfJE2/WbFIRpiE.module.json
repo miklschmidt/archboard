@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
       "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "the content of a world's model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/vault.ts",
+        "symbol": "modelContent"
+      },
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "id": "vKEsyHFk#yTRjJnVv"
     }
   ]
 }

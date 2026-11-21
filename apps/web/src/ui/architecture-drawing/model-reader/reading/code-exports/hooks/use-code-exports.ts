@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { codeExportsQuery } from "#ui/architecture-drawing/model-reader/access/clients/code-exports.ts";
+import { codeExportsQuery } from "#ui/architecture-drawing/model-reader/reading/code-exports/clients/code-exports.ts";
 import type { ModelCodeReading } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-code-findings.ts";
 
 /**

@@ -8,7 +8,7 @@
 
 import { APCAcontrast, sRGBtoY } from "apca-w3";
 
-import type { DiagramTheme } from "@archboard/model/render-reply";
+import { type DiagramTheme } from "@archboard/model-contract";
 import { themeColor } from "#runtime/theme/store/source.ts";
 
 /** One colour: sRGB channels 0 to 255 and alpha 0 to 1. */
@@ -297,7 +297,7 @@ function chromaOf(hex: string): number {
 
 /**
  * The hue of a hex colour in OKLCH, in degrees: the hue every tone of an ink
- * keeps (`toned` in `crates/archboard-scene/src/paint/colour.rs`) unless sRGB clips it.
+ * keeps (`toned` in `crates/archboard-painting/src/paint/colour.rs`) unless sRGB clips it.
  * @param hex The colour.
  * @returns Its hue.
  */

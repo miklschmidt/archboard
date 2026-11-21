@@ -66,7 +66,9 @@ fn template(shape: &Shape) -> &'static [Key] {
         }
         (Geometry::Path { .. }, Purpose::Outline) => &[Place, Fill, Stroke, Width],
         (Geometry::Path { .. }, Purpose::Port) => &[Place, Fill, Pointer],
-        (Geometry::Path { .. }, Purpose::Cutout) => &[Place, Width, Cap, Fill, Stroke],
+        (Geometry::Path { .. }, Purpose::Cutout | Purpose::Core) => {
+            &[Place, Width, Cap, Fill, Stroke]
+        }
         (Geometry::Path { .. }, Purpose::Sample) => {
             &[Place, Fill, Cap, Stroke, Opacity, Width, Dash]
         }
@@ -92,6 +94,7 @@ fn spelling_of(purpose: Purpose, arrowhead: Spelling) -> Spelling {
         | Purpose::Rail
         | Purpose::Swipe
         | Purpose::Cutout
+        | Purpose::Core
         | Purpose::Rule => Spelling::Route,
     }
 }
@@ -128,7 +131,7 @@ fn place(shape: &Shape, arrowhead: Spelling, out: &mut Attributes) {
 pub(crate) fn listed(numbers: &[f64]) -> String {
     numbers
         .iter()
-        .map(|number| archboard_scene::js::number(*number))
+        .map(|number| archboard_ecma::number(*number))
         .collect::<Vec<_>>()
         .join(" ")
 }

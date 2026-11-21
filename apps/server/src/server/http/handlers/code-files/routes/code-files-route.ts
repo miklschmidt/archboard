@@ -18,7 +18,7 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 import { listCheckoutFiles } from "#server/http/handlers/code-files/operations/checkout-files.ts";
 import { readCodeFile } from "#server/http/handlers/code-files/operations/read-code-file.ts";

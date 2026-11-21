@@ -1,0 +1,29 @@
+{
+  "order": 64100,
+  "name": "Explanation requests",
+  "kind": "function",
+  "responsibility": "Reads a tab's latest temporary answer and sends each explanation action through the one action route",
+  "description": "explanationKey(tab), explanationQuery(vault, tab) and explanationRequest(vault, input, signal?), which moved from Model queries to the application that shows the answer (TASK-653.14). One query per browser tab outlives repository navigation.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/application/clients/explanations.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#dDVY1Iqe",
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 64200,
+      "kind": "http",
+      "label": "the tab's latest answer, and each action on it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/clients/explanations.ts",
+        "symbol": "explanationRequest"
+      },
+      "id": "vKEsyHFk#LD7AScwW",
+      "to": "vKEsyHFk/HBlhIeSD#QboPNrzG"
+    }
+  ]
+}

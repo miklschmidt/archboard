@@ -19,9 +19,12 @@ import {
 	addressedVariant,
 	type LegacyBoard,
 	type SemanticVariant,
-} from "@archboard/model/legacy-board";
-import { everyStep, isMessage, stepWords, type FlowStep } from "@archboard/model/flow";
-import type { SemanticNode } from "@archboard/model/content";
+	type FlowStep,
+	type SemanticNode,
+	type ReconciliationIssue,
+	parseDocument,
+	readFlow,
+} from "@archboard/model-contract";
 import { RelationshipChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import { DetailsPanel } from "#ui/architecture-drawing/canvas/presentation/components/DetailsPanel.tsx";
 import { LineBody } from "#ui/architecture-drawing/canvas/presentation/components/SemanticInspectorLine.tsx";
@@ -53,7 +56,6 @@ import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kin
 import { retainedDocumentQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import {
 	depictionOf,
-	readDocument,
 	subjectOf,
 	type EdgeSubject,
 	type FlowSubject,
@@ -66,10 +68,6 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/rules/overview-line.ts";
 import { usePaneVault } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-vault.ts";
 import type { OpenDown } from "#ui/architecture-drawing/canvas/picture/rules/drill-target.ts";
-import type { ReconciliationIssueSchema } from "@archboard/model/reconciliation";
-import type { z } from "zod";
-
-type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
 
 /** What the last pass found on one model at one variant. */
 type RememberedReading = RememberedFindings["readings"][number];
@@ -143,6 +141,28 @@ function stepSort(step: FlowStep): string {
 }
 
 /**
+ * What a step adds to the exchange's facts: a message's ends and repeats, a decision's answers.
+ * @param props The step.
+ * @param props.subject The step, with its ends.
+ * @returns The rows, or nothing for a loop.
+ */
+function StepFacts(props: { subject: StepSubject }): JSX.Element | null {
+	const { step, from, to } = props.subject;
+	if (step.kind === "loop") return null;
+	if (step.kind === "decision") {
+		const answers = step.alternatives.map((alternative) => alternative.label).join(", ");
+		return <Row label="answers" value={answers} />;
+	}
+	return (
+		<>
+			<Row label="from" value={nameOf(from, step.from)} />
+			<Row label="to" value={nameOf(to, step.to)} />
+			{step.repeat !== undefined && <Row label="repeats" value={`${step.repeat}×`} />}
+		</>
+	);
+}
+
+/**
  * Everything the model says about one step of an exchange.
  *
  * Where it comes is part of what it means, which is why the comparison treats a
@@ -151,11 +171,12 @@ function stepSort(step: FlowStep): string {
  * @returns The body.
  */
 function StepBody(props: StepBodyProps): JSX.Element {
-	const { step, flow, position, from, to } = props.subject;
+	const { step, flow, position } = props.subject;
+	const { every, words } = readFlow(flow.steps);
 	return (
 		<>
 			<SidebarRegion slot="semantic-inspector-about">
-				<SubjectTitle name={stepWords(step)}>
+				<SubjectTitle name={words.get(step.id) ?? step.id}>
 					<span>{stepSort(step)}</span>
 				</SubjectTitle>
 				<Account detail={step.note} />
@@ -169,22 +190,8 @@ function StepBody(props: StepBodyProps): JSX.Element {
 						    this variant does not send is the variant it is read against. The
 						    composed picture the diagram is drawn from holds both at once and
 						    is nobody's architecture, so nothing is counted against it. */}
-						<Row
-							field="position"
-							label="step"
-							value={`${position} of ${everyStep(flow.steps).length}`}
-						/>
-						{isMessage(step) && <Row label="from" value={nameOf(from, step.from)} />}
-						{isMessage(step) && <Row label="to" value={nameOf(to, step.to)} />}
-						{isMessage(step) && step.repeat !== undefined && (
-							<Row label="repeats" value={`${step.repeat}×`} />
-						)}
-						{step.kind === "decision" && (
-							<Row
-								label="answers"
-								value={step.alternatives.map((alternative) => alternative.label).join(", ")}
-							/>
-						)}
+						<Row field="position" label="step" value={`${position} of ${every.length}`} />
+						<StepFacts subject={props.subject} />
 					</Facts>
 				</SidebarSection>
 			</SidebarRegion>
@@ -447,28 +454,28 @@ function explain(
 	if (document === undefined) {
 		return { ...nothing, notice: "Reading the model…" };
 	}
-	const reading = readDocument(document);
-	if (!reading.ok) {
-		return { ...nothing, notice: `This model could not be read. ${reading.problem}` };
+	const reading = parseDocument("legacyBoard", document);
+	if (!reading.success) {
+		return { ...nothing, notice: `This model could not be read. ${reading.error}` };
 	}
-	const opened = addressedVariant(reading.board, variant);
+	const opened = addressedVariant(reading.data, variant);
 	if (!opened.ok) {
 		return { ...nothing, notice: `This model cannot say what is on screen: ${opened.problem}.` };
 	}
 	const shown = opened.variant;
-	const compared = comparedSubject(reading.board, shown, selection);
+	const compared = comparedSubject(reading.data, shown, selection);
 	const { line, ids } = pickedLine(compared.held, selection, overview);
 	return {
 		...compared,
 		subject: line ?? compared.subject,
 		ids,
-		level: reading.board.level,
+		level: reading.data.level,
 		open: openOn(shown, ids),
 		on: {
 			vault,
-			model: reading.board.name,
+			model: reading.data.name,
 			variant: shown.id,
-			version: reading.board.version,
+			version: reading.data.version,
 		},
 		notice: "This is not on the model any more. It may have gone since the picture was drawn.",
 	};

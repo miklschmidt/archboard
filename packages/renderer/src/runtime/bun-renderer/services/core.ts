@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 import { CORE_BUILD_COMMAND, coreSourceHash } from "#runtime/store/core-sources.ts";
 
 /** The core's exports, as wasm-bindgen wrote them. */

@@ -16,10 +16,7 @@ import {
 } from "../../apps/cli/src/cli/commands/vault/operations/check-help.ts";
 import { EMBED_CODES } from "../../apps/cli/src/cli/commands/vault/protocol/embeds-answer.ts";
 import { codeCheckAnswerSchema } from "../../packages/code-intel/src/shared/api/code-check.ts";
-import {
-	SCHEMA_NAMES,
-	jsonSchema,
-} from "../../apps/cli/src/cli/commands/model/operations/schema.ts";
+import { describeModelSchema } from "@archboard/model-contract";
 import {
 	sharedOption,
 	sharedOptionKeys,
@@ -27,7 +24,7 @@ import {
 import { ENVIRONMENT, EXIT_CODES } from "../../apps/cli/src/cli/routing/protocol/conventions.ts";
 import { CliUsageError } from "../../apps/cli/src/cli/contract/protocol/contract.ts";
 import { FIRST_NATIVE_TYPESCRIPT } from "../../packages/code-intel/src/runtime/language-servers/operations/server-command.ts";
-import { RELEASE_PORT } from "../../packages/workspace/src/runtime/services/source-checkout.ts";
+import { RELEASE_PORT } from "../../packages/machine/src/runtime/services/source-checkout.ts";
 import { summaryLimits } from "../../actions/check/summary.ts";
 import { ANNOTATION_LIMIT_PER_LEVEL } from "../../actions/shared/workflow-commands.ts";
 
@@ -167,8 +164,8 @@ const shared = sharedOptionKeys().map((key) => {
 	};
 });
 
-const schemas = SCHEMA_NAMES.map((name) => {
-	const schema = jsonSchema(name);
+const schemas = describeModelSchema().map(({ name }) => {
+	const schema = describeModelSchema(name);
 	return { name, title: String(schema.title), schema };
 });
 

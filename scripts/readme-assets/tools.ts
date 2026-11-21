@@ -15,8 +15,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
-import { installation } from "@archboard/workspace/installation";
-import { discoveredChromiumPath } from "@archboard/renderer/headless-chromium";
+import { installation } from "@archboard/machine/installation";
+import { discoveredChromiumPath } from "@archboard/headless-chromium";
 import { findFfmpeg } from "@archboard/walkthrough/ffmpeg";
 
 /** The repository root. */

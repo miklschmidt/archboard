@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { vaultDirectory } from "@archboard/workspace/vault";
-import type { checkoutsReadFrom } from "@archboard/code-binding/resolution";
+import type { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import type { EmbedVault } from "#cli/commands/vault/protocol/embeds-answer.ts";
 import { fetchedVault } from "#cli/commands/vault/embeds/operations/fetched-vaults.ts";
 interface VaultFailure {
@@ -13,7 +13,7 @@ type FoundVault =
 	| { readonly ok: true; readonly vault: string; readonly read: EmbedVault }
 	| VaultFailure;
 type VaultReading = FoundVault;
-type ReadCheckouts = ReturnType<typeof checkoutsReadFrom>;
+type ReadCheckouts = ReturnType<typeof checkoutsReadFrom>["checkouts"];
 /**
  * Refuse an unavailable source without creating a vault.
  * @param reason The concrete source failure.

@@ -19,8 +19,8 @@ import {
 	type OperationId,
 	type ThreadId,
 	type TurnId,
-	createIdentityAuthorities,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import type { GeneralThreadToolName } from "#runtime/thread-tools/protocol/manifest.ts";
 import type {
 	CodexDynamicToolsOptions,
@@ -385,7 +385,7 @@ export function setupAuthorities(): {
 	readonly otherTarget: DynamicTargetAuthority;
 	readonly selfTarget: DynamicTargetAuthority;
 } {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const caller = callerAuthority(authorities);
 	const otherTarget = targetAuthority(authorities, "other-thread", caller);
 	const selfTarget = targetAuthority(authorities, CALLER_WIRE_ID, caller, {

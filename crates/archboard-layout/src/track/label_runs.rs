@@ -4,7 +4,7 @@
 //! labels, then each as near where it wants to be as that allows.
 
 use crate::constants::LABEL_LABEL_CLEARANCE;
-use crate::ecma::{abs, js_max, js_min, or, sorted_by, unique};
+use crate::ecma::{abs, max, min, or, sorted_by, unique};
 use crate::track::chains::LANE;
 use crate::track::scene::{ItemId, Placement};
 
@@ -32,7 +32,7 @@ fn cost_at(slider: &Slider, centre: f64) -> Cost {
     let off: Vec<f64> = slider
         .reaches
         .iter()
-        .map(|&(low, high)| js_max(js_max(low - centre, centre - high), 0.0))
+        .map(|&(low, high)| max([max([low - centre, centre - high]), 0.0]))
         .collect();
     [
         off.iter().filter(|&&d| d > TOLERANCE).count() as f64,
@@ -189,7 +189,7 @@ fn plan_run(scene: &Placement, sliders: Vec<Slider>, low: f64, high: f64) -> Opt
         let centres = unique(
             &anchors
                 .iter()
-                .map(|&x| js_min(last, js_max(first, x)) + offsets[index])
+                .map(|&x| min([last, max([first, x])]) + offsets[index])
                 .collect::<Vec<_>>(),
         );
         let previous = index
@@ -257,7 +257,7 @@ pub(crate) fn place_run(scene: &mut Placement, sliders: &[Slider], low: f64, hig
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::Rect;
+    use archboard_geometry::Rect;
 
     use super::*;
     use crate::track::scene::Item;

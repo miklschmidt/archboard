@@ -1,0 +1,28 @@
+{
+  "order": 960370,
+  "name": "Diagnostic line",
+  "kind": "function",
+  "responsibility": "Writes a diagnostic or a code check finding as one line: its severity, where it is, the subject it is about and what is wrong",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/commands/vault/rules/diagnostic-line.ts"
+  },
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#XCFJ92k4",
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "describe a diagnostic's subject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/vault/rules/diagnostic-line.ts",
+        "symbol": "describeSubject"
+      },
+      "id": "vKEsyHFk#jb2m0ZwA",
+      "to": "vKEsyHFk#yB4wKD87"
+    }
+  ]
+}

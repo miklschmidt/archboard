@@ -27,10 +27,10 @@ import {
 	BehindPartSchema,
 	BehindSkipSchema,
 } from "#shared/protocol/code-check.ts";
-import { subjectStandingSchema } from "@archboard/model/render-reply";
+import { modelShape } from "@archboard/model-contract";
 
 /** How the comparison marks a part, relationship or step that it names. */
-const NamedStatusSchema = subjectStandingSchema().exclude(["unchanged"]);
+const NamedStatusSchema = modelShape("subjectStanding").exclude(["unchanged"]);
 
 /** One end of a relationship or a step. */
 const FootprintEndSchema = z.object({ id: z.string(), name: z.string() }).strict();

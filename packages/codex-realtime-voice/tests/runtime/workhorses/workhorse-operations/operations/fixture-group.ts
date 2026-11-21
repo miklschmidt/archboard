@@ -1,16 +1,15 @@
-import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { afterAll, beforeAll } from "bun:test";
 
 import { createCodexEpochStore } from "#runtime/epoch/store/epoch.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	buildFixture,
 	prepareFixture,
 	type Fixture,
 } from "#tests/runtime/workhorses/workhorse-operations/operations/support.ts";
-import { restoreIdentityAuthorities } from "#tests/runtime/support/identity.ts";
 
 interface FixtureGroup {
 	readonly create: (initialStatus?: "idle" | "active") => Fixture;
@@ -32,25 +31,7 @@ function useFixtureGroup(): FixtureGroup["create"] {
 }
 
 function createFixtureGroup(): FixtureGroup {
-	const authorities = createIdentityAuthorities();
-	const identity = authorities.identity;
 	const parent = realpathSync(mkdtempSync(join("/tmp", "voice-workhorse-operations-group-")));
-	const preparedRoot = join(parent, "prepared");
-	const preparedEpochRoot = join(preparedRoot, "epoch");
-	const preparedCodexHome = join(preparedRoot, "codex-home");
-	const preparedSqliteHome = join(preparedRoot, "codex-sqlite");
-	for (const directory of [preparedEpochRoot, preparedCodexHome, preparedSqliteHome]) {
-		mkdirSync(directory, { recursive: true, mode: 0o700 });
-	}
-	const preparedEpoch = createCodexEpochStore({
-		rootDirectory: preparedEpochRoot,
-		codexHome: preparedCodexHome,
-		sqliteHome: preparedSqliteHome,
-		now: () => 100,
-	});
-	const prepared = prepareFixture(preparedEpoch, identity);
-	const preparedSnapshot = preparedEpoch.snapshot();
-	preparedEpoch.close();
 
 	let nextCase = 0;
 	let closed = false;
@@ -81,17 +62,14 @@ function createFixtureGroup(): FixtureGroup {
 			for (const directory of [epochRoot, codexHome, sqliteHome]) {
 				mkdirSync(directory, { recursive: true, mode: 0o700 });
 			}
-			copyFileSync(preparedSnapshot.manifestPath, join(epochRoot, "epoch-manifest.json"));
-			const caseAuthorities = restoreIdentityAuthorities({
-				childId: identity.validator.childId,
-				epoch: identity.validator.epoch,
-			});
+			const caseAuthorities = testAuthorities();
 			const epoch = createCodexEpochStore({
 				rootDirectory: epochRoot,
 				codexHome,
 				sqliteHome,
 				now: () => 100,
 			});
+			const prepared = prepareFixture(epoch, caseAuthorities.identity);
 			let caseClosed = false;
 			const cleanupCase = (): void => {
 				if (caseClosed) {

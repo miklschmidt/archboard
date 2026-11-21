@@ -8,10 +8,8 @@ import type {
 import { BROWSER_SPOKEN_APPROVAL_REASONS } from "#shared/browser/schemas/spoken-approval.ts";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 import { parseRealtimeItemId, parseRealtimeSessionId } from "#shared/protocol/realtime-contract.ts";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { projectCodexBrowserState } from "#server/chat-conversations/browser-state/projections/projection.ts";
 import { type BrowserProjectionInput } from "#server/projection/protocol/projection-contract.ts";
 import { commandApprovalOwnerFixture } from "#tests/server/support/gateway/approval-owner-fixture.ts";
@@ -202,7 +200,7 @@ function project(
 
 describe("spoken approval browser projection", () => {
 	test("joins the runtime gate to one exact ordinary approval owner", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const result = project(authorities, approval, spokenSnapshot(authorities, approval));
 
@@ -227,7 +225,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("nominates only the runtime-captured post-prompt final user item", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const captured = withCapturedFinal(
 			authorities,
@@ -242,7 +240,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("does not arm or select a post-prompt assistant when captured user evidence is null", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const snapshot = spokenSnapshot(authorities, approval, { state: "classifying" });
 		const projected = project(authorities, approval, snapshot, true);
@@ -253,7 +251,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("maps every runtime fallback reason and reserves unknown outcome for resolver loss", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const base = withCapturedFinal(authorities, spokenSnapshot(authorities, approval));
 
@@ -272,7 +270,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("preserves a known not-delivered resolver settlement as visual fallback", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const projected = project(authorities, approval, {
 			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),
@@ -287,7 +285,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("keeps a genuinely unknown resolver settlement outcome unknown", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const projected = project(authorities, approval, {
 			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),
@@ -302,7 +300,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("fails closed when the gate effect no longer matches the approval owner", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const projected = project(
 			authorities,
@@ -315,7 +313,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("fails closed when a settlement names a different approval request", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const captured = withCapturedFinal(authorities, spokenSnapshot(authorities, approval));
 		const projected = project(authorities, approval, {
@@ -336,7 +334,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("the shared schema rejects classifier loss as an unknown resolver outcome", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const resolved = project(authorities, approval, {
 			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),
@@ -351,7 +349,7 @@ describe("spoken approval browser projection", () => {
 	});
 
 	test("the shared schema rejects unknown presentation for a known resolver settlement", () => {
-		const authorities = createIdentityAuthorities();
+		const authorities = testAuthorities();
 		const approval = owner(authorities);
 		const projected = project(authorities, approval, {
 			...withCapturedFinal(authorities, spokenSnapshot(authorities, approval)),

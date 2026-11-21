@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 
 use crate::geometry::{Rect, Side};
 use crate::graph::{DOOR, Edge, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
-use archboard_scene::paint::design::tab_width;
+use archboard_painting::tab_width;
 
 /// A local handle, never a semantic subject id.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

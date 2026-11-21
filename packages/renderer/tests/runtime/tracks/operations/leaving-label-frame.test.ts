@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { labelsAcrossWalls } from "#tests/runtime/support/drawn-checks.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";

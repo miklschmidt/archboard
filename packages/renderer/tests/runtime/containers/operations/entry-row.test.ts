@@ -5,9 +5,8 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { interfaceContent } from "#shared/render/rules/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DiagramAtlas } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy, type DiagramAtlas } from "@archboard/model-contract";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 // The scheduler is a hidden part that only calls out: nothing holds it below
 // the entry point but the interface, so without it Graphviz stands it on the
@@ -45,8 +44,8 @@ function standsBelow(atlas: DiagramAtlas, upper: string, lower: string): boolean
  * @returns The document.
  */
 function documentOf(draft: unknown) {
-	return LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	return fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Service",
@@ -64,7 +63,7 @@ function documentOf(draft: unknown) {
 			},
 		],
 		variants: [
-			{ id: "current", name: "Current", lifecycle: "current", content: orderedFixture(service) },
+			{ id: "current", name: "Adopted", lifecycle: "current", content: orderedFixture(service) },
 			{
 				id: "draft",
 				name: "Draft",
@@ -159,7 +158,7 @@ test("a child a comparison puts back is never an entry point", async () => {
 		edges: [...service.edges, { id: "notify", from: "client", to: "hook", kind: "call" }],
 	};
 	const document = documentOf(service);
-	const withHook = LegacyBoardSchema.parse({
+	const withHook = fixtureDocument("legacyBoard", {
 		...document,
 		variants: [
 			{ ...document.variants[0]!, content: orderedFixture(current) },

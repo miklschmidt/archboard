@@ -10,16 +10,18 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
 import { tabSessionId } from "#ui/panes/tab-session/clients/tab-session.ts";
-import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
+import {
+	ModelExplanationContext,
+	type ExplanationInvocation,
+} from "#ui/architecture-drawing/model-reader/state/explanations.ts";
+import type { ExplanationActionRequest } from "@archboard/workbench/browser-contract";
 import type { UserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import {
 	explanationKey,
 	explanationQuery,
 	explanationRequest,
-	type ExplanationInvocation,
-	type ExplanationRequest,
-} from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+} from "#ui/application/clients/explanations.ts";
 import { ModelExplanationResult } from "#ui/architecture-drawing/model-reader/reading/components/ModelExplanationResult.tsx";
 
 interface HostProps {
@@ -55,7 +57,7 @@ function ModelExplanationHost(props: HostProps): JSX.Element {
 		 * @param request.input The shared local action.
 		 * @returns Its resulting snapshot, or a visible refusal.
 		 */
-		mutationFn: async ({ vault, input }: { vault: string; input: ExplanationRequest }) => {
+		mutationFn: async ({ vault, input }: { vault: string; input: ExplanationActionRequest }) => {
 			const result = await explanationRequest(vault, input);
 			if (!result.success) throw new Error(result.error);
 			return result.action;

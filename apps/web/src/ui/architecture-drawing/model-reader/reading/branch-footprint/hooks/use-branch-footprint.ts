@@ -1,13 +1,13 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import { vaultQueryKey } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import {
 	branchFootprintQuery,
 	mergeBaseQuery,
 	sourceRefsQuery,
 	type SourceRefsAnswer,
-} from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+} from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 import { useReadVault } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/hooks/use-read-vault.ts";
 import {
 	useMergeBaseStates,

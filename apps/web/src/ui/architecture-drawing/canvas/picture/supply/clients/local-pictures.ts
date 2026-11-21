@@ -34,10 +34,10 @@ import type { QueryClient } from "@tanstack/react-query";
 import {
 	addressedVariant,
 	type LegacyBoard,
-	parseLegacyBoard,
-} from "@archboard/model/legacy-board";
-import { wasDrawn, type SemanticRenderReply } from "@archboard/model/render-reply";
-import type { SemanticPolicy } from "@archboard/model/policy";
+	type SemanticRenderReply,
+	type SemanticPolicy,
+	parseDocument,
+} from "@archboard/model-contract";
 import type { drawLegacyBoardHere } from "@archboard/renderer/browser";
 import {
 	ReadingError,
@@ -87,9 +87,12 @@ interface LocalPictureSetup {
  * @throws {ReadingError} When what the server sent is not a coherent legacy board.
  */
 async function modelFor(client: QueryClient, vault: string, model: string): Promise<LegacyBoard> {
-	const parsed = parseLegacyBoard(await client.fetchQuery(retainedDocumentQuery(vault, model)));
-	if (!parsed.ok) throw new ReadingError("MODEL_UNREADABLE", parsed.problem);
-	return parsed.board;
+	const parsed = parseDocument(
+		"legacyBoard",
+		await client.fetchQuery(retainedDocumentQuery(vault, model)),
+	);
+	if (!parsed.success) throw new ReadingError("MODEL_UNREADABLE", parsed.error);
+	return parsed.data;
 }
 
 /**
@@ -136,7 +139,7 @@ async function drawHere(
 		kept ??
 		(await (drawing.get(key) ??
 			startDrawing(setup, { model, request, stamp, policy: vault.policy }, drawing, key)));
-	return wasDrawn(reply) ? { ...reply, kind: "drawn" } : { ...reply, kind: "empty" };
+	return "svg" in reply ? { ...reply, kind: "drawn" } : { ...reply, kind: "empty" };
 }
 
 /**

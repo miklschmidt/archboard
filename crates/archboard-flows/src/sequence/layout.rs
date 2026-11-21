@@ -19,28 +19,34 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::Rect;
-use archboard_scene::js;
+use archboard_geometry::Rect;
+use archboard_painting::{
+    CardWords, ColumnLimits, FragmentHead, HeadCard, flow_tab, sequence_cards,
+};
+use archboard_scene::drawing::TextRun;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
 
 use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;
-use crate::sequence::card::{
-    Card, card_content_width, card_height, card_notes, card_text_width, mark_room, title_room,
-};
 use crate::sequence::design::{
-    ARCHITECTURE_CARD_PADDING, CARD_TITLE_FONT, COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH,
-    CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN, FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP,
-    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, ICON_MIN_CARD_WIDTH, LIFELINE_GAP, NEST_INSET,
-    TAB_PADDING, TITLE_SIZE, TITLE_SIZE_MIN, TITLE_SIZE_SMALL, TITLE_SIZE_STEP,
+    COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH, CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN,
+    FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP, NEST_INSET,
 };
 use crate::sequence::frames::{place_frames, span_around};
 use crate::sequence::messages::frame_span;
 use crate::sequence::placing::{lowest_drawn, place_steps};
 use crate::sequence::rows::{ColumnBounds, MessageWords, PlacedNote, required_note_column_width};
-use archboard_scene::paint::design::tab_width;
 
-use archboard_scene::fitted_size;
+/// One participant's heading.
+#[derive(Clone, Debug)]
+pub(super) struct Card {
+    pub node: Node,
+    pub bounds: Rect,
+    pub title_size: f64,
+    /// The run its name has on the card.
+    pub title_room: f64,
+    pub notes: Vec<TextRun>,
+}
 
 /// Which alternative of each decision that holds a message it runs on, by
 /// decision id. Two messages on different alternatives of one decision never
@@ -129,6 +135,12 @@ impl FrameStep<'_> {
 #[derive(Clone, Debug)]
 pub(super) struct FrameRows<'a> {
     pub step: FrameStep<'a>,
+    /// What its tab says: `alt` for a decision, `loop` for a loop.
+    pub operator: FrameOperator,
+    /// What its head row says beside the tab: the question, or the condition.
+    pub words: String,
+    /// Its head, measured once before what it holds is placed.
+    pub head: FragmentHead,
     /// Where its frame begins.
     pub top: f64,
     /// Where it ends.
@@ -149,10 +161,6 @@ pub(super) struct PlacedFrame<'a> {
     pub bounds: Rect,
     /// The tab at its top left corner that its operator stands in.
     pub tab: Rect,
-    /// What the tab says: `alt` for a decision, `loop` for a loop.
-    pub operator: FrameOperator,
-    /// What the head row says beside the tab: the question, or the condition.
-    pub words: String,
 }
 
 /// One flow, placed.
@@ -215,7 +223,7 @@ impl<'a> ActiveAt<'a> {
 
 /// The largest of some numbers, and the floor when there are none.
 pub(super) fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 {
-    values.into_iter().fold(floor, js::js_max)
+    archboard_ecma::max(std::iter::once(floor).chain(values))
 }
 
 /// The node a column stands for. A picture whose flows name nodes it does not
@@ -241,29 +249,21 @@ fn participant_node(id: &str, by_id: &HashMap<&str, &Node>) -> Node {
     )
 }
 
-/// The one width every column of every flow is drawn at, and each
-/// participant's measured responsibility.
-///
-/// One width rather than one per flow, because stacked flows share a page and
-/// columns that almost line up read as a mistake; one rather than one per
-/// column, because a column's width is also the step between lifelines. The
-/// cap keeps one long name from widening every column, and a name past it
-/// shrinks its title first; what still does not fit at the smallest title
-/// size widens every column together rather than being cut.
-fn measure_columns(
-    flows: &[Flow],
-    by_id: &HashMap<&str, &Node>,
-) -> (f64, HashMap<String, Vec<archboard_scene::drawing::TextRun>>) {
-    let asked = flows.iter().flat_map(|flow| {
-        flow.participants
-            .iter()
-            .map(|participant| card_content_width(&participant_node(participant, by_id)))
-    });
-    // A whole unit: adding measured widths leaves floating-point dust, and a
-    // card handed back exactly the width its name measured would cut it.
-    let preferred = js::js_min(COLUMN_MAX_WIDTH, largest(asked, COLUMN_MIN_WIDTH).ceil());
-    // Whole-line kerning and unbroken identifiers can exceed the preferred
-    // wrap width: every column widens together so whole notes fit their cards.
+/// The cards heading every column of every flow, measured together, by
+/// participant: one width for every column, because stacked flows share a
+/// page and columns that almost line up read as a mistake.
+struct Heads {
+    /// The width every column is drawn at.
+    width: f64,
+    /// How far under a card its lifeline starts.
+    lifeline_drop: f64,
+    /// Each participant's card, by id.
+    cards: HashMap<String, HeadCard>,
+}
+
+/// Every participant's card, measured once for every flow. A whole note may
+/// widen every column, and so may the corridor a step's note needs.
+fn measure_columns(flows: &[Flow], by_id: &HashMap<&str, &Node>) -> Heads {
     let mut participants: Vec<&str> = Vec::new();
     for flow in flows {
         for participant in &flow.participants {
@@ -276,80 +276,59 @@ fn measure_columns(
         .iter()
         .map(|id| participant_node(id, by_id))
         .collect();
-    let notes: Vec<(String, Vec<_>)> = nodes
+    let words: Vec<CardWords<'_>> = nodes
         .iter()
-        .map(|node| (node.id.clone(), card_notes(node, preferred)))
+        .map(|node| CardWords {
+            name: &node.name,
+            responsibility: node.responsibility.as_deref(),
+            path: None,
+            tags: &[],
+            drills: node.drills,
+            door: false,
+            toggle: None,
+        })
         .collect();
-    let painted = notes
-        .iter()
-        .flat_map(|(_, runs)| runs.iter().map(|run| run.width));
-    let names = nodes.iter().map(|node| {
-        archboard_scene::width(&node.name, CARD_TITLE_FONT, TITLE_SIZE_MIN) + mark_room(node)
-    });
-    let insets = preferred - card_text_width(preferred);
-    let width = js::max([
-        preferred,
-        (largest(painted, 0.0) + insets).ceil(),
-        (largest(names, 0.0) + insets).ceil(),
-        required_note_column_width(flows),
-    ]);
-    (width, notes.into_iter().collect())
-}
-
-/// The card heading one column. A long name steps down in half-points before
-/// it is cut, against the run the painter will use; the responsibility's
-/// lines are whole and already measured.
-fn place_column_card(
-    node: Node,
-    centre_x: f64,
-    top: f64,
-    width: f64,
-    notes: Vec<archboard_scene::drawing::TextRun>,
-) -> Card {
-    let bounds = Rect {
-        x: centre_x - width / 2.0,
-        y: top,
-        width,
-        height: card_height(&notes),
-    };
-    let earned = if width >= ICON_MIN_CARD_WIDTH {
-        TITLE_SIZE
-    } else {
-        TITLE_SIZE_SMALL
-    };
-    let title_size = fitted_size(
-        &node.name,
-        CARD_TITLE_FONT,
-        earned,
-        title_room(&node, width),
-        TITLE_SIZE_MIN,
-        TITLE_SIZE_STEP,
+    let heads = sequence_cards(
+        &words,
+        ColumnLimits {
+            least: COLUMN_MIN_WIDTH,
+            most: COLUMN_MAX_WIDTH,
+            floor: required_note_column_width(flows),
+        },
     );
-    Card {
-        node,
-        bounds,
-        title_size,
-        notes,
+    Heads {
+        width: heads.width,
+        lifeline_drop: heads.lifeline_drop,
+        cards: nodes
+            .into_iter()
+            .map(|node| node.id)
+            .zip(heads.cards)
+            .collect(),
     }
 }
 
 /// The participants' cards, one on each column, and their height: the heads
 /// are one row of one height, so every lifeline starts level.
-fn head_cards(
-    nodes: Vec<Node>,
-    centres: &[f64],
-    top: f64,
-    (column_width, notes): (
-        f64,
-        &HashMap<String, Vec<archboard_scene::drawing::TextRun>>,
-    ),
-) -> (Vec<Card>, f64) {
+fn head_cards(nodes: Vec<Node>, centres: &[f64], top: f64, heads: &Heads) -> (Vec<Card>, f64) {
+    let width = heads.width;
     let mut cards: Vec<Card> = nodes
         .into_iter()
         .enumerate()
         .map(|(index, node)| {
-            let held = notes.get(&node.id).cloned().unwrap_or_default();
-            place_column_card(node, centres[index], top, column_width, held)
+            // Every participant of every flow was measured together.
+            let head = heads.cards[&node.id].clone();
+            Card {
+                bounds: Rect {
+                    x: centres[index] - width / 2.0,
+                    y: top,
+                    width,
+                    height: head.height,
+                },
+                title_size: head.title_size,
+                title_room: head.title_room,
+                notes: head.notes,
+                node,
+            }
         })
         .collect();
     let tallest = largest(cards.iter().map(|card| card.bounds.height), 0.0);
@@ -364,11 +343,11 @@ fn head_cards(
 fn layout_flow<'a>(
     flow: &'a Flow,
     by_id: &HashMap<&str, &Node>,
-    (column_width, notes): &(f64, HashMap<String, Vec<archboard_scene::drawing::TextRun>>),
+    heads: &Heads,
     top: f64,
     turn: u32,
 ) -> FlowLayout<'a> {
-    let column_width = *column_width;
+    let column_width = heads.width;
     let nodes: Vec<Node> = flow
         .participants
         .iter()
@@ -382,17 +361,15 @@ fn layout_flow<'a>(
     let content_width = column_width * count + COLUMN_GAP * (count - 1.0);
 
     // The name and the summary stand in the frame's tab, and the heads stand as
-    // far under the well's edge as in from the frame's sides.
-    let header_top = top + ARCHITECTURE_CARD_PADDING;
-    let header_height = if flow.summary.is_none() {
-        FLOW_HEADING
-    } else {
-        FLOW_HEADING_WITH_NOTE
-    };
-    let tab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
+    // far under the well's edge as in from the frame's sides. The heading's
+    // height does not hang on the frame's width, which messages may yet widen.
+    let has_summary = flow.summary.is_some();
+    let heading = flow_tab(NEST_INSET * 2.0 + content_width, has_summary).header;
+    let header_top = top + heading.y;
+    let tab_foot = header_top + heading.height + heading.y;
     let cards_top = tab_foot + NEST_INSET;
-    let (cards, tallest) = head_cards(nodes, &centres, cards_top, (column_width, notes));
-    let first_row = cards_top + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
+    let (cards, tallest) = head_cards(nodes, &centres, cards_top, heads);
+    let first_row = cards_top + tallest + heads.lifeline_drop + FIRST_MESSAGE_DROP;
 
     let centre_of: HashMap<&str, f64> = flow
         .participants
@@ -422,7 +399,7 @@ fn layout_flow<'a>(
             let activations = activations_for(&card.node.id, &steps);
             Column {
                 centre_x: centres[index],
-                lifeline_top: card.bounds.y + card.bounds.height + LIFELINE_GAP,
+                lifeline_top: card.bounds.y + card.bounds.height + heads.lifeline_drop,
                 activations,
                 card,
             }
@@ -442,6 +419,7 @@ fn layout_flow<'a>(
         ),
         &frames,
     );
+    let tab = flow_tab(width, has_summary);
     FlowLayout {
         flow,
         frame: Rect {
@@ -451,15 +429,15 @@ fn layout_flow<'a>(
             height: lifeline_bottom + CONTAINER_BOTTOM_PAD - top,
         },
         header: Rect {
-            x: x + TAB_PADDING,
+            x: x + tab.header.x,
             y: header_top,
-            width: tab_width(width) - TAB_PADDING * 2.0,
-            height: header_height,
+            width: tab.header.width,
+            height: tab.header.height,
         },
         tab: Rect {
             x,
             y: top,
-            width: tab_width(width),
+            width: tab.width,
             height: tab_foot - top,
         },
         lifeline_bottom,

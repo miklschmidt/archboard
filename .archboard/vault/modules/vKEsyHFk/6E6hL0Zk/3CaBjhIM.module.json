@@ -3,7 +3,7 @@
   "name": "Fact analysis",
   "kind": "module",
   "responsibility": "Parses each supported language or format, resolves references, finds definitions, and reads module exposure",
-  "description": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines.",
+  "description": "Module exposure reads every language that a module holds, not only the first one that matches. Each grammar query also names the kind of each export, the pieces of logic in each body, and the expression around each use of a name that another file defines. Each definition also says whether it is a contract, a Rust trait, a Swift protocol or a C# or Go interface, or implements a member of one. An exposed Rust type that holds data gains the pub and pub(crate) members of its own impl blocks in any file of its crate.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/code-facts"

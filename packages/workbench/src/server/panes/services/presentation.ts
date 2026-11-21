@@ -14,7 +14,7 @@
 
 import { randomUUID } from "node:crypto";
 
-import { paneMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	paneKeyOfClient,
 	panes,
@@ -22,15 +22,11 @@ import {
 	sendKeylessToPane,
 } from "#server/panes/services/registry.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
-import type { panePresentRequestSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePresentation = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["presentation"]
->;
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
-type PanePresentRequest = z.infer<ReturnType<typeof panePresentRequestSchema>>;
+type SemanticPanePresentation = NonNullable<ModelDocument<"paneContext">["presentation"]>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
+type PanePresentRequest = ModelDocument<"panePresentRequest">;
 
 /** Why a pane could not be shown the step it was asked for. */
 type PresentRefusal =
@@ -264,7 +260,7 @@ function awaitAnswer(
 		// A slow pane keeps its request, so only a pane that has gone ends the wait.
 		const watch = setInterval(() => {
 			if (parts.paneFor(clientId) === null) settle({ kind: "refused", reason: "no_pane" });
-		}, paneMs("presentationPaneCheck"));
+		}, durationMs("pane.presentationPaneCheck"));
 		/**
 		 * End the wait once, whoever ends it.
 		 * @param outcome How it ended.

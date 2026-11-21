@@ -1,0 +1,28 @@
+{
+  "order": 65000,
+  "name": "Variant comparison",
+  "kind": "module",
+  "responsibility": "What a variant differs by, read against its predecessor or Current: each subject's change, the state to read against and whether a draft follows Current",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-rules/src/shared/compare"
+  },
+  "parent": "vKEsyHFk#zJxdsk87",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#2TsE24MN",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "resolve the variants a drawing compares",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-rules/src/shared/compare/rules/drawing.ts",
+        "symbol": "resolveVariant"
+      },
+      "id": "vKEsyHFk#rZtTWSgd",
+      "to": "vKEsyHFk#vZUWUgyb"
+    }
+  ]
+}

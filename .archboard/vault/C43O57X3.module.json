@@ -1,0 +1,18 @@
+{
+  "order": 500,
+  "name": "Agent root",
+  "kind": "module",
+  "responsibility": "Holds the agent of a page over its panes and offers it to every surface drawn below: the owners, one setup, the voice session, the actions, the draft and the panel",
+  "description": "The assembly apps/web made before TASK-653.13 (use-workbench, use-agent*, use-voice-view, the voice store, the owners, agent focus, the setup's ports, the subtitled transcript, the snapshot cache and the progress clock). The panes' conversations arrive by registration from AgentPane; the voice session stays with the pane voice was started from until it ends. The narrator starts voice once it has followed the pane a narration was asked for.",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/agent-surfaces/src/ui/agent-root"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#C43O57X3",
+  "parent": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+  "outgoing": []
+}

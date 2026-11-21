@@ -2,13 +2,20 @@
   "order": 40200,
   "name": "archboard-scene",
   "kind": "package",
-  "responsibility": "Holds the renderer core's drawing contract and its scene: measures every word, rounds routed lines and paints a settled drawing into the scene that every painter draws",
+  "responsibility": "Holds the renderer core's drawing contract: the drawing a layout answers, the request a painter takes, and the typed scene every painter draws, with the reading of a picture's key",
+  "description": "The contract crate of ADR 0091, 12 names; no crate re-exports a name of another. archboard-painting builds every scene, and the scene's types stay plain data. names.rs spells an enum's value by its name; sequence_picture.rs holds the sequence picture's types, reached through request.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#9gGvxWHp",
-  "outgoing": [],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "parent": "vKEsyHFk#HgZPVIE2",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0091-the-renderer-core-splits-into-numbers-geometry-the-contract-and-painting.md"
+    }
+  ],
+  "outgoing": []
 }

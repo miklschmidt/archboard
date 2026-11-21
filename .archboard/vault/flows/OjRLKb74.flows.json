@@ -76,7 +76,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "path": "crates/archboard-painting/src/measure/cards.rs",
                     "symbol": "measure_node"
                   }
                 },
@@ -170,7 +170,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/paint/mod.rs",
+            "path": "crates/archboard-painting/src/paint/mod.rs",
             "symbol": "paint_architecture"
           }
         },
@@ -182,7 +182,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/paint/architecture.rs",
+            "path": "crates/archboard-painting/src/paint/architecture.rs",
             "symbol": "paint_architecture"
           }
         },
@@ -194,7 +194,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/paint/architecture.rs",
+            "path": "crates/archboard-painting/src/paint/architecture.rs",
             "symbol": "paint_architecture"
           }
         }
@@ -238,7 +238,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "path": "crates/archboard-painting/src/measure/cards.rs",
                     "symbol": "measure_node"
                   }
                 }
@@ -255,7 +255,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "path": "crates/archboard-painting/src/measure/cards.rs",
                     "symbol": "CARD_LEAST"
                   }
                 }
@@ -279,7 +279,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "crates/archboard-scene/src/measure/cards.rs",
+                    "path": "crates/archboard-painting/src/measure/cards.rs",
                     "symbol": "marked"
                   }
                 }
@@ -304,7 +304,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "crates/archboard-scene/src/measure/mod.rs",
+                "path": "crates/archboard-painting/src/measure/mod.rs",
                 "symbol": "paragraph"
               }
             },
@@ -331,7 +331,7 @@
           "note": "a relationship label is clamped the same way, 40 to 200 wide",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/measure/cards.rs",
+            "path": "crates/archboard-painting/src/measure/cards.rs",
             "symbol": "CARD_MOST"
           }
         },
@@ -348,7 +348,7 @@
               "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "crates/archboard-scene/src/measure/cards.rs",
+                "path": "crates/archboard-painting/src/measure/cards.rs",
                 "symbol": "runs_for"
               }
             }
@@ -362,7 +362,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/measure/cards.rs",
+            "path": "crates/archboard-painting/src/measure/cards.rs",
             "symbol": "slab"
           }
         },
@@ -374,7 +374,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-scene/src/measure/cards.rs",
+            "path": "crates/archboard-painting/src/measure/cards.rs",
             "symbol": "measure_node"
           }
         }

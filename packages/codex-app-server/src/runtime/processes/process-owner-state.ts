@@ -209,13 +209,17 @@ function createOwnerState(options: CodexProcessTestOptions): ProcessOwnerState {
 			dependencies.processGroup,
 			{
 				now: dependencies.now,
-				schedule: dependencies.schedule,
 				/**
-				 * Cancel a timer through the owner, so a cancel failure is charged to it.
-				 * @param timer - The timer to cancel.
+				 * Schedule through the owner, and cancel through it, so a cancel failure is charged to it.
+				 * @param ms - The delay.
+				 * @param run - What to run.
+				 * @returns Cancels it.
 				 */
-				cancel: (timer): void => {
-					cancelTimer(state, timer);
+				after: (ms, run) => {
+					const timer = dependencies.schedule(run, ms);
+					return () => {
+						cancelTimer(state, timer);
+					};
 				},
 			},
 			{

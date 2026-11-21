@@ -9,7 +9,7 @@ import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
 } from "#shared/protocol/realtime-contract.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	projectServerBrowserReadiness,
 	type ServerReadinessInput,
@@ -18,7 +18,7 @@ import { processFacts } from "#tests/server/support/generation/process-fixture.t
 import { projectionHarness } from "#tests/server/support/generation/projection-harness.ts";
 import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
 
-const identity = createIdentityAuthorities();
+const identity = testAuthorities();
 const readinessSchema = createCodexBrowserModel(identity).BrowserReadinessSchema;
 const loginId = identity.identity.decoder.adoptLoginId("login-readiness");
 
@@ -247,7 +247,7 @@ test("cached queue submissions are presented only for the thread they were read 
 	const harness = projectionHarness();
 	const { options, context } = harness;
 	const state = harness.workhorse.state;
-	const decoder = createIdentityAuthorities().identity.decoder;
+	const decoder = testAuthorities().identity.decoder;
 	state.queue = {
 		kind: "codex_queue",
 		submissions: [

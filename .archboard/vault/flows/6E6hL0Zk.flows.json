@@ -29,6 +29,18 @@
           }
         },
         {
+          "id": "vKEsyHFk#vKVMVlcG",
+          "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+          "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG",
+          "label": "is the port held on the other loopback address?",
+          "kind": "sync",
+          "anchor": {
+            "repo": "github.com/miklschmidt/archboard",
+            "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+            "symbol": "loopbackRefusal"
+          }
+        },
+        {
           "id": "vKEsyHFk/6E6hL0Zk#MAbVX98e",
           "kind": "decision",
           "question": "Is another Archboard already listening on the port?",
@@ -45,7 +57,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-                    "symbol": "loopbackRefusal"
+                    "symbol": "startServer"
                   }
                 }
               ]
@@ -57,13 +69,13 @@
                   "id": "vKEsyHFk/6E6hL0Zk#90uVynO9",
                   "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
                   "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
-                  "label": "start the workbench",
+                  "label": "start the workbench at the address it listens on",
                   "kind": "sync",
                   "note": "resources start in order, each after the one before; the first failure skips the rest",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-                    "symbol": "prepareCodexWorkbench"
+                    "symbol": "prepareWorkbench"
                   }
                 },
                 {
@@ -746,7 +758,7 @@
         "vKEsyHFk/Oi6SBIAM#X07YebBP",
         "vKEsyHFk/Oi6SBIAM#RjaKX25k",
         "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
-        "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+        "vKEsyHFk#KnU5WSI6"
       ],
       "steps": [
         {
@@ -807,7 +819,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                    "symbol": "namedVault"
+                    "symbol": "resolveVault"
                   }
                 },
                 {
@@ -836,27 +848,27 @@
                       "label": "readable",
                       "steps": [
                         {
-                          "id": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
+                          "id": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
                           "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
+                          "to": "vKEsyHFk#KnU5WSI6",
+                          "label": "hand it the pane's socket",
+                          "kind": "sync",
+                          "anchor": {
+                            "repo": "github.com/miklschmidt/archboard",
+                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+                            "symbol": "acceptPaneSocket"
+                          }
+                        },
+                        {
+                          "id": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
+                          "from": "vKEsyHFk#KnU5WSI6",
                           "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
                           "label": "the model this pane starts on",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
+                            "path": "packages/workbench/src/server/panes/sockets/pane-socket.ts",
                             "symbol": "sendStartingPlace"
-                          }
-                        },
-                        {
-                          "id": "vKEsyHFk/6E6hL0Zk#MtgrEVHR",
-                          "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
-                          "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
-                          "label": "accept the browser",
-                          "kind": "sync",
-                          "anchor": {
-                            "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                            "symbol": "acceptWebSocketConnection"
                           }
                         }
                       ]
@@ -876,6 +888,7 @@
       "participants": [
         "vKEsyHFk/6E6hL0Zk#J7yOKraz",
         "vKEsyHFk/6E6hL0Zk#K6P74fM7",
+        "vKEsyHFk#Zse70SS2",
         "vKEsyHFk/Oi6SBIAM#X07YebBP",
         "vKEsyHFk/6E6hL0Zk#WEawqdWG",
         "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
@@ -943,6 +956,18 @@
               "label": "settled",
               "steps": [
                 {
+                  "id": "vKEsyHFk#AAcQXjAL",
+                  "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
+                  "to": "vKEsyHFk#Zse70SS2",
+                  "label": "close every browser owner and accepted socket",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
+                    "symbol": "closeBrowserOwners"
+                  }
+                },
+                {
                   "id": "vKEsyHFk/6E6hL0Zk#TyYrGUII",
                   "from": "vKEsyHFk/6E6hL0Zk#J7yOKraz",
                   "to": "vKEsyHFk/Oi6SBIAM#X07YebBP",
@@ -1003,7 +1028,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/start-stop/lifecycle/server-startup.ts",
-                    "symbol": "stopCodexWorkbench"
+                    "symbol": "stopWorkbench"
                   }
                 }
               ]

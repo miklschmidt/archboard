@@ -1,16 +1,16 @@
-import { architectureMigrationRequestSchema } from "@archboard/model/contract";
-import { migrateArchitectureModel } from "@archboard/model/store-write";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
+import type { LegacyInventoryRead } from "@archboard/model-contract";
+import {
+	migrateArchitectureModel,
+	readLegacyInventory,
+	saveLegacyMappingPlan,
+} from "@archboard/model-store";
+import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import type { Express, Response } from "express";
 import { z } from "zod";
-import { readLegacyInventory } from "@archboard/model/store-read";
-import { saveLegacyMappingPlan } from "@archboard/model/store-write";
-import { legacyMappingWriteSchema, type LegacyInventoryRead } from "@archboard/model/migration";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 
 const QuerySchema = z.strictObject({ vault: z.string(), origin: z.string().min(1) });
-const WriteSchema = legacyMappingWriteSchema().extend({ vault: z.string().optional() });
 
 /**
  * Return the shared runtime result with its transport status.
@@ -43,18 +43,8 @@ function mountLegacyMigrationRoutes(app: Express): void {
 		"/api/architecture/migration/apply",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = architectureMigrationRequestSchema()
-				.extend({
-					vault: z.string().optional(),
-				})
-				.safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
-			const { vault: _vault, ...request } = parsed.data;
+			const request = requestOf(res, "migrate", req.body);
+			if (request === undefined) return;
 			respond(res, await migrateArchitectureModel(vaultOfRequest(req), request));
 		}),
 	);
@@ -72,14 +62,8 @@ function mountLegacyMigrationRoutes(app: Express): void {
 		"/api/architecture/migration/plan",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = WriteSchema.safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
-			const { vault: _vault, ...request } = parsed.data;
+			const request = requestOf(res, "saveLegacyMappingPlan", req.body);
+			if (request === undefined) return;
 			answer(res, await saveLegacyMappingPlan(vaultOfRequest(req), request));
 		}),
 	);

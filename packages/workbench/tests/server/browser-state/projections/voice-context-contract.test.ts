@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/schemas";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
+import { createCodexBrowserModel } from "@archboard/codex-realtime-voice/contract";
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
 
 /**
@@ -21,7 +21,7 @@ function voiceContext(canonicalBrief: string) {
 }
 
 test("the browser voice-context brief fits the Archboard producer contract", () => {
-	const { BrowserVoiceContextSchema } = createCodexBrowserModel(createIdentityAuthorities());
+	const { BrowserVoiceContextSchema } = createCodexBrowserModel(testAuthorities());
 	const limit = SEMANTIC_CONTEXT_LIMITS.briefBytes;
 	expect(BrowserVoiceContextSchema.safeParse(voiceContext("a".repeat(limit))).success).toBe(true);
 	expect(BrowserVoiceContextSchema.safeParse(voiceContext("a".repeat(limit + 1))).success).toBe(

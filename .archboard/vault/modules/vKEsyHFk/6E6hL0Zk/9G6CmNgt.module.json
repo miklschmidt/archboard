@@ -2,7 +2,7 @@
   "order": 10000,
   "name": "Archboard workbench host",
   "kind": "service",
-  "responsibility": "Adapts local panes, context, tools, and narration to the voice agent",
+  "responsibility": "Adapts local panes, context, tools, and narration to the voice agent, mounts the workbench's routes, and prepares and stops the workbench with the server",
   "groups": [
     "agent"
   ],

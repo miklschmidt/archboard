@@ -1,6 +1,6 @@
 //! A scene's geometry as the paths a canvas takes.
 
-use archboard_scene::geometry::{Point, Rect, Segment};
+use archboard_geometry::{Point, Rect, Segment};
 use archboard_scene::scene::{Cap, Geometry, Join, PathStep, Stroke};
 use kurbo::{Affine, BezPath, ParamCurve as _, Shape as _, Vec2};
 
@@ -211,8 +211,10 @@ pub(crate) fn placed(x: f64, y: f64, scale: Option<f64>) -> Affine {
 #[cfg(test)]
 mod tests {
     use super::{end_of, outline_of, path_of, stroke_of};
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::scene::{Cap, Geometry, PathStep, Stroke, Token};
+
+    use crate::testing::stroke;
 
     fn at(x: f64, y: f64) -> Point {
         Point { x, y }
@@ -262,7 +264,11 @@ mod tests {
 
     #[test]
     fn a_stroke_keeps_its_ends_and_scales_its_width() {
-        let drawn = stroke_of(&Stroke::new(Token::Border, 2.0).capped(Cap::Round), 1.5);
+        let round = Stroke {
+            cap: Some(Cap::Round),
+            ..stroke(Token::Border, 2.0)
+        };
+        let drawn = stroke_of(&round, 1.5);
         assert_eq!(drawn.width, 3.0);
         assert_eq!(drawn.start_cap, kurbo::Cap::Round);
     }

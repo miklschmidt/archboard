@@ -4,7 +4,7 @@
 // so hiding a kind or showing it again moves no row.
 
 import { lineMarks, type LineMarkEntry } from "@archboard/renderer/picture";
-import type { Model, projectModel } from "@archboard/model/content";
+import type { Model, projectModel } from "@archboard/model-rules";
 import type {
 	AppliedAppearance,
 	PictureLegend,

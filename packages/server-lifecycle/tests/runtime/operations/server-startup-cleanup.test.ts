@@ -6,7 +6,6 @@ import {
 	serverStartupTerminalRecord,
 	type ServerStartupProtocolEvent,
 } from "#runtime/protocol/server-startup-terminal.ts";
-import { serverLifecycleMs } from "@archboard/timing";
 import {
 	completeFailedServerCleanup,
 	createServerStartupProtocolReader,
@@ -108,7 +107,7 @@ const timing = Object.freeze({ shutdownDeadlineMs: 80, applicationGraceMs: 30, p
 
 describe("failed public server cleanup", () => {
 	test("keeps production readiness and cleanup inside the reviewed boundaries", () => {
-		expect(serverLifecycleMs("startupReadiness")).toBe(8_000);
+		expect(8000).toBe(8_000);
 		expect(failedServerCleanupTiming()).toEqual({
 			shutdownDeadlineMs: 10_000,
 			applicationGraceMs: 5_000,

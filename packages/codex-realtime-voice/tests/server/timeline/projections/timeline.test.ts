@@ -7,10 +7,8 @@ import type {
 	SessionThreadTurnPageResult,
 } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import {
-	createIdentityAuthorities,
-	type IdentityAuthorities,
-} from "@archboard/codex-app-server/identity";
+import { type IdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createServerTimelineOwner } from "#server/timeline/projections/timeline.ts";
 import {
 	agentMessageItem,
@@ -61,7 +59,7 @@ function event(
 }
 
 test("timeline owner loads typed pages and projects every arm with its evidence", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const threadId = decoder.adoptThreadId("timeline-thread");
 	const turnId = decoder.adoptTurnId("timeline-turn");
@@ -327,7 +325,7 @@ test("timeline owner loads typed pages and projects every arm with its evidence"
 });
 
 test("timeline owner ignores stale link loads and recovers after a refresh failure", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const firstThreadId = authorities.identity.decoder.adoptThreadId("timeline-first-thread");
 	const secondThreadId = authorities.identity.decoder.adoptThreadId("timeline-second-thread");
 	const firstPage = Promise.withResolvers<SessionThreadTurnPageResult>();
@@ -393,8 +391,8 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 });
 
 test("timeline owner waits for thread capability and refreshes only the current correlated thread", async () => {
-	const authorities = createIdentityAuthorities();
-	const foreign = createIdentityAuthorities();
+	const authorities = testAuthorities();
+	const foreign = testAuthorities();
 	const threadId = authorities.identity.decoder.adoptThreadId("timeline-refresh-thread");
 	let calls = 0;
 	let fail = true;

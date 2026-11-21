@@ -1,4 +1,4 @@
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 /** What Find can land on. */
 type FindKind = "module" | "flow" | "walkthrough" | "bookmark" | "address";

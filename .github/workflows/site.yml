@@ -47,15 +47,18 @@ on:
       - scripts/build-core.ts
       - package.json
       - bun.lock
-      - packages/model/**
+      - packages/model-contract/**
+      - packages/model-rules/**
+      - packages/model-store/**
       - packages/renderer/**
-      - packages/workbench/package.json
-      - packages/workbench/src/ui/workbench-client/orb/clients/**
-      - packages/workbench/src/ui/workbench-client/orb/rules/**
-      - packages/workbench/src/ui/workbench-client/orb/state/**
+      - packages/agent-surfaces/package.json
+      - packages/agent-surfaces/src/ui/workbench-client/orb/clients/**
+      - packages/agent-surfaces/src/ui/workbench-client/orb/rules/**
+      - packages/agent-surfaces/src/ui/workbench-client/orb/state/**
       - packages/timing/**
       # The reference reads the CLI's contracts and the facts that these packages hold.
       - packages/code-intel/**
+      - packages/machine/**
       - packages/workspace/**
       - apps/cli/**
       - actions/**
@@ -77,15 +80,18 @@ on:
       - scripts/build-core.ts
       - package.json
       - bun.lock
-      - packages/model/**
+      - packages/model-contract/**
+      - packages/model-rules/**
+      - packages/model-store/**
       - packages/renderer/**
-      - packages/workbench/package.json
-      - packages/workbench/src/ui/workbench-client/orb/clients/**
-      - packages/workbench/src/ui/workbench-client/orb/rules/**
-      - packages/workbench/src/ui/workbench-client/orb/state/**
+      - packages/agent-surfaces/package.json
+      - packages/agent-surfaces/src/ui/workbench-client/orb/clients/**
+      - packages/agent-surfaces/src/ui/workbench-client/orb/rules/**
+      - packages/agent-surfaces/src/ui/workbench-client/orb/state/**
       - packages/timing/**
       # The reference reads the CLI's contracts and the facts that these packages hold.
       - packages/code-intel/**
+      - packages/machine/**
       - packages/workspace/**
       - apps/cli/**
       - actions/**

@@ -1,19 +1,15 @@
-import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/render-recipe";
 import { crc32 } from "node:zlib";
-import { everyStep } from "@archboard/model/flow";
+import { readFlow } from "@archboard/model-contract";
 import { z } from "zod";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import {
-	architectureModelReadSchema,
-	architectureClaimResultSchema,
-	architectureModuleEditResultSchema,
-} from "@archboard/model/contract";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-flow-surface-"));
@@ -54,7 +50,7 @@ function cli(args: string[], input?: unknown) {
 test("CLI authors independent flows and renders explicit sequence and flowchart selections through HTTP", async () => {
 	const currentCli = cli(["model", "read"]);
 	expect(currentCli.status, currentCli.stderr).toBe(0);
-	const current = architectureModelReadSchema().parse(answer(currentCli.stdout));
+	const current = parsedReply("read", answer(currentCli.stdout));
 	if (!current.success || current.manifest.current === null)
 		throw new Error(JSON.stringify(current));
 	const target = { model: current.manifest.id, state: current.manifest.current.id };
@@ -65,7 +61,7 @@ test("CLI authors independent flows and renders explicit sequence and flowchart 
 		subjects: ["Shop", "Shop#Gateway", "Shop#Worker"],
 	});
 	expect(claimCli.status, claimCli.stderr).toBe(0);
-	const claim = architectureClaimResultSchema().parse(answer(claimCli.stdout));
+	const claim = parsedReply("claim", answer(claimCli.stdout));
 	if (!claim.success) throw new Error(JSON.stringify(claim));
 	const unexplained = cli(["model", "edit", "--doing", "authoring independent behavior"], {
 		target,
@@ -141,10 +137,10 @@ test("CLI authors independent flows and renders explicit sequence and flowchart 
 		],
 	});
 	expect(editCli.status, editCli.stderr).toBe(0);
-	const edit = architectureModuleEditResultSchema().parse(answer(editCli.stdout));
+	const edit = parsedReply("edit", answer(editCli.stdout));
 	if (!edit.success) throw new Error(JSON.stringify(edit));
 	const read = cli(["model", "read"]);
-	const model = architectureModelReadSchema().parse(answer(read.stdout));
+	const model = parsedReply("read", answer(read.stdout));
 	if (!model.success) throw new Error(JSON.stringify(model));
 	const flow = model.collections[0]!.flows[0]!;
 	const release = cli(["model", "release"], { claim: claim.claim.id, writer: "surface-agent" });
@@ -158,10 +154,10 @@ test("CLI authors independent flows and renders explicit sequence and flowchart 
 			"Shop#Worker",
 			"Shop#Gateway",
 			flow.id,
-			...everyStep(flow.steps).map((step) => step.id),
+			...readFlow(flow.steps).every.map((step) => step.id),
 		],
 	});
-	const claimed = architectureClaimResultSchema().parse(answer(fullClaim.stdout));
+	const claimed = parsedReply("claim", answer(fullClaim.stdout));
 	if (!claimed.success || !server) throw new Error(fullClaim.stdout);
 	const editedHttp = await fetch(`${server.base}/api/architecture/module`, {
 		method: "POST",
@@ -181,7 +177,7 @@ test("CLI authors independent flows and renders explicit sequence and flowchart 
 		}),
 	});
 	expect(editedHttp.status).toBe(200);
-	expect(architectureModuleEditResultSchema().parse(await editedHttp.json())).toMatchObject({
+	expect(parsedReply("edit", await editedHttp.json())).toMatchObject({
 		success: true,
 	});
 	const selectedCli = cli(["model", "read", "--flow", flow.id]);
@@ -388,7 +384,7 @@ test("canonical initialization accepts shared CLI doing intent and retries witho
 		const retried = invoke(stated);
 		expect(retried.status, retried.stderr).toBe(0);
 		expect(answer(retried.stdout)).toEqual(answer(created.stdout));
-		const read = architectureModelReadSchema().parse(answer(invoke(["model", "read"]).stdout));
+		const read = parsedReply("read", answer(invoke(["model", "read"]).stdout));
 		expect(read).toMatchObject({
 			success: true,
 			manifest: { name: "Checkout and orders", current: null },

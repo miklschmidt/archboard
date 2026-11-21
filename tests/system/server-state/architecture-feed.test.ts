@@ -4,11 +4,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { connect } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { architectureFeedFrameSchema, type ArchitectureFeedFrame } from "@archboard/model/contract";
+import type { ArchitectureFeedFrame } from "@archboard/model-contract";
 import { openArchitectureFeed } from "../support/architecture-feed.ts";
 import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
-import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
+import { startOwnedServer, waitForProcessExit, type OwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const root = mkdtempSync(join(tmpdir(), "archboard-feed-"));
 const first = vaultIn(join(root, "first"));
@@ -33,7 +34,7 @@ test("one socket follows every vault of a tab and names a vault it cannot read",
 	const frames: ArchitectureFeedFrame[] = [];
 	const heard = new Promise<void>((settle) => {
 		socket.addEventListener("message", (message) => {
-			frames.push(architectureFeedFrameSchema().parse(JSON.parse(String(message.data))));
+			frames.push(parsedReply("feed", JSON.parse(String(message.data))));
 			if (frames.length === 3) settle();
 		});
 	});
@@ -67,4 +68,21 @@ test("a malformed frame ends its own socket and leaves the server serving", asyn
 	await once(socket, "close");
 	using feed = await openArchitectureFeed(server.base, first);
 	expect((await feed.next()).type).toBe("architecture_snapshot");
+});
+
+test("a stopping server closes a feed socket, so the socket does not keep it running", async () => {
+	await using stack = new AsyncDisposableStack();
+	const stopping = await startOwnedServer({
+		serverPath: resolve(import.meta.dir, "../../../apps/server/src/server.ts"),
+		vault: first,
+	});
+	stack.defer(() => stopping.dispose());
+	const socket = new WebSocket(`${stopping.base.replace("http", "ws")}/api/architecture/events`);
+	await new Promise((settle) => socket.addEventListener("open", settle));
+	const closed = new Promise((settle) => socket.addEventListener("close", settle));
+	const { pid } = stopping;
+	if (pid === null) throw new Error("The server has no process to stop.");
+	process.kill(pid, "SIGTERM");
+	await closed;
+	await waitForProcessExit(pid);
 });

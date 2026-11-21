@@ -137,9 +137,11 @@ test("a WebGPU painter that fails again soon gives way to WebGL2 on a fresh canv
 	await inPage(true, async () => {
 		const canvas = pageCanvas();
 		const next = await startPainter(canvas, false, {
-			painter: "gpu",
-			reason: "device lost",
-			retry: false,
+			failure: {
+				painter: "gpu",
+				reason: "device lost",
+				retry: false,
+			},
 		});
 		expect(next.kind).toBe("webgl");
 		expect(next.canvas).not.toBe(canvas);
@@ -206,9 +208,11 @@ test("a WebGL2 painter that stopped at work gives way to the CPU on a fresh canv
 	await inPage(false, async () => {
 		const canvas = pageCanvas();
 		const next = await startPainter(canvas, false, {
-			painter: "webgl",
-			reason: "The WebGL2 context was lost.",
-			retry: false,
+			failure: {
+				painter: "webgl",
+				reason: "The WebGL2 context was lost.",
+				retry: false,
+			},
 		});
 		expect(next.kind).toBe("cpu");
 		expect(next.canvas).not.toBe(canvas);

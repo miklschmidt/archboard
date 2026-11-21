@@ -1,0 +1,14 @@
+{
+  "order": 902000,
+  "name": "Session API",
+  "kind": "module",
+  "responsibility": "The public methods of a Codex session, its options and its errors, which a caller reads a failure by",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/session/services/session-api.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HWhu9Us6",
+  "outgoing": []
+}

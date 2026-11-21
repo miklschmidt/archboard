@@ -2,8 +2,8 @@
   "order": 90000,
   "name": "Staleness",
   "kind": "function",
-  "responsibility": "Says whether the running server loaded the source and serves the frontend bundle that are on disk now",
-  "description": "A checkout's server runs TypeScript that it loaded once, so it compares the time of every source file it loaded with the time of loading, and compares the entry script of the bundle a tab fetched with the bundle on disk. It reads the root and the frontend directory from the installation. /health reports both answers, and status says when either is stale.",
+  "responsibility": "Says which code the running server runs: whether it loaded the source on disk now, which frontend build is on disk, and whether a tab's bundle is older",
+  "description": "A checkout's server runs TypeScript that it loaded once, so it compares the time of every source file it loaded with the time of loading, and compares the entry script of the bundle a tab fetched with the bundle on disk. It reads the root and the frontend directory from the installation. serverCodeState answers /health with the source state and the frontend build; a tab's question goes to staleFrontend, which stats no source file. status says when either is stale.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/services/staleness.ts"

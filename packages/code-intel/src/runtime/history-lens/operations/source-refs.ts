@@ -7,13 +7,13 @@
 // read is named with the reason instead of being dropped.
 
 import { existsSync } from "node:fs";
-import { checkoutsReadFrom, vaultIdentity } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import { gitAnswer, type GitRunOptions } from "#runtime/history-lens/clients/git.ts";
 import { commitOf } from "#runtime/history-lens/clients/source-history.ts";
 import type { SourceRef, SourceRefsAnswer } from "#shared/protocol/source-refs.ts";
 
 type Repository = SourceRefsAnswer["repositories"][number];
-type Checkout = ReturnType<typeof checkoutsReadFrom>[number];
+type Checkout = ReturnType<typeof checkoutsReadFrom>["checkouts"][number];
 
 /** Every ref of one checkout, as a person types it. */
 interface CheckoutRefs {
@@ -262,8 +262,8 @@ async function readSourceRefs(
 	options: GitRunOptions = {},
 	range?: SourceRange,
 ): Promise<SourceRefsAnswer> {
-	const checkouts = checkoutsReadFrom(vault);
-	const own = vaultIdentity(vault);
+	const { checkouts, own: ownCheckout } = checkoutsReadFrom(vault);
+	const own = ownCheckout?.identity;
 	const identities = [...new Set(own === undefined ? repos : [...repos, own])].toSorted();
 	const read = await Promise.all(
 		identities.map(async (repo) => ({
@@ -276,7 +276,7 @@ async function readSourceRefs(
 		})),
 	);
 	const ownRead = read.find((one) => one.repo === own);
-	const ownRoot = checkouts.find((one) => one.repo === own)?.root;
+	const ownRoot = ownCheckout?.root;
 	return {
 		refs: merged(read),
 		repositories: read.map((one) => one.repository),

@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture, renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 test("a nested proposal lays out its comparison content fresh and retains subject standing", async () => {
 	const retained = [
@@ -21,8 +21,8 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		],
 		edges: [{ id: "keys", from: "kms", to: "custody", kind: "data", label: "Signing key" }],
 	};
-	const document = LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	const document = fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Nested proposal",
@@ -34,7 +34,7 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		variants: [
 			{
 				id: "current",
-				name: "Current",
+				name: "Adopted",
 				lifecycle: "current",
 				content: orderedFixture({ nodes: retained }),
 			},

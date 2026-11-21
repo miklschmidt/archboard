@@ -9,7 +9,7 @@
 // drawn, as the shell reads the level of a live voice.
 
 import { talkClock, type Talk } from "@archboard/walkthrough/talk";
-import type { SubtitleSource, VoiceLevel } from "@archboard/workbench/voice";
+import type { SubtitleSource, VoiceLevel } from "@archboard/agent-surfaces";
 import { recordedStep, type RecordedStep } from "#ui/walkthroughs/recording/state/recorder.ts";
 
 /** Something that happened during the talk, at a moment of it. */

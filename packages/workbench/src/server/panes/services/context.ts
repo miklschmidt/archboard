@@ -13,16 +13,15 @@
 // tab cannot leave a true-looking answer standing after it stopped being true.
 
 import type { Express, Request, Response } from "express";
-import { semanticPaneContextRoute, semanticPaneContextSchema } from "@archboard/model/pane-context";
-import { staleFrontend } from "@archboard/server-lifecycle/server-host";
+import { parseDocument, type ModelDocument } from "@archboard/model-contract";
+import { staleFrontend } from "@archboard/server-lifecycle/server-process";
 import { publishPaneContext } from "#server/workbench-host/services/wiring-hooks.ts";
 import { panePresentations } from "#server/panes/services/presentation.ts";
 import { paneVaults, panes } from "#server/panes/services/registry.ts";
 import { bodyOf } from "#server/request/services/request-fields.ts";
-import { requireVault, vaultOfRequest } from "#server/request/services/vault.ts";
-import type { z } from "zod";
+import type { WorkbenchHooks } from "#server/workbench-host/routes/workbench-routes.ts";
 
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type SemanticPaneContext = ModelDocument<"paneContext">;
 
 /** The latest report from each pane, by the client id that sent it. */
 const reports = new Map<string, SemanticPaneContext>();
@@ -122,9 +121,10 @@ function forgetSemanticPaneContexts(): void {
  * Take one pane's report.
  * @param req The request.
  * @param res Its response.
+ * @param vault The vault the request named.
  */
-function reportRoute(req: Request, res: Response): void {
-	const parsed = semanticPaneContextSchema().safeParse(bodyOf(req));
+function reportRoute(req: Request, res: Response, vault: string): void {
+	const parsed = parseDocument("paneContext", bodyOf(req));
 	if (!parsed.success) {
 		res.status(400).json({
 			success: false,
@@ -133,7 +133,6 @@ function reportRoute(req: Request, res: Response): void {
 		});
 		return;
 	}
-	const vault = vaultOfRequest(req);
 	if (paneVaults.get(parsed.data.clientId) !== vault) {
 		res.status(409).json({
 			success: false,
@@ -175,20 +174,28 @@ function reportRoute(req: Request, res: Response): void {
 /**
  * What the panes are reading, for anything that wants to see it without being
  * an agent: the same reports, in the shape they arrived.
- * @param req The request.
  * @param res Its response.
+ * @param vault The vault the request named.
  */
-function listRoute(req: Request, res: Response): void {
-	res.json({ success: true, panes: semanticPaneContexts(vaultOfRequest(req)) });
+function listRoute(res: Response, vault: string): void {
+	res.json({ success: true, panes: semanticPaneContexts(vault) });
 }
 
 /**
  * Mount the pane-context routes.
  * @param app The express application.
+ * @param hooks How the server reads the vault a request names.
  */
-function mountSemanticPaneContextRoutes(app: Express): void {
-	app.post(semanticPaneContextRoute(), requireVault, reportRoute);
-	app.get(semanticPaneContextRoute(), requireVault, listRoute);
+function mountSemanticPaneContextRoutes(
+	app: Express,
+	hooks: Pick<WorkbenchHooks, "requireVault" | "vaultOfRequest">,
+): void {
+	app.post("/api/panes/semantic-context", hooks.requireVault, (req, res) => {
+		reportRoute(req, res, hooks.vaultOfRequest(req));
+	});
+	app.get("/api/panes/semantic-context", hooks.requireVault, (req, res) => {
+		listRoute(res, hooks.vaultOfRequest(req));
+	});
 }
 
 export {

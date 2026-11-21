@@ -20,7 +20,7 @@
 
 import { useLayoutEffect, useMemo, useRef } from "react";
 
-import { pictureMs, presentationMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import type { BeatFocus } from "#ui/architecture-drawing/canvas/picture/transitions/rules/narrative.ts";
 import type {
@@ -89,7 +89,7 @@ function stepDuration(reading: FitReading, pictureChanged: boolean): number {
 	if (reading.reducedMotion) {
 		return 0;
 	}
-	return pictureChanged ? pictureMs("transition") : presentationMs("step");
+	return pictureChanged ? durationMs("picture.transition") : durationMs("presentation.step");
 }
 
 /**

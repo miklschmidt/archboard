@@ -1,0 +1,28 @@
+{
+  "order": 960170,
+  "name": "Model shapes",
+  "kind": "module",
+  "responsibility": "The model's own shapes that other contracts are built from, taken by one key, so a command or a protocol declares what the model defines and cannot drift from it",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-contract/src/shared/protocol/shapes.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#FV4APnhq",
+  "parent": "vKEsyHFk#QsBnI8Ja",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the model it takes shapes from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/shapes.ts",
+        "symbol": "ArchitectureModelSchema"
+      },
+      "to": "vKEsyHFk#8539szQJ",
+      "id": "vKEsyHFk#THOt7JqD"
+    }
+  ]
+}

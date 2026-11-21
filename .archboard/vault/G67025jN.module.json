@@ -1,0 +1,14 @@
+{
+  "order": 200,
+  "name": "Drawing contract",
+  "kind": "module",
+  "responsibility": "States the drawing a layout answers and the painter paints: measured and placed nodes, routed edges, labels and frames, each with its facts",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/drawing.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#G67025jN",
+  "parent": "vKEsyHFk#9gGvxWHp",
+  "outgoing": []
+}

@@ -1,6 +1,5 @@
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
-import { fitIn } from "#shared/constants/shell-geometry.ts";
+import { type DiagramBox, type VariantContent } from "@archboard/model-contract";
+import { fit } from "#shared/constants/shell-geometry.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { across, along, breadth, faceOf } from "#tests/runtime/support/drawn-reading.ts";
 import {
@@ -92,7 +91,7 @@ function runsOf(drawing: Pick<RenderedDiagram, "svg">): Run[] {
  * @returns The scale that shows it whole, capped at one.
  */
 function fitOf(drawing: RenderedDiagram): number {
-	return fitIn(drawing);
+	return fit(drawing);
 }
 
 /**

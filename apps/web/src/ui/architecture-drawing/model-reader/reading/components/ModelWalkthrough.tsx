@@ -13,7 +13,7 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
-import { projectModel, type Model } from "@archboard/model/content";
+import { projectModel, type Model } from "@archboard/model-rules";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/architecture-drawing/model-reader/rules/scene.ts";

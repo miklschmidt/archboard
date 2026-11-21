@@ -5,7 +5,7 @@
 
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { parseTabSessionId, type TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 import { readWorkhorseList } from "#server/chat-conversations/browser-state/projections/workhorse-list.ts";
 import {
@@ -15,7 +15,7 @@ import {
 import type { WorkhorseListInput } from "#server/chat-conversations/browser-state/projections/workhorse-list.ts";
 
 const TAB = parseTabSessionId("tab-one") as TabSessionId;
-const { decoder } = createIdentityAuthorities().identity;
+const { decoder } = testAuthorities().identity;
 
 /**
  * A workhorse of the tab as the list reads it.

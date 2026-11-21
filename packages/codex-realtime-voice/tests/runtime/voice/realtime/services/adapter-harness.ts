@@ -7,12 +7,12 @@ import {
 	type RealtimeSemanticEvent,
 } from "#shared/protocol/realtime-contract.ts";
 import {
-	createIdentityAuthorities,
 	type ChildEpoch,
 	type ChildId,
 	type ItemId,
 	type ThreadId,
 } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	serverNotification,
 	type ServerNotification,
@@ -125,7 +125,7 @@ function harness(
 	},
 	voice: WorkbenchVoicePolicy = createTestVoicePolicy(),
 ): Harness {
-	const identity = createIdentityAuthorities().identity;
+	const identity = testAuthorities().identity;
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [LINKED_WIRE_THREAD_ID, COORDINATOR_WIRE_THREAD_ID, "other-thread"],
 	});

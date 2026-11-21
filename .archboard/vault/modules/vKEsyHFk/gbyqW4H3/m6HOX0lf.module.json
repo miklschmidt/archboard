@@ -2,13 +2,20 @@
   "order": 30003,
   "name": "Painting",
   "kind": "module",
-  "responsibility": "Paints a settled drawing into a scene: architecture and sequence marks, the surfaces and ports of cards, the theme's colours and the atlas of where every subject landed",
+  "responsibility": "Paints a settled drawing into a scene: architecture and sequence marks, card surfaces and ports, the theme's colours and the atlas; other crates get only the few sizes and looks they place by",
+  "description": "Its builders (paint/build.rs) are the producer's own: the setters, the producer-only constructors and Text::set, private to the crate (ADR 0091). It asks the pulse train for a mark's pulse breadth and for an exchange's turn distance. The sizes it draws by sit in the crate-private sheet sizes.rs, shared only with the measurer (ADR 0088). Other crates call paint, viewer_marks, junction_boxes, own_icons, diagram_margin, straight_card_top_contains, tab_width and header_padding. The far view's widths and scale stay behind viewer_marks, and paint decides a part's icon: NodeAppearance.icon is optional, and a part's TypeKind has a Flow variant.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint"
+    "path": "crates/archboard-painting/src/paint"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "parent": "vKEsyHFk#9gGvxWHp",
+  "parent": "vKEsyHFk#aZWqSegA",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0088-a-layout-learns-a-parts-size-from-the-measurer.md"
+    }
+  ],
   "outgoing": []
 }

@@ -1,38 +1,30 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
-import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
-import { serverLifecycleMs } from "@archboard/timing";
+import { releaseServerPid, reportStartupEnd } from "@archboard/server-lifecycle/server-process";
+import {
+	listenAddress,
+	logHttpServerError,
+	loopbackRefusal,
+} from "#server/http/listener/services/listener-address.ts";
+import { errorMessage } from "@archboard/diagnostics/thrown-error";
+import { durationMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,
 } from "#server/start-stop/lifecycle/application-lifetime.ts";
 import { server } from "#server/http/listener/wiring/server-app.ts";
-import { closeBrowserOwners } from "@archboard/workbench/panes";
-import { prepareCodexWorkbench, stopCodexWorkbench } from "@archboard/workbench/server";
+import { closeBrowserOwners, prepareWorkbench, stopWorkbench } from "@archboard/workbench/server";
 import { checkoutWork, mutationAdmission } from "#server/wiring/server-owners.ts";
 import {
 	closeHttpServer,
-	forgetEngineState,
 	listen,
 	stopListening,
 	type HttpOwnership,
 } from "#server/start-stop/lifecycle/server-resources.ts";
-import {
-	findExistingLoopbackListener,
-	formatHostForUrl,
-	isLoopbackGuardedHost,
-	listenAddress,
-	logHttpServerError,
-	serverUrl,
-	messageOf,
-} from "@archboard/workbench/host";
-import { agentActivity } from "#server/wiring/server-owners.ts";
-import {
-	unwatchRegistry,
-	watchRegistry,
-} from "#server/http/handlers/repositories/routes/repository-routes.ts";
+import { forgetModelMemory } from "@archboard/model-store";
 import { serverStartupFailureMessage } from "#server/start-stop/lifecycle/startup-error.ts";
 import {
+	acceptedSockets,
 	closeWebSocketServer,
 	startWebSocketServer,
 } from "#server/panes/connections/sockets/websocket-connection.ts";
@@ -64,63 +56,13 @@ function isRecoverableServerStopError(error: unknown): boolean {
  * @param error The failure.
  */
 function reportServerStopError(error: unknown): void {
-	const message = `Archboard server shutdown refused or failed: ${messageOf(error)}`;
+	const message = `Archboard server shutdown refused or failed: ${errorMessage(error)}`;
 	if (isRecoverableServerStopError(error)) {
 		logger().error(message);
 	} else {
 		process.stderr.write(message + "\n");
 		process.exitCode = 1;
 	}
-}
-
-/**
- * Refuse to start beside a server already listening on the other loopback
- * address, which would split state between an IPv4 and an IPv6 server.
- * @returns The refusal, or null when the port is free on both.
- */
-async function loopbackRefusal(): Promise<string | null> {
-	if (!isLoopbackGuardedHost()) {
-		return null;
-	}
-	const existingHost = await findExistingLoopbackListener();
-	if (!existingHost) {
-		return null;
-	}
-	const { host, port } = listenAddress();
-	const message =
-		`Refusing to start Archboard server on ${formatHostForUrl(host)}:${port}: ` +
-		`${formatHostForUrl(existingHost)}:${port} is already listening. ` +
-		"This prevents duplicate IPv4/IPv6 Archboard servers from splitting state.";
-	logger().error(message);
-	return message;
-}
-
-/** Reports the startup protocol's terminal record exactly once. */
-interface StartupTerminal {
-	report: (message?: string | null) => void;
-}
-
-/**
- * The terminal reporter for one startup, which says whether cleanup was
- * proven by the lifetime once one exists.
- * @param cleanupProven How to ask whether cleanup was proven.
- * @returns The reporter.
- */
-function startupTerminal(cleanupProven: () => boolean): StartupTerminal {
-	let reported = false;
-	return {
-		/**
-		 * Write the terminal record, the first time only.
-		 * @param message Why startup ended, or null for an ordinary stop.
-		 */
-		report: (message = null) => {
-			if (reported) {
-				return;
-			}
-			reported = true;
-			reportStartupEnd({ cleanupProven: cleanupProven(), message });
-		},
-	};
 }
 
 /** The signal and error handling around one running lifetime. */
@@ -133,17 +75,11 @@ interface ProcessHandlers {
 
 /**
  * The process-level handlers for one lifetime: signals stop it, an HTTP
- * runtime error stops it and fails the process, exit removes the pidfile.
+ * runtime error stops it and fails the process, exit releases the pidfile.
  * @param lifetimeOf How to reach the lifetime once it exists.
- * @param http The HTTP ownership.
- * @param terminal The startup terminal reporter.
  * @returns The handlers.
  */
-function processHandlers(
-	lifetimeOf: () => ServerLifetime,
-	http: HttpOwnership,
-	terminal: StartupTerminal,
-): ProcessHandlers {
+function processHandlers(lifetimeOf: () => ServerLifetime): ProcessHandlers {
 	let runtimeServerStop: Promise<void> | null = null;
 	/** Stop the server after an HTTP runtime error, failing the process. */
 	const stopServerAfterHttpError = async (): Promise<void> => {
@@ -170,7 +106,7 @@ function processHandlers(
 		} catch (error) {
 			reportServerStopError(error);
 		} finally {
-			terminal.report();
+			reportStartupEnd({ cleanupProven: lifetimeOf().cleanupProven(), message: null });
 		}
 	};
 	/**
@@ -190,11 +126,9 @@ function processHandlers(
 		onInterrupt: () => {
 			shutdown("SIGINT");
 		},
-		/** Remove the pidfile this process wrote, as the process exits. */
+		/** Release the pidfile this process recorded, as the process exits. */
 		onExit: () => {
-			if (http.ownsPidFile) {
-				removePidFile(listenAddress().port);
-			}
+			releaseServerPid(listenAddress().port);
 		},
 		/**
 		 * Stop the server after an HTTP error while it was running, once.
@@ -293,16 +227,21 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				start: () => {
 					// The vault is read on demand; this process holds nothing of it.
 				},
-				/** Forget every engine-level record. */
+				/** Forget every model this process read. */
 				stop: () => {
-					forgetEngineState();
+					forgetModelMemory();
 				},
 			},
 			{
-				name: "codex-workbench",
-				start: prepareCodexWorkbench,
-				stop: stopCodexWorkbench,
-				forceStop: stopCodexWorkbench,
+				name: "workbench",
+				/**
+				 * Prepare the workbench at the address this server listens on.
+				 * @param signal Cancels the preparation.
+				 * @returns Resolves once it is ready.
+				 */
+				start: (signal) => prepareWorkbench(signal, listenAddress()),
+				stop: stopWorkbench,
+				forceStop: stopWorkbench,
 			},
 			{
 				name: "telemetry-sender",
@@ -313,13 +252,6 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Stop sending. A round under way finishes on its own or is dropped with the process. */
 				stop: () => {
 					stopTelemetrySender();
-				},
-			},
-			{
-				name: "agent-activity",
-				/** Stop the activity tracker with its owning receiver. */
-				stop: () => {
-					agentActivity.dispose();
 				},
 			},
 			{
@@ -338,7 +270,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				 * @returns Resolves once the port is released.
 				 */
 				stop: () => stopListening(http),
-				stopGraceMs: serverLifecycleMs("httpStopGrace"),
+				stopGraceMs: durationMs("serverLifecycle.httpStopGrace"),
 				/** Drop every connection and close. */
 				forceStop: async () => {
 					server.closeAllConnections();
@@ -350,16 +282,18 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				/** Accept panes. */
 				start: () => {
 					startWebSocketServer();
-					logger().info(`WebSocket server running on ${serverUrl("ws")}`);
+					logger().info(`WebSocket server running on ${listenAddress().wsUrl}`);
 				},
 				stop: closeWebSocketServer,
 			},
 			{
-				name: "registry-watch",
-				start: watchRegistry,
-				stop: unwatchRegistry,
+				name: "browser-and-pending-operations",
+				/**
+				 * Close every browser owner, terminating every socket the server accepted.
+				 * @returns Resolves once they have closed.
+				 */
+				stop: () => closeBrowserOwners(acceptedSockets()),
 			},
-			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
 			{
 				name: "checkout-snapshot-work",
 				/** Admit checkout snapshots. */
@@ -373,34 +307,21 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 }
 
 /**
- * Nothing has been acquired yet, so there is nothing whose cleanup could have
- * failed: a startup that ends before the lifetime exists proves its own cleanup.
- * @returns Always true.
- */
-function cleanupProvenBeforeResourceAcquisition(): boolean {
-	return true;
-}
-
-/**
  * Start the server: refuse beside a duplicate listener, then run every resource
  * through the lifetime. A server needs no vault, because every call names its own (ADR 0049).
  */
 async function startServer(): Promise<void> {
-	let cleanupProven = cleanupProvenBeforeResourceAcquisition;
-	const terminal = startupTerminal(() => cleanupProven());
 	const refusal = await loopbackRefusal();
 	if (refusal !== null) {
-		terminal.report(refusal);
+		// Nothing has been acquired yet, so there is nothing whose cleanup could have failed: a
+		// startup that ends before the lifetime exists proves its own cleanup.
+		reportStartupEnd({ cleanupProven: true, message: refusal });
 		throw new Error(refusal);
 	}
-	// Only the process that actually wrote the pidfile may remove it —
-	// a concurrent-start loser exiting on EADDRINUSE must not delete the
-	// winner's pidfile.
 	const http: HttpOwnership = {
 		phase: "idle",
 		startPromise: null,
 		errorListener: null,
-		ownsPidFile: false,
 		closePromise: null,
 	};
 	let lifetime: ServerLifetime | null = null;
@@ -414,13 +335,15 @@ async function startServer(): Promise<void> {
 		}
 		return lifetime;
 	};
-	lifetime = buildLifetime(http, processHandlers(lifetimeOf, http, terminal));
+	lifetime = buildLifetime(http, processHandlers(lifetimeOf));
 	serverLifetime = lifetime;
-	cleanupProven = lifetime.cleanupProven;
 	try {
 		await lifetime.start();
 	} catch (error) {
-		terminal.report(serverStartupFailureMessage(error));
+		reportStartupEnd({
+			cleanupProven: lifetime.cleanupProven(),
+			message: serverStartupFailureMessage(error),
+		});
 		throw error;
 	}
 }

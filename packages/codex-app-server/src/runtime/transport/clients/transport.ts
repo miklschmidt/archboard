@@ -1,5 +1,6 @@
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
-import { codexProcessMs } from "@archboard/timing";
+import { CODEX_APP_SERVER_CAPACITY } from "#shared/constants/app-server-capacity.ts";
+import { durationMs } from "@archboard/timing";
 import {
 	attachChildListeners,
 	destroyQuietly,
@@ -41,10 +42,9 @@ import type {
 	ReverseRecord,
 	WriteJob,
 } from "#runtime/transport/clients/transport-internals.ts";
-import { protocolErrorFrame, wireKey, type WireId } from "#runtime/protocol/wire.ts";
+import { encodeFrame, type JsonRpcErrorKind, type WireId } from "#runtime/protocol/frames.ts";
 
 const PROTOCOL_ERROR_MESSAGE = "Codex transport is shutting down.";
-const INTERNAL_ERROR_CODE = -32603;
 
 type TransportState = "open" | "closing" | "closed";
 type CloseReason = Extract<
@@ -71,7 +71,7 @@ function defaultLane(job: WriteJob): WriteLane {
  */
 export function createCodexTransport(options: CodexTransportOptions): CodexTransport {
 	const child: CodexTransportChild = options.child;
-	let identity: IdentityAuthority = options.identity;
+	const identity: IdentityAuthority = options.identity;
 	let state: TransportState = "open";
 	let inputEndStarted = false;
 	let inputFinished = false;
@@ -106,12 +106,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	 * @returns True once closed.
 	 */
 	const isClosed = (): boolean => currentState() === "closed";
-
-	/**
-	 * The current identity authority.
-	 * @returns The authority.
-	 */
-	const currentIdentity = (): IdentityAuthority => identity;
 
 	/**
 	 * The closed error for the current state.
@@ -178,14 +172,19 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	 * @param message The error message.
 	 * @returns True when the error was queued and the id retained as answered.
 	 */
-	const enqueueProtocolError = (wireId: WireId, code: number, message: string): boolean => {
+	const enqueueProtocolError = (
+		wireId: WireId,
+		code: JsonRpcErrorKind,
+		message: string,
+	): boolean => {
 		if (isClosed() || inputEndStarted) {
 			return false;
 		}
-		let frame: Buffer;
-		try {
-			frame = protocolErrorFrame(wireId, code, message);
-		} catch {
+		const encoded = encodeFrame(
+			{ kind: "error", id: wireId, code, message },
+			CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
+		);
+		if (!encoded.ok) {
 			emitIssue({
 				kind: "write-error",
 				direction: "write",
@@ -193,9 +192,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			});
 			return false;
 		}
-		const key = wireKey(wireId);
+		const key = encoded.key;
 		try {
-			enqueue({ kind: "protocol-error", frame, key }, undefined, "response");
+			enqueue({ kind: "protocol-error", frame: encoded.line, key }, undefined, "response");
 		} catch {
 			emitIssue({
 				kind: "write-error",
@@ -365,7 +364,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	 * @param record The reverse record.
 	 */
 	const refuseForShutdown = (record: ReverseRecord): void => {
-		enqueueProtocolError(record.wireId, INTERNAL_ERROR_CODE, PROTOCOL_ERROR_MESSAGE);
+		enqueueProtocolError(record.wireId, "internalError", PROTOCOL_ERROR_MESSAGE);
 	};
 
 	/** Gives up on a shutdown whose stdin did not drain within the composed bound. */
@@ -409,7 +408,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		if (isClosed()) {
 			return promise;
 		}
-		shutdownTimer = setTimeout(abortShutdown, codexProcessMs("composedShutdown"));
+		shutdownTimer = setTimeout(abortShutdown, durationMs("codexProcess.composedShutdown"));
 		finishShutdown();
 		return promise;
 	};
@@ -479,7 +478,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	);
 
 	const outbound = createOutboundOperations({
-		identity: currentIdentity,
+		identity,
 		state: currentState,
 		pendingRequests,
 		removeQueuedJob: writer.remove,
@@ -487,7 +486,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		enqueue: enqueueRegular,
 	});
 	const router = createInboundRouter({
-		identity: currentIdentity,
+		identity,
 		state: currentState,
 		pendingRequests,
 		tombstones,
@@ -517,22 +516,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			throw closedError();
 		}
 		router.registerDynamicDispatcher(registration);
-	};
-
-	/**
-	 * Replaces the identity authority over the same child epoch.
-	 * @param replacement The new authority; it must keep the exact child and epoch.
-	 */
-	const replaceIdentity = (replacement: IdentityAuthority): void => {
-		if (
-			replacement.validator.childId !== identity.validator.childId ||
-			replacement.validator.epoch !== identity.validator.epoch
-		) {
-			throw new TypeError(
-				"A Codex transport identity replacement must keep the exact child epoch.",
-			);
-		}
-		identity = replacement;
 	};
 
 	/**
@@ -573,7 +556,6 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	start();
 
 	return Object.freeze({
-		replaceIdentity,
 		request: outbound.request,
 		sendNotification: outbound.sendNotification,
 		registerDynamicDispatcher,

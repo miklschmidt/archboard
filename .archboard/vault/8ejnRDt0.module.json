@@ -1,0 +1,29 @@
+{
+  "order": 301,
+  "name": "Voice panel",
+  "kind": "module",
+  "responsibility": "mountVoice(element, url): a working voice panel over one voice client, so a host has an agent in one line",
+  "description": "Native controls, accessible status updates, the system's light and dark colors and replaceable English words; it carries no stylesheet beyond them. A custom page builds on createVoiceClient instead and gets the same reconnect and restoration behavior.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/ui/voice-panel"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#8ejnRDt0",
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "outgoing": [
+    {
+      "order": 906,
+      "kind": "call",
+      "label": "one voice client on the host's socket URL",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/voice-panel/clients/mount-voice.ts",
+        "symbol": "mountVoice"
+      },
+      "id": "vKEsyHFk#dQ31dMe7",
+      "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
+    }
+  ]
+}

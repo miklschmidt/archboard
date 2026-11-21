@@ -6,12 +6,12 @@ import type {
 	SessionThreadTurnPageResult,
 } from "@archboard/codex-app-server/session";
 import type { TransportServerNotification } from "@archboard/codex-app-server/transport";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createServerTimelineOwner } from "#server/timeline/projections/timeline.ts";
 import { flush, turnFixture } from "#tests/server/support/timeline/timeline-fixture.ts";
 
 function turnCompleted(
-	authorities: ReturnType<typeof createIdentityAuthorities>,
+	authorities: ReturnType<typeof testAuthorities>,
 	threadId: string,
 ): TransportServerNotification {
 	return {
@@ -41,7 +41,7 @@ function turnCompleted(
 }
 
 test("a target's timeline is read from its own thread, re-read on that thread's news, and re-keyed with the target", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const first = decoder.adoptThreadId("coordinator-first");
 	const second = decoder.adoptThreadId("coordinator-second");
@@ -106,7 +106,7 @@ test("a target's timeline is read from its own thread, re-read on that thread's 
 });
 
 test("a target read shows only the turns its reader keeps, and every turn to a reader that keeps all", async () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const decoder = authorities.identity.decoder;
 	const thread = decoder.adoptThreadId("coordinator");
 	const owner = createServerTimelineOwner({

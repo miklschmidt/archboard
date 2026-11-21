@@ -5,7 +5,9 @@
 // holds a part for each check that ran, and only a diagnostic or a warning
 // fails it. Behind is information (ADR 0045), so a model many commits behind
 // never does. `--state`, `--every-draft` and `--plan` name what the code
-// check reads, and only `check`, `check all` and `check embeds` take `--fix`.
+// check reads, `--state` also the draft `check semantics` reads, and only
+// `check`, `check all` and `check embeds` take `--fix`. An option may come
+// before the subcommand's name (TASK-655).
 // `--fail-shallow-modules`, or a model's policy, makes an information
 // `MODULE_SHALLOW` or `INTERFACE_WIDE` on a module the branch touched a
 // warning (debt mode), and `--base` names the base (TASK-646.04, TASK-651).
@@ -20,12 +22,12 @@ import {
 	CodeCheckResultSchema,
 	type CodeCheckResult,
 } from "#cli/commands/vault/protocol/code-check-result.ts";
-import { defaultSemanticPolicy, vaultCheckSchema } from "@archboard/model/policy";
+import { defaultSemanticPolicy, modelShape, type ModelReply } from "@archboard/model-contract";
 import codeCheckFixture from "#tests/cli/commands/vault/fixtures/check-parts-code.json";
 import type { CliRegistryEntry } from "#cli/routing/protocol/route.ts";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 /** One finding of the code check. */
 type CodeFinding = CodeCheckResult["findings"][number];
@@ -162,7 +164,9 @@ async function run(argv: string[]): Promise<{ stdout: string; stderr: string; ex
 const SEMANTICS_ROUTE = "/api/vault/check";
 const CODE_ROUTE = "/api/vault/code-check";
 const PartsSchema = z.object({
-	semantics: vaultCheckSchema().extend({ timings: CodeCheckResultSchema.shape.timings }).optional(),
+	semantics: modelShape("vaultCheck")
+		.extend({ timings: CodeCheckResultSchema.shape.timings })
+		.optional(),
 	code: CodeCheckResultSchema.optional(),
 	embeds: z.object({ checkout: z.string().nullable(), embeds: z.array(z.string()) }).optional(),
 });
@@ -181,10 +185,10 @@ const readsFix = (entry: CliRegistryEntry): boolean =>
 		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--fix"),
 	);
 
-/** The check commands that read the code check's options, as the registry declares them. */
-const readsCodeOptions = (entry: CliRegistryEntry): boolean =>
+/** Whether a check command declares an option, as the registry says. */
+const declares = (entry: CliRegistryEntry, spelling: string): boolean =>
 	entry.contract.parameters.some(
-		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--state"),
+		(parameter) => parameter.kind === "option" && parameter.spellings.includes(spelling),
 	);
 const checkRoutes = () =>
 	cliContractRegistry().filter(
@@ -238,6 +242,20 @@ test("check semantics asks only the semantics check and fills only its part", as
 	const answer: unknown = JSON.parse(stdout);
 	expect(Object.keys(PartsSchema.parse(answer))).toEqual(["semantics"]);
 	expect(answer).not.toHaveProperty("code");
+});
+
+test("check semantics reads --state on either side of its name and asks only the semantics check for that draft", async () => {
+	plain = clean;
+	for (const argv of [
+		["check", "semantics", "--state", "TASK-1"],
+		["check", "--state", "TASK-1", "semantics"],
+	]) {
+		asked.length = 0;
+		const { stdout, exited } = await run(argv);
+		expect(exited, argv.join(" ")).toBe(0);
+		expect(asked, argv.join(" ")).toEqual([`${SEMANTICS_ROUTE}?state=TASK-1`]);
+		expect(Object.keys(PartsSchema.parse(JSON.parse(stdout)))).toEqual(["semantics"]);
+	}
 });
 
 test("check code asks only the code check and fills only its part", async () => {
@@ -389,9 +407,9 @@ test("a refused draft read prints the code and the recovery the server gave", as
 	}
 });
 
-test("every other check subcommand refuses the code check's options before asking the server", async () => {
+test("every other check subcommand refuses the code check's options it does not declare before asking the server", async () => {
 	const others = checkRoutes().filter(
-		(entry) => entry.parent === "check" && !readsCodeOptions(entry),
+		(entry) => entry.parent === "check" && !declares(entry, "--every-draft"),
 	);
 	expect(others.map((entry) => entry.name)).toContain("check semantics");
 	for (const entry of others) {
@@ -400,6 +418,7 @@ test("every other check subcommand refuses the code check's options before askin
 			["--every-draft"],
 			["--plan", "infra/plan.json"],
 		]) {
+			if (declares(entry, option[0] ?? "")) continue;
 			asked.length = 0;
 			expect((await run([...entry.name.split(" "), ...option])).exited, entry.name).toBe(2);
 			expect(asked).toEqual([]);

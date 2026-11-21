@@ -1,16 +1,17 @@
 //! What a move does, held to the scenes a test builds by hand. None of it
 //! needs a GPU or a DOM: a move is plain items in and plain items out.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{
     Clip, ClipId, Definition, Group, Item, Mask, MaskId, Purpose, Role, Scene, Shape, Transform,
 };
 
-use super::Between;
-use super::ease::{emphasised, phase};
+use super::ease::emphasised;
 use super::testing::{
     PHASES, card, drawing, label, line, plate, rect, region, route_of, scene, shadow,
 };
+use super::{Between, Focus};
+use crate::timing::phase;
 
 /// Every run of words a group draws, to any depth.
 fn said(items: &[Item]) -> Vec<String> {
@@ -67,21 +68,21 @@ fn a_busy_move() -> (Scene, Scene, Between) {
     let (mut after, nodes) = two_cards(rect(30.0, 40.0, 100.0, 50.0), "New");
     after.push(card("d", rect(200.0, 100.0, 100.0, 50.0), &["Fresh"]));
     let to = scene(after, &nodes);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     (from, to, between)
 }
 
 #[test]
 fn a_move_lands_on_the_next_scene() {
     let (_, to, between) = a_busy_move();
-    assert_eq!(between.at(1.0), to.body);
+    assert_eq!(between.at(1.0).0, to.body);
 }
 
 #[test]
 fn a_move_starts_on_the_last_scene() {
     let (from, _, between) = a_busy_move();
     let start = between.at(0.0);
-    let a = drawing(&start, "a")[0];
+    let a = drawing(&start.0, "a")[0];
     assert_eq!(
         plate(a),
         rect(10.0, 10.0, 100.0, 50.0),
@@ -89,18 +90,18 @@ fn a_move_starts_on_the_last_scene() {
     );
     assert_eq!(said(&a.items), ["Title", "Old"], "with the words it had");
     assert_eq!(
-        solid(drawing(&start, "c")[0]),
+        solid(drawing(&start.0, "c")[0]),
         1.0,
         "a card that goes is still there"
     );
     assert_eq!(
-        solid(drawing(&start, "d")[0]),
+        solid(drawing(&start.0, "d")[0]),
         0.0,
         "a card that comes is not yet"
     );
     let kept = drawing(&from.body, "e")[0];
     assert_eq!(
-        route_of(drawing(&start, "e")[0]),
+        route_of(drawing(&start.0, "e")[0]),
         route_of(kept),
         "a line starts on its old route"
     );
@@ -111,35 +112,35 @@ fn a_shift_holds_the_shared_cards_still_until_they_have_moved() {
     let (body, nodes) = two_cards(rect(10.0, 10.0, 100.0, 50.0), "Note");
     let from = scene(body.clone(), &nodes);
     let to = scene(body, &nodes);
-    let between = Between::new(&from, &to, (5.0, 7.0), &PHASES);
+    let between = Between::carry(&from, &to, (5.0, 7.0), &PHASES);
 
     let back = |items: &[Item]| match items {
         [Item::Group(group)] => group.transform,
         _ => None,
     };
     assert_eq!(
-        back(&between.at(0.0)),
+        back(&between.at(0.0).0),
         Some(Transform::translate(-5.0, -7.0))
     );
-    let halfway = back(&between.at(0.4)).expect("still on its way home");
+    let halfway = back(&between.at(0.4).0).expect("still on its way home");
     assert!(halfway.x > -5.0 && halfway.x < 0.0);
-    assert_eq!(back(&between.at(0.9)), None, "home with the cards");
+    assert_eq!(back(&between.at(0.9).0), None, "home with the cards");
 }
 
 #[test]
 fn a_picture_that_arrives_during_a_move_starts_from_what_shows() {
     let (first, next, between) = a_busy_move();
     let (seen, back) = between.seen_at(0.4, &next);
-    let turned = Between::new(&seen, &first, back, &PHASES);
+    let turned = Between::carry(&seen, &first, back, &PHASES);
     let (shown, start) = (between.at(0.4), turned.at(0.0));
-    let (card, same) = (drawing(&shown, "a")[0], drawing(&start, "a")[0]);
+    let (card, same) = (drawing(&shown.0, "a")[0], drawing(&start.0, "a")[0]);
     assert_eq!(plate(card), plate(same));
     assert_ne!(plate(card), plate(drawing(&first.body, "a")[0]));
 }
 
 /// A move of one group down the picture, far enough to count as a long way.
 fn a_long_way(before: Item, after: Item) -> Between {
-    Between::new(
+    Between::carry(
         &scene(vec![before], &[]),
         &scene(vec![after], &[]),
         (0.0, 0.0),
@@ -155,7 +156,7 @@ fn a_line_that_travels_far_recedes_and_comes_back() {
     );
     let shown = |progress| {
         let items = between.at(progress);
-        let stroke = shape_of(drawing(&items, "e")[0], Purpose::Line)
+        let stroke = shape_of(drawing(&items.0, "e")[0], Purpose::Line)
             .stroke
             .as_ref();
         stroke.and_then(|stroke| stroke.opacity).unwrap_or(1.0)
@@ -173,9 +174,13 @@ fn a_label_that_crosses_the_picture_leaves_and_comes_back_at_its_new_place() {
         label("e", new_place, "words"),
     );
     let gone = between.at(0.3);
-    assert!(drawing(&gone, "e").iter().all(|group| solid(group) < 0.01));
+    assert!(
+        drawing(&gone.0, "e")
+            .iter()
+            .all(|group| solid(group) < 0.01)
+    );
     let back = between.at(0.999);
-    let seen: Vec<_> = drawing(&back, "e")
+    let seen: Vec<_> = drawing(&back.0, "e")
         .into_iter()
         .filter(|group| solid(group) > 0.5)
         .collect();
@@ -199,11 +204,11 @@ fn a_repeated_id_pairs_in_order() {
         ],
         &[],
     );
-    let between = Between::new(&before, &after, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&before, &after, (0.0, 0.0), &PHASES);
     let halfway = 0.5;
     let moved = emphasised(phase(halfway, 0.06, 0.88));
     let body = between.at(halfway);
-    let both = drawing(&body, "r");
+    let both = drawing(&body.0, "r");
     assert_eq!(both.len(), 2, "neither group was lost or doubled");
     assert!(
         (plate(both[0]).x - 10.0 * moved).abs() < 1e-9,
@@ -220,10 +225,10 @@ fn a_removed_card_fades_and_shrinks_about_its_box() {
     let gone = rect(10.0, 100.0, 100.0, 50.0);
     let from = scene(vec![card("c", gone, &["Gone"])], &[("c", gone)]);
     let to = scene(Vec::new(), &[]);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
 
     let early = between.at(0.1);
-    let group = drawing(&early, "c")[0];
+    let group = drawing(&early.0, "c")[0];
     assert!(solid(group) < 1.0 && solid(group) > 0.0);
     let shrink = group.transform.expect("shrunk");
     let scale = shrink.scale.expect("a scale");
@@ -236,7 +241,7 @@ fn a_removed_card_fades_and_shrinks_about_its_box() {
         "nobody picks what is leaving"
     );
     assert!(
-        drawing(&between.at(0.35), "c").is_empty(),
+        drawing(&between.at(0.35).0, "c").is_empty(),
         "gone by the end of its phase"
     );
 }
@@ -248,10 +253,10 @@ fn an_added_line_draws_on_from_its_start() {
         vec![line("f", &[(0.0, 0.0), (60.0, 0.0), (60.0, 80.0)])],
         &[],
     );
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     let stroke = |progress: f64| {
         let body = between.at(progress);
-        let group = drawing(&body, "f")[0].clone();
+        let group = drawing(&body.0, "f")[0].clone();
         (solid(&group), shape_of(&group, Purpose::Line).clone())
     };
 
@@ -273,10 +278,10 @@ fn an_added_lines_arrowhead_waits_until_it_is_nearly_drawn() {
         vec![line("f", &[(0.0, 0.0), (60.0, 0.0), (60.0, 80.0)])],
         &[],
     );
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     let stroke = |progress: f64| {
         let body = between.at(progress);
-        let group = drawing(&body, "f")[0].clone();
+        let group = drawing(&body.0, "f")[0].clone();
         (solid(&group), shape_of(&group, Purpose::Line).clone())
     };
     let (_, there) = (0..2000)
@@ -302,7 +307,7 @@ fn a_longer_route() -> (Scene, Scene, Between) {
         vec![line("e", &long), card("a", nodes[0].1, &["A"])],
         &nodes,
     );
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     (from, to, between)
 }
 
@@ -311,12 +316,12 @@ fn a_line_keeps_both_its_routes_at_the_ends_of_its_move() {
     let (from, to, between) = a_longer_route();
     let start = between.at(0.0);
     assert_eq!(
-        route_of(drawing(&start, "e")[0]),
+        route_of(drawing(&start.0, "e")[0]),
         route_of(drawing(&from.body, "e")[0])
     );
     let settled = between.at(0.9);
     assert_eq!(
-        route_of(drawing(&settled, "e")[0]),
+        route_of(drawing(&settled.0, "e")[0]),
         route_of(drawing(&to.body, "e")[0])
     );
 }
@@ -326,11 +331,11 @@ fn a_line_that_changes_its_shape_leaves_and_is_drawn_again_rather_than_swinging(
     let (from, to, between) = a_longer_route();
     let leaving = between.at(0.2);
     assert_eq!(
-        route_of(drawing(&leaving, "e")[0]),
+        route_of(drawing(&leaving.0, "e")[0]),
         route_of(drawing(&from.body, "e")[0])
     );
     let drawn = between.at(between.length() * 0.9);
-    let group = drawing(&drawn, "e")[0];
+    let group = drawing(&drawn.0, "e")[0];
     assert_eq!(route_of(group), route_of(drawing(&to.body, "e")[0]));
     let dash = shape_of(group, Purpose::Line)
         .stroke
@@ -356,7 +361,7 @@ fn the_ports_of_a_line_in_flight_wait_for_the_landing() {
         ],
         &nodes,
     );
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     let has_port = |items: &[Item]| {
         drawing(items, "e")[0]
             .items
@@ -364,10 +369,10 @@ fn the_ports_of_a_line_in_flight_wait_for_the_landing() {
             .any(|item| matches!(item, Item::Group(group) if matches!(group.role, Role::Port)))
     };
     assert!(
-        !has_port(&between.at(0.4)),
+        !has_port(&between.at(0.4).0),
         "the ports wait for the cards to land"
     );
-    assert!(has_port(&between.at(1.0)));
+    assert!(has_port(&between.at(1.0).0));
 }
 
 #[test]
@@ -376,11 +381,11 @@ fn a_kept_cards_box_follows_the_move_curve() {
     let after = rect(30.0, 40.0, 140.0, 50.0);
     let from = scene(vec![card("a", before, &["Title"])], &[("a", before)]);
     let to = scene(vec![card("a", after, &["Title"])], &[("a", after)]);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
 
     let body = between.at(0.4);
     let moved = emphasised(phase(0.4, 0.06, 0.88));
-    let group = drawing(&body, "a")[0];
+    let group = drawing(&body.0, "a")[0];
     let here = plate(group);
     assert!((here.x - (10.0 + 20.0 * moved)).abs() < 1e-9);
     assert!((here.y - (10.0 + 30.0 * moved)).abs() < 1e-9);
@@ -406,8 +411,8 @@ fn a_title_stays_while_a_changed_note_swaps_through_the_move() {
     let frame = rect(10.0, 10.0, 100.0, 50.0);
     let from = scene(vec![card("a", frame, &["Title", "Old"])], &[("a", frame)]);
     let to = scene(vec![card("a", frame, &["Title", "New"])], &[("a", frame)]);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
-    let words_at = |progress: f64| said(&drawing(&between.at(progress), "a")[0].items);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
+    let words_at = |progress: f64| said(&drawing(&between.at(progress).0, "a")[0].items);
 
     assert_eq!(words_at(0.0), ["Title", "Old"]);
     assert_eq!(
@@ -424,7 +429,10 @@ fn a_shadow_rides_under_the_card_that_casts_it() {
         let Item::Group(group) = shadow() else {
             unreachable!("a shadow is a group");
         };
-        Item::Group(group.standing_with(vec!["a".to_owned()]))
+        Item::Group(Group {
+            members: vec!["a".to_owned()],
+            ..group
+        })
     };
     let (here, there) = (
         rect(10.0, 10.0, 100.0, 50.0),
@@ -432,9 +440,9 @@ fn a_shadow_rides_under_the_card_that_casts_it() {
     );
     let from = scene(vec![cast(), card("a", here, &["Title"])], &[("a", here)]);
     let to = scene(vec![cast(), card("a", there, &["Title"])], &[("a", there)]);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     let riding = between.at(0.3);
-    let moved = riding.iter().find_map(|item| match item {
+    let moved = riding.0.iter().find_map(|item| match item {
         Item::Group(group) if group.items.iter().any(
             |inside| matches!(inside, Item::Group(shadow) if matches!(shadow.role, Role::Shadow(_))),
         ) => group.transform,
@@ -442,7 +450,7 @@ fn a_shadow_rides_under_the_card_that_casts_it() {
     });
     let moved = moved.expect("the shadow moves");
     assert!(moved.x < 0.0 && moved.x > -100.0, "it is on its way");
-    assert_eq!(between.at(1.0), to.body, "it lands on the scene itself");
+    assert_eq!(between.at(1.0).0, to.body, "it lands on the scene itself");
 }
 
 #[test]
@@ -462,7 +470,8 @@ fn the_last_scenes_masks_and_clips_keep_their_own_names() {
     from.definitions = vec![mask(rect(0.0, 0.0, 1.0, 1.0)), clip.clone()];
     let mut to = scene(Vec::new(), &[]);
     to.definitions = vec![mask(rect(0.0, 0.0, 2.0, 2.0)), clip];
-    let defined = Between::new(&from, &to, (0.0, 0.0), &PHASES).definitions();
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
+    let defined = between.definitions().expect("a carry has its own");
 
     let masks: Vec<&MaskId> = defined
         .iter()
@@ -487,8 +496,8 @@ fn the_same_move_is_the_same_frames() {
     let from = scene(body, &nodes);
     let (body, nodes) = two_cards(rect(40.0, 30.0, 100.0, 50.0), "New");
     let to = scene(body, &nodes);
-    let one = Between::new(&from, &to, (0.0, 0.0), &PHASES);
-    let other = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let one = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
+    let other = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
     for progress in [0.0, 0.13, 0.5, 0.77, 1.0] {
         assert_eq!(one.at(progress), other.at(progress));
         assert_eq!(one.at(progress), one.at(progress));
@@ -508,30 +517,8 @@ fn a_flight_knows_what_the_next_scene_defines_inside_its_body() {
         &[],
     );
     let from = scene(Vec::new(), &[]);
-    let defined = Between::new(&from, &to, (0.0, 0.0), &PHASES).definitions();
-    assert_eq!(defined, vec![clip]);
-}
-
-#[test]
-fn an_in_between_draws_with_balanced_layers() {
-    use crate::canvas::Count;
-    use crate::palette::Theme;
-    use crate::stage::Stage;
-    use crate::testing::painting;
-
-    let (body, nodes) = two_cards(rect(10.0, 10.0, 100.0, 50.0), "Old");
-    let from = scene(body, &nodes);
-    let (body, nodes) = two_cards(rect(40.0, 30.0, 140.0, 50.0), "New");
-    let to = scene(body, &nodes);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
-    let mut halfway = painting(between.at(0.5));
-    halfway.scene.definitions = between.definitions();
-    let mut stage = Stage::new(Theme::Light, (400.0, 300.0));
-    stage.show(halfway);
-    let mut count = Count::default();
-    stage.draw(&mut count, 0.0);
-    assert!(count.fills > 0 && count.layers > 0);
-    assert_eq!(count.open, 0);
+    let between = Between::carry(&from, &to, (0.0, 0.0), &PHASES);
+    assert_eq!(between.definitions(), Some(&[clip][..]));
 }
 
 /// A door, and the frame it opens into with a part inside.
@@ -550,9 +537,9 @@ fn door_and_frame() -> (Scene, Scene) {
 #[test]
 fn a_door_that_opens_carries_its_parts_inside_it() {
     let (shut, open) = door_and_frame();
-    let between = Between::new(&shut, &open, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&shut, &open, (0.0, 0.0), &PHASES);
     let early = between.at(0.2);
-    let part = drawing(&early, "p")[0];
+    let part = drawing(&early.0, "p")[0];
     assert!(part.opacity.is_some_and(|opacity| opacity > 0.0));
     assert!(
         part.transform
@@ -560,20 +547,22 @@ fn a_door_that_opens_carries_its_parts_inside_it() {
             .is_some_and(|scale| scale < 1.0),
         "a part is as small as its door still is"
     );
-    let held = between.opening_at(0.0).expect("a door opens");
+    let Some(Focus::Door(held, _)) = between.focus(0.0) else {
+        panic!("a door opens")
+    };
     assert_eq!(held, rect(180.0, 140.0, 40.0, 20.0));
 }
 
 #[test]
 fn a_door_that_closes_takes_its_parts_back_inside_it() {
     let (shut, open) = door_and_frame();
-    let between = Between::new(&open, &shut, (0.0, 0.0), &PHASES);
+    let between = Between::carry(&open, &shut, (0.0, 0.0), &PHASES);
     let early = between.at(0.2);
-    let part = drawing(&early, "p")[0];
+    let part = drawing(&early.0, "p")[0];
     assert!(
         part.transform
             .and_then(|moved| moved.scale)
             .is_some_and(|scale| scale < 1.0)
     );
-    assert!(between.opening_at(0.5).is_none(), "no door opens");
+    assert!(between.focus(0.5).is_none(), "no door opens");
 }

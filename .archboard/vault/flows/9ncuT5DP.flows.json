@@ -1868,25 +1868,25 @@
       "summary": "When a tab's last chat closes, a grace period lets a reload return to its conversation and approvals. If none returns, the server ends the session, cancels its approvals and unloads its threads.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+        "vKEsyHFk/9ncuT5DP#YiFwU6JS",
         "vKEsyHFk/9ncuT5DP#hCKEBd5f",
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#iay14AUl",
         "vKEsyHFk/9ncuT5DP#QGVPyMwG",
         "vKEsyHFk/9ncuT5DP#YxDrzJtI",
-        "vKEsyHFk/9ncuT5DP#jylkTBp7",
-        "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+        "vKEsyHFk/9ncuT5DP#jylkTBp7"
       ],
       "steps": [
         {
           "id": "vKEsyHFk/9ncuT5DP#EPxYqowm",
           "from": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
-          "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
-          "label": "a socket closes and its tab is forgotten",
+          "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+          "label": "a socket closes; its connection releases its tab",
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
-            "symbol": "forgetTabSession"
+            "path": "packages/codex-realtime-voice/src/server/agent/services/connect.ts",
+            "symbol": "createVoiceConnector"
           }
         },
         {
@@ -1924,13 +1924,13 @@
                         {
                           "id": "vKEsyHFk/9ncuT5DP#r9HIC4rX",
                           "from": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
-                          "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
-                          "label": "a new socket names its tab",
+                          "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+                          "label": "a new socket connects and names its tab",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/workbench/src/server/panes/services/tab-sessions.ts",
-                            "symbol": "noteTabSession"
+                            "path": "packages/codex-realtime-voice/src/server/agent/services/connect.ts",
+                            "symbol": "createVoiceConnector"
                           }
                         },
                         {

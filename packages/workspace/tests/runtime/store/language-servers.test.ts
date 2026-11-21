@@ -94,28 +94,63 @@ test("a global file that cannot be read decides each language that the repositor
 
 test("setting a server keeps the file in language order without empty arguments, removing the last one deletes the file, and a file that cannot be read is never overwritten", () => {
 	rmSync(join(root, ".archboard"), { recursive: true });
-	setServer("repository", "rust", { command: "scripts/rust-analyzer", args: [] }, root);
+	const place = { root, cwd: root };
+	setServer("repository", "rust", { command: "scripts/rust-analyzer", args: [] }, place);
 	const written = setServer(
 		"repository",
 		"python",
 		{ command: "pyright-langserver", args: ["--stdio"] },
-		root,
+		place,
 	);
-	expect(written.file).toBe(repositoryFile);
+	expect(written).toMatchObject({ kind: "written", file: repositoryFile });
 	expect(readFileSync(repositoryFile, "utf8")).toBe(
 		`${JSON.stringify(
 			{
 				python: { command: "pyright-langserver", args: ["--stdio"] },
-				rust: { command: "scripts/rust-analyzer" },
+				rust: { command: "./scripts/rust-analyzer" },
 			},
 			null,
 			"\t",
 		)}\n`,
 	);
-	setServer("repository", "python", undefined, root);
-	setServer("repository", "rust", undefined, root);
+	setServer("repository", "python", undefined, place);
+	setServer("repository", "rust", undefined, place);
 	expect(existsSync(repositoryFile)).toBe(false);
 	writeFileSync(globalFile, "{");
-	expect(() => setServer("global", "c", { command: "clangd", args: [] })).toThrow(globalFile);
+	expect(() => setServer("global", "c", { command: "clangd", args: [] }, place)).toThrow(
+		globalFile,
+	);
 	expect(readFileSync(globalFile, "utf8")).toBe("{");
+});
+
+test("a command path is read from where it was typed: the repository file keeps it from the checkout root, the global file keeps it absolute", () => {
+	const typedIn = join(root, "src");
+	const server = (command: string) => ({ command, args: [] });
+	expect(
+		setServer("repository", "rust", server("../scripts/rust-analyzer"), { root, cwd: typedIn }),
+	).toMatchObject({ servers: { rust: { command: "./scripts/rust-analyzer" } } });
+	expect(setServer("repository", "c", server("clangd"), { root, cwd: typedIn })).toMatchObject({
+		servers: { c: { command: "clangd" } },
+	});
+	expect(setServer("global", "go", server("bin/gopls"), { root, cwd: typedIn })).toMatchObject({
+		servers: { go: { command: join(typedIn, "bin", "gopls") } },
+	});
+});
+
+test.each([
+	[
+		"an absolute path outside the checkout",
+		"/usr/bin/rust-analyzer",
+		() => "/usr/bin/rust-analyzer",
+	],
+	[
+		"a relative path outside the checkout",
+		"../bin/rust-analyzer",
+		() => join(scratch, "bin", "rust-analyzer"),
+	],
+	["the checkout root itself", "../checkout", () => root],
+])("the repository file holds no path to %s, and nothing is written", (_, command, absolute) => {
+	const answer = setServer("repository", "rust", { command, args: [] }, { root, cwd: root });
+	expect(answer).toEqual({ kind: "outside-checkout", absolute: absolute() });
+	expect(existsSync(repositoryFile)).toBe(false);
 });

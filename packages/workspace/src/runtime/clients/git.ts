@@ -172,10 +172,12 @@ function fulfilled<T>(result: PromiseSettledResult<T>): T {
 }
 
 /**
- * Capture one immutable view of the Git facts a top-level operation consumes.
+ * Capture one immutable view of the Git facts a top-level operation consumes: the root, the
+ * identity, and what the checkout has out. A detached HEAD has no branch, and a branch with no
+ * commits yet has no commit.
  * @param anyPath Any path inside the checkout.
  * @param options Cancellation.
- * @returns The root, identity, branch and commit, or undefined outside a repository.
+ * @returns The root, identity, branch and full commit id, or undefined outside a repository.
  */
 async function inspectCheckout(
 	anyPath: string,
@@ -189,8 +191,8 @@ async function inspectCheckout(
 	// no Git process is left running under a rejected inspection.
 	const [identityResult, branchResult, commitResult] = await Promise.allSettled([
 		repoIdentityAt(root, options),
-		optionalGit(root, ["rev-parse", "--abbrev-ref", "HEAD"], options),
-		optionalGit(root, ["rev-parse", "HEAD"], options),
+		optionalGit(root, ["symbolic-ref", "--quiet", "--short", "HEAD"], options),
+		optionalGit(root, ["rev-parse", "--quiet", "--verify", "HEAD"], options),
 	]);
 	const identity = fulfilled(identityResult);
 	const branch = fulfilled(branchResult);
@@ -201,32 +203,6 @@ async function inspectCheckout(
 		...(branch ? { branch } : {}),
 		...(commit ? { commit } : {}),
 	});
-}
-
-/** What a checkout has out: the branch it is on and the commit at HEAD, each absent when none. */
-interface CheckoutHead {
-	readonly branch?: string;
-	readonly commit?: string;
-}
-
-/**
- * The branch a checkout is on and the commit it has out. A detached HEAD has no branch, and a
- * branch with no commits yet has no commit.
- * @param root The checkout's root.
- * @param options Cancellation.
- * @returns The branch and the full commit id, each when there is one.
- */
-async function checkoutHead(
-	root: string,
-	options: InspectOptions = {},
-): Promise<Readonly<CheckoutHead>> {
-	const [branchResult, commitResult] = await Promise.allSettled([
-		optionalGit(root, ["symbolic-ref", "--quiet", "--short", "HEAD"], options),
-		optionalGit(root, ["rev-parse", "--quiet", "--verify", "HEAD"], options),
-	]);
-	const branch = fulfilled(branchResult);
-	const commit = fulfilled(commitResult);
-	return Object.freeze({ ...(branch ? { branch } : {}), ...(commit ? { commit } : {}) });
 }
 
 /** One entry of `git worktree list --porcelain`. */
@@ -411,7 +387,6 @@ async function worktreesOf(
 
 export {
 	worktreesOf,
-	checkoutHead,
 	existingDir,
 	repoRootOf,
 	repoIdentityAt,

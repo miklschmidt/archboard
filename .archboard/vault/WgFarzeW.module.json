@@ -1,0 +1,29 @@
+{
+  "order": 300,
+  "name": "Picture legend",
+  "kind": "function",
+  "responsibility": "Reads a picture's key back from its drawn scene: the appearance each subject was drawn with, and the distinct samples among them",
+  "description": "picture_legend(body) -> PictureLegend { subjects, kinds, relationships }, each an Applied appearance (Drawn and its icon). Every painter and the exported legend read the key here, so they cannot list different things (TASK-468).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/legend.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#WgFarzeW",
+  "parent": "vKEsyHFk#9gGvxWHp",
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "the drawn scene it reads the key from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/legend.rs",
+        "symbol": "picture_legend"
+      },
+      "id": "vKEsyHFk#li2dTnjZ",
+      "to": "vKEsyHFk#DP4ukgGR"
+    }
+  ]
+}

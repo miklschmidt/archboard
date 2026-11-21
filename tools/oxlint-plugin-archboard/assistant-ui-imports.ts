@@ -29,7 +29,7 @@ const ASSISTANT_UI_AUXILIARY_PACKAGES = new Set(["assistant-cloud", "assistant-s
 const ASSISTANT_UI_THREAD_OWNER = "thread";
 const ASSISTANT_UI_MARKDOWN_PACKAGE = "@assistant-ui/react-markdown";
 /** The ui area of the workbench package, in its source and in its tests. */
-const ASSISTANT_UI_AREAS = ["packages/workbench/src/ui", "packages/workbench/tests/ui"];
+const ASSISTANT_UI_AREAS = ["packages/agent-surfaces/src/ui", "packages/agent-surfaces/tests/ui"];
 /** The owners among the behavior folders above the role folder of a path. */
 const BEHAVIOR_OWNERS = new Set([ASSISTANT_UI_THREAD_OWNER, "assistant-runtime"]);
 const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
@@ -461,7 +461,7 @@ const assistantUiImports = createRule(
 		noDirectRadixImport:
 			"Do not import Radix directly from application source; use the repository's Base UI layer or an Archboard-owned semantic control.",
 		noAssistantUiOwner:
-			"Only the thread and assistant-runtime behaviors of packages/workbench/src/ui may import assistant-ui; move the import to its owning behavior and expose Archboard-owned behavior.",
+			"Only the thread and assistant-runtime behaviors of packages/agent-surfaces/src/ui may import assistant-ui; move the import to its owning behavior and expose Archboard-owned behavior.",
 		noAssistantUiNamedImport:
 			"assistant-ui imports must be named imports from the package root; remove the side-effect, dynamic, or require form.",
 		noAssistantUiDefault:

@@ -2,7 +2,8 @@
   "order": 25000,
   "name": "server-requests",
   "kind": "package",
-  "responsibility": "Every browser call to the server, each naming its vault",
+  "responsibility": "Every call between the browser and the server, each naming its vault: the browser's JSON requests, and the server's resolution of the vault a call names (ADR 0049)",
+  "description": "Four names: inVault, requestJson and strictReply for the browser, and resolveVault in ./server for the server. It moved from layer 0 to layer 3 for the server end, which reads the workspace's repository listing and vault layout (TASK-653.09).",
   "groups": [
     "packages"
   ],
@@ -12,12 +13,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#29kIWfHH",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

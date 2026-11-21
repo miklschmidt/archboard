@@ -1,4 +1,4 @@
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 
 /** The states of one vault: its current state and its proposals. */
 type VaultStates = Pick<Model, "manifest" | "proposals">;

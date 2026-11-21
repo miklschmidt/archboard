@@ -47,7 +47,7 @@ async function withLinkedDirectory(
  */
 async function failedStart(directory: string, executablePath: string, checkout: string) {
 	const agent = createVoiceAgent({
-		storage: { directory },
+		directory,
 		codex: { executablePath },
 		checkouts: [checkout],
 		instructions: { coordinator: "Coordinate.", workhorse: "Work." },

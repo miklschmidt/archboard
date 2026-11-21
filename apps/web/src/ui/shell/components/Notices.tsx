@@ -1,5 +1,5 @@
 import { Toaster, toast } from "sonner";
-import { shellClockMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import {
 	RiCloseLine,
 	RiErrorWarningLine,
@@ -9,19 +9,13 @@ import {
 import { useCallback, useEffect, useRef, type JSX } from "react";
 
 import { gitHubHttpsUrl, type CodeTargetNotice } from "@archboard/code-opener/opening";
-import { Alert, Button, buttonVariants, IconButton } from "@archboard/ui-kit/components";
+import { Alert, Button, IconButton } from "@archboard/ui-kit/components";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/shell/rules/contracts.ts";
 
 /** A 24px outline action with two-pixel corners. */
 const TOASTER_STYLE = { fontFamily: "var(--font-sans)", position: "absolute" } as const;
 
 const ACTION_CLASS = "rounded-chip font-medium";
-
-const LINK_BUTTON_CLASS = buttonVariants({
-	variant: "outline",
-	size: "xs",
-	className: ACTION_CLASS,
-});
 
 /** The id a `settings` code target action is reported with. */
 const SETTINGS_ACTION_ID = "settings";
@@ -68,10 +62,17 @@ function GitHubAction(props: GitHubActionProps): JSX.Element | null {
 		return null;
 	}
 	return (
-		<a href={href} target="_blank" rel="noopener noreferrer" className={LINK_BUTTON_CLASS}>
+		<Button
+			href={href}
+			target="_blank"
+			rel="noopener noreferrer"
+			variant="outline"
+			size="xs"
+			className={ACTION_CLASS}
+		>
 			{props.action.label}
 			<RiExternalLinkLine data-icon="inline-end" />
-		</a>
+		</Button>
 	);
 }
 
@@ -194,7 +195,7 @@ function Notices(props: NoticesProps): JSX.Element {
 				if (current.current.get(notice) === id) props.actions.dismissNotice(notice);
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
-				duration: isPersistent(notice) ? Infinity : shellClockMs("notice"),
+				duration: isPersistent(notice) ? Infinity : durationMs("shellClock.notice"),
 				onAutoClose: dismiss,
 				onDismiss: dismiss,
 			});

@@ -5,8 +5,6 @@
 
 use std::collections::BTreeMap;
 
-use serde::de::IntoDeserializer;
-use serde::de::value::{Error as ValueError, StrDeserializer};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -58,15 +56,6 @@ pub enum PaletteColor {
     Rose,
 }
 
-impl PaletteColor {
-    /// The colour a name names, if it is one of the palette's: read as the
-    /// contract reads it.
-    pub fn named(name: &str) -> Option<PaletteColor> {
-        let name: StrDeserializer<'_, ValueError> = name.into_deserializer();
-        PaletteColor::deserialize(name).ok()
-    }
-}
-
 /// Which way the picture a part opens lies from the picture it is drawn on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
@@ -104,14 +93,27 @@ pub struct NodeAppearance {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub type_color: Option<PaletteColor>,
-    /// The export name of its kind's icon.
-    pub icon: String,
+    /// The export name of the icon its kind asks for, when it asks for one.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub icon: Option<String>,
     /// What its kind is called.
     pub type_name: String,
-    /// The key of its kind in the vault's policy.
-    pub type_kind: String,
+    /// Its kind.
+    pub type_kind: TypeKind,
     /// Which way the picture it opens lies, or null when it opens none.
     pub drill: Option<DrillDirection>,
+}
+
+/// What kind a part is: a flowchart's flow, or a kind of the vault's policy.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum TypeKind {
+    /// A flowchart's flow: its frame's tab holds its heading and no kind.
+    Flow,
+    /// A kind of the vault's policy, by its key.
+    #[serde(untagged)]
+    Policy(String),
 }
 
 /// How a line is dashed.
@@ -188,14 +190,6 @@ pub enum JumpEnd {
     OutRight,
     /// Where the lines that stopped go on, drawn as a disc.
     In,
-}
-
-impl FlowchartShape {
-    /// Whether it is a step of the flow, which a reader picks: a decision or
-    /// a loop, and never a terminal or a jump.
-    pub fn is_step(self) -> bool {
-        matches!(self, FlowchartShape::Decision | FlowchartShape::Loop)
-    }
 }
 
 /// One card a flowchart draws as a shape, and its wrapped words.
@@ -366,16 +360,4 @@ pub struct PaintRequest {
     /// Each icon's path data, by its export name: every icon the picture's
     /// appearances name that the host has.
     pub icons: BTreeMap<String, Vec<String>>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::PaletteColor;
-
-    #[test]
-    fn names_a_palette_colour_as_the_contract_spells_it() {
-        assert_eq!(PaletteColor::named("fuchsia"), Some(PaletteColor::Fuchsia));
-        assert_eq!(PaletteColor::named("neutral"), None);
-        assert_eq!(PaletteColor::named("Rose"), None);
-    }
 }

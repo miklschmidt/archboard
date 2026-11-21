@@ -5,7 +5,7 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 // a read-only task writes nothing.
 
 import path from "node:path";
-import type { SemanticVariant } from "@archboard/model/legacy-board";
+import type { SemanticVariant } from "@archboard/model-contract";
 import {
 	checkoutOf,
 	namesVault,

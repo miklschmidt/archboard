@@ -3,7 +3,7 @@
   "name": "Code exports",
   "kind": "ui",
   "responsibility": "Lists a module's exports by kind on its About page, each with its findings and an Open code action",
-  "description": "Functions, classes with their public members, values and types each get a group. Each name shows its findings from the last code check, and a module with many names keeps its groups collapsed.",
+  "description": "Functions, classes with their public members, values and types each get a group. Each name shows its findings from the last code check, and a module with many names keeps its groups collapsed. Its query lives in its clients and reads the code check route's exports itself, cached under the vault's prefix from Model queries (TASK-653.14).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports"
@@ -15,10 +15,28 @@
     {
       "order": 900,
       "kind": "call",
-      "label": "the selected module's export names and lines",
+      "label": "its cache key under the vault",
       "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports/clients/code-exports.ts",
+        "symbol": "vaultQueryKey"
+      },
       "id": "vKEsyHFk#NqQSFaBz",
       "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "order": 910,
+      "kind": "http",
+      "label": "the selected module's export names and lines",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports/clients/code-exports.ts",
+        "symbol": "codeExportsQuery"
+      },
+      "id": "vKEsyHFk#274OGnTu",
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
     },
     {
       "order": 910,

@@ -1,8 +1,11 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
-import { fitIn } from "#shared/constants/shell-geometry.ts";
+import {
+	defaultSemanticPolicy,
+	type DiagramBox,
+	type VariantContent,
+} from "@archboard/model-contract";
+import { fit } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
@@ -17,9 +20,8 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
-import phone from "../../../../../../docs/design/wide-board-layout-fixtures/phone-ownership.content.json";
-import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import phone from "../../support/wide-boards/phone-ownership.content.json";
+import publicApi from "../../support/wide-boards/public-api-independent.content.json";
 
 /**
  * Whether a whole card fits inside its actual parent, including rounded SVG precision.
@@ -153,7 +155,7 @@ for (const fixture of [
 		// TASK-278 measured the baseline sizes and route totals.
 		// Improvement must exceed the corpus's two-percent size tolerance, not pin
 		// either engine's chosen coordinates or trade height for unusable width.
-		expect(fitIn(drawing)).toBeGreaterThan(fitIn(fixture) * 1.02);
+		expect(fit(drawing)).toBeGreaterThan(fit(fixture) * 1.02);
 		const measures = new Map(scorecardOf(drawing, content).map(({ name, value }) => [name, value]));
 		expect(measures.get("route length")).toBeLessThan(fixture.length);
 		expect(measures.get("crossings")).toBeLessThanOrEqual(fixture.crossings);

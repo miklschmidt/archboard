@@ -3,7 +3,7 @@
   "name": "archboard-paint",
   "kind": "package",
   "responsibility": "Draws a typed scene on a canvas and works out every move from one picture to the next, as plain Rust with no DOM and no GPU of its own",
-  "description": "One Canvas trait serves Vello on WebGPU, Vello GPU on WebGL2 and Vello on the CPU, so all three run the same walk over the scene (ADR 0071, ADR 0074). The WebGPU canvas keeps a settled part as an encoded scene. The keeper of the parts module keeps one for both strip canvases as its drawing calls with each stroke's outline, and a frame draws only the kept shapes it can see. The in-between of two scenes is a pure function of the scenes and a progress value, so Rust tests own it. A host tells the stage what changed and what time it is, and asks for frames.",
+  "description": "One Canvas trait of nine operations serves Vello on WebGPU, Vello GPU on WebGL2 and Vello on the CPU, so all three run the same walk over the scene (ADR 0071, ADR 0074). push(Layer) starts a layer laid over the one under it, a cut or a keep, and pop ends it. The WebGPU canvas keeps a settled part as an encoded scene; for both strip canvases the stage keeps the parts in its own store when a draw asks for strips, and a frame draws only the kept shapes it can see. The in-between of two scenes is a pure function of the scenes and a progress value, so Rust tests own it. A host states how the picture is seen, which picture arrives and which departs, and asks the stage for frames at moments of the stage's own clock (ADR 0085). Its tests read frames from a recording canvas; the counting canvas that a measurement draws on belongs to the WebAssembly painter.",
   "groups": [
     "drawing"
   ],
@@ -13,9 +13,9 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#NFwqWgrm",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Painter core"
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": []
 }

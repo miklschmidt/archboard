@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import {
+	defaultSemanticPolicy,
+	type DiagramBox,
+	type VariantContent,
+} from "@archboard/model-contract";
 import { renderSemanticView } from "#runtime/bun-renderer/operations/render.ts";
 import { SemanticRenderError } from "#shared/protocol/render-request.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** One edit: a decision on the lease, its "no" side writing each variant in a loop. */
 const BRANCHING: VariantContent = orderedFixture({

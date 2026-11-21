@@ -2,7 +2,8 @@
   "order": 36000,
   "name": "workbench",
   "kind": "package",
-  "responsibility": "Archboard's host of the voice package: model context, domain tools, narration, pane routing, and the visual workbench shell",
+  "responsibility": "Archboard's host of the voice package on the server: model context, domain tools, narration, the panes (registry, rules, routes, socket, registry follow, agent activity) and explanations",
+  "description": "The server half is seven operations in ./server: mountWorkbenchRoutes(app, hooks), acceptPaneSocket(ws, req, vault), followRegistry(), prepareWorkbench(signal, address), closeBrowserOwners(accepted), stopWorkbench() and admittedClientCount(); ./browser-contract keeps shownConversationPath and the two explanation schemas. ./panes and ./host are gone (TASK-653.09). The workbench owns the registry follow with its watch private (started last in prepare, closed first at stop), the agent activity (private), the explanation routes, and write observation as the mount's first middleware on /api/architecture. stopWorkbench shares one stop per application generation: it disposes the activity before the shutdown and clears that generation's memories and wiring in finally. The server lends requireVault, vaultOfRequest, statedVault, its mutation lease, its refusal status and { port, httpUrl } through WorkbenchHooks, and passes the sockets it accepted to closeBrowserOwners.",
   "groups": [
     "agent",
     "packages"
@@ -13,12 +14,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

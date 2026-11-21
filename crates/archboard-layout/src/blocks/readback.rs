@@ -3,12 +3,12 @@
 //! nodes around their members with their title rows, and the regions as rows
 //! on the block's root, the shape the track scene reads.
 
-use crate::ecma::{abs, js_min};
+use crate::constants::HEADER_PADDING;
+use crate::ecma::{abs, min};
 use crate::geometry::{Point, Rect};
 use crate::placed::{PlacedNode, PlacedRegion};
 use crate::track::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
 use crate::track::scene::Map;
-use archboard_scene::paint::design::header_words_width;
 
 use super::clusters::{Clusters, NODE_GAP, title_of};
 use super::laid::Size;
@@ -120,8 +120,8 @@ impl Clusters<'_> {
             boxes.insert(
                 id.clone(),
                 Rect {
-                    x: js_min(x1, x2) - origin.x,
-                    y: js_min(y1, y2) - origin.y,
+                    x: min([x1, x2]) - origin.x,
+                    y: min([y1, y2]) - origin.y,
                     width: abs(x2 - x1),
                     height: abs(y2 - y1),
                 },
@@ -141,7 +141,7 @@ impl Clusters<'_> {
             width: cluster.header.width,
             centre: centres[title_of(&cluster.id).as_str()].y,
             height: cluster.header.height,
-            words: header_words_width(cluster.header.width),
+            words: cluster.header.width - HEADER_PADDING,
             steps: cluster.header.steps.as_deref(),
         };
         PlacedNode {

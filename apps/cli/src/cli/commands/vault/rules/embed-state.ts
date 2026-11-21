@@ -15,7 +15,7 @@ import type {
 	EmbedsPart,
 	EmbedVault,
 } from "#cli/commands/vault/protocol/embeds-answer.ts";
-import { readRenderRecipe } from "@archboard/renderer/recipe";
+import { readRenderRecipe } from "@archboard/render-recipe";
 type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe" }>["recipe"];
 
 /**

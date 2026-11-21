@@ -14,11 +14,11 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import { projectModel, projectFlow } from "@archboard/model/content";
+import { projectFlow, projectModel } from "@archboard/model-rules";
+import { readArchitectureModel } from "@archboard/model-store";
+import { modelShape } from "@archboard/model-contract";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { fitIn } from "@archboard/renderer/shell-geometry";
+import { fit } from "@archboard/renderer/shell-geometry";
 /** One drawing under one engine. */
 interface Drawn {
 	readonly engine: string;
@@ -39,8 +39,8 @@ interface Drawing {
 const vault = process.argv[2] ?? ".archboard/vault";
 const out = process.argv[3] ?? mkdtempSync(join(tmpdir(), "archboard-engine-gallery-"));
 const engines = z
-	.array(layoutEngineSchema())
-	.parse(process.argv[4]?.split(",") ?? layoutEngineSchema().options);
+	.array(modelShape("layoutEngine"))
+	.parse(process.argv[4]?.split(",") ?? modelShape("layoutEngine").options);
 mkdirSync(out, { recursive: true });
 
 /**
@@ -97,7 +97,7 @@ for (const reading of readings) {
 			ms: Math.round(performance.now() - started),
 			width,
 			height,
-			fit: fitIn({ width, height }),
+			fit: fit({ width, height }),
 		});
 	}
 	drawings.push({ model: model.manifest.name, view: reading.name, drawn });

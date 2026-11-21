@@ -2,7 +2,8 @@
   "order": 24000,
   "name": "ui-kit",
   "kind": "package",
-  "responsibility": "Composite presentation components the web app, the workbench and the code opener draw with",
+  "responsibility": "The shared composite components the web app, the workbench and the code opener draw with",
+  "description": "Layer 0, @archboard/ui-kit, one entry ./components of width 20 (ceiling 21 with the type DialogError): Alert, Badge, Button, Command, Dialog, DropdownMenu, Field, IconButton, Input, InputGroup, Popover, RepositoryName, Select, Separator, Tabs, ToggleGroup, Tooltip, cn, usesCommandKey and shownRepository (TASK-653.17, a split by job, not depth). The frame clock and time as text are ui-clocks; fullscreen presentation is the web app's application state; a registry item with one caller and no shared dependent lives beside it (ADR 0093): Resizable in the shell's columns, Checkbox beside SemanticChanges, RadioGroup beside OpenerChoiceGroup. The next component two modules draw comes back here.",
   "groups": [
     "packages"
   ],
@@ -12,12 +13,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

@@ -1,6 +1,6 @@
 import type { SessionThread } from "@archboard/codex-app-server/session";
 import type { GeneralThreadToolName } from "#runtime/thread-tools/protocol/manifest.ts";
-import { isCodexThreadStatusType } from "@archboard/codex-app-server/contract";
+import { codexFieldSchema } from "@archboard/codex-app-server/contract";
 
 type DynamicToolName = GeneralThreadToolName;
 const DYNAMIC_MUTATION_TOOL_NAMES = [
@@ -103,7 +103,7 @@ function isDynamicEpochState(value: unknown): value is DynamicEpochState {
  * @returns Whether the value is a thread status type.
  */
 function isDynamicStatus(value: unknown): value is DynamicStatus {
-	return isCodexThreadStatusType(value);
+	return codexFieldSchema("threadStatusType").safeParse(value).success;
 }
 
 /**

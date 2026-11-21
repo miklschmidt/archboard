@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { createDynamicAuthorityTokenIssuer } from "#runtime/dynamic-tools/authority/rules/authority-token.ts";
 import { createServerDynamicOperationIdAdapter } from "#server/generation/services/operation-lifecycle.ts";
 import { presentingPane } from "#server/pane/rules/presenting-pane.ts";
@@ -48,7 +48,7 @@ test("the production dynamic authority token issuer retires exact opaque capabil
 });
 
 test("the production operation adapter shares authority and terminalizes exactly once", () => {
-	const authorities = createIdentityAuthorities();
+	const authorities = testAuthorities();
 	const adapter = createServerDynamicOperationIdAdapter(authorities.operation);
 	const operationId = adapter.issueCanonicalOperationId();
 

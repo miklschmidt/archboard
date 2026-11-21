@@ -1,7 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
+import { defaultSemanticPolicy, modelShape } from "@archboard/model-contract";
 import parentReturn from "#tests/runtime/support/fixtures/parent-return.json";
 import reservedCorner from "#tests/runtime/support/fixtures/reserved-label-corner.json";
 import reservedLane from "#tests/runtime/support/fixtures/reserved-label-lane.json";
@@ -18,7 +18,6 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /** The room a line's words keep from a card: archboard_layout::constants::LABEL_CARD_CLEARANCE. */
 const LABEL_CARD_CLEARANCE = 16;
@@ -35,7 +34,7 @@ const AIR = { blocks: PLANNED_LABEL_CARD_CLEARANCE, track: LABEL_CARD_CLEARANCE 
 const LABEL_AIR = LABEL_LABEL_CLEARANCE;
 
 test.each(
-	layoutEngineSchema().options.flatMap((layout) =>
+	modelShape("layoutEngine").options.flatMap((layout) =>
 		[false, true].map((nested) => [nested, layout] as const),
 	),
 )(
@@ -217,7 +216,7 @@ test("a response from a child keeps its label on the return route", async () => 
 
 // Reduced from Diagram presentation components: a driver into the child
 // makes Graphviz rank the response label beyond both ends of the return route.
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"a driven child's response reserves a label run between its endpoints (%s)",
 	async (layout) => {
 		const content = orderedFixture({

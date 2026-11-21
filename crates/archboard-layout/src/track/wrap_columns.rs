@@ -6,7 +6,7 @@
 //! line's ends, where no column lets the line drop straight past it, steps
 //! aside by the least that opens one, at most a few lanes.
 
-use crate::ecma::{abs, js_max, js_min, sorted_by};
+use crate::ecma::{abs, max, min, sorted_by};
 use crate::geometry::Rect;
 use crate::track::chains::{FACE_MARGIN, LANE};
 use crate::track::graphviz::{Columns, Join, Wrap};
@@ -28,21 +28,21 @@ fn hollow(name: &str) -> bool {
 /// Where a line may meet an item straight.
 fn reach(columns: &Columns<'_, '_>, name: &str) -> (f64, f64) {
     let at = columns.boxes[name];
-    let margin = js_min(
+    let margin = min([
         if name.starts_with("label:") {
             LANE
         } else {
             FACE_MARGIN
         },
         at.width / 2.0,
-    );
+    ]);
     (at.x + margin, at.x + at.width - margin)
 }
 
 /// Where both ends of a line may meet it straight, if anywhere.
 fn common(columns: &Columns<'_, '_>, join: &Join) -> Option<(f64, f64)> {
     let ((a, b), (c, d)) = (reach(columns, &join.tail), reach(columns, &join.head));
-    let (low, high) = (js_max(a, c), js_min(b, d));
+    let (low, high) = (max([a, c]), min([b, d]));
     (low <= high).then_some((low, high))
 }
 
@@ -206,8 +206,8 @@ fn shifts_aside(columns: &Columns<'_, '_>, join: &Join, card: &str) -> Vec<f64> 
         .into_iter()
         .flat_map(|(low, high)| {
             [
-                js_max(low, high - LANE) - LANE - (at.x + at.width),
-                js_min(high, low + LANE) + LANE - at.x,
+                max([low, high - LANE]) - LANE - (at.x + at.width),
+                min([high, low + LANE]) + LANE - at.x,
             ]
         })
         .filter(|shift| abs(*shift) >= 0.5 && abs(*shift) <= STEP_ASIDE)

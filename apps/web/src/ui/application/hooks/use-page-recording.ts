@@ -5,11 +5,12 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 
+import { useAgentVoice } from "@archboard/agent-surfaces";
+
 import type { Narration } from "#ui/application/hooks/use-narration.ts";
-import type { PaneOverlay, PaneRecording } from "#ui/application/hooks/use-pane-views.ts";
+import type { PaneRecording } from "#ui/application/hooks/use-pane-views.ts";
 import type { PaneList } from "#ui/application/rules/pane-list.ts";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/application/state/pane-handles.ts";
-import type { Workbench } from "#ui/application/hooks/use-workbench.ts";
 import type { WorkspaceAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import { paneAddressOf } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { openWalkthroughRecorder } from "#ui/walkthroughs/recording/clients/open-recorder.ts";
@@ -48,7 +49,6 @@ function recordedMedia(
 /** What the panes are given that depends on whether the page is a recording. */
 interface RecordedViews {
 	readonly narration: Narration | null;
-	readonly overlay: PaneOverlay | null;
 	readonly recording: PaneRecording | null;
 }
 
@@ -56,26 +56,24 @@ interface RecordedViews {
  * What a recording gives its pane, kept in step with the server's agent and voice. A recording is
  * not narrated by hand; its subtitles are the page's own.
  * @param recorder The page's recorder, or null.
- * @param workbench The workbench.
- * @param usual The narration and the subtitles the page gives its panes.
+ * @param paneId The pane the page records: its first.
+ * @param narration The narration the page offers its panes.
  * @returns What the panes are given.
  */
 function useRecordedViews(
 	recorder: WalkthroughRecorder | null,
-	workbench: Workbench,
-	usual: Omit<RecordedViews, "recording">,
+	paneId: string,
+	narration: Narration,
 ): RecordedViews {
-	const view = useWalkthroughRecording(recorder, {
-		setup: workbench.setup,
-		voice: workbench.voice,
-	});
-	const { narration, overlay } = usual;
+	const voice = useAgentVoice();
+	const sources = useMemo(() => ({ voice, paneId }), [voice, paneId]);
+	const view = useWalkthroughRecording(recorder, sources);
 	return useMemo(
 		() =>
 			recorder === null
-				? { narration, overlay, recording: null }
-				: { narration: null, overlay, recording: { ...view, onReading: recorder.reading } },
-		[recorder, view, narration, overlay],
+				? { narration, recording: null }
+				: { narration: null, recording: { ...view, onReading: recorder.reading } },
+		[recorder, view, narration],
 	);
 }
 

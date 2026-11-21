@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { projectModel, type Model } from "@archboard/model/content";
-import { modelDrawingQuery } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
+import { projectModel, type Model } from "@archboard/model-rules";
+import { modelDrawingQuery } from "#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts";
 import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import {
 	useDive,

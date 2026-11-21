@@ -10,7 +10,8 @@ import path from "node:path";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type { CodeTargetOpenRequest } from "#shared/schemas/code-target-open.ts";
-import { checkoutsReadFrom, isPathWithin } from "@archboard/code-binding/resolution";
+import { isPathWithin } from "@archboard/code-binding/resolution";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 
 /** The binding a named file would be, or why it has none. */
 type NamedPathBinding =
@@ -55,7 +56,7 @@ function namedPathBinding(vault: string, named: string): NamedPathBinding {
 	// A checkout can hold another, as a worktree in the directory of its main checkout does,
 	// so the innermost checkout holds the file.
 	const holder = checkoutsReadFrom(vault)
-		.flatMap((entry) => {
+		.checkouts.flatMap((entry) => {
 			const root = realpathOf(entry.root);
 			return root !== undefined && isPathWithin(root, target) ? [{ repo: entry.repo, root }] : [];
 		})
@@ -83,7 +84,7 @@ function repositoryPathBinding(
 	request: Extract<CodeTargetOpenRequest, { repo: string }>,
 ): NamedPathBinding {
 	const { repo, path: named, symbol } = request;
-	if (!checkoutsReadFrom(vault).some((entry) => entry.repo === repo)) {
+	if (!checkoutsReadFrom(vault).checkouts.some((entry) => entry.repo === repo)) {
 		return {
 			ok: false,
 			code: "TARGET_OUTSIDE_CHECKOUT",

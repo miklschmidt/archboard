@@ -1,4 +1,4 @@
-// Time the painters on one picture of a corpus (docs/design/painter-webgl-fallback.md).
+// Time the painters on one picture of a corpus.
 // A page paints the picture under a moving camera for a number of frames and
 // reports the gap between frames, the time of each frame, and how much of it
 // drew on the canvas and how much rendered. A strip canvas cuts its strips
@@ -92,13 +92,12 @@ try {
 	let painter;
 	if (kind === "gpu") {
 		await Painter.warm(() => {});
-		painter = Painter.gpu(canvas, fixture.dark);
-	} else if (kind === "webgl") painter = Painter.webgl(canvas, fixture.dark);
-	else painter = Painter.cpu(canvas, fixture.dark);
+		painter = Painter.gpu(canvas, fixture.dark, "{}");
+	} else if (kind === "webgl") painter = Painter.webgl(canvas, fixture.dark, "{}");
+	else painter = Painter.cpu(canvas, fixture.dark, "{}");
 	const startMs = performance.now() - started;
-	painter.show(fixture.painting);
-	painter.setFarLine(0, 0);
-	painter.setTrafficShown(false);
+	painter.arrive(fixture.painting, JSON.stringify({ kind: "cut" }));
+	painter.present(JSON.stringify({ farLine: { scale: 0, ms: 0 }, trafficShown: false }));
 	const fit = Math.min(width / fixture.width, height / fixture.height);
 	const camera = (index) => {
 		const scale = fit * (1 + 0.6 * (0.5 - 0.5 * Math.cos((2 * Math.PI * index) / 240)));

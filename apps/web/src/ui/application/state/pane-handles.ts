@@ -1,36 +1,30 @@
 // The imperative handles the application keeps outside React state: each
-// pane's session, reported by its `ApplicationPane`, and the browser media
-// owner that follows the pane's workbench transport generations. Nothing
+// pane's session, reported by its `ApplicationPane`, and the socket
+// conversation that pane's session attaches to each of its sockets. Nothing
 // renders from these; actions read them when a person acts.
 
 import {
-	createBrowserWorkbenchMediaOwner,
-	type BrowserWorkbenchMediaOwner,
-	type BrowserWorkbenchTransport,
-} from "@archboard/codex-realtime-voice/controllers";
-import type { PaneSession as SessionOf } from "#ui/panes/pane-session/rules/session-contracts.ts";
+	createSocketConversation,
+	type SocketConversation,
+	type SocketConversationOptions,
+} from "@archboard/codex-realtime-voice/browser";
+import type { PaneSession } from "#ui/panes/pane-session/rules/session-contracts.ts";
 
-/** The session of one pane, over the production transport. */
-type PaneSession = SessionOf<BrowserWorkbenchTransport>;
-
-/** What every pane's media owner is made with. */
-type BrowserWorkbenchMediaOwnerOptions = NonNullable<
-	Parameters<typeof createBrowserWorkbenchMediaOwner>[0]
->;
+/** Where every pane's voice is played and heard. */
+type BrowserWorkbenchMediaOwnerOptions = NonNullable<SocketConversationOptions["media"]>;
 
 /** The handles by pane id. */
 class PaneHandles {
 	readonly #sessions = new Map<string, PaneSession>();
-	readonly #media = new Map<string, BrowserWorkbenchMediaOwner>();
-	readonly #mediaOptions: BrowserWorkbenchMediaOwnerOptions;
+	readonly #conversations = new Map<string, SocketConversation>();
+	readonly #media: BrowserWorkbenchMediaOwnerOptions;
 
 	/**
-	 * The handles, with how each pane's media is made.
-	 * @param mediaOptions What every pane's media owner is made with: where a recording page
-	 *   (TASK-304) hears the voice, and nothing otherwise.
+	 * The handles, with where each pane's voice is played and heard.
+	 * @param media Where a recording page (TASK-304) hears the voice, and nothing otherwise.
 	 */
-	constructor(mediaOptions: BrowserWorkbenchMediaOwnerOptions = {}) {
-		this.#mediaOptions = mediaOptions;
+	constructor(media: BrowserWorkbenchMediaOwnerOptions = {}) {
+		this.#media = media;
 	}
 
 	/**
@@ -58,26 +52,26 @@ class PaneHandles {
 	setSession(paneId: string, session: PaneSession | null): void {
 		if (session === null) {
 			this.#sessions.delete(paneId);
-			// The session disposed the socket owner, which disposed the media.
-			this.#media.delete(paneId);
+			// The session disposed the pane's conversation.
+			this.#conversations.delete(paneId);
 			return;
 		}
 		this.#sessions.set(paneId, session);
 	}
 
 	/**
-	 * The media owner that follows a pane's transport generations, created on
-	 * first use. The pane's socket owner disposes it when the pane closes.
+	 * The socket conversation of a pane, created on first use. The pane's session disposes it
+	 * when the pane closes.
 	 * @param paneId The pane.
-	 * @returns The media owner.
+	 * @returns The conversation.
 	 */
-	media(paneId: string): BrowserWorkbenchMediaOwner {
-		const existing = this.#media.get(paneId);
+	conversation(paneId: string): SocketConversation {
+		const existing = this.#conversations.get(paneId);
 		if (existing !== undefined) {
 			return existing;
 		}
-		const created = createBrowserWorkbenchMediaOwner(this.#mediaOptions);
-		this.#media.set(paneId, created);
+		const created = createSocketConversation({ chatId: paneId, media: this.#media });
+		this.#conversations.set(paneId, created);
 		return created;
 	}
 }

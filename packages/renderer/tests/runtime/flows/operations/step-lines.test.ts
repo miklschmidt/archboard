@@ -5,10 +5,9 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // keyed by the step's id lands on its line.
 
 import { describe, expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, type VariantContent } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const NODES = [
 	{ id: "sh", name: "Shell", kind: "external", responsibility: "Invokes the command" },

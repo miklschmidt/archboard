@@ -3,21 +3,21 @@
 //! a loop's condition), so it is drawn whole under the message it qualifies,
 //! never cut, and the message's row grows to hold it.
 
+use archboard_geometry::{Point, Rect};
+use archboard_painting::{MessagePlate, activation_span, message_plate, note_plate, self_loop};
 use archboard_scene::drawing::TextRun;
-use archboard_scene::geometry::Rect;
-use archboard_scene::js;
-use archboard_scene::request::WordLine;
 
 use crate::content::{Flow, Message, MessageKind, messages_of};
 use crate::sequence::design::{
-    ACTIVATION_HALF_WIDTH, COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_LINE_STEP, MESSAGE_PITCH,
-    NOTE_SIZE, PILL_PADDING_X, PILL_TEXT_SIZE, SELF_LABEL_GAP, SELF_LOOP_EXTENT,
-    SELF_MESSAGE_PITCH, STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH,
-    STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TEXT_LINE_HEIGHT,
+    COLUMN_GAP, LABEL_BAR_CLEARANCE, MESSAGE_PITCH, SELF_LABEL_GAP, SELF_MESSAGE_PITCH,
+    STEP_NOTE_GAP, STEP_NOTE_INSET, STEP_NOTE_MAX_WIDTH, STEP_NOTE_MIN_WIDTH,
 };
 
-/// `Number.MAX_SAFE_INTEGER`: the width of a line nothing stands beside.
-const UNBOUNDED: f64 = 9_007_199_254_740_991.0;
+/// How far a busy column's bar reaches either side of its lifeline: the room
+/// a label or a note keeps clear of it.
+fn bar_reach() -> f64 {
+    activation_span(0.0).width / 2.0
+}
 
 /// A step's note, placed under its message.
 #[derive(Clone, Debug)]
@@ -46,11 +46,11 @@ pub(super) struct ColumnBounds {
     pub last_centre: f64,
 }
 
-/// A message's words as drawn: their lines, and where a long hop centres them.
+/// A message's words as drawn: their plate, and where a long hop centres them.
 #[derive(Clone, Debug)]
 pub(super) struct MessageWords {
-    /// Every line, whole, with its painted width.
-    pub lines: Vec<WordLine>,
+    /// Every line, whole, with its painted width, on its plate.
+    pub plate: MessagePlate,
     /// The x a crossing message's plate is centred on; a self-message's plate
     /// starts at its loop.
     pub centre: Option<f64>,
@@ -58,7 +58,7 @@ pub(super) struct MessageWords {
 
 /// Whether a note says anything.
 fn has_words(note: Option<&str>) -> bool {
-    note.is_some_and(|note| !js::trim(note).is_empty())
+    note.is_some_and(|note| !archboard_ecma::trim(note).is_empty())
 }
 
 /// One note measured against the narrowest readable corridor: its plate's
@@ -67,19 +67,10 @@ fn minimum_note_width(note: Option<&str>) -> f64 {
     let Some(note) = note.filter(|note| has_words(Some(note))) else {
         return 0.0;
     };
-    let lines = archboard_scene::note_lines(
-        note,
-        STEP_NOTE_MIN_WIDTH - STEP_NOTE_PADDING_X * 2.0,
-        NOTE_SIZE,
-        NOTE_SIZE * TEXT_LINE_HEIGHT,
-    );
-    let painted = lines
-        .iter()
-        .fold(0.0, |painted, line| js::js_max(painted, line.width));
-    js::js_max(
+    archboard_ecma::max([
         STEP_NOTE_MIN_WIDTH,
-        painted.ceil() + STEP_NOTE_PADDING_X * 2.0,
-    )
+        note_plate(note, STEP_NOTE_MIN_WIDTH).width,
+    ])
 }
 
 /// The column width that leaves every note a readable corridor, or zero when
@@ -88,22 +79,22 @@ pub(super) fn required_note_column_width(flows: &[Flow]) -> f64 {
     let mut width: f64 = 0.0;
     for flow in flows {
         for step in messages_of(&flow.steps) {
-            width = js::js_max(width, minimum_note_width(step.note.as_deref()));
+            width = archboard_ecma::max([width, minimum_note_width(step.note.as_deref())]);
         }
     }
     if width == 0.0 {
         0.0
     } else {
-        width + (ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET) * 2.0 - COLUMN_GAP
+        width + (bar_reach() + STEP_NOTE_INSET) * 2.0 - COLUMN_GAP
     }
 }
 
 /// Where a note's leading edge goes: in the next corridor, or the previous one
 /// for a self-message on the last column.
 fn note_anchor(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> f64 {
-    let inset = ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET;
+    let inset = bar_reach() + STEP_NOTE_INSET;
     if step.kind != MessageKind::Myself {
-        return js::js_min(ends.from_x, ends.to_x) + inset;
+        return archboard_ecma::min([ends.from_x, ends.to_x]) + inset;
     }
     if ends.from_x == bounds.last_centre && bounds.first_centre != bounds.last_centre {
         return ends.from_x - bounds.pitch + inset;
@@ -120,39 +111,35 @@ pub(super) fn place_note(
 ) -> Option<PlacedNote> {
     let note = step.note.as_deref().filter(|note| has_words(Some(note)))?;
     let myself = step.kind == MessageKind::Myself;
-    let inset = ACTIVATION_HALF_WIDTH + STEP_NOTE_INSET;
+    let inset = bar_reach() + STEP_NOTE_INSET;
     let corridor_width = bounds.pitch - inset * 2.0;
-    let wrap_width = js::min([
+    let wrap_width = archboard_ecma::min([
         bounds.right - bounds.left,
         STEP_NOTE_MAX_WIDTH,
-        js::js_max(STEP_NOTE_MIN_WIDTH, (ends.to_x - ends.from_x).abs()),
+        archboard_ecma::max([STEP_NOTE_MIN_WIDTH, (ends.to_x - ends.from_x).abs()]),
         corridor_width,
     ]);
-    let line_height = NOTE_SIZE * TEXT_LINE_HEIGHT;
-    let lines = archboard_scene::note_lines(
-        note,
-        wrap_width - STEP_NOTE_PADDING_X * 2.0,
-        NOTE_SIZE,
-        line_height,
-    );
-    // The painted width wins over the wrap width, as on a card: whole-line
-    // kerning can run a hair past the measure, and no word is cut to fit.
-    let widest = lines
-        .iter()
-        .fold(0.0, |widest, run| js::js_max(widest, run.width));
-    let width = widest.ceil() + STEP_NOTE_PADDING_X * 2.0;
-    let drop = if myself { SELF_LOOP_EXTENT } else { 0.0 };
+    let plate = note_plate(note, wrap_width);
+    let drop = if myself {
+        self_loop(Point {
+            x: ends.from_x,
+            y: ends.y,
+        })
+        .height
+    } else {
+        0.0
+    };
     Some(PlacedNote {
         bounds: Rect {
-            x: js::js_max(
+            x: archboard_ecma::max([
                 bounds.left,
-                js::js_min(note_anchor(step, ends, bounds), bounds.right - width),
-            ),
+                archboard_ecma::min([note_anchor(step, ends, bounds), bounds.right - plate.width]),
+            ]),
             y: ends.y + drop + STEP_NOTE_GAP,
-            width,
-            height: lines.len() as f64 * line_height + STEP_NOTE_PADDING_Y * 2.0,
+            width: plate.width,
+            height: plate.height,
         },
-        lines,
+        lines: plate.lines,
     })
 }
 
@@ -164,21 +151,21 @@ pub(super) fn place_note(
 /// self-message's plate runs from its loop to the next column; on the last
 /// column nothing stands to its right.
 fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Option<f64>) {
-    let clear = ACTIVATION_HALF_WIDTH + LABEL_BAR_CLEARANCE;
+    let clear = bar_reach() + LABEL_BAR_CLEARANCE;
     if step.kind == MessageKind::Myself {
         let last = ends.from_x >= bounds.last_centre;
         let width = if last {
             f64::INFINITY
         } else {
-            bounds.pitch - clear - ACTIVATION_HALF_WIDTH - SELF_LABEL_GAP
+            bounds.pitch - clear - bar_reach() - SELF_LABEL_GAP
         };
         return (width, None);
     }
-    let hops = js::js_max(
+    let hops = archboard_ecma::max([
         1.0,
-        js::round((ends.to_x - ends.from_x).abs() / bounds.pitch),
-    );
-    let direction = js::sign(ends.to_x - ends.from_x);
+        archboard_ecma::round((ends.to_x - ends.from_x).abs() / bounds.pitch),
+    ]);
+    let direction = archboard_ecma::sign(ends.to_x - ends.from_x);
     (
         bounds.pitch - clear * 2.0,
         Some(ends.from_x + direction * (((hops - 1.0) / 2.0).floor() + 0.5) * bounds.pitch),
@@ -188,18 +175,8 @@ fn room_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> (f64, Op
 /// A message's words, wrapped to the room its plate has.
 pub(super) fn words_for(step: &Message, ends: MessageEnds, bounds: ColumnBounds) -> MessageWords {
     let (width, centre) = room_for(step, ends, bounds);
-    let limit = if width.is_finite() {
-        width - PILL_PADDING_X * 2.0
-    } else {
-        UNBOUNDED
-    };
     MessageWords {
-        lines: archboard_scene::message_lines(
-            &step.drawn_label(),
-            limit,
-            PILL_TEXT_SIZE,
-            MESSAGE_LINE_STEP,
-        ),
+        plate: message_plate(&step.drawn_label(), width),
         centre,
     }
 }

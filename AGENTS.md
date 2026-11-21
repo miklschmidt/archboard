@@ -8,14 +8,10 @@ Where things are written down:
 - Who archboard serves and the rules every surface keeps: [PRODUCT.md](PRODUCT.md)
 - Running it and making sure that it works: [TESTING.md](TESTING.md). Installing it elsewhere:
   [INSTALL.md](INSTALL.md)
-- Domain language: [CONTEXT.md](CONTEXT.md). Module layout and import rules:
-  [docs/agents/boundaries.md](docs/agents/boundaries.md)
-- Changing frontend code: [docs/agents/frontend.md](docs/agents/frontend.md)
+- Domain language: [CONTEXT.md](CONTEXT.md)
 - The advisors that stand in for the owner at design gates: [docs/agents/advisors.md](docs/agents/advisors.md)
 - Decisions: [docs/adr/](docs/adr/). Read the ADR before you touch what it decides.
-- Measured investigations: [docs/design/](docs/design/). The visual authority of the UI is
-  [DESIGN.md](DESIGN.md).
-- Writing tests, and changing tests or CI: [docs/agents/test-suite.md](docs/agents/test-suite.md)
+- The visual authority of the UI: [DESIGN.md](DESIGN.md).
 - Building and publishing a release on npm: [docs/agents/releasing.md](docs/agents/releasing.md)
 - Refreshing the README's diagrams, clips, banner and videos:
   [docs/agents/readme-assets.md](docs/agents/readme-assets.md)

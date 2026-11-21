@@ -1,0 +1,18 @@
+{
+  "order": 80,
+  "name": "Own icons",
+  "kind": "function",
+  "responsibility": "Names the icons the core draws on its own, the fallback and the flow icon, so a host ships them with the icon set it gives",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-painting/src/paint/icons.rs",
+    "symbol": "own_icons"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#MsqEgypi",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "formerNames": [
+    "Type icons"
+  ],
+  "outgoing": []
+}

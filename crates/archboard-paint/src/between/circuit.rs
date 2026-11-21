@@ -12,7 +12,7 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{Group, Scene};
 
 use super::found::{Form, Found};
@@ -262,7 +262,7 @@ pub(super) fn label_span((begin, end): Span) -> Span {
 #[cfg(test)]
 mod tests {
     use super::{Run, run_order};
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
 
     const fn at(x: f64, y: f64) -> Point {
         Point { x, y }

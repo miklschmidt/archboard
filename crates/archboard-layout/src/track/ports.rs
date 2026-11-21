@@ -2,7 +2,7 @@
 //! for over the other end of its line, the ports a face spreads and fans, and
 //! the x each net takes at both of its ends.
 
-use crate::ecma::{abs, js_max, max, min, or, sorted_by};
+use crate::ecma::{abs, max, min, or, sorted_by};
 use crate::geometry::Rect;
 use crate::track::chains::{Kind, LANE, Track};
 use crate::track::channels::{End, NetId, PORT_MARGIN, TrunkId, port_reach, spread_along};
@@ -174,10 +174,10 @@ impl Track<'_> {
     fn face_reach(&self, item: ItemId, face: &Rect, fan: bool) -> (f64, f64) {
         let (low, high) = port_reach(face);
         let low = if fan {
-            js_max(
+            max([
                 low,
                 self.scene.item(item).bx.x + self.scene.item(item).top_inset,
-            )
+            ])
         } else {
             low
         };

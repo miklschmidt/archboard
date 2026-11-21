@@ -11,12 +11,8 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/evalu
 import fs from "node:fs";
 import path from "node:path";
 
-import type { PageRegion } from "@archboard/renderer/rasterizer";
-import {
-	parseRasterReceipt,
-	type ArchitectureRasterReceipt,
-	type SemanticRasterReceipt as LegacyRasterReceipt,
-} from "@archboard/renderer/rasterizer";
+import { z } from "zod";
+import { modelShape, type ModelShape } from "@archboard/model-contract";
 import {
 	archboard,
 	type CliAnswer,
@@ -33,8 +29,23 @@ import type {
 	CaptureRequest,
 } from "#runtime/evaluation/batch/schemas/suite.ts";
 
+/** What `model rasterize` says about one capture of a model reading. */
+type ArchitectureRasterReceipt = z.infer<ModelShape<"rasterReceipt">>;
+
+/** What `semantic rasterize` said about one capture of a legacy board's view. */
+type LegacyRasterReceipt = z.infer<ModelShape<"legacyRasterReceipt">>;
+
 /** What the rasterizer says about one capture. */
 type SemanticRasterReceipt = LegacyRasterReceipt | ArchitectureRasterReceipt;
+
+/** A rectangle of the diagram's page, as a receipt states it. */
+type PageRegion = NonNullable<SemanticRasterReceipt["region"]>;
+
+/** Either receipt, as a command answers it. */
+const RasterReceiptSchema = z.union([
+	modelShape("rasterReceipt"),
+	modelShape("legacyRasterReceipt"),
+]);
 
 /**
  * The longest side a capture keeps whole before it is also cut into tiles.
@@ -146,8 +157,8 @@ function parsedReceipt(answer: CliAnswer): ReadReceipt {
 		const last = answer.stderr.trim().split("\n").at(-1) ?? "";
 		return { failure: `rasterize failed (exit ${answer.exitCode ?? "none"}): ${last}` };
 	}
-	const receipt = parseRasterReceipt(answer.json);
-	return receipt === undefined ? { failure: "rasterize answered no receipt" } : { receipt };
+	const parsed = RasterReceiptSchema.safeParse(answer.json);
+	return parsed.success ? { receipt: parsed.data } : { failure: "rasterize answered no receipt" };
 }
 
 /**

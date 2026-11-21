@@ -1,0 +1,15 @@
+{
+  "order": 41000,
+  "name": "Shell geometry",
+  "kind": "module",
+  "responsibility": "The shell's measures that a pane, a recording and the layout suite size pictures by, and the scale that fits a size into a room",
+  "description": "shell(key) is the renderer's one keyed getter, over navigator, sidebar, chrome, agentPanel, fitMargin, viewport and referencePane; fit(size, room?, ceiling = 1) answers the scale (TASK-653.16). The browser shell, the canvas camera, the walkthrough recorder and the layout suite read them, so a picture fitted in one fits in the others.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/constants/shell-geometry.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#PwpfcGFH",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": []
+}

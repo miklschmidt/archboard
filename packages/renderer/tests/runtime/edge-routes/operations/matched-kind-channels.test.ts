@@ -1,12 +1,10 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import type { VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, modelShape, type VariantContent } from "@archboard/model-contract";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
-import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import publicApi from "../../support/wide-boards/public-api-independent.content.json";
 
 /** The gateway lanes that reproduce the live comparison's shared channels. */
 const CHANNEL_EDGE_IDS = [
@@ -68,7 +66,7 @@ test("routes leaving one gateway in one direction may share a run", async () => 
 	expect(overdrawnRun(plain, OUTGOING_CHANNELS)).toBeGreaterThan(0);
 });
 
-test.each(layoutEngineSchema().options)(
+test.each(modelShape("layoutEngine").options)(
 	"opposing same-kind channels do not share an overdrawn run (%s)",
 	async (layout) => {
 		const plain = await renderArchitecture({
@@ -125,7 +123,7 @@ const DIFFERENCES: Record<string, (edge: Edge) => void> = {
 
 // Each engine keeps the complete treatment of a shared channel.
 for (const [name, change] of Object.entries(DIFFERENCES)) {
-	test.each(layoutEngineSchema().options)(
+	test.each(modelShape("layoutEngine").options)(
 		`different ${name} uses distinct same-kind channels (%s)`,
 		async (layout) => {
 			const drawing = await renderArchitecture({

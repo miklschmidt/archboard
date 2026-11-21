@@ -1,5 +1,5 @@
-import { projectModel, type Model } from "@archboard/model/content";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
+import { projectModel, type Model } from "@archboard/model-rules";
 import type {
 	SceneReading,
 	SceneRequest,

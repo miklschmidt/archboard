@@ -12,7 +12,7 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 
 import { resolveCodexExecutable } from "@archboard/codex-app-server/process";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { PRODUCERS } from "./assets.ts";

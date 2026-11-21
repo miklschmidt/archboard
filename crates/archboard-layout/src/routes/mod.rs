@@ -11,6 +11,7 @@ mod clearance;
 mod clusters;
 mod crossings;
 mod crowding;
+mod curves;
 mod drawn_lines;
 mod fans;
 mod folded;

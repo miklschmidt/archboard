@@ -11,21 +11,17 @@
 // Debounced for the same reason a selection always has been: picking things out
 // is a click a second, and what reads this is a command that runs once a turn.
 //
-// The wire shape is `@archboard/model/pane-context`, which the reader of these
+// The wire shape is `@archboard/model-contract`, which the reader of these
 // reports owns; nothing about it is restated here.
 
-import { semanticPaneContextRoute } from "@archboard/model/pane-context";
-import { paneMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { createUserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { StaleFrontend } from "#ui/panes/pane-session/clients/pane-requests.ts";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticPanePart = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["byUser"]
->[number];
-type SemanticPaneContext = z.infer<ReturnType<typeof semanticPaneContextSchema>>;
+type SemanticPanePart = NonNullable<ModelDocument<"paneContext">["byUser"]>[number];
+type SemanticPaneContext = ModelDocument<"paneContext">;
 
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
@@ -112,7 +108,7 @@ interface ReadingReply {
  * @returns The server's answer.
  */
 function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingReply> {
-	return requestJson<ReadingReply>(inVault(semanticPaneContextRoute(), vault), {
+	return requestJson<ReadingReply>(inVault("/api/panes/semantic-context", vault), {
 		method: "POST",
 		payload: body,
 	});
@@ -202,7 +198,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		if (timer !== null) {
 			clearTimeout(timer);
 		}
-		timer = setTimeout(flush, paneMs("selectionDebounce"));
+		timer = setTimeout(flush, durationMs("pane.selectionDebounce"));
 	}
 
 	/**

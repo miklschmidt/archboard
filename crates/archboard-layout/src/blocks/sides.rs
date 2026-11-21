@@ -9,7 +9,7 @@
 //! each other. A region round one node stands its node taller, and turns no
 //! line's faces.
 
-use crate::ecma::js_max;
+use crate::ecma::max;
 use crate::geometry::{Rect, Side};
 use crate::track::scene::Map;
 
@@ -105,8 +105,8 @@ fn grown_in(tree: &BlockTree, block: BlockId) -> f64 {
 /// The edges two boxes face each other by: their walls where they stand
 /// further apart across than up and down, else their tops and bottoms.
 fn sides_between(one: &Rect, other: &Rect) -> (Side, Side) {
-    let across = js_max(other.x - one.x - one.width, one.x - other.x - other.width);
-    let down = js_max(other.y - one.y - one.height, one.y - other.y - other.height);
+    let across = max([other.x - one.x - one.width, one.x - other.x - other.width]);
+    let down = max([other.y - one.y - one.height, one.y - other.y - other.height]);
     if across >= down {
         return if other.x > one.x {
             (Side::Right, Side::Left)

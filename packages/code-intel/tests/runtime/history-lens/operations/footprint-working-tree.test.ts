@@ -13,11 +13,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema, type FootprintAnswer } from "#shared/protocol/footprint.ts";
-import {
-	LEGACY_BOARD_SCHEMA_VERSION,
-	LegacyBoardSchema,
-	currentVariant,
-} from "@archboard/model/legacy-board";
+import { resolveVariant } from "@archboard/model-contract";
+import { legacyBoard } from "#tests/runtime/support/legacy-board.ts";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-working-tree-"));
@@ -88,8 +85,8 @@ const PARTS = [
  * @returns The answer, checked against its schema.
  */
 async function footprint(head?: { readonly workingTree: true }): Promise<FootprintAnswer> {
-	const document = LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	const document = legacyBoard({
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -109,7 +106,7 @@ async function footprint(head?: { readonly workingTree: true }): Promise<Footpri
 			},
 		],
 	});
-	const against = currentVariant(document);
+	const against = resolveVariant(document);
 	return FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({ vault: scratch, document, against, base: "main", head }),
 	);

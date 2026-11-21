@@ -1,14 +1,22 @@
 {
-  "order": 28000,
-  "name": "Semantic rasterizer",
-  "kind": "module",
-  "responsibility": "Renders a model to a bounded image through one reusable browser session",
+  "order": 29500,
+  "name": "raster",
+  "kind": "package",
+  "responsibility": "Pictures to PNGs: one private headless Chromium per run, started when the first picture needs it, each bitmap exactly the size asked for, and proof that the browser is gone when the run ends",
+  "description": "Layer 6, @archboard/raster (TASK-653.16), below the renderer: the renderer's rasterizer folder, moved out. Width 2: rasterizeAll(jobs, { signal?, chromiumPath? }) yields captures in order, and rasterScaleSchema() is the scales a caller may ask for. The CLI's model rasterize and the layout scorecards call it; it calls headless-chromium for the browser, render-recipe for a bitmap's size and timing for its limits.",
+  "groups": [
+    "drawing",
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/rasterizer"
+    "path": "packages/raster"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "parent": "vKEsyHFk#EuaJBisP",
+  "formerNames": [
+    "Semantic rasterizer"
+  ],
   "outgoing": []
 }

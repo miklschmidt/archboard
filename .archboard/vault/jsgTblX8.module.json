@@ -1,0 +1,54 @@
+{
+  "order": 960150,
+  "name": "Model requests",
+  "kind": "module",
+  "responsibility": "What a caller asks of the model, read once for every side that receives it: each operation's request, with the vault it names",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-contract/src/shared/protocol/requests.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#jsgTblX8",
+  "parent": "vKEsyHFk#QsBnI8Ja",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the mapping a request carries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/requests.ts",
+        "symbol": "LegacyMappingWriteSchema"
+      },
+      "to": "vKEsyHFk/0T9enjhi#O3Pczt31",
+      "id": "vKEsyHFk#B0fsUD6N"
+    },
+    {
+      "order": 1010,
+      "kind": "dependency",
+      "label": "the render request it reads",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/requests.ts",
+        "symbol": "ArchitectureRenderRequestSchema"
+      },
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz",
+      "id": "vKEsyHFk#uAlR22Xt"
+    },
+    {
+      "order": 1020,
+      "kind": "dependency",
+      "label": "the publication destination it reads",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/requests.ts",
+        "symbol": "ArchitecturePublicationDestinationSchema"
+      },
+      "to": "vKEsyHFk#8539szQJ",
+      "id": "vKEsyHFk#OYw02zL4"
+    }
+  ]
+}

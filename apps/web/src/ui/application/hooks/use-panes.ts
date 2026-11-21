@@ -6,7 +6,6 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
-import type { BrowserWorkbenchTransport } from "@archboard/codex-realtime-voice/controllers";
 import { LiveBinding } from "#ui/application/state/live-binding.ts";
 import { initialPaneList, type PaneList } from "#ui/application/rules/pane-list.ts";
 import { createPaneMoves } from "#ui/application/state/pane-moves.ts";
@@ -39,20 +38,14 @@ interface PaneEvents {
 	readonly onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 	/** A pane's socket came back after being lost; nothing it cached is trustworthy. */
 	readonly onPaneReconnected: (paneId: string) => void;
-	/** A pane's status was published; the workbench re-reads its transport. */
-	readonly onStatusPublished: (paneId: string) => void;
 	/** The server moved a pane onto a model, which the address bar records. */
-	readonly onModelAdopted: NonNullable<
-		PaneSessionOptions<BrowserWorkbenchTransport>["onModelAdopted"]
-	>;
-	/** A pane reported its session, or went. */
-	readonly onSession: (paneId: string, session: PaneSession | null) => void;
+	readonly onModelAdopted: NonNullable<PaneSessionOptions["onModelAdopted"]>;
 }
 
 /** The session callbacks every pane shares; stable for the application's life. */
 type PaneCallbacks = Required<
 	Pick<
-		PaneSessionOptions<BrowserWorkbenchTransport>,
+		PaneSessionOptions,
 		| "onStatus"
 		| "onPaneReconnected"
 		| "onStaleFrontend"
@@ -120,7 +113,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 	 */
 	function onStatus(status: PaneStatus): void {
 		patch(status.paneId, { status });
-		events.read().onStatusPublished(status.paneId);
 	}
 	/**
 	 * The server asks for another pane, or for one to go.
@@ -135,13 +127,14 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		}
 	}
 	/**
-	 * A pane reported its session, or went.
+	 * A pane reported its session, or went. The conversation of its socket goes into its record,
+	 * so the shell reads it where it draws.
 	 * @param paneId The pane.
 	 * @param session The session, or null.
 	 */
 	function onSession(paneId: string, session: PaneSession | null): void {
 		handles.setSession(paneId, session);
-		events.read().onSession(paneId, session);
+		if (session !== null) patch(paneId, { conversation: session.conversation });
 	}
 	return {
 		onStatus,
@@ -212,7 +205,7 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
  * The panes.
  * @param initial The list to start with, which the address bar seeds from the
  *   URL so a restored comparison mounts both panes in its first render.
- * @param media What each pane's media owner is made with, read once.
+ * @param media Where each pane's voice is played and heard, read once.
  * @returns The panes, their records and the moves.
  */
 function usePanes(

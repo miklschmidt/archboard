@@ -1,12 +1,11 @@
 // A fan-in takes one deterministic solve and reaches its original target.
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/model/content";
+import { defaultSemanticPolicy, type VariantContent } from "@archboard/model-contract";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { installBunHost } from "#runtime/bun-renderer/services/bun-host.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { installRendererHost, rendererHost } from "#shared/render/rules/host.ts";
 import { endsOffCards } from "#tests/runtime/support/drawn-parents.ts";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 /**
  * Source blocks of two cards each, every card's line joining on its way into

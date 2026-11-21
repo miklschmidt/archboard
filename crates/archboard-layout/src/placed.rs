@@ -9,7 +9,7 @@
 
 use std::rc::Rc;
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 
 use crate::graph::Edge;
 

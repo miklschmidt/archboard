@@ -2,13 +2,8 @@ import { expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import {
-	architectureClaimResultSchema,
-	architectureModelReadSchema,
-	architectureModuleEditResultSchema,
-	type ArchitectureClaim,
-} from "@archboard/model/contract";
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
+import type { ArchitectureClaim } from "@archboard/model-contract";
+import type { AgentActivityMessage } from "@archboard/workbench/browser-contract";
 import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
@@ -16,6 +11,7 @@ import { openTestPane, type PaneMessage } from "../support/pane-websocket.ts";
 import { runServerCli } from "../support/run-cli.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS } from "../support/timing.ts";
+import { parsedReply } from "../support/model-reply.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -47,9 +43,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 	const requestSecond = createJsonRequester(second);
 	const pane = await openTestPane(first.base, requestFirst, "topology-pane", 0);
 	resources.defer(() => pane.close());
-	const reading = architectureModelReadSchema().parse(
-		(await requestFirst("/api/architecture/model")).body,
-	);
+	const reading = parsedReply("read", (await requestFirst("/api/architecture/model")).body);
 	if (!reading.success) throw new Error(JSON.stringify(reading));
 	const target = { model: reading.manifest.id, state: reading.selectedState!.id };
 	const claimsIn = (message: PaneMessage) =>
@@ -80,7 +74,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 			body: { target, writer, subjects: [subject], reason: "Exercise cross-process claims" },
 		});
 		expect(response.status).toBe(200);
-		const result = architectureClaimResultSchema().parse(response.body);
+		const result = parsedReply("claim", response.body);
 		if (!result.success) throw new Error(JSON.stringify(result));
 		return result.claim;
 	};
@@ -128,7 +122,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 		body: { ...edit, operationId: "cross-process-released", claim: available.id },
 	});
 	expect(written.status).toBe(200);
-	const result = architectureModuleEditResultSchema().parse(written.body);
+	const result = parsedReply("edit", written.body);
 	if (!result.success) throw new Error(JSON.stringify(result));
 	await requestFirst("/api/architecture/claims/release", {
 		method: "POST",

@@ -85,7 +85,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                    "symbol": "vaultOfUpgrade"
+                    "symbol": "resolveVault"
                   }
                 },
                 {
@@ -108,7 +108,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "packages/workbench/src/server/request/services/vault.ts",
+                            "path": "packages/server-requests/src/server/services/vault.ts",
                             "symbol": "placeInstead"
                           }
                         },
@@ -136,8 +136,8 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workbench/src/server/request/services/vault.ts",
-                    "symbol": "vaultOfUpgrade"
+                    "path": "packages/server-requests/src/server/services/vault.ts",
+                    "symbol": "resolveVault"
                   }
                 },
                 {
@@ -174,7 +174,7 @@
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
                             "path": "apps/server/src/server/panes/connections/sockets/websocket-connection.ts",
-                            "symbol": "acceptWebSocketConnection"
+                            "symbol": "startWebSocketServer"
                           }
                         }
                       ]
@@ -190,13 +190,13 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
       "name": "A person chooses a checkout",
-      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its model again there. Every tab then refreshes its repositories.",
+      "summary": "Seen from the panes: the workbench follows the registry, so each pane learns where it is, or moves into the chosen checkout's vault and reads its model again there. Every tab then refreshes its repositories.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+        "vKEsyHFk#qhpG7ofG",
         "vKEsyHFk/Oi6SBIAM#BL7LFThw",
         "vKEsyHFk#CgXCbunb",
-        "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
         "vKEsyHFk/yejBBUFY#xsn0RvSi"
       ],
       "steps": [
@@ -229,7 +229,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "refuseUnknownCheckout"
+                    "symbol": "refuseChoice"
                   }
                 }
               ]
@@ -250,6 +250,18 @@
                   }
                 },
                 {
+                  "id": "vKEsyHFk#uvI32LPW",
+                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                  "to": "vKEsyHFk#qhpG7ofG",
+                  "label": "follow the registry",
+                  "kind": "sync",
+                  "anchor": {
+                    "repo": "github.com/miklschmidt/archboard",
+                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                    "symbol": "followRegistry"
+                  }
+                },
+                {
                   "id": "vKEsyHFk/Oi6SBIAM#XFiY1bF6",
                   "kind": "loop",
                   "condition": "for each pane the server holds",
@@ -264,13 +276,13 @@
                           "steps": [
                             {
                               "id": "vKEsyHFk/Oi6SBIAM#l5rDHunS",
-                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "from": "vKEsyHFk#qhpG7ofG",
                               "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                               "label": "tell it where it is, with its repository's name",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                                "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                                 "symbol": "sendKeylessToPane"
                               }
                             }
@@ -281,37 +293,37 @@
                           "steps": [
                             {
                               "id": "vKEsyHFk/Oi6SBIAM#D9yzkvrZ",
-                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "from": "vKEsyHFk#qhpG7ofG",
                               "to": "vKEsyHFk#CgXCbunb",
                               "label": "move it into the chosen checkout's vault",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                                "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                                 "symbol": "movePaneVault"
                               }
                             },
                             {
                               "id": "vKEsyHFk/Oi6SBIAM#vJTlDcZe",
-                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "from": "vKEsyHFk#qhpG7ofG",
                               "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                               "label": "pane_place: its model, read again there",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                                "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                                 "symbol": "sendToPane"
                               }
                             },
                             {
                               "id": "vKEsyHFk/Oi6SBIAM#Z5pzIome",
-                              "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
+                              "from": "vKEsyHFk#qhpG7ofG",
                               "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                               "label": "the pane arrived on its model",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
+                                "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
                                 "symbol": "arrivedOnModel"
                               }
                             }
@@ -323,26 +335,26 @@
                 },
                 {
                   "id": "vKEsyHFk/Oi6SBIAM#U31cZhAR",
-                  "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
-                  "to": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                  "from": "vKEsyHFk#qhpG7ofG",
+                  "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                   "label": "tell every tab",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/http/handlers/repositories/routes/repository-routes.ts",
-                    "symbol": "broadcastEverywhere"
+                    "path": "packages/workbench/src/server/panes/services/registry-follow.ts",
+                    "symbol": "sendToEveryClient"
                   }
                 },
                 {
                   "id": "vKEsyHFk/Oi6SBIAM#Q6IZmbLE",
-                  "from": "vKEsyHFk/Oi6SBIAM#nPjqFn3J",
+                  "from": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
                   "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
                   "label": "repositories_changed",
                   "kind": "async",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/server/src/server/panes/connections/state/pane-vaults.ts",
-                    "symbol": "broadcastEverywhere"
+                    "path": "packages/workbench/src/server/panes/services/registry.ts",
+                    "symbol": "sendToEveryClient"
                   }
                 },
                 {

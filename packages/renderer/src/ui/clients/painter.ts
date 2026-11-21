@@ -2,7 +2,10 @@
 // the browser gives a real adapter, Vello GPU on WebGL2 where it gives a
 // hardware WebGL2 context, and Vello on the CPU otherwise. The choice is made
 // once for a canvas, from what the browser says, and the caller shows it.
+// Every painter keeps the page's pace: the phases of a move and the longest step
+// of its clock, which `@archboard/timing` holds (ADR 0071).
 
+import { durationMs, painterPhasesJson } from "@archboard/timing";
 import initPainter, {
 	Painter,
 	sourceHash,
@@ -13,6 +16,15 @@ const PAINTER_WASM = new URL(
 	"../../shared/protocol/generated/core/archboard_painter_wasm_bg.wasm",
 	import.meta.url,
 );
+
+/**
+ * How a painter's stage keeps time, as JSON: at which points of a move each of its parts happens,
+ * and how much of a stall one step of its clock can take.
+ * @returns The pace.
+ */
+function pace(): string {
+	return `{"phases":${painterPhasesJson()},"longestStep":${String(durationMs("picture.longestStep"))}}`;
+}
 
 /** Which painter draws a canvas: Vello on WebGPU, Vello GPU on WebGL2, or Vello on the CPU. */
 type PainterKind = "gpu" | "webgl" | "cpu";
@@ -127,7 +139,7 @@ function warmPainter(): void {
  * @returns The painter.
  */
 function startCpu(canvas: HTMLCanvasElement, dark: boolean, reason: string): StartedPainter {
-	return { painter: Painter.cpu(canvas, dark), canvas, kind: "cpu", reason };
+	return { painter: Painter.cpu(canvas, dark, pace()), canvas, kind: "cpu", reason };
 }
 
 /**
@@ -172,7 +184,7 @@ function contextLoss(canvas: HTMLCanvasElement): NonNullable<StartedPainter["whe
  */
 function startWebgl(canvas: HTMLCanvasElement, dark: boolean, reason: string): StartedPainter {
 	try {
-		const painter = Painter.webgl(canvas, dark);
+		const painter = Painter.webgl(canvas, dark, pace());
 		return { painter, canvas, kind: "webgl", reason, whenGpuStops: contextLoss(canvas) };
 	} catch (cause) {
 		const refused = cause instanceof Error ? cause.message : String(cause);
@@ -193,7 +205,7 @@ function startGpu(
 	whenGpuStops: GpuAnswer["whenGpuStops"],
 ): StartedPainter {
 	return {
-		painter: Painter.gpu(canvas, dark),
+		painter: Painter.gpu(canvas, dark, pace()),
 		canvas,
 		kind: "gpu",
 		reason: null,
@@ -233,46 +245,60 @@ async function startBest(
 }
 
 /**
- * Start the painter of a canvas. A GPU painter that stopped at work leaves its canvas, and the
- * next painter down takes a fresh one: WebGPU once more, unless it failed again soon, then
- * WebGL2, then the CPU.
+ * Start the next painter down after a GPU painter of a canvas stopped at work, on a fresh canvas:
+ * a canvas that held a GPU context takes no 2D context, and its surface may be what failed.
+ * @param canvas The canvas the painter stopped on.
+ * @param dark Whether the page is dark.
+ * @param failure Why it stopped.
+ * @returns The painter.
+ */
+async function startAfter(
+	canvas: HTMLCanvasElement,
+	dark: boolean,
+	failure: PainterFailure,
+): Promise<StartedPainter> {
+	const target = freshCanvas(canvas);
+	if (failure.painter === "webgl") return startCpu(target, dark, failure.reason);
+	if (failure.retry) return startBest(target, dark, failure.reason);
+	return startWebgl(target, dark, failure.reason);
+}
+
+/** How a canvas's painter starts. */
+interface PainterOptions {
+	/** Why the GPU painter of this canvas stopped, when it stopped at work. */
+	readonly failure?: PainterFailure | undefined;
+	/**
+	 * `cpu` for a picture that is painted once and then only read, as an image: the CPU paints it
+	 * in a few milliseconds, while starting WebGPU can hold the page for hundreds of milliseconds
+	 * the first time a browser compiles its pipelines. Its canvas is never replaced.
+	 */
+	readonly only?: "cpu" | undefined;
+}
+
+/**
+ * Start the painter of a canvas: the best one the browser allows, or the CPU's when asked. A GPU
+ * painter that stopped at work leaves its canvas, and the next painter down takes a fresh one:
+ * WebGPU once more, unless it failed again soon, then WebGL2, then the CPU.
  * @param canvas The canvas, sized in pixels.
  * @param dark Whether the page is dark.
- * @param failure Why the GPU painter of this canvas stopped, when it stopped at work.
+ * @param options Why the last GPU painter stopped, or that only the CPU paints.
  * @returns The painter, which says which it is and why.
  */
 async function startPainter(
 	canvas: HTMLCanvasElement,
 	dark: boolean,
-	failure?: PainterFailure,
+	options: PainterOptions = {},
 ): Promise<StartedPainter> {
 	await loadPainter();
-	let next: StartedPainter;
-	if (failure === undefined) {
-		next = await startBest(canvas, dark);
-	} else {
-		// A canvas that held a GPU context takes no 2D context, and its surface may be what failed.
-		const target = freshCanvas(canvas);
-		if (failure.painter === "webgl") next = startCpu(target, dark, failure.reason);
-		else if (failure.retry) next = await startBest(target, dark, failure.reason);
-		else next = startWebgl(target, dark, failure.reason);
-	}
+	if (options.only === "cpu")
+		return startCpu(canvas, dark, "The picture is painted once, on the CPU.");
+	const next =
+		options.failure === undefined
+			? await startBest(canvas, dark)
+			: await startAfter(canvas, dark, options.failure);
 	// A failed start leaves the caller's canvas in place, so it can still dispose or retry it.
 	if (next.canvas !== canvas) canvas.replaceWith(next.canvas);
 	return next;
 }
 
-/**
- * Start the CPU painter of a canvas without asking for the GPU. A picture that is painted once
- * and then only read, as an image, costs the CPU a few milliseconds, while starting WebGPU can hold
- * the page for hundreds of milliseconds the first time a browser compiles its pipelines.
- * @param canvas The canvas, sized in pixels.
- * @param dark Whether the page is dark.
- * @returns The painter.
- */
-async function startCpuPainter(canvas: HTMLCanvasElement, dark: boolean): Promise<StartedPainter> {
-	await loadPainter();
-	return startCpu(canvas, dark, "The picture is painted once, on the CPU.");
-}
-
-export { startCpuPainter, startPainter, warmPainter };
+export { startPainter, warmPainter };

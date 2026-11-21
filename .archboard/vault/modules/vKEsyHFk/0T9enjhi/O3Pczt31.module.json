@@ -6,11 +6,11 @@
   "description": "Shared inventory and mapping contracts retain provenance, conflict choices and optional explicit drill-down target mappings. Canonical read results identify migration previews separately from installed current architecture.\n\nMigration preview converts stable narratives and complete reading instructions. Unused views become content-free bookmarks. Exact original aliases select qualified original states. Current composition applies saved identity choices. Original history and retained playback preserve original coverage and never borrow current surroundings.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/model/src/shared/schemas/migration.ts"
+    "path": "packages/model-contract/src/shared/schemas/migration.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#O3Pczt31",
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "parent": "vKEsyHFk#QsBnI8Ja",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/schemas/migration.ts",
+        "path": "packages/model-contract/src/shared/schemas/migration.ts",
         "symbol": "QualifiedSubjectIdSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#VRAAecug",
@@ -52,7 +52,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/shared/schemas/migration.ts",
+        "path": "packages/model-contract/src/shared/schemas/migration.ts",
         "symbol": "LegacyBoardSchema"
       },
       "id": "vKEsyHFk#YvPtAKu5",

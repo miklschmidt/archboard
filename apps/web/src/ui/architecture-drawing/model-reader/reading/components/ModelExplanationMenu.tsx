@@ -7,9 +7,9 @@ import {
 	RiOpenaiFill,
 	RiRouteLine,
 } from "@remixicon/react";
-import { buttonVariants, DropdownMenu } from "@archboard/ui-kit/components";
-import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
-import type { Model } from "@archboard/model/content";
+import { Button, DropdownMenu } from "@archboard/ui-kit/components";
+import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
+import type { Model } from "@archboard/model-rules";
 
 type Action = ExplanationInvocation["request"]["action"];
 const ACTIONS = {
@@ -34,6 +34,9 @@ interface ChoiceProps {
 	onAction: MenuProps["onAction"];
 }
 
+/** The menu's key: a small outline button. */
+const EXPLAIN_KEY = <Button variant="outline" size="sm" />;
+
 /**
  * Offer each applicable action through one keyboard-accessible menu.
  * @param props The selected subjects and their coherent reading.
@@ -42,10 +45,7 @@ interface ChoiceProps {
 function ModelExplanationMenu(props: MenuProps): JSX.Element {
 	return (
 		<DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
-			<DropdownMenu.Trigger
-				data-slot="model-explain"
-				className={buttonVariants({ variant: "outline", size: "sm" })}
-			>
+			<DropdownMenu.Trigger data-slot="model-explain" render={EXPLAIN_KEY}>
 				<RiOpenaiFill aria-hidden="true" />
 				<span>
 					Explain

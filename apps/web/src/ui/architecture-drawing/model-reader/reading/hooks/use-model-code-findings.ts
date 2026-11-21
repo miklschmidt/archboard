@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { RememberedFindings } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { codeFindingsQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import { readsVaultOnDisk } from "#ui/architecture-drawing/model-reader/rules/vault-on-disk.ts";

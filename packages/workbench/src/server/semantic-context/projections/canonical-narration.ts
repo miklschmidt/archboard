@@ -1,13 +1,9 @@
-import { readArchitectureModel } from "@archboard/model/store-read";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ArchitectureModelRead, ModelDocument } from "@archboard/model-contract";
+import { readArchitectureModel } from "@archboard/model-store";
 import type { RealtimePresentationChange } from "#runtime/realtime/rules/presentation-mode.ts";
 import { canonicalNarratedSubjects } from "#server/semantic-context/rules/narrated-subjects.ts";
 
-type Architecture = NonNullable<
-	z.infer<ReturnType<typeof semanticPaneContextSchema>>["architecture"]
->;
+type Architecture = NonNullable<ModelDocument<"paneContext">["architecture"]>;
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type Capture = Model & { playback: NonNullable<Model["playback"]> };
 

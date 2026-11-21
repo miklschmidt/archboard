@@ -1,13 +1,13 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type ReactNode } from "react";
-import { semanticPaneContextSchema } from "@archboard/model/pane-context";
 import { explanationActionRequestSchema } from "@archboard/workbench/browser-contract";
 import { SHOP, shopReading } from "#tests/ui/support/model-reader/scene.ts";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
-import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/access/clients/explanations.ts";
+import type { ExplanationInvocation } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { comparedWith } from "#ui/architecture-drawing/model-reader/reading/rules/comparison-choices.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
+import { parseDocument } from "@archboard/model-contract";
 
 GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
@@ -60,13 +60,15 @@ test("pane labels survive the wire without entering an explanation request, and 
 	);
 	expect(report.mock.calls.at(-1)?.[0]?.architecture).toBeNull();
 	rerender({ ready: true });
-	const wire = semanticPaneContextSchema().parse({
+	const parsedWire = parseDocument("paneContext", {
 		...report.mock.calls.at(-1)?.[0],
 		paneId: "A",
 		clientId: "client",
 		sequence: 1,
 		at: new Date().toISOString(),
 	});
+	if (!parsedWire.success) throw parsedWire.error;
+	const wire = parsedWire.data;
 	expect(wire.architecture).toMatchObject({
 		model: model.manifest.id,
 		subjects: [...selected],

@@ -6,8 +6,8 @@
 import { useCallback, useState, type CSSProperties, type JSX, type ReactNode } from "react";
 import { usePanelRef } from "react-resizable-panels";
 
-import { shellLength } from "@archboard/renderer/shell-geometry";
-import { Resizable } from "@archboard/ui-kit/components";
+import { shell } from "@archboard/renderer/shell-geometry";
+import { Resizable } from "#ui/shell/components/Resizable.tsx";
 import { storedWidth, storeWidth, type ColumnWidths } from "#ui/shell/clients/column-width.ts";
 
 /** What the navigator can be. */
@@ -15,7 +15,7 @@ const NAVIGATOR: ColumnWidths = {
 	key: "archboard.navigator.width",
 	min: 240,
 	max: 520,
-	initial: shellLength("navigator"),
+	initial: shell("navigator"),
 };
 
 /**

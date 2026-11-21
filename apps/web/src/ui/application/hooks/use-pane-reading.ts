@@ -18,12 +18,9 @@ import {
 	paneAddressOf,
 	sameModelName,
 } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
-import type { z } from "zod";
+import type { ModelDocument } from "@archboard/model-contract";
 
-type SemanticSubjectRef = z.infer<
-	ReturnType<typeof semanticPaneContextSchema>
->["selection"][number];
+type SemanticSubjectRef = ModelDocument<"paneContext">["selection"][number];
 
 /** One picked subject, as the viewer described it. */
 type PickedSubject = SemanticSubjectRef;

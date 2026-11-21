@@ -23,8 +23,7 @@ mod steps;
 use std::collections::{BTreeMap, BTreeSet};
 
 use archboard_layout::Solver;
-use archboard_scene::paint::design::own_icons;
-use archboard_scene::paint::paint;
+use archboard_painting::{own_icons, paint};
 use archboard_scene::request::{DocumentRequest, PageRequest, PaintRequest};
 use archboard_scene::scene::{PaintedDocument, Painting};
 use archboard_svg::{AppliedAppearance, PictureLegend};

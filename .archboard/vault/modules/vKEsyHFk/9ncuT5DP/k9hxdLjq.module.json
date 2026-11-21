@@ -3,6 +3,7 @@
   "name": "Workbench interface",
   "kind": "module",
   "responsibility": "Starts the shared Codex sessions the voice agent asks for and owns their connections, lifecycle, and state through one host contract, and hands each announced change to the live generation",
+  "description": "It owns the browser connections, the tab store and their lease ledger itself and hands the agent its connections, tabs and checkout admission. The routing and ledger extensions are gone: browserLeaseLedger, browserCheckoutOf, installBrowserSessions and the onBrowserGateway override (TASK-653.12).",
   "groups": [
     "agent"
   ],

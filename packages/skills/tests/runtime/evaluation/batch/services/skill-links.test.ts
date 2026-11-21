@@ -7,7 +7,7 @@ import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 import { anchorsOf } from "#runtime/evaluation/batch/services/citations.ts";
 

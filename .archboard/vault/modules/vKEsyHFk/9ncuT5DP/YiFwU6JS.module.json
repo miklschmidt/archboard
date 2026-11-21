@@ -2,8 +2,8 @@
   "order": 46000,
   "name": "Voice agent",
   "kind": "module",
-  "responsibility": "The host's one entry: createVoiceAgent turns its storage, Codex, checkouts, instructions, identity and extensions into one workbench, serves sockets on node:http or Bun.serve, and announces changes",
-  "description": "start, status, shutdown and the browser port come from the workbench it creates. attach admits sockets on one path of a node:http server, and bunHandlers wraps the fetch and websocket handlers of Bun.serve; both admit an upgrade only from the one origin and on the one path the host names, and work in the checkout the host names for that path. The role profiles are composed here from the host's instructions, tools and identity, so every thread Codex is given carries the host's names and no other.",
+  "responsibility": "The host's one entry: createVoiceAgent turns its directory, checkouts, origins, instructions and extensions into one workbench, connects each browser socket through agent.connect and announces changes",
+  "description": "start, status and shutdown come from the workbench it creates. agent.connect(socket, route) registers a socket at once, before Codex is ready and across Codex restarts, from any WebSocket library on Bun. A { request } route is admitted from its upgrade: a loopback Host with an exact same-origin match, or a listed origin, else 1008 before registration; an upgrade without an Origin header stays admitted. A route that names its identity is the host's to admit. receive(frame) returns false at once for a frame that is not a voice request, and answers the three refusals in their envelope, wording and order; close() releases the connection. bunHandlers({ path }) is a thin Bun.serve adapter over connect; the node:http attach, the socket factories and the lease ledger are gone. tabs is a read-only projection of the browser tabs, and voiceStartTrace reads the last voice starts for a host's route. The role profiles are composed here from the host's instructions, tools and identity, so every thread Codex is given carries the host's names and no other.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/agent/services"
@@ -18,6 +18,19 @@
     }
   ],
   "outgoing": [
+    {
+      "order": 910,
+      "kind": "call",
+      "label": "the last voice starts, as voiceStartTrace",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
+        "symbol": "voiceStartAttempts"
+      },
+      "id": "vKEsyHFk#8FV2EPia",
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    },
     {
       "order": 70035,
       "kind": "call",
@@ -39,7 +52,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
-        "symbol": "surfaceIn"
+        "symbol": "surfaceOf"
       },
       "id": "vKEsyHFk#cWzsQnxC",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
@@ -60,12 +73,12 @@
     {
       "order": 87000,
       "kind": "call",
-      "label": "each admitted socket's requests and its close",
+      "label": "register each socket; its voice frames; release on close",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
-        "symbol": "openBrowserSocket"
+        "path": "packages/codex-realtime-voice/src/server/agent/services/connect.ts",
+        "symbol": "createVoiceConnector"
       },
       "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
       "to": "vKEsyHFk#sZUpSKaS"
@@ -80,8 +93,8 @@
         "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
         "symbol": "resolveCodexExecutable"
       },
-      "to": "vKEsyHFk#06cbjPhn",
-      "id": "vKEsyHFk#0U4c1hjN"
+      "id": "vKEsyHFk#0U4c1hjN",
+      "to": "vKEsyHFk#06cbjPhn"
     }
   ]
 }

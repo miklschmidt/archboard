@@ -54,15 +54,11 @@ import type { StateEvidence, Piece } from "#runtime/code-check/evidence/operatio
 import { sideOf, sidesJoined } from "#runtime/code-check/evidence/operations/sides.ts";
 import { differingCode } from "#runtime/code-check/operations/part-code.ts";
 import type { PartCode, ReadPart, SkippedPart } from "#runtime/code-check/operations/part-code.ts";
-import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
+import { describeSubject, edgeSubjects, nodeSubject } from "@archboard/model-rules";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { messagesOf } from "@archboard/model/flow";
-import type { SemanticEdge } from "@archboard/model/content";
-import { describeSubject, type SemanticPolicy } from "@archboard/model/policy";
-import type { evidenceKindSchema } from "@archboard/model/policy";
-import type { z } from "zod";
+import { readFlow, type SemanticEdge, type SemanticPolicy } from "@archboard/model-contract";
 
-type EvidenceKind = z.infer<ReturnType<typeof evidenceKindSchema>>;
+type EvidenceKind = CodeEvidence["kind"];
 
 /** The evidence kinds that are a dependency at run time or at build time. */
 const DEPENDENCY_KINDS: ReadonlySet<EvidenceKind> = new Set([
@@ -128,7 +124,10 @@ function drawn(reading: RelationshipReading, left: string, right: string): boole
 	const { content } = reading.read.variant;
 	const atLeft = reading.lineages.get(left) ?? new Set([left]);
 	const atRight = reading.lineages.get(right) ?? new Set([right]);
-	const joints = [...content.edges, ...content.flows.flatMap((flow) => messagesOf(flow.steps))];
+	const joints = [
+		...content.edges,
+		...content.flows.flatMap((flow) => readFlow(flow.steps).messages),
+	];
 	return joints.some(
 		({ from, to }) =>
 			(atLeft.has(from) && atRight.has(to)) || (atLeft.has(to) && atRight.has(from)),

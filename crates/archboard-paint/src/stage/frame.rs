@@ -1,18 +1,18 @@
 //! One frame of a stage: its ground, the picture, the picture inside a card, and
 //! over them what is left of the last picture.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Item;
 use kurbo::{Affine, RoundedRect, Shape as _};
 
 use super::Stage;
 use crate::between::departing;
-use crate::canvas::Canvas;
+use crate::canvas::{Canvas, Layer};
 use crate::draw::{Inks, draw_ground, draw_items};
-use crate::flight::{Dive, Flight, Ghost, Leaving};
+use crate::flight::{Arriving, Dive, Ghost, Leaving};
 use crate::passage::Plane;
 use crate::path::{placed, rect_of};
-use crate::presentation::Presentation;
+use crate::presentation::Seen;
 
 impl Stage {
     /// Draw what stands on the stage: its ground, the picture, the picture
@@ -20,11 +20,12 @@ impl Stage {
     pub(super) fn draw_frame<C: Canvas>(&mut self, canvas: &mut C, now: f64) {
         let Stage {
             shown,
-            presentation,
+            seen,
             palette,
+            marks,
             outlines,
             size,
-            flight,
+            arriving,
             leaving,
             ghost,
             behind,
@@ -38,12 +39,12 @@ impl Stage {
         };
         let picture = &shown.picture;
         draw_ground(canvas, &picture.scene, *size, palette);
-        let camera = presentation.camera;
+        let camera = seen.camera;
         let plane = plane_at(leaving.as_ref(), ghost.as_ref(), now);
         let transform = plane.transform * placed(camera.x, camera.y, Some(camera.scale));
         let fades = dive.as_ref().map(|dive| dive.fades(now));
         let parent = fades.map_or(1.0, |fades| fades.parent) * plane.shown;
-        let moved = flight.as_mut().map(|flight| flight.items(now));
+        let moved = arriving.as_mut().map(|arriving| arriving.items(now));
         let moved = match leaving.as_ref().filter(|leaving| leaving.axis.is_none()) {
             Some(leaving) => Some(departing(
                 moved.unwrap_or_else(|| picture.scene.body.clone()),
@@ -52,30 +53,32 @@ impl Stage {
             )),
             None => moved,
         };
-        let definitions = flight
+        let definitions = arriving
             .as_ref()
-            .and_then(Flight::definitions)
+            .and_then(Arriving::definitions)
             .unwrap_or(&picture.definitions);
         let items = moved.as_deref().unwrap_or(&picture.scene.body);
         let mut inks = Inks {
             palette,
             outlines: &mut *outlines,
-            presentation,
+            seen,
+            marks,
             still: (*settled && moved.is_none()).then_some(*looks),
         };
         faded(canvas, parent, |canvas| {
             draw_items(canvas, items, definitions, transform, &mut inks);
         });
-        let plain = Presentation {
+        let plain = Seen {
             camera,
-            far: presentation.far,
-            traffic: presentation.traffic,
-            ..Presentation::default()
+            far: seen.far,
+            traffic: seen.traffic,
+            ..Seen::default()
         };
         let mut plain_inks = Inks {
             palette,
             outlines,
-            presentation: &plain,
+            seen: &plain,
+            marks,
             still: None,
         };
         if let Some((dive, fades)) = dive.as_ref().zip(fades) {
@@ -89,7 +92,9 @@ impl Stage {
                 &mut plain_inks,
             );
         }
-        let tray = flight.as_ref().and_then(|flight| flight.holder_at(now));
+        let tray = arriving
+            .as_ref()
+            .and_then(|arriving| arriving.holder_at(now));
         for ghost in behind.iter().chain(ghost.as_ref()) {
             draw_ghost(canvas, ghost, now, tray, &mut plain_inks);
         }
@@ -124,19 +129,20 @@ fn draw_ghost<C: Canvas>(
         * held.transform
         * placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
     let items = match tray.filter(|_| ghost.axis.is_none()) {
-        Some(tray) => ghost.items_inside(now, tray, inks.presentation.camera),
+        Some(tray) => ghost.items_inside(now, tray, inks.seen.camera),
         None => ghost.items(now),
     };
-    let look = Presentation {
-        camera: inks.presentation.camera,
-        far: inks.presentation.far,
-        traffic: inks.presentation.traffic,
+    let look = Seen {
+        camera: inks.seen.camera,
+        far: inks.seen.far,
+        traffic: inks.seen.traffic,
         ..ghost.look.clone()
     };
     let mut inks = Inks {
         palette: inks.palette,
         outlines: &mut *inks.outlines,
-        presentation: &look,
+        seen: &look,
+        marks: inks.marks,
         still: None,
     };
     faded(canvas, own.shown * held.shown, |canvas| {
@@ -151,7 +157,10 @@ fn faded<C: Canvas>(canvas: &mut C, opacity: f64, draw: impl FnOnce(&mut C)) {
         return;
     }
     canvas.set_transform(Affine::IDENTITY);
-    canvas.push(None, opacity_of(opacity));
+    canvas.push(Layer::Over {
+        clip: None,
+        opacity: opacity_of(opacity),
+    });
     draw(canvas);
     canvas.pop();
 }
@@ -182,7 +191,10 @@ fn draw_inset<C: Canvas>(
     let clip = rect_of(dive.card_box.as_ref().unwrap_or(frame));
     let clip = RoundedRect::from_rect(clip, CARD_CORNER).to_path(0.1);
     canvas.set_transform(transform);
-    canvas.push(Some((&clip, false)), opacity_of(opacity));
+    canvas.push(Layer::Over {
+        clip: Some((&clip, false)),
+        opacity: opacity_of(opacity),
+    });
     draw_ground(canvas, scene, (1e5, 1e5), inks.palette);
     draw_items(
         canvas,

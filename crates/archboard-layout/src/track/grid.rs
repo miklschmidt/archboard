@@ -5,7 +5,7 @@
 //! Graphviz stacks the rows and keeps the columns straight.
 
 use crate::constants::LAYOUT_ASPECT;
-use crate::ecma::{js_max, js_min, max, round};
+use crate::ecma::{max, min, round};
 use crate::track::score::Plan;
 use crate::track::spacing::EMPTY_CHANNEL;
 use crate::viz::{Attrs, Edge, Value};
@@ -44,7 +44,7 @@ pub(crate) fn grid_edges(cards: &[Loose]) -> Vec<Edge> {
         clippy::cast_sign_loss,
         reason = "a whole count from 1 to the number of cards: Math.round of a finite root, clamped"
     )]
-    let columns = js_max(1.0, js_min(cards.len() as f64, fitting)) as usize;
+    let columns = max([1.0, min([cards.len() as f64, fitting])]) as usize;
     cards[columns..]
         .iter()
         .enumerate()

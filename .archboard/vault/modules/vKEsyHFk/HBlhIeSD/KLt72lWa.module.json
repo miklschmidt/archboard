@@ -3,7 +3,7 @@
   "name": "Repository listing",
   "kind": "module",
   "responsibility": "Turns the checkout registry into the repositories the navigator lists: each identity's chosen checkout, its vault and its state, and the names of the vaults",
-  "description": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. repositoryOfVault is how a show names the repository a pane moved into. A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it.",
+  "description": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. placeOfVault(vault) answers its home vault, its repository's name, its checkout and whether that checkout is chosen; it absorbs both repositoryOfVault names, so a show, a pane's starting place, a thread's label and the CLI's canvas address all ask it (TASK-653.10). A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/server/projections/repository-listing.ts"
@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 25500,
+      "kind": "call",
+      "label": "the chosen checkout of a repository",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/server/projections/repository-listing.ts",
+        "symbol": "checkoutOf"
+      },
+      "id": "vKEsyHFk#nMNm8jov",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    },
+    {
       "order": 62000,
       "kind": "call",
       "label": "every checkout and untracked vault",
@@ -49,12 +62,12 @@
     {
       "order": 70041,
       "kind": "call",
-      "label": "recognize the canonical vault layout",
+      "label": "the vault a checkout holds",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workspace/src/server/projections/repository-listing.ts",
-        "symbol": "isVaultLayout"
+        "symbol": "vaultIn"
       },
       "id": "vKEsyHFk#SyLH2N4H",
       "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"

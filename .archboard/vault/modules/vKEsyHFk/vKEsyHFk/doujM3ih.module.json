@@ -2,7 +2,8 @@
   "order": 33000,
   "name": "server-lifecycle",
   "kind": "package",
-  "responsibility": "Starts, finds, restarts and stops the server of a checkout or a release, and the request transport and pane rules its callers share",
+  "responsibility": "Starts, finds, restarts and stops the server of a checkout or a release, carries a CLI invocation's requests to it, and holds what the server process does for itself",
+  "description": "Sixteen names on four entries: ./server (ensureServerRunning, restartServer, serverStatus, connectedBrowsers, stopServer), ./server-client (requestJson, stateInvocation, statedInvocation), ./config (archboardUrl, removedEnvironmentMessage) and ./server-process, what the server process does for itself: recordServerPid, releaseServerPid, reportStartupOwnership, reportStartupEnd, serverCodeState and staleFrontend. A server owns its pidfile by the exact bytes it wrote: releaseServerPid removes the file only while it still holds them, so a server that bound the freed port, or the winner of a concurrent start, keeps its record. The launcher makes the same check by pid when it cleans up after a failed start or a stop. reportStartupEnd is a first-call-wins latch in the writer: a process writes one terminal startup record, and a later report writes nothing. The pane rules and the messages a pane is sent belong to workbench (TASK-653.08).",
   "groups": [
     "packages"
   ],
@@ -12,12 +13,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

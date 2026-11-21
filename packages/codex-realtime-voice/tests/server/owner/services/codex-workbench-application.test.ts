@@ -10,7 +10,7 @@ import type {
 } from "@archboard/codex-app-server/transport";
 import { createCodexBrowserModel } from "#shared/browser/schemas/model.ts";
 
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { type BrowserOwnerProjection } from "#server/projection/protocol/projection-contract.ts";
 import { type BrowserWorkbenchActions } from "#server/chat-conversations/gateway/protocol/contract.ts";
 import { createCodexWorkbenchGateway } from "#server/chat-conversations/gateway/connections/services/gateway.ts";
@@ -35,7 +35,7 @@ interface PublicSocketClient {
 const CHECKOUT = "/work/payments";
 
 test("the live server socket crosses the real gateway and approval broker exactly once", async () => {
-	const identity = createIdentityAuthorities();
+	const identity = testAuthorities();
 	const model = createCodexBrowserModel(identity);
 	const childId = identity.identity.validator.childId;
 	const epoch = identity.identity.validator.epoch;

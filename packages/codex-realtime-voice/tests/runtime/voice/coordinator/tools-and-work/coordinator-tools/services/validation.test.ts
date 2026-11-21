@@ -16,7 +16,7 @@ import {
 	responseEnvelope,
 	type CoordinatorToolsFixture,
 } from "#tests/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/support.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 
 function dispatch(fixtureValue: CoordinatorToolsFixture, request: DynamicServerRequest) {
 	return fixtureValue.dispatcher.dispatch(request as CoordinatorToolsServerRequest);
@@ -202,7 +202,7 @@ describe("coordinator dynamic-tool identity and authority validation", () => {
 
 	test("refuses a validated call when the issuer returns a foreign operation identity", async () => {
 		const h = fixture();
-		h.operation.setNextIssued(createIdentityAuthorities().operation.issuer.mintOperationId());
+		h.operation.setNextIssued(testAuthorities().operation.issuer.mintOperationId());
 		const result = await dispatch(h, h.request("inspect_workhorse"));
 		expect(result.response.success).toBe(true);
 		expect(responseEnvelope(result.response)).toMatchObject({

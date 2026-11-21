@@ -1,0 +1,28 @@
+{
+  "order": 73000,
+  "name": "Legacy inventory rules",
+  "kind": "module",
+  "responsibility": "The rules that plan a migration from the inventory of legacy boards: current nodes, identities, names, flows, conflicts and drafts",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-store/src/shared/legacy-inventory"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#lO00uVmy",
+  "outgoing": [
+    {
+      "order": 2000,
+      "kind": "call",
+      "label": "resolve the variant an original names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/shared/legacy-inventory/rules/evidence.ts",
+        "symbol": "resolveVariant"
+      },
+      "id": "vKEsyHFk#b2N8FmIo",
+      "to": "vKEsyHFk#vZUWUgyb"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import type {
 	ArchitectureCheckpointRetain,
 	ArchitectureModelRead,
-} from "@archboard/model/contract";
+} from "@archboard/model-contract";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";

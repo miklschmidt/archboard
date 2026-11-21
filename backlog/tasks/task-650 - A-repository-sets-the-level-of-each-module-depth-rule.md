@@ -1,11 +1,11 @@
 ---
 id: TASK-650
 title: A repository sets the level of each module-depth rule
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-19T13:43:00Z'
-updated_date: '2026-11-19T13:56:00Z'
+updated_date: '2026-11-21T03:02:00Z'
 labels:
   - ready-for-agent
 dependencies:
@@ -69,6 +69,8 @@ Per-path or per-module scope (the model's `external` mark covers code a reposito
 
 <!-- SECTION:NOTES:BEGIN -->
 Evidence: packages/model/tests/runtime/store/configuration.test.ts (AC1, AC5 config half: INVALID_CONFIG with path codeCheck.rules.<CODE>; an unknown key now ends the diagnostic path for every strict object). packages/code-intel/tests/runtime/code-check/operations/depth-rules.test.ts (AC2, AC7 pure: lower with policy message, off, untouched). module-depth.test.ts 'the vault's rules lower or remove...' (AC2 models[].rules, AC3: EXPOSED_VALUE off keeps Timing MODULE_SHALLOW); verified it fails with the rules unwired. AC4: rules apply once in run.ts answerOf, which the server memory and the CLI JSON (read by the Action) take as is; check-parts.test.ts prints one off line and refuses the flag beside rules.MODULE_SHALLOW with exit 2 (SHALLOW_RULE_CONFLICT). AC6: gate.mdx, pull-requests.mdx, check code help Rules section, schema meta, SKILL.md, design-lens.md, CONTEXT.md (Module-depth rule), ADR 0082 decision entry. Gates: bun run build, types, lint:all, format:check, test:modules (5307 pass), test:repository (174), test:system (227), check-model exit 0, site reference + build pass. vault.ts was at its 600-line limit, so the code check's refusals moved to commands/vault/protocol/code-check-refusals.ts.
+
+Set Done in the deepen layer (#142): every criterion was checked when TASK-650 merged into feat/module-depth-rules (#141), but its status stayed In Progress.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

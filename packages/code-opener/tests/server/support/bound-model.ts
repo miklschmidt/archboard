@@ -1,7 +1,7 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { mintId } from "@archboard/model/ids";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
+import { mintId } from "@archboard/model-rules";
 /** Canonical input and bound module for opener integration fixtures. */
 interface BoundFixture {
 	readonly key: string;

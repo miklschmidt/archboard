@@ -33,6 +33,19 @@
   ],
   "outgoing": [
     {
+      "order": 30000,
+      "kind": "call",
+      "label": "read a tracked picture's recipe; replace it when redrawn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/vault/embeds/operations/embeds-check.ts",
+        "symbol": "replaceRenderRecipe"
+      },
+      "id": "vKEsyHFk#D8bHS02D",
+      "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+    },
+    {
       "order": 95000,
       "kind": "data",
       "label": "the default branch vault, shallow and sparse",

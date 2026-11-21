@@ -10,7 +10,7 @@
 
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { modelCacheMs } from "@archboard/timing";
+import { durationMs } from "@archboard/timing";
 import { fetchRepositories } from "#ui/panes/model-catalog/clients/repositories.ts";
 
 /** The one root every catalog resource hangs under, so invalidation can sweep it. */
@@ -43,7 +43,7 @@ function repositoriesQuery() {
 		 * @returns The listing.
 		 */
 		queryFn: (context) => fetchRepositories(context.signal),
-		staleTime: modelCacheMs("listingStale"),
+		staleTime: durationMs("modelCache.listingStale"),
 		refetchOnWindowFocus: "always",
 	});
 }

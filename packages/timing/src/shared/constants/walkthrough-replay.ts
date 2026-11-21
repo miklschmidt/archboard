@@ -24,13 +24,4 @@ const REPLAY_MS = durations({
 	preroll: 1500,
 });
 
-/**
- * One duration of a replay.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function replayMs(key: keyof typeof REPLAY_MS): number {
-	return REPLAY_MS[key];
-}
-
-export { replayMs };
+export { REPLAY_MS };

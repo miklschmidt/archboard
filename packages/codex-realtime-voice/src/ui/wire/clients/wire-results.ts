@@ -27,7 +27,7 @@ import {
 	parseBrowserSnapshot,
 	record,
 } from "#ui/wire/clients/wire.ts";
-import { parseIdentity } from "#ui/wire/clients/wire-identity.ts";
+import { parseIdentity } from "#shared/browser/schemas/wire-identity.ts";
 
 const GATEWAY_ERROR_CODES: ReadonlySet<string> = new Set(BROWSER_GATEWAY_ERROR_CODES);
 const COMMAND_RESULT_KEYS = [

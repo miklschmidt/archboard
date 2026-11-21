@@ -7,11 +7,8 @@ import type {
 	TerminalApprovalState,
 } from "#runtime/approvals/services/contract.ts";
 import { CodexApprovalError } from "#runtime/approvals/services/contract.ts";
-import {
-	type ReverseResponse,
-	CodexTransportOwnershipError,
-	CodexTransportUsageError,
-} from "@archboard/codex-app-server/transport";
+import type { ReverseResponse } from "@archboard/codex-app-server/transport";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import { parseCodexServerResponse } from "@archboard/codex-app-server/session";
 
 type RecordValue = Record<string, unknown>;
@@ -415,7 +412,7 @@ function classifyResponseFailure(
  * @returns True when the transport refused it.
  */
 function isRefusedByTransport(error: unknown): boolean {
-	return error instanceof CodexTransportOwnershipError || error instanceof CodexTransportUsageError;
+	return readCodexFailure(error)?.kind === "refused_write";
 }
 
 export { effectiveCommandDecisions, isRecord, type RecordValue };

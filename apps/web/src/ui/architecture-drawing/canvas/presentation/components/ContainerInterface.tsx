@@ -10,12 +10,8 @@
 
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
-import {
-	inspectContainer,
-	interfaceMeasures,
-	type Caller,
-} from "@archboard/model/container-interface";
-import type { SemanticNode, VariantContent } from "@archboard/model/content";
+import type { SemanticNode, VariantContent } from "@archboard/model-contract";
+import { inspectContainer, type Caller, type ContainerInspection } from "@archboard/model-rules";
 import { KindIcon } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
 	SidebarChoice,
@@ -29,7 +25,7 @@ import {
 import { usePeekControl } from "#ui/architecture-drawing/canvas/picture/hooks/use-peek.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
 
-type Derived = Parameters<typeof interfaceMeasures>[0];
+type Derived = Extract<ContainerInspection, { readonly holdsParts: true }>;
 
 /** Inputs for the interface. */
 interface ContainerInterfaceProps {
@@ -58,7 +54,7 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 	if (!inspection.holdsParts) {
 		return null;
 	}
-	const measures = interfaceMeasures(inspection);
+	const { measures } = inspection;
 	return (
 		<SidebarRegion slot="semantic-inspector-interface">
 			<Measure

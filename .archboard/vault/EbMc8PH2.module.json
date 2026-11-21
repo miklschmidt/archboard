@@ -54,10 +54,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/telemetry/src/runtime/rollup/rules/daily-usage.ts",
-        "symbol": "telemetryMs"
+        "symbol": "deadline"
       },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#iFWjFhbg"
+      "id": "vKEsyHFk#iFWjFhbg",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }

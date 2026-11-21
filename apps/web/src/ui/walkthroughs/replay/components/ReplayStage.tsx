@@ -23,15 +23,7 @@ import { readingOf } from "#ui/application/rules/pane-reading.ts";
 import type { PaneReading } from "#ui/panes/pane-session/state/pane-reading.ts";
 import { CanvasStage } from "#ui/architecture-drawing/canvas/presentation/components/CanvasStage.tsx";
 import { type SemanticPaneReading } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
-import {
-	OrbStageProvider,
-	RecordedOrb,
-	type SubtitleSource,
-	VoiceBox,
-	type VoiceBoxProps,
-	type AgentVoiceView,
-	type VoiceLevel,
-} from "@archboard/workbench/voice";
+import { RecordedVoice, RecordedVoiceBox } from "@archboard/agent-surfaces";
 import { RecordingStage } from "#ui/walkthroughs/recording/components/RecordingStage.tsx";
 import type { TalkPlayback } from "#ui/walkthroughs/replay/state/talk-playback.ts";
 
@@ -57,46 +49,9 @@ interface ReplayStageProps {
  */
 const TALK_VAULT = "recorded-talk";
 
-/** Nobody picks anything out of a rendered talk, or presses one of its keys. */
+/** Nobody picks anything out of a rendered talk. */
 function ignore(): void {
 	// A recording is watched, not handled.
-}
-
-/** The voice box's keys, as a video has them: drawn, and doing nothing. */
-const WATCHED: VoiceBoxProps["actions"] = { mute: ignore, unmute: ignore };
-
-/**
- * The voice of a talk: live from its first frame to its last.
- * @param level How loud it is on the frame played to.
- * @returns The voice, as the voice box and the orb read it.
- */
-function talkVoice(level: VoiceLevel): AgentVoiceView {
-	return { stage: "listening", problem: null, busy: false, level };
-}
-
-/**
- * The voice box, where the stage lays it, low over the picture: shown once the walkthrough is
- * presented.
- * @param props The voice, what it has said so far, and whether the walkthrough is presented.
- * @param props.voice The voice.
- * @param props.transcript What it has said, which a recording always subtitles.
- * @param props.presented Whether the talk has reached its first step.
- * @returns The box.
- */
-function ReplayVoiceBox(props: {
-	readonly voice: AgentVoiceView;
-	readonly transcript: readonly SubtitleSource[];
-	readonly presented: boolean;
-}): JSX.Element {
-	return (
-		<VoiceBox
-			voice={props.voice}
-			actions={WATCHED}
-			transcript={props.transcript}
-			reducedMotion={false}
-			shown={props.presented}
-		/>
-	);
 }
 
 /**
@@ -113,16 +68,15 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 		[onReading],
 	);
 	const moment = useSyncExternalStore(playback.subscribe, playback.moment);
-	const voice = useMemo(() => talkVoice(level), [level]);
 	const presented = moment.step !== null;
 	const overlay = useMemo(
-		() => <ReplayVoiceBox voice={voice} transcript={moment.transcript} presented={presented} />,
-		[voice, moment.transcript, presented],
+		() => <RecordedVoiceBox transcript={moment.transcript} presented={presented} />,
+		[moment.transcript, presented],
 	);
 	return (
 		<QueryClientProvider client={props.client}>
 			<Tooltip.Provider>
-				<OrbStageProvider>
+				<RecordedVoice level={level}>
 					<RecordingStage>
 						<div data-slot="pane-stage" className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 							<PaneVaultContext value={TALK_VAULT}>
@@ -151,8 +105,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 							</PaneVaultContext>
 						</div>
 					</RecordingStage>
-					<RecordedOrb voice={voice} />
-				</OrbStageProvider>
+				</RecordedVoice>
 			</Tooltip.Provider>
 		</QueryClientProvider>
 	);

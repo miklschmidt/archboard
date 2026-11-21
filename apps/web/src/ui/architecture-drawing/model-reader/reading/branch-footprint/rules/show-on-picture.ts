@@ -1,5 +1,5 @@
-import type { Model } from "@archboard/model/content";
-import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/access/clients/branch-footprint.ts";
+import type { Model } from "@archboard/model-rules";
+import type { BranchFootprintAnswer } from "#ui/architecture-drawing/model-reader/reading/branch-footprint/clients/branch-footprint.ts";
 
 /** A list to show on its picture: the reading the footprint read, and the list's modules. */
 interface FootprintShow {

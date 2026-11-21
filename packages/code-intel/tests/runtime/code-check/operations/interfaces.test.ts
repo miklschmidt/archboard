@@ -204,7 +204,7 @@ beforeAll(async () => {
 				id: "v1",
 				name: "Built",
 				lifecycle: "current",
-				content: { nodes: [part(name, path)], edges: [], flows: [] },
+				content: { nodes: [part(`${name}M`, path)], edges: [], flows: [] },
 			},
 		]);
 	}
@@ -387,7 +387,7 @@ test("each exposed name no file outside the module uses is a finding of its own,
 test("a bound module with no parts reports its interface", () => {
 	const unused = findings("EXPOSED_UNUSED", "Timing");
 	expect(unused.map((each) => [each.subject?.id, each.export, each.severity])).toEqual([
-		["Timing", "IDLE_MS", "warning"],
+		["TimingM", "IDLE_MS", "warning"],
 	]);
 });
 
@@ -395,8 +395,8 @@ test("a bound module that holds two languages reports the exports and the uses o
 	const unused = findings("EXPOSED_UNUSED", "Kit");
 	// Each language's unused export is named by itself, and each language's caller is a use.
 	expect(unused.map((each) => [each.subject?.id, each.export])).toEqual([
-		["Kit", "tsUnused"],
-		["Kit", "py_unused"],
+		["KitM", "tsUnused"],
+		["KitM", "py_unused"],
 	]);
 });
 

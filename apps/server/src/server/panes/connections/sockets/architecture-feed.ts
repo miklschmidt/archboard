@@ -1,12 +1,8 @@
 import type { IncomingMessage } from "http";
 import { WebSocket, type RawData } from "ws";
-import {
-	architectureFeedRequestSchema,
-	type ArchitectureFeedFrame,
-} from "@archboard/model/contract";
-import { watchArchitectureModel } from "@archboard/model/store-read";
-import { namedVault } from "@archboard/workbench/host";
-import { frameText } from "#server/panes/connections/sockets/frame-text.ts";
+import { parseModelRequest, type ArchitectureFeedFrame } from "@archboard/model-contract";
+import { watchArchitectureModel } from "@archboard/model-store";
+import { resolveVault } from "@archboard/server-requests/server";
 
 /**
  * Whether an upgrade asks for the one architecture socket of a tab, not for a pane.
@@ -23,8 +19,10 @@ function isArchitectureFeed(req: IncomingMessage): boolean {
  * @returns The request, or null for a frame that is not one.
  */
 function feedRequest(raw: RawData) {
+	// ws hands every frame over as one buffer while nothing changes its binaryType.
+	if (!Buffer.isBuffer(raw)) return null;
 	try {
-		const parsed = architectureFeedRequestSchema().safeParse(JSON.parse(frameText(raw)));
+		const parsed = parseModelRequest("feed", JSON.parse(raw.toString("utf8")));
 		return parsed.success ? parsed.data : null;
 	} catch {
 		return null;
@@ -55,7 +53,7 @@ function serveArchitectureFeed(ws: WebSocket): void {
 			return;
 		}
 		if (watching.has(vault)) return;
-		if (namedVault(vault).ok) watching.set(vault, watchArchitectureModel(vault, send));
+		if (resolveVault(vault).ok) watching.set(vault, watchArchitectureModel(vault, send));
 		else send({ type: "architecture_unavailable", vault });
 	});
 	ws.once("close", () => {

@@ -4,7 +4,7 @@ import { ARCHBOARD_BROWSER_URL, ARCHBOARD_URL } from "#runtime/services/config.t
 import { bothRelease, otherVersionWarning } from "#runtime/rules/release-version.ts";
 import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 /** Identity marker the Archboard server puts in /health (v1.1+). */
 const ARCHBOARD_SERVICE_NAME = "archboard-server";

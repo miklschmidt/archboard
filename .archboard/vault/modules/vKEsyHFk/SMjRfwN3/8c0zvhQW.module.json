@@ -8,7 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/rasterizer/services/session.ts"
+    "path": "packages/raster/src/runtime/services/session.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#8c0zvhQW",
@@ -18,7 +18,6 @@
       "order": 4000,
       "kind": "call",
       "label": "launch, open a page, stop",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -26,7 +25,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
+        "path": "packages/raster/src/runtime/services/session.ts",
         "symbol": "launchHeadlessChromium"
       },
       "id": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
@@ -36,7 +35,6 @@
       "order": 6000,
       "kind": "call",
       "label": "one socket to the page",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -44,7 +42,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
+        "path": "packages/raster/src/runtime/services/session.ts",
         "symbol": "DevTools.evaluate"
       },
       "id": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
@@ -61,7 +59,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
+        "path": "packages/raster/src/runtime/services/session.ts",
         "symbol": "checkedReadiness"
       },
       "id": "vKEsyHFk/SMjRfwN3#TBd33jdx",
@@ -74,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
+        "path": "packages/raster/src/runtime/services/session.ts",
         "symbol": "regionOf"
       },
       "id": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
@@ -87,7 +85,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/session.ts",
+        "path": "packages/raster/src/runtime/services/session.ts",
         "symbol": "RasterSession"
       },
       "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",

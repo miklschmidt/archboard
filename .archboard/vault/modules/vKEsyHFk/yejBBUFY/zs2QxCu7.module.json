@@ -3,13 +3,13 @@
   "name": "Agent setup",
   "kind": "module",
   "responsibility": "Talking needs no setup: a message or Talk is held and carried through sign-in, Codex starting and the creation of the tab's conversation",
-  "description": "One setup for the tab, outliving focus: both panes share the tab's conversation. Each held message says what it waits on. A failure stays on it with the reason, and nothing is retried behind the user's back. It speaks through ports the application wires to the focused pane's thread link, composer and voice session.",
+  "description": "One setup for the server, outliving focus: both panes share the tab's conversation. Each held message says what it waits on. A failure stays on it with the reason, and nothing is retried behind the user's back. It speaks through ports the agent root wires to the focused pane's thread link, composer and voice session.",
   "groups": [
     "agent"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/agent-setup/state"
+    "path": "packages/agent-surfaces/src/ui/agent-setup"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#zs2QxCu7",
@@ -36,7 +36,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
         "symbol": "createConversation"
       },
       "id": "vKEsyHFk/yejBBUFY#FWzvKaC4",
@@ -49,7 +49,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/agent-setup/state/setup.ts",
+        "path": "packages/agent-surfaces/src/ui/agent-setup/state/setup.ts",
         "symbol": "startVoice"
       },
       "id": "vKEsyHFk/yejBBUFY#UBmrpsBg",

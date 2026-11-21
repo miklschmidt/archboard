@@ -1,10 +1,9 @@
 import { z } from "zod";
-import { architectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
 import {
-	diagramThemeSchema,
-	layoutEngineSchema,
 	defaultLayoutEngine,
-} from "@archboard/model/render-reply";
+	modelShape,
+	type ArchitectureModelRead,
+} from "@archboard/model-contract";
 import { recordingLanguageInputSchema } from "@archboard/walkthrough/recording";
 import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
@@ -18,13 +17,16 @@ import {
 	requireWritableDirectory,
 } from "#cli/commands/model/rules/recording-output.ts";
 
+const diagramTheme = modelShape("diagramTheme");
+const layoutEngine = modelShape("layoutEngine");
+
 const InputSchema = z.object({
 	checkpoint: z.string(),
 	walkthrough: z.string(),
 	out: z.string(),
 	talk: z.string().optional(),
-	theme: diagramThemeSchema().default("dark"),
-	layout: layoutEngineSchema().default(defaultLayoutEngine()),
+	theme: diagramTheme.default("dark"),
+	layout: layoutEngine.default(defaultLayoutEngine()),
 	language: recordingLanguageInputSchema(),
 });
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -134,7 +136,7 @@ const modelRecordContract = defineCommand({
 			spellings: ["--theme"],
 			value: "required",
 			placeholder: "theme",
-			choices: diagramThemeSchema().options,
+			choices: diagramTheme.options,
 			default: "dark",
 			description: "Which palette the recording draws in",
 		},
@@ -144,7 +146,7 @@ const modelRecordContract = defineCommand({
 			spellings: ["--layout"],
 			value: "required",
 			placeholder: "engine",
-			choices: layoutEngineSchema().options,
+			choices: layoutEngine.options,
 			default: defaultLayoutEngine(),
 			description: "Which layout engine lays the model out",
 		},
@@ -194,7 +196,7 @@ const modelRecordContract = defineCommand({
 			model: z.string(),
 			state: z.string().nullable(),
 			checkpoint: z.string(),
-			revision: architectureModelReadSchema().options[0].shape.revision,
+			revision: modelShape("revision"),
 			walkthrough: z.object({ id: z.string(), name: z.string() }),
 			steps: z.int(),
 			file: z.string(),
@@ -202,11 +204,11 @@ const modelRecordContract = defineCommand({
 			mimeType: z.string(),
 			durationMs: z.int(),
 			frames: z.int(),
-			theme: diagramThemeSchema(),
-			layout: layoutEngineSchema(),
+			theme: diagramTheme,
+			layout: layoutEngine,
 			talk: z.string(),
 		}),
-		architectureModelReadSchema().options[1],
+		modelShape("refusal"),
 	]),
 	outcomes: [
 		{

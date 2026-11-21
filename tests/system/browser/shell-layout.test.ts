@@ -27,7 +27,7 @@ import {
 	editCanonicalModel,
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import {
 	AGENT_DOCK,
 	AGENT_PANEL,
@@ -143,7 +143,7 @@ test(
 		);
 		const proposal = { id: created.target.state!, name: "Queued ingest" };
 		// The agent's activity row outlives its write by a product linger
-		// (claimMs("activityLinger")). A restart drops it, so the shell matrix captures the
+		// ("claim.activityLinger"). A restart drops it, so the shell matrix captures the
 		// idle navigator without waiting that linger out.
 		await server.restart();
 

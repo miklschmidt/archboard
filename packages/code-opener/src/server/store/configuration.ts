@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 import type { OpenerSelection } from "#shared/schemas/opener-settings.ts";
-import { writeFileAtomic } from "@archboard/workspace/atomic-write";
-import { stateDir } from "@archboard/workspace/state-dir";
+import { writeFileAtomic } from "@archboard/machine/atomic-write";
+import { stateDir } from "@archboard/machine/state-dir";
 import { validateOpenerSelection } from "#server/projections/planning.ts";
 
 interface OpenerConfigurationSuccess {

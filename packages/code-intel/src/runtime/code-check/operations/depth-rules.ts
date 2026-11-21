@@ -9,7 +9,7 @@
 // turning a rule off never changes which modules are shallow. The rules belong
 // to the vault, so the answer's severities still never depend on the caller.
 
-import type { SemanticPolicy } from "@archboard/model/policy";
+import type { SemanticPolicy } from "@archboard/model-contract";
 
 /** The level a vault sets for each module-depth code. */
 type DepthRules = NonNullable<NonNullable<SemanticPolicy["codeCheck"]>["rules"]>;

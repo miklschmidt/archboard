@@ -1,0 +1,31 @@
+{
+  "order": 960510,
+  "name": "Explanation result",
+  "kind": "ui",
+  "responsibility": "One captured local answer as Codex gives it: where it stands, the answer with the files it names, and cancel",
+  "groups": [
+    "agent"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelExplanationResult.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#nT2UAqsi",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 960075,
+      "kind": "render",
+      "label": "a local answer, with the files it names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelExplanationResult.tsx",
+        "symbol": "AgentAnswer"
+      },
+      "id": "vKEsyHFk#Yav1RSmc",
+      "to": "vKEsyHFk#3MpdOmsk"
+    }
+  ]
+}

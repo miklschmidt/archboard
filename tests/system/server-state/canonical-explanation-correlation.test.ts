@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { cpSync, existsSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { readArchitectureModel } from "@archboard/model/store-read";
+import { readArchitectureModel } from "@archboard/model-store";
 import { prepareProductionFixture, productionRecords } from "./support/codex-production.ts";
 import {
 	seedGit,

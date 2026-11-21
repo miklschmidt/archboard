@@ -42,12 +42,12 @@
     {
       "order": 36000,
       "kind": "render",
-      "label": "the voice box, with the talk's lines as they were said",
+      "label": "the talk's voice: its orb, and its box with the lines said",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
-        "symbol": "VoiceBox"
+        "symbol": "RecordedVoice"
       },
       "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
       "to": "vKEsyHFk#ZTh8T7Ym"
@@ -64,19 +64,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
       "to": "vKEsyHFk/yejBBUFY#H17EYQ6u"
-    },
-    {
-      "order": 47000,
-      "kind": "render",
-      "label": "the one orb, in the voice box's socket",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/replay/components/ReplayStage.tsx",
-        "symbol": "RecordedOrb"
-      },
-      "id": "vKEsyHFk/yejBBUFY#gIVISpC9",
-      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
     },
     {
       "order": 53000,

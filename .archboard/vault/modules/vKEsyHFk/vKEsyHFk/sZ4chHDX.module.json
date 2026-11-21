@@ -2,7 +2,8 @@
   "order": 22000,
   "name": "timing",
   "kind": "package",
-  "responsibility": "Every duration, grouped by the subsystem that owns it, with what it pulls against",
+  "responsibility": "Owns every duration and the waiting around them: named waits, pauses and deadlines, and one getter for durations that something other than a wait takes as a number",
+  "description": "Callers do not write the waiting themselves (ADR: timing owns the waiting, and one getter reads the rest). It exports nine names. waitUntil polls a probe on a named wait whose private policy keeps its bound, its cadence, whether it sleeps first, where it checks the bound, whether the bound's own moment counts and how its last sleep meets the bound. A caller may pass its own bound, an outer cap, a signal and a clock, and gets the value found or a refusal with its reason and the bound in seconds, which the caller puts in its own sentence. pause sleeps one named cadence for a loop that keeps its own decisions across passes. deadline ends a named duration from a moment, never past an optional cap; an age check compares the time now with it, and the caller keeps its own operator. durationMs is the one keyed getter, for what takes a number and is not a wait: a stylesheet, a physics constant, a timer, a library option or a message. No wait bound or cadence is readable through it except the model lock's poll, which a synchronous loop sleeps with Bun.sleepSync. painterPhasesJson, reachHopDelayMs, columnSlideSettledMs, codexRestartDelayMs and localityDefaultSinceSeconds keep their computations. The Clock port (now, and after(ms, run) that returns a cancel) is the seam a caller or a test passes; the default clock stays private and reads Date.now and setTimeout when called. A duration is named \"<owner>.<key>\" over the owner groups, which stay inside with what each pulls against. The names and policies have a published half, the Codex groups and processGroup that @archboard/codex-realtime-voice bundles, and a host half that a build under the published condition leaves out, where a host name throws by name. It stays browser-safe: no process and no node: imports.",
   "groups": [
     "packages"
   ],
@@ -12,12 +13,12 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+  "parent": "vKEsyHFk#EuaJBisP",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "parent": "vKEsyHFk#EuaJBisP"
+  "outgoing": []
 }

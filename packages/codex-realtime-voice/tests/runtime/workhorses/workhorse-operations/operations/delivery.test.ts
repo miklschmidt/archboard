@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { createCodexFailure } from "@archboard/codex-app-server/failure";
 
 import { createTextUserInput } from "#runtime/host/turn-input/rules/text-input.ts";
-import { CodexSessionMutationError } from "@archboard/codex-app-server/session";
 import { CodexWorkhorseQueueError } from "#runtime/workhorses/workhorse-queue/services/contract.ts";
 import {
 	flush,
@@ -250,11 +250,12 @@ describe("codex workhorse operation delivery", () => {
 	test("keeps one unknown start attempt and confirms it only from exact later turn evidence", async () => {
 		const fixtureValue = fixture();
 		try {
-			fixtureValue.session.nextStartError = new CodexSessionMutationError(
-				"turn/start",
-				"outcome_unknown",
-				"lost",
-			);
+			fixtureValue.session.nextStartError = createCodexFailure({
+				kind: "mutation",
+				method: "turn/start",
+				outcome: "outcome_unknown",
+				message: "lost",
+			});
 			const events: string[] = [];
 			let operationId = "";
 			fixtureValue.operations.subscribe((event) => {
@@ -352,11 +353,12 @@ describe("codex workhorse operation delivery", () => {
 		const fixtureValue = fixture();
 		try {
 			fixtureValue.setStatus("active", [turn(fixtureValue.identity, "steer-loss", "inProgress")]);
-			fixtureValue.session.nextSteerError = new CodexSessionMutationError(
-				"turn/steer",
-				"not_delivered",
-				"not sent",
-			);
+			fixtureValue.session.nextSteerError = createCodexFailure({
+				kind: "mutation",
+				method: "turn/steer",
+				outcome: "not_delivered",
+				message: "not sent",
+			});
 			const events: string[] = [];
 			fixtureValue.operations.subscribe((event) => events.push(event.type));
 			const result = await fixtureValue.operations.steer({
@@ -378,11 +380,12 @@ describe("codex workhorse operation delivery", () => {
 			fixtureValue.setStatus("active", [
 				turn(fixtureValue.identity, "unknown-steer", "inProgress"),
 			]);
-			fixtureValue.session.nextSteerError = new CodexSessionMutationError(
-				"turn/steer",
-				"outcome_unknown",
-				"response lost",
-			);
+			fixtureValue.session.nextSteerError = createCodexFailure({
+				kind: "mutation",
+				method: "turn/steer",
+				outcome: "outcome_unknown",
+				message: "response lost",
+			});
 			const events: string[] = [];
 			let operationId = "";
 			fixtureValue.operations.subscribe((event) => {

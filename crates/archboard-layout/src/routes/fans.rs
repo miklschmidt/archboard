@@ -5,12 +5,12 @@
 
 use std::collections::BTreeSet;
 
+use archboard_geometry::{Point, Rect};
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts};
-use archboard_scene::geometry::{Point, Rect};
 
 use crate::constants::EPSILON;
 
-use crate::ecma::{hypot, js_max, js_min, sign};
+use crate::ecma::{hypot, max, min, sign};
 
 use super::ROUTE_LANE;
 use super::folded::{
@@ -48,10 +48,10 @@ fn lane_sweep(leg: &Leg, to: f64) -> Rect {
     let row = axis.across();
     box_on(
         axis,
-        js_min(axis.of(leg.corner), to),
-        js_max(axis.of(leg.corner), to),
-        js_min(row.of(leg.corner), row.of(leg.far)),
-        js_max(row.of(leg.corner), row.of(leg.far)),
+        min([axis.of(leg.corner), to]),
+        max([axis.of(leg.corner), to]),
+        min([row.of(leg.corner), row.of(leg.far)]),
+        max([row.of(leg.corner), row.of(leg.far)]),
     )
 }
 

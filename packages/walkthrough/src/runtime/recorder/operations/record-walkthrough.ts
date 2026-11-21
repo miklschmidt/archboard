@@ -1,5 +1,5 @@
 import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
-import { type ArchitectureModelRead } from "@archboard/model/contract";
+import type { ArchitectureModelRead } from "@archboard/model-contract";
 // Recording one walkthrough of a document to a video file, narrated by the Codex
 // voice (TASK-304), in two passes (TASK-381).
 //
@@ -25,10 +25,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
-import type { LegacyBoard } from "@archboard/model/legacy-board";
-import { shellSize } from "@archboard/renderer/shell-geometry";
-import { recorderMs } from "@archboard/timing";
+import type {
+	DiagramTheme,
+	LayoutEngineName,
+	LegacyBoard,
+	ModelReply,
+} from "@archboard/model-contract";
+import { shell } from "@archboard/renderer/shell-geometry";
+import { durationMs } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
@@ -43,11 +47,8 @@ import {
 	type Talk,
 	type TalkLog,
 } from "#shared/protocol/talk.ts";
-import {
-	isJsonRecord,
-	type HeadlessChromium,
-	type HeadlessWindow,
-} from "@archboard/renderer/headless-chromium";
+import { isRecord } from "@archboard/diagnostics/unknown-record";
+import { type HeadlessChromium, type HeadlessWindow } from "@archboard/headless-chromium";
 
 import { WalkthroughRecordingError } from "#runtime/recorder/operations/recording-errors.ts";
 import { resolveEncoder, startBrowser } from "#runtime/recorder/services/recording-tools.ts";
@@ -60,10 +61,8 @@ import {
 import { renderTalk } from "#runtime/recorder/operations/render-talk.ts";
 import { writeSilence } from "#runtime/recorder/store/silence.ts";
 import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/recorder/store/talk-files.ts";
-import type { vaultCheckSchema } from "@archboard/model/policy";
-import type { z } from "zod";
 
-type VaultCheck = z.infer<ReturnType<typeof vaultCheckSchema>>;
+type VaultCheck = ModelReply<"checkVault">;
 
 /** What to record, and where. */
 interface RecordingOptions {
@@ -232,9 +231,9 @@ function pageHandle(window: HeadlessWindow): RecordingPageHandle {
 		saveBlob: async (expression, path, readTimeoutMs) => {
 			const remote = await page.evaluate(expression, {
 				returnByValue: false,
-				timeoutMs: recorderMs("call"),
+				timeoutMs: durationMs("recorder.call"),
 			});
-			const objectId = isJsonRecord(remote) ? remote["objectId"] : undefined;
+			const objectId = isRecord(remote) ? remote["objectId"] : undefined;
 			if (typeof objectId !== "string") {
 				throw new RecordingPageError("The canvas page finished without a talk to hand over.", true);
 			}
@@ -260,20 +259,20 @@ async function openRecordingPage(
 		await chromium.browser.call(
 			"Browser.grantPermissions",
 			{ origin: new URL(url).origin, permissions: ["audioCapture"] },
-			recorderMs("call"),
+			durationMs("recorder.call"),
 		);
 		const window = await chromium.openWindow(
 			"about:blank",
-			shellSize("viewport"),
-			recorderMs("call"),
+			shell("viewport"),
+			durationMs("recorder.call"),
 		);
 		const { page } = window;
 		await page.call(
 			"Emulation.setEmulatedMedia",
 			{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
-			recorderMs("call"),
+			durationMs("recorder.call"),
 		);
-		const navigation = await page.call("Page.navigate", { url }, recorderMs("call"));
+		const navigation = await page.call("Page.navigate", { url }, durationMs("recorder.call"));
 		const refused = navigation["errorText"];
 		if (typeof refused === "string" && refused !== "") {
 			throw new Error(

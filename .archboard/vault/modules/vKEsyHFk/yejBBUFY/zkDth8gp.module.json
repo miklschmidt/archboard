@@ -3,7 +3,7 @@
   "name": "Pane composition",
   "kind": "module",
   "responsibility": "Mounts the session and drawing stage for one pane",
-  "description": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.",
+  "description": "Canonical reading metadata joins the existing pane publisher. The request uses the admitted pane vault, while architecture names the actual reading vault. Legacy and canonical readings use one report sequence.\n\nCanonical recording draws only its supplied payload. Live narration waits for the accepted capture report before voice starts. Matching pane requests drive the captured walkthrough. Reading changes or failed publication refuse a pending narration start.\n\nAlready-open panes observe the shared architecture feed before cutover. The public read result selects the active format. Durable migration changes the pane to canonical authority; recovery and busy states stay explicit. The browser performs no migration write.\n\nIt hands the pane's session the pane's socket conversation from the pane handles; it makes no socket owner or transport itself.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/components/ApplicationPane.tsx"
@@ -76,7 +76,7 @@
         "symbol": "explanationKey"
       },
       "id": "vKEsyHFk/yejBBUFY#ponUuQbD",
-      "to": "vKEsyHFk#guvtYApo"
+      "to": "vKEsyHFk#dDVY1Iqe"
     },
     {
       "order": 87000,
@@ -116,6 +116,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#g00kNnNx",
       "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
+    },
+    {
+      "order": 960073,
+      "kind": "render",
+      "label": "the pane's agent: its socket's conversation, the voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/ApplicationPane.tsx",
+        "symbol": "AgentPane"
+      },
+      "id": "vKEsyHFk#daoQ6MAE",
+      "to": "vKEsyHFk#Y2VCuHs5"
     }
   ]
 }

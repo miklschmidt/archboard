@@ -1,0 +1,28 @@
+{
+  "order": 41000,
+  "name": "Operation errors",
+  "kind": "module",
+  "responsibility": "Turns a thrown value into the error code and delivery outcome a workhorse operation settles: link refusals, session mutation failures and queue errors",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/rules/operation-errors.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#k8k1iIPp",
+  "outgoing": [
+    {
+      "order": 90,
+      "kind": "call",
+      "label": "a failed mutation's outcome, else outcome_unknown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-operations/rules/operation-errors.ts",
+        "symbol": "readCodexFailure"
+      },
+      "id": "vKEsyHFk#CtMqkVpA",
+      "to": "vKEsyHFk#9WRvXbgc"
+    }
+  ]
+}

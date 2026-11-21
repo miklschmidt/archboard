@@ -3,13 +3,12 @@
 // `ShellActions`. The shell keeps only presentation state of its own.
 
 import type { ReactNode } from "react";
-import type { z } from "zod";
-import type { Model } from "@archboard/model/content";
-import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
+import type { Model } from "@archboard/model-rules";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
-import type { RepositoryEntry } from "@archboard/workspace/repositories";
+import type { RepositoryEntry } from "@archboard/workspace/shapes";
 import type { AgentActivityEntry, PaneStatus } from "#ui/panes/pane-session/rules/session-types.ts";
+import type { ModelDocumentInput } from "@archboard/model-contract";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -18,10 +17,7 @@ type ThemeChoice = "light" | "dark";
 type NavigatorMode = "architecture" | "code";
 
 /** What a pane opens of a model, when it opens more than its roots. */
-type PaneOpening = Omit<
-	z.input<ReturnType<typeof architecturePaneReadingSchema>>,
-	"model" | "beat"
->;
+type PaneOpening = Omit<ModelDocumentInput<"paneReading">, "model" | "beat">;
 
 /** One pane: what it reports about itself, who holds its model, and its mounted stage. */
 interface ShellPane {

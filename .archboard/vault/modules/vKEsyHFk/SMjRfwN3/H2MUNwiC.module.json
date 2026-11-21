@@ -8,11 +8,11 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/recipe/operations/png-recipe.ts"
+    "path": "packages/render-recipe/src/runtime/operations/png-recipe.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#H2MUNwiC",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "parent": "vKEsyHFk#uQ2UEbuS",
   "outgoing": [
     {
       "order": 54000,
@@ -21,7 +21,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/recipe/operations/png-recipe.ts",
+        "path": "packages/render-recipe/src/runtime/operations/png-recipe.ts",
         "symbol": "readPngDimensions"
       },
       "id": "vKEsyHFk/SMjRfwN3#rzORtiO1",

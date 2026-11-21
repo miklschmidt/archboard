@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createCodexDynamicTools } from "#runtime/dynamic-tools/dispatch/operations/dispatcher.ts";
 import { type CodexDynamicTools } from "#runtime/dynamic-tools/protocol/contract.ts";
 import { parseDynamicToolCallResponse } from "#tests/runtime/support/dynamic-tools/parse-response.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import {
 	FakeApproval,
 	dynamicDecision,
@@ -341,7 +341,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		await reachQuarantine(tools);
 
 		fixture.lifecycle.exitQuarantineWith(
-			createIdentityAuthorities().identity.validator.childId,
+			testAuthorities().identity.validator.childId,
 			caller.epoch,
 		);
 		await Promise.resolve();
@@ -429,7 +429,7 @@ describe("codex dynamic unresolved mutation quarantine", () => {
 		const { authorities, caller } = setupAuthorities();
 		const fixture = optionsFor(authorities, caller, { approval: cancelledApproval() });
 		fixture.lifecycle.poisonOwnerOverride = {
-			child: createIdentityAuthorities().identity.validator.childId,
+			child: testAuthorities().identity.validator.childId,
 			epoch: caller.epoch,
 		};
 		fixture.operationIds.terminalFaults.push("before", "before", "before", "before");

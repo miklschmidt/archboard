@@ -3,7 +3,7 @@
   "name": "Application composition",
   "kind": "module",
   "responsibility": "Connects canonical pane and feature owners",
-  "description": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents.",
+  "description": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents. Each pane gets one socket conversation from the pane handles, which its session attaches to each of its sockets and hands to the pane's agent. The agent itself is @archboard/agent-surfaces: the shell is drawn inside its root and reads the voice and the panel from it (TASK-653.13). Presenting one pane fullscreen is its application state (state/fullscreen-presentation.ts, moved from ui-kit in TASK-653.17): one owned root, the pane wanted on it, and a browser that may refuse, lose or answer late.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application"

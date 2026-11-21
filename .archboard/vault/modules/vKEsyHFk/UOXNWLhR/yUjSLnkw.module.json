@@ -20,10 +20,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-target.ts",
-        "symbol": "readDocument"
+        "symbol": "parseDocument"
       },
       "id": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
-      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
+      "to": "vKEsyHFk#UOmGPBWI"
     },
     {
       "order": 105000,

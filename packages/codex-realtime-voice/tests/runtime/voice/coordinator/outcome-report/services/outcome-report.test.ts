@@ -9,12 +9,12 @@ import { TEST_CONTEXT_CODEC } from "#tests/runtime/support/host.ts";
 
 import { describe, expect, test } from "bun:test";
 import { createOutcomeReportPort } from "#runtime/voice/coordinator/outcome-report/services/outcome-report.ts";
-import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
+import { testAuthorities } from "#tests/runtime/support/codex-connection.ts";
 import { generationContextFixture } from "#tests/server/support/generation/generation-values.ts";
 
 /** A port whose turn/start a test scripts, recording what was started. */
 function harness(startFails = false, unattended = false) {
-	const threadId = createIdentityAuthorities().identity.decoder.adoptThreadId("coordinator");
+	const threadId = testAuthorities().identity.decoder.adoptThreadId("coordinator");
 	const starts: { readonly prompt: string; readonly clientUserMessageId: unknown }[] = [];
 	const contexts: string[] = [];
 	const port = createOutcomeReportPort({

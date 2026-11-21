@@ -10,7 +10,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import { defaultSemanticPolicy } from "@archboard/model-contract";
 import { keepTalk, renderTalk } from "@archboard/walkthrough/recorder";
 
 import { prepareFakeFfmpeg } from "./support/fake-ffmpeg.ts";

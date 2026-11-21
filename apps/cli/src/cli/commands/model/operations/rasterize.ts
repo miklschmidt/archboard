@@ -1,15 +1,8 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import {
-	architectureRenderRequestSchema,
-	architectureRenderResultSchema,
-} from "@archboard/model/contract";
-import {
-	architectureRasterReceiptSchema,
-	createSemanticRasterizer,
-	rasterScaleSchema,
-} from "@archboard/renderer/rasterizer";
-import { readRenderRecipe, embedRecipeInPng } from "@archboard/renderer/recipe";
+import { modelShape, type ModelReply } from "@archboard/model-contract";
+import { rasterizeAll, rasterScaleSchema } from "@archboard/raster";
+import { readRenderRecipe, replaceRenderRecipe } from "@archboard/render-recipe";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { pendingArtifactSchema } from "#cli/contract/protocol/schemas.ts";
 import {
@@ -18,10 +11,7 @@ import {
 } from "#cli/commands/model/operations/render.ts";
 import { defineCommand } from "#cli/contract/protocol/contract.ts";
 import { regionWithin } from "#cli/commands/model/rules/raster-region.ts";
-type Picture = Extract<
-	z.infer<ReturnType<typeof architectureRenderResultSchema>>,
-	{ success: true }
->;
+type Picture = Extract<ModelReply<"render">, { success: true }>;
 const RegionSchema = z
 	.string()
 	.regex(/^\d+,\d+,[1-9]\d*,[1-9]\d*$/u)
@@ -30,7 +20,7 @@ const RegionSchema = z
 		return { x, y, width, height };
 	});
 /**
- * Capture a canonical SVG through the existing private rasterizer.
+ * Capture a canonical SVG in its own private Chromium, carrying the picture's recipe.
  * @param picture The complete server-rendered picture.
  * @param scale Bitmap pixels per diagram pixel.
  * @param region The optional diagram region.
@@ -43,31 +33,21 @@ async function captureArchitecture(
 	region: z.output<typeof RegionSchema> | undefined,
 	signal: AbortSignal,
 ) {
-	const rasterizer = createSemanticRasterizer();
-	await using lifetime = new AsyncDisposableStack();
-	lifetime.defer(async () => {
-		const cleanup = await rasterizer.stop();
-		if (!cleanup.clean)
-			throw new Error(
-				`The canonical rasterizer did not stop cleanly: ${cleanup.errors.join("; ")}`,
-			);
-	});
-	const capture = await rasterizer.rasterize(
-		{
-			svg: picture.svg,
-			width: picture.width,
-			height: picture.height,
-			scale,
-			region: regionWithin(region, picture),
-		},
-		signal,
-	);
+	const job = {
+		svg: picture.svg,
+		width: picture.width,
+		height: picture.height,
+		scale,
+		region: regionWithin(region, picture),
+	};
+	const [capture] = await Array.fromAsync(rasterizeAll([job], { signal }));
+	if (capture === undefined) throw new Error("The rasterizer answered no capture.");
 	const read = readRenderRecipe(Buffer.from(picture.svg));
 	if (read.kind !== "recipe" || !("model" in read.recipe))
 		throw new Error("The canonical picture carries no reproducible recipe.");
 	const recipe = { ...read.recipe, raster: { scale, region: region ?? null } };
 	return {
-		png: embedRecipeInPng(capture.png, recipe),
+		png: replaceRenderRecipe(capture.png, recipe),
 		width: capture.width,
 		height: capture.height,
 		source: {
@@ -123,14 +103,14 @@ const modelRasterizeContract = defineCommand({
 		},
 	],
 	input: {
-		ingress: architectureRenderRequestSchema().extend({
+		ingress: modelShape("renderRequest").extend({
 			out: z.string(),
 			theme: z.enum(["light", "dark"]).default("dark"),
 			scale: rasterScaleSchema().default(1),
 			region: RegionSchema.optional(),
 		}),
 	},
-	result: z.union([architectureRasterReceiptSchema(), architectureRenderResultSchema().options[1]]),
+	result: z.union([modelShape("rasterReceipt"), modelShape("refusal")]),
 	output: {
 		cases: [
 			{

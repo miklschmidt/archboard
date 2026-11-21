@@ -1,11 +1,11 @@
 import { domainScope } from "#server/generation/services/domain.ts";
 import type { CodexWorkbenchStorage } from "#server/generation/protocol/host.ts";
 import type { CodexApprovalBroker } from "#runtime/approvals/services/contract.ts";
-import { CodexTransportRemoteError } from "@archboard/codex-app-server/transport";
+import { readCodexFailure } from "@archboard/codex-app-server/failure";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
-	CodexWorkbenchGenerationInput,
+	CodexWorkbenchChildInput,
 } from "#server/generation/services/workbench.ts";
 import { ACCOUNT_READ_FAILED_REASON } from "#server/actions/services/account.ts";
 import {
@@ -23,7 +23,7 @@ interface HookContext {
 	readonly server: CodexWorkbenchServer;
 	/** Where the child keeps what it writes, and the directory it works in. */
 	readonly storage: Pick<CodexWorkbenchStorage, "coordinatorDirectory">;
-	readonly input: CodexWorkbenchGenerationInput;
+	readonly input: CodexWorkbenchChildInput;
 	readonly owners: GenerationOwners;
 }
 
@@ -74,7 +74,7 @@ async function readAccountOrNull(
 	try {
 		return await session.accountRead();
 	} catch (error) {
-		if (error instanceof CodexTransportRemoteError) return null;
+		if (readCodexFailure(error)?.kind === "remote") return null;
 		throw error;
 	}
 }

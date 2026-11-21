@@ -8,8 +8,9 @@
 // directory (typescript-exposure.ts). A Python package's root file is its
 // `__init__.py`. A Swift module is a target of its package, and each of its
 // files is a root file (swift-exposure.ts). A Rust crate's root file is its
-// `lib.rs`, and a module's is its `mod.rs` or the file beside its directory
-// (rust-exposure.ts). A Go package is the files directly in its directory,
+// `lib.rs`, and a module's is its `mod.rs` or the file beside its directory,
+// and a type it exposes gains the methods of its `impl` blocks elsewhere in
+// the crate (rust-exposure.ts). A Go package is the files directly in its directory,
 // each a root file but its tests (go-exposure.ts). A C, C++ or Objective-C
 // module's root files are its public headers (c-exposure.ts): an `.m` file
 // is a source file that pairs with its header, and a class extension in it
@@ -48,11 +49,7 @@ import type {
 import type { CheckoutFiles } from "#runtime/code-facts/modules/operations/module-resolution.ts";
 import { isHelmValues } from "#runtime/code-facts/kubernetes/operations/helm-values.ts";
 import type { FactsPass } from "#runtime/code-facts/services/reader.ts";
-import {
-	RUST_FILE,
-	rustHolds,
-	rustRootFiles,
-} from "#runtime/code-facts/rust/operations/rust-exposure.ts";
+import { RUST } from "#runtime/code-facts/rust/operations/rust-exposure.ts";
 import { GO } from "#runtime/code-facts/go/operations/go-exposure.ts";
 import { PYTHON } from "#runtime/code-facts/python/operations/python-exposure.ts";
 import { SWIFT_FILE, swiftRootFiles } from "#runtime/code-facts/swift/operations/swift-exposure.ts";
@@ -102,6 +99,18 @@ interface ExposureRule {
 	 */
 	readonly member?: (name: ExposedName, exposed: readonly ExposedName[]) => boolean;
 	/**
+	 * The members the exposed types gain in files the root files do not pass
+	 * on, as a Rust `impl` block in a private module file adds methods to its type.
+	 * @param pass The pass.
+	 * @param checkout The checkout.
+	 * @param exposed What the root files expose.
+	 */
+	readonly members?: (
+		pass: FactsPass,
+		checkout: CheckoutFiles,
+		exposed: readonly ExposedName[],
+	) => Promise<ExposedName[]>;
+	/**
 	 * Whether a file is the module's own, so no caller of it. Without it, every
 	 * file below the module's directory is.
 	 * @param directory The module's directory.
@@ -141,28 +150,6 @@ const SWIFT: ExposureRule = {
 	 */
 	entry: () => false,
 	rootFiles: swiftRootFiles,
-};
-
-/**
- * Rust's rule: a crate, whose `lib.rs` exposes its `pub` items and what it
- * passes on, or a module of a crate's tree, whose `mod.rs` or file beside its
- * directory does (rust-exposure.ts).
- */
-const RUST: ExposureRule = {
-	/**
-	 * Whether a file is Rust.
-	 * @param file The file.
-	 * @returns True when it is.
-	 */
-	writes: (file) => RUST_FILE.test(file),
-	/**
-	 * Whether a file is a crate's `lib.rs` or a module's `mod.rs`, which stand for their directory.
-	 * @param name The file's name.
-	 * @returns True when it is.
-	 */
-	entry: (name) => name === "lib.rs" || name === "mod.rs",
-	rootFiles: rustRootFiles,
-	holds: rustHolds,
 };
 
 /**
@@ -519,6 +506,31 @@ function moduleOf(bound: string, kind: "file" | "directory"): string | undefined
 }
 
 /**
+ * The names a module's root files expose, and the members a language's rule
+ * says its types gain elsewhere.
+ * @param pass The pass.
+ * @param checkout The checkout and the files the pass may read.
+ * @param rootFiles The module's root files.
+ * @param rule The language's rule.
+ * @returns The names, in the root files' order, the members last.
+ */
+async function rootExposed(
+	pass: FactsPass,
+	checkout: CheckoutFiles,
+	rootFiles: readonly string[],
+	rule: ExposureRule,
+): Promise<ExposedName[]> {
+	const search: Search = { pass, checkout, chain: [], read: new Map() };
+	const exposed: ExposedName[] = [];
+	for (const file of rootFiles) {
+		// oxlint-disable-next-line no-await-in-loop -- one root file at a time keeps the names in the root files' order
+		exposed.push(...(await exposedBy(search, file)));
+	}
+	if (rule.members !== undefined) exposed.push(...(await rule.members(pass, checkout, exposed)));
+	return exposed;
+}
+
+/**
  * What a module exposes by the rule of one language.
  * @param pass The pass.
  * @param checkout The checkout and the files the pass may read.
@@ -534,12 +546,7 @@ async function exposureBy(
 ): Promise<ModuleExposure | undefined> {
 	const rootFiles = await rule.rootFiles(pass, checkout, directory);
 	if (rootFiles.length === 0) return undefined;
-	const search: Search = { pass, checkout, chain: [], read: new Map() };
-	const exposed: ExposedName[] = [];
-	for (const file of rootFiles) {
-		// oxlint-disable-next-line no-await-in-loop -- one root file at a time keeps the names in the root files' order
-		exposed.push(...(await exposedBy(search, file)));
-	}
+	const exposed = await rootExposed(pass, checkout, rootFiles, rule);
 	const { member, holds = within } = rule;
 	const outside = [...checkout.files].filter(
 		(file) => rule.writes(file) && !holds(directory, file),

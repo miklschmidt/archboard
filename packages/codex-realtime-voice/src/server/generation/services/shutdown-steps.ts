@@ -1,4 +1,3 @@
-import { codexSessionControl } from "@archboard/codex-app-server/session";
 import type {
 	CodexWorkbenchStopReason,
 	GenerationState,
@@ -16,7 +15,7 @@ function shutdownSteps(
 	state: GenerationState,
 	reason: CodexWorkbenchStopReason,
 ): (() => Promise<unknown> | void)[] {
-	const { components, hooks } = state;
+	const { components, hooks, sessionControl } = state;
 	const cause = reason === "shutdown" ? "server_shutdown" : "child_disconnected";
 	const childSettlement = state.childSettlement;
 	const settleChild =
@@ -55,7 +54,7 @@ function shutdownSteps(
 		 * Dispose the session.
 		 * @returns Resolves once it has.
 		 */
-		() => codexSessionControl(components.session).dispose(),
+		() => sessionControl.dispose(),
 		/**
 		 * Dispose every tab session's callbacks, spoken approval gate, context
 		 * delivery and coordinator tools.

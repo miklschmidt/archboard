@@ -2,9 +2,10 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::{Scene, Transform};
 
+use super::departure::visible_at;
 use super::ease::{carried, then};
 use super::found::{Found, found};
 use super::open::containers;
@@ -18,8 +19,8 @@ const MOST_CHANGE: f64 = 2.5;
 pub(crate) struct Handover<'a> {
     /// The last picture.
     pub last: &'a Scene,
-    /// How much of it still shows, from 0 to 1.
-    pub shown: f64,
+    /// How far it has gone on its way out, from 0 to 1.
+    pub gone: f64,
 }
 
 /// Whether a box holds another.
@@ -74,7 +75,7 @@ impl<'a> Last<'a> {
                 })
                 .collect(),
             stood,
-            shown: handover.shown,
+            shown: visible_at(handover.gone),
         }
     }
 

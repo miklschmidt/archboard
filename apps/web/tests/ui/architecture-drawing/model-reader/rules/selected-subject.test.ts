@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { projectModel, type Model } from "@archboard/model/content";
+import { projectModel, type Model } from "@archboard/model-rules";
 import {
 	isDoor,
 	isOpenDoor,

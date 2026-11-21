@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type JSX, type ReactNode } from "react";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
+import type { LayoutEngineName } from "@archboard/model-contract";
 import type { SceneRequest } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 import { SHOP, shopRequest } from "#tests/ui/support/model-reader/scene.ts";
 
@@ -57,7 +57,7 @@ const { act, cleanup, renderHook, waitFor } = await import("@testing-library/rea
 const { useAcceptedScene } =
 	await import("#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts");
 const { modelDrawingQuery } =
-	await import("#ui/architecture-drawing/model-reader/access/clients/drawing.ts");
+	await import("#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts");
 const { chooseLayoutEngine } =
 	await import("#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts");
 const { EMPTY_DRAWING } = await import("#ui/architecture-drawing/model-reader/rules/scene.ts");

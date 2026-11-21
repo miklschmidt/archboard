@@ -6,7 +6,7 @@
   "description": "A door takes the finish of a primary action in its group's colour, or in its kind's colour when it has no group. That colour stays bright on both themes. Its icon shows its kind.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/door.rs"
+    "path": "crates/archboard-painting/src/paint/door.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#jn71SBXe",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/door.rs",
+        "path": "crates/archboard-painting/src/paint/door.rs",
         "symbol": "Palette"
       },
       "id": "vKEsyHFk#QqSMvn6U",
@@ -32,7 +32,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/door.rs",
+        "path": "crates/archboard-painting/src/paint/door.rs",
         "symbol": "slab_seat"
       },
       "id": "vKEsyHFk#4tSdqitW",
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/door.rs",
+        "path": "crates/archboard-painting/src/paint/door.rs",
         "symbol": "words_in"
       },
       "id": "vKEsyHFk#2O7PSXBM",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/door.rs",
+        "path": "crates/archboard-painting/src/paint/door.rs",
         "symbol": "standing_pin"
       },
       "id": "vKEsyHFk#V38aoFC1",
@@ -71,7 +71,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/door.rs",
+        "path": "crates/archboard-painting/src/paint/door.rs",
         "symbol": "door_far_runs"
       },
       "id": "vKEsyHFk#HXLXTybX",

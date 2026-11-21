@@ -8,10 +8,10 @@ import {
 	type ReactNode,
 } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/model/content";
+import type { Model } from "@archboard/model-rules";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import { Button, cn } from "@archboard/ui-kit/components";
-import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/access/clients/history.ts";
+import { modelHistoryQuery } from "#ui/architecture-drawing/model-reader/reading/clients/history.ts";
 import {
 	MeasureHead,
 	MeasureShow,

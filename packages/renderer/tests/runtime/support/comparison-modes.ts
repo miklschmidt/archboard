@@ -5,9 +5,12 @@ import { expect } from "bun:test";
 
 import { renderLegacyBoard } from "#runtime/bun-renderer/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DrawnPicture, LayoutEngineName } from "@archboard/model/render-reply";
-import { defaultSemanticPolicy } from "@archboard/model/policy";
+import {
+	defaultSemanticPolicy,
+	type DrawnPicture,
+	type LayoutEngineName,
+} from "@archboard/model-contract";
+import { fixtureDocument } from "#tests/runtime/support/model-documents.ts";
 
 /**
  * A document whose draft lacks what its current variant has, drawn with its
@@ -24,8 +27,8 @@ async function bothModes(
 	draft: unknown,
 	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
 ): Promise<{ compared: DrawnPicture; plain: DrawnPicture }> {
-	const document = LegacyBoardSchema.parse({
-		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
+	const document = fixtureDocument("legacyBoard", {
+		schemaVersion: "2.5.0",
 		kind: "semantic-board",
 		id: "document",
 		name: "Removals",
@@ -36,7 +39,7 @@ async function bothModes(
 		current: "current",
 		views: how.view === undefined ? [] : [{ id: "view", name: "View", ...how.view }],
 		variants: [
-			{ id: "current", name: "Current", lifecycle: "current", content: orderedFixture(current) },
+			{ id: "current", name: "Adopted", lifecycle: "current", content: orderedFixture(current) },
 			{
 				id: "draft",
 				name: "Draft",

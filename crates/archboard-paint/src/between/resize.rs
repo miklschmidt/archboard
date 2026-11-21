@@ -11,12 +11,13 @@
 
 use std::collections::HashMap;
 
-use archboard_scene::geometry::{Point, Rect};
+use archboard_geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, PathStep, Shape, Transform, Viewport};
 
-use super::ease::{carried, ease_out, lerp, mix_rect, phase, then};
+use super::ease::{carried, ease_out, lerp, mix_rect, then};
 use super::found::{Found, Pairing};
 use super::open::{OPENS, Way, edge, under_way, ways, worn_edge};
+use crate::timing::phase;
 
 /// The visible state of a tray, in the last picture's units.
 #[derive(Clone, Copy, Debug)]
@@ -323,7 +324,7 @@ impl Anchors {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::geometry::{Point, Rect};
+    use archboard_geometry::{Point, Rect};
     use archboard_scene::scene::{Geometry, Group, Item, Transform};
 
     use super::super::found::found;

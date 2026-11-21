@@ -1,72 +1,33 @@
 import type { Express } from "express";
-import { z } from "zod";
-import {
-	exportArchitectureModel,
-	importArchitectureModel,
-	initializeArchitectureModel,
-} from "@archboard/model/store-write";
-import {
-	architectureImportRequestSchema,
-	architectureInitializationRequestSchema,
-} from "@archboard/model/contract";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
+import { exportArchitectureModel, installArchitectureModel } from "@archboard/model-store";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
+import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
 /**
  * Route portable operations through the shared runtime with explicit vault addressing.
  * @param app The server application.
  */
 function mountArchitecturePortableRoutes(app: Express) {
-	app.post(
-		"/api/architecture/init",
-		requireVault,
-		asyncEndpoint(async (req, res) => {
-			const parsed = architectureInitializationRequestSchema()
-				.extend({
-					vault: z.string().optional(),
-				})
-				.safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
-			const { vault: _vault, ...request } = parsed.data;
-			respond(res, await initializeArchitectureModel(vaultOfRequest(req), request));
-		}),
-	);
+	for (const [path, operation] of [
+		["/api/architecture/init", "initialize"],
+		["/api/architecture/import", "import"],
+	] as const) {
+		app.post(
+			path,
+			requireVault,
+			asyncEndpoint(async (req, res) => {
+				const request = requestOf(res, operation, req.body);
+				if (request === undefined) return;
+				respond(res, await installArchitectureModel(vaultOfRequest(req), request));
+			}),
+		);
+	}
 	app.post(
 		"/api/architecture/export",
 		requireVault,
 		asyncEndpoint(async (req, res) => {
-			const parsed = z.strictObject({ vault: z.string().optional() }).safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
+			if (requestOf(res, "export", req.body) === undefined) return;
 			respond(res, await exportArchitectureModel(vaultOfRequest(req)));
-		}),
-	);
-	app.post(
-		"/api/architecture/import",
-		requireVault,
-		asyncEndpoint(async (req, res) => {
-			const parsed = architectureImportRequestSchema()
-				.extend({
-					vault: z.string().optional(),
-				})
-				.safeParse(req.body);
-			if (!parsed.success) {
-				res
-					.status(400)
-					.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(parsed.error) });
-				return;
-			}
-			const { vault: _vault, ...request } = parsed.data;
-			respond(res, await importArchitectureModel(vaultOfRequest(req), request));
 		}),
 	);
 }

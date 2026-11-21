@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
+import type { ComponentProps, JSX } from "react";
 import { cn } from "#ui/rules/class-names.ts";
 
 const buttonVariants = cva(
@@ -37,17 +38,32 @@ const buttonVariants = cva(
 	},
 );
 
-function Button({
-	className,
-	variant = "default",
-	size = "default",
-	...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+type ButtonProps = ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { href?: never };
+
+// Archboard: a link drawn as a button. With `href` the button is a plain `<a>` with the same
+// classes and no Base UI primitive, because Base UI 1.7.0 gives a rendered element that is not a
+// native button `role="button"` (internals/use-button/useButton.mjs:177-181), and a link must
+// stay a link. The button's own props are the last overload, so `ComponentProps<typeof Button>`
+// still names them.
+type LinkButtonProps = ComponentProps<"a"> & VariantProps<typeof buttonVariants> & { href: string };
+
+function Button(props: LinkButtonProps): JSX.Element;
+function Button(props: ButtonProps): JSX.Element;
+function Button(props: ButtonProps | LinkButtonProps) {
+	if (props.href !== undefined) {
+		const { className, variant = "default", size = "default", children, ...link } = props;
+		return (
+			<a className={cn(buttonVariants({ variant, size, className }))} {...link}>
+				{children}
+			</a>
+		);
+	}
+	const { className, variant = "default", size = "default", ...button } = props;
 	return (
 		<ButtonPrimitive
 			data-slot="button"
 			className={cn(buttonVariants({ variant, size, className }))}
-			{...props}
+			{...button}
 		/>
 	);
 }

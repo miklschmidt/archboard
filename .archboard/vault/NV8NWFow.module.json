@@ -1,0 +1,28 @@
+{
+  "order": 40,
+  "name": "Scene text",
+  "kind": "module",
+  "responsibility": "The words of a scene as shaped runs of glyphs, its icons, and the boxes some items are drawn in",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/scene/text.rs"
+  },
+  "parent": "vKEsyHFk#U4Q7nid1",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#NV8NWFow",
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "the face each glyph of a run is drawn from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/scene/text.rs",
+        "symbol": "Face"
+      },
+      "id": "vKEsyHFk#cbuFHeuk",
+      "to": "vKEsyHFk#C4dZpr3U"
+    }
+  ]
+}

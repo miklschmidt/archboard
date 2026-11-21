@@ -36,26 +36,15 @@ describe("production Codex owner lifecycle", () => {
 		const fixture = createCodexWorkbenchGenerationFixture(events);
 		const owner = installCodexWorkbenchOwner({
 			createProcess: () => fakeProcess(events),
-			createKernel: () => ({
-				kernel: {
-					identityLedger: fixture.identityLedger,
-					transport: fixture.components.transport,
-				},
-				identity: fixture.components.identity,
-			}),
-			createGeneration: async (input: CodexWorkbenchGenerationInput) => {
-				if (input.kernel === null) {
-					throw new Error("The integrated generation owner did not acquire its stable kernel.");
-				}
-				return composeCodexWorkbenchGeneration({
-					identityLedger: input.kernel.identityLedger,
+			createKernel: () => fixture.connection,
+			createGeneration: async (input: CodexWorkbenchGenerationInput) =>
+				composeCodexWorkbenchGeneration({
+					connection: input.connection,
 					factories: fixture.factories,
 					hooks: fixture.hooks,
-					ownsTransport: false,
 					activate: false,
 					assertActivationCurrent: input.assertActivationCurrent,
-				});
-			},
+				}),
 		});
 		await owner.start();
 		await owner.shutdown();

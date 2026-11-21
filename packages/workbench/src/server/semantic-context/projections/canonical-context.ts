@@ -1,7 +1,7 @@
-import { modelContent, subjectsOf } from "@archboard/model/content";
+import { subjectsOf, type ArchitectureModelRead } from "@archboard/model-contract";
+import { modelContent } from "@archboard/model-rules";
+import { readArchitectureModel } from "@archboard/model-store";
 import { canonicalNarratedSubjects } from "#server/semantic-context/rules/narrated-subjects.ts";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { SemanticContextInput } from "#runtime/schemas/semantic-context-types.ts";
 import { semanticPaneContextFor } from "#server/panes/services/context.ts";
 import { NOTHING_READ } from "#server/semantic-context/projections/architecture-context.ts";

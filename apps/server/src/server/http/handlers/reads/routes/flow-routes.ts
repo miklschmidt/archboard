@@ -1,18 +1,14 @@
 import type { Express } from "express";
-import { z } from "zod";
-import { readArchitectureModel } from "@archboard/model/store-read";
-import {
-	architectureRenderRequestSchema,
-	type ArchitectureModelRead,
-} from "@archboard/model/contract";
-import { projectModel, projectFlow, type Model } from "@archboard/model/content";
-import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
-import { vaultIdentity } from "@archboard/code-binding/resolution";
+import { readArchitectureModel } from "@archboard/model-store";
+import type { ArchitectureModelRead, ModelRequest } from "@archboard/model-contract";
+import { projectModel, projectFlow, type Model } from "@archboard/model-rules";
+import { recordArchitectureRecipe } from "@archboard/render-recipe";
+import { checkoutsReadFrom } from "@archboard/workspace/checkouts";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import { respond } from "#server/http/handlers/routes/model-response.ts";
+import { requireVault, vaultOfRequest } from "#server/http/middleware/request-vault.ts";
+import { requestOf, respond } from "#server/http/handlers/routes/model-response.ts";
 
-type Reading = z.infer<ReturnType<typeof architectureRenderRequestSchema>>;
+type Reading = ModelRequest<"render">;
 /**
  * Read the explicitly selected current or retained flow through the public runtime.
  * @param vault The addressed vault.
@@ -163,6 +159,14 @@ function renderProjection(model: Model, input: Reading, reference?: Model) {
 	};
 }
 /**
+ * The repository a recipe names: the identity of the checkout that holds the vault (ADR 0049).
+ * @param vault The addressed vault.
+ * @returns The identity, or null for a vault in no checkout.
+ */
+function ownRepository(vault: string): string | null {
+	return checkoutsReadFrom(vault).own?.identity ?? null;
+}
+/**
  * Attach exact reading evidence through the existing recipe owner.
  * @param model The coherent architecture.
  * @param input The public selectors.
@@ -186,7 +190,7 @@ function renderReceipt(
 		grammar: input.grammar,
 		revision: model.revision,
 		checkpoint: model.checkpoint?.id,
-		svg: recordArchitectureRecipe(drawn.svg, model, input, vaultIdentity(vault) ?? null),
+		svg: recordArchitectureRecipe(drawn.svg, model, input, ownRepository(vault)),
 		width: drawn.width,
 		height: drawn.height,
 		placed: drawn.placed,
@@ -199,23 +203,15 @@ function renderReceipt(
  */
 function mountArchitectureFlowRoutes(app: Express): void {
 	app.get("/api/architecture/render", requireVault, async (req, res) => {
-		const query = architectureRenderRequestSchema()
-			.extend({ vault: z.string() })
-			.safeParse({
-				...req.query,
-				...Object.fromEntries(
-					["focus", "hideKinds", "expand"]
-						.filter((key) => typeof req.query[key] === "string")
-						.map((key) => [key, [req.query[key]]]),
-				),
-			});
-		if (!query.success) {
-			res
-				.status(400)
-				.json({ success: false, code: "INVALID_REQUEST", error: z.prettifyError(query.error) });
-			return;
-		}
-		const { vault: _vault, ...reading } = query.data;
+		const reading = requestOf(res, "render", {
+			...req.query,
+			...Object.fromEntries(
+				["focus", "hideKinds", "expand"]
+					.filter((key) => typeof req.query[key] === "string")
+					.map((key) => [key, [req.query[key]]]),
+			),
+		});
+		if (reading === undefined) return;
 		const model = await flowReading(vaultOfRequest(req), reading);
 		if (!model.success) {
 			respond(res, model);

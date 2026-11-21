@@ -3,7 +3,7 @@
 // workbench through these functions, so there is exactly one place a state
 // change, a retirement or an incompatibility is decided.
 
-import { codexRealtimeMs } from "@archboard/timing";
+import { deadline } from "@archboard/timing";
 import type { BrowserCommandLease, BrowserSnapshot } from "#shared/browser/schemas/snapshot.ts";
 import type {
 	BrowserWorkbenchCommandIntent,
@@ -206,7 +206,7 @@ function setBackoff(core: TransportCore, run: SocketRun, reason: string): void {
 		connection: "reconnecting",
 		snapshot: run.snapshot,
 		sequence: run.sequence,
-		retryAtMs: core.now() + codexRealtimeMs("clientReconnect"),
+		retryAtMs: deadline("codexRealtime.clientReconnect", core.now()),
 		reason,
 	});
 }

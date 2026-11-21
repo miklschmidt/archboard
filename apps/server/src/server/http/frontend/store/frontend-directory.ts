@@ -1,4 +1,4 @@
-import { installation } from "@archboard/workspace/installation";
+import { installation } from "@archboard/machine/installation";
 
 /**
  * The directory of the frontend build: `dist/frontend` of the checkout whose source runs

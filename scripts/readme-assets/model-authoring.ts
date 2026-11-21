@@ -1,14 +1,15 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
-import { modelContent, subjectsOf } from "@archboard/model/content";
-import type { architecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
-	architectureModelReadSchema,
-	architectureClaimResultSchema,
-	architectureModuleEditResultSchema,
+	readModelReply,
+	subjectsOf,
 	type ArchitectureModuleEdit,
-} from "@archboard/model/contract";
+	type ModelDocumentInput,
+	type ModelReply,
+	type ReplyOperation,
+} from "@archboard/model-contract";
+import { modelContent } from "@archboard/model-rules";
 
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { scratch, type TakeServer } from "./kit.ts";
@@ -27,13 +28,27 @@ function modelResult(reply: unknown) {
 }
 
 /**
+ * The answer of one operation that a CLI reply carries.
+ * @param operation The operation the command answers.
+ * @param reply The CLI JSON answer, without its invocation metadata.
+ * @returns The answer, its success or its refusal.
+ * @throws {z.ZodError} When the reply is not an answer to the operation.
+ */
+function parsedReply<O extends ReplyOperation>(operation: O, reply: unknown): ModelReply<O> {
+	const read = readModelReply(operation, reply);
+	if (!read.success) throw read.error;
+	return read.data;
+}
+
+/**
  * Read a complete canonical state through the take's CLI.
  * @param server The isolated take server.
  * @param state A proposal identity or name, or current when absent.
  * @returns The successful public reading.
  */
 async function readModel(server: TakeServer, state: string | null = null) {
-	const model = architectureModelReadSchema().parse(
+	const model = parsedReply(
+		"read",
 		modelResult(await server.cli(["model", "read", ...(state === null ? [] : ["--state", state])])),
 	);
 	if (!model.success) throw new Error(JSON.stringify(model));
@@ -98,7 +113,8 @@ async function editModel(
 			],
 		}),
 	);
-	const claimed = architectureClaimResultSchema().parse(
+	const claimed = parsedReply(
+		"claim",
 		modelResult(await server.cli(["model", "claim", "--input", claimInput])),
 	);
 	if (!claimed.success) throw new Error(JSON.stringify(claimed));
@@ -115,7 +131,8 @@ async function editModel(
 				...(proposal === undefined ? {} : { proposal }),
 			}),
 		);
-		const result = architectureModuleEditResultSchema().parse(
+		const result = parsedReply(
+			"edit",
 			modelResult(await server.cli(["model", "edit", "--input", input, "--doing", intent.doing])),
 		);
 		if (!result.success) throw new Error(JSON.stringify(result));
@@ -150,11 +167,11 @@ async function showModel(
 	server: TakeServer,
 	take: string,
 	pane: string,
-	reading: z.input<ReturnType<typeof architecturePaneReadingSchema>>,
+	reading: ModelDocumentInput<"paneReading">,
 ): Promise<void> {
 	const input = join(scratch("takes", take), `${crypto.randomUUID()}.reading.json`);
 	writeFileSync(input, JSON.stringify(reading));
 	await server.cli(["browser", "show", "--input", input, "--pane", pane]);
 }
 
-export { readModel, editModel, modelResult, showModel };
+export { readModel, editModel, modelResult, parsedReply, showModel };

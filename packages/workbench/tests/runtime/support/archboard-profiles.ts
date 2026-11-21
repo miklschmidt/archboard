@@ -12,7 +12,7 @@ export function archboardProfiles(): VoiceAgent["instructions"] {
 	const directory = mkdtempSync(join(tmpdir(), "archboard-profiles-"));
 	try {
 		return createVoiceAgent({
-			storage: { directory },
+			directory,
 			codex: { executablePath: "/nonexistent/codex" },
 			checkouts: [],
 			identity: ARCHBOARD_AGENT.identity,

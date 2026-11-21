@@ -3,7 +3,7 @@
 //! trunks routed between them, and the unused strips under its header and
 //! over its bottom ports closed.
 
-use crate::ecma::{abs, js_max, js_min, sort_by};
+use crate::ecma::{abs, max, min, sort_by};
 use crate::geometry::{Point, Rect, Side};
 use crate::track::chains::LANE;
 use crate::track::channels::{spread_along, spread_ports};
@@ -46,10 +46,10 @@ impl PackLayout<'_> {
                 }
                 _ => 0.0,
             };
-        let high = js_max(
+        let high = max([
             width - self.insets.side,
             low + LANE * (ports.len() + 1) as f64,
-        );
+        ]);
         let mut wanted: Vec<(String, f64)> = ports
             .into_iter()
             .map(|port| {
@@ -102,8 +102,8 @@ impl PackLayout<'_> {
             })
             .filter(|end| self.tree.pins.contains_key(end.as_str()))
             .collect();
-        let x = pins.iter().fold(0.0, |sum, end| sum + self.pin_x(end))
-            / js_max(1.0, pins.len() as f64);
+        let x =
+            pins.iter().fold(0.0, |sum, end| sum + self.pin_x(end)) / max([1.0, pins.len() as f64]);
         let reached: Set<&str> = pins
             .iter()
             .map(|end| {
@@ -129,7 +129,7 @@ impl PackLayout<'_> {
             })
             .collect();
         let (low, high) = open_stretch(edge, &against, TRUNK_CLEARANCE + LANE, x);
-        js_min(high, js_max(low, x))
+        min([high, max([low, x])])
     }
 
     /// Place the block's own ports on its side walls, within the block: each
@@ -195,7 +195,7 @@ impl PackLayout<'_> {
                 })
             })
             .collect();
-        reached.iter().fold(0.0, |sum, y| sum + y) / js_max(1.0, reached.len() as f64)
+        reached.iter().fold(0.0, |sum, y| sum + y) / max([1.0, reached.len() as f64])
     }
 
     /// Place the block's header and its own ports on every edge, its top and

@@ -46,7 +46,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workspace/src/runtime/services/source-checkout.ts",
+                    "path": "packages/machine/src/runtime/services/source-checkout.ts",
                     "symbol": "runInstead"
                   }
                 },
@@ -58,7 +58,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workspace/src/runtime/services/source-checkout.ts",
+                    "path": "packages/machine/src/runtime/services/source-checkout.ts",
                     "symbol": "handOff"
                   }
                 }
@@ -75,7 +75,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/workspace/src/runtime/services/source-checkout.ts",
+                    "path": "packages/machine/src/runtime/services/source-checkout.ts",
                     "symbol": "handOff"
                   }
                 },

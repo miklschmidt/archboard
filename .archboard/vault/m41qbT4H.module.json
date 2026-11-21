@@ -1,0 +1,15 @@
+{
+  "order": 24003,
+  "name": "Time as text",
+  "kind": "module",
+  "responsibility": "How long ago or how long, as text that re-reads the time at a fixed tick",
+  "description": "The ./time entry: useClock re-renders its reader on whole multiples of its tick, so two readers with one tick agree; shortAge says how long ago a stamp was and clockDuration a duration as a clock. Moved from ui-kit with the frame clock (TASK-653.17).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/ui-clocks/src/ui"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#m41qbT4H",
+  "parent": "vKEsyHFk#UX6KRQDf",
+  "outgoing": []
+}

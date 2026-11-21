@@ -1,15 +1,15 @@
 //! How a picture arrives with nothing to carry it from: part by part over what
 //! is left of the last one, or inside the card the camera flies into.
 
-use archboard_scene::geometry::Rect;
+use archboard_geometry::Rect;
 use archboard_scene::scene::Painting;
 use kurbo::Point;
 
 use super::Stage;
-use crate::between::{Entrance, Handover, Heading, frame_of};
+use crate::between::{Between, Handover, frame_of};
 use crate::draw::Picture;
-use crate::flight::{Dive, DiveWay, Flight, Ghost, Stretch};
-use crate::passage::Axis;
+use crate::flight::{Arriving, Dive, DiveWay, Ghost, Stretch};
+use crate::passage::{Axis, Heading};
 use crate::presentation::Camera;
 use crate::warnings::Warnings;
 
@@ -18,7 +18,7 @@ impl Stage {
     /// over it, where it was last seen, moved with its pane by `moved` canvas
     /// pixels. `heading` says where the reader went when the picture was never
     /// sent on its way.
-    pub fn enter(
+    pub(super) fn enter(
         &mut self,
         painting: Painting,
         heading: Option<Heading>,
@@ -27,22 +27,26 @@ impl Stage {
         now: f64,
     ) {
         self.now = now;
-        let next_width = painting.scene.width * self.presentation.camera.scale;
+        let next_width = painting.scene.width * self.seen.camera.scale;
         let mut ghost = self.ghost_of_last((heading, next_width), ms, moved, now);
         let handover = ghost.as_ref().map(|ghost| Handover {
             last: &ghost.picture.scene,
-            shown: ghost.shown(),
+            gone: ghost.from,
         });
         // A passage carries the next picture as one plane, so it has no entrance.
         let passes = ghost.as_ref().is_some_and(|ghost| ghost.axis.is_some());
-        let flight = self
+        let entered = self
             .phases
             .as_ref()
             .filter(|_| !passes)
-            .map(|phases| Flight::enter(&painting.scene, phases, ms, handover));
-        if let (Some(ghost), Some(flown)) = (&mut ghost, flight.as_ref().and_then(Flight::flown)) {
-            ghost.hand_over(flown);
-        }
+            .map(|phases| Between::enter(&painting.scene, phases, handover));
+        let arriving = entered.map(|(between, left)| {
+            // What flies over to the next picture leaves the ghost.
+            if let (Some(ghost), Some(left)) = (&mut ghost, left) {
+                ghost.picture.scene.body = left;
+            }
+            Arriving::new(between, ms)
+        });
         let on_its_way = self.ghost.take().filter(|ghost| ghost.axis.is_some());
         let behind = std::mem::take(&mut self.behind);
         self.stand(painting);
@@ -50,9 +54,9 @@ impl Stage {
         self.behind = behind;
         self.behind.extend(on_its_way);
         self.ghost = ghost;
-        self.flight = flight;
-        if self.flight.is_some() {
-            self.presentation.warnings = Warnings::default();
+        self.arriving = arriving;
+        if self.arriving.is_some() {
+            self.seen.warnings = Warnings::default();
         }
     }
 
@@ -60,7 +64,7 @@ impl Stage {
     /// of the picture it goes to as far as that is known. A picture has no place in
     /// the module tree against no heading, or a view of its own picture.
     pub(super) fn axis_of(&self, heading: Heading, next_width: f64) -> Option<Axis> {
-        let camera = self.presentation.camera;
+        let camera = self.seen.camera;
         let (width, height) = self.size;
         let middle = Point::new(width / 2.0, height / 2.0);
         match heading {
@@ -111,14 +115,14 @@ impl Stage {
             (axis, place)
         });
         let last = self.shown.take()?;
-        let (picture, back) = match &self.flight {
-            Some(flight) => {
-                let (scene, back) = flight.seen_at(now, &last.picture.scene);
+        let (picture, back) = match &self.arriving {
+            Some(arriving) => {
+                let (scene, back) = arriving.seen_at(now, &last.picture.scene);
                 (Picture::new(scene), back)
             }
             None => (last.picture, (0.0, 0.0)),
         };
-        let camera = self.presentation.camera;
+        let camera = self.seen.camera;
         Some(Ghost {
             picture,
             camera: Camera {
@@ -140,7 +144,7 @@ impl Stage {
 
     /// Put a picture inside its card, and start the fades of the flight between
     /// the two. `flight` is the flight's way, and the card it flies into.
-    pub fn dive(
+    pub(super) fn dive(
         &mut self,
         painting: Painting,
         frame: Rect,
@@ -157,7 +161,7 @@ impl Stage {
         let bloom = self
             .phases
             .as_ref()
-            .map(|phases| Entrance::new(&painting.scene, phases, None));
+            .map(|phases| Between::enter(&painting.scene, phases, None).0);
         self.dive = Some(Dive {
             inset: Picture::new(painting.scene),
             bloom,
@@ -171,8 +175,8 @@ impl Stage {
     }
 
     /// Take the picture inside a card away, and the fades with it.
-    pub fn end_dive(&mut self) {
+    pub(super) fn end_dive(&mut self) {
         self.dive = None;
-        self.presentation.fading_words = None;
+        self.seen.fading_words = None;
     }
 }

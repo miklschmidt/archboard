@@ -1,7 +1,10 @@
-import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
-import { diagramGrammarSchema, type DiagramGrammar } from "@archboard/model/views";
-import type { ModelDrawing } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
+import {
+	type LayoutEngineName,
+	type DiagramGrammar,
+	parseDocument,
+} from "@archboard/model-contract";
+import type { Model, ModelFilters, projectModel } from "@archboard/model-rules";
+import type { ModelDrawing } from "#ui/architecture-drawing/canvas/picture/supply/clients/drawing.ts";
 import type {
 	Departure,
 	DepartureSide,
@@ -87,7 +90,7 @@ const EMPTY_DRAWING: ModelDrawing = Object.freeze({
  * @returns The mode, or null for an unknown mode, a missing scope or a behavior with no flow.
  */
 function drawableGrammar(grammar: string, projection: Projection): DiagramGrammar | null {
-	const parsed = diagramGrammarSchema().safeParse(grammar);
+	const parsed = parseDocument("diagramGrammar", grammar);
 	if (!parsed.success) return null;
 	const missing = parsed.data === "architecture" ? projection.missing : projection.flow === null;
 	return missing ? null : parsed.data;

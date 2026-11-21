@@ -6,8 +6,7 @@ import {
 	openDiagram,
 	pressInPanel,
 } from "./support/canonical-page.ts";
-import type { z } from "zod";
-import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
+import type { ModelDocument } from "@archboard/model-contract";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createJsonRequester } from "../support/http.ts";
@@ -111,10 +110,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		WAIT,
 	);
 	const focusedReport = await pollUntil(
-		() =>
-			request<{ panes: z.infer<ReturnType<typeof semanticPaneContextSchema>>[] }>(
-				"/api/panes/semantic-context",
-			),
+		() => request<{ panes: ModelDocument<"paneContext">[] }>("/api/panes/semantic-context"),
 		(result) =>
 			result.body.panes.some((pane) => pane.architecture?.reading.focus.includes("Shop#Decode")),
 		"the focused reading to reach the local agent context",

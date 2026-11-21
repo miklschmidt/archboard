@@ -2,7 +2,7 @@
   "order": 960070,
   "name": "Application frame",
   "kind": "ui",
-  "responsibility": "Lays out the desktop frame and mounts what stands around the panes: the catalogue, the agent surfaces, the orb and the settings",
+  "responsibility": "Lays out the desktop frame inside the agent's root and mounts what stands around the panes: the catalogue, the agent's dock and panel, and the settings",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/components/Application.tsx"
@@ -48,15 +48,15 @@
     {
       "order": 11000,
       "kind": "render",
-      "label": "dock, conversation, voice box, the presentation's voice key",
+      "label": "the dock, the conversation panel and the Talk key",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/AgentSurfaceSlots.tsx",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
         "symbol": "AgentDock"
       },
       "id": "vKEsyHFk/yejBBUFY#WchncnH1",
-      "to": "vKEsyHFk#UoblaIEv"
+      "to": "vKEsyHFk#6D1rYDAd"
     },
     {
       "order": 14000,
@@ -72,19 +72,6 @@
       "to": "vKEsyHFk#upjMkmlU"
     },
     {
-      "order": 27000,
-      "kind": "render",
-      "label": "over voice's pane, or the presented one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/PaneSubtitles.tsx",
-        "symbol": "VoiceSubtitles"
-      },
-      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
-      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
-    },
-    {
       "order": 28000,
       "kind": "call",
       "label": "the recorder, when the address asks",
@@ -96,19 +83,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
       "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv"
-    },
-    {
-      "order": 43000,
-      "kind": "render",
-      "label": "the stage the one orb is flown on",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/components/Application.tsx",
-        "symbol": "OrbStageProvider"
-      },
-      "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
-      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
     },
     {
       "order": 59000,
@@ -135,6 +109,32 @@
       },
       "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
       "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 960071,
+      "kind": "render",
+      "label": "the agent's root: focused pane, file opener, chooser",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "AgentRoot"
+      },
+      "id": "vKEsyHFk#Z2EQi9WX",
+      "to": "vKEsyHFk#PFXyjBr4"
+    },
+    {
+      "order": 960072,
+      "kind": "call",
+      "label": "the panel's open, close, ask, fill; voice to narrate, record",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/components/Application.tsx",
+        "symbol": "useAgentPanel"
+      },
+      "id": "vKEsyHFk#CN0Ww2f3",
+      "to": "vKEsyHFk#1URZo0r1"
     },
     {
       "order": 980130,

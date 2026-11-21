@@ -1,6 +1,8 @@
 // The npm build of @archboard/codex-realtime-voice works outside this repository: a Bun project
-// installs the packed tarball, type-checks a file that imports every public entry together with
-// the README's checked code blocks, and imports the server entry.
+// installs the packed tarball, finds exactly the runtime names each entry promises, type-checks
+// the README's checked code blocks, and runs a consumer's server and client against a stand-in
+// Codex: a client that connects before start, a refused start, a reconnect after shutdown and a
+// stale approval click. Every duration the packed code names resolves in timing's published build.
 import { expect, test } from "bun:test";
 import {
 	mkdtempSync,
@@ -13,7 +15,26 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { prepareProductionFixture } from "../server-state/support/codex-production.ts";
+
 const root = path.resolve(import.meta.dir, "../../..");
+/**
+ * The runtime value names each public entry exports, sorted: the package's whole interface. A
+ * change here is a change of the published package, which needs a `!` and a BREAKING CHANGE
+ * footer when it removes or renames a name.
+ */
+const ENTRY_NAMES = {
+	"./browser": ["createSocketConversation", "createVoiceClient", "mountVoice"],
+	"./contract": ["createCodexBrowserModel"],
+	"./react": ["useVoiceState"],
+	"./server": [
+		"additionalContextPolicy",
+		"composeRoleInstructions",
+		"createTextUserInput",
+		"createVoiceAgent",
+		"parseTabSessionId",
+	],
+};
 const packed = path.join(root, "dist/codex-realtime-voice");
 /** The packages beside the tarball that the README's install line names for the quickstart page. */
 const QUICKSTART_PACKAGES = [
@@ -93,11 +114,129 @@ function archboardConceptsInPackedPackage(): string[] {
 	);
 }
 
-test("an outside Bun project installs the packed package, uses every public entry and the README's code", () => {
+/**
+ * Every name the packed JavaScript hands to timing: a duration, such as `"codexRealtime.stop"`,
+ * or a wait, which `waitUntil` takes.
+ * @returns The names, each once, a wait marked by a leading `wait:`.
+ */
+function timingNamesInPackedCode(): string[] {
+	const call = /\b(durationMs|deadline|waitUntil|pause)(?:\$\d+)?\(\s*"([a-zA-Z]+\.[a-zA-Z]+)"/g;
+	const names = readdirSync(path.join(packed, "dist"))
+		.filter((file) => file.endsWith(".mjs"))
+		.flatMap((file) =>
+			[...readFileSync(path.join(packed, "dist", file), "utf8").matchAll(call)].map(
+				([, operation, name]) => `${operation === "waitUntil" ? "wait:" : ""}${name ?? ""}`,
+			),
+		);
+	return [...new Set(names)].toSorted();
+}
+
+/**
+ * Read each name once through timing built under the `published` condition, which the pack builds
+ * with. A name that only the host's half of timing carries throws there.
+ * @param names The names, as {@link timingNamesInPackedCode} returns them.
+ * @returns One line for each name read.
+ */
+function readInPublishedTiming(names: readonly string[]): string[] {
+	const script = `import { deadline, waitUntil } from "@archboard/timing";
+for (const name of ${JSON.stringify(names)}) {
+	if (name.startsWith("wait:")) console.log(name, (await waitUntil(name.slice(5), () => true)).ok);
+	else console.log(name, deadline(name, 0));
+}`;
+	const output = run(
+		["bun", "--conditions", "published", "-e", script],
+		path.join(root, "packages/codex-realtime-voice"),
+	);
+	return output.split("\n").filter(Boolean);
+}
+
+/**
+ * What timing's published build says when it is asked for a duration only the host's half carries.
+ * @returns Its error output.
+ */
+function hostNameInPublishedTiming(): string {
+	const result = Bun.spawnSync(
+		[
+			"bun",
+			"--conditions",
+			"published",
+			"-e",
+			'import { durationMs } from "@archboard/timing"; durationMs("pane.report");',
+		],
+		{ cwd: path.join(root, "packages/codex-realtime-voice"), stdout: "pipe", stderr: "pipe" },
+	);
+	expect(result.exitCode).not.toBe(0);
+	return result.stderr.toString();
+}
+
+/**
+ * A consumer's server and client against a stand-in Codex. The client connects before the agent
+ * starts, an agent whose Codex exits refuses its start, the client reconnects after a shutdown and
+ * a new start, and an approval from before that reconnect is refused in the client.
+ */
+const EXERCISE = `import { chmodSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { createVoiceClient } from "@archboard/codex-realtime-voice/browser";
+import { createVoiceAgent } from "@archboard/codex-realtime-voice/server";
+
+const until = async (check: () => boolean, what: string) => {
+	for (let tries = 0; !check(); tries++) {
+		if (tries > 400) throw new Error(\`Timed out waiting for \${what}.\`);
+		await Bun.sleep(50);
+	}
+};
+const exits = path.join(import.meta.dir, "exits");
+writeFileSync(exits, '#!/bin/sh\\n[ "$1" = --version ] && echo "codex-cli 0.166.0" && exit 0\\nexit 1\\n');
+chmodSync(exits, 0o755);
+const refused = createVoiceAgent({
+	directory: path.join(import.meta.dir, "refused"),
+	codex: { executablePath: exits },
+	checkouts: [import.meta.dir],
+	onFatal: () => undefined,
+});
+console.log("start", await refused.start().then(() => "started", () => "refused"));
+await refused.shutdown();
+
+const agent = createVoiceAgent({
+	directory: path.join(import.meta.dir, "state"),
+	codex: { executablePath: process.env["STAND_IN_CODEX"] },
+	checkouts: [import.meta.dir],
+});
+const server = Bun.serve({ hostname: "127.0.0.1", port: 0, ...agent.bunHandlers({ path: "/voice" }) });
+Object.assign(globalThis, { location: { href: server.url.href } });
+const client = createVoiceClient({ url: "/voice" });
+await until(() => client.snapshot().failure !== null, "the client to be refused before start");
+console.log("before start", client.snapshot().failure?.message);
+await agent.start();
+const connected = () => client.snapshot().connection === "connected" && !client.snapshot().busy;
+await until(connected, "the client to connect after start");
+console.log("account", client.snapshot().server?.account.state);
+await client.send("Run a command.");
+await until(() => (client.snapshot().server?.approvals.length ?? 0) > 0, "the approval");
+const stale = client.snapshot().server!.approvals[0]!;
+await agent.shutdown();
+await until(() => client.snapshot().connection !== "connected", "the client to lose its socket");
+await agent.start();
+await until(connected, "the client to reconnect after shutdown");
+console.log("reconnected", client.snapshot().connection);
+const answered = await client.answerApproval(stale, { approvalKind: "command_execution", decision: "accept" });
+console.log("stale", String(answered));
+console.log("failure", client.snapshot().failure?.message);
+await client.dispose();
+await agent.shutdown();
+await server.stop(true);
+`;
+
+test("an outside Bun project installs the packed package, uses every public entry and the README's code", async () => {
 	const project = realpathSync(mkdtempSync(path.join(tmpdir(), "codex-realtime-voice-consumer-")));
+	const resources = new AsyncDisposableStack();
 	try {
 		run(["bun", "run", "pack:voice"], root);
 		expect(archboardConceptsInPackedPackage()).toEqual([]);
+		const names = timingNamesInPackedCode();
+		expect(names).toContain("codexRealtime.clientReconnect");
+		expect(readInPublishedTiming(names)).toHaveLength(names.length);
+		expect(hostNameInPublishedTiming()).toContain('no duration named "pane.report"');
 		const manifest = JSON.parse(readFileSync(path.join(packed, "package.json"), "utf8")) as {
 			name: string;
 			exports: Record<string, unknown>;
@@ -122,20 +261,19 @@ test("an outside Bun project installs the packed package, uses every public entr
 			project,
 		);
 
-		const specifiers = Object.keys(manifest.exports).map(
-			(subpath) => `${manifest.name}${subpath.slice(1)}`,
-		);
-		writeFileSync(
-			path.join(project, "consumer.ts"),
+		expect(Object.keys(manifest.exports).toSorted()).toEqual(Object.keys(ENTRY_NAMES));
+		const entryNames = run(
 			[
-				...specifiers.map((specifier, index) => `import * as entry${index} from "${specifier}";`),
-				`export const entries = [${specifiers.map((_, index) => `entry${index}`).join(", ")}];`,
-				"",
-			].join("\n"),
+				"bun",
+				"-e",
+				`const names = {}; for (const entry of ${JSON.stringify(Object.keys(ENTRY_NAMES))}) names[entry] = Object.keys(await import("${manifest.name}" + entry.slice(1))).toSorted(); console.log(JSON.stringify(names));`,
+			],
+			project,
 		);
+		expect(JSON.parse(entryNames)).toEqual(ENTRY_NAMES);
 		const blocks = checkedReadmeBlocks();
 		expect(blocks.map(({ file }) => file)).toEqual(
-			expect.arrayContaining(["server.ts", "page.tsx"]),
+			expect.arrayContaining(["server.ts", "page.ts"]),
 		);
 		for (const { file, code } of blocks) writeFileSync(path.join(project, file), code);
 		// The compiler options of `bun init`, which a developer who copies the README has.
@@ -157,21 +295,35 @@ test("an outside Bun project installs the packed package, uses every public entr
 					noEmit: true,
 					skipLibCheck: false,
 				},
-				include: ["consumer.ts", ...blocks.map(({ file }) => file)],
+				include: blocks.map(({ file }) => file),
 			}),
 		);
 		run([path.join(root, "node_modules/.bin/tsc"), "-p", "tsconfig.json"], project);
 
-		const imported = run(
-			[
-				"bun",
-				"-e",
-				`const server = await import("${manifest.name}/server"); console.log(typeof server.createVoiceAgent);`,
-			],
-			project,
+		const fixture = prepareProductionFixture(
+			resources,
+			path.join(root, "tests/system/server-state/fixtures/fake-codex-production.ts"),
 		);
-		expect(imported.trim()).toBe("function");
+		writeFileSync(fixture.controlPath, JSON.stringify({ ordinaryOnly: true }));
+		writeFileSync(path.join(project, "exercise.ts"), EXERCISE);
+		const exercised = Bun.spawnSync(["bun", "exercise.ts"], {
+			cwd: project,
+			env: { ...process.env, STAND_IN_CODEX: fixture.executablePath },
+			stdout: "pipe",
+			stderr: "pipe",
+		});
+		const said = exercised.stdout.toString();
+		expect(exercised.exitCode, `${said}${exercised.stderr.toString()}`).toBe(0);
+		expect(said.trim().split("\n")).toEqual([
+			"start refused",
+			"before start The Codex workbench is unavailable.",
+			"account ready",
+			"reconnected connected",
+			"stale false",
+			"failure This approval is from an earlier state of the conversation. Answer it again from the current state.",
+		]);
 	} finally {
+		await resources.disposeAsync();
 		rmSync(project, { recursive: true, force: true });
 	}
 }, 600_000);

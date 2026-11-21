@@ -13,7 +13,7 @@ import type {
 	BrowserWorkbenchSnapshotMessage,
 } from "#ui/transport/state/contract.ts";
 import type { SocketRun } from "#ui/transport/clients/socket-run.ts";
-import { BrowserWorkbenchWireError } from "#ui/wire/clients/wire-identity.ts";
+import { BrowserWorkbenchWireError } from "#shared/browser/schemas/wire-identity.ts";
 
 /** What one message did to the run. */
 type StreamStatus = "applied" | "duplicate" | "stale" | "gap";
