@@ -8,7 +8,7 @@
 
 use archboard_geometry::Rect;
 use archboard_painting::paint;
-use archboard_scene::request::PaintRequest;
+use archboard_scene::request::{PaintRequest, Picture, TypeKind};
 use archboard_scene::scene::{
     Definition, Geometry, Group, Icon, Item, MarkerId, Paint, Purpose, Role, Scene, Shape,
     SubjectKind,
@@ -260,4 +260,31 @@ fn a_part_whose_icon_is_missing_draws_the_fallback_icon() {
         unreachable!("a card's group")
     };
     assert_eq!(look.icon.as_deref(), Some("RiQuestionLine"));
+}
+
+#[test]
+fn a_container_with_the_policy_kind_flow_omits_its_tab_chip() {
+    let mut request: PaintRequest = serde_json::from_str(REQUEST).expect("the fixture is a request");
+    let Picture::Architecture(picture) = &mut request.picture else {
+        panic!("the fixture draws an architecture");
+    };
+    let drawing_nodes = &mut picture.drawing.drawing;
+    let card = drawing_nodes.cards.remove(0);
+    let id = card.measured.node.id.clone();
+    drawing_nodes.containers.push(card);
+    let look = picture
+        .appearances
+        .get_mut(&id)
+        .expect("the part has a look");
+    look.container = true;
+    look.type_kind = TypeKind::Policy("flow".to_owned());
+
+    let scene = paint(&request);
+    let tab = drawing(&scene, SubjectKind::Region, &id, |role| {
+        matches!(role, Role::Header(_))
+    });
+    assert!(
+        icons(&tab.items).is_empty(),
+        "a flow's tab omits its kind chip"
+    );
 }

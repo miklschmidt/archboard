@@ -23,6 +23,7 @@ use crate::sizes::{
 };
 use archboard_geometry::Rect;
 use archboard_scene::drawing::TextRun;
+use archboard_scene::names::word;
 use archboard_scene::request::{NodeAppearance, Standing, TypeKind};
 use archboard_scene::scene::{Group, Role, SubjectKind};
 
@@ -136,8 +137,13 @@ fn line_views(
         y: near_tab.y + (TAB_HEIGHT - size) / 2.0,
         size,
     };
-    // A flow's tab holds its heading, as a sequence's does, and no kind.
-    let kind = if appearance.type_kind == TypeKind::Flow {
+    // The tab omits the chip for the flow key, including when a vault uses
+    // that key for an authored kind.
+    let omit_chip = match &appearance.type_kind {
+        TypeKind::Flow => true,
+        TypeKind::Policy(key) => key == word(&TypeKind::Flow),
+    };
+    let kind = if omit_chip {
         Items::new()
     } else {
         shared_chip(
