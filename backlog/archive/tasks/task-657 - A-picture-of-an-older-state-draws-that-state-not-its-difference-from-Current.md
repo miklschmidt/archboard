@@ -4,6 +4,7 @@ title: A picture of an older state draws that state, not its difference from Cur
 status: To Do
 assignee: []
 created_date: '2026-11-21T04:36:00Z'
+updated_date: '2026-11-21T05:23:00Z'
 labels: []
 dependencies: []
 ordinal: 1140000
@@ -23,3 +24,9 @@ Rendering a state that is older than Current by its id (`archboard model rasteri
 - [ ] #4 A focused test reproduces the backwards marks with a small vault of two states and fails without the fix
 - [ ] #5 The CLI help and the archboard skill say what an older state compares against by default
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Closed by the owner (2026-11-21): an older state keeps comparing with Current by default, as ADRs 0023 and 0032 and CONTEXT.md decide. Draw an older state plainly with an explicit comparison choice. Found while closing: model render and model rasterize have no option to name the comparison, so the CLI cannot draw an older state plainly today.
+<!-- SECTION:NOTES:END -->
