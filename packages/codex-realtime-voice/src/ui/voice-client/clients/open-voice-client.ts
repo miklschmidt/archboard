@@ -117,10 +117,19 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 		boundState = transport.state().snapshot;
 	}
 
-	/** Publish a new state to every listener. */
+	/**
+	 * Publish a new state to every listener. The state that first shows a server's snapshot
+	 * after a socket did not open clears why it did not, so no page shows that failure beside it.
+	 */
 	const publish = () => {
 		if (disposed) return;
+		const previous = current;
 		current = read();
+		if (failedToConnect && reached(current) && !reached(previous)) {
+			failure = null;
+			failedToConnect = false;
+			current = read();
+		}
 		for (const listener of listeners) listener();
 	};
 	const unsubscribeTransport = transport.subscribe(publish);
@@ -277,15 +286,8 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	 */
 	const reconnect = async () => {
 		const idle = pending === 0 && !disposed && !hidden;
-		if (idle && (await busyWith(reopen, noteConnectFailure))) reopened();
-		else if (!unreadableServer()) reconnectAfter(durationMs("codexRealtime.clientReconnect"));
-	};
-
-	/** A socket opened: it clears why an earlier one did not. */
-	const reopened = () => {
-		if (failedToConnect) failure = null;
-		failedToConnect = false;
-		publish();
+		if (idle && (await busyWith(reopen, noteConnectFailure))) return;
+		if (!unreadableServer()) reconnectAfter(durationMs("codexRealtime.clientReconnect"));
 	};
 
 	/** Release the socket and the microphone while the page is hidden. */
@@ -468,6 +470,15 @@ function socketUrl(options: VoiceClientOptions, pageUrl: string, tabSessionId: s
 	url.searchParams.set("chatId", options.chatId ?? "main");
 	url.searchParams.set("tabSessionId", tabSessionId);
 	return url.href;
+}
+
+/**
+ * Whether a state shows a server's snapshot over a connected socket.
+ * @param state The state.
+ * @returns True once the server answered on the socket.
+ */
+function reached(state: VoiceClientSnapshot): boolean {
+	return state.connection === "connected" && state.server !== null;
 }
 
 /**
