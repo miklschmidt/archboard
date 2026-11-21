@@ -479,3 +479,64 @@ fn a_small_reading_with_doors_round_its_frame_stands_in_the_panes_shape_not_a_st
     );
     assert!(width / height < 2.0, "a {width:.0} by {height:.0} strip");
 }
+
+/// A card too small to space the ends of its eight lines of six kinds: no placement gives
+/// every line a clear planned channel.
+fn crowded_card() -> String {
+    let kinds = ["call", "http", "event", "data", "config", "mixed kinds"];
+    let cards = std::iter::once(json!({"id":"hub","width":16,"height":16}))
+        .chain((0..8).map(|at| json!({"id":format!("c{at}"),"width":160,"height":60})));
+    let edges = (0..8).map(|at| {
+        let kind = kinds[at % kinds.len()];
+        let card = format!("c{at}");
+        let (from, to) = if at < kinds.len() {
+            ("hub", card.as_str())
+        } else {
+            (card.as_str(), "hub")
+        };
+        json!({"id":format!("e{at}"),"sources":[from],"targets":[to],
+            "layoutOptions":{"archboard.relationship.kind":kind,
+                "archboard.relationship.held-kind":kind},
+            "labels":[{"id":format!("l{at}"),"text":"calls","width":40,"height":16}]})
+    });
+    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()})
+    .to_string()
+}
+
+#[test]
+fn a_reading_no_placement_routes_is_drawn_unplanned_by_its_legacy_placement() {
+    let answer = lay_out_picture(&crowded_card(), &mut archboard_graphviz::InCore)
+        .expect("a drawing of a reading the planner refuses");
+    let answer: Value = serde_json::from_str(&answer).expect("an answer");
+    let options = &answer["layoutOptions"];
+    assert!(options.get("archboard.blocks.planned").is_none());
+    let placed: Value = serde_json::from_str(
+        options["archboard.blocks.placed"]
+            .as_str()
+            .expect("the drawing"),
+    )
+    .expect("the drawing");
+    assert_eq!(placed["cards"].as_array().expect("its cards").len(), 9);
+    let edges = placed["edges"].as_array().expect("its lines");
+    assert_eq!(edges.len(), 8);
+    assert!(edges.iter().all(|edge| {
+        edge["points"]
+            .as_array()
+            .is_some_and(|points| points.len() >= 2)
+    }));
+}
+
+/// A Graphviz that refuses every graph.
+struct Refusing;
+
+impl archboard_layout::Graphviz for Refusing {
+    fn render(&mut self, _graph: &str) -> Result<String, String> {
+        Err("syntax error".to_owned())
+    }
+}
+
+#[test]
+fn a_reading_the_planner_refuses_still_fails_when_graphviz_fails() {
+    lay_out_picture(&crowded_card(), &mut Refusing).unwrap_err();
+}
