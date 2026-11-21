@@ -81,7 +81,7 @@ function createNarrator<Start>(talk: (start: Start) => void): Narrator<Start> {
 			if (!focus.idle) {
 				return;
 			}
-			if (paneId === focus.active) {
+			if (paneId === focus.active && (focus.followed === paneId || focus.followed === null)) {
 				talk(start);
 				return;
 			}

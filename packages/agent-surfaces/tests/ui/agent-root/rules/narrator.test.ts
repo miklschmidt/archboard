@@ -29,9 +29,18 @@ function mountNarrator(focus: PaneFocus): {
 	return { narrator, talks };
 }
 
-test("a start asked for in the active pane is made at once", () => {
+test("a start asked for in the active pane is made at once when voice follows it", () => {
 	const agent = mountNarrator(QUIET);
 	agent.narrator.start("a", "tour");
+	expect(agent.talks).toEqual(["tour"]);
+});
+
+test("a start asked for just after focus moves waits for voice to follow", () => {
+	const agent = mountNarrator({ ...QUIET, active: "b" });
+	agent.narrator.start("b", "tour");
+	expect(agent.talks).toEqual([]);
+
+	agent.narrator.sync({ ...QUIET, active: "b", followed: "b" });
 	expect(agent.talks).toEqual(["tour"]);
 });
 
