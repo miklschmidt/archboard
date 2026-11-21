@@ -41,6 +41,19 @@
       },
       "id": "vKEsyHFk#s1kzuMxy",
       "to": "vKEsyHFk#DKzh4lMo"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "what a drawn variant differs by",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-rules/src/shared/rules/model-projection.ts",
+        "symbol": "comparedContent"
+      },
+      "to": "vKEsyHFk#2TsE24MN",
+      "id": "vKEsyHFk#tnWIXs1l"
     }
   ]
 }

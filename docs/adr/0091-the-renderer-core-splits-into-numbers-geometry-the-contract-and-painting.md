@@ -27,12 +27,14 @@ Candidates 2 and 5 of the run had narrowed the scene and Painting, and left 79 n
   `sign`, `pow`, `trim`, `is_space`). `archboard-geometry` holds points, boxes and routes (17).
   `archboard-scene` keeps the contract (12): the drawing, the request and the scene, the reading of
   a picture's key (`legend`) and the speller of an enum's word (`names`). `archboard-painting`
-  holds the measurer, the painter and their private size sheet (20). No crate re-exports a name of
+  holds the measurer, the painter and their private size sheet (19). No crate re-exports a name of
   another.
-- **Painting's 20 names** are the ten Flow part measures and `paint`, `viewer_marks`,
+- **Painting's 19 names** are the ten Flow part measures and `paint`, `viewer_marks`,
   `junction_boxes`, `own_icons`, `measure_node` (one operation over `Part::{Card, Container,
-  FlowFrame}`), `measure_label` (both plates, `LabelPlates { wide, narrow }`), `diagram_margin`,
-  `straight_card_top_contains`, `tab_width` and `header_padding`. The measurer stays with the
+  FlowFrame}`), `measure_label` (both plates, whose type is not exported: callers read `wide` and
+  `narrow`), `diagram_margin`, `straight_card_top_contains` and `tab_width`. A container header's
+  padding is the layout's own constant, `HEADER_PADDING`, because only the layout reads it
+  (TASK-653.22). The measurer stays with the
   painter, because they share the size sheet (ADR 0088). The crate's one keyed getter stays unspent:
   publishing the sheet through it would undo the private sheet.
 - **The far view's widths stay in Painting, behind `viewer_marks`.** The widened widths are built

@@ -1,0 +1,28 @@
+{
+  "order": 960190,
+  "name": "Schema descriptions",
+  "kind": "module",
+  "responsibility": "The JSON Schemas of what an agent reads and writes, rendered from the Zod authorities of this installation, so they match the program that reads them",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model-contract/src/shared/protocol/schema-description.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#oZzhBbuo",
+  "parent": "vKEsyHFk#QsBnI8Ja",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "dependency",
+      "label": "the model schema it renders",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-contract/src/shared/protocol/schema-description.ts",
+        "symbol": "ArchitectureModelSchema"
+      },
+      "to": "vKEsyHFk#8539szQJ",
+      "id": "vKEsyHFk#8NvF9npS"
+    }
+  ]
+}

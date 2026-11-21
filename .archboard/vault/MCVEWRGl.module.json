@@ -11,19 +11,6 @@
   "id": "vKEsyHFk#MCVEWRGl",
   "outgoing": [
     {
-      "order": 100,
-      "kind": "call",
-      "label": "the vault's policy",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/tests/runtime/support/wide-boards/timing.ts",
-        "symbol": "checkArchitectureVault"
-      },
-      "id": "vKEsyHFk#vo1cE4kF",
-      "to": "vKEsyHFk#V0iTeueR"
-    },
-    {
       "order": 200,
       "kind": "call",
       "label": "time each render",

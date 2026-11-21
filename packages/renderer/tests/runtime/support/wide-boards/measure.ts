@@ -1,56 +1,40 @@
-// Measures every fixture and every vault document on the scorecard a layout change
+// Measures every fixture and readings of this repository's model on the scorecard a layout change
 // is judged by (packages/renderer/tests/runtime/support/drawn-scorecard.ts): fit,
 // page area, how much of the page is card, route length, bends, crossings,
 // margin-lane ink, flank fan, how far a label sits from the line it names, the
 // corridors two routes share and the two
 // invariants. No single measure decides a comparison; layout tasks
-// record the numbers it prints. A fixture is any
-// `*.content.json` beside this file.
+// record the numbers it prints. A fixture is any `*.content.json` beside this
+// file; the readings are the whole model of `.archboard/vault` and each module
+// that holds parts (items.ts).
 //
 // Run from the repository root:
 //   bun packages/renderer/tests/runtime/support/wide-boards/measure.ts [outdir]
 //
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
-// ALL=1              measure every variant of every document, not only the current one
-// ENGINE=track       lay every document out with this engine, not the default one
+// ALL=1              also measure the readings of every proposal, not only the current state
+// ENGINE=track       lay every picture out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
-import {
-	defaultLayoutEngine,
-	defaultSemanticPolicy,
-	parseDocument,
-	type SemanticPolicy,
-} from "@archboard/model-contract";
-import { checkArchitectureVault } from "@archboard/model-store";
+import { defaultLayoutEngine } from "@archboard/model-contract";
 import { shell } from "@archboard/renderer/shell-geometry";
 import { rasterizeAll } from "@archboard/raster";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { fixtureDocument } from "../model-documents.ts";
-import { orderedFixture } from "../ordered-fixture.ts";
 import { scorecardOf, verdictOf, type Measure } from "../drawn-scorecard.ts";
+import { wideBoardItems } from "./items.ts";
 
-const fixtures = import.meta.dir;
-const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
 const layout = fixtureDocument("layoutEngine", process.env["ENGINE"] ?? defaultLayoutEngine());
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
-
-/** One thing to measure: a document's variant, or a fixture. */
-interface Item {
-	readonly name: string;
-	readonly variant: string;
-	readonly content: unknown;
-	/** The vault's policy, which names the groups the document draws; a fixture has none of its own. */
-	readonly policy: SemanticPolicy;
-}
 
 /** One document's saved result. */
 interface Result {
@@ -59,42 +43,7 @@ interface Result {
 	readonly measures: Measure[];
 }
 
-const items: Item[] = [];
-for (const file of fs
-	.readdirSync(fixtures)
-	.filter((name) => name.endsWith(".content.json"))
-	.toSorted()) {
-	items.push({
-		name: file.replace(".content.json", ""),
-		variant: "fixture",
-		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
-		policy: defaultSemanticPolicy(),
-	});
-}
-const { policy } = await checkArchitectureVault(vault);
-for (const file of fs
-	.readdirSync(vault)
-	.filter((name) => name.endsWith(".semantic.json"))
-	.toSorted()) {
-	const parsed = parseDocument(
-		"legacyBoard",
-		JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")),
-	);
-	if (!parsed.success) {
-		console.error(`unparsed ${file}: ${JSON.stringify(parsed).slice(0, 200)}`);
-		continue;
-	}
-	for (const variant of parsed.data.variants) {
-		const current = variant.id === parsed.data.current;
-		if (!current && !every) continue;
-		items.push({
-			name: parsed.data.name,
-			variant: `${current ? "*" : ""}${variant.name}`,
-			content: variant.content,
-			policy,
-		});
-	}
-}
+const items = await wideBoardItems(every);
 
 /**
  * A measure's value as the scorecard prints it.
@@ -120,8 +69,7 @@ const keys: string[] = [];
  */
 async function* measured() {
 	for (const item of items) {
-		// A fixture authored before subjects carried an order is given one by position.
-		const content = orderedFixture(item.content);
+		const { content } = item;
 		const drawn = await renderArchitecture({
 			content,
 			theme: "light",

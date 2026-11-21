@@ -17,19 +17,5 @@
   "formerNames": [
     "Painter core"
   ],
-  "outgoing": [
-    {
-      "order": 900,
-      "kind": "call",
-      "label": "each mark's pulse train and a leg's slide at the frame",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-paint/src/traffic.rs",
-        "symbol": "draw_traffic"
-      },
-      "id": "vKEsyHFk#EEuLPVrA",
-      "to": "vKEsyHFk#94vxmg9V"
-    }
-  ]
+  "outgoing": []
 }

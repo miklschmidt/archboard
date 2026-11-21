@@ -73,7 +73,7 @@
         "symbol": "parseDocument"
       },
       "id": "vKEsyHFk/0T9enjhi#PvjdCCub",
-      "to": "vKEsyHFk#QsBnI8Ja"
+      "to": "vKEsyHFk#UOmGPBWI"
     },
     {
       "order": 112000,
@@ -280,6 +280,19 @@
       },
       "id": "vKEsyHFk#ewLuX29P",
       "to": "vKEsyHFk#vZUWUgyb"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "the identity a board maps to",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "mappedIdentity"
+      },
+      "to": "vKEsyHFk#lO00uVmy",
+      "id": "vKEsyHFk#lALmByID"
     }
   ]
 }

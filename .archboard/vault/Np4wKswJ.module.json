@@ -1,0 +1,28 @@
+{
+  "order": 960510,
+  "name": "Key samples",
+  "kind": "ui",
+  "responsibility": "Draws a kind, a standing and a mark in small, as the picture draws them: the samples a legend, a tip and an inspector show",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx"
+  },
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Np4wKswJ",
+  "outgoing": [
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "the key's finished samples and the code warning mark",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx",
+        "symbol": "markSample"
+      },
+      "id": "vKEsyHFk#lzpiRcT2",
+      "to": "vKEsyHFk#Ut8M2UHc"
+    }
+  ]
+}

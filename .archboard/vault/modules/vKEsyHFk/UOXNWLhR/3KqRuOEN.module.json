@@ -14,19 +14,5 @@
   "formerNames": [
     "Render stage states"
   ],
-  "outgoing": [
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "the key's finished samples and the code warning mark",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx",
-        "symbol": "markSample"
-      },
-      "id": "vKEsyHFk#lzpiRcT2",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    }
-  ]
+  "outgoing": []
 }

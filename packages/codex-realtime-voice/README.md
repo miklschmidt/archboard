@@ -84,7 +84,7 @@ Then do these steps:
 
 1. Open `http://127.0.0.1:4100`.
 2. Select "Sign in with ChatGPT", then "Continue sign-in", and finish the sign-in in that browser. Select "I signed in" when the panel still asks for the sign-in.
-3. Type a message to the workhorse and select "Send".
+3. Type a message to Codex and select "Send".
 4. Select "Start voice", allow the microphone, and talk to the coordinator.
 5. Press `Ctrl+C` in the terminal to stop the server and its Codex process.
 
@@ -301,11 +301,11 @@ A host that admits its sockets itself, and knows who each one is, names the iden
 
 ### `mountVoice(element, url, options)`
 
-`mountVoice` draws the panel in `element` and connects it to the socket at `url`, a path such as `/voice` or a full URL. It returns the function that removes the panel and releases its client. It throws a `TypeError` when `element` is `null`. `options.chatId` names the chat (default `main`), and `options.text` replaces any of the panel's English words, such as `{ signIn: "Anmelden" }`.
+`mountVoice` draws the panel in `element` and connects it to the socket at `url`, a path such as `/voice` or a full URL. It returns the function that removes the panel and releases its client. It throws a `TypeError` when `element` is `null`. `options.chatId` names the chat (default `main`), and `options.text` replaces any of the panel's English words, such as `{ signIn: "Anmelden" }`. A host that keeps its words in a file of their own types them as `Partial<VoicePanelText>`.
 
 ### `createVoiceClient(options)`
 
-`createVoiceClient` makes the client of one chat and opens its socket at once.
+`createVoiceClient` makes the client of one chat and opens its socket at once. Its `options` have the type `VoiceClientOptions`.
 
 | Field    | Default  | What it does                                                                                                                            |
 | -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |

@@ -30,6 +30,19 @@
       },
       "id": "vKEsyHFk/wAHh0HTa#qQrqNYdt",
       "to": "vKEsyHFk#W7H379Zc"
+    },
+    {
+      "order": 90,
+      "kind": "call",
+      "label": "tell a remote failure from any other",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/generation/services/hooks.ts",
+        "symbol": "readCodexFailure"
+      },
+      "id": "vKEsyHFk#6y4kR6Zd",
+      "to": "vKEsyHFk#9WRvXbgc"
     }
   ]
 }

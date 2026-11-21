@@ -1,0 +1,28 @@
+{
+  "order": 32000,
+  "name": "Model responses",
+  "kind": "module",
+  "responsibility": "Reads a route's body as the request of one operation, and answers a model read or write with its refusal's HTTP status",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server/src/server/http/handlers/routes/model-response.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#pVWPwozS",
+  "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "call",
+      "label": "read a request and the vault it names, or its refusal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/routes/model-response.ts",
+        "symbol": "parseModelRequest"
+      },
+      "id": "vKEsyHFk#PACCuNBM",
+      "to": "vKEsyHFk#jsgTblX8"
+    }
+  ]
+}

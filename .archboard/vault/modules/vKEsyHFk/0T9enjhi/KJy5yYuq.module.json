@@ -196,6 +196,19 @@
       },
       "id": "vKEsyHFk#UDGtsZfv",
       "to": "vKEsyHFk#DKzh4lMo"
+    },
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "compare two states' interfaces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/proposals/operations/compare.ts",
+        "symbol": "compareInterfaces"
+      },
+      "to": "vKEsyHFk#aFPM6O4Z",
+      "id": "vKEsyHFk#CMucvdBb"
     }
   ]
 }

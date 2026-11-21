@@ -33,19 +33,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 91000,
-      "kind": "call",
-      "label": "read a request and the vault it names, or its refusal",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/routes/model-response.ts",
-        "symbol": "parseModelRequest"
-      },
-      "id": "vKEsyHFk#PACCuNBM",
-      "to": "vKEsyHFk#QsBnI8Ja"
-    }
-  ]
+  "outgoing": []
 }

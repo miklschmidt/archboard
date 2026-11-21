@@ -178,6 +178,45 @@
       },
       "id": "vKEsyHFk#7Zm6sJS7",
       "to": "vKEsyHFk#FMiMVZ28"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "read each message of a flow",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/claims/operations/claims.ts",
+        "symbol": "readFlow"
+      },
+      "to": "vKEsyHFk#e2vuWFxK",
+      "id": "vKEsyHFk#tYkUmz6P"
+    },
+    {
+      "order": 30010,
+      "kind": "call",
+      "label": "the content of the model it checks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/operations/states.ts",
+        "symbol": "modelContent"
+      },
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "id": "vKEsyHFk#8Hg7357r"
+    },
+    {
+      "order": 30020,
+      "kind": "call",
+      "label": "inspect a container's interface",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/code-check/interfaces/operations/interfaces.ts",
+        "symbol": "inspectContainer"
+      },
+      "to": "vKEsyHFk#DKzh4lMo",
+      "id": "vKEsyHFk#vx6GrSnB"
     }
   ]
 }

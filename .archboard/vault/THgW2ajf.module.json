@@ -1,0 +1,14 @@
+{
+  "order": 50500,
+  "name": "Voice client contract",
+  "kind": "module",
+  "responsibility": "The voice client's public shape: what a host passes in, the one state it publishes, and the actions a page calls",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/ui/voice-client/state/contract.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#eOG7Eo1U",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#THgW2ajf",
+  "outgoing": []
+}

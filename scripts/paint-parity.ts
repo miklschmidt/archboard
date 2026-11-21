@@ -460,7 +460,7 @@ function runOfArguments(): Run {
 		allowPositionals: true,
 		options: {
 			painters: { type: "string", default: "gpu,webgl,cpu" },
-			views: { type: "string", default: "near,far" },
+			views: { type: "string", default: "near,far,traffic" },
 			only: { type: "string", default: "" },
 			browser: { type: "string", default: "google-chrome" },
 			worst: { type: "string", default: "12" },

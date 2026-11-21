@@ -11,19 +11,6 @@
   "id": "vKEsyHFk#S6MFhkV7",
   "outgoing": [
     {
-      "order": 100,
-      "kind": "call",
-      "label": "the vault's policy",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/tests/runtime/support/wide-boards/measure.ts",
-        "symbol": "checkArchitectureVault"
-      },
-      "id": "vKEsyHFk#NZXdvNpk",
-      "to": "vKEsyHFk#V0iTeueR"
-    },
-    {
       "order": 71000,
       "kind": "call",
       "label": "render measured layout fixtures",

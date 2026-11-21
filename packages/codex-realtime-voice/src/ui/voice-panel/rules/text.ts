@@ -62,7 +62,7 @@ const ENGLISH: VoicePanelText = Object.freeze<VoicePanelText>({
 	stopVoice: "Stop voice",
 	transcript: "What was said",
 	work: "Work",
-	message: "Message to the workhorse",
+	message: "Message to Codex",
 	send: "Send",
 	stopWork: "Stop work",
 	refresh: "Refresh",

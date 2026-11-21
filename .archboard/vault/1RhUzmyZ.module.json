@@ -100,6 +100,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#108U3Rhl",
       "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
+    {
+      "order": 10,
+      "kind": "call",
+      "label": "the registered checkout a source names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model-store/src/runtime/canonical/archive/store/model-archive.ts",
+        "symbol": "resolveRegisteredCheckout"
+      },
+      "to": "vKEsyHFk#T01An9xZ",
+      "id": "vKEsyHFk#5kwssESq"
     }
   ]
 }
