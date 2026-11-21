@@ -46,17 +46,22 @@ const DEFAULTS = {
 	drop: [],
 };
 
+/**
+ * A notification the fake sends after a realtime start, in list order, each `delayMs` after the
+ * one before it. One with `after` waits, from then on, until the control names it in `released`.
+ */
+type FixtureEvent = {
+	readonly method: string;
+	readonly params: unknown;
+	readonly delayMs?: number;
+	readonly after?: string;
+};
+
 type FixtureControl = {
-	readonly startEvents?: readonly {
-		readonly method: string;
-		readonly params: unknown;
-		readonly delayMs?: number;
-	}[];
-	readonly afterStartEvents?: readonly {
-		readonly method: string;
-		readonly params: unknown;
-		readonly delayMs?: number;
-	}[];
+	readonly startEvents?: readonly FixtureEvent[];
+	readonly afterStartEvents?: readonly FixtureEvent[];
+	/** The names of the events with `after` that the fake may send now. */
+	readonly released?: readonly string[];
 	readonly pages?: readonly unknown[];
 	readonly startDelayMs?: number;
 	readonly exitOn?: string | null;
@@ -121,7 +126,7 @@ if(frame.method==="configRequirements/read"){response(frame,{supportsIndependent
 if(frame.method==="config/read"){response(frame,configResponse());return;}
 if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro",workspaceName:null},requiresOpenaiAuth:true,workspaceRouting:null});return;}
 const current=control();record({kind:"request",method:frame.method,params:frame.params});
-if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const emitEvents=values=>{let delay=0;for(const event of values){delay+=event.delayMs??0;setTimeout(()=>notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId)),delay);}};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
+if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const released=(name,run)=>(control().released??[]).includes(name)?run():setTimeout(()=>released(name,run),5);const emitEvents=(values,index=0)=>{const event=values[index];if(!event)return;const emit=()=>setTimeout(()=>{notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId));emitEvents(values,index+1);},event.delayMs??0);if(event.after)released(event.after,emit);else emit();};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
 if(frame.method==="thread/timeline/list"){const pages=current.pages??[];const page=pages[pageIndex++]??{data:[],nextCursor:null,activeRealtimeSessionAtPageStart:null};response(frame,replace(page,realtimeSessionId,frame.params.threadId));return;}
 if(current.exitOn===frame.method){process.exit(17);return;} if((current.drop??[]).includes(frame.method))return; response(frame,{});
 }

@@ -135,10 +135,15 @@ test("a socket the server closes before its first snapshot fails with the server
 	expect(client.snapshot().failure?.message).toBe(SERVER_REASON);
 	expect(client.snapshot().connection).toBe("reconnecting");
 	expect(calls).toEqual([]);
+	const published: ReturnType<typeof client.snapshot>[] = [];
+	client.subscribe(() => published.push(client.snapshot()));
 	await fire(timers);
 	expect(sockets).toHaveLength(2);
 	expect(client.snapshot().connection).toBe("connected");
-	expect(client.snapshot().failure).toBeNull();
+	// The server's first snapshot clears the refusal in the state that shows it, not after.
+	const shown = published.filter((state) => state.connection === "connected" && state.server);
+	expect(shown.length).toBeGreaterThan(0);
+	expect(shown.map((state) => state.failure)).toEqual(shown.map(() => null));
 	await client.dispose();
 });
 
