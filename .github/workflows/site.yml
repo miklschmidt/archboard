@@ -129,7 +129,7 @@ jobs:
       # The hero's painter and its painting come from one build of the renderer core (ADR 0059,
       # ADR 0071), and the flake's dev shell holds the Rust tools that build it.
       - name: Setup Nix
-        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
+        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
 
       - name: Install the repository's dependencies
         working-directory: .
