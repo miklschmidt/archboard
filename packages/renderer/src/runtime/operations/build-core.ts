@@ -6,7 +6,8 @@
 // standalone picture in. A complete build that records the hash of the sources
 // in this checkout is kept, so a run without a change needs no Rust tools. When
 // cargo or wasm-bindgen does not run and `nix` is on PATH, the build runs itself
-// again inside the `nix develop` shell of the checkout.
+// again inside the `nix develop` shell of the checkout. Build diagnostics go
+// to stderr so a caller can write its result to stdout.
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { CoreBuildError, loadCore } from "#runtime/bun-renderer/services/core.ts";
@@ -65,7 +66,7 @@ function spawn(
 		return Bun.spawnSync(command, {
 			cwd: checkoutPath(),
 			env: { ...process.env, ...env },
-			stdout: output,
+			stdout: output === "inherit" ? process.stderr.fd : output,
 			stderr: "inherit",
 		});
 	} catch {
@@ -185,7 +186,7 @@ function buildInNixShell(): void {
 		{
 			cwd: checkoutPath(),
 			env: { ...process.env, [IN_SHELL]: "1" },
-			stdio: ["inherit", "inherit", "inherit"],
+			stdio: ["inherit", process.stderr.fd, "inherit"],
 		},
 	);
 	if (ran.exitCode !== 0) {
@@ -252,7 +253,7 @@ function buildWasm(hash: string): void {
 	run(["wasm-bindgen", "--target", "web", "--out-dir", coreBuildPath(), PAINTER_BUILT]);
 	run(["wasm-bindgen", "--target", "web", "--out-dir", coreBuildPath(), BUILT]);
 	guardCoreGlue();
-	console.log(`Built the renderer core from these sources (${hash}).`);
+	console.error(`Built the renderer core from these sources (${hash}).`);
 }
 
 /**
@@ -284,7 +285,7 @@ async function writeThemeColors(): Promise<void> {
 async function buildCore(): Promise<void> {
 	const hash = coreSourceHash();
 	if (currentBuild(hash)) {
-		console.log(`The renderer core is built from these sources (${hash}).`);
+		console.error(`The renderer core is built from these sources (${hash}).`);
 	} else if (needsNixShell()) {
 		buildInNixShell();
 		return;
