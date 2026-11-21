@@ -34,6 +34,7 @@ pub(crate) fn told_drawing(options: &mut IndexMap<String, String>) -> Option<(St
 /// A solve's answer: the hierarchy's root, as large as the drawing, carrying it in its options.
 fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> String {
     let mut options = graph.layout_options.clone().unwrap_or_default();
+    options.shift_remove(BLOCKS_PLANNED);
     for (name, value) in told {
         options.insert(name.to_owned(), value);
     }
