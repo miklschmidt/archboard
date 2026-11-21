@@ -144,7 +144,6 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 });
 
 test("real process rejects wrong child/thread/session/version, stale SDP, and flat transcript content", async () => {
-	// The fake sends each event the test checks the offer before only once the test releases it.
 	const control = {
 		startDelayMs: 50,
 		startEvents: [
@@ -195,6 +194,7 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 				throw error;
 			},
 		);
+		void pending.catch(() => undefined);
 		await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
 		const foreign = testAuthorities().identity;
 		const sendSdp = (
@@ -233,7 +233,7 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 		await waitForDiagnostic(harness, 1);
 		expectPendingOffer(harness, settled);
 		harness.setControl({ ...control, released: ["wrong version"] });
-		await waitForDiagnostic(harness, 2);
+		await Promise.race([waitForDiagnostic(harness, 2), pending]);
 		expectPendingOffer(harness, settled);
 		harness.setControl({ ...control, released: ["wrong version", "answer"] });
 		const answer = await pending;
@@ -252,7 +252,6 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 		expect(JSON.stringify(harness.events)).not.toContain("flat");
 	});
 });
-
 test("real process probes the pinned binary before spawn and rejects a wrong version", async () => {
 	const harness = await createHarness({}, { version: "codex-cli 0.150.0" });
 	try {
