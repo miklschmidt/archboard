@@ -282,7 +282,15 @@ Bun.serve({
 	websocket: {
 		data: {} as SocketData,
 		open(ws) {
-			const socket = { send: (text: string) => void ws.send(text), close: ws.close.bind(ws) };
+			const socket = {
+				send(text: string) {
+					if (ws.readyState !== 1) throw new Error("The voice socket is not open.");
+					if (ws.send(text) !== 0) return;
+					ws.terminate();
+					throw new Error("The voice socket dropped a frame.");
+				},
+				close: ws.close.bind(ws),
+			};
 			ws.data.voice = agent.connect(socket, { request: ws.data.request });
 		},
 		message(ws, message) {
