@@ -55,7 +55,7 @@ interface SocketConversation {
 	 * @throws {Error} When the transport or the media could not attach; the generation is retired.
 	 */
 	readonly attach: (socket: BrowserWorkbenchSocket) => Promise<HostedConversation | null>;
-	/** Retire the generation on a socket, if it is the current one. The socket stays open. */
+	/** Cancel a pending attach or retire the current generation on this socket. The socket stays open. */
 	readonly detach: (socket: BrowserWorkbenchSocket) => Promise<void>;
 	/** The conversation of the attached socket, or null while none is attached. */
 	readonly current: () => HostedConversation | null;
@@ -111,6 +111,7 @@ function openSocketConversation(
 	let published: Generation | null = null;
 	let disposed = false;
 	let latestAttach = 0;
+	let pendingSocket: BrowserWorkbenchSocket | null = null;
 	let retirement: Promise<void> = Promise.resolve();
 
 	/**
@@ -229,19 +230,23 @@ function openSocketConversation(
 			const previous = active;
 			if (previous?.socket === socket && !previous.retired) return previous.up;
 			const request = ++latestAttach;
+			pendingSocket = socket;
 			await settle(previous);
 			// A later attach, a detach and a dispose each count a new request.
-			return request === latestAttach ? start(socket, request) : null;
+			if (request !== latestAttach) return null;
+			pendingSocket = null;
+			return start(socket, request);
 		},
 		/**
-		 * Retire the generation on a socket, if it is the current one.
+		 * Cancel a pending attach or retire the current generation on this socket.
 		 * @param socket The socket.
 		 */
 		detach: async (socket: BrowserWorkbenchSocket) => {
 			const generation = active;
-			if (generation === null || generation.socket !== socket) return;
+			if (generation?.socket !== socket && pendingSocket !== socket) return;
+			pendingSocket = null;
 			++latestAttach;
-			await retire(generation);
+			await settle(generation);
 		},
 		/**
 		 * The conversation of the attached socket.
@@ -253,6 +258,7 @@ function openSocketConversation(
 		dispose: async () => {
 			if (disposed) return;
 			disposed = true;
+			pendingSocket = null;
 			++latestAttach;
 			await settle(active);
 			await quietly(() => media.dispose());

@@ -173,3 +173,17 @@ test("a detach retires only the current socket's generation and leaves the socke
 	expect(socket.closeCalls).toBe(0);
 	await conversation.dispose();
 });
+
+test("detaching a replacement socket during retirement cancels its pending attach", async () => {
+	const { conversation, log } = recordingConversation();
+	const first = paneSocket();
+	const replacement = paneSocket();
+	await conversation.attach(first);
+	const attaching = conversation.attach(replacement);
+	await conversation.detach(replacement);
+	expect(await attaching).toBeNull();
+	expect(conversation.current()).toBeNull();
+	expect(log).toEqual(["t1.attach", "media.attach t1", "media.detach t1", "t1.dispose"]);
+	expect(replacement.closeCalls).toBe(0);
+	await conversation.dispose();
+});
