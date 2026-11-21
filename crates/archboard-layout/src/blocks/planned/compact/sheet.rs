@@ -131,6 +131,24 @@ fn joined_card(drawing: &Placed, line: usize, start: bool, two_way: &[&str]) -> 
         .flatten()
 }
 
+/// A box of the drawing that a line can end on: a card or a frame, by its place in the drawing.
+#[derive(Clone, Copy)]
+enum Held {
+    Card(usize),
+    Frame(usize),
+}
+
+/// One wall of a card or a frame on this axis, where it stands before the shift.
+struct Wall {
+    held: Held,
+    /// Whether it is the box's wall at the high end of the axis.
+    high: bool,
+    at: f64,
+    mover: usize,
+    from: f64,
+    to: f64,
+}
+
 /// What moves each part of a drawing on one axis, and the pieces they hold.
 #[derive(Default)]
 pub(super) struct Sheet {
@@ -144,6 +162,8 @@ pub(super) struct Sheet {
     lines: Vec<Vec<usize>>,
     /// The mover of each label, in the order of the lines that have one.
     words: Vec<usize>,
+    /// The walls of the cards and the frames, which the ends of lines stand on.
+    walls: Vec<Wall>,
 }
 
 impl Sheet {
@@ -167,6 +187,22 @@ impl Sheet {
             to,
             joins: Vec::new(),
         });
+    }
+
+    /// The two walls of a box on this axis, each with the mover that moves it.
+    fn wall(&mut self, held: Held, axis: Axis, bx: Rect, movers: (usize, usize)) {
+        let (low, high) = axis.span(bx);
+        let (from, to) = axis.across().span(bx);
+        for (high, at, mover) in [(false, low, movers.0), (true, high, movers.1)] {
+            self.walls.push(Wall {
+                held,
+                high,
+                at,
+                mover,
+                from,
+                to,
+            });
+        }
     }
 
     fn walls(&mut self, axis: Axis, at: Rect) -> (usize, usize) {
@@ -220,7 +256,7 @@ impl Sheet {
 
     /// Every card holds the mover of its place in the drawing's cards, so `cards` comes first.
     fn cards(&mut self, drawing: &Placed, axis: Axis) {
-        for card in &drawing.cards {
+        for (at, card) in drawing.cards.iter().enumerate() {
             let mover = self.mover();
             let kind = if card.depth == 0 {
                 Kind::Door
@@ -228,12 +264,14 @@ impl Sheet {
                 Kind::Card
             };
             self.add(axis, mover, kind, card.bx, card.bx);
+            self.wall(Held::Card(at), axis, card.bx, (mover, mover));
         }
     }
 
     fn frames(&mut self, drawing: &Placed, axis: Axis) {
-        for frame in &drawing.frames {
+        for (at, frame) in drawing.frames.iter().enumerate() {
             let walls = self.walls(axis, frame.bx);
+            self.wall(Held::Frame(at), axis, frame.bx, walls);
             self.frames.push(walls);
         }
         for region in &drawing.regions {
@@ -311,10 +349,41 @@ impl Sheet {
         }
     }
 
+    /// Where each run of a line that stood on a wall of a card or a frame, and moves with that
+    /// wall, stands once the boxes moved: on the wall, exactly where the moved box puts it. A box
+    /// moves its corner and keeps its size, so its far wall can land a rounding away from a point
+    /// that took the same shift, and the guard would read that line as running into the box.
+    fn landed(&self, drawing: &Placed, axis: Axis, shifts: &[f64]) -> Vec<Option<f64>> {
+        let mut landed = vec![None; self.movers];
+        let runs = (self.pieces.iter()).filter(|piece| piece.kind == Kind::Line);
+        for run in runs {
+            let on = |wall: &&Wall| {
+                wall.at == run.low
+                    && shifts[wall.mover] == shifts[run.mover]
+                    && run.from <= wall.to
+                    && wall.from <= run.to
+            };
+            landed[run.mover] = self.walls.iter().find(on).map(|wall| {
+                let bx = match wall.held {
+                    Held::Card(at) => drawing.cards[at].bx,
+                    Held::Frame(at) => drawing.frames[at].bx,
+                };
+                let (low, high) = axis.span(bx);
+                if wall.high { high } else { low }
+            });
+        }
+        landed
+    }
+
+    /// Move the lines and their words, after `apply_boxes` moved the boxes they stand on.
     pub(super) fn apply_lines(&self, drawing: &mut Placed, axis: Axis, shifts: &[f64]) {
+        let landed = self.landed(drawing, axis, shifts);
         for (line, points) in drawing.edges.iter_mut().zip(&self.lines) {
             for (point, &mover) in line.points.iter_mut().zip(points) {
-                axis.nudge(point, shifts[mover]);
+                match landed[mover] {
+                    Some(wall) => *axis.pick(&mut point.x, &mut point.y) = wall,
+                    None => axis.nudge(point, shifts[mover]),
+                }
             }
         }
         let labels = drawing

@@ -299,3 +299,71 @@ fn alignment_cannot_chain_small_gaps_into_a_large_cost() {
         assert!(gap <= CARD_GAP + STAY_ALIGNED);
     }
 }
+
+// A reading with a few open frames (TASK-658): a card that moved up took its corner along and kept
+// its height, and the line leaving its bottom wall took the same shift, but the two sums rounded
+// apart. The line then started a hair inside its own card, so the guard refused every tight
+// drawing and the picture kept its empty trays.
+#[test]
+fn a_sparse_frame_closes_and_its_lines_stay_on_their_cards_walls() {
+    // The size of a card with a two-line summary, as words are measured.
+    let tall = 112.602;
+    let card = |id: &str, y: f64| PlacedCard {
+        id: id.into(),
+        bx: Rect {
+            x: 100.0,
+            y,
+            width: 340.0,
+            height: tall,
+        },
+        depth: 1,
+        header: None,
+    };
+    let (upper, lower) = (923.408, 1923.408);
+    let frame = PlacedCard {
+        id: "frame".into(),
+        bx: Rect {
+            x: 40.0,
+            y: 40.0,
+            width: 460.0,
+            height: 2100.0,
+        },
+        depth: 0,
+        header: None,
+    };
+    let shape = Shape::new(Placed {
+        width: 600.0,
+        height: 2200.0,
+        cards: vec![card("upper", upper), card("lower", lower)],
+        frames: vec![frame],
+        regions: Vec::new(),
+        edges: vec![PlacedLine {
+            id: "down".into(),
+            points: vec![
+                Point {
+                    x: 270.0,
+                    y: upper + tall,
+                },
+                Point { x: 270.0, y: lower },
+            ],
+            label: None,
+        }],
+        titles: Vec::new(),
+        routed: None,
+    });
+    let drawn = drawing(&shape, 8.0, &[]).expect("empty tray to take out");
+    let (from, to) = (drawn.cards[0].bx, drawn.cards[1].bx);
+    let line = &drawn.edges[0].points;
+    assert_eq!(line[0].y, from.y + from.height);
+    assert_eq!(line[1].y, to.y);
+    let frame = drawn.frames[0].bx;
+    assert!(from.y - frame.y < 100.0, "the tray above the cards closes");
+    assert!(
+        to.y - (from.y + from.height) < 100.0,
+        "the band between the cards closes"
+    );
+    assert!(
+        frame.y + frame.height - (to.y + to.height) < 100.0,
+        "the tray below closes"
+    );
+}
