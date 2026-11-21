@@ -361,10 +361,14 @@ impl Sheet {
                 continue;
             }
             let last = points.len() - 1;
-            for (end, next) in [(0, 1), (last, last - 1)] {
+            let approaches = [
+                (0, points.iter().find(|&&point| point != points[0])),
+                (last, points.iter().rfind(|&&point| point != points[last])),
+            ];
+            for (end, next) in approaches {
                 let point = points[end];
                 let at = axis.of(point);
-                if at == axis.of(points[next]) {
+                if next.is_none_or(|&next| at == axis.of(next)) {
                     continue;
                 }
                 let across = axis.across().of(point);

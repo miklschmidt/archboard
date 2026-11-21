@@ -370,6 +370,12 @@ fn a_sparse_frame_closes_and_its_lines_stay_on_their_cards_walls() {
 
 #[test]
 fn a_run_only_lands_on_an_unambiguous_endpoint_wall() {
+    for axis in [Axis::X, Axis::Y] {
+        check_endpoint_walls(axis);
+    }
+}
+
+fn check_endpoint_walls(axis: Axis) {
     let mut upper = card("upper", 100.0, 923.408);
     upper.bx.height = 112.602;
     let wall = upper.bx.y + upper.bx.height;
@@ -414,30 +420,37 @@ fn a_run_only_lands_on_an_unambiguous_endpoint_wall() {
         titles: Vec::new(),
         routed: None,
     };
-    let sheet = Sheet::of(&drawing, Axis::Y, &[]);
+    let card_end = drawing.edges[0].points[0];
+    drawing.edges[0].points.insert(0, card_end);
+    let frame_end = drawing.edges[4].points[1];
+    drawing.edges[4].points.push(frame_end);
+    if matches!(axis, Axis::X) {
+        transpose(&mut drawing);
+    }
+    let sheet = Sheet::of(&drawing, axis, &[]);
     let shift = -900.0;
     let shifts = vec![shift; sheet.movers];
-    sheet.apply_boxes(&mut drawing, Axis::Y, &shifts);
-    sheet.apply_lines(&mut drawing, Axis::Y, &shifts);
+    sheet.apply_boxes(&mut drawing, axis, &shifts);
+    sheet.apply_lines(&mut drawing, axis, &shifts);
     let upper = drawing.cards[0].bx;
     let far_frame = drawing.frames[1].bx;
     let passing = &drawing.edges[3].points;
     assert_eq!(
         [
-            drawing.edges[0].points[0].y,
-            drawing.edges[1].points[0].y,
-            drawing.edges[2].points[0].y,
-            passing[1].y,
-            passing[2].y,
-            drawing.edges[4].points[1].y,
+            axis.of(drawing.edges[0].points[0]),
+            axis.of(drawing.edges[1].points[0]),
+            axis.of(drawing.edges[2].points[0]),
+            axis.of(passing[1]),
+            axis.of(passing[2]),
+            axis.of(drawing.edges[4].points[2]),
         ],
         [
-            upper.y + upper.height,
+            axis.span(upper).1,
             wall + shift,
             (wall + 1e-9) + shift,
             wall + shift,
             wall + shift,
-            far_frame.y + far_frame.height,
+            axis.span(far_frame).1,
         ]
     );
     assert!(
@@ -447,4 +460,15 @@ fn a_run_only_lands_on_an_unambiguous_endpoint_wall() {
             .flat_map(|line| line.points.windows(2))
             .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y)
     );
+}
+
+fn transpose(drawing: &mut Placed) {
+    std::mem::swap(&mut drawing.width, &mut drawing.height);
+    for card in drawing.cards.iter_mut().chain(&mut drawing.frames) {
+        std::mem::swap(&mut card.bx.x, &mut card.bx.y);
+        std::mem::swap(&mut card.bx.width, &mut card.bx.height);
+    }
+    for point in drawing.edges.iter_mut().flat_map(|line| &mut line.points) {
+        std::mem::swap(&mut point.x, &mut point.y);
+    }
 }
