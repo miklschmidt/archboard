@@ -74,13 +74,19 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         return super::planned::solve_part(&graph, &part);
     }
     let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
-    let (placed, frozen) = if mode == "blocks" {
-        (hybrid(&graph, host)?, true)
+    let planned = if mode == "blocks" {
+        hybrid(&graph, host)?
     } else {
-        (
+        None
+    };
+    // Track, and a Blocks reading that no placement gives every line a clear planned channel,
+    // take the retained placement, whose routes the drawing settles as Track's (TASK-624).
+    let (placed, frozen) = match planned {
+        Some(placed) => (placed, true),
+        None => (
             super::legacy::place(&graph, Nesting::named(mode)?, host)?,
             false,
-        )
+        ),
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {
@@ -174,20 +180,27 @@ impl Across {
     }
 }
 
+/// A planned drawing, or none when the planner refuses every placement; an error is a Graphviz
+/// failure.
+type Planned = Result<Option<super::assembly::Placed>, String>;
+
 /// A door's lines share a trunk, which their words would hold apart, so they are drawn
 /// without them first, and each then wears them on its own branch.
-fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Planned {
     let Some(quiet) = super::planned::without_trunk_words(graph) else {
         return solved(graph, host);
     };
-    super::planned::dress(graph, solved(&quiet, host)?).or_else(|_| solved(graph, host))
+    let Some(drawing) = solved(&quiet, host)? else {
+        return Ok(None);
+    };
+    super::planned::dress(graph, drawing)
+        .map_or_else(|_| solved(graph, host), |dressed| Ok(Some(dressed)))
 }
 
-fn solved(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+fn solved(graph: &Node, host: &mut dyn Graphviz) -> Planned {
     if let Some(drawing) = super::planned::dense_drawing(graph) {
-        return Ok(drawing);
+        return Ok(Some(drawing));
     }
-    let mut failure = super::planned::Refused::from("No guarded Blocks drawing");
     let mut room = Vec::new();
     let mut complete_room = Vec::new();
     // Preserve every drawing the original bounded attempts already find. Only
@@ -202,10 +215,10 @@ fn solved(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Plac
         (256.0, true),
     ] {
         let endpoints = if complete { &complete_room } else { &room };
-        match try_placements(graph, host, endpoints, extra, complete)? {
-            Ok(drawing) => return Ok(drawing),
-            Err(error) => failure = error,
-        }
+        let failure = match try_placements(graph, host, endpoints, extra, complete)? {
+            Ok(drawing) => return Ok(Some(drawing)),
+            Err(failure) => failure,
+        };
         let Some(latest) = failure.blocked.first() else {
             break;
         };
@@ -222,7 +235,7 @@ fn solved(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Plac
             complete_room.dedup();
         }
     }
-    Err(failure.message)
+    Ok(None)
 }
 
 fn try_placements(

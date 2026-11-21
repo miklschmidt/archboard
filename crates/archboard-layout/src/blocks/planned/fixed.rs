@@ -100,10 +100,9 @@ fn reach_shoulders(model: &Model<'_>, shape: &Shape, mut drawing: Placed) -> Pla
     drawing
 }
 
+/// No clear planned channel for these lines.
 fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
-    let edge = *edges.last().expect("an unfinished route");
     super::Refused {
-        message: format!("No clear planned channel for {}", model.edges[edge].id),
         blocked: edges
             .iter()
             .rev()
