@@ -22,7 +22,7 @@
     },
     {
       "order": 110,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "draws readings",
       "emphasis": "normal",
