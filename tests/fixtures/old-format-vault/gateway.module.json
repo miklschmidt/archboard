@@ -1,0 +1,14 @@
+{
+	"schemaVersion": 1,
+	"id": "Shop#Gateway",
+	"name": "Gateway",
+	"formerNames": ["Public API"],
+	"kind": "service",
+	"order": 20,
+	"responsibility": "Accepts shopping requests",
+	"description": "Authenticates callers and sends shopping requests to the worker.",
+	"groups": ["public"],
+	"binding": { "repo": "github.com/acme/shop", "path": "src/gateway.ts" },
+	"documents": [{ "repo": "github.com/acme/shop", "path": "docs/gateway.md", "commit": "abc123" }],
+	"outgoing": []
+}
