@@ -3,13 +3,14 @@
   "name": "Basket route",
   "kind": "route",
   "responsibility": "PUT /basket: keeps the shopper's basket between page views",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/MKhTEYqf#4M4pdgk0",
   "parent": "Shop/MKhTEYqf#lwmpnaVU",
   "outgoing": [
     {
       "order": 7000,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "mutation",
       "label": "keep the basket",
       "emphasis": "muted",
       "id": "Shop/MKhTEYqf#AdNRbD8D",

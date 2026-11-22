@@ -15,8 +15,8 @@
   "schemaVersion": 1,
   "lifecycle": "draft",
   "predecessor": null,
-  "predecessorRevision": "32bb5070904076faa5d23359aa5c91dcc72cbd827cd465de377268fa6ee7c6fb",
-  "baseline": "b38ef58caabf2453e364af0a41da7caac1912e9f",
+  "predecessorRevision": "cb3662eaf77e31238c99da78fc2a060c237bbed71524c577045a736817a58808",
+  "baseline": "bff733ecd8f4d96426cfc09523bc5fb08a8be82f",
   "changes": [
     {
       "type": "add",
@@ -27,7 +27,7 @@
         "name": "Storefront",
         "kind": "ui",
         "responsibility": "Shows up to 8 suggestions under each product",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/MKhTEYqf#cgbB3aQp"
       }
     },
@@ -45,6 +45,7 @@
       "value": {
         "order": 1000,
         "kind": "http",
+        "effect": "query",
         "label": "GET /recommendations/{product}",
         "emphasis": "hero",
         "traffic": {
@@ -71,7 +72,7 @@
         "name": "Recommendations API",
         "kind": "module",
         "responsibility": "Answers which products to show beside a product",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#pehY1Vt2"
       }
     },
@@ -91,7 +92,7 @@
         "name": "Suggest route",
         "kind": "route",
         "responsibility": "GET /recommendations/{product}: up to 8 products to show beside it",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#6F35VHCd"
       }
     },
@@ -108,7 +109,8 @@
       "kind": "relationship",
       "value": {
         "order": 2000,
-        "kind": "data",
+        "kind": "storage",
+        "effect": "query",
         "label": "read the list for a product",
         "emphasis": "hero",
         "traffic": {
@@ -133,6 +135,7 @@
       "value": {
         "order": 3000,
         "kind": "call",
+        "effect": "query",
         "label": "drop sold-out products",
         "emphasis": "normal",
         "traffic": {
@@ -159,7 +162,7 @@
         "name": "Sold-out filter",
         "kind": "function",
         "responsibility": "Drops suggestions nobody can buy right now",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#Fu665Uqs"
       }
     },
@@ -177,6 +180,7 @@
       "value": {
         "order": 4000,
         "kind": "http",
+        "effect": "query",
         "label": "how many are left",
         "emphasis": "normal",
         "traffic": {
@@ -203,7 +207,7 @@
         "name": "Suggestions",
         "kind": "datastore",
         "responsibility": "The products to suggest for each product",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#2YPq2CN8"
       }
     },
@@ -226,7 +230,7 @@
         "groups": [
           "fulfilment"
         ],
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/MKhTEYqf#HYDbL5fE",
         "references": [
           {

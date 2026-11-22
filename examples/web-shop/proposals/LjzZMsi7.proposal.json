@@ -15,8 +15,8 @@
   "schemaVersion": 1,
   "lifecycle": "draft",
   "predecessor": "ud0cQDB9",
-  "predecessorRevision": "e9a83b2c3350728eb5011ed1b72b35812889ff64d7bc012e1e7739774d995d0d",
-  "baseline": "bf7bba485577ad566dadea26f056ff47aa5e6809",
+  "predecessorRevision": "42fc3a7d287627c684214cc5b85f554f3035ccee6e1007b6a54e76890ab11974",
+  "baseline": "ccfddc152ca898070380844444b90882a8046b6f",
   "changes": [
     {
       "type": "assign",
@@ -33,7 +33,7 @@
         "name": "Orders replica",
         "kind": "datastore",
         "responsibility": "A read-only copy of Orders DB, at most a day behind",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#tMH3KtXK"
       }
     },
@@ -53,7 +53,7 @@
         "name": "Nightly job",
         "kind": "job",
         "responsibility": "At 02:00, finds the products most often bought together over the last 90 days",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": "Shop/gsfCCrqV#3UyAn6so"
       }
     },
@@ -70,7 +70,8 @@
       "kind": "relationship",
       "value": {
         "order": 5000,
-        "kind": "data",
+        "kind": "storage",
+        "effect": "query",
         "label": "read 90 days of orders",
         "emphasis": "normal",
         "id": "Shop/gsfCCrqV#mvPRO97Z",
@@ -90,7 +91,8 @@
       "kind": "relationship",
       "value": {
         "order": 6000,
-        "kind": "data",
+        "kind": "storage",
+        "effect": "mutation",
         "label": "replace every list",
         "emphasis": "normal",
         "id": "Shop/gsfCCrqV#y5jKdDgY",

@@ -3,12 +3,13 @@
   "name": "Storefront",
   "kind": "ui",
   "responsibility": "Where shoppers browse, fill a basket and pay",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/MKhTEYqf#cgbB3aQp",
   "outgoing": [
     {
       "order": 1000,
       "kind": "http",
+      "effect": "mutation",
       "label": "POST /orders",
       "emphasis": "hero",
       "traffic": {
@@ -21,6 +22,7 @@
     {
       "order": 3000,
       "kind": "http",
+      "effect": "query",
       "label": "how many are left",
       "emphasis": "normal",
       "traffic": {
@@ -33,6 +35,7 @@
     {
       "order": 6000,
       "kind": "http",
+      "effect": "mutation",
       "label": "PUT /basket",
       "emphasis": "muted",
       "id": "Shop/MKhTEYqf#3PN9WBRn",

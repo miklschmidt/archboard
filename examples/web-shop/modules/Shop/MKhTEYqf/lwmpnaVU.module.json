@@ -3,7 +3,7 @@
   "name": "Checkout API",
   "kind": "service",
   "responsibility": "Takes an order, charges it and confirms it",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/MKhTEYqf#lwmpnaVU",
   "formerNames": [
     "Shop app"

@@ -3,13 +3,14 @@
   "name": "Place order",
   "kind": "route",
   "responsibility": "POST /orders: reserves the stock, charges the card, saves the order and emails the receipt, then answers",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/MKhTEYqf#kZjjfq1m",
   "parent": "Shop/MKhTEYqf#lwmpnaVU",
   "outgoing": [
     {
       "order": 2000,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "mutation",
       "label": "write the paid order",
       "emphasis": "normal",
       "traffic": {
@@ -22,6 +23,7 @@
     {
       "order": 3000,
       "kind": "http",
+      "effect": "mutation",
       "label": "charge the card, and wait",
       "emphasis": "hero",
       "traffic": {
@@ -34,6 +36,7 @@
     {
       "order": 4000,
       "kind": "http",
+      "effect": "mutation",
       "label": "send the receipt, and wait",
       "description": "The email client tries up to 3 times before it gives up, all inside the shopper's request.",
       "emphasis": "normal",
@@ -47,6 +50,7 @@
     {
       "order": 5000,
       "kind": "http",
+      "effect": "mutation",
       "label": "reserve stock, and wait",
       "emphasis": "hero",
       "traffic": {
@@ -58,7 +62,8 @@
     },
     {
       "order": 8000,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "query",
       "label": "read the basket",
       "emphasis": "muted",
       "id": "Shop/MKhTEYqf#ywGKHoBq",
@@ -67,6 +72,7 @@
     {
       "order": 9000,
       "kind": "call",
+      "effect": "mutation",
       "label": "start the 10 s clock",
       "emphasis": "muted",
       "id": "Shop/MKhTEYqf#ys6hWCoY",
