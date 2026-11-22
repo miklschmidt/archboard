@@ -455,13 +455,16 @@ function writeOf(node: Node, found: Effects): void {
 }
 
 /**
- * The calls in code, nested ones included.
- * @param node The code.
- * @returns The calls.
+ * The call an arm forwards, through a single-expression block or return.
+ * @param node The arm's expression.
+ * @returns Its call, if it only forwards one.
  */
-function callsIn(node: Node): Node[] {
-	const nested = codeOf(node).flatMap(callsIn);
-	return node.type === "call_expression" ? [node, ...nested] : nested;
+function forwardedCall(node: Node | undefined): Node | undefined {
+	if (node === undefined || node.type === "call_expression") return node;
+	if (node.type === "block" && codeOf(node).length !== 1) return undefined;
+	if (["block", "expression_statement", "return_expression"].includes(node.type))
+		return forwardedCall(part(node, ""));
+	return undefined;
 }
 
 /**
@@ -480,7 +483,8 @@ function bare(argument: Node): boolean {
  * @returns True when it does.
  */
 function forwards(code: readonly Node[]): boolean {
-	const list = part(code.flatMap(callsIn)[0], "arguments");
+	const call = code.length === 1 ? forwardedCall(code[0]) : undefined;
+	const list = part(call, "arguments");
 	const logic = code.reduce((sum, node) => sum + logicIn(node), 0);
 	return logic === 1 && list !== undefined && codeOf(list).every(bare);
 }

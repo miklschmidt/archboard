@@ -81,6 +81,9 @@ const checkout = fixtureCheckout({
 		"            Departure::OutOfCard => self.end_dive(),",
 		"        }",
 		"    }",
+		"    pub fn apply(&mut self, part: Part) {",
+		"        match part { Part::Card => { self.leaving = None; card(); }, _ => frame() }",
+		"    }",
 		"    pub fn draw(&mut self, on: Surface, now: f64) -> Motion {",
 		"        let now = self.clock.at(now);",
 		"        match on {",
@@ -114,6 +117,12 @@ const checkout = fixtureCheckout({
 	].join("\n"),
 });
 const facts = createCodeFacts();
+
+test("a Rust arm that writes state retains the logic of its call", async () => {
+	const read = await facts.pass(new AbortController().signal).read(checkout, "src/lib.rs");
+	if (read === undefined || read.adapter === "text") throw new Error("Rust source was not read");
+	expect(read.definitions.find((each) => each.symbol === "Stage.apply")?.picks?.logic).toBe(3);
+});
 
 afterAll(() => {
 	checkout.remove();
@@ -174,6 +183,7 @@ test("a Rust function picks one operation for each enum variant or boolean whose
 			key: "departure",
 			keys: [["Leaving"], ["Stayed"], ["Cleared"], ["OutOfCard"]],
 		},
+		"Stage.apply": { key: "part", keys: [["Card"], ["*"]] },
 		measure: { key: "part", keys: [["Card"], ["Container"], ["FlowFrame"]] },
 		save: { key: "part", keys: [["Card"], ["*"]] },
 		tab: { key: "container", keys: [["true"], ["false"]] },
