@@ -116,8 +116,8 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 				<Dialog.Header>
 					<Dialog.Title>Settings</Dialog.Title>
 					<Dialog.Description className="sr-only">
-						How this browser lights pictures, and which editor opens a module's code on
-						this machine.
+						How this browser lights pictures, and which editor opens a module's code on this
+						machine.
 					</Dialog.Description>
 				</Dialog.Header>
 				<Tabs value={tab} onValueChange={changeTab} className="min-h-0 gap-4">
