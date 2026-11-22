@@ -92,7 +92,8 @@ Focused renderer tests and process cancellation deadlines also remain in the nor
 Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
 Blocks is the default layout engine (ADR 0064), and Lanes the other ([ADR 0096](../adr/0096-track-is-replaced-by-lanes.md)).
-A renderer test names no engine unless it tests Lanes, which names `layout: "lanes"`.
+Renderer tests use the default unless the case needs an explicit engine.
+Engine comparisons name `layout: "blocks"` and `layout: "lanes"` explicitly.
 
 `bun run check` is the complete normal gate.
 It runs lint, formatting, both TypeScript projects, the architecture check, and the normal test chain.
