@@ -99,7 +99,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		"the camera of that reading",
 		WAIT,
 	);
-	await browser.run(["click", '[data-filter-kind="call"]']);
+	await browser.run(["click", '[data-filter-kind="sync"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`new URLSearchParams(location.search).has('hideKindsA')`),
 		Boolean,

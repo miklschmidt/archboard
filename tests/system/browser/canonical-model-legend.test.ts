@@ -1,7 +1,9 @@
-// The owner of the legend's workflow: the picture is read through a lens that the address keeps,
-// each line type is its own switch, its rows stay where they stand while a reader hides and shows
-// lines, Show all reads the picture through the lens of every relationship, and a group's tag
-// selects what the picture draws of that group, from the pointer and from the keyboard.
+// The owner of the legend's workflow: the picture is read through a lens that the address keeps
+// and the line above the picture names, each lens is one press, each kind and each effect is its
+// own switch and its name shows it alone, what the lens leaves out stands apart with no switch, the
+// rows stay where they stand while a reader hides and shows lines, Show all reads the picture
+// through the lens of every relationship, and a group's tag selects what the picture draws of that
+// group, from the pointer and from the keyboard.
 
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -16,7 +18,7 @@ import {
 	serverTestEnvironment,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { settledOn } from "./support/canonical-page.ts";
+import { pick, settledOn } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -32,9 +34,9 @@ function line(id: string, to: string, kind: string): Record<string, unknown> {
 
 /**
  * A reading of Gateway whose line kinds carry things off the picture: hiding `event` takes the door
- * Bank, its kind and its group, and hiding `call` takes the door Worker, the marks of its line and
- * the mixed line between Handler and Router. The default lens leaves out Handler's dependency on
- * Bank, which every relationship shows.
+ * Bank, its kind and its group, and hiding `sync` takes the door Worker and the marks of its line.
+ * The default lens leaves out Handler's dependency on Bank, with its kind and its declared-only
+ * effect, which every relationship shows.
  * @param vault The vault.
  */
 function seedReading(vault: string): void {
@@ -51,7 +53,7 @@ function seedReading(vault: string): void {
 			)
 			.replace(
 				"groups:\n",
-				"  data: { name: Data, arrowhead: filled, color: teal }\n  event: { name: Event, arrowhead: open, color: rose }\ngroups:\n",
+				"  data: { name: Data, color: teal }\n  event: { name: Event, color: rose }\ngroups:\n",
 			)}  billing: { name: Billing, color: amber }\n`,
 	);
 	const module = (name: string, fields: Record<string, unknown>): void =>
@@ -82,7 +84,7 @@ function seedReading(vault: string): void {
 			groups: ["public"],
 			outgoing: [
 				...handler.outgoing,
-				line("Route", "Router", "call"),
+				line("Route", "Router", "sync"),
 				line("Copy", "Router", "data"),
 				{ id: "Shop#Needs", to: "Shop#Bank", kind: "dependency", order: 20 },
 			],
@@ -114,10 +116,10 @@ function selectedParts(browser: AgentBrowserSession): Promise<string[]> {
 	);
 }
 
-/** The switch of each line type in the legend, with whether the picture draws that type. */
+/** The switch of each kind and each effect in the legend, with whether the picture draws it. */
 function switches(browser: AgentBrowserSession): Promise<string[]> {
 	return browser.eval<string[]>(
-		`[...document.querySelectorAll('${LEGEND} [role="switch"]')].map((one) => \`\${one.getAttribute('data-filter-kind')}: \${one.getAttribute('aria-checked')}\`)`,
+		`[...document.querySelectorAll('${LEGEND} [role="switch"]')].map((one) => \`\${one.getAttribute('data-filter-kind') ?? one.getAttribute('data-filter-effect')}: \${one.getAttribute('aria-checked')}\`)`,
 	);
 }
 
@@ -127,10 +129,10 @@ function pressed(browser: AgentBrowserSession, tag: string): Promise<string | nu
 	);
 }
 
-/** What the lens control says, and the count of lines it left out beside it. */
+/** What the line above the picture says of the lens and the lines it left out. */
 function lensOf(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(
-		`[...document.querySelectorAll('[data-slot="model-lens"], [data-slot="model-lens-left-out"]')].map((part) => part.textContent.trim()).join(" | ")`,
+		`document.querySelector('[data-slot="model-lens-status"]')?.textContent.trim() ?? ""`,
 	);
 }
 
@@ -145,7 +147,7 @@ async function clickAt(browser: AgentBrowserSession, at: { x: number; y: number 
 	await browser.run(["mouse", "up"]);
 }
 
-test("each line type is its own switch, the legend's words stay put while a reader hides lines, and a group's tag selects its parts", async () => {
+test("each kind and effect is its own switch, the legend's words stay put while a reader hides lines, and a group's tag selects its parts", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "legend-model"));
 	seedReading(vault);
@@ -163,20 +165,20 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-	expect(await switches(browser)).toEqual([
-		"call: true",
-		"event: true",
-		"dependency: true",
-		"data: true",
-	]);
-	expect(await lensOf(browser)).toBe("Main lines | 1 line left out");
+	expect(await switches(browser)).toEqual(["sync: true", "event: true", "data: true", "mutation: true"]);
+	expect(await lensOf(browser)).toBe("Main lines · 1 line left out");
 	expect(
-		await browser.eval<{ marks: number; switches: number }>(`(() => {
+		await browser.eval<{ leftOut: string[]; marks: number; switches: number }>(`(() => {
+			const leftOut = document.querySelector('[data-slot="model-legend-left-out"]');
 			const marks = document.querySelector('[data-slot="model-legend-marks"]');
-			return { marks: marks.querySelectorAll('li [title]').length, switches: marks.querySelectorAll('[role="switch"]').length };
+			return {
+				leftOut: [...leftOut.querySelectorAll('li [title]')].map((row) => row.textContent),
+				marks: marks.querySelectorAll('li [title]').length,
+				switches: leftOut.querySelectorAll('button').length + marks.querySelectorAll('button').length,
+			};
 		})()`),
-		"the effects its lines' dashes say (the declared-only dependency the lens leaves out dimmed among them), the mixed line and the marks of lines, which no reader hides, stand apart",
-	).toEqual({ marks: 5, switches: 0 });
+		"the dependency and its declared-only effect, which the lens leaves out, and the marks of lines, which no reader hides, stand apart with no switch",
+	).toEqual({ leftOut: ["Dependency", "Declared only"], marks: 2, switches: 0 });
 
 	await browser.run(["click", '[data-filter-kind="event"]']);
 	await pollUntil(
@@ -195,7 +197,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	expect(await browser.eval<boolean>(`document.querySelector('${BILLING}').disabled`)).toBe(true);
-	await browser.run(["focus", '[data-filter-kind="call"]']);
+	await browser.run(["focus", '[data-filter-kind="sync"]']);
 	await browser.run(["press", "Space"]);
 	await pollUntil(
 		async () => !(await drawn(browser, "Shop#Worker")),
@@ -203,13 +205,31 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
-	expect(await switches(browser)).toEqual([
-		"call: false",
-		"event: false",
-		"dependency: true",
-		"data: true",
-	]);
+	expect(await switches(browser)).toEqual(["sync: false", "event: false", "data: true", "mutation: true"]);
 	expect(await wordsAt(browser)).toBe(rest);
+
+	// Data already stands alone, so its name shows every kind again; Sync's name shows Sync alone.
+	await browser.run(["click", '[data-solo-kind="data"]']);
+	await pollUntil(
+		() => addressed(browser, "hideKindsA"),
+		(hidden) => hidden === null,
+		"every kind again from the name of the kind that stood alone",
+		WAIT,
+	);
+	await browser.run(["click", '[data-solo-kind="sync"]']);
+	await pollUntil(
+		() => addressed(browser, "hideKindsA"),
+		(hidden) => hidden === "data,event",
+		"sync alone from its name",
+		WAIT,
+	);
+	await browser.run(["click", '[data-filter-effect="mutation"]']);
+	await pollUntil(
+		() => addressed(browser, "hideEffectsA"),
+		(hidden) => hidden === "mutation",
+		"the effect hidden by its own switch",
+		WAIT,
+	);
 
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
 	await pollUntil(
@@ -221,31 +241,44 @@ test("each line type is its own switch, the legend's words stay put while a read
 	expect(await drawn(browser, "Shop#Needs")).toBe(true);
 	expect(await drawn(browser, "Shop#Worker")).toBe(true);
 	expect(await addressed(browser, "hideKindsA")).toBeNull();
+	expect(await addressed(browser, "hideEffectsA")).toBeNull();
 	expect(await addressed(browser, "lensA")).toBe("all");
-	expect(await wordsAt(browser)).toBe(rest);
+	// Under every relationship the lens leaves nothing out, so the rows it left out join the switches.
+	const all = await wordsAt(browser);
 
-	await browser.run(["click", '[data-slot="model-lens"]']);
+	await pick(browser, "Shop#Dispatch");
 	await pollUntil(
 		() =>
-			browser.eval<string[]>(
-				`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.textContent)`,
+			browser.eval<string>(
+				`document.querySelector('[data-slot="model-connection-kinds"]')?.textContent ?? ""`,
 			),
-		(items) => items.length > 0,
-		"the lenses of the reading",
+		(said) => said === "Sync calls · Mutation",
+		"the selected line's kind and effect",
 		WAIT,
 	);
+	await browser.run(["press", "Escape"]);
+
 	expect(
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.getAttribute('data-lens-id'))`,
 		),
-	).toEqual(["main", "effects", "reads", "network", "dependencies", "all"]);
+		"every lens is one press in the legend, in the policy's order",
+	).toEqual(["main", "effects", "sync-compute", "network", "reads", "dependencies", "all"]);
+	await browser.run(["click", '[data-filter-kind="event"]']);
+	await pollUntil(
+		() => addressed(browser, "hideKindsA"),
+		(hidden) => hidden === "event",
+		"a kind hidden under every relationship",
+		WAIT,
+	);
 	await browser.run(["click", '[data-lens-id="dependencies"]']);
 	await pollUntil(
 		() => lensOf(browser),
-		(lens) => lens === "Declared dependencies | 3 lines left out",
-		"the picture read through the lens chosen",
+		(lens) => lens === "Declared dependencies · 4 lines left out",
+		"the picture read through the lens chosen, which shows every kind it selects",
 		WAIT,
 	);
+	expect(await addressed(browser, "hideKindsA")).toBeNull();
 	await browser.run(["reload"]);
 	await settledOn(browser, "Shop#Gateway");
 	await pollUntil(
@@ -263,6 +296,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"every line again",
 		WAIT,
 	);
+	await pollUntil(() => drawn(browser, "Shop#Router"), Boolean, "Router back on the picture", WAIT);
 
 	const tag = await browser.eval<{ x: number; y: number }>(`(() => {
 		const { x, y, width, height } = document.querySelector('${PUBLIC}').getBoundingClientRect();
@@ -276,7 +310,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	expect(await pressed(browser, PUBLIC)).toBe("true");
-	expect(await wordsAt(browser)).toBe(rest);
+	expect(await wordsAt(browser)).toBe(all);
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(
