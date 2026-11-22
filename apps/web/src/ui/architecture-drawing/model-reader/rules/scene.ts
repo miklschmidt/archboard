@@ -235,7 +235,11 @@ function destinationName(to: SceneRequest): string {
  * @returns True with a focus or a filter.
  */
 function isNarrowed(reading: SceneReading): boolean {
-	return reading.focus !== null || reading.filters.hideKinds.length > 0;
+	return (
+		reading.focus !== null ||
+		reading.filters.hideKinds.length > 0 ||
+		reading.filters.lens !== undefined
+	);
 }
 
 /**
@@ -247,7 +251,7 @@ function emptyWithFilters(scene: AcceptedScene | null): boolean {
 	return (
 		scene?.grammar === "architecture" &&
 		scene.picture.svg === "" &&
-		scene.reading.filters.hideKinds.length > 0 &&
+		(scene.reading.filters.hideKinds.length > 0 || scene.projection.leftOut > 0) &&
 		scene.projection.allConnections.length > 0
 	);
 }

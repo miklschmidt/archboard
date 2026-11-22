@@ -132,19 +132,22 @@ describe("a lens", () => {
 		reading.connections.flatMap(({ joins }) => joins.map((edge) => edge.id)).toSorted();
 
 	test.each([
-		["main", ["fetch", "tell", "write"]],
-		["effects", ["tell", "write"]],
-		["reads", ["fetch", "read"]],
-		["network", ["fetch", "tell"]],
-		["dependencies", ["needs"]],
-		["all", ["fetch", "needs", "read", "sum", "tell", "write"]],
-	])("%s draws what its definition shows and keeps every part", (lens, lines) => {
-		const reading = read(lens);
-		expect(drawn(reading)).toEqual(lines);
-		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "c", "d"]);
-		expect(reading.lens.id).toBe(lens);
-		expect(reading.leftOut).toBe(6 - lines.length);
-	});
+		["main", ["fetch", "tell", "write"], ["a", "b", "c", "d"]],
+		["effects", ["tell", "write"], ["a", "b", "d"]],
+		["reads", ["fetch", "read"], ["a", "b", "c"]],
+		["network", ["fetch", "tell"], ["b", "c", "d"]],
+		["dependencies", ["needs"], ["d"]],
+		["all", ["fetch", "needs", "read", "sum", "tell", "write"], ["a", "b", "c", "d"]],
+	])(
+		"%s draws what its definition shows, and takes off the parts it left no line",
+		(lens, lines, parts) => {
+			const reading = read(lens);
+			expect(drawn(reading)).toEqual(lines);
+			expect(reading.children.map((node) => node.id)).toEqual(parts);
+			expect(reading.lens.id).toBe(lens);
+			expect(reading.leftOut).toBe(6 - lines.length);
+		},
+	);
 
 	test("the default lens is main, and a lens the policy lacks reads as the default", () => {
 		expect(read().lens).toEqual({ id: "main", name: "Main lines" });

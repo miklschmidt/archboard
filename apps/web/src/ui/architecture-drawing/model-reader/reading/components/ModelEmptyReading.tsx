@@ -108,8 +108,26 @@ function emptyWords(scene: AcceptedScene): EmptyWords {
 				: `The focus names no module in this reading, and ${hidden} lines are hidden.`;
 		return { title: "Nothing to draw", line, action: "Show whole scope" };
 	}
+	return hiddenWords(scene, hidden);
+}
+
+/**
+ * Why every module left a picture: the lens or the kinds the reader hid took all of its lines.
+ * @param scene The empty scene.
+ * @param hidden The names of the hidden kinds, joined.
+ * @returns Its title, its line and the words of the key that shows them again.
+ */
+function hiddenWords(scene: AcceptedScene, hidden: string): EmptyWords {
+	const { hideKinds } = scene.reading.filters;
+	const title = "Every module is hidden";
+	if (hideKinds.length === 0)
+		return {
+			title,
+			line: `${scene.projection.lens.name} leaves out every line of this scope.`,
+			action: "Show every relationship",
+		};
 	return {
-		title: "Every module is hidden",
+		title,
 		line: `Each module here draws only ${hidden} lines, and you hid them.`,
 		action: hideKinds.length > 2 ? "Show every relationship" : `Show ${hidden}`,
 	};

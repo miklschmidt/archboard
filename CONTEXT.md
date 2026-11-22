@@ -449,7 +449,7 @@ _Avoid_: highlight, focus (that is part of a reading)
 
 **Lens**:
 A named question that a picture is read through, which the vault policy defines: one list that shows or hides relationships by their kind, their effect or both (ADR 0095).
-It keeps every part of its scope, and the picture says how many lines it left out. `main` is the default lens, and `all` shows every relationship.
+A part whose every line it leaves out leaves the picture, and the picture says how many lines it left out. `main` is the default lens, and `all` shows every relationship.
 _Avoid_: filter (that hides by hand), view, layer, design lens (that states facts about a design)
 
 **Filter**:

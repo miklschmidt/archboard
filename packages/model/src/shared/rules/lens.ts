@@ -1,5 +1,5 @@
 // The lens a picture is read through: a named question that chooses which of
-// its relationships draw. A lens never removes a part; it only chooses lines.
+// its relationships draw. A part whose every line it leaves out leaves too.
 
 import { ALL_LENS_ID, type SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";

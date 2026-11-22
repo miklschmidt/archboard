@@ -1,6 +1,5 @@
 // The lens a structural picture is read through: a named question that chooses which of its
-// relationships draw, with how many lines it left out, or which default lens drew none here. Every
-// part of the scope stays on the picture.
+// relationships draw, with how many lines it left out, or which default lens drew none here.
 
 import { useCallback, type JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";

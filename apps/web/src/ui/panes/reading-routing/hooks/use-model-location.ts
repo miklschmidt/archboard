@@ -400,7 +400,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, userChanged],
 	);
 	const showWholeScope = useCallback((): void => {
-		explore({ focus: undefined, hideKinds: undefined });
+		explore({ focus: undefined, hideKinds: undefined, lens: undefined });
 	}, [explore]);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {

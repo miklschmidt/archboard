@@ -254,7 +254,8 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"the lens kept by the address",
 		WAIT,
 	);
-	expect(await drawn(browser, "Shop#Router")).toBe(true);
+	// Router draws no declared dependency, so the lens takes it off the picture with its lines.
+	expect(await drawn(browser, "Shop#Router")).toBe(false);
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
 	await pollUntil(
 		() => addressed(browser, "lensA"),

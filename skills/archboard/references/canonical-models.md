@@ -989,7 +989,7 @@ Choose `--module`, exact `--scope`, repeated `--focus`, `--lens`, or `--hide-kin
 A picture is read through a lens: a named question that chooses which relationships draw.
 `--lens <id>` names one. Without it, the picture reads through the vault's default lens, `main` unless the vault names another, or through `all` where the default would draw no line.
 The built-in lenses are `main` (every mutation and all traffic between processes, without dependencies and in-process queries and computes), `effects`, `reads`, `network`, `dependencies`, and `all`.
-A lens keeps every part of its scope. Each relationship that it shows has a drawn line, and the picture says how many lines the lens left out.
+Each relationship that a lens shows has a drawn line. A part whose every line the lens leaves out leaves the picture, and the picture says how many lines the lens left out.
 Pass `--lens all` to draw every relationship. `--hide-kind` hides a kind beyond the lens.
 A sequence or a flowchart refuses `--lens`, because it draws its whole flow.
 A vault adds or replaces lenses under `lenses` in its configuration, and names its default with `defaultLens`.

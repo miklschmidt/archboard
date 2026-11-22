@@ -61,11 +61,15 @@ Effects picture of such a reading would otherwise say that nothing changes state
 
 TASK-663.03 builds this section and may adjust it.
 
-A lens keeps every part of its scope. It takes away lines, and the doors that keep no line, and
-never a part. The filter (`--hide-kind`, and the kind switches of the legend) still hides kinds by
-hand after the lens, with its own rule: a part that drew only lines of hidden kinds leaves the
-picture. Choosing a lens clears the kinds hidden by hand, and `Show all` selects `all` and clears
-them.
+A lens takes away lines, and with them each part and door whose every line it took. This is the
+rule of the filter since TASK-647: a part that drew only hidden lines leaves the picture, and a
+part that never drew a line stays, as do open frames, the subjects of a focus and the members of
+an exact imported view. The owner decided on 2026-11-22 that a lens follows it: a picture that
+kept parts with nothing attached contradicted TASK-647. The filter (`--hide-kind`, and the kind
+switches of the legend) still hides kinds by hand after the lens. Choosing a lens clears the kinds
+hidden by hand, and `Show all` selects `all` and clears them. When a lens the reader named leaves
+no part, the reading says that the lens leaves out every line of the scope, and offers every
+relationship.
 
 The picture says how many lines the lens left out: `N lines left out`. It counts the lines that
 `all` draws at the same scope, focus and comparison and that the lens leaves out whole. A joined
@@ -94,8 +98,10 @@ every useful cut of them.
 
 ## Considered and rejected
 
-- **A lens that takes away parts, as the filter does.** Under that rule the default pictures of
-  this repository lost 430 of 677 parts, and 33 of 117 scopes had nothing left.
+- **A lens that keeps every part of its scope.** The advisors first chose it, because the
+  default pictures of this repository lost 430 of 677 parts and 33 of 117 scopes had nothing left.
+  The default lens now gives way to `all` where it would draw no line, so no scope opens empty,
+  and the owner chose the rule of TASK-647 over bare cards.
 - **A lens as one list of kind ids.** `main` and `all` then could not be written as
   configuration, and a vault that restated its default as a list would leave its own new kinds out
   of it.

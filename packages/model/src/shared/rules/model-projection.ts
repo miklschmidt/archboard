@@ -111,8 +111,8 @@ function projectScope(
 	const throughLens = linesOf(lensed, every, relevant.length);
 	const shown = lensed.filter((edge) => !choices.hideKinds?.includes(edge.kind));
 	const connections = linesOf(shown, throughLens, lensed.length);
-	// A lens keeps every part of its scope; a kind the reader hid takes off the cards it stranded.
-	const stranded = strandedCards(throughLens, connections, open);
+	// A card whose every line the lens or a hidden kind leaves out leaves the picture with them.
+	const stranded = strandedCards(every, connections, open);
 	const children = complete.nodes.filter(
 		({ id, parent }) =>
 			!stranded.has(id) &&

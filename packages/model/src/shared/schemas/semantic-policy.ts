@@ -123,7 +123,7 @@ const LensSelectorSchema = z
 /**
  * A named question a picture is read through: which of its relationships
  * draw. It has exactly one list: `show` draws only what its selectors match,
- * `hide` draws all but that. A lens never removes a part.
+ * `hide` draws all but that. A part whose every line a lens leaves out leaves the picture.
  */
 const LensSchema = z
 	.object({

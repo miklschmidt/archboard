@@ -395,8 +395,8 @@ test("a picture through a lens counts the lines it left out, with or without a l
 	const bare = drawn(["--legend", "none"]);
 	expect(bare.note).toBe("Main lines: 1 line left out");
 	expect(bare.svg).not.toContain('data-slot="export-legend"');
-	// A lens keeps every part of its scope: Library stays though its only line is left out.
-	expect(main.svg).toContain('data-semantic-id="Shop#Library"');
+	// A part whose every line the lens leaves out leaves the picture: Library drew only its dependency.
+	expect(main.svg).not.toContain('data-semantic-id="Shop#Library"');
 	expect(drawn(["--lens", "dependencies"])).toMatchObject({
 		note: "Declared dependencies: 1 line left out",
 		lens: "dependencies",
