@@ -160,7 +160,7 @@ The command does these things:
    canonical models, `archboard-pr`, which gives a pull request an
    architecture explainer, `archboard-plan`, which carries a proposal
    through the `to-spec`, `to-tickets` and `implement-spec` skills, and
-   `archboard-deepen`, which redesigns shallow modules and wide interfaces
+   `archboard-deepen`, which redesigns shallow modules
    from a report to merged code, with two advisor agents in place of a
    person. It installs them for your user, so they work in
    every repository. Codex gets them, and Claude Code gets them when `claude`
