@@ -120,11 +120,14 @@ const CodeCheckPolicySchema = z
 		}),
 	})
 	.strict()
-	.refine((policy) => policy.failShallowModules !== true || policy.rules?.MODULE_SHALLOW === undefined, {
-		path: ["rules", "MODULE_SHALLOW"],
-		message:
-			"failShallowModules fails the check on MODULE_SHALLOW, and this rule lowers it: remove one of them",
-	});
+	.refine(
+		(policy) => policy.failShallowModules !== true || policy.rules?.MODULE_SHALLOW === undefined,
+		{
+			path: ["rules", "MODULE_SHALLOW"],
+			message:
+				"failShallowModules fails the check on MODULE_SHALLOW, and this rule lowers it: remove one of them",
+		},
+	);
 /**
  * Build the policy contract with the icon vocabulary available at this boundary.
  * @param icon Valid icon names; browser readers only need the transport spelling.
