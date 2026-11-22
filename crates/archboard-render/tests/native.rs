@@ -95,7 +95,7 @@ fn a_native_build_draws_a_corpus_picture_to_the_bytes_the_webassembly_build_draw
 #[test]
 fn a_sequence_with_an_unknown_participant_is_refused_before_painting() {
     let request: RenderRequest = serde_json::from_str(
-        r#"{"grammar":"sequence","layout":"blocks","content":{"flows":[
+        r#"{"grammar":"sequence","content":{"flows":[
             {"id":"f","name":"F","participants":["missing"],"steps":[
                 {"id":"s","kind":"self","from":"missing","to":"missing","label":"work"}]}]},
             "policy":{"levels":[],"nodeKinds":{},"relationshipKinds":{}},
