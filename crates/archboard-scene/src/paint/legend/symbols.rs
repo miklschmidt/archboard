@@ -26,8 +26,9 @@ use crate::sizes::ICON_CHIP_SIZE;
 
 /// The height of one legend row.
 pub(super) const ROW: f64 = 28.0;
-/// The width of the symbol at the start of a legend row.
-pub(super) const GLYPH: f64 = 30.0;
+/// The width of the symbol at the start of a legend row: room for a ring, a
+/// little body and the longest head, so a query's sample shows its line.
+pub(super) const GLYPH: f64 = 36.0;
 const PULSE_STOPS: [(f64, f64); 6] = [
     (0.0, 0.0),
     (0.35, 0.05),
