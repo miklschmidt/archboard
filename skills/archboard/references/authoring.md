@@ -18,14 +18,15 @@ Tell the user which modules you combined and which code proved the match.
 ### Choose the kind and the effect
 
 Every relationship states its `kind`, how it travels between its two ends, and its `effect`, what it asks the target to do.
-The kind is the color of its line and the effect its line type, and lenses select by both.
+The kind is the color of its line and the effect the decoration at its ends, and lenses select by both.
 Read the sending code and the callee or its contract before you choose either.
 
 Choose the kind by the mechanism at the two named ends:
 
 | Kind         | The source                                                                                           |
 | ------------ | ---------------------------------------------------------------------------------------------------- |
-| `call`       | Uses a function, a method or a value of the target in its own process.                               |
+| `sync`       | Calls the target in its own process and has the answer when the call returns.                        |
+| `async`      | Calls the target in its own process, and the call returns before the work is done.                   |
 | `http`       | Sends the target an HTTP request.                                                                    |
 | `rpc`        | Calls the target through a remote procedure contract, such as gRPC or JSON-RPC.                      |
 | `event`      | Publishes a named message that the target receives.                                                  |
@@ -39,8 +40,29 @@ Choose the kind by the mechanism at the two named ends:
 Take the most specific contract that the source relies on.
 When none of these says how a relationship travels, add a kind of the vault's own under `relationshipKinds` in `.archboard/config.yaml`, with its name and color.
 JSON-RPC over HTTP is `rpc`.
-A service that asks a repository object for orders is a `call`, and the repository that issues the SQL is `storage`.
-A function or a value that the source uses at run time is a `call`, never a `dependency`.
+A service that asks a repository object for orders is `sync` or `async`, and the repository that issues the SQL is `storage`.
+A function or a value that the source uses at run time is `sync` or `async`, never a `dependency`.
+`call` is gone: the configuration, a lens and `--hide-kind` refuse it.
+
+#### Sync or async
+
+Read the call at the anchor, the source's call into the target, and its callee:
+
+- `async` when the source awaits it (`await`, `.await`, `.then`, or it hands the promise or future on to its own awaiting caller).
+- `async` when the source starts it and leaves it to run: a task, a goroutine, a thread, `spawn`, `spawn_blocking`, `create_task`, `Task.Run`, `Task {}`, `dispatch_async`, `pthread_create`, a timer, a worker message, or an async function called without being awaited.
+- `sync` for a plain call of a function that is not async, and for a value the source reads.
+
+Judge the call into the target, not the source's own signature: an async function that makes plain calls into the target is `sync` for those calls.
+Registering a callback is `sync` when the registering call returns at once; the later calls of the callback are the target's own relationship.
+A relationship that stands for several calls takes the timing of the operation its label names.
+
+The code facts already say how each call site runs its callee, where the language can tell: TypeScript, Rust, Python, C#, Swift, Go (`go f()` only), Objective-C (dispatch queues) and C (`pthread_create`).
+`check code` reports `CALL_TIMING_MISMATCH`, as information, on a `sync` relationship whose anchored calls are all awaited or started, and on an `async` one whose anchored calls are all plain.
+Read the call, then correct the kind, or move the anchor to the call the relationship stands for.
+Where the sites disagree or one is unknown, the check says nothing, and your reading decides.
+
+A reader reads the kind with the effect: a `sync` `compute` is where a caller waits for an answer it could have asked for in the background, and the `Sync compute` lens shows those.
+Never choose a kind to make a picture look better.
 
 Choose the effect by asking in order:
 
@@ -56,9 +78,10 @@ Judge every kind by its operation, as these examples do:
 | Code                                                              | Kind         | Effect     |
 | ----------------------------------------------------------------- | ------------ | ---------- |
 | A POST that creates an order                                      | `http`       | `mutation` |
-| A read through a cache, or one that fills a memo of a fixed value | `call`       | `query`    |
-| A call that invalidates or rewrites what other callers read       | `call`       | `mutation` |
-| A function that formats the bytes that it is given                | `call`       | `compute`  |
+| A read through a cache, or one that fills a memo of a fixed value | `sync`       | `query`    |
+| An awaited write that invalidates what other callers read         | `async`      | `mutation` |
+| A function that formats the bytes that it is given                | `sync`       | `compute`  |
+| A task started to refresh an index, left to run                   | `async`      | `mutation` |
 | A component that places a child component with no mount behavior  | `render`     | `compute`  |
 | An event publication or a queue submission                        | `event`      | `mutation` |
 | A read of retained events that consumes none                      | `event`      | `query`    |
@@ -74,14 +97,18 @@ Give it one only when loading the target does the work that the relationship sta
 `check code` reports a dependency whose evidence is a call into the target, so that you state the call and its effect.
 
 Add a kind of the vault's own when several relationships travel by one mechanism of this repository's domain that no built-in kind names, such as starting a durable workflow.
-Define it under `relationshipKinds` in `.archboard/config.yaml`, with a name, a color from the palette, an arrowhead and the evidence kinds that prove it:
+A kind earns its place when a reader of the picture would act on it and the code decides it.
+Do not add one for the role of the target, such as a cache or a logger: that belongs on the card.
+Do not add one to split `sync` by what the call does: that is the effect.
+Define it under `relationshipKinds` in `.archboard/config.yaml`, with a name, a color from the palette and the evidence kinds that prove it:
 
 ```yaml
 relationshipKinds:
-  workflow: { name: Workflow, color: violet, arrowhead: filled, evidence: [call, configured-path] }
+  workflow: { name: Workflow, color: lime, evidence: [call, configured-path] }
 ```
 
 Its color is required, because the kind is the color of its lines.
+Choose a color that no other kind of the vault uses. The kind sets nothing else of the line: the effect draws its ends.
 Relationships of the vault's own kind state an effect too.
 An entry with a built-in id replaces that kind whole.
 `archboard model schema vault-config` prints the fields and the colors.

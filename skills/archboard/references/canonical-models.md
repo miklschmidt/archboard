@@ -347,7 +347,7 @@ These are separate examples, not one valid combined intent:
 	{
 		"type": "add-relationship",
 		"source": "Shop#Gateway",
-		"relationship": { "to": "Shop#Worker", "kind": "call", "effect": "mutation", "order": 20 }
+		"relationship": { "to": "Shop#Worker", "kind": "sync", "effect": "mutation", "order": 20 }
 	},
 	{
 		"type": "edit-relationship",
@@ -706,7 +706,7 @@ If it contains `explanation`, answer the accepted capture directly without anoth
 		"reading": {
 			"scope": "Shop#Gateway",
 			"focus": [],
-			"relationshipKinds": ["call"],
+			"relationshipKinds": ["sync"],
 			"groups": true,
 			"grammar": "architecture"
 		}
@@ -984,13 +984,26 @@ After an interrupted response, retry the exact operation identity. A different i
 Occupied vaults refuse. Legacy vaults require [migration](legacy-migration.md).
 
 `model render --out picture.svg` draws structure by default.
-Choose `--module`, exact `--scope`, repeated `--focus`, `--lens`, or `--hide-kind` for the reading.
+Choose `--module`, exact `--scope`, repeated `--focus`, `--lens`, `--hide-kind` or `--hide-effect` for the reading.
 
 A picture is read through a lens: a named question that chooses which relationships draw.
 `--lens <id>` names one. Without it, the picture reads through the vault's default lens, `main` unless the vault names another, or through `all` where the default would draw no line.
-The built-in lenses are `main` (every mutation and all traffic between processes, without dependencies and in-process queries and computes), `effects`, `reads`, `network`, `dependencies`, and `all`.
-Each relationship that a lens shows has a drawn line. A part whose every line the lens leaves out leaves the picture, and the picture says how many lines the lens left out.
-Pass `--lens all` to draw every relationship. `--hide-kind` hides a kind beyond the lens.
+The built-in lenses, in the order a reader is offered them:
+
+| Lens           | Draws                                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| `main`         | Every mutation and all traffic between processes, without dependencies and in-process queries and computes |
+| `effects`      | Side effects: every mutation                                                                               |
+| `sync-compute` | Sync computes: where a caller waits for an answer, the first place to look for work to make async          |
+| `network`      | `http`, `rpc`, `queue`, `event` and `stream`                                                               |
+| `reads`        | Every query                                                                                                |
+| `dependencies` | Declared dependencies                                                                                      |
+| `all`          | Every relationship                                                                                         |
+
+Each relationship that a lens shows has a drawn line. A part whose every line the lens leaves out leaves the picture.
+The status above the picture names the lens and how many lines it left out, or says that the default had no lines and the picture shows every relationship.
+Pass `--lens all` to draw every relationship. `--hide-kind <kind>` and `--hide-effect <effect>`, both repeatable, hide relationships beyond the lens. The effects are `mutation`, `query`, `compute` and `declared`, a dependency that states none.
+`call` is gone: a lens, `--hide-kind` or `relationshipKinds` that names it is refused, and the refusal names `sync` and `async`.
 A sequence or a flowchart refuses `--lens`, because it draws its whole flow.
 A vault adds or replaces lenses under `lenses` in its configuration, and names its default with `defaultLens`.
 The legend is drawn under the picture. Use `--legend vertical` to draw it beside the picture, or `--legend none` to leave it out.
