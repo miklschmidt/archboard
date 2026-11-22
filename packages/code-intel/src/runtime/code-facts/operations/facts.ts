@@ -154,6 +154,8 @@ interface Switchboard {
 	 * type and it `closes` the key.
 	 */
 	readonly type?: string;
+	/** The keys the body names, including arms that run no operation, when closure is deferred. */
+	readonly namedKeys?: readonly string[];
 	/** Each operation, in the order the body first picks it: two or more. */
 	readonly operations: readonly PickedOperation[];
 	/**

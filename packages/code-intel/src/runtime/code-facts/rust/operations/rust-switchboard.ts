@@ -526,7 +526,13 @@ function switchboardOf(fn: Node): Switchboard | undefined {
 function switchboardFrom(dispatch: Dispatch | undefined): Switchboard | undefined {
 	if (dispatch === undefined) return undefined;
 	const picked = operationsOf(dispatch.arms.map(armOf));
-	const operations = dispatch.boolean ? restSpelled(picked, ["true", "false"]) : picked;
+	const operations = dispatch.boolean
+		? restSpelled(
+				picked,
+				["true", "false"],
+				dispatch.arms.flatMap((arm) => arm.keys),
+			)
+		: picked;
 	if (operations.length < 2) return undefined;
 	const forwarding = dispatch.arms.filter((arm) => forwards(arm.code)).length;
 	return { key: dispatch.key, operations, logic: dispatch.logic + forwarding };

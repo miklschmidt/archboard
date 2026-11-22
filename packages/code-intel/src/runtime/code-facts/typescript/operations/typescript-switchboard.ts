@@ -288,7 +288,9 @@ function switchboardOf(declaration: Node): Switchboard | undefined {
 	const call = bareCall(dispatch.call) ? 1 : 0;
 	return {
 		key: dispatch.key,
-		...("type" in closure ? { type: closure.type } : {}),
+		...("type" in closure
+			? { type: closure.type, namedKeys: dispatch.arms.flatMap((arm) => arm.keys) }
+			: {}),
 		operations,
 		logic: dispatch.logic + forwarding + call,
 	};
@@ -303,7 +305,13 @@ function operationsFor(pick: ClosedPick): PickedOperation[] {
 	const { callable, dispatch, closure } = pick;
 	const line = callable.startPosition.row + 1;
 	const picked = operationsOf(dispatch.arms.map((arm) => armOf(arm, line)));
-	return "whole" in closure && closure.whole ? restSpelled(picked, closure.keys) : picked;
+	return "whole" in closure && closure.whole
+		? restSpelled(
+				picked,
+				closure.keys,
+				dispatch.arms.flatMap((arm) => arm.keys),
+			)
+		: picked;
 }
 
 export { switchboardOf };

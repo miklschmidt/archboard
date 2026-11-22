@@ -55,6 +55,16 @@ async function closedKeys(
 }
 
 /**
+ * Close a pick whose adapter deferred key resolution.
+ * @param picks The pick.
+ * @param keys The closed key set.
+ * @returns Its reachable operations.
+ */
+function closeOperations(picks: Switchboard, keys: readonly string[]): Switchboard["operations"] {
+	return restSpelled(picks.operations, keys, picks.namedKeys ?? []);
+}
+
+/**
  * The switchboard a name is, with its key closed where a type another file declares closes it.
  * @param reading The module.
  * @param name The name.
@@ -67,7 +77,8 @@ async function switchboardOf(
 	const picks = await picksOf(reading, name);
 	if (picks === undefined) return undefined;
 	const keys = await closedKeys(reading, name, picks);
-	const operations = keys === undefined ? picks.operations : restSpelled(picks.operations, keys);
+	const operations = keys === undefined ? picks.operations : closeOperations(picks, keys);
+	if (operations.length < 2) return undefined;
 	const open = picks.type !== undefined && keys === undefined ? { open: picks.type } : {};
 	return {
 		listed: {

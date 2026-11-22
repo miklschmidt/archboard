@@ -76,18 +76,19 @@ function operationsOf(arms: readonly Arm[]): PickedOperation[] {
  * The operations with `*` spelled out as the keys of the closed set that no arm names.
  * @param operations The operations.
  * @param closed Every key of the closed set.
- * @returns The operations.
+ * @param named The explicitly handled keys, including arms that run no operation.
+ * @returns The reachable operations.
  */
 function restSpelled(
 	operations: readonly PickedOperation[],
 	closed: readonly string[],
+	named: readonly string[],
 ): PickedOperation[] {
-	const named = new Set(operations.flatMap((each) => each.keys));
-	const rest = closed.filter((key) => !named.has(key));
-	return operations.map((each) => ({
-		...each,
-		keys: each.keys.flatMap((key) => (key === "*" ? rest : [key])),
-	}));
+	const rest = closed.filter((key) => !named.includes(key));
+	return operations.flatMap((each) => {
+		const keys = each.keys.flatMap((key) => (key === "*" ? rest : [key]));
+		return keys.length === 0 ? [] : [{ ...each, keys }];
+	});
 }
 
 export { type Arm, operationsOf, restSpelled };
