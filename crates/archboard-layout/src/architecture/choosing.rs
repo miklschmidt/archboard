@@ -54,8 +54,8 @@ struct Told {
     options: IndexMap<String, String>,
 }
 
-/// Lay one graph out as Blocks.
-pub(crate) async fn placed_blocks<S: Solver>(solver: &S, graph: String) -> Result<Placed, String> {
+/// Lay one graph out using its selected engine.
+pub(crate) async fn placed_drawing<S: Solver>(solver: &S, graph: String) -> Result<Placed, String> {
     let reply = solver.solve(graph).await.map_err(|error| match error {
         Unsolved::Failed(words) => words,
         Unsolved::CalledOff => "The layout solve was called off.".to_owned(),

@@ -1,5 +1,5 @@
 //! An architecture drawn from one graph plan through the host's [`Solver`].
-//! The engine named places its parts and relationships, fits its page, and
+//! The selected engine places its parts and relationships, fits its page, and
 //! settles its crossings. The painter and flowcharts consume that drawing.
 
 mod choosing;
@@ -48,7 +48,7 @@ pub async fn draw<S: Solver>(
     solver: &S,
 ) -> Result<Painted, String> {
     let graph = graph::compound_graph(content, measured, standings, engine);
-    let placed = choosing::placed_blocks(solver, graph).await?;
+    let placed = choosing::placed_drawing(solver, graph).await?;
     let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed));
     let frozen = placed.planned;
     let bridged = if frozen {

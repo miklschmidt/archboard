@@ -58,7 +58,7 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
 ///
 /// # Errors
 ///
-/// An unreadable graph or a refusal from Graphviz.
+/// An unreadable graph, a Lanes request for a split part, or a refusal from Graphviz.
 pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
     let unreadable =
         |error: serde_json::Error| format!("The measured graph is unreadable: {error}");
@@ -69,6 +69,9 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
     };
     let graph: Node = serde_json::from_str(graph).map_err(unreadable)?;
     if let Some(Asked { part }) = asked {
+        if lanes(&graph) {
+            return Err("Lanes does not solve in parts.".to_owned());
+        }
         return super::planned::solve_part(&graph, &part);
     }
     // Lanes always takes the lanes' placement, and so does a Blocks reading that no placement

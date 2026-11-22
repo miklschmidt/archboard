@@ -101,3 +101,18 @@ fn a_failed_part_leaves_the_answer_to_one_solve() {
     };
     assert_eq!(across(graph, &workers), whole(graph));
 }
+
+#[test]
+fn a_dense_lanes_reading_uses_one_solve() {
+    let mut graph: serde_json::Value =
+        serde_json::from_str(include_str!("fixtures/asks-room.json")).unwrap();
+    graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
+    let graph = graph.to_string();
+    let workers = Workers::default();
+    assert_eq!(across(&graph, &workers), whole(&graph));
+    assert_eq!(workers.asked.get(), 1);
+
+    let part = format!(r#"{{"part":"unused",{}"#, &graph[1..]);
+    let error = lay_out_picture(&part, &mut archboard_graphviz::InCore).unwrap_err();
+    assert_eq!(error, "Lanes does not solve in parts.");
+}
