@@ -194,8 +194,11 @@ test("a write is refused at the relationship and field that state no effect, and
 				},
 			],
 		});
-	const refused = await add({ kind: "call" });
-	if (refused.success) throw new Error("A call without an effect was written");
+	await expect(add({ kind: "call", effect: "mutation" })).rejects.toThrow(
+		/The kind call is gone: use sync .* or async/u,
+	);
+	const refused = await add({ kind: "sync" });
+	if (refused.success) throw new Error("A sync call without an effect was written");
 	expect(refused.diagnostics).toEqual([
 		expect.objectContaining({
 			file: "worker.module.json",
@@ -214,7 +217,7 @@ test("a write is refused at the relationship and field that state no effect, and
 	input = await batch(vault, ["Shop", "Shop#Worker", "Shop#Gateway", declared.id]);
 	const retyped = await editArchitectureModule(vault, {
 		...input,
-		changes: [{ type: "edit-relationship", subject: declared.id, set: { kind: "call" } }],
+		changes: [{ type: "edit-relationship", subject: declared.id, set: { kind: "sync" } }],
 	});
 	if (retyped.success) throw new Error("A dependency became a call without an effect");
 	expect(retyped.diagnostics).toEqual([
@@ -237,7 +240,7 @@ test("relationship additions, field edits and removals preserve order and reserv
 					source: "Shop#Worker",
 					relationship: {
 						to: "Public API",
-						kind: "call",
+						kind: "sync",
 						effect: "mutation",
 						order: 4,
 						label: "Notify",
@@ -272,7 +275,7 @@ test("relationship additions, field edits and removals preserve order and reserv
 		id: edge.id,
 		from: "Shop#Worker",
 		to: "Shop#Gateway",
-		kind: "call",
+		kind: "sync",
 		effect: "mutation",
 		emphasis: "normal",
 		order: 1,
@@ -422,7 +425,7 @@ test("a batch can reference its new module before its addition without exposing 
 			{
 				type: "add-relationship",
 				source: "Shop#Handler",
-				relationship: { to: "Cache", kind: "call", effect: "query", order: 3 },
+				relationship: { to: "Cache", kind: "sync", effect: "query", order: 3 },
 			},
 			{ type: "edit-module", subject: "Shop#Handler", set: { parent: "Cache" } },
 			{ type: "add-module", module: { name: "Cache", kind: "service", order: 5 } },

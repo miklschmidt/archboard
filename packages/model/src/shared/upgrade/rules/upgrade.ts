@@ -1,20 +1,27 @@
 import { createHash } from "node:crypto";
 import type { z } from "zod";
 import {
-	EFFECTLESS_KIND,
+	configurationOf,
 	type EvidenceKindSchema,
 	type SemanticPolicy,
 } from "#shared/schemas/semantic-policy.ts";
+import {
+	CALL_REPLACEMENT,
+	EFFECTLESS_KIND,
+	IN_PROCESS,
+	RETIRED_CALL,
+} from "#shared/schemas/built-in-vocabulary.ts";
 import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
 import type { ModelDiagnostic } from "#shared/canonical-contracts/schemas/model.ts";
 import type { InventoryRelationship, UpgradeInventory } from "#shared/upgrade/schemas/upgrade.ts";
 
 /**
- * The kinds the current format retired, with what replaces each: a storage access is now
- * `storage` and data that passes is no kind, and a relationship that fits no kind takes one the
- * vault adds.
+ * The kinds the current format retired, with what replaces each: an in-process call is now sync
+ * or async, a storage access is now `storage` and data that passes is no kind, and a
+ * relationship that fits no kind takes one the vault adds.
  */
 const RETIRED_KINDS: Readonly<Record<string, string>> = {
+	[RETIRED_CALL]: CALL_REPLACEMENT,
 	data: "use storage for a store the source reads or writes directly, or the kind that carries the data",
 	other:
 		"use the kind that says how it travels, or add a kind of the vault's own under relationshipKinds in .archboard/config.yaml",
@@ -50,23 +57,67 @@ const OLD_BUILT_IN_KINDS: Record<string, SemanticPolicy["relationshipKinds"][str
 	other: { name: "Other", arrowhead: "filled" },
 };
 
+type Lens = SemanticPolicy["lenses"][string];
+type Selector = NonNullable<Lens["show"]>[number];
+
+/**
+ * A lens selector in the current vocabulary: one that names call names sync and async.
+ * @param selector The selector as the old configuration wrote it.
+ * @returns Its selectors now.
+ */
+function upgradedSelectors(selector: Selector): Selector[] {
+	return selector.kind === RETIRED_CALL
+		? IN_PROCESS.map((kind) => ({ ...selector, kind }))
+		: [selector];
+}
+
+/**
+ * A vault's own lens in the current vocabulary.
+ * @param lens The lens as the old configuration wrote it.
+ * @param lens.show What it shows, if it has that list.
+ * @param lens.hide What it hides, if it has that list.
+ * @returns The lens, its selectors upgraded.
+ */
+function upgradedLens({ show, hide, ...lens }: Lens): Lens {
+	return {
+		...lens,
+		...(show === undefined ? {} : { show: show.flatMap(upgradedSelectors) }),
+		...(hide === undefined ? {} : { hide: hide.flatMap(upgradedSelectors) }),
+	};
+}
+
 /**
  * The configuration of an old vault in the current format: no kind has a
- * dash, the retired kinds `data` and `other` go, and so does each entry that restates an
- * old default, its dash aside. What the vault chose itself stays.
+ * dash or an arrowhead, the retired kinds `call`, `data` and `other` go, and so does each entry
+ * that restates an old default. An entry under call goes even when the vault renamed it, because
+ * a name for one kind cannot name both sync and async, and keeping it would block the upgrade of
+ * every old vault, whose configuration listed call whole. A vault's own lenses keep their place,
+ * and a selector that names call names sync and async. What the vault chose itself stays.
  * @param policy The policy of the old configuration.
  * @returns The configuration to validate and write.
  */
 function upgradedConfiguration(policy: SemanticPolicy): Record<string, unknown> {
-	const { lenses: _lenses, defaultLens: _defaultLens, relationshipKinds, ...vocabulary } = policy;
-	const kinds = Object.entries(relationshipKinds).flatMap(([id, { dash: _dash, ...kind }]) => {
-		const old = OLD_BUILT_IN_KINDS[id];
-		const restated =
-			old !== undefined &&
-			sameSemanticValue({ ...kind, evidence: kind.evidence ?? old.evidence }, old);
-		return isRetiredKind(id) || restated ? [] : [[id, kind] as const];
-	});
-	return { ...vocabulary, relationshipKinds: Object.fromEntries(kinds) };
+	const { relationshipKinds, lenses, ...stated } = configurationOf(policy);
+	const kinds = Object.entries(relationshipKinds).flatMap(
+		([id, { dash: _dash, arrowhead, ...kind }]) => {
+			const old = OLD_BUILT_IN_KINDS[id];
+			const restated =
+				old !== undefined &&
+				sameSemanticValue({ ...kind, arrowhead, evidence: kind.evidence ?? old.evidence }, old);
+			return isRetiredKind(id) || restated ? [] : [[id, kind] as const];
+		},
+	);
+	return {
+		...stated,
+		relationshipKinds: Object.fromEntries(kinds),
+		...(lenses === undefined
+			? {}
+			: {
+					lenses: Object.fromEntries(
+						Object.entries(lenses).map(([id, lens]) => [id, upgradedLens(lens)]),
+					),
+				}),
+	};
 }
 
 /** A relationship the inventory names, by its key: its id, and its draft when it has one. */
@@ -210,14 +261,37 @@ function upgradedRelationship(
 	entry: Pick<InventoryRelationship, "kind" | "effect">,
 ): Record<string, unknown> {
 	return Object.fromEntries(
-		Object.entries(relationship).flatMap(([key, value]) =>
-			key === "kind" ? Object.entries(classification(entry)) : [[key, value]],
-		),
+		Object.entries(relationship).flatMap(([key, value]) => {
+			if (key === "kind") return Object.entries(classification(entry));
+			return key === "effect" ? [] : [[key, value]];
+		}),
 	);
 }
 
+/**
+ * How the anchored call of a relationship runs, as the code facts read it: awaited, started and
+ * left to run (a task, a goroutine, an async callee not awaited), a plain call of a sync
+ * function, or unknown where the language or the code cannot tell.
+ */
+type CallTiming = "awaited" | "started" | "plain" | "unknown";
+
+/**
+ * The kind an inventory entry starts with: the old kind, none for a retired kind, and for a
+ * call the kind its anchored call says, or none for the agent to fill.
+ * @param oldKind The kind the relationship had.
+ * @param timing How its anchored call runs, when the code facts read it.
+ * @returns The seeded kind, or null.
+ */
+function seededKind(oldKind: string, timing: CallTiming | undefined): string | null {
+	if (oldKind !== RETIRED_CALL) return isRetiredKind(oldKind) ? null : oldKind;
+	if (timing === "awaited" || timing === "started") return "async";
+	return timing === "plain" ? "sync" : null;
+}
+
 export {
+	type CallTiming,
 	type Held,
+	seededKind,
 	classification,
 	isRetiredKind,
 	upgradedConfiguration,

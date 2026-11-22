@@ -1,7 +1,8 @@
 // The lens a picture is read through: a named question that chooses which of
 // its relationships draw. A part whose every line it leaves out leaves too.
 
-import { ALL_LENS_ID, type SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
+import { type SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
+import { ALL_LENS_ID } from "#shared/schemas/built-in-vocabulary.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 
 type Lens = SemanticPolicy["lenses"][string];

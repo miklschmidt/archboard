@@ -7,7 +7,13 @@ import {
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
 import { modelBoundaryFailure } from "#runtime/canonical/installation/store/model-state.ts";
-import { inventoryKey, isRetiredKind, type Held } from "#shared/upgrade/rules/upgrade.ts";
+import {
+	inventoryKey,
+	seededKind,
+	type CallTiming,
+	type Held,
+} from "#shared/upgrade/rules/upgrade.ts";
+import { RETIRED_CALL } from "#shared/schemas/built-in-vocabulary.ts";
 import type {
 	InventoryRelationship,
 	UpgradeInventory,
@@ -144,18 +150,26 @@ function endOf(reading: ArchitectureModel, id: string) {
 	return { id, name, ...(binding === undefined ? {} : { binding }) };
 }
 
+/** What an inventory entry says before anyone fills it: the relationship, its ends and its anchor. */
+type Listing = Omit<InventoryRelationship, "kind" | "effect" | "gap">;
 /**
- * One inventory entry, with nothing filled in but the old kind where it still exists.
+ * How the anchored call of a listed relationship runs, read from the code, or undefined when its
+ * code has no such call. The upgrade asks only about relationships of the retired kind call.
+ */
+type ReadCallTiming = (entry: Listing) => Promise<CallTiming | undefined>;
+
+/**
+ * What the inventory lists of a relationship before anyone fills it.
  * @param reading The reading that holds the relationship.
  * @param relationship The relationship.
  * @param proposal The draft it belongs to, if any.
- * @returns The entry.
+ * @returns The listing.
  */
-function entryOf(
+function listingOf(
 	reading: ArchitectureModel,
 	relationship: ArchitectureModel["relationships"][number],
 	proposal: string | undefined,
-): InventoryRelationship {
+): Listing {
 	const { id, from, to, kind, label, description, anchor } = relationship;
 	return {
 		id,
@@ -166,8 +180,30 @@ function entryOf(
 		...(description === undefined ? {} : { description }),
 		...(anchor === undefined ? {} : { anchor }),
 		oldKind: kind,
-		kind: isRetiredKind(kind) ? null : kind,
-		effect: null,
+	};
+}
+
+/**
+ * One inventory entry. Its kind starts as the old kind, a retired one as none, and a call as the
+ * kind its anchored call says; its effect starts as the one it states, if any.
+ * @param reading The reading that holds the relationship.
+ * @param relationship The relationship.
+ * @param proposal The draft it belongs to, if any.
+ * @param timing How its anchored call runs, when the code facts read it.
+ * @returns The entry.
+ */
+async function entryOf(
+	reading: ArchitectureModel,
+	relationship: ArchitectureModel["relationships"][number],
+	proposal: string | undefined,
+	timing: ReadCallTiming | undefined,
+): Promise<InventoryRelationship> {
+	const listing = listingOf(reading, relationship, proposal);
+	const read = relationship.kind === RETIRED_CALL ? await timing?.(listing) : undefined;
+	return {
+		...listing,
+		kind: seededKind(relationship.kind, read),
+		effect: relationship.effect ?? null,
 		gap: null,
 	};
 }
@@ -204,15 +240,26 @@ function upgradeRelationships(states: UpgradeStates) {
  * each one a draft adds or gives another kind, grouped by the root module of
  * its source, for agents to classify from the code. Nothing changes.
  * @param vault The addressed vault.
+ * @param timing Reads how the anchored call of a former call runs, which seeds sync or async.
+ * Without it, every former call starts with no kind.
  * @returns One inventory for each root module, or why the vault has none.
  */
-async function readUpgradeInventory(vault: string): Promise<UpgradeInventoryRead> {
+async function readUpgradeInventory(
+	vault: string,
+	timing?: ReadCallTiming,
+): Promise<UpgradeInventoryRead> {
 	const blocked = modelBoundaryFailure(vault);
 	if (blocked !== undefined) return blocked;
 	const states = await readUpgradeStates(vault);
 	if (!("current" in states)) return states;
 	const inventories = new Map<string, UpgradeInventory>();
-	for (const { reading, relationship, proposal } of upgradeRelationships(states)) {
+	const listed = upgradeRelationships(states);
+	const entries = await Promise.all(
+		listed.map(({ reading, relationship, proposal }) =>
+			entryOf(reading, relationship, proposal, timing),
+		),
+	);
+	for (const [index, { reading, relationship }] of listed.entries()) {
 		const root = rootOf(reading, relationship.from);
 		const inventory = inventories.get(root.id) ?? {
 			format: "archboard-upgrade-inventory" as const,
@@ -221,7 +268,7 @@ async function readUpgradeInventory(vault: string): Promise<UpgradeInventoryRead
 			root: { id: root.id, name: root.name },
 			relationships: [],
 		};
-		inventory.relationships.push(entryOf(reading, relationship, proposal));
+		inventory.relationships.push(entries[index]!);
 		inventories.set(root.id, inventory);
 	}
 	return { success: true, inventories: [...inventories.values()] };
@@ -247,5 +294,6 @@ export {
 	readUpgradeStates,
 	predecessorOf,
 	heldRelationships,
+	type ReadCallTiming,
 	type UpgradeStates,
 };

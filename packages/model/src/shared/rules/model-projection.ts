@@ -11,13 +11,14 @@ import { drawingContent, type DrawnContent } from "#shared/rules/model-drawing.t
 import { drawnEnds, drawnLines, joinedLines, strandedCards } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/inspect/rules/container-interface.ts";
 import { allLens, readingLens, type ReadingLens } from "#shared/rules/lens.ts";
+import { hiddenKinds, lineEffect } from "#shared/schemas/built-in-vocabulary.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
 /** What a reader chose of a reading, besides its scope and its focus. */
 type ModelFilters = Pick<
 	z.infer<typeof ArchitectureRenderRequestSchema>,
-	"hideKinds" | "expand" | "lens"
+	"hideKinds" | "hideEffects" | "expand" | "lens"
 > & {
 	/** Whether a live reader draws its picture, so that its doors and frames wear their controls. */
 	readonly controls?: boolean;
@@ -27,8 +28,14 @@ type Standing = Readonly<Record<string, ChangeKind>>;
 type Node = VariantContent["nodes"][number];
 type Edge = VariantContent["edges"][number];
 
-/** What decides which lines a reading draws: its lens, then the kinds a reader hid besides. */
-type LineChoices = Pick<ModelFilters, "hideKinds"> & { readonly lens: ReadingLens };
+/**
+ * What decides which lines a reading draws: its lens, then the kinds and effects a reader hid
+ * besides, read as one test of a relationship.
+ */
+interface LineChoices {
+	readonly lens: ReadingLens;
+	readonly shown: (edge: Pick<Edge, "kind" | "effect">) => boolean;
+}
 /** What a scope draws besides its own frame, and whether its controls are drawn. */
 type ScopeChoices = LineChoices & {
 	readonly frames: readonly string[];
@@ -109,7 +116,7 @@ function projectScope(
 	const every = drawnLines(complete, allConnections, open);
 	const lensed = relevant.filter(choices.lens.draws);
 	const throughLens = linesOf(lensed, every, relevant.length);
-	const shown = lensed.filter((edge) => !choices.hideKinds?.includes(edge.kind));
+	const shown = lensed.filter(choices.shown);
 	const connections = linesOf(shown, throughLens, lensed.length);
 	// A card whose every line the lens or a hidden kind leaves out leaves the picture with them.
 	const stranded = strandedCards(every, connections, open);
@@ -154,7 +161,7 @@ function projectScope(
  * @param model The coherent model.
  * @param scope The scope to restore when focus is cleared.
  * @param focus Explicit focused identities, or no focus.
- * @param filters The lens, and the relationship kinds hidden besides.
+ * @param filters The lens, and the relationship kinds and effects hidden besides.
  * @param reference The coherent comparison base, when available.
  * @param visibility Exact imported view membership, when the reading supplies it.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
@@ -188,7 +195,7 @@ function projectModel(
 			opened,
 			focus,
 			standing,
-			{ lens, hideKinds: filters.hideKinds, frames, controls },
+			{ lens, shown: filtered(model.policy, filters), frames, controls },
 			visibility,
 		);
 	const { projection, lens, emptyLens } = drawnThrough(model.policy, filters.lens, (through) =>
@@ -210,6 +217,26 @@ function projectModel(
 		),
 		flow: null as ModelFlow | null,
 		content: projection.content,
+	};
+}
+
+/**
+ * Whether a relationship survives the kinds and effects a reader hid besides the lens. A
+ * relationship is out when its kind or its effect is hidden; `declared` is a dependency that
+ * states no effect, and `call` from before sync and async hides both.
+ * @param policy The policy in effect.
+ * @param filters What the reader hid.
+ * @returns The test.
+ */
+function filtered(
+	policy: Model["policy"],
+	filters: Pick<ModelFilters, "hideKinds" | "hideEffects">,
+): LineChoices["shown"] {
+	const kinds = new Set(hiddenKinds(filters.hideKinds, policy));
+	const effects = new Set(filters.hideEffects);
+	return (edge) => {
+		const effect = lineEffect(edge);
+		return !kinds.has(edge.kind) && (effect === undefined || !effects.has(effect));
 	};
 }
 
@@ -353,9 +380,7 @@ function projectVisible(
 		.map((edge) => ({ line: edge, joins: [edge] as const }));
 	const connections = drawnLines(
 		complete,
-		allConnections.filter(
-			({ line }) => choices.lens.draws(line) && !choices.hideKinds?.includes(line.kind),
-		),
+		allConnections.filter(({ line }) => choices.lens.draws(line) && choices.shown(line)),
 		visible,
 	);
 	return {
@@ -427,9 +452,7 @@ function projectFocused(
 	 * @returns Both drawn ends.
 	 */
 	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
-	const shown = relevant.filter(
-		(edge) => choices.lens.draws(edge) && !choices.hideKinds?.includes(edge.kind),
-	);
+	const shown = relevant.filter((edge) => choices.lens.draws(edge) && choices.shown(edge));
 	const allConnections = joinedLines(complete, relevant, ends, openSelf, standing);
 	const joined = joinedLines(complete, shown, ends, openSelf, standing);
 	const connections = drawnLines(complete, joined, open);

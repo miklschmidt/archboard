@@ -133,7 +133,7 @@ test("projected connections retain unresolved joined identities and behavioral p
 				source: "Shop#Gateway",
 				relationship: {
 					to: "Shop#Worker",
-					kind: "call",
+					kind: "sync",
 					effect: "mutation",
 					order: 20,
 					label: "Second route",

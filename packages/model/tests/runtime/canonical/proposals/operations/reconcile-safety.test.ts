@@ -95,7 +95,7 @@ test("a proposal-only relationship keeps its removed source readable while unrel
 			source: "Shop#Worker",
 			relationship: {
 				to: "Shop#Gateway",
-				kind: "call",
+				kind: "sync",
 				effect: "mutation",
 				order: 20,
 				label: "Callback",

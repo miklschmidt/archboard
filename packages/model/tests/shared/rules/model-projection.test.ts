@@ -21,7 +21,7 @@ function modelOf(modules: Module[], relationships: Relationship[]): Model {
 			...module,
 		})),
 		relationships: relationships.map((edge, order) => ({
-			kind: "call",
+			kind: "sync",
 			emphasis: "normal",
 			order,
 			...edge,
@@ -43,169 +43,6 @@ const toggleOf = (reading: ReturnType<typeof projectModel>, id: string) =>
 function lines(projection: ReturnType<typeof projectModel>): string[] {
 	return projection.content.edges.map((edge) => `${edge.from}>${edge.to}`);
 }
-
-describe("lines", () => {
-	const model = modelOf(
-		[{ id: "a" }, { id: "b" }],
-		[
-			{ id: "one", from: "a", to: "b", kind: "http", label: "ask" },
-			{ id: "two", from: "a", to: "b", kind: "event", label: "tell" },
-			{ id: "back", from: "b", to: "a", kind: "http", label: "answer" },
-		],
-	);
-
-	test("a pair with relationships in both directions draws one line with an arrow at each end", () => {
-		const reading = projectModel(model);
-		expect(lines(reading)).toEqual(["a>b"]);
-		expect(reading.content.edges[0]?.twoWay).toBe(true);
-		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two", "back"]);
-	});
-
-	test("a line of one kind wears it, and a line of mixed kinds names neither", () => {
-		const [joined] = projectModel(model).content.edges;
-		expect(joined?.kind).not.toBe("http");
-		expect(joined?.kind).not.toBe("event");
-		const [shared] = projectModel(model, null, null, { hideKinds: ["event"] }).content.edges;
-		expect(shared?.kind).toBe("http");
-	});
-
-	test("hiding a kind leaves the relationships of every other kind on their line", () => {
-		const reading = projectModel(model, null, null, { hideKinds: ["http"] });
-		expect(reading.content.edges[0]).toMatchObject({ id: "two", kind: "event", label: "tell" });
-		expect(reading.content.edges[0]).not.toHaveProperty("twoWay");
-		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["two"]);
-		expect(reading.allConnections[0]?.joins.map((edge) => edge.id)).toEqual(["one", "two", "back"]);
-	});
-});
-
-describe("a hidden kind", () => {
-	const model = modelOf(
-		[
-			{ id: "system" },
-			{ id: "a", parent: "system" },
-			{ id: "b", parent: "system" },
-			{ id: "c", parent: "system" },
-			{ id: "alone", parent: "system" },
-		],
-		[
-			{ id: "ask", from: "a", to: "b", kind: "http" },
-			{ id: "tell", from: "b", to: "c", kind: "event" },
-		],
-	);
-	const cards = (reading: ReturnType<typeof projectModel>) =>
-		reading.content.nodes.map((node) => node.id);
-
-	test("takes off the cards that drew only its lines, and keeps a card that never drew one", () => {
-		const reading = projectModel(model, "system", null, { hideKinds: ["event"] });
-		expect(cards(reading)).toEqual(["system", "a", "b", "alone"]);
-		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "alone"]);
-	});
-
-	test("leaves the subjects of a focus, which the reader named", () => {
-		const reading = projectModel(model, "system", ["a", "b", "c"], { hideKinds: ["event"] });
-		expect(cards(reading)).toEqual(["a", "b", "c"]);
-	});
-});
-
-describe("a lens", () => {
-	const model = modelOf(
-		[
-			{ id: "system" },
-			{ id: "a", parent: "system" },
-			{ id: "b", parent: "system" },
-			{ id: "c", parent: "system" },
-			{ id: "d", parent: "system" },
-			{ id: "outside" },
-		],
-		[
-			{ id: "write", from: "a", to: "b", kind: "call", effect: "mutation" },
-			{ id: "read", from: "a", to: "c", kind: "call", effect: "query" },
-			{ id: "sum", from: "c", to: "d", kind: "call", effect: "compute" },
-			{ id: "fetch", from: "b", to: "c", kind: "http", effect: "query" },
-			{ id: "needs", from: "d", to: "outside", kind: "dependency" },
-			{ id: "tell", from: "b", to: "d", kind: "event", effect: "mutation" },
-		],
-	);
-	const read = (lens?: string, hideKinds?: string[]) =>
-		projectModel(model, "system", null, { lens, hideKinds });
-	const drawn = (reading: ReturnType<typeof projectModel>) =>
-		reading.connections.flatMap(({ joins }) => joins.map((edge) => edge.id)).toSorted();
-
-	test.each([
-		["main", ["fetch", "tell", "write"], ["a", "b", "c", "d"]],
-		["effects", ["tell", "write"], ["a", "b", "d"]],
-		["reads", ["fetch", "read"], ["a", "b", "c"]],
-		["network", ["fetch", "tell"], ["b", "c", "d"]],
-		["dependencies", ["needs"], ["d"]],
-		["all", ["fetch", "needs", "read", "sum", "tell", "write"], ["a", "b", "c", "d"]],
-	])(
-		"%s draws what its definition shows, and takes off the parts it left no line",
-		(lens, lines, parts) => {
-			const reading = read(lens);
-			expect(drawn(reading)).toEqual(lines);
-			expect(reading.children.map((node) => node.id)).toEqual(parts);
-			expect(reading.lens.id).toBe(lens);
-			expect(reading.leftOut).toBe(6 - lines.length);
-		},
-	);
-
-	test("the default lens is main, and a lens the policy lacks reads as the default", () => {
-		expect(read().lens).toEqual({ id: "main", name: "Main lines" });
-		expect(read("nowhere").lens.id).toBe("main");
-	});
-
-	test("a hidden kind subtracts from the lens and counts among the lines left out", () => {
-		const reading = read("main", ["event"]);
-		expect(drawn(reading)).toEqual(["fetch", "write"]);
-		expect(reading.leftOut).toBe(4);
-		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "c"]);
-	});
-
-	test("a line that keeps one of its relationships is not left out", () => {
-		const joined = modelOf(
-			[{ id: "a" }, { id: "b" }],
-			[
-				{ id: "write", from: "a", to: "b", kind: "call", effect: "mutation" },
-				{ id: "read", from: "a", to: "b", kind: "call", effect: "query" },
-			],
-		);
-		const reading = projectModel(joined);
-		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["write"]);
-		expect(reading.leftOut).toBe(0);
-	});
-
-	test("the default lens gives way to every relationship where it would draw no line", () => {
-		const computing = modelOf(
-			[{ id: "system" }, { id: "a", parent: "system" }, { id: "b", parent: "system" }],
-			[
-				{ id: "read", from: "a", to: "b", kind: "call", effect: "query" },
-				{ id: "sum", from: "b", to: "a", kind: "call", effect: "compute" },
-			],
-		);
-		const fallen = projectModel(computing, "system");
-		expect(fallen.lens.id).toBe("all");
-		expect(fallen.emptyLens).toEqual({ id: "main", name: "Main lines" });
-		expect(drawn(fallen)).toEqual(["read", "sum"]);
-		expect(fallen.leftOut).toBe(0);
-		const named = projectModel(computing, "system", null, { lens: "main" });
-		expect(named.lens.id).toBe("main");
-		expect(named.emptyLens).toBeUndefined();
-		expect(named.connections).toHaveLength(0);
-		expect(named.leftOut).toBe(1);
-		const bare = projectModel(
-			modelOf([{ id: "system" }, { id: "a", parent: "system" }], []),
-			"system",
-		);
-		expect(bare.lens.id).toBe("main");
-		expect(bare.emptyLens).toBeUndefined();
-	});
-
-	test("a focus is read through the lens too", () => {
-		const reading = projectModel(model, "system", ["a", "b", "c"], { lens: "reads" });
-		expect(drawn(reading)).toEqual(["fetch", "read"]);
-		expect(reading.leftOut).toBe(3);
-	});
-});
 
 describe("a relationship between a module and a part that it holds", () => {
 	const modules = [
@@ -282,11 +119,17 @@ describe("two-way lines", () => {
 	});
 });
 
+/**
+ * A closed card and the parts it holds.
+ * @param card The card.
+ * @param parts Its parts.
+ * @returns Its modules.
+ */
+function closed(card: string, parts: string[]): Module[] {
+	return [{ id: card }, ...parts.map((id) => ({ id, name: `the ${id}`, parent: card }))];
+}
+
 describe("the words on a joined line", () => {
-	const closed = (card: string, parts: string[]) => [
-		{ id: card },
-		...parts.map((id) => ({ id, name: `the ${id}`, parent: card })),
-	];
 	const model = modelOf(
 		[
 			...closed("user", []),

@@ -14,6 +14,7 @@ import {
 	type ModelDiagnostic,
 } from "#shared/canonical-contracts/schemas/model.ts";
 import { parseVaultPolicy } from "#runtime/store/configuration.ts";
+import { RETIRED_CALL } from "#shared/schemas/built-in-vocabulary.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/coherence/rules/model.ts";
 
@@ -26,7 +27,7 @@ const UPGRADE_REQUIRED: ModelDiagnostic = {
 	code: "UPGRADE_REQUIRED",
 	file: ".",
 	message:
-		"This vault is in the old format: its relationships state no effect, so it opens read-only.",
+		"This vault is in an old format, so it opens read-only: its relationships state no effect, or name the retired kind call, which is now sync or async.",
 	recovery:
 		"Upgrade the vault to the current format, which states each relationship's kind and effect: write its inventory with `archboard upgrade inventory`, fill it, and install it with `archboard upgrade install`. Every write is refused until then.",
 };
@@ -88,14 +89,15 @@ function decode<T>(
 /**
  * Require valid authored policy instead of activating legacy fallback defaults.
  * @param captured Exact inputs and diagnostics.
+ * @param namesCall Whether a relationship names the retired kind call, so the vault reads in that era's vocabulary.
  * @returns The policy in effect and its format, or undefined when invalid.
  */
-function decodePolicy(captured: CapturedModel) {
+function decodePolicy(captured: CapturedModel, namesCall: boolean) {
 	try {
 		const source = new TextDecoder("utf-8", { fatal: true }).decode(
 			captured.inputs.get(".archboard/config.yaml"),
 		);
-		const parsed = parseVaultPolicy(Bun.YAML.parse(source));
+		const parsed = parseVaultPolicy(Bun.YAML.parse(source), namesCall);
 		if (!parsed.success) throw parsed.error;
 		return parsed;
 	} catch (error) {
@@ -220,13 +222,16 @@ function decodeModel(
 		ArchitectureManifestSchema,
 		diagnostics,
 	);
-	const configuration = decodePolicy(captured);
 	const discovered = [...inputs]
 		.filter(([file]) => file.endsWith(".module.json"))
 		.flatMap(([file, bytes]) => {
 			const definition = decode(file, bytes, ModuleFileSchema, diagnostics);
 			return definition === undefined ? [] : [{ ...definition, file }];
 		});
+	const configuration = decodePolicy(
+		captured,
+		discovered.some((module) => module.outgoing.some((edge) => edge.kind === RETIRED_CALL)),
+	);
 	if (manifest === undefined || configuration === undefined)
 		return failure("MODEL_INVALID", diagnostics);
 	const { policy } = configuration;

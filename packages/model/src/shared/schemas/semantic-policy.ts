@@ -1,6 +1,18 @@
 import { z } from "zod";
 import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
 import { CodeCheckPolicySchema } from "#shared/schemas/code-check-policy.ts";
+import {
+	ALL_LENS,
+	ALL_LENS_ID,
+	BUILT_IN_LENSES,
+	BUILT_IN_RELATIONSHIP_KINDS,
+	CALL_ERA_FORMAT,
+	CURRENT_FORMAT,
+	DEFAULT_LENS_ID,
+	RETIRED_CALL,
+	retiredCallAdvice,
+	type PolicyFormat,
+} from "#shared/schemas/built-in-vocabulary.ts";
 
 /** Stable vocabulary names; their light and dark colors live in packages/renderer/assets/theme.css. */
 const PaletteColorSchema = z.enum([
@@ -21,6 +33,7 @@ const PaletteColorSchema = z.enum([
 	"fuchsia",
 	"pink",
 	"rose",
+	"slate",
 ]);
 const VocabularyNameSchema = z
 	.string()
@@ -53,7 +66,6 @@ const EvidenceKindSchema = z.enum([
 	"build-dependency",
 	"provisioning",
 ]);
-type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 /**
  * What a relationship does at its target: it changes state or has an effect
  * outside the caller (`mutation`), it reads held or fetched state (`query`), or
@@ -62,50 +74,66 @@ type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
  */
 const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]);
 /**
- * The one kind whose relationships may state no effect: a declared
- * requirement, of which nothing runs at run time. Every other kind, a vault's
- * own included, states one.
+ * What a line's dash and head say it does: its effect, or `declared` for a
+ * dependency that states none. A reader hides relationships by these tokens.
  */
-const EFFECTLESS_KIND = "dependency";
+const LineEffectSchema = z.enum([...RelationshipEffectSchema.options, "declared"]);
+/** The arrowhead a kind set before the effect took over the head. Only an old configuration and a reading of one carry it. */
 const ArrowheadSchema = z.enum(["filled", "open", "none"]);
 /** How the old format dashed a kind's lines. The current format takes a line's dash from its effect. */
 const DashSchema = z.enum(["solid", "dashed", "dotted"]);
-/** One relationship kind as a vault writes it. The kind is the color of its lines. */
+const EvidenceListSchema = z
+	.array(EvidenceKindSchema)
+	.min(1)
+	.refine((values) => new Set(values).size === values.length, "Evidence kinds must be unique")
+	.optional()
+	.meta({
+		uniqueItems: true,
+		description:
+			"The evidence kinds that prove a relationship of this kind to `archboard check code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
+	});
+/**
+ * One relationship kind as a vault writes it. The kind is the color of its
+ * lines; the line's dash and head say its effect.
+ */
 const RelationshipPolicySchema = z
 	.object({
 		name: PolicyDisplayNameSchema,
 		color: PaletteColorSchema.optional(),
-		arrowhead: ArrowheadSchema,
-		evidence: z
-			.array(EvidenceKindSchema)
-			.min(1)
-			.refine((values) => new Set(values).size === values.length, "Evidence kinds must be unique")
-			.optional()
-			.meta({
-				uniqueItems: true,
-				description:
-					"The evidence kinds that prove a relationship of this kind to `archboard check code` (ADR 0046). A kind without the key accepts every evidence kind, and the check never judges the evidence of its relationships.",
-			}),
+		evidence: EvidenceListSchema,
 	})
 	.strict();
-type RelationshipPolicy = z.infer<typeof RelationshipPolicySchema>;
 /**
- * One relationship kind with a dash, its fields in the order the old format
- * wrote them, which the digests of old readings read.
- * @param dash The dash, required or optional.
+ * One relationship kind with the fields of an older format, in the order that
+ * format wrote them, which the digests of old readings read.
+ * @param dash The dash: required, optional, or absent.
+ * @param arrowhead The arrowhead: required or optional.
  * @returns The kind's schema.
  */
-function dashedKindSchema<Dash extends z.ZodType>(dash: Dash) {
-	const { name, color, arrowhead, evidence } = RelationshipPolicySchema.shape;
+function olderKindSchema<Dash extends z.ZodType, Head extends z.ZodType>(
+	dash: Dash,
+	arrowhead: Head,
+) {
+	const { name, color, evidence } = RelationshipPolicySchema.shape;
 	return z.object({ name, color, dash, arrowhead, evidence }).strict();
 }
 /** One relationship kind of a vault in the old format, which dashed every line of a kind alike. */
-const LegacyRelationshipPolicySchema = dashedKindSchema(DashSchema);
+const LegacyRelationshipPolicySchema = olderKindSchema(DashSchema, ArrowheadSchema);
+/** One relationship kind of a vault written before sync and async replaced call: it set its arrowhead. */
+const CallEraRelationshipPolicySchema = z
+	.object({
+		name: RelationshipPolicySchema.shape.name,
+		color: RelationshipPolicySchema.shape.color,
+		arrowhead: ArrowheadSchema,
+		evidence: RelationshipPolicySchema.shape.evidence,
+	})
+	.strict();
 /**
- * One relationship kind as a reading carries it. Only a reading of the old
- * format has a dash: it keeps its recorded look (ADR 0065).
+ * One relationship kind as a reading carries it. Only a reading of an older
+ * format has a dash or an arrowhead: it keeps its recorded vocabulary (ADR 0065).
  */
-const RelationshipLookSchema = dashedKindSchema(DashSchema.optional());
+const RelationshipLookSchema = olderKindSchema(DashSchema.optional(), ArrowheadSchema.optional());
+type RelationshipLook = z.infer<typeof RelationshipLookSchema>;
 /**
  * Which relationships one entry of a lens names: those of a kind, those with
  * an effect, or those of a kind with an effect. A relationship that states no
@@ -136,7 +164,6 @@ const LensSchema = z
 	.refine((lens) => (lens.show === undefined) !== (lens.hide === undefined), {
 		message: "A lens has exactly one list: show or hide",
 	});
-type Lens = z.infer<typeof LensSchema>;
 /**
  * One configured group a node may belong to. The record key is the stable id
  * models carry; the name is what a reader sees, and renaming it changes no
@@ -153,77 +180,6 @@ const GroupPolicySchema = z
 		}),
 	})
 	.strict();
-/**
- * What proves a relationship across a network, an event bus, a queue, a
- * process boundary or a store: a use in code, a trigger or a route in
- * infrastructure, or configuration that points one part at the other (ADR 0046).
- */
-const NETWORK: EvidenceKind[] = ["call", "configured-path"];
-/**
- * The relationship kinds every vault has, by how a relationship travels. Every
- * kind but an in-process call draws in an ink of its own, so the kind is the
- * colour of its lines (TASK-663). A vault's own entry replaces the built-in of
- * its id whole, and a vault adds a kind with an id of its own, which is where a
- * relationship that fits no built-in kind goes. Every built-in kind names the
- * evidence kinds that prove it to the code check (ADR 0046).
- */
-const BUILT_IN_RELATIONSHIP_KINDS: Record<string, RelationshipPolicy> = {
-	call: { name: "Call", arrowhead: "filled", evidence: ["call"] },
-	http: { name: "HTTP", color: "sky", arrowhead: "filled", evidence: NETWORK },
-	rpc: { name: "RPC", color: "blue", arrowhead: "filled", evidence: NETWORK },
-	event: { name: "Event", color: "violet", arrowhead: "open", evidence: NETWORK },
-	queue: { name: "Queue", color: "amber", arrowhead: "open", evidence: NETWORK },
-	stream: { name: "Stream", color: "teal", arrowhead: "filled", evidence: NETWORK },
-	spawn: { name: "Spawn", color: "fuchsia", arrowhead: "filled", evidence: NETWORK },
-	render: { name: "Render", color: "pink", arrowhead: "filled", evidence: ["call"] },
-	storage: { name: "Storage", color: "emerald", arrowhead: "filled", evidence: NETWORK },
-	dependency: {
-		name: "Dependency",
-		color: "indigo",
-		arrowhead: "open",
-		evidence: ["call", "configured-path", "import", "build-dependency"],
-	},
-};
-/**
- * The lens of every relationship. A vault may rename it but not narrow it, so
- * Show all means one thing in every vault.
- */
-const ALL_LENS_ID = "all";
-const ALL_LENS: Lens = { name: "All relationships", hide: [] };
-/**
- * The lenses every vault has. A vault's own lens replaces the built-in of its
- * id whole; `all` keeps showing everything. `main` is the default: it leaves out declared
- * dependencies and in-process queries and computes, and shows every mutation
- * and all traffic between processes.
- */
-const BUILT_IN_LENSES: Record<string, Lens> = {
-	main: {
-		name: "Main lines",
-		hide: [
-			{ kind: EFFECTLESS_KIND },
-			{ kind: "call", effect: "query" },
-			{ kind: "call", effect: "compute" },
-		],
-	},
-	effects: {
-		name: "Effects",
-		question: "Where does state change?",
-		show: [{ effect: "mutation" }],
-	},
-	reads: {
-		name: "Reads",
-		question: "Where is held or fetched state read?",
-		show: [{ effect: "query" }],
-	},
-	network: {
-		name: "Network",
-		question: "How does traffic flow between processes?",
-		show: ["http", "rpc", "queue", "event", "stream"].map((kind) => ({ kind })),
-	},
-	dependencies: { name: "Declared dependencies", show: [{ kind: EFFECTLESS_KIND }] },
-	[ALL_LENS_ID]: ALL_LENS,
-};
-const DEFAULT_LENS_ID = "main";
 /**
  * The vocabulary fields a vault writes and a reading carries alike, in the
  * order every policy has kept them, which digests and fingerprints read.
@@ -277,27 +233,38 @@ const SemanticPolicySchema = z
 	})
 	.strict();
 type SemanticPolicy = z.infer<typeof SemanticPolicySchema>;
-type AuthoredPolicy = z.infer<ReturnType<typeof authoredPolicySchema>>;
+/** An authored policy of either format, as its refusals and its resolution read it. */
+type AuthoredPolicy = Omit<
+	z.infer<ReturnType<typeof authoredPolicySchema<typeof RelationshipPolicySchema>>>,
+	"relationshipKinds"
+> & {
+	readonly relationshipKinds: Record<string, RelationshipLook>;
+};
 /**
  * The policy a vault writes in its configuration: its own node kinds and
  * groups, the relationship kinds it adds or replaces, and its lenses.
  * @param icon Valid icon names.
+ * @param kind The schema of one relationship kind: the current one, or the call era's.
  * @returns The authored shape, before validation against the kinds in effect.
  */
-function authoredPolicySchema(icon: z.ZodType<string>) {
+function authoredPolicySchema<Kind extends z.ZodType>(icon: z.ZodType<string>, kind: Kind) {
 	return z
 		.object({
 			...vocabularyShape(
 				icon,
-				z.record(VocabularyNameSchema, RelationshipPolicySchema).default({}).meta({
-					description:
-						"The relationship kinds this vault adds, or replaces by id. The built-in kinds sit under them: call, http, rpc, event, queue, stream, spawn, render, storage and dependency. A relationship that fits none of them takes a kind the vault adds, which names its color.",
-				}),
+				z
+					.record(VocabularyNameSchema, kind)
+					.default({})
+					.meta({
+						description: `The relationship kinds this vault adds, or replaces by id. The built-in kinds sit under them: ${Object.keys(BUILT_IN_RELATIONSHIP_KINDS).join(", ")}. A relationship that fits none of them takes a kind the vault adds, which names its color.`,
+					}),
 			),
-			lenses: z.record(VocabularyNameSchema, LensSchema).default({}).meta({
-				description:
-					"The lenses this vault adds, or replaces by id. The built-in lenses sit under them: main, effects, reads, network, dependencies and all. `all` shows every relationship: a vault may rename it, and its list stays `hide: []`.",
-			}),
+			lenses: z
+				.record(VocabularyNameSchema, LensSchema)
+				.default({})
+				.meta({
+					description: `The lenses this vault adds, or replaces by id. The built-in lenses sit under them: ${Object.keys(BUILT_IN_LENSES).join(", ")}. \`all\` shows every relationship: a vault may rename it, and its list stays \`hide: []\`.`,
+				}),
 			defaultLens: VocabularyNameSchema.optional().meta({
 				description: "The lens a picture is read through when it names none. Without it, `main`.",
 			}),
@@ -312,17 +279,30 @@ interface PolicyIssue {
 /**
  * The kinds a vault adds without a color: the kind is the color of its lines.
  * @param authored The authored policy.
+ * @param format The built-ins it sits over.
  * @returns A refusal for each, at its color.
  */
-function colorlessKinds(authored: AuthoredPolicy): PolicyIssue[] {
+function colorlessKinds(authored: AuthoredPolicy, format: PolicyFormat): PolicyIssue[] {
 	return Object.entries(authored.relationshipKinds)
-		.filter(
-			([id, kind]) => !Object.hasOwn(BUILT_IN_RELATIONSHIP_KINDS, id) && kind.color === undefined,
-		)
+		.filter(([id, kind]) => !Object.hasOwn(format.kinds, id) && kind.color === undefined)
 		.map(([id]) => ({
 			path: ["relationshipKinds", id, "color"],
 			message: `A kind the vault adds names its color, because the kind is the color of its lines: add color: with one of ${PaletteColorSchema.options.join(", ")}`,
 		}));
+}
+/**
+ * A kind the vault states under the retired id call.
+ * @param authored The authored policy.
+ * @returns Its refusal, or none.
+ */
+function retiredCallKind(authored: AuthoredPolicy): PolicyIssue[] {
+	if (!Object.hasOwn(authored.relationshipKinds, RETIRED_CALL)) return [];
+	return [
+		{
+			path: ["relationshipKinds", RETIRED_CALL],
+			message: `${retiredCallAdvice(RETIRED_CALL)}. Move this entry to sync or async`,
+		},
+	];
 }
 /**
  * A vault's `all` lens that no longer shows every relationship.
@@ -341,37 +321,46 @@ function narrowedAll(authored: AuthoredPolicy): PolicyIssue[] {
 	];
 }
 /**
+ * What is wrong with the kind a lens selector names, if anything.
+ * @param kind The kind it names.
+ * @param kinds The kinds in effect.
+ * @returns The refusal's message, or nothing.
+ */
+function selectorKindProblem(kind: string, kinds: ReadonlySet<string>): string | undefined {
+	if (kinds.has(kind)) return undefined;
+	return (
+		retiredCallAdvice(kind) ??
+		`Unknown relationship kind "${kind}": use one of ${[...kinds].join(", ")}`
+	);
+}
+/**
  * The lens selectors that name a kind the policy does not have.
  * @param authored The authored policy.
+ * @param format The built-ins it sits over.
  * @returns A refusal for each, at the selector's kind.
  */
-function unknownLensKinds(authored: AuthoredPolicy): PolicyIssue[] {
-	const kinds = new Set([
-		...Object.keys(BUILT_IN_RELATIONSHIP_KINDS),
-		...Object.keys(authored.relationshipKinds),
-	]);
+function unknownLensKinds(authored: AuthoredPolicy, format: PolicyFormat): PolicyIssue[] {
+	const kinds = new Set([...Object.keys(format.kinds), ...Object.keys(authored.relationshipKinds)]);
 	return Object.entries(authored.lenses).flatMap(([id, lens]) =>
 		(["show", "hide"] as const).flatMap((list) =>
-			(lens[list] ?? []).flatMap((selector, index) =>
-				selector.kind === undefined || kinds.has(selector.kind)
+			(lens[list] ?? []).flatMap((selector, index) => {
+				const message =
+					selector.kind === undefined ? undefined : selectorKindProblem(selector.kind, kinds);
+				return message === undefined
 					? []
-					: [
-							{
-								path: ["lenses", id, list, index, "kind"],
-								message: `Unknown relationship kind "${selector.kind}": use one of ${[...kinds].join(", ")}`,
-							},
-						],
-			),
+					: [{ path: ["lenses", id, list, index, "kind"], message }];
+			}),
 		),
 	);
 }
 /**
  * A default lens the policy does not have.
  * @param authored The authored policy.
+ * @param format The built-ins it sits over.
  * @returns Its refusal, or none.
  */
-function unknownDefaultLens(authored: AuthoredPolicy): PolicyIssue[] {
-	const lenses = new Set([...Object.keys(BUILT_IN_LENSES), ...Object.keys(authored.lenses)]);
+function unknownDefaultLens(authored: AuthoredPolicy, format: PolicyFormat): PolicyIssue[] {
+	const lenses = new Set([...Object.keys(format.lenses), ...Object.keys(authored.lenses)]);
 	if (authored.defaultLens === undefined || lenses.has(authored.defaultLens)) return [];
 	return [
 		{
@@ -383,30 +372,33 @@ function unknownDefaultLens(authored: AuthoredPolicy): PolicyIssue[] {
 /**
  * Refuse an authored policy at each place where it names what is not in
  * effect, or adds a kind without its color.
- * @param authored The authored policy.
- * @param context Where the issues go.
+ * @param format The built-ins it sits over.
+ * @returns The refinement.
  */
-function refusePolicyIssues(authored: AuthoredPolicy, context: z.RefinementCtx): void {
-	for (const issue of [
-		...colorlessKinds(authored),
-		...narrowedAll(authored),
-		...unknownLensKinds(authored),
-		...unknownDefaultLens(authored),
-	])
-		context.addIssue({ code: "custom", ...issue });
+function refusePolicyIssues(format: PolicyFormat) {
+	return (authored: AuthoredPolicy, context: z.RefinementCtx): void => {
+		for (const issue of [
+			...colorlessKinds(authored, format),
+			...(format === CURRENT_FORMAT ? retiredCallKind(authored) : []),
+			...narrowedAll(authored),
+			...unknownLensKinds(authored, format),
+			...unknownDefaultLens(authored, format),
+		])
+			context.addIssue({ code: "custom", ...issue });
+	};
 }
 /**
  * The policy in effect for an authored one: the built-ins under the vault's own.
- * @param authored The validated authored policy.
- * @returns The policy a reading carries.
+ * @param format The built-ins it sits over.
+ * @returns The resolution.
  */
-function resolvePolicy(authored: AuthoredPolicy): SemanticPolicy {
-	return {
+function resolvePolicy(format: PolicyFormat) {
+	return (authored: AuthoredPolicy): SemanticPolicy => ({
 		...authored,
-		relationshipKinds: { ...BUILT_IN_RELATIONSHIP_KINDS, ...authored.relationshipKinds },
-		lenses: { ...BUILT_IN_LENSES, ...authored.lenses },
+		relationshipKinds: { ...format.kinds, ...authored.relationshipKinds },
+		lenses: { ...format.lenses, ...authored.lenses },
 		defaultLens: authored.defaultLens ?? DEFAULT_LENS_ID,
-	};
+	});
 }
 /**
  * The entries a vault states itself: those that differ from the built-in of their id.
@@ -414,27 +406,37 @@ function resolvePolicy(authored: AuthoredPolicy): SemanticPolicy {
  * @param builtIn The built-ins they sit over.
  * @returns The vault's own entries.
  */
-function ownEntries<T>(values: Record<string, T>, builtIn: Record<string, T>): Record<string, T> {
+function ownEntries<T>(
+	values: Record<string, T>,
+	builtIn: Readonly<Record<string, T>>,
+): Record<string, T> {
 	return Object.fromEntries(
 		Object.entries(values).filter(([id, value]) => !sameSemanticValue(value, builtIn[id])),
 	);
 }
+/** A configuration as `configurationOf` writes it: an old one has no lenses. */
+type Configuration = Omit<SemanticPolicy, "lenses" | "defaultLens"> &
+	Partial<Pick<SemanticPolicy, "lenses" | "defaultLens">>;
 /**
  * The configuration that reads back as a policy in effect, so a reading can
- * be written again as inputs, and what a digest of a reading's policy reads. A policy of the old format, which records a dash
- * on each kind, is written in the old format and without lenses; any other
- * keeps only what differs from the built-ins.
+ * be written again as inputs, and what a digest of a reading's policy reads. A
+ * policy of the old format, which records a dash on each kind, is written in
+ * the old format and without lenses; any other keeps only what differs from
+ * the built-ins of its format, the call era's when it has the kind call.
  * @param policy The policy in effect.
  * @returns The configuration to write.
  */
-function configurationOf(policy: SemanticPolicy): Record<string, unknown> {
+function configurationOf(policy: SemanticPolicy): Configuration {
 	const { lenses, defaultLens, ...vocabulary } = policy;
 	if (Object.values(vocabulary.relationshipKinds).some((kind) => kind.dash !== undefined))
 		return vocabulary;
+	const format = Object.hasOwn(vocabulary.relationshipKinds, RETIRED_CALL)
+		? CALL_ERA_FORMAT
+		: CURRENT_FORMAT;
 	return {
 		...vocabulary,
-		relationshipKinds: ownEntries(vocabulary.relationshipKinds, BUILT_IN_RELATIONSHIP_KINDS),
-		lenses: ownEntries(lenses, BUILT_IN_LENSES),
+		relationshipKinds: ownEntries(vocabulary.relationshipKinds, format.kinds),
+		lenses: ownEntries(lenses, format.lenses),
 		...(defaultLens === DEFAULT_LENS_ID ? {} : { defaultLens }),
 	};
 }
@@ -444,7 +446,24 @@ function configurationOf(policy: SemanticPolicy): Record<string, unknown> {
  * @returns The configuration schema.
  */
 function createVaultConfigurationSchema(icon: z.ZodType<string> = NodePolicySchema.shape.icon) {
-	return authoredPolicySchema(icon).superRefine(refusePolicyIssues).transform(resolvePolicy);
+	return authoredPolicySchema(icon, RelationshipPolicySchema)
+		.superRefine(refusePolicyIssues(CURRENT_FORMAT))
+		.transform(resolvePolicy(CURRENT_FORMAT));
+}
+/**
+ * Build the contract of a configuration written before sync and async
+ * replaced call, read exactly for a vault not yet upgraded and for its
+ * history: its kinds set their arrowhead, and the built-ins it sits over are
+ * that era's, call included.
+ * @param icon Valid icon names.
+ * @returns The call era's configuration schema.
+ */
+function createCallEraVaultConfigurationSchema(
+	icon: z.ZodType<string> = NodePolicySchema.shape.icon,
+) {
+	return authoredPolicySchema(icon, CallEraRelationshipPolicySchema)
+		.superRefine(refusePolicyIssues(CALL_ERA_FORMAT))
+		.transform(resolvePolicy(CALL_ERA_FORMAT));
 }
 /**
  * Build the contract of a vault configuration in the old format, read exactly
@@ -514,53 +533,22 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = createVaultConfigurationSchema()
 	levels: ["system", "service", "module"],
 });
 export {
-	ALL_LENS_ID,
 	VocabularyNameSchema,
 	createVaultConfigurationSchema,
+	createCallEraVaultConfigurationSchema,
 	createLegacyVaultConfigurationSchema,
 	configurationOf,
 	DEFAULT_VAULT_CONFIGURATION,
 	RelationshipEffectSchema,
-	EFFECTLESS_KIND,
+	RelationshipLookSchema,
+	LensSchema,
+	LineEffectSchema,
 	PaletteColorSchema,
 	SemanticPolicySchema,
 	type SemanticPolicy,
 	DEFAULT_SEMANTIC_POLICY,
 	EvidenceKindSchema,
 };
-
-/**
- * Whether a relationship kind is the declared requirement, the one kind that
- * may state no effect, because nothing of its target runs at run time.
- * @param kind The relationship's kind.
- * @returns True for that kind.
- */
-export function isEffectlessKind(kind: string): boolean {
-	return kind === EFFECTLESS_KIND;
-}
-
-/**
- * What a line's dash says it does under a policy, as the renderer core draws
- * it (`line_appearance` in `crates/archboard-render`): the effect the line
- * states, `declared` for a dependency that states none, and nothing on a
- * reading whose kinds record their dash, which keeps its recorded look (ADR 0065).
- * @param line The line's kind and effect.
- * @param line.kind Its kind.
- * @param line.effect Its effect, if it states one.
- * @param policy The policy in effect.
- * @returns The effect its dash says, or undefined.
- */
-export function drawnEffect(
-	line: {
-		readonly kind: string;
-		readonly effect?: z.infer<typeof RelationshipEffectSchema> | undefined;
-	},
-	policy: SemanticPolicy,
-): z.infer<typeof RelationshipEffectSchema> | "declared" | undefined {
-	if (Object.values(policy.relationshipKinds).some((kind) => kind.dash !== undefined))
-		return undefined;
-	return line.effect ?? (line.kind === EFFECTLESS_KIND ? "declared" : undefined);
-}
 
 /**
  * The value `DEFAULT_SEMANTIC_POLICY`, for callers that read it.
@@ -592,4 +580,12 @@ export function paletteColorSchema(): typeof PaletteColorSchema {
  */
 export function semanticPolicySchema(): typeof SemanticPolicySchema {
 	return SemanticPolicySchema;
+}
+
+/**
+ * The schema of the tokens a reader hides effects by, for callers that parse or offer them.
+ * @returns The schema.
+ */
+export function lineEffectSchema(): typeof LineEffectSchema {
+	return LineEffectSchema;
 }

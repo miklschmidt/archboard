@@ -16,6 +16,8 @@ import {
 	RecordedFlowChangeSchema,
 } from "#shared/canonical-contracts/schemas/model-flows.ts";
 import { z } from "zod";
+import { LineEffectSchema } from "#shared/schemas/semantic-policy.ts";
+import { retiredCallAdvice } from "#shared/schemas/built-in-vocabulary.ts";
 import { SemanticIdSchema, SingleLineTextSchema } from "#shared/schemas/primitives.ts";
 import {
 	ArchitectureModuleSchema,
@@ -37,8 +39,10 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	expand: z.array(QualifiedSubjectIdSchema).optional(),
 	/** The lens a structural picture is read through, by id; the vault's default lens when absent. */
 	lens: z.string().min(1).optional(),
-	/** Relationship kinds hidden besides what the lens leaves out. */
+	/** Relationship kinds hidden besides what the lens leaves out. `call`, from before sync and async, hides both. */
 	hideKinds: z.array(z.string()).optional(),
+	/** Effects hidden besides what the lens leaves out; `declared` is a dependency that states none. */
+	hideEffects: z.array(LineEffectSchema).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),
 	/** Where the legend is drawn: under the picture, beside it, or `none` to leave it out. */
@@ -111,9 +115,18 @@ const ModuleFieldsSchema = ArchitectureModuleSchema.omit({
 	outgoing: true,
 	formerNames: true,
 }).extend({ parent: SingleLineTextSchema.optional() });
+/** A relationship an edit writes: it never names the retired kind call. */
 const RelationshipFieldsSchema = ArchitectureModuleSchema.shape.outgoing.element
 	.omit({ id: true })
-	.extend({ to: SingleLineTextSchema });
+	.extend({
+		to: SingleLineTextSchema,
+		kind: ArchitectureModuleSchema.shape.outgoing.element.shape.kind.superRefine(
+			(kind, context) => {
+				const advice = retiredCallAdvice(kind);
+				if (advice !== undefined) context.addIssue({ code: "custom", message: `${advice}.` });
+			},
+		),
+	});
 const StructureChangeSchema = z.discriminatedUnion("type", [
 	z.object({ type: z.literal("remove-module"), subject: SingleLineTextSchema }).strict(),
 	z

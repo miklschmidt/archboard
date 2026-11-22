@@ -7,7 +7,7 @@ import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import { LegacyBoardSchema, SemanticVariantSchema } from "#shared/schemas/legacy-board.ts";
 import { documentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
-import { EFFECTLESS_KIND, isEffectlessKind } from "#shared/schemas/semantic-policy.ts";
+import { EFFECTLESS_KIND, isEffectlessKind } from "#shared/schemas/built-in-vocabulary.ts";
 import {
 	SemanticIdSchema,
 	DisplayNameSchema,

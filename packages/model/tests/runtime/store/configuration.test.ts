@@ -84,37 +84,30 @@ function readPolicy(fields: Record<string, unknown>) {
 test("the built-in kinds sit under a vault's own, and a kind the vault adds names its color", () => {
 	const own = readPolicy({
 		relationshipKinds: {
-			call: { name: "Calls", arrowhead: "filled" },
-			ledger: { name: "Ledger", color: "rose", arrowhead: "filled" },
+			sync: { name: "Sync calls", color: "slate" },
+			ledger: { name: "Ledger", color: "rose" },
 		},
 	});
 	expect(own.diagnostics).toEqual([]);
-	expect(Object.keys(own.configuration.relationshipKinds).toSorted()).toEqual(
-		[
-			"call",
-			"http",
-			"rpc",
-			"event",
-			"queue",
-			"stream",
-			"spawn",
-			"render",
-			"storage",
-			"dependency",
-			"ledger",
-		].toSorted(),
-	);
-	expect(own.configuration.relationshipKinds["call"]?.name).toBe("Calls");
+	expect(Object.keys(own.configuration.relationshipKinds)).toEqual([
+		"sync",
+		"async",
+		"http",
+		"rpc",
+		"event",
+		"queue",
+		"stream",
+		"spawn",
+		"render",
+		"storage",
+		"dependency",
+		"ledger",
+	]);
+	expect(own.configuration.relationshipKinds["sync"]?.name).toBe("Sync calls");
 	for (const [relationshipKinds, path] of [
-		[{ ledger: { name: "Ledger", arrowhead: "filled" } }, "relationshipKinds.ledger.color"],
-		// A kind's dash follows its effect now; only a whole configuration of the old format records one.
-		[
-			{
-				call: { name: "Call", arrowhead: "filled", dash: "dashed" },
-				ledger: { name: "Ledger", color: "rose", arrowhead: "filled" },
-			},
-			"relationshipKinds.call.dash",
-		],
+		[{ ledger: { name: "Ledger" } }, "relationshipKinds.ledger.color"],
+		// A kind's dash and head follow its effect now; only a whole configuration of an older format records one.
+		[{ sync: { name: "Sync", dash: "dashed" } }, "relationshipKinds.sync.dash"],
 	] as const) {
 		const refused = readPolicy({ relationshipKinds });
 		expect(refused.diagnostics.map((each) => [each.code, each.path])).toEqual([
@@ -123,9 +116,20 @@ test("the built-in kinds sit under a vault's own, and a kind the vault adds name
 	}
 });
 
+test("a kind or a lens selector that names call is refused, naming sync and async", () => {
+	for (const [fields, path] of [
+		[{ relationshipKinds: { call: { name: "Calls", color: "slate" } } }, "relationshipKinds.call"],
+		[{ lenses: { x: { name: "X", show: [{ kind: "call" }] } } }, "lenses.x.show.0.kind"],
+	] as const) {
+		const [refused] = readPolicy(fields).diagnostics;
+		expect([refused?.code, refused?.path]).toEqual(["INVALID_CONFIG", path]);
+		expect(refused?.message).toMatch(/The kind call is gone: use sync .* or async/u);
+	}
+});
+
 test("lenses validate against the kinds and effects in effect, each refusal at its path", () => {
 	const lenses = readPolicy({
-		relationshipKinds: { ledger: { name: "Ledger", color: "rose", arrowhead: "filled" } },
+		relationshipKinds: { ledger: { name: "Ledger", color: "rose" } },
 		defaultLens: "writes",
 		lenses: {
 			writes: {
@@ -137,9 +141,16 @@ test("lenses validate against the kinds and effects in effect, each refusal at i
 	});
 	expect(lenses.diagnostics).toEqual([]);
 	expect(lenses.configuration.defaultLens).toBe("writes");
-	expect(Object.keys(lenses.configuration.lenses).toSorted()).toEqual(
-		["main", "effects", "reads", "network", "dependencies", "all", "writes"].toSorted(),
-	);
+	expect(Object.keys(lenses.configuration.lenses)).toEqual([
+		"main",
+		"effects",
+		"sync-compute",
+		"network",
+		"reads",
+		"dependencies",
+		"all",
+		"writes",
+	]);
 	expect(lenses.configuration.lenses["all"]?.name).toBe("Everything");
 	expect(readPolicy({}).configuration.defaultLens).toBe("main");
 	for (const [fields, path] of [
@@ -147,7 +158,7 @@ test("lenses validate against the kinds and effects in effect, each refusal at i
 		[{ lenses: { x: { name: "X", hide: [{ effect: "write" }] } } }, "lenses.x.hide.0.effect"],
 		[{ lenses: { x: { name: "X", show: [], hide: [] } } }, "lenses.x"],
 		[{ lenses: { x: { name: "X", show: [{}] } } }, "lenses.x.show.0"],
-		[{ lenses: { all: { name: "All", hide: [{ kind: "call" }] } } }, "lenses.all"],
+		[{ lenses: { all: { name: "All", hide: [{ kind: "sync" }] } } }, "lenses.all"],
 		[{ defaultLens: "traffic" }, "defaultLens"],
 	] as const) {
 		const refused = readPolicy(fields);

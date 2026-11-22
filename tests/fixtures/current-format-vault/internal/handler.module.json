@@ -10,7 +10,7 @@
 		{
 			"id": "Shop#Dispatch",
 			"to": "Shop#Worker",
-			"kind": "call",
+			"kind": "sync",
 			"effect": "mutation",
 			"order": 10,
 			"label": "Dispatch request",

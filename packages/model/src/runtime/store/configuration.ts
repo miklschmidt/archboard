@@ -6,6 +6,7 @@ import { z } from "zod";
 import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
 import {
 	DEFAULT_SEMANTIC_POLICY,
+	createCallEraVaultConfigurationSchema,
 	createLegacyVaultConfigurationSchema,
 	createVaultConfigurationSchema,
 	configurationOf,
@@ -20,6 +21,7 @@ const InstalledIconSchema = z.enum(
 );
 const VaultConfigurationSchema = createVaultConfigurationSchema(InstalledIconSchema);
 const LegacyVaultConfigurationSchema = createLegacyVaultConfigurationSchema(InstalledIconSchema);
+const CallEraVaultConfigurationSchema = createCallEraVaultConfigurationSchema(InstalledIconSchema);
 /**
  * A configuration as the store reads it: the policy in effect, and whether
  * the configuration is in the old format, which only an old vault and its
@@ -30,18 +32,45 @@ type VaultPolicy =
 	| { readonly success: false; readonly error: z.ZodError };
 
 /**
- * Read a parsed configuration in the current format, else in the old one. A
- * configuration that is neither is refused with the current format's issues,
- * which say how to write it now.
+ * Whether a configuration names a relationship kind of its own. Every kind of
+ * the call era sets its arrowhead, so a configuration that reads in that era
+ * and names one was written then.
  * @param value The parsed YAML.
+ * @returns True when it names a kind.
+ */
+function namesKinds(value: unknown): boolean {
+	const kinds = z.object({ relationshipKinds: z.record(z.string(), z.unknown()) }).safeParse(value);
+	return kinds.success && Object.keys(kinds.data.relationshipKinds).length > 0;
+}
+/**
+ * A configuration in an older format: the call era's, when its kinds set their arrowhead or the
+ * vault's relationships still name call, else the one whose kinds set a dash.
+ * @param value The parsed YAML.
+ * @param namesCall Whether the vault's relationships name the retired kind call.
+ * @returns The policy in effect, or undefined when it is in neither.
+ */
+function olderPolicy(value: unknown, namesCall: boolean): SemanticPolicy | undefined {
+	const callEra = CallEraVaultConfigurationSchema.safeParse(value);
+	if (callEra.success && (namesCall || namesKinds(value))) return callEra.data;
+	const old = LegacyVaultConfigurationSchema.safeParse(value);
+	return old.success ? old.data : undefined;
+}
+/**
+ * Read a parsed configuration in the current format, else in an older one, so a vault in an
+ * older format opens to be upgraded. A vault whose relationships still name call reads in the
+ * call era first. A configuration that is in no format is refused with the current format's
+ * issues, which say how to write it now.
+ * @param value The parsed YAML.
+ * @param namesCall Whether the vault's relationships name the retired kind call.
  * @returns The policy in effect and its format, or the current format's refusal.
  */
-function parseVaultPolicy(value: unknown): VaultPolicy {
+function parseVaultPolicy(value: unknown, namesCall = false): VaultPolicy {
 	const current = VaultConfigurationSchema.safeParse(value);
-	if (current.success) return { success: true, format: "current", policy: current.data };
-	const old = LegacyVaultConfigurationSchema.safeParse(value);
-	if (old.success) return { success: true, format: "old", policy: old.data };
-	return { success: false, error: current.error };
+	const older = namesCall || !current.success ? olderPolicy(value, namesCall) : undefined;
+	if (older !== undefined) return { success: true, format: "old", policy: older };
+	return current.success
+		? { success: true, format: "current", policy: current.data }
+		: { success: false, error: current.error };
 }
 interface VaultConfigurationRead {
 	readonly ok: boolean;

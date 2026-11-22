@@ -262,12 +262,12 @@ test("origin namespaces distinguish reused local ids and dependencies can cycle"
 	edit(vault, "worker.module.json", {
 		id: "Old/Family#Gateway",
 		outgoing: [
-			{ id: "Old/Family#Return", to: "Shop#Gateway", kind: "call", effect: "mutation", order: 1 },
+			{ id: "Old/Family#Return", to: "Shop#Gateway", kind: "sync", effect: "mutation", order: 1 },
 		],
 	});
 	edit(vault, "internal/handler.module.json", {
 		outgoing: [
-			{ id: "Shop#Dispatch", to: "Old/Family#Gateway", kind: "call", effect: "mutation", order: 1 },
+			{ id: "Shop#Dispatch", to: "Old/Family#Gateway", kind: "sync", effect: "mutation", order: 1 },
 		],
 	});
 	expect(readArchitectureModel(vault)).toMatchObject({
@@ -308,7 +308,7 @@ test("relationships have one identity and derive their source from their contain
 	const vault = fixture();
 	edit(vault, "worker.module.json", {
 		outgoing: [
-			{ id: "Shop#Dispatch", to: "Shop#Gateway", kind: "call", effect: "mutation", order: 1 },
+			{ id: "Shop#Dispatch", to: "Shop#Gateway", kind: "sync", effect: "mutation", order: 1 },
 		],
 	});
 	const duplicate = readArchitectureModel(vault);
@@ -322,7 +322,7 @@ test("relationships have one identity and derive their source from their contain
 				id: "Shop#Return",
 				from: "Shop#Handler",
 				to: "Shop#Gateway",
-				kind: "call",
+				kind: "sync",
 				effect: "mutation",
 				order: 1,
 			},
@@ -341,8 +341,8 @@ test("module identity wins over names and authored positions determine outgoing 
 	edit(vault, "internal/handler.module.json", { outgoing: [] });
 	edit(vault, "gateway.module.json", {
 		outgoing: [
-			{ id: "Shop#Later", to: "Shop#Worker", kind: "call", effect: "mutation", order: 20 },
-			{ id: "Shop#Early", to: "Shop#Worker", kind: "call", effect: "mutation", order: 10 },
+			{ id: "Shop#Later", to: "Shop#Worker", kind: "sync", effect: "mutation", order: 20 },
+			{ id: "Shop#Early", to: "Shop#Worker", kind: "sync", effect: "mutation", order: 10 },
 		],
 	});
 	const result = readArchitectureModel(vault, "Shop#Gateway");
