@@ -115,61 +115,70 @@ const ModuleFieldsSchema = ArchitectureModuleSchema.omit({
 	outgoing: true,
 	formerNames: true,
 }).extend({ parent: SingleLineTextSchema.optional() });
-/** A relationship an edit writes: it never names the retired kind call. */
-const RelationshipFieldsSchema = ArchitectureModuleSchema.shape.outgoing.element
+/** A relationship as history recorded it, which may name the retired kind call. */
+const RecordedRelationshipFieldsSchema = ArchitectureModuleSchema.shape.outgoing.element
 	.omit({ id: true })
-	.extend({
-		to: SingleLineTextSchema,
-		kind: ArchitectureModuleSchema.shape.outgoing.element.shape.kind.superRefine(
-			(kind, context) => {
-				const advice = retiredCallAdvice(kind);
-				if (advice !== undefined) context.addIssue({ code: "custom", message: `${advice}.` });
-			},
-		),
-	});
-const StructureChangeSchema = z.discriminatedUnion("type", [
-	z.object({ type: z.literal("remove-module"), subject: SingleLineTextSchema }).strict(),
-	z
-		.object({
-			type: z.literal("add-relationship"),
-			source: SingleLineTextSchema,
-			relationship: RelationshipFieldsSchema,
-		})
-		.strict(),
-	z.object({ type: z.literal("remove-relationship"), subject: QualifiedSubjectIdSchema }).strict(),
-	z
-		.object({
-			type: z.literal("edit-relationship"),
-			subject: QualifiedSubjectIdSchema,
-			source: SingleLineTextSchema.optional(),
-			set: RelationshipFieldsSchema.partial()
-				.extend({ emphasis: RelationshipFieldsSchema.shape.emphasis.removeDefault().optional() })
-				.optional(),
-			clear: z.array(z.enum(["effect", "label", "description", "traffic", "anchor"])).optional(),
-		})
-		.strict(),
-	z.object({ type: z.literal("add-module"), module: ModuleFieldsSchema }).strict(),
-	z
-		.object({
-			type: z.literal("edit-module"),
-			subject: SingleLineTextSchema,
-			set: ModuleFieldsSchema.partial().optional(),
-			clear: z
-				.array(
-					z.enum([
-						"responsibility",
-						"description",
-						"parent",
-						"groups",
-						"binding",
-						"documents",
-						"references",
-					]),
-				)
-				.optional(),
-		})
-		.strict(),
-]);
+	.extend({ to: SingleLineTextSchema });
+/** A relationship a new edit writes: it never names the retired kind call. */
+const RelationshipFieldsSchema = RecordedRelationshipFieldsSchema.extend({
+	kind: RecordedRelationshipFieldsSchema.shape.kind.superRefine((kind, context) => {
+		const advice = retiredCallAdvice(kind);
+		if (advice !== undefined) context.addIssue({ code: "custom", message: `${advice}.` });
+	}),
+});
+/**
+ * The structure changes of an edit, with the relationship fields it may write.
+ * @param relationship What a written relationship holds.
+ * @returns The changes.
+ */
+function structureChangeSchema(relationship: typeof RecordedRelationshipFieldsSchema) {
+	return z.discriminatedUnion("type", [
+		z.object({ type: z.literal("remove-module"), subject: SingleLineTextSchema }).strict(),
+		z
+			.object({
+				type: z.literal("add-relationship"),
+				source: SingleLineTextSchema,
+				relationship,
+			})
+			.strict(),
+		z
+			.object({ type: z.literal("remove-relationship"), subject: QualifiedSubjectIdSchema })
+			.strict(),
+		z
+			.object({
+				type: z.literal("edit-relationship"),
+				subject: QualifiedSubjectIdSchema,
+				source: SingleLineTextSchema.optional(),
+				set: relationship
+					.partial()
+					.extend({ emphasis: relationship.shape.emphasis.removeDefault().optional() })
+					.optional(),
+				clear: z.array(z.enum(["effect", "label", "description", "traffic", "anchor"])).optional(),
+			})
+			.strict(),
+		z.object({ type: z.literal("add-module"), module: ModuleFieldsSchema }).strict(),
+		z
+			.object({
+				type: z.literal("edit-module"),
+				subject: SingleLineTextSchema,
+				set: ModuleFieldsSchema.partial().optional(),
+				clear: z
+					.array(
+						z.enum([
+							"responsibility",
+							"description",
+							"parent",
+							"groups",
+							"binding",
+							"documents",
+							"references",
+						]),
+					)
+					.optional(),
+			})
+			.strict(),
+	]);
+}
 const ProposalConfirmationsSchema = z.array(z.enum(["INHERITANCE_DROPPED", "PART_RECREATED"]));
 const ProposalIntentSchema = z.discriminatedUnion("type", [
 	z.strictObject({
@@ -255,7 +264,7 @@ function editSchema<Statement extends z.ZodType>(statement: Statement) {
 }
 const ArchitectureModuleEditSchema = editSchema(
 	z.discriminatedUnion("type", [
-		...StructureChangeSchema.options,
+		...structureChangeSchema(RelationshipFieldsSchema).options,
 		...FlowChangeSchema.options,
 		...WalkthroughChangeSchema.options,
 	]),
@@ -263,7 +272,7 @@ const ArchitectureModuleEditSchema = editSchema(
 /** An intent as a signed record or a journal holds it, which history must keep decoding. */
 const RecordedModuleEditSchema = editSchema(
 	z.discriminatedUnion("type", [
-		...StructureChangeSchema.options,
+		...structureChangeSchema(RecordedRelationshipFieldsSchema).options,
 		...RecordedFlowChangeSchema.options,
 		...WalkthroughChangeSchema.options,
 	]),
