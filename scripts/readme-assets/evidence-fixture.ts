@@ -226,15 +226,23 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 	 * @param to The called module.
 	 * @param path The file that contains the call.
 	 * @param symbol The called function.
+	 * @param effect What the call does: saving and placing an order change it, validating computes.
 	 * @returns The relationship creation request.
 	 */
-	const call = (source: string, to: string, path: string, symbol: string): RelationshipInput => ({
+	const call = (
+		source: string,
+		to: string,
+		path: string,
+		symbol: string,
+		effect: "mutation" | "compute" = "mutation",
+	): RelationshipInput => ({
 		type: "add-relationship",
 		source,
 		relationship: {
 			order: 0,
 			to,
 			kind: "call",
+			effect,
 			label: `${symbol}()`,
 			emphasis: "normal",
 			anchor: { repo: REPO, path, symbol },
@@ -268,7 +276,13 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 			})),
 			call("Checkout route", "Place order", "src/checkout/route.ts", "placeOrder"),
 			call("Replay job", "Place order", "src/replay/job.ts", "placeOrder"),
-			call("Place order", "Validate order", "src/orders/place-order.ts", "validateOrder"),
+			call(
+				"Place order",
+				"Validate order",
+				"src/orders/place-order.ts",
+				"validateOrder",
+				"compute",
+			),
 			// The code check must discover the deliberately omitted placeOrder -> saveOrder call.
 		],
 		{ type: "create", name: "Implemented checkout" },
@@ -296,6 +310,7 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 						order: 0,
 						to: "Validate order",
 						kind: "call",
+						effect: "compute",
 						emphasis: "normal",
 						label: "validateOrder()",
 						description: "Proposal: checkout directly calls the validation entry point.",
@@ -308,6 +323,7 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 						order: 0,
 						to: "Save order",
 						kind: "call",
+						effect: "mutation",
 						emphasis: "normal",
 						label: "saveOrder()",
 						description: "Proposal: replay directly calls the storage entry point.",

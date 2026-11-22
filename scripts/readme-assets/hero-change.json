@@ -74,7 +74,7 @@
 		"source": "Place order",
 		"set": {
 			"to": "Orders DB",
-			"kind": "data",
+			"kind": "storage",
 			"label": "write the order as pending",
 			"traffic": {}
 		}
@@ -97,6 +97,7 @@
 		"relationship": {
 			"to": "Payment webhook",
 			"kind": "event",
+			"effect": "mutation",
 			"label": "payment succeeded",
 			"emphasis": "hero",
 			"traffic": {},
@@ -108,7 +109,8 @@
 		"source": "Payment webhook",
 		"relationship": {
 			"to": "Orders DB",
-			"kind": "data",
+			"kind": "storage",
+			"effect": "mutation",
 			"label": "mark the order paid",
 			"order": 35000
 		}
@@ -119,6 +121,7 @@
 		"relationship": {
 			"to": "Order events",
 			"kind": "queue",
+			"effect": "mutation",
 			"label": "publish order paid",
 			"emphasis": "hero",
 			"traffic": {},
@@ -131,6 +134,7 @@
 		"relationship": {
 			"to": "Fulfilment worker",
 			"kind": "queue",
+			"effect": "mutation",
 			"label": "deliver order paid",
 			"traffic": {},
 			"order": 37000

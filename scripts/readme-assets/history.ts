@@ -135,6 +135,7 @@ async function historyStops(server: TakeServer): Promise<readonly Stop[]> {
 				relationship: {
 					to: "Delivery tracking",
 					kind: "call",
+					effect: "mutation",
 					emphasis: "normal",
 					label: "records delivery",
 					order: 12000,
