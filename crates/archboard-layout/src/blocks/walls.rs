@@ -207,7 +207,6 @@ fn outermost(scene: &Placement, item: ItemId, wall: Side) -> bool {
         .cards
         .values()
         .chain(scene.labels.values())
-        .chain(scene.titles.values())
         .all(|&one| {
             let other = scene.item(one);
             if one == item || other.band != card.band || other.bx.width <= PORT {

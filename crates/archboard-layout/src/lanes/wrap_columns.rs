@@ -20,7 +20,7 @@ const SEARCH_STEP: f64 = 2.0;
 
 /// Whether a line passes over an item rather than around it: containers and their parts.
 fn hollow(name: &str) -> bool {
-    ["cluster:", "title:", "pin:", "port:", "stub:", "header:"]
+    ["cluster:", "pin:", "port:", "stub:", "header:"]
         .iter()
         .any(|prefix| name.starts_with(prefix))
 }

@@ -56,8 +56,7 @@ fn folded_size(laid: &Laid, runs: &[Vec<&Band>], insets: Insets) -> (f64, f64) {
         .map(|run| run[run.len() - 1].bottom - run[0].top));
     let gutters = (runs.len() - 1) as f64 * MIN_GUTTER;
     let width = widths.iter().fold(0.0, |sum, width| sum + width) + gutters + 2.0 * insets.side;
-    let height =
-        laid.height - span + tallest + 2.0 * channel_height(runs.len() - 1, 0.0, false, false);
+    let height = laid.height - span + tallest + 2.0 * channel_height(runs.len() - 1, false);
     (width, height)
 }
 

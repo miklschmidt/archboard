@@ -9,7 +9,7 @@ use crate::ecma::{js_max, js_min};
 use crate::geometry::{Point, polyline_x};
 use crate::lanes::channels::{Net, NetId, Trunk};
 use crate::lanes::occupancy::Occupancy;
-use crate::lanes::scene::{ItemId, Placement, Set, Spot, centre_x};
+use crate::lanes::scene::{ItemId, Placement, Set, centre_x};
 use crate::placed::PlacedEdge;
 
 /// Distance between neighbouring lanes and tracks.
@@ -199,14 +199,6 @@ impl<'s> Track<'s> {
             item.bx.x = x - item.bx.width / 2.0;
         } else {
             self.stations[id.0].x = x;
-        }
-    }
-
-    /// Where a station stands.
-    pub(crate) fn spot(&self, id: StationId) -> Spot {
-        Spot {
-            band: self.station(id).band,
-            x: self.x(id),
         }
     }
 
@@ -452,9 +444,8 @@ impl<'s> Track<'s> {
             .find(|run| run.lanes.contains(&lane))
     }
 
-    /// The x a line can pass a station at straight: anywhere along a card's or
-    /// title row's face clear of its corners, anywhere across a label box, or
-    /// a lane's own x.
+    /// The x a line can pass a station at straight: anywhere along a card's
+    /// face clear of its corners, anywhere across a label box, or a lane's own x.
     pub(crate) fn reach_of(&self, id: StationId) -> (f64, f64) {
         let station = self.station(id);
         let Some(item) = station.item else {
@@ -481,32 +472,5 @@ impl<'s> Track<'s> {
         let low = js_max(a, c);
         let high = js_min(b, d);
         (low <= high).then(|| js_min(high, js_max(low, near)))
-    }
-
-    /// Where a run of lanes to or from a container runs straight on: the
-    /// columns to try, best first; none for a run between two cards.
-    pub(crate) fn straight_on(&self, before: StationId, after: StationId) -> Vec<f64> {
-        let titled = |id: StationId| {
-            self.station(id)
-                .item
-                .is_some_and(|item| self.scene.titles.values().any(|&title| title == item))
-        };
-        if titled(after) {
-            let x = self.x(before);
-            return self
-                .meeting(before, after, x)
-                .into_iter()
-                .chain(std::iter::once(x))
-                .collect();
-        }
-        if titled(before) {
-            let x = self.x(after);
-            return self
-                .meeting(before, after, x)
-                .into_iter()
-                .chain(std::iter::once(x))
-                .collect();
-        }
-        Vec::new()
     }
 }

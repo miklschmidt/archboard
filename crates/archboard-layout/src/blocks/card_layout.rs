@@ -21,9 +21,7 @@ use crate::placed::{PlacedBlock, PlacedEdge, PlacedNode};
 use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node, nodes_in};
 
 use super::laid::{Insets, Laid, LaidMap, Size};
-use super::leaves::{
-    PORT, corner_header, hold_resized_children, leaves_of, pinned_leaf, settled_leaf,
-};
+use super::leaves::{PORT, corner_header, pinned_leaf, settled_leaf};
 use super::line_up::LinedUp;
 use super::routing::{Settling, routed};
 use super::tree::{Block, BlockId, BlockTree, Line, header_of};
@@ -419,8 +417,6 @@ impl<'t> CardLayout<'t> {
                     y: centre.y - size.height / 2.0,
                     width,
                     height: size.height,
-                    children: None,
-                    frame: None,
                 }
             })
             .collect();
@@ -436,9 +432,8 @@ impl<'t> CardLayout<'t> {
             .map(|line| self.placed_line(line, centres, polylines))
             .collect();
         PlacedBlock {
-            children: leaves,
+            nodes: leaves,
             edges,
-            regions: Vec::new(),
             header,
         }
     }
@@ -526,14 +521,13 @@ impl Reroute {
         ports: &Map<String, f64>,
     ) -> Laid {
         let mut placed = self.placed.borrow_mut();
-        for leaf in leaves_of(&mut placed.children) {
+        for leaf in &mut placed.nodes {
             if let Some(&x) = ports.get(&leaf.id) {
                 leaf.x = x - self.left - self.insets.side - leaf.width / 2.0;
             } else if let Some(at) = settled_leaf(tree, laid, &leaf.id, &self.centres) {
                 (leaf.x, leaf.y, leaf.width, leaf.height) = (at.x, at.y, at.width, at.height);
             }
         }
-        hold_resized_children(&mut placed.children);
         routed(
             tree,
             self.block,
