@@ -40,6 +40,9 @@ pub(crate) const LABEL_LABEL_CLEARANCE: f64 = 24.0;
 /// Required straight run after the final bend, for every arrow: as long as the
 /// painter's longest mark needs.
 pub(crate) const APPROACH_STRAIGHT: f64 = archboard_scene::paint::design::approach_straight();
+/// The least length of an arrow with no bend: the painter's marks at its ends
+/// and a little body. With no bend, a head needs no approach.
+pub(crate) const STRAIGHT_RUN: f64 = archboard_scene::paint::design::straight_run();
 
 /// The page shape the renderer lays a picture out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;

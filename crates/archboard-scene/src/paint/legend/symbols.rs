@@ -8,7 +8,9 @@ use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::edge_line::body;
-use crate::paint::heads::{body_short_of, mark_length, mark_shapes, place_of};
+use crate::paint::heads::{
+    IMPRINT_REACH, IMPRINT_WIDTH, body_short_of, mark_length, mark_shapes, place_of, ring_reach,
+};
 use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
@@ -35,11 +37,6 @@ const PULSE_STOPS: [(f64, f64); 6] = [
     (1.0, 0.0),
 ];
 const PULSE_SPAN: f64 = 40.0;
-/// The room a sample keeps at its start for a ring: half the ring's square.
-const RING_ROOM: f64 = 4.0;
-/// How far a sample's imprint reaches to either side of its tip, and how thick it is.
-const IMPRINT_SAMPLE: f64 = 6.0;
-const IMPRINT_SAMPLE_WIDTH: f64 = 2.0;
 /// A kind's chip in the legend, as the reading panel draws it (`KindChip` in
 /// `apps/web`): how round, how thick its edge, how much of the kind's ink its
 /// face and its edge carry, and how large its icon.
@@ -112,7 +109,7 @@ fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
     let head = head_of(sample.head);
     let tail = sample.tail;
     let short = |mark: Option<Head>| mark.map_or(0.0, body_short_of);
-    let start = point(x + 1.0 + tail.map_or(0.0, |_| RING_ROOM), across);
+    let start = point(x + 1.0 + tail.map_or(0.0, |_| ring_reach()), across);
     let end = if head == Some(Head::Filled) {
         x + GLYPH - 1.0 - HEAD_LENGTH / 2.0
     } else {
@@ -138,15 +135,15 @@ fn line_symbol(ink: &Colour, sample: &Sample, x: f64, y: f64) -> Items {
                 Purpose::Sample,
                 vec![
                     PathStep::Move {
-                        to: point(tip.x, across - IMPRINT_SAMPLE),
+                        to: point(tip.x, across - IMPRINT_REACH),
                     },
                     PathStep::Line {
-                        to: point(tip.x, across + IMPRINT_SAMPLE),
+                        to: point(tip.x, across + IMPRINT_REACH),
                     },
                 ],
             )
             .unfilled()
-            .stroked(Stroke::new(ink, IMPRINT_SAMPLE_WIDTH)),
+            .stroked(Stroke::new(ink, IMPRINT_WIDTH)),
         ));
     }
     items

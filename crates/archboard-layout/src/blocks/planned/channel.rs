@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
+use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, STRAIGHT_RUN};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -364,9 +364,14 @@ pub(super) fn shared_fragment(
         && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
 }
 
-/// Rounded corners must leave the complete arrow approach after painting.
+/// Rounded corners must leave the complete arrow approach after painting. A
+/// line with no bend needs only the room its marks take.
 pub(super) fn approaches(points: &[Point]) -> bool {
-    let required = APPROACH_STRAIGHT + if points.len() > 2 { BEND_RADIUS } else { 0.0 };
+    let required = if points.len() > 2 {
+        APPROACH_STRAIGHT + BEND_RADIUS
+    } else {
+        STRAIGHT_RUN
+    };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
 }
 

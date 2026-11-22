@@ -9,8 +9,8 @@ use peniko::{ColorStop, Gradient, InterpolationAlphaSpace};
 use super::{Inside, Walk};
 use crate::canvas::{Canvas, Ink};
 
-/// The glow round an imprint: how much wider than the stripe, and how solid.
-const GLOW: (f64, f64) = (4.0, 0.22);
+/// The glow round an imprint: how many times as wide as the stripe, and how solid.
+const GLOW: (f64, f64) = (3.0, 0.22);
 
 impl<C: Canvas> Walk<'_, C> {
     /// Draw an imprint, fading at both ends, with its glow under it. It grows
@@ -45,7 +45,7 @@ impl<C: Canvas> Walk<'_, C> {
         let glow = (GLOW.1 * (1.0 + lit)) as f32;
         let round = |breadth: f64| kurbo::Stroke::new(breadth).with_caps(kurbo::Cap::Round);
         self.canvas
-            .stroke(&path, &round(width + GLOW.0 * grown), &fading(glow));
+            .stroke(&path, &round(width * GLOW.0), &fading(glow));
         self.canvas.stroke(&path, &round(width), &fading(1.0));
     }
 }

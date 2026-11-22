@@ -16,16 +16,13 @@ fn hops_of(bridges: &[DrawingBridge]) -> Vec<&DrawingBridge> {
 // line each hopped it cleanly, and became one long brace on the line they cross.
 #[test]
 fn lines_crossing_a_line_sixteen_apart_each_hop_it_where_every_hop_fits() {
-    // Whether the crossed line is painted first or between the two.
+    // Whether the crossed line is painted first or between the two. Every
+    // line runs straight well past its approaches, so each has a hop's room.
+    let crossed = || down_from(50.0, -50.0, 150.0);
+    let crosser = |y| across_from(y, -50.0, 150.0);
     for (routes, line) in [
-        (
-            [down_from(50.0, 0.0, 150.0), across(50.0), across(66.0)],
-            "0",
-        ),
-        (
-            [across(50.0), down_from(50.0, 0.0, 150.0), across(66.0)],
-            "1",
-        ),
+        ([crossed(), crosser(50.0), crosser(66.0)], "0"),
+        ([crosser(50.0), crossed(), crosser(66.0)], "1"),
     ] {
         let result = bridged(&drawing(&routes));
         assert_eq!(result.bridges.len(), 2);

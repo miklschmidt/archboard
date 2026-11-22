@@ -418,17 +418,19 @@ describe("renderArchitecture", () => {
 		}
 
 		// A label is also checked against its own plate, which the atlas was
-		// derived from and so cannot vouch for. Every plate is its label's width
-		// plus the same padding, and a plate sized in a face other than the one
-		// its words are set in would leave a different amount of room on a short
-		// label than on a long one.
-		const slack = drawn
-			.filter((one) => one.subject.kind === "edge")
-			.map((one) => {
-				const plate = plates.get(one.subject.id)!;
-				expect(spanFits(drawnSpan(one), plate)).toBe(true);
-				return Math.round((plate.width - one.width) * 100) / 100;
-			});
+		// derived from and so cannot vouch for. Every plate is its label's widest
+		// line plus the same padding, and a plate sized in a face other than the
+		// one its words are set in would leave a different amount of room on a
+		// short label than on a long one.
+		const widest = new Map<string, number>();
+		for (const one of drawn.filter((line) => line.subject.kind === "edge")) {
+			const plate = plates.get(one.subject.id)!;
+			expect(spanFits(drawnSpan(one), plate)).toBe(true);
+			widest.set(one.subject.id, Math.max(widest.get(one.subject.id) ?? 0, one.width));
+		}
+		const slack = [...widest].map(
+			([id, width]) => Math.round((plates.get(id)!.width - width) * 100) / 100,
+		);
 		expect(slack.length).toBeGreaterThan(3);
 		expect(new Set(slack).size).toBe(1);
 		expect(slack[0]!).toBeGreaterThan(0);

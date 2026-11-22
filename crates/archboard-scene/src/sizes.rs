@@ -162,8 +162,10 @@ pub(crate) const TAG_BESIDE: f64 = 8.0;
 pub(crate) const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
 /// The least side of a mark's square on screen, in CSS pixels: a viewer that
 /// sees the picture from far out grows each mark to it, so a mark's shape
-/// still reads. It acts only beyond the opening zoom of a large picture.
-pub(crate) const HEAD_FLOOR: f64 = 5.0;
+/// still reads: an "=" keeps its gap open at the opening zoom of a large
+/// picture, where a mark drawn at its own size would close it. From about a
+/// third of full size inward, marks keep their own size.
+pub(crate) const HEAD_FLOOR: f64 = 8.0;
 /// How thick a line of normal weight is drawn.
 pub(crate) const LINE_WIDTH: f64 = 2.4;
 /// How thick a broken line's body is, as a share of its weight's width.

@@ -235,6 +235,12 @@ pub const fn approach_straight() -> f64 {
     super::heads::APPROACH
 }
 
+/// The least length of a line with no bend: room for the marks at its ends
+/// and a little body. With no bend, a head needs no approach.
+pub const fn straight_run() -> f64 {
+    super::heads::STRAIGHT_RUN
+}
+
 /// How many steps an octave of the camera's scale holds for a mark's growth.
 const GROWTH_STEPS: f64 = 8.0;
 
