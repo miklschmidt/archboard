@@ -15,7 +15,7 @@ archboard model rasterize --checkpoint <checkpoint-id> --scope '<qualified-modul
 ```
 
 A checkpoint selects its recorded state, so omit `--state`.
-Use the same selectors for SVG and PNG, with the Blocks engine.
+Use the same selectors for SVG and PNG, with the default Blocks engine, or add `--layout lanes` to both.
 Keep artifacts outside the checkout, or in a directory that the repository ignores for run output, unless the repository intentionally tracks them.
 
 Read the receipt's model, revision, checkpoint, dimensions, and placed IDs.

@@ -16,7 +16,7 @@ archboard model record --checkpoint <checkpoint-id> --walkthrough <walkthrough-i
 archboard model replay <artifact-directory>/talk --out <artifact-directory>/walkthrough-again.mp4
 ```
 
-Video and pictures use Blocks. The talk keeps its layout for replay.
+Video and pictures use Blocks by default, and `--layout lanes` draws them with Lanes. The talk keeps its layout for replay.
 
 Read the receipt's duration, output size, talk path, and exact revision.
 Check the recording as the consumer reference's recording check says, before you use it.

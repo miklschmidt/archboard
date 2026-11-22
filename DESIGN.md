@@ -724,7 +724,7 @@ The change list follows as a tree, one row for each owner: a module, a collectio
 
 ### Settings dialog
 
-The gear in the header opens `Settings`, a dialog 720px wide at most. It stands 8% of the window from the top, so the tabs stay in place when a tab of another height opens. A content selector at its head holds two tabs. `Picture` holds the setting of this browser for every picture: whether a part under the pointer dims the rest. It is a row with its name, one line of Body in muted ink that says what it does, and a switch at the end. `Code opener` holds the editor that opens a module's code on this machine. A tab taller than the window scrolls under the tabs, and the footer of the opener, with `Reset`, `Test`, `Close` and `Save`, stays at the foot of the dialog. A notice about the opener opens the dialog on `Code opener`.
+The gear in the header opens `Settings`, a dialog 720px wide at most. It stands 8% of the window from the top, so the tabs stay in place when a tab of another height opens. A content selector at its head holds two tabs. `Picture` holds the settings of this browser for every picture: the layout engine and whether a part under the pointer dims the rest. Each is a row with its name, one line of Body in muted ink that says what it does, and a switch at the end. `Code opener` holds the editor that opens a module's code on this machine. A tab taller than the window scrolls under the tabs, and the footer of the opener, with `Reset`, `Test`, `Close` and `Save`, stays at the foot of the dialog. A notice about the opener opens the dialog on `Code opener`.
 
 ### History dialog
 
