@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-22T03:38:00Z'
+updated_date: '2026-11-22T12:58:00Z'
 labels: []
 dependencies: []
 ordinal: 1144000
@@ -22,3 +23,9 @@ Pictures of many modules are unreadable: this model's 1328 relationships are 78%
 - [ ] #1 Every subtask is Done
 - [ ] #2 This repository's model states a kind and an effect on every relationship, and its pictures read through the default lens are compared with the old ones in the pull request
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner chose 2026-11-22: a reading that names no lens reads through all where the default lens would draw no line, and the legend says the default draws none there. A named lens never gives way. ADR 0095 records it.
+<!-- SECTION:NOTES:END -->

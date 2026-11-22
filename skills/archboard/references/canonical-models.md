@@ -987,7 +987,7 @@ Occupied vaults refuse. Legacy vaults require [migration](legacy-migration.md).
 Choose `--module`, exact `--scope`, repeated `--focus`, `--lens`, or `--hide-kind` for the reading.
 
 A picture is read through a lens: a named question that chooses which relationships draw.
-`--lens <id>` names one. Without it, the picture reads through the vault's default lens, `main` unless the vault names another.
+`--lens <id>` names one. Without it, the picture reads through the vault's default lens, `main` unless the vault names another, or through `all` where the default would draw no line.
 The built-in lenses are `main` (every mutation and all traffic between processes, without dependencies and in-process queries and computes), `effects`, `reads`, `network`, `dependencies`, and `all`.
 A lens keeps every part of its scope. Each relationship that it shows has a drawn line, and the picture says how many lines the lens left out.
 Pass `--lens all` to draw every relationship. `--hide-kind` hides a kind beyond the lens.

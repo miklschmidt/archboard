@@ -130,17 +130,23 @@ function ReadingPicture(props: {
 function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	const { reader } = props;
 	const { model, vault, location, accepted, selection, comparison, page, onPage } = reader;
-	const { reveal, grammar, scope, filters } = location;
+	const { reveal, grammar, scope } = location;
 	const { shown } = accepted;
 	const code = useModelCodeFindings(vault, shown.model);
 	const reporting = useMemo(
 		() => ({ ready: accepted.ready, presentation: null }),
 		[accepted.ready],
 	);
+	// An agent is told the lens the picture is drawn through, which is all where the default drew none.
+	const drawnLens = shown.projection.lens.id;
+	const captured = useMemo(
+		() => ({ ...shown.reading, filters: { ...shown.reading.filters, lens: drawnLens } }),
+		[shown.reading, drawnLens],
+	);
 	const explanation = useModelExplanation(
 		vault,
 		shown.model,
-		shown.reading,
+		captured,
 		accepted.selected,
 		reporting,
 	);
@@ -152,14 +158,14 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	);
 	const revealSelection = useCallback((): void => {
 		const edges = model.relationships.filter((edge) => selection.ids.has(edge.id));
-		const lens = readingLens(model.policy, filters.lens);
+		const lens = readingLens(model.policy, drawnLens);
 		// A relationship that the lens leaves out shows through the lens of every relationship.
 		reveal(
 			[...selection.ids].filter((id) => !behavioralIds.has(id)),
 			edges.map((edge) => edge.kind),
 			!edges.every(lens.draws),
 		);
-	}, [model.relationships, model.policy, filters.lens, selection.ids, reveal, behavioralIds]);
+	}, [model.relationships, model.policy, drawnLens, selection.ids, reveal, behavioralIds]);
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
 	const subjectMenu = useSubjectMenu(reader);
 	useReaderKeys(reader.onMove);

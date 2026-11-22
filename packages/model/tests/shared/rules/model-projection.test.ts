@@ -171,6 +171,32 @@ describe("a lens", () => {
 		expect(reading.leftOut).toBe(0);
 	});
 
+	test("the default lens gives way to every relationship where it would draw no line", () => {
+		const computing = modelOf(
+			[{ id: "system" }, { id: "a", parent: "system" }, { id: "b", parent: "system" }],
+			[
+				{ id: "read", from: "a", to: "b", kind: "call", effect: "query" },
+				{ id: "sum", from: "b", to: "a", kind: "call", effect: "compute" },
+			],
+		);
+		const fallen = projectModel(computing, "system");
+		expect(fallen.lens.id).toBe("all");
+		expect(fallen.emptyLens).toEqual({ id: "main", name: "Main lines" });
+		expect(drawn(fallen)).toEqual(["read", "sum"]);
+		expect(fallen.leftOut).toBe(0);
+		const named = projectModel(computing, "system", null, { lens: "main" });
+		expect(named.lens.id).toBe("main");
+		expect(named.emptyLens).toBeUndefined();
+		expect(named.connections).toHaveLength(0);
+		expect(named.leftOut).toBe(1);
+		const bare = projectModel(
+			modelOf([{ id: "system" }, { id: "a", parent: "system" }], []),
+			"system",
+		);
+		expect(bare.lens.id).toBe("main");
+		expect(bare.emptyLens).toBeUndefined();
+	});
+
 	test("a focus is read through the lens too", () => {
 		const reading = projectModel(model, "system", ["a", "b", "c"], { lens: "reads" });
 		expect(drawn(reading)).toEqual(["fetch", "read"]);

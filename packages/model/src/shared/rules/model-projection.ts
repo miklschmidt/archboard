@@ -10,7 +10,7 @@ import { foldedScope } from "#shared/rules/module-fold.ts";
 import { drawingContent, type DrawnContent } from "#shared/rules/model-drawing.ts";
 import { drawnEnds, drawnLines, joinedLines, strandedCards } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/inspect/rules/container-interface.ts";
-import { readingLens, type ReadingLens } from "#shared/rules/lens.ts";
+import { allLens, readingLens, type ReadingLens } from "#shared/rules/lens.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
@@ -176,29 +176,34 @@ function projectModel(
 		filters,
 	);
 	const frames = expanded.map(({ frame }) => frame);
-	const choices = {
-		lens: readingLens(model.policy, filters.lens),
-		hideKinds: filters.hideKinds,
-		frames,
-		controls,
-	};
 	/**
-	 * Both sides of a comparison read the same opened scope.
+	 * Both sides of a comparison read the same opened scope through the same lens.
 	 * @param content The side to project.
+	 * @param lens The lens to read it through.
 	 * @returns That side's reading.
 	 */
-	const read = (content: VariantContent) =>
-		projectContent(content, opened, focus, standing, choices, visibility);
-	const projection = read(context.depicted);
+	const read = (content: VariantContent, lens: ReadingLens) =>
+		projectContent(
+			content,
+			opened,
+			focus,
+			standing,
+			{ lens, hideKinds: filters.hideKinds, frames, controls },
+			visibility,
+		);
+	const { projection, lens, emptyLens } = drawnThrough(model.policy, filters.lens, (through) =>
+		read(context.depicted, through),
+	);
 	return {
 		...projection,
+		emptyLens,
 		...context,
 		opened,
 		expanded,
 		unopened,
 		unsettled: unsettledSubjects(model, projection.connections),
 		reference,
-		held: heldContent(reference, () => read(context.complete), projection.content),
+		held: heldContent(reference, () => read(context.complete, lens), projection.content),
 		inspection: interfaceOf(
 			context.complete,
 			context.complete.nodes.find((node) => node.id === opened),
@@ -206,6 +211,27 @@ function projectModel(
 		flow: null as ModelFlow | null,
 		content: projection.content,
 	};
+}
+
+/**
+ * The lens a picture draws through. The default lens gives way to every relationship where it
+ * would draw no line; a lens the reader named is a question, and an empty picture answers it.
+ * @param policy The policy in effect.
+ * @param id The lens the reading names, if any.
+ * @param read Reads the picture through a lens.
+ * @returns The reading, the lens it draws through, and the default that drew no line, if any.
+ */
+function drawnThrough<Reading extends { connections: readonly unknown[]; leftOut: number }>(
+	policy: Model["policy"],
+	id: string | undefined,
+	read: (lens: ReadingLens) => Reading,
+) {
+	const named = readingLens(policy, id);
+	const projection = read(named);
+	if (id !== undefined || projection.connections.length > 0 || projection.leftOut === 0)
+		return { projection, lens: named, emptyLens: undefined };
+	const lens = readingLens(policy, allLens());
+	return { projection: read(lens), lens, emptyLens: { id: named.id, name: named.name } };
 }
 
 /**

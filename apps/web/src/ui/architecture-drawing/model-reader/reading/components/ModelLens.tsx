@@ -1,5 +1,6 @@
 // The lens a structural picture is read through: a named question that chooses which of its
-// relationships draw, with how many lines it left out. Every part of the scope stays on the picture.
+// relationships draw, with how many lines it left out, or which default lens drew none here. Every
+// part of the scope stays on the picture.
 
 import { useCallback, type JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
@@ -8,7 +9,7 @@ import { Select } from "@archboard/ui-kit/components";
 /** Inputs for the lens control. */
 interface ModelLensProps {
 	readonly model: Model;
-	readonly projection: Pick<ReturnType<typeof projectModel>, "lens" | "leftOut">;
+	readonly projection: Pick<ReturnType<typeof projectModel>, "lens" | "leftOut" | "emptyLens">;
 	/** Read the picture through another lens. */
 	readonly onSelect: (id: string) => void;
 }
@@ -21,7 +22,7 @@ interface ModelLensProps {
  */
 function ModelLens(props: ModelLensProps): JSX.Element {
 	const { model, projection, onSelect } = props;
-	const { lens, leftOut } = projection;
+	const { lens, leftOut, emptyLens } = projection;
 	const choose = useCallback(
 		(value: string | null): void => {
 			if (value !== null && value !== lens.id) onSelect(value);
@@ -47,13 +48,22 @@ function ModelLens(props: ModelLensProps): JSX.Element {
 					))}
 				</Select.Content>
 			</Select>
-			{leftOut > 0 && (
+			{(leftOut > 0 || emptyLens !== undefined) && (
 				<span data-slot="model-lens-left-out" className="text-body text-muted-foreground truncate">
-					{leftOut === 1 ? "1 line left out" : `${leftOut} lines left out`}
+					{emptyLens === undefined ? leftOutNote(leftOut) : `${emptyLens.name} draws none here`}
 				</span>
 			)}
 		</li>
 	);
+}
+
+/**
+ * The note of the lines a lens left out.
+ * @param count How many it left out.
+ * @returns The note.
+ */
+function leftOutNote(count: number): string {
+	return count === 1 ? "1 line left out" : `${count} lines left out`;
 }
 
 export { ModelLens };

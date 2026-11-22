@@ -73,6 +73,13 @@ line that keeps one of its relationships counts nothing. At zero there is no not
 in the picture even when the picture has no legend. Where the lens control stands, in the caption
 or in the legend, is decided by screenshots of both in the build.
 
+Where the default lens would draw no line and `all` would draw some, a reading that names no lens
+reads through `all`, and the legend says that the default draws none there: `Main lines draws
+none here`. The owner decided this on 2026-11-22 (TASK-663), because in this repository the
+default drew nothing in modules that only compute, such as Painting. A lens the reader names is a
+question, and an empty picture with its note answers it, so a named lens never gives way. The
+reading records the lens it drew, `all`, so its recipe redraws the same picture.
+
 `model render` and `model rasterize` take `--lens <id>`, by id only. An unknown lens is refused
 with the list of lenses. A sequence or a flowchart refuses `--lens`, because it draws every
 participant and step of its flow. `--hide-kind` stays and hides kinds beyond the lens.
