@@ -16,7 +16,7 @@ const LONGEST_PAUSE_MS = 250;
 
 interface PollOptions {
 	/** The caller's own signal: when it aborts, the wait rejects with its reason. */
-	readonly signal?: AbortSignal;
+	readonly signal?: AbortSignal | undefined;
 }
 
 /** The end of the wait, as one timer that carries the wait's name. */

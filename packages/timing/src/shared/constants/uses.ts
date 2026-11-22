@@ -20,10 +20,14 @@ interface PolledUse {
 	readonly waitingFor: string;
 }
 
-/** A delay before something runs once, which `after` schedules. */
+/**
+ * A delay before something runs once, which `after` schedules. A delay whose end is a timeout,
+ * such as a child that never said it was ready, also says what was waited for.
+ */
 interface DelayUse {
 	readonly use: "delay";
 	readonly ms: number;
+	readonly waitingFor?: string;
 }
 
 /** A cadence something runs at, which `every` keeps. */
@@ -87,10 +91,11 @@ function polled(ms: number, waitingFor: string): PolledUse {
 /**
  * Declare a delay before something runs once.
  * @param ms The delay.
+ * @param waitingFor What a timeout at its end waited for, when its end is one.
  * @returns The declaration.
  */
-function delay(ms: number): DelayUse {
-	return { use: "delay", ms };
+function delay(ms: number, waitingFor?: string): DelayUse {
+	return waitingFor === undefined ? { use: "delay", ms } : { use: "delay", ms, waitingFor };
 }
 
 /**

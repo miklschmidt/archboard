@@ -52,7 +52,7 @@ function markAppServerReady(
 	record.ready = true;
 	record.strictHint = false;
 	record.strictTail = "";
-	clearReadiness(state, record);
+	clearReadiness(record);
 	publish(state);
 	resolvePendingStart(state);
 }

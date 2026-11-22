@@ -3,19 +3,20 @@
 // cleanup has a deadline (TASK-436.02). The embeds check fetches the vault of a
 // repository that this machine has no checkout of, over the network.
 
-import { durations } from "#shared/constants/durations.ts";
+import { handed, span } from "#shared/constants/uses.ts";
 
-/** `CHECK_MS.vaultFetch`, named once so that the stale age can be a number of fetches. */
+/** `check.vaultFetch`, named once so that the stale age can be a number of fetches. */
 const VAULT_FETCH_MS = 60_000;
 
 /** The code check's language servers and the embeds check's fetches. */
-const CHECK_MS = durations({
+const CHECKS = {
 	/**
 	 * From shutdown to process exit, then kill the server and its process group.
 	 * No further answer is needed during cleanup. TypeScript 7.0.2 took 19 to 27 ms
 	 * on 2026-10-06; 2 seconds lets normal shutdown finish before escalation.
+	 * Handed to the language server session, which a caller may shorten.
 	 */
-	languageServerStop: 2000,
+	"check.languageServerStop": handed(2000),
 	/**
 	 * Outer bound for one network Git command of the embeds check: asking a remote
 	 * where its default branch is, or fetching that commit's vault shallow and
@@ -24,26 +25,17 @@ const CHECK_MS = durations({
 	 * a stalled connection, not a person typing. And the `.archboard/vault`
 	 * directory of one commit, a few megabytes at most, must still arrive over a
 	 * slow link. A command past it counts as a failed fetch, and the check reads
-	 * the cache.
+	 * the cache. Handed to the Git command runner.
 	 */
-	vaultFetch: VAULT_FETCH_MS,
+	"check.vaultFetch": handed(VAULT_FETCH_MS),
 	/**
 	 * Age past which a fetch's `.incoming-` directory in the cache was left by a
 	 * check that was killed, and is removed. It pulls against the longest fetch
-	 * still running: two network commands of `vaultFetch` and three local ones of
-	 * `GIT_MS.command`, each shorter than a network one. A directory is never
+	 * still running: two network commands of `check.vaultFetch` and three local ones of
+	 * `git.command`, each shorter than a network one. A directory is never
 	 * younger than its last change, so one this old is no running fetch's.
 	 */
-	fetchIncomingStale: 3 * VAULT_FETCH_MS,
-});
+	"check.fetchIncomingStale": span(3 * VAULT_FETCH_MS),
+};
 
-/**
- * One duration of the checks.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function checkMs(key: keyof typeof CHECK_MS): number {
-	return CHECK_MS[key];
-}
-
-export { checkMs };
+export { CHECKS };

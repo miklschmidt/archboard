@@ -28,8 +28,6 @@ test("a failed stop barrier resumes only exact captured members and refuses grou
 	const capturedMember = observed(42, "darwin:member", "stopped");
 	const capturedStaleMember = observed(43, "darwin:stale", "stopped");
 	const operations: GitGroupTerminationOperations = {
-		now: () => 0,
-		wait: async () => undefined,
 		members: () => {
 			census += 1;
 			if (census > 1) {
@@ -83,8 +81,6 @@ test("a child whose fork completes after the group reads as stopped is stopped b
 	let childStopped = false;
 	let census = 0;
 	const operations: GitGroupTerminationOperations = {
-		now: () => 0,
-		wait: async () => undefined,
 		members: () => {
 			census += 1;
 			const leader = observed(41, "darwin:leader", census === 1 ? "live" : "stopped");
@@ -109,8 +105,6 @@ test("a child whose fork completes after the group reads as stopped is stopped b
 test("an already quiescent group completes without requiring a leader", async () => {
 	let signalCalls = 0;
 	const operations: GitGroupTerminationOperations = {
-		now: () => 0,
-		wait: async () => undefined,
 		members: () => [],
 		signalGroup: () => {
 			signalCalls += 1;

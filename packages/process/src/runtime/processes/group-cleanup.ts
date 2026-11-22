@@ -1,18 +1,10 @@
 import { awaitFrozenGroup } from "#runtime/processes/observation.ts";
-import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
+import { pollUntil, TimedOut } from "@archboard/timing";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
 	CodexProcessGroupOperations,
 } from "#runtime/processes/codex-group.ts";
-
-type Timer = ReturnType<typeof setTimeout>;
-
-interface ProcessGroupCleanupClock {
-	readonly now: () => number;
-	readonly schedule: (callback: () => void, delayMs: number) => Timer;
-	readonly cancel: (timer: Timer) => void;
-}
 
 interface ProcessGroupCleanupDiagnostics {
 	readonly failure: (message: string) => Error;
@@ -21,204 +13,38 @@ interface ProcessGroupCleanupDiagnostics {
 
 interface ProcessGroupCleanupInput {
 	readonly identity: CodexProcessGroupIdentity;
-	readonly childClosed: Promise<unknown>;
-	readonly deadlineAtMs: number;
+	/** The composed shutdown: when it aborts, cleanup kills at once and proves what is left. */
+	readonly signal: AbortSignal;
 }
 
-interface ProcessGroupDeadline {
-	readonly waitForClosedOrAt: (
-		childClosed: Promise<unknown>,
-		deadlineAtMs: number,
-	) => Promise<"closed" | "time">;
-	readonly settleBeforeDeadline: (
-		work: readonly Promise<void>[],
-		deadlineAtMs: number,
-	) => Promise<PromiseSettledResult<void>[]>;
-}
-
-interface ProcessGroupCleanup extends ProcessGroupDeadline {
+interface ProcessGroupCleanup {
 	readonly cleanup: (input: ProcessGroupCleanupInput) => Promise<void>;
 }
 
 /**
- * A one-way latch shared between a scheduled timer and the code that
- * scheduled it. It is an object rather than a local boolean because an
- * injected scheduler may fire the callback synchronously, before the timer
- * handle is even assigned, and the scheduling code must observe that.
- * @returns The latch with its settle and inspection operations.
+ * Wait out one step of cleanup. The step's own bound running out, or the composed shutdown's,
+ * only moves cleanup on to its next step: neither proves anything about the group.
+ * @param step The step.
  */
-function createSettleLatch(): {
-	readonly settle: () => boolean;
-	readonly isSettled: () => boolean;
-} {
-	const latch = { settled: false };
-	return Object.freeze({
-		/**
-		 * Flip the latch.
-		 * @returns True the first time, false once already settled.
-		 */
-		settle: (): boolean => {
-			if (latch.settled) return false;
-			latch.settled = true;
-			return true;
-		},
-		/**
-		 * Read the latch.
-		 * @returns True once settled.
-		 */
-		isSettled: (): boolean => latch.settled,
-	});
-}
-
-/**
- * Schedule a callback, cancelling it immediately when the latch settled
- * synchronously during scheduling, and rejecting when scheduling itself fails.
- * @param clock - The injected clock.
- * @param latch - The latch shared with the callback.
- * @param callback - What to run when the delay elapses.
- * @param delayMs - The delay.
- * @param reject - Called with the scheduling failure when the latch is still open.
- * @returns The timer handle, or undefined when scheduling failed.
- */
-function scheduleGuarded(
-	clock: ProcessGroupCleanupClock,
-	latch: ReturnType<typeof createSettleLatch>,
-	callback: () => void,
-	delayMs: number,
-	reject: (error: unknown) => void,
-): Timer | undefined {
+async function waitOut(step: Promise<unknown>): Promise<void> {
 	try {
-		const timer = clock.schedule(callback, delayMs);
-		if (latch.isSettled()) clock.cancel(timer);
-		return timer;
+		await step;
 	} catch (error) {
-		if (latch.settle()) reject(error);
-		return undefined;
+		if (!(error instanceof TimedOut)) throw error;
 	}
 }
 
 /**
- * Own the TERM-then-KILL escalation of one Codex process group against the
- * composed shutdown deadline, using only the injected clock and group
- * operations so tests can drive it deterministically.
+ * Own the TERM-then-KILL escalation of one Codex process group within the
+ * composed shutdown, on the ambient timers, so tests drive it with fake timers.
  * @param operations - Group capture, inspection and signalling.
- * @param clock - Time source and timer scheduling.
  * @param diagnostics - Failure construction with redaction.
- * @returns The cleanup and deadline-waiting operations.
+ * @returns The cleanup.
  */
 function createProcessGroupCleanup(
 	operations: CodexProcessGroupOperations,
-	clock: ProcessGroupCleanupClock,
 	diagnostics: ProcessGroupCleanupDiagnostics,
 ): ProcessGroupCleanup {
-	/**
-	 * Resolve once the clock reaches the given instant.
-	 * @param deadlineAtMs - The instant to wait for.
-	 * @returns A promise settled at or after the instant.
-	 */
-	const waitUntil = (deadlineAtMs: number): Promise<void> => {
-		const delayMs = Math.max(0, deadlineAtMs - clock.now());
-		if (delayMs === 0) {
-			return Promise.resolve();
-		}
-		return new Promise<void>((resolve, reject) => {
-			const latch = createSettleLatch();
-			let timer: Timer | undefined;
-			/**
-			 * Resolve once and release the timer.
-			 */
-			const finish = (): void => {
-				if (!latch.settle()) return;
-				if (timer !== undefined) clock.cancel(timer);
-				resolve();
-			};
-			timer = scheduleGuarded(clock, latch, finish, delayMs, reject);
-		});
-	};
-
-	/**
-	 * Race the child's close against an instant.
-	 * @param childClosed - Settles when the child closes.
-	 * @param deadlineAtMs - The instant to stop waiting.
-	 * @returns Which happened first.
-	 */
-	const waitForClosedOrAt = (
-		childClosed: Promise<unknown>,
-		deadlineAtMs: number,
-	): Promise<"closed" | "time"> => {
-		const delayMs = Math.max(0, deadlineAtMs - clock.now());
-		if (delayMs === 0) {
-			return Promise.resolve("time");
-		}
-		return new Promise<"closed" | "time">((resolve, reject) => {
-			const latch = createSettleLatch();
-			let timer: Timer | undefined;
-			/**
-			 * Resolve once with whichever event came first and release the timer.
-			 * @param result - The winning event.
-			 */
-			const finish = (result: "closed" | "time"): void => {
-				if (!latch.settle()) return;
-				if (timer !== undefined) clock.cancel(timer);
-				resolve(result);
-			};
-			void childClosed.then(() => {
-				finish("closed");
-				return null;
-			});
-			timer = scheduleGuarded(clock, latch, () => finish("time"), delayMs, reject);
-		});
-	};
-
-	/**
-	 * Await every shutdown task, failing the whole shutdown when the composed
-	 * deadline expires first.
-	 * @param work - The shutdown tasks.
-	 * @param deadlineAtMs - The composed deadline.
-	 * @returns The settled results when all finished in time.
-	 */
-	const settleBeforeDeadline = async (
-		work: readonly Promise<void>[],
-		deadlineAtMs: number,
-	): Promise<PromiseSettledResult<void>[]> => {
-		const all = Promise.allSettled(work);
-		const latch = createSettleLatch();
-		let timer: Timer | undefined;
-		const deadline = new Promise<never>((_resolve, reject) => {
-			/**
-			 * Reject the race once the deadline passes.
-			 */
-			const fail = (): void => {
-				if (!latch.settle()) return;
-				reject(
-					diagnostics.failure(
-						"The composed Codex shutdown deadline expired. Recovery: inspect retained process ownership and retry stop.",
-					),
-				);
-			};
-			timer = scheduleGuarded(
-				clock,
-				latch,
-				fail,
-				Math.max(0, deadlineAtMs - clock.now()),
-				(error) =>
-					reject(
-						diagnostics.failure(
-							`Could not schedule the composed Codex shutdown deadline: ${diagnostics.safeCauseMessage(error)}.`,
-						),
-					),
-			);
-		});
-		try {
-			return await Promise.race([all, deadline]);
-		} finally {
-			latch.settle();
-			if (timer !== undefined) {
-				clock.cancel(timer);
-			}
-		}
-	};
-
 	/**
 	 * Inspect the group, reading an inspection failure as unproven.
 	 * @param identity - The owned group.
@@ -298,10 +124,6 @@ function createProcessGroupCleanup(
 	 * @param input - The group, its close promise and the composed deadline.
 	 */
 	const freezeGroup = async (input: ProcessGroupCleanupInput): Promise<void> => {
-		const freezeDeadlineAtMs = Math.min(
-			input.deadlineAtMs,
-			clock.now() + codexProcessMs("groupFreeze"),
-		);
 		try {
 			await awaitFrozenGroup(
 				{
@@ -314,16 +136,9 @@ function createProcessGroupCleanup(
 					stop: () => {
 						operations.signal(input.identity, "SIGSTOP");
 					},
-					now: clock.now,
-					/**
-					 * Pause one poll on the injected clock, never past the freeze bound.
-					 * @param ms - The pause.
-					 * @returns A promise settled after the pause.
-					 */
-					wait: (ms) => waitUntil(Math.min(freezeDeadlineAtMs, clock.now() + ms)),
-					pollMs: processGroupPollMs(),
 				},
-				freezeDeadlineAtMs,
+				"codex.groupFreeze",
+				input.signal,
 			);
 		} catch {
 			// KILL still reaches every member the freeze did not.
@@ -361,21 +176,23 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * Give a TERMed group its grace period, ending early only when the group has gone.
-	 * @param input - The group, its close promise and the composed deadline.
+	 * Give a TERMed group its grace period, ending early once the group has gone.
+	 * @param input - The group and the composed shutdown.
 	 * @returns False when the group is already quiescent, so nothing needs escalating.
 	 */
 	const awaitTermGrace = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + codexProcessMs("termGrace"));
-		const firstEvent = await waitForClosedOrAt(input.childClosed, termAtMs);
-		if (!stillOwned(input.identity, "finish TERM cleanup of the Codex process group")) return false;
-		if (firstEvent === "closed" && clock.now() < termAtMs) {
-			await waitUntil(termAtMs);
-		}
-		if (clock.now() < termAtMs) {
-			await waitUntil(termAtMs);
-		}
-		return true;
+		let gone = false;
+		await waitOut(
+			pollUntil(
+				"codex.termGrace",
+				() => {
+					gone = !stillOwned(input.identity, "finish TERM cleanup of the Codex process group");
+					return gone ? true : undefined;
+				},
+				{ signal: input.signal },
+			),
+		);
+		return !gone;
 	};
 
 	/**
@@ -392,32 +209,28 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * Wait for a killed group to close, then poll it until it is quiescent or the
-	 * composed deadline expires.
-	 * @param input - The group, its close promise and the composed deadline.
-	 * @returns False when the group closed and ownership has lapsed, so nothing remains to check.
+	 * Poll a killed group until it is quiescent, while the composed shutdown still allows it; one
+	 * that has already ended leaves the group to the final inspection.
+	 * @param input - The group and the composed shutdown.
+	 * @returns False when the group is quiescent, so nothing remains to check.
 	 */
 	const drainKilledGroup = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
-		while (clock.now() < input.deadlineAtMs) {
-			if (!needsKillDrain(input.identity, "verify KILL cleanup of the Codex process group")) {
-				return false;
-			}
-			// oxlint-disable-next-line no-await-in-loop -- each observation follows the prior pause in one bounded poll
-			await waitUntil(Math.min(input.deadlineAtMs, clock.now() + processGroupPollMs()));
-		}
-		return true;
-	};
-
-	/**
-	 * Drain a killed group while the composed deadline still allows it; a deadline that has
-	 * already passed leaves the group to the final inspection.
-	 * @param input - The group, its close promise and the composed deadline.
-	 * @returns False when the group closed and ownership has lapsed.
-	 */
-	const drainIfTimeRemains = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		if (clock.now() >= input.deadlineAtMs) return true;
-		return drainKilledGroup(input);
+		if (input.signal.aborted) return true;
+		let drained = false;
+		await waitOut(
+			pollUntil(
+				"codex.killDrain",
+				() => {
+					drained = !needsKillDrain(
+						input.identity,
+						"verify KILL cleanup of the Codex process group",
+					);
+					return drained ? true : undefined;
+				},
+				{ signal: input.signal },
+			),
+		);
+		return !drained;
 	};
 
 	/**
@@ -429,14 +242,14 @@ function createProcessGroupCleanup(
 		if (!initiateTerm(input)) return;
 		if (!(await awaitTermGrace(input))) return;
 		if (!(await escalateKill(input))) return;
-		if (!(await drainIfTimeRemains(input))) return;
+		if (!(await drainKilledGroup(input))) return;
 		const status = inspect(input.identity);
 		if (status !== "quiescent") {
 			throw groupFailure(status, "complete composed Codex shutdown");
 		}
 	};
 
-	return Object.freeze({ cleanup, settleBeforeDeadline, waitForClosedOrAt });
+	return Object.freeze({ cleanup });
 }
 
 export { createProcessGroupCleanup };

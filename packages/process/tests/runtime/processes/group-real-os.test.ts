@@ -1,22 +1,26 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 
-import { codexProcessMs, processGroupPollMs } from "@archboard/timing";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 } from "#runtime/processes/codex-group.ts";
 import { readProcessObservation } from "#runtime/processes/observation.ts";
 
+/** How long a killed real group may take to leave, as a test budget: the product's composed shutdown. */
+const TEST_CLEANUP_MS = 10_000;
+/** The pause between two looks at a real group. */
+const TEST_POLL_MS = 10;
+
 async function waitForQuiescent(
 	identity: CodexProcessGroupIdentity,
-	deadlineMs = codexProcessMs("composedShutdown"),
+	deadlineMs = TEST_CLEANUP_MS,
 ): Promise<void> {
 	const deadline = Date.now() + deadlineMs;
 	const operations = createCodexProcessGroupOperations();
 	while (Date.now() < deadline) {
 		if (operations.inspect(identity) === "quiescent") return;
-		await Bun.sleep(processGroupPollMs());
+		await Bun.sleep(TEST_POLL_MS);
 	}
 	throw new Error(
 		`Process group ${identity.pgid} did not become quiescent before cleanup deadline.`,
@@ -35,7 +39,7 @@ async function waitForChildClose(child: ChildProcess): Promise<void> {
 			reject(
 				new Error(`Detached child ${String(child.pid)} did not close before cleanup deadline.`),
 			);
-		}, codexProcessMs("composedShutdown"));
+		}, TEST_CLEANUP_MS);
 		child.once("close", onClose);
 	});
 }
@@ -108,5 +112,5 @@ test(
 			}
 		}
 	},
-	codexProcessMs("composedShutdown") + processGroupPollMs() * 4,
+	TEST_CLEANUP_MS + TEST_POLL_MS * 4,
 );

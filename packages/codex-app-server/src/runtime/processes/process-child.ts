@@ -1,4 +1,4 @@
-import { codexProcessMs, codexRestartDelayMs, codexSessionMs } from "@archboard/timing";
+import { after, backoff, TimedOut, within } from "@archboard/timing";
 import {
 	CodexProcessError,
 	type ChildExit,
@@ -42,24 +42,25 @@ function markGroupQuiescent(state: ProcessOwnerState, record: ChildRecord): void
  * Start, or join, the process-group cleanup for a child generation.
  * @param state - The owner state.
  * @param record - The child generation.
- * @param deadlineAtMs - The composed shutdown deadline.
+ * @param signal - A stop's composed shutdown, which the cleanup joins; without it, the
+ * cleanup runs within a composed shutdown of its own.
  * @returns Settles when the group is quiescent, rejects when it cannot be proved so.
  */
 function ensureGroupCleanup(
 	state: ProcessOwnerState,
 	record: ChildRecord,
-	deadlineAtMs: number,
+	signal?: AbortSignal,
 ): Promise<void> {
 	if (record.groupQuiescent) {
 		markGroupQuiescent(state, record);
 		return Promise.resolve();
 	}
 	if (record.groupCleanup) return record.groupCleanup;
-	const pending = state.processGroupCleanup.cleanup({
-		identity: record.group,
-		childClosed: record.closed,
-		deadlineAtMs,
-	});
+	const pending = within(
+		"codex.composedShutdown",
+		(composed) => state.processGroupCleanup.cleanup({ identity: record.group, signal: composed }),
+		{ signal },
+	);
 	record.groupCleanup = pending;
 	void pending.then(
 		() => markGroupQuiescent(state, record),
@@ -104,14 +105,9 @@ function releaseStorageAfterTerminalCleanup(state: ProcessOwnerState): void {
  * the terminal owner has nothing left.
  * @param state - The owner state.
  * @param record - The child generation.
- * @param deadlineAtMs - The composed shutdown deadline.
  */
-function observeGroupCleanup(
-	state: ProcessOwnerState,
-	record: ChildRecord,
-	deadlineAtMs: number,
-): void {
-	const cleanup = ensureGroupCleanup(state, record, deadlineAtMs);
+function observeGroupCleanup(state: ProcessOwnerState, record: ChildRecord): void {
+	const cleanup = ensureGroupCleanup(state, record);
 	void cleanup.then(
 		() => {
 			releaseStorageAfterTerminalCleanup(state);
@@ -176,10 +172,10 @@ function scheduleRestart(
 	exit: ChildExit,
 	classification: "early_exit" | "crash",
 ): void {
-	const delayMs = codexRestartDelayMs(state.restartAttempt);
+	const delayMs = backoff("codex.restart", state.restartAttempt);
 	state.restartAttempt += 1;
 	state.restartDelayMs = delayMs;
-	state.nextRestartAtMs = state.dependencies.now() + delayMs;
+	state.nextRestartAtMs = Date.now() + delayMs;
 	state.lastFailure = Object.freeze({
 		code: classification,
 		terminal: false,
@@ -189,17 +185,11 @@ function scheduleRestart(
 		),
 	});
 	setState(state, "backoff");
-	try {
-		state.restartTimer = state.dependencies.schedule(() => runScheduledRestart(state), delayMs);
-	} catch (cause) {
-		terminalFailure(
-			state,
-			shutdownError(
-				state,
-				`Could not schedule the Codex restart: ${safeCauseMessage(state, cause)}.`,
-			),
-		);
-	}
+	const restart = setTimeout(() => runScheduledRestart(state), delayMs);
+	/** Cancel the scheduled restart. */
+	state.restartTimer = () => {
+		clearTimeout(restart);
+	};
 }
 
 /**
@@ -257,11 +247,7 @@ function recoverFromExit(
 ): void {
 	if (!record.ready) rejectPendingStart(state, exitError(state, "early_exit", exit, false));
 	setState(state, "group_cleanup");
-	const cleanup = ensureGroupCleanup(
-		state,
-		record,
-		codexProcessMs("composedShutdown", state.dependencies.now()),
-	);
+	const cleanup = ensureGroupCleanup(state, record);
 	void cleanup.then(
 		() => {
 			if (!state.stopping && state.state === "group_cleanup") {
@@ -282,7 +268,7 @@ function recoverFromExit(
 function handleClosed(state: ProcessOwnerState, record: ChildRecord, exit: ChildExit): void {
 	if (record.closedHandled) return;
 	record.closedHandled = true;
-	clearReadiness(state, record);
+	clearReadiness(record);
 	state.diagnostics.finalize();
 	record.resolveClosed(exit);
 	if (state.current === record) state.current = undefined;
@@ -308,9 +294,8 @@ function routeClosedChild(
 	exit: ChildExit,
 	classification: CodexProcessExit["classification"],
 ): void {
-	const deadlineAtMs = codexProcessMs("composedShutdown", state.dependencies.now());
 	if (classification === "requested" || state.state === "terminal_failure") {
-		observeGroupCleanup(state, record, deadlineAtMs);
+		observeGroupCleanup(state, record);
 		return;
 	}
 	if (classification === "strict_config") {
@@ -324,7 +309,7 @@ function routeClosedChild(
 				" Check config.toml and the exact strict argv.",
 			),
 		);
-		observeGroupCleanup(state, record, deadlineAtMs);
+		observeGroupCleanup(state, record);
 		return;
 	}
 	recoverFromExit(state, record, exit, classification);
@@ -344,7 +329,7 @@ function readinessTimeout(state: ProcessOwnerState, record: ChildRecord): void {
 		new CodexProcessError({
 			code: "startup_timeout",
 			terminal: true,
-			message: `The Codex app-server spawned but did not acknowledge typed readiness within ${codexSessionMs("requestSettlement")} ms. Recovery: verify the app-server handshake and retry start.`,
+			message: `${new TimedOut("codex.readiness").message} Recovery: verify the app-server handshake and retry start.`,
 		}),
 	);
 	void state.hooks.stop().catch(() => undefined);
@@ -392,22 +377,7 @@ function handleSpawned(state: ProcessOwnerState, record: ChildRecord): void {
 	if (state.stopping) return;
 	setState(state, "running");
 	if (!stillRunning(state, record)) return;
-	try {
-		record.readinessTimer = state.dependencies.schedule(
-			() => readinessTimeout(state, record),
-			codexSessionMs("requestSettlement"),
-		);
-	} catch (cause) {
-		terminalFailure(
-			state,
-			shutdownError(
-				state,
-				`Could not schedule the Codex readiness timeout: ${safeCauseMessage(state, cause)}.`,
-			),
-		);
-		void state.hooks.stop().catch(() => undefined);
-		return;
-	}
+	record.readinessTimer = after("codex.readiness", () => readinessTimeout(state, record));
 	announceChild(state, record);
 }
 

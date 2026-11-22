@@ -13,7 +13,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
 import { readProcessObservation } from "#runtime/processes/observation.ts";
 import {
 	captureDetachedProcessGroup,
@@ -22,6 +21,11 @@ import {
 } from "#runtime/processes/group.ts";
 import { git } from "#runtime/processes/git-command.ts";
 
+/**
+ * The product's grace for a terminated Git group, as a test budget: a group the product cleans up
+ * leaves within it. A test number beside the product's, which the test cannot read.
+ */
+const TEST_GIT_GROUP_CLEANUP_MS = 3000;
 /** Ceiling for the fake Git child to publish its startup marker; it normally does so at once. */
 const TEST_GIT_FIXTURE_START_MS = 5000;
 /**
@@ -81,7 +85,7 @@ function recordedPid(file: string): number {
 }
 
 async function expectPidAbsent(pid: number): Promise<void> {
-	const deadline = gitGroupCleanupDeadline(Date.now());
+	const deadline = Date.now() + TEST_GIT_GROUP_CLEANUP_MS;
 	while (readProcessObservation(pid) !== undefined && Date.now() < deadline) {
 		await Bun.sleep(5);
 	}
@@ -299,7 +303,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			await expect(git(root, [mode, marker], { executable })).rejects.toMatchObject({
 				failure: "output",
 			});
-			expect(performance.now() - started).toBeLessThan(gitMs("groupCleanup"));
+			expect(performance.now() - started).toBeLessThan(TEST_GIT_GROUP_CLEANUP_MS);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -325,7 +329,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 		await expect(git(root, ["descendant", descendantMarker], { executable })).rejects.toMatchObject(
 			{ failure: "cleanup" },
 		);
-		expect(performance.now() - descendantStarted).toBeLessThan(gitMs("groupCleanup"));
+		expect(performance.now() - descendantStarted).toBeLessThan(TEST_GIT_GROUP_CLEANUP_MS);
 		await waitForFile(`${descendantMarker}.descendant`);
 		await expectPidAbsent(recordedPid(`${descendantMarker}.leader`));
 		await expectPidAbsent(recordedPid(`${descendantMarker}.descendant`));
@@ -358,7 +362,7 @@ async function exerciseGitLifecycle(): Promise<void> {
 			if (outcome.kind === "rejected") {
 				expect(outcome.error).toMatchObject({ failure });
 			}
-			expect(performance.now() - started).toBeLessThan(gitMs("groupCleanup"));
+			expect(performance.now() - started).toBeLessThan(TEST_GIT_GROUP_CLEANUP_MS);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
 
@@ -404,7 +408,7 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 		}
 		const outcome = await Promise.race([
 			stalledOutcome,
-			Bun.sleep(3 * gitMs("groupCleanup")).then(() => ({ kind: "deadline" as const })),
+			Bun.sleep(3 * TEST_GIT_GROUP_CLEANUP_MS).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(outcome.kind).toBe("rejected");
 		if (outcome.kind === "rejected") {

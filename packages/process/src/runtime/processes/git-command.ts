@@ -8,7 +8,7 @@
 
 import type { Subprocess } from "bun";
 
-import { gitGroupCleanupDeadline, gitMs } from "@archboard/timing";
+import { ms, pollUntil, TimedOut, within } from "@archboard/timing";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
@@ -28,16 +28,11 @@ import type { BoundedDrain, DrainOutcome } from "#runtime/processes/git-output.t
  * @returns True when the group disappeared in time.
  */
 async function processGroupDisappeared(pgid: number): Promise<boolean> {
-	const deadline = gitGroupCleanupDeadline(Date.now());
-	for (;;) {
-		if (!processGroupExists(pgid)) {
-			return true;
-		}
-		if (Date.now() >= deadline) {
-			return false;
-		}
-		// oxlint-disable-next-line no-await-in-loop -- polling one interval at a time
-		await new Promise((resolve) => setTimeout(resolve, gitMs("groupPoll")));
+	try {
+		return await pollUntil("git.groupGone", () => (processGroupExists(pgid) ? undefined : true));
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
 	}
 }
 
@@ -158,28 +153,18 @@ interface RunHandles {
  * @returns Every outcome, in order.
  */
 async function settleRun(run: GitRun, handles: RunHandles): Promise<Settled> {
-	let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
+	const complete = Promise.all([handles.exited, handles.stdout.result, handles.stderr.result]);
+	const raced = await Promise.race([complete, run.terminationSignal.then(() => null)]);
+	if (raced !== null) return raced;
 	try {
-		const complete = Promise.all([handles.exited, handles.stdout.result, handles.stderr.result]);
-		const cleanupExpired = run.terminationSignal.then(
-			() =>
-				new Promise<null>((resolve) => {
-					cleanupTimer = setTimeout(() => resolve(null), gitMs("groupCleanup"));
-				}),
-		);
-		const raced = await Promise.race([complete, cleanupExpired]);
-		if (raced !== null) {
-			return raced;
-		}
-		const cancellation = new Error("Git process-group cleanup exceeded its grace.");
-		run.termination ??= { failure: "cleanup", cause: cancellation };
-		await Promise.all([handles.stdout.cancel(cancellation), handles.stderr.cancel(cancellation)]);
-		return await complete;
-	} finally {
-		if (cleanupTimer !== undefined) {
-			clearTimeout(cleanupTimer);
-		}
+		return await within("git.groupCleanup", () => complete);
+	} catch (error) {
+		if (!(error instanceof TimedOut)) throw error;
 	}
+	const cancellation = new Error("Git process-group cleanup exceeded its grace.");
+	run.termination ??= { failure: "cleanup", cause: cancellation };
+	await Promise.all([handles.stdout.cancel(cancellation), handles.stderr.cancel(cancellation)]);
+	return complete;
 }
 
 /**
@@ -358,7 +343,7 @@ async function settleWithLimits(command: RunningCommand, options: GitOptions): P
 	const timeout =
 		options.timeoutMs === null
 			? undefined
-			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? gitMs("command"));
+			: setTimeout(() => run.terminate("timeout"), options.timeoutMs ?? ms("git.command"));
 	/** End the command because the caller gave up on it. */
 	const abort = (): void => {
 		run.terminate("aborted");

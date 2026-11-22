@@ -1,3 +1,5 @@
+import { type Polled, pollUntil, TimedOut } from "@archboard/timing";
+
 /** The part of a process observation that decides whether a group is frozen. */
 interface GroupMember {
 	readonly pid: number;
@@ -11,10 +13,6 @@ interface FrozenGroupSeam {
 	readonly census: () => readonly GroupMember[];
 	/** Send SIGSTOP to the whole group. */
 	readonly stop: () => void;
-	readonly now: () => number;
-	readonly wait: (ms: number) => Promise<void>;
-	/** The gap between two censuses. */
-	readonly pollMs: number;
 }
 
 /**
@@ -42,25 +40,33 @@ function stoppedMembership(members: readonly GroupMember[]): string | undefined 
  * SIGKILL sent to the group. So the group counts as frozen only when
  * two censuses one poll apart find the same members, all of them stopped. A
  * kill sent after this returns reaches every member there can be.
- * @param seam The census, stop signal, clock and wait.
- * @param deadlineAtMs The instant after which the group is given up as unfrozen.
- * @returns True once the group is frozen, false when the deadline passed first.
- * @throws {Error} When a census or signal fails.
+ * @param seam The census and the stop signal.
+ * @param wait How long the group may take to freeze.
+ * @param signal An outer wait that ends this one with it.
+ * @returns True once the group is frozen, false when the wait ran out first.
+ * @throws {Error} When a census or signal fails, or with the outer wait's reason.
  */
-async function awaitFrozenGroup(seam: FrozenGroupSeam, deadlineAtMs: number): Promise<boolean> {
+async function awaitFrozenGroup(
+	seam: FrozenGroupSeam,
+	wait: Polled,
+	signal?: AbortSignal,
+): Promise<boolean> {
 	let frozen: string | undefined;
-	for (;;) {
-		const census = stoppedMembership(seam.census());
-		if (census !== undefined && census === frozen) {
-			return true;
-		}
-		frozen = census;
-		if (seam.now() >= deadlineAtMs) {
-			return false;
-		}
-		if (census === undefined) seam.stop();
-		// oxlint-disable-next-line no-await-in-loop -- a process group is sampled until the bounded barrier
-		await seam.wait(seam.pollMs);
+	try {
+		return await pollUntil(
+			wait,
+			() => {
+				const census = stoppedMembership(seam.census());
+				if (census !== undefined && census === frozen) return true;
+				frozen = census;
+				if (census === undefined) seam.stop();
+				return undefined;
+			},
+			{ signal },
+		);
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
 	}
 }
 

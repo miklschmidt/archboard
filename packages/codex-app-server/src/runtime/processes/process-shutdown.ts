@@ -1,4 +1,4 @@
-import { codexProcessMs } from "@archboard/timing";
+import { TimedOut, within } from "@archboard/timing";
 import { ensureGroupCleanup } from "#runtime/processes/process-child.ts";
 import type {
 	CodexProcessError,
@@ -45,37 +45,44 @@ function closeStdin(
 
 /**
  * Let the current child consume stdin EOF before signalling its remaining group.
- * @param state The owner.
  * @param record The current child, when any.
- * @param deadlineAtMs The unchanged composed shutdown deadline.
+ * @param signal The composed shutdown.
  */
-async function awaitStdinEof(
-	state: ProcessOwnerState,
-	record: ChildRecord | undefined,
-	deadlineAtMs: number,
-): Promise<void> {
+async function awaitStdinEof(record: ChildRecord | undefined, signal: AbortSignal): Promise<void> {
 	if (record === undefined || record.closedHandled) return;
-	await state.processGroupCleanup.waitForClosedOrAt(
-		record.closed,
-		Math.min(deadlineAtMs, state.dependencies.now() + codexProcessMs("stdinEofGrace")),
-	);
+	await within("codex.stdinEofGrace", () => record.closed, { signal }).catch(() => undefined);
 }
 
 /**
- * Drain one owned group and wait for its child to close before the deadline.
+ * Wait for a child to close within the composed shutdown.
+ * @param closed Settles when the child closes.
+ * @param signal The composed shutdown.
+ * @returns False when the composed shutdown ended first.
+ */
+async function closesInTime(closed: Promise<unknown>, signal: AbortSignal): Promise<boolean> {
+	try {
+		await within("codex.composedShutdown", () => closed, { signal });
+		return true;
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
+	}
+}
+
+/**
+ * Drain one owned group and wait for its child to close within the composed shutdown.
  * @param state - The owner state.
  * @param owned - The child generation.
- * @param deadlineAtMs - The composed shutdown deadline.
+ * @param signal - The composed shutdown.
  */
 async function settleOwnedChild(
 	state: ProcessOwnerState,
 	owned: ChildRecord,
-	deadlineAtMs: number,
+	signal: AbortSignal,
 ): Promise<void> {
-	await ensureGroupCleanup(state, owned, deadlineAtMs);
+	await ensureGroupCleanup(state, owned, signal);
 	if (owned.closedHandled) return;
-	const result = await state.processGroupCleanup.waitForClosedOrAt(owned.closed, deadlineAtMs);
-	if (result === "time")
+	if (!(await closesInTime(owned.closed, signal)))
 		throw shutdownError(
 			state,
 			"The Codex child did not close before the composed shutdown deadline. Recovery: inspect the retained process group and retry stop.",
@@ -86,12 +93,12 @@ async function settleOwnedChild(
  * Kill a child whose group was never proved and wait for it to close.
  * @param state - The owner state.
  * @param unproven - The retained child.
- * @param deadlineAtMs - The composed shutdown deadline.
+ * @param signal - The composed shutdown.
  */
 async function settleUnprovenChild(
 	state: ProcessOwnerState,
 	unproven: UnprovenChild,
-	deadlineAtMs: number,
+	signal: AbortSignal,
 ): Promise<void> {
 	try {
 		unproven.child.kill("SIGKILL");
@@ -101,8 +108,7 @@ async function settleUnprovenChild(
 			`Could not kill the Codex child whose process group was unavailable: ${safeCauseMessage(state, cause)}. Recovery: inspect the retained child and retry stop.`,
 		);
 	}
-	const result = await state.processGroupCleanup.waitForClosedOrAt(unproven.closed, deadlineAtMs);
-	if (result === "time")
+	if (!(await closesInTime(unproven.closed, signal)))
 		throw shutdownError(
 			state,
 			"The Codex child whose process group was unavailable did not close before the composed shutdown deadline. Recovery: inspect the retained child and retry stop.",
@@ -128,18 +134,11 @@ function assertAllSettled(
 }
 
 /**
- * Refuse to report a successful stop unless every child and group is gone
- * before the deadline.
+ * Refuse to report a successful stop unless every child and group is gone.
  * @param state - The owner state.
- * @param deadlineAtMs - The composed shutdown deadline.
  */
-function assertQuiescent(state: ProcessOwnerState, deadlineAtMs: number): void {
-	// This read is strict, not `>=`. settleBeforeDeadline is what proves lateness: it rejects
-	// when the deadline expires before the work finishes, so reaching this line at all means the
-	// composed shutdown did complete in time. This second clock read only catches time passing
-	// afterwards, which is why it is strict. A `>=` would refuse a stop that provably settled;
-	// process-lifecycle.test.ts holds that line.
-	if (state.dependencies.now() > deadlineAtMs || ownsChildren(state))
+function assertQuiescent(state: ProcessOwnerState): void {
+	if (ownsChildren(state))
 		throw shutdownError(
 			state,
 			"Codex shutdown did not prove that the child and its process group are quiescent. Recovery: inspect the retained ownership and retry stop.",
@@ -147,8 +146,36 @@ function assertQuiescent(state: ProcessOwnerState, deadlineAtMs: number): void {
 }
 
 /**
+ * Close stdin, then drain every owned and unproven child, all within the composed shutdown.
+ * @param state - The owner state.
+ * @returns A shutdown issue to surface once everything settled, or undefined.
+ */
+async function drainChildren(state: ProcessOwnerState): Promise<CodexProcessError | undefined> {
+	const shutdownIssue = closeStdin(state, state.current);
+	try {
+		await within("codex.composedShutdown", async (signal) => {
+			if (shutdownIssue === undefined) await awaitStdinEof(state.current, signal);
+			const work: Promise<void>[] = [
+				...[...state.groups].map((owned) => settleOwnedChild(state, owned, signal)),
+				...[...state.unprovenChildren].map((unproven) =>
+					settleUnprovenChild(state, unproven, signal),
+				),
+			];
+			assertAllSettled(state, await Promise.allSettled(work));
+		});
+	} catch (error) {
+		if (!(error instanceof TimedOut)) throw error;
+		throw shutdownError(
+			state,
+			"The composed Codex shutdown deadline expired. Recovery: inspect retained process ownership and retry stop.",
+		);
+	}
+	return shutdownIssue;
+}
+
+/**
  * The whole stop operation: cancel restarts, close stdin, drain every owned
- * and unproven child before the composed deadline, then release storage.
+ * and unproven child within the composed shutdown, then release storage.
  * @param state - The owner state.
  * @returns The stopped snapshot.
  */
@@ -156,7 +183,6 @@ async function runShutdown(state: ProcessOwnerState): Promise<CodexProcessSnapsh
 	state.stopping = true;
 	clearRestart(state);
 	if (state.state !== "stopped") setState(state, "stopping");
-	const deadlineAtMs = codexProcessMs("composedShutdown", state.dependencies.now());
 	rejectPendingStart(
 		state,
 		shutdownError(
@@ -164,16 +190,8 @@ async function runShutdown(state: ProcessOwnerState): Promise<CodexProcessSnapsh
 			"Codex startup was canceled by stop before app-server readiness. Recovery: await stop, then retry start.",
 		),
 	);
-	const shutdownIssue = closeStdin(state, state.current);
-	if (shutdownIssue === undefined) await awaitStdinEof(state, state.current, deadlineAtMs);
-	const work: Promise<void>[] = [
-		...[...state.groups].map((owned) => settleOwnedChild(state, owned, deadlineAtMs)),
-		...[...state.unprovenChildren].map((unproven) =>
-			settleUnprovenChild(state, unproven, deadlineAtMs),
-		),
-	];
-	assertAllSettled(state, await state.processGroupCleanup.settleBeforeDeadline(work, deadlineAtMs));
-	assertQuiescent(state, deadlineAtMs);
+	const shutdownIssue = await drainChildren(state);
+	assertQuiescent(state);
 	if (shutdownIssue) throw shutdownIssue;
 	const releaseError = releaseStorage(state);
 	if (releaseError) throw releaseError;

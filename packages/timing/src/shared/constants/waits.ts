@@ -3,11 +3,17 @@
 // operation of `timing` are derived here from those uses.
 
 import type { Use } from "#shared/constants/uses.ts";
+import { CHECKS } from "#shared/constants/checks.ts";
+import { CODEX_PROCESS } from "#shared/constants/codex-process.ts";
+import { GIT } from "#shared/constants/git.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
 
 /** Every declared duration, by its name. */
 const WAITS = Object.freeze({
 	...SERVER_LIFECYCLE,
+	...GIT,
+	...CHECKS,
+	...CODEX_PROCESS,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;
@@ -45,7 +51,7 @@ type Motion = NamesOf<"motion">;
 /** A duration `ms` reads: one handed to another owner, or a motion. */
 type Readable = NamesOf<"handed" | "motion">;
 /** A wait whose end is a timeout: the names a `TimedOut` names. */
-type Timeout = NamesOf<"bound" | "polled" | "span">;
+type Timeout = NamesOf<"bound" | "polled" | "span" | "delay">;
 /** Every declared name. */
 type Wait = keyof Waits;
 

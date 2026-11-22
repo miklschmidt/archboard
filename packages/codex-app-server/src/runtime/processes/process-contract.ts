@@ -110,7 +110,6 @@ interface CodexProcessLifecycle {
 }
 
 type Child = ChildProcessByStdio<Writable, Readable, Readable>;
-type Timer = ReturnType<typeof setTimeout>;
 /** The piped-stdio spawn overload; the only shape the owner ever spawns with. */
 type SpawnChild = (
 	file: string,
@@ -127,9 +126,6 @@ interface CodexProcessDependencies {
 	) => PreparedCodexStorage;
 	readonly fileSystem?: CodexStorageFileSystem;
 	readonly processGroup?: CodexProcessGroupOperations;
-	readonly now?: () => number;
-	readonly schedule?: (callback: () => void, delayMs: number) => Timer;
-	readonly cancel?: (timer: Timer) => void;
 }
 
 type CodexProcessStorageInput =
@@ -213,5 +209,4 @@ export {
 	type CodexProcessState,
 	type CodexProcessTestOptions,
 	type SpawnChild,
-	type Timer,
 };

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test, jest } from "bun:test";
 
 import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
@@ -55,6 +55,8 @@ async function stopFake(
 ): Promise<void> {
 	await driveManual(owner.stop(), clock);
 }
+
+afterEach(() => jest.useRealTimers());
 
 describe("Codex process child-generation capabilities", () => {
 	test("ignores readiness from child A after child B owns the process", async () => {

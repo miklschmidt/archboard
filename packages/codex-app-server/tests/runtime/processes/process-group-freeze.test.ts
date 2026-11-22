@@ -1,6 +1,4 @@
-import { describe, expect, test } from "bun:test";
-
-import { codexProcessMs } from "@archboard/timing";
+import { afterEach, describe, expect, test, jest } from "bun:test";
 
 import { createProcessOwner as createCodexProcess } from "#runtime/processes/process-owner.ts";
 import {
@@ -10,7 +8,13 @@ import {
 	startReady,
 	temporaryRoot,
 } from "#tests/runtime/support/process-support.ts";
-import { driveManual, fakeLifecycle } from "#tests/runtime/support/process-lifecycle-support.ts";
+import {
+	driveManual,
+	fakeLifecycle,
+	REVIEWED_SHUTDOWN_MS,
+} from "#tests/runtime/support/process-lifecycle-support.ts";
+
+afterEach(() => jest.useRealTimers());
 
 describe("Codex process group KILL", () => {
 	test("a child that forks into the group after it was stopped is stopped before KILL", async () => {
@@ -60,9 +64,9 @@ describe("Codex process group KILL", () => {
 			expect(stopped.state).toBe("stopped");
 			expect(lifecycle.signals.at(-1)).toBe("SIGKILL");
 			expect(lifecycle.clock.now()).toBeLessThanOrEqual(
-				codexProcessMs("stdinEofGrace") +
-					codexProcessMs("termGrace") +
-					codexProcessMs("groupFreeze"),
+				REVIEWED_SHUTDOWN_MS.stdinEofGrace +
+					REVIEWED_SHUTDOWN_MS.termGrace +
+					REVIEWED_SHUTDOWN_MS.groupFreeze,
 			);
 		} finally {
 			if (owner) {

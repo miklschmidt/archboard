@@ -16,7 +16,8 @@ test.each(RELATIONS.map((relation) => [JSON.stringify(relation), relation] as co
 	"keeps %s",
 	(_name, [shorter, relation, longer]) => {
 		if (relation === "<") expect(length(shorter)).toBeLessThan(length(longer));
-		else expect(length(shorter)).toBeLessThanOrEqual(length(longer));
+		else if (relation === "<=") expect(length(shorter)).toBeLessThanOrEqual(length(longer));
+		else expect(length(shorter)).toBe(length(longer));
 	},
 );
 

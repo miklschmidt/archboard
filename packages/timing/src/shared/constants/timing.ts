@@ -46,7 +46,6 @@ export type {
 
 // ── Groups still read by their old getters, until their owners move ────────
 export { modelLockMs, claimMs } from "#shared/constants/model-locks.ts";
-export { gitGroupCleanupDeadline, gitMs } from "#shared/constants/git.ts";
 export { processGroupPollMs } from "#shared/constants/process-groups.ts";
 export {
 	codexApprovalExpiresAt,
@@ -58,7 +57,6 @@ export {
 	codexSessionMs,
 } from "#shared/constants/codex.ts";
 export { rasterMs } from "#shared/constants/raster.ts";
-export { checkMs } from "#shared/constants/checks.ts";
 export { localityDefaultSinceSeconds } from "#shared/constants/history-lens.ts";
 export {
 	recorderMs,

@@ -3,9 +3,9 @@ import { TimedOut } from "#shared/operations/timed-out.ts";
 
 interface WithinOptions {
 	/** The caller's own signal: when it aborts, the work is aborted and the wait rejects with its reason. */
-	readonly signal?: AbortSignal;
+	readonly signal?: AbortSignal | undefined;
 	/** A length the caller read from its own environment, in place of the declared one. */
-	readonly ms?: number;
+	readonly ms?: number | undefined;
 }
 
 /**
