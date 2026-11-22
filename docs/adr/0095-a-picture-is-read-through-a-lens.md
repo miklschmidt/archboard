@@ -13,6 +13,11 @@ This record amends [ADR 0024](0024-vault-configuration-owns-vocabulary-and-prese
 [ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md) and
 [ADR 0070](0070-doors-are-buttons-and-every-relationship-has-a-line.md).
 
+Amended on 2026-11-22 (TASK-663.08 to TASK-663.12): the lenses select `sync` and `async` where
+they selected `call`, a new lens finds sync computes, a reader hides effects by hand as well as
+kinds, the legend offers every lens in one click, and the lens and its outcome stand above the
+picture.
+
 ## Context
 
 Since ADR 0070, every relationship has a line. In this repository, a scope with 20 or more lines
@@ -37,19 +42,27 @@ such as `lenses.<id>.show.<n>.kind`, and a default lens that does not exist at `
 The built-in lenses sit under a vault's own, and a vault's lens with a built-in id replaces it
 whole:
 
-| Id             | Name                  | Question                                 | List                                                          |
-| -------------- | --------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| `main`         | Main lines            |                                          | hide `dependency`, `call` with `query`, `call` with `compute` |
-| `effects`      | Effects               | Where does state change?                 | show `mutation`                                               |
-| `reads`        | Reads                 | Where is held or fetched state read?     | show `query`                                                  |
-| `network`      | Network               | How does traffic flow between processes? | show `http`, `rpc`, `queue`, `event`, `stream`                |
-| `dependencies` | Declared dependencies |                                          | show `dependency`                                             |
-| `all`          | All relationships     |                                          | hide nothing                                                  |
+| Id             | Name                  | Question                                                           | List                                                                  |
+| -------------- | --------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `main`         | Main lines            |                                                                    | hide `dependency`, and `query` and `compute` on `sync` and on `async` |
+| `effects`      | Side effects          | Where does state change?                                           | show `mutation`                                                       |
+| `sync-compute` | Sync compute          | Where does the caller wait while another part works out an answer? | show `sync` with `compute`                                            |
+| `network`      | Network               | How does traffic flow between processes?                           | show `http`, `rpc`, `queue`, `event`, `stream`                        |
+| `reads`        | Reads                 | Where is held or fetched state read?                               | show `query`                                                          |
+| `dependencies` | Declared dependencies |                                                                    | show `dependency`                                                     |
+| `all`          | All relationships     |                                                                    | hide nothing                                                          |
+
+The lenses are offered in this order. "Side effects" is the old Effects, named in the owner's
+words ("a map of calls with side effects"). "Sync compute" is the owner's hunt, the case that
+`main` hides: "when i look at a diagram and i see an synchronous compute call, that's when i would
+dig deeper and likely plan work to make that call async."
 
 `main` is the default lens of a vault that names none. It shows every mutation, however it
 travels, and all traffic between processes. It leaves out declared dependencies and the queries
 and computes in process. It is the owner's "leave out plain calls and dependencies" in the terms
-of ADR 0094.
+of ADR 0094. An address, a recipe or a policy of the call era that hides `call` reads as hiding
+both `sync` and `async`. A selector that names `call` is refused, and the refusal names `sync`
+and `async`.
 
 `all` shows every relationship in every vault. A vault may rename it, but its list stays
 `hide: []`, so `Show all` means one thing everywhere.
@@ -73,13 +86,16 @@ relationship.
 
 The picture says how many lines the lens left out: `N lines left out`. It counts the lines that
 `all` draws at the same scope, focus and comparison and that the lens leaves out whole. A joined
-line that keeps one of its relationships counts nothing. At zero there is no note. The note stands
-in the picture even when the picture has no legend. Where the lens control stands, in the caption
-or in the legend, is decided by screenshots of both in the build.
+line that keeps one of its relationships counts nothing.
+
+The lens and its outcome stand in one status line above the picture, in the reader and in
+exports: `Main lines · 66 lines left out`. At zero there is no count. The status stands even when
+the picture has no legend. It moved there from the legend and from the foot of an export, because
+a reader reads the picture's question before its lines, and a note at the foot was found last.
 
 Where the default lens would draw no line and `all` would draw some, a reading that names no lens
-reads through `all`, and the legend says that the default draws none there: `Main lines draws
-none here`. The owner decided this on 2026-11-22 (TASK-663), because in this repository the
+reads through `all`, and the status says so: `Main lines has no lines here · Showing all
+relationships`. The owner decided this on 2026-11-22 (TASK-663), because in this repository the
 default drew nothing in modules that only compute, such as Painting. A lens the reader names is a
 question, and an empty picture with its note answers it, so a named lens never gives way. The
 reading records the lens it drew, `all`, so its recipe redraws the same picture.
@@ -93,8 +109,29 @@ restyles old pictures as a changed policy does (ADR 0024). A reading, a recipe, 
 or a bookmark from before lenses names no lens, and it reads through `all` with its hidden kinds
 kept, which is what it drew. A new reading that names no lens reads through the vault's default.
 
-There is no filter of effects by hand. There are three effects, and the built-in lenses name
-every useful cut of them.
+### A reader hides kinds and effects by hand
+
+After the lens, a reader hides kinds (`hideKinds`) and effects (`hideEffects`) by hand. The
+tokens of `hideEffects` are `mutation`, `query`, `compute` and `declared`, the last for a
+dependency that states no effect. A relationship draws when the lens shows it and neither its
+kind nor its effect is hidden. The filters act on each relationship before lines join, so the
+joins, the cards and the count of lines left out are worked out again after them. Choosing a
+lens clears both lists, and `Show all` selects `all` and clears both.
+
+The address, the render recipe and the CLI carry `hideEffects`: `model render` and `model
+rasterize` take `--hide-effect`, repeatable, beside `--hide-kind`. An unknown token is refused
+before the command reaches the server.
+
+### The legend offers the lenses
+
+The `Relationships` section of the legend holds, from top to bottom: the lenses, one click each,
+in the order above; a row for each kind, its sample in the kind's ink, with an eye; a row for
+each effect, its sample in neutral ink with its head, with an eye; then the read-only marks of
+emphasis, traffic and comparison. The rows come from the whole scope, so hiding one moves no row.
+Clicking a row's name shows only that row, and its eye still turns it on and off. Rows that the
+lens leaves out sit dimmed under the caption `Left out by this lens`, with no switch, because
+turning them on would contradict the lens the reader chose. Isolating sync computes from `all`
+by hand took six clicks, and the lens takes one.
 
 ## Considered and rejected
 
@@ -118,13 +155,23 @@ every useful cut of them.
 - **A lens found by its name on the command line.** A lens id is a word that a person chose, as a
   kind id is, and `--hide-kind` takes ids only.
 - **"0 lines left out".** A count of none reads as noise.
-- **A `--hide-effect` option and switches on the effect key.** Each needs an address field, a
-  recipe field, a flag and a switch for no question that a lens does not answer.
+- **No filter of effects by hand**, which the first version of this record chose, because the
+  built-in lenses named every useful cut of three effects. Once the effect was a row of the
+  legend with its own sample, a reader expected it to switch as a kind does, and isolating one
+  pair of kind and effect from `all` took six clicks. `hideEffects` costs an address field, a
+  recipe field and a flag.
+- **Every lens falling back to `all` when it draws nothing.** A lens the reader named is a
+  question, and an empty picture with its status answers it. Only the implicit default gives way.
+- **The lens and its count at the foot of the picture or in the legend.** The reader met the
+  question after the lines, and a closed legend hid it.
+- **Switches on rows that the lens leaves out.** Turning one on would draw lines that the chosen
+  lens hides, so the reader would no longer read through the lens they chose.
 - **A semantic check on the share of plain calls.** ADR 0094 replaces it with the effect that
   every relationship states.
 
 ## Consequences
 
-- A picture opens on fewer lines than before, and says how many it left out.
+- A picture opens on fewer lines than before, and says above the picture which lens it reads
+  through and how many lines it left out.
 - Tracked embeds stay current: the recipe's fingerprint reads no lens definition, and a recipe
   from before lenses reads through `all`.

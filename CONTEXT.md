@@ -124,14 +124,29 @@ Outside the open scope does not mean external, because a door can be a module of
 _Avoid_: third-party kind for our own parts, link node
 
 **Relationship kind**:
-How a relationship travels between its two ends: in process (`call`), over HTTP, by an event or a queue, or another of the built-in kinds or a vault's own.
-It is the color of the relationship's line (ADR 0094).
+How a relationship travels between its two ends: in process (`sync` or `async`), over HTTP, by an event or a queue, or another of the built-in kinds or a vault's own.
+It is the color of the relationship's line, and it sets nothing else of the line's look (ADR 0094).
 _Avoid_: line style, arrowhead, emphasis, effect (that is what it does)
+
+**Sync**:
+The relationship kind of a call in one process where the caller has the answer when the call returns.
+It is the most common kind, so its ink is the quietest and its labels carry no kind name.
+_Avoid_: call (the kind it replaced), in-process (that is both sync and async), blocking
+
+**Async**:
+The relationship kind of a call in one process that returns before the work is done: the caller awaits it, or starts it and leaves it to run.
+A sync compute where an async one could serve is what a reader hunts for, so the kind is read with the effect.
+_Avoid_: call (the kind it replaced), background, event (that is a named message), non-blocking
 
 **Effect**:
 What a relationship does at its target: `mutation` when it can change state or have an effect outside the caller, `query` when it reads held or fetched state, and `compute` when its answer follows from what it hands over alone.
-Every relationship states one, except a `dependency`, which may omit it to say that it is a declared requirement only. It is the line type of the relationship's line (ADR 0094).
+Every relationship states one, except a `dependency`, which may omit it to say that it is a declared requirement only. Its effect decoration draws it (ADR 0094).
 _Avoid_: command, side effect, read or write, relationship kind (that is how it travels)
+
+**Effect decoration**:
+How a line shows its relationship's effect, in the kind's ink: a mutation ends in a solid wedge that leaves an imprint on the target's card, a query in an eye with a hollow ring at the caller, and a compute in an "=" behind a small point.
+Their bodies are solid. Only a declared-only dependency has a broken body, which ends in a detached open chevron. A pointed line or card plays its effect once.
+_Avoid_: line type, dash, arrowhead (it is only the head of the decoration), traffic (that is authored)
 
 **Traffic**:
 An optional illustration of flow along a relationship: a steady train of pulses that fly along its line, with independent volume and speed.
@@ -360,8 +375,8 @@ _Avoid_: nearby context, external (that is a kind)
 
 **Line**:
 The mark that joins a pair of drawn parts in a picture, and it ends on the parts that own it.
-One line can hold several relationships, which makes it a joined line, and it has no identity of its own.
-Its color is its relationship kind and its line type its effect, and a joined line wears the strongest effect of its relationships.
+One line can hold several relationships of one kind and one effect, which makes it a joined line, and it has no identity of its own.
+Its color is its relationship kind and its effect decoration its effect. Relationships of different kinds or effects between the same ends draw as separate lines.
 _Avoid_: edge, relationship (that is authored), connector, aggregate connection
 
 **Shared trunk**:
@@ -378,7 +393,7 @@ A bright named tag on a card, and the same tag in the Legend, where a press sele
 A group has no frame or region and no tinted face.
 
 **Legend**:
-What explains the marks of a picture: module kinds, relationship kinds with their switches, the effect of each line type, and groups.
+What explains the marks of a picture: module kinds, the lenses, relationship kinds and effects with their switches, the marks of lines, and groups.
 It always stands at the foot of the Right panel on a Diagram reading, over the engine switch.
 _Avoid_: Key, filters
 
@@ -449,13 +464,13 @@ _Avoid_: highlight, focus (that is part of a reading)
 
 **Lens**:
 A named question that a picture is read through, which the vault policy defines: one list that shows or hides relationships by their kind, their effect or both (ADR 0095).
-A part whose every line it leaves out leaves the picture, and the picture says how many lines it left out. `main` is the default lens, and `all` shows every relationship.
+A part whose every line it leaves out leaves the picture. The status line above the picture names the lens and how many lines it left out. `main` is the default lens, and `all` shows every relationship.
 _Avoid_: filter (that hides by hand), view, layer, design lens (that states facts about a design)
 
 **Filter**:
-A choice in a reading to hide a relationship kind by hand, beyond its lens.
+A choice in a reading to hide a relationship kind or an effect by hand, beyond its lens (`hideKinds`, `hideEffects`).
 It acts on relationships before they join, and the model keeps every relationship.
-A part of a scope that drew only lines of hidden kinds leaves the picture.
+A part of a scope that drew only lines of hidden kinds or effects leaves the picture.
 A part that never drew a line stays, and so does each subject of a focus.
 _Avoid_: legend (that explains the marks), lens (that is a named question)
 
