@@ -153,4 +153,4 @@ function feedSocket(client: QueryClient): ReturnType<typeof createFeedSocket> {
 	return socket;
 }
 
-export { feedSocket, type RepositoriesFrame };
+export { feedSocket };
