@@ -122,8 +122,8 @@ pub enum Dash {
     Solid,
     Dashed,
     Dotted,
-    /// The line that joins relationships of several kinds. No policy can choose it.
-    Mixed,
+    /// A dash and a dot in turn: a dependency that states no effect (TASK-663).
+    Declared,
 }
 
 /// Which arrowhead a line ends in.
@@ -139,8 +139,76 @@ pub enum Arrowhead {
     None,
 }
 
-/// How a drawn line reads: a relationship in its kind's appearance, or a flow
-/// step in its own.
+/// What a relationship does at its target (`effect` in the vault's module
+/// files): it changes state or acts outside its caller, it reads held or
+/// fetched state, or its answer follows from what it hands over alone.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+#[expect(missing_docs, reason = "each variant is the effect its name says")]
+pub enum Effect {
+    Mutation,
+    Query,
+    Compute,
+}
+
+/// What a line's dash says it does, as the legend's effect key names it: one
+/// of the three effects, or a dependency that states none. Listed in the key's
+/// order, strongest first.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum LineEffect {
+    /// It changes state or acts outside its caller: solid.
+    Mutation,
+    /// It reads held or fetched state: dashed.
+    Query,
+    /// Its answer follows from what it hands over alone: dotted.
+    Compute,
+    /// A declared requirement, of which nothing runs at run time: a dash and a dot.
+    Declared,
+}
+
+impl LineEffect {
+    /// Every value, in the key's order.
+    pub const ALL: [LineEffect; 4] = [
+        LineEffect::Mutation,
+        LineEffect::Query,
+        LineEffect::Compute,
+        LineEffect::Declared,
+    ];
+
+    /// The dash that says it.
+    pub fn dash(self) -> Dash {
+        match self {
+            LineEffect::Mutation => Dash::Solid,
+            LineEffect::Query => Dash::Dashed,
+            LineEffect::Compute => Dash::Dotted,
+            LineEffect::Declared => Dash::Declared,
+        }
+    }
+
+    /// What the effect key calls it.
+    pub fn words(self) -> &'static str {
+        match self {
+            LineEffect::Mutation => "Mutation",
+            LineEffect::Query => "Query",
+            LineEffect::Compute => "Compute",
+            LineEffect::Declared => "Declared only",
+        }
+    }
+}
+
+impl From<Effect> for LineEffect {
+    fn from(effect: Effect) -> Self {
+        match effect {
+            Effect::Mutation => LineEffect::Mutation,
+            Effect::Query => LineEffect::Query,
+            Effect::Compute => LineEffect::Compute,
+        }
+    }
+}
+
+/// How a drawn line reads: a relationship in its kind's ink and its effect's
+/// dash, or a flow step in its own look.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct LineAppearance {
     /// What its relationship kind is called, which the line carries as `data-type-name`.
@@ -149,10 +217,36 @@ pub struct LineAppearance {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub color: Option<PaletteColor>,
+    /// Whether it joins relationships of several kinds, and so is drawn as two
+    /// rails in the neutral ink. No policy can choose it.
+    #[serde(default)]
+    pub rails: bool,
     /// How it is dashed.
     pub dash: Dash,
     /// Which arrowhead it ends in.
     pub arrowhead: Arrowhead,
+    /// What its dash says it does; absent where the dash is its kind's own, on
+    /// a reading from before effects and on a flow step.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub effect: Option<LineEffect>,
+}
+
+impl LineAppearance {
+    /// How its kind's legend row samples it: solid with a filled head in the
+    /// kind's ink where the dash says an effect, else as the kind draws it.
+    #[must_use]
+    pub fn kind_sample(&self) -> LineAppearance {
+        match self.effect {
+            None => self.clone(),
+            Some(_) => LineAppearance {
+                dash: Dash::Solid,
+                arrowhead: Arrowhead::Filled,
+                effect: None,
+                ..self.clone()
+            },
+        }
+    }
 }
 
 /// Which shape a flowchart draws a step as.

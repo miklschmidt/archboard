@@ -48,10 +48,11 @@ struct Routed {
     upward: bool,
 }
 
-/// The relationship kind, standing, emphasis, and traffic required to share a trunk.
+/// The relationship kind, effect, standing, emphasis, and traffic required to share a trunk.
 pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
+        edge.option(crate::graph::EFFECT).unwrap_or(""),
         edge.option("archboard.relationship.standing")
             .unwrap_or("unchanged"),
         edge.option("archboard.relationship.emphasis")

@@ -1,5 +1,5 @@
-//! What each drawn thing looks like: a line's dash says what sort of
-//! relationship it is and its weight how much attention the author asked for.
+//! What each drawn thing looks like: a line's dash says what its relationship
+//! does and its weight how much attention the author asked for.
 //! Every lettering that sets a size also sets the face that measured the string.
 
 use crate::drawing::{DiagramFont, Emphasis};
@@ -139,9 +139,10 @@ pub(super) fn marker_for(weight: Emphasis, head: Head, standing: Option<Standing
 /// How a line of each dash is broken.
 pub(super) fn dash_array(dash: Dash) -> &'static [f64] {
     match dash {
-        Dash::Solid | Dash::Mixed => &[],
+        Dash::Solid => &[],
         Dash::Dashed => &[6.0, 4.0],
         Dash::Dotted => &[1.5, 3.5],
+        Dash::Declared => &[7.0, 3.0, 1.5, 3.0],
     }
 }
 

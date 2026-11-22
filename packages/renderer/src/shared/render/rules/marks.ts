@@ -1,6 +1,7 @@
 // The marks a viewer draws beside or over a picture, drawn as the renderer core
-// draws them in the picture (ADR 0059): the key's line samples, the pin a
-// subject of one standing wears, and the warning a code finding raises.
+// draws them in the picture (ADR 0059): the key's line samples and dashes,
+// the effect each dash says, the pin a subject of one standing wears, and the
+// warning a code finding raises.
 //
 // A pane draws these itself, at once and without the core. Their inks, sizes
 // and markup are generated from the core's painter by `bun run build:core`,
@@ -10,7 +11,9 @@
 import type { EdgeEmphasis } from "@archboard/model/content";
 import {
 	CORNER_INSET,
+	EFFECT_KEY,
 	HEAD_LENGTH,
+	LINE_DASH,
 	LINE_INK,
 	LINE_WIDTH,
 	OPEN_ARM,
@@ -84,6 +87,40 @@ function lineWidth(emphasis: EdgeEmphasis): number {
 	return LINE_WIDTH[emphasis];
 }
 
+/** How a line is dashed, as the core names it. */
+type LineDash = keyof typeof LINE_DASH;
+
+/**
+ * Whether a name is a dash the core draws.
+ * @param dash The name.
+ * @returns Whether it is.
+ */
+function isLineDash(dash: string): dash is LineDash {
+	return Object.hasOwn(LINE_DASH, dash);
+}
+
+/**
+ * How a line of some dash is broken, as the picture breaks it.
+ * @param dash The dash, as an appearance names it; a name the core does not draw is solid.
+ * @returns The lengths drawn and left, in turn, as an SVG `stroke-dasharray`, or undefined for a solid line.
+ */
+function lineDash(dash: string): string | undefined {
+	const lengths: readonly number[] = isLineDash(dash) ? LINE_DASH[dash] : [];
+	return lengths.length === 0 ? undefined : lengths.join(" ");
+}
+
+/** One row of the effect key: what a line's dash says it does. */
+type EffectKeyEntry = (typeof EFFECT_KEY)[number];
+
+/**
+ * The effect key, in the order a legend lists it: each effect a line's dash
+ * says, the words for it and its dash.
+ * @returns The rows.
+ */
+function effectKey(): typeof EFFECT_KEY {
+	return EFFECT_KEY;
+}
+
 /**
  * The pin a subject of one standing wears on its corner, as a page draws it:
  * for a key that has to show the mark the picture shows (TASK-383).
@@ -128,8 +165,11 @@ export {
 	neutralPulse,
 	OPEN_ARM,
 	cornerWarning,
+	effectKey,
+	lineDash,
 	lineInk,
 	lineWarning,
 	lineWidth,
 	standingMark,
+	type EffectKeyEntry,
 };

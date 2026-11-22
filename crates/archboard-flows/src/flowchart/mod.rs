@@ -221,8 +221,10 @@ fn drawing_of(
     let next = LineAppearance {
         name: "Next".to_owned(),
         color: None,
+        rails: false,
         dash: Dash::Solid,
         arrowhead: Arrowhead::Filled,
+        effect: None,
     };
     let joining = LineAppearance {
         arrowhead: Arrowhead::None,
@@ -266,6 +268,7 @@ fn drawing_of(
                 from: run.from,
                 to: run.to,
                 kind: NEXT_KIND.to_owned(),
+                effect: None,
                 emphasis: Emphasis::Normal,
                 traffic: None,
                 two_way: false,

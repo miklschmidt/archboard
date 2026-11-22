@@ -15,11 +15,11 @@ use crate::paint::standing::{
     ghost_opacity, standing_palette, standing_swipe, subject, warning_on_line,
 };
 use crate::paint::styles::{
-    HEAD_LENGTH, Styles, drawn_ink, edge_stroke, head_of, head_ref_x, head_widths,
+    HEAD_LENGTH, Styles, dash_array, drawn_ink, edge_stroke, head_of, head_ref_x, head_widths,
     relationship_ink, stroke_width,
 };
 use crate::paint::text_runs::paint_text_runs;
-use crate::request::{Dash, LineAppearance, Standing};
+use crate::request::{LineAppearance, Standing};
 use crate::scene::{
     Colour, Definition, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId, PathStep, Purpose,
     Role, Shape, Stroke, SubjectKind,
@@ -151,11 +151,15 @@ pub(super) fn paint_edge_line(
             .unfilled()
             .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
     ));
-    if appearance.dash == Dash::Mixed {
+    if appearance.rails {
         parts.push(shape(
             Shape::path(Purpose::Rail, route(&routed.curve))
                 .unfilled()
-                .stroked(Stroke::new(&ink, RAILS).rounded()),
+                .stroked(
+                    Stroke::new(&ink, RAILS)
+                        .rounded()
+                        .dashed(dash_array(appearance.dash)),
+                ),
         ));
     }
     parts.push(shape(line));

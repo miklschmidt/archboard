@@ -1,6 +1,7 @@
 //! The marks a viewer draws beside a picture, as the painter draws them in it:
 //! the weight of a line, its arrowhead, its ink and its pulse's ink by its
-//! colour, a standing's pin, and the warning on a subject nobody has decided.
+//! colour, its dash, the effect each dash says, a standing's pin, and the
+//! warning on a subject nobody has decided.
 //! A frontend that draws a key, a pin or a warning of its own reads them here,
 //! so it never holds a copy of the painter's rules.
 
@@ -8,9 +9,9 @@ use crate::drawing::Emphasis;
 use crate::paint::edge_line::OPEN_ARM;
 use crate::paint::palette::Palette;
 use crate::paint::standing::{PIN_INSET, standing_pin_at, warning_glyph};
-use crate::paint::styles::{HEAD_LENGTH, WEIGHTS, drawn_ink, quietened, stroke_width};
+use crate::paint::styles::{HEAD_LENGTH, WEIGHTS, dash_array, drawn_ink, quietened, stroke_width};
 use crate::paint::traffic::pulse_look;
-use crate::request::{PaletteColor, Standing};
+use crate::request::{Dash, LineEffect, PaletteColor, Standing};
 use crate::scene::traffic::pulse_breadth;
 use crate::scene::{Colour, Item};
 
@@ -57,6 +58,10 @@ pub struct ViewerMarks {
     pub warning: Vec<Item>,
     /// How far in from a box's corner its pin and its warning stand.
     pub corner_inset: f64,
+    /// How a line of each dash is broken: lengths drawn and left, in turn.
+    pub dashes: Vec<(Dash, &'static [f64])>,
+    /// The effect key: what each line effect is called and its dash, in the key's order.
+    pub effects: Vec<(LineEffect, &'static str, Dash)>,
 }
 
 /// The marks a viewer draws beside a picture, from the painter's own rules.
@@ -101,6 +106,14 @@ pub fn viewer_marks() -> ViewerMarks {
         pulse_breadth: pulse_breadth(stroke_width(Emphasis::Normal)),
         line_inks,
         pulse_inks,
+        dashes: [Dash::Solid, Dash::Dashed, Dash::Dotted, Dash::Declared]
+            .into_iter()
+            .map(|dash| (dash, dash_array(dash)))
+            .collect(),
+        effects: LineEffect::ALL
+            .into_iter()
+            .map(|effect| (effect, effect.words(), effect.dash()))
+            .collect(),
         pins,
         warning: warning_glyph(&palette),
         corner_inset: PIN_INSET,

@@ -1,6 +1,7 @@
 //! Print the marks a viewer draws beside a picture as TypeScript constants:
 //! line widths, the arrowhead's length, each line's and pulse's ink, each
-//! standing's pin and the warning, as the painter draws them in a picture.
+//! dash, the effect key, each standing's pin and the warning, as the painter
+//! draws them in a picture.
 //! `scripts/build-core.ts` writes them beside the WebAssembly build, so a pane
 //! that draws a key, a pin or a warning holds no copy of the painter's rules.
 
@@ -78,6 +79,32 @@ fn main() {
             "The ink of the body of a pulse on a line of each colour.",
             "PULSE_INK",
             inks(&marks.pulse_inks),
+        ),
+        (
+            "How a line of each dash is broken: lengths drawn and left, in turn; none for a solid line.",
+            "LINE_DASH",
+            object(marks.dashes.iter().map(|(dash, lengths)| {
+                let listed: Vec<String> = lengths.iter().map(|one| js::number(*one)).collect();
+                (word(dash), format!("[{}]", listed.join(", ")))
+            })),
+        ),
+        (
+            "The effect key: what each line effect is called and the dash that says it, in the key's order.",
+            "EFFECT_KEY",
+            format!(
+                "[\n{}\n] as const",
+                marks
+                    .effects
+                    .iter()
+                    .map(|(effect, words, dash)| format!(
+                        "\t{{ effect: {}, word: {}, dash: {} }},",
+                        quoted(word(effect)),
+                        quoted(words),
+                        quoted(word(dash))
+                    ))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            ),
         ),
         (
             "The pin each standing wears, centred on the origin; none for unchanged.",

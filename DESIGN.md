@@ -456,7 +456,16 @@ A neutral line, its arrowhead and a lifeline are drawn in **Line Ink**
 (`--diagram-edge`, oklch(60% 0.015 286), dark oklch(0.6 0.012 80)). It keeps
 APCA Lc 58 or more against the ground and a container's floor on chalk and Lc 34
 on graphite, and it stays far under the contrast of text. A colored line is
-drawn in its full color on chalk and at four fifths of its color on graphite. Every arrowhead is 11 units
+drawn in its full color on chalk and at four fifths of its color on graphite. A line's color says
+its kind, how it travels: every kind but an in-process call has an ink of its own, and a call is
+Line Ink. Its dash says its effect, what it does: solid for a mutation, dashed (6 on, 4 off) for a
+query, dotted (1.5 on, 3.5 off) for a compute, and a dash and a dot (7, 3, 1.5, 3) for a
+dependency that states none. A colored line's label starts with its kind's name and a middle dot,
+so its kind never rests on color alone. A line that joins several relationships wears the
+strongest effect among them, mutation over query over compute, and a line of several kinds draws
+two rails in Line Ink in that dash. A compared line takes its standing's color, and its dash still
+says its effect. A reading from before effects keeps the dash and the head its policy recorded.
+A relationship's line ends in one filled arrowhead, which says only its direction. Every arrowhead is 11 units
 long, whatever the emphasis of its line. A muted line is as wide as a default
 one and paler: its ink keeps 70 % of its default ink over chalk and 60 % over
 graphite, never by opacity. A traffic pulse is the color of its
@@ -676,30 +685,33 @@ and a long subject scrolls it down with its lists, so a reader finds it in one p
 outside the subject, so a new subject neither redraws it nor moves it, and a press on a group's
 tag keeps the tag where it stood and the keyboard on it. It has three parts, each under the
 label of any other section of the panel, 20px apart as the panel's sections are: `Legend` over
-the kinds in two columns, `Relationships` over the line types and the marks of lines, and
+the kinds in two columns, `Relationships` over the relationship kinds, their effects and the marks of lines, and
 `Groups` over the tags. Each part opens with the rule of a section, and six pixels part a label from its rows. There is no plate. A
 row is 28px high, and every mark stands in a box 24px wide, as wide as a kind's chip, so the
 names start on one line. A kind wears the kind chip of the panel's head (see Chips). A section
 with nothing to show is absent.
 
-A reader can hide a line type and nothing else, so each line type stands on a row of its own,
-and the row is its switch. It is a row of the panel like any other, with the tone of a row
+A reader can hide a relationship kind and nothing else, so each kind stands on a row of its own,
+and the row is its switch. Its sample is a solid line in the kind's ink with a filled head; a
+reading from before effects samples each kind as its policy recorded it. It is a row of the panel like any other, with the tone of a row
 under the pointer, 8px past the column on each side, and the ring of the keyboard's focus. Its
 sample and its name stand at the start, and an eye at its end says whether the picture draws
-the type's lines: an open eye while it does, and a struck eye while a reader hid them. A click,
+the kind's lines: an open eye while it does, and a struck eye while a reader hid them. A click,
 Space or Enter turns it, and the eye and the dim change in place. There is no mode to enter and
 no key to find first, because a control that only appears on request reads as missing. Under
-the line types, 4px apart and in two columns, stand what no reader hides, with no switch: a
-mixed line, which is no kind of relationship, then `More emphasis` and `Illustrated traffic`,
-the marks that lines wear beside their kinds. A row with an eye can be hidden, and a mark in the
-two columns cannot. While a line type of the reading is hidden, the key `Show all` stands at
-the right end of the `Relationships` row, 24px high and drawn as `Trace back` is, and brings every type back in one press. It needs
-no count, because every hidden type stays in the list.
+the kinds, 4px apart and in two columns, stand what no reader hides, with no switch: the effect
+key, `Mutation`, `Query`, `Compute` and `Declared only`, each a headless sample in Line Ink in its
+dash and listed only when the reading holds it, then a mixed line, which is no kind of
+relationship, then `More emphasis` and `Illustrated traffic`, the marks that lines wear beside
+their kinds. A row with an eye can be hidden, and a mark in the
+two columns cannot. While a kind of the reading is hidden, the key `Show all` stands at
+the right end of the `Relationships` row, 24px high and drawn as `Trace back` is, and brings every kind back in one press. It needs
+no count, because every hidden kind stays in the list.
 
 The rows come from the whole reading, not from what the picture draws now, and each list keeps
-the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
-type that a reader hid stays, dimmed, with its struck eye. So does a part kind, a mixed line or a
-line's mark that left the picture with it. A chip that the picture does not draw takes the icon
+the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A
+relationship kind that a reader hid stays, dimmed, with its struck eye. So does a part kind, an
+effect, a mixed line or a line's mark that left the picture with it. A chip that the picture does not draw takes the icon
 that the policy names.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in

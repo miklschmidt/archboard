@@ -28,7 +28,7 @@ use crate::paint::standing::{Standings, Unsettled, marked_box};
 use crate::paint::styles::{head_of, quietened, relationship_ink, stroke_width};
 use crate::paint::traffic::{TrafficLine, paint_traffic};
 use crate::paint::{Edge, Node};
-use crate::request::{Dash, LineAppearance, NodeAppearance, Standing};
+use crate::request::{LineAppearance, NodeAppearance, Standing};
 use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 use crate::sizes::{DIAGRAM_MARGIN, SLAB_RADIUS};
 
@@ -167,7 +167,7 @@ impl<'p> Painting<'p> {
     ) -> Painting<'p> {
         let edges = &drawing.bridged.edges;
         let removed = |id: &str| standings.of(id) == Some(Standing::Removed);
-        let double = |routed: &Edge| look_of(vocabulary, &routed.edge.id).dash == Dash::Mixed;
+        let double = |routed: &Edge| look_of(vocabulary, &routed.edge.id).rails;
         let mut cutouts: Vec<Cutout> = crossing_cutouts(edges, &drawing.bridged.bridges, &double);
         cutouts.extend(trunk_cutouts(edges, &double));
         cutouts.extend(rail_cutouts(edges, &double));

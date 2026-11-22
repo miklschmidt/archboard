@@ -12,7 +12,7 @@ use indexmap::IndexMap;
 use super::content::{Content, Edge, Node};
 use super::measured::Measured;
 use crate::ecma;
-use crate::graph::{DOOR, GROUPS};
+use crate::graph::{DOOR, EFFECT, GROUPS, HELD_EFFECT};
 use crate::json::J;
 
 /// The option marking a child a relationship from outside its container reaches (ADR 0044).
@@ -120,6 +120,9 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
         ("archboard.order".to_owned(), J::Str(text(edge.order))),
         ("archboard.relationship.kind".to_owned(), J::str(&edge.kind)),
     ];
+    if let Some(effect) = &edge.effect {
+        options.push((EFFECT.to_owned(), J::str(word(effect))));
+    }
     let emphasis = word(&edge.emphasis);
     options.push((
         "archboard.relationship.emphasis".to_owned(),
@@ -142,8 +145,11 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
 /// A relationship with its options and its measured label.
 fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>, inline: bool) -> J {
     let mut options = edge_options(edge, standing);
-    if !inline && let Some(kind) = measured.held_kinds.get(&edge.id) {
+    if !inline && let Some((kind, effect)) = measured.held_lines.get(&edge.id) {
         options.push(("archboard.relationship.held-kind".to_owned(), J::str(kind)));
+        if let Some(effect) = effect {
+            options.push((HELD_EFFECT.to_owned(), J::str(word(effect))));
+        }
     }
     let labels = measured
         .labels

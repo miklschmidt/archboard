@@ -3,6 +3,7 @@
 //! what the painter is told about each of them.
 
 use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Toggle, Traffic};
+use archboard_scene::request::Effect;
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// One part of a picture: a card, or a container of other parts.
@@ -83,6 +84,9 @@ pub struct Edge {
     pub to: String,
     /// The key of the vault policy's relationship kind it is.
     pub kind: String,
+    /// What it does at its target; absent where it states none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effect: Option<Effect>,
     /// What it carries, when the picture says.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
@@ -106,6 +110,7 @@ impl Edge {
             from: self.from.clone(),
             to: self.to.clone(),
             kind: self.kind.clone(),
+            effect: self.effect,
             emphasis: self.emphasis,
             traffic: self.traffic,
             two_way: self.two_way,

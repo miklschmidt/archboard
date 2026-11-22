@@ -4,6 +4,7 @@
 use std::collections::BTreeMap;
 
 use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, NodeFacts};
+use archboard_scene::request::Effect;
 use indexmap::IndexMap;
 
 use crate::routes::LineLook;
@@ -20,6 +21,7 @@ pub struct Measured {
     pub narrow_labels: IndexMap<String, MeasuredLabel>,
     /// How each line is drawn, by relationship id.
     pub lines: BTreeMap<String, LineLook>,
-    /// The variant's own relationship kinds before removed comparison context changes an overview's majority kind.
-    pub held_kinds: BTreeMap<String, String>,
+    /// The kind and effect of each relationship as the variant's own reading draws it, before
+    /// removed comparison context changes an overview's joined line.
+    pub held_lines: BTreeMap<String, (String, Option<Effect>)>,
 }

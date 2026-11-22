@@ -94,6 +94,8 @@ function statedBy(group: Queried): AppliedAppearance {
 		lineColor: fact("data-line-color", "neutral"),
 		dash: fact("data-line-dash", "solid"),
 		arrowhead: fact("data-arrowhead", "filled"),
+		rails: group.getAttribute("data-line-rails") === "true",
+		effect: fact("data-line-effect", ""),
 	};
 }
 

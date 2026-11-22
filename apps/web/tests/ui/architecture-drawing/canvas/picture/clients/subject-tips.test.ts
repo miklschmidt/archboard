@@ -74,6 +74,8 @@ const LINE: AppliedAppearance = {
 	lineColor: "sky",
 	dash: "dashed",
 	arrowhead: "open",
+	rails: false,
+	effect: "",
 };
 
 /** The container's appearance, including the icon drawn in its separate header. */
@@ -88,6 +90,8 @@ const CONTAINER: AppliedAppearance = {
 	lineColor: "neutral",
 	dash: "solid",
 	arrowhead: "filled",
+	rails: false,
+	effect: "",
 };
 
 /**
@@ -159,6 +163,12 @@ test("a label's tip names its words and the kind of line the picture draws them 
 	expect(tip.kind).toBe(LINE.typeName);
 	expect(tip.appearance).toBe(LINE);
 	expect(tip.body).toBe("Once per request.");
+});
+
+test("a label's tip names the effect its line's dash says beside the kind", () => {
+	const label = tipTargetAt(at(drawn(), "pill"), 0)!;
+	const querying = { ...LINE, dash: "dashed", effect: "query" };
+	expect(subjectTip(VARIANT, label, querying, false)!.kind).toBe("Calls · Query");
 });
 
 test("a container answers the pointer on its header band, not across its frame", () => {

@@ -1,10 +1,16 @@
 // What the legend lists. Its rows come from the whole reading, not from what the picture draws at
 // this moment: a hidden kind takes its lines off the picture, and the cards and doors that only
-// those lines reached, with their part kinds and groups. Each list keeps one order, the policy's,
-// so hiding a kind or showing it again moves no row.
+// those lines reached, with their part kinds, their effects and their groups. Each list keeps one
+// order, the policy's or the effect key's, so hiding a kind or showing it again moves no row.
 
-import { lineMarks, type LineMarkEntry } from "@archboard/renderer/picture";
+import {
+	effectKey,
+	lineMarks,
+	type EffectKeyEntry,
+	type LineMarkEntry,
+} from "@archboard/renderer/picture";
 import type { Model, projectModel } from "@archboard/model/content";
+import { drawnEffect } from "@archboard/model/policy";
 import type {
 	AppliedAppearance,
 	PictureLegend,
@@ -44,6 +50,9 @@ interface LegendLine extends LegendRow {
 
 /** One mark that lines wear beside their kinds. */
 type LegendMark = LineMarkEntry & { readonly dimmed: boolean };
+
+/** One effect that the dash of a line says. */
+type LegendEffect = EffectKeyEntry & { readonly dimmed: boolean };
 
 /** One group of the reading. */
 interface LegendGroup {
@@ -104,6 +113,8 @@ function policyPart(model: Model, id: string): AppliedAppearance {
 		lineColor: UNKNOWN_KIND.color,
 		dash: UNKNOWN_KIND.dash,
 		arrowhead: UNKNOWN_KIND.arrowhead,
+		rails: false,
+		effect: "",
 	};
 }
 
@@ -115,7 +126,11 @@ function policyPart(model: Model, id: string): AppliedAppearance {
  * @returns Its appearance.
  */
 function policyLine(model: Model, id: string): AppliedAppearance {
-	const look = { ...UNKNOWN_KIND, ...model.policy.relationshipKinds[id] };
+	const stated = model.policy.relationshipKinds[id];
+	const look = { ...UNKNOWN_KIND, ...stated };
+	// A kind whose policy records no dash samples solid with a filled head: its
+	// lines' dashes say their effects, and every head says only direction.
+	const recorded = stated?.dash !== undefined;
 	return {
 		id,
 		typeName: kindLookOf(model.policy, new Map()).relationship(id).name,
@@ -125,7 +140,9 @@ function policyLine(model: Model, id: string): AppliedAppearance {
 		typeColor: UNKNOWN_KIND.color,
 		lineColor: look.color ?? UNKNOWN_KIND.color,
 		dash: look.dash ?? UNKNOWN_KIND.dash,
-		arrowhead: look.arrowhead,
+		arrowhead: recorded ? look.arrowhead : UNKNOWN_KIND.arrowhead,
+		rails: false,
+		effect: "",
 	};
 }
 
@@ -202,6 +219,28 @@ function markRows(projection: Projection): readonly LegendMark[] {
 }
 
 /**
+ * The effects that the dashes of the reading's lines say, in the key's order. A reading whose kinds
+ * record their dash says none.
+ * @param model The reading, whose policy says how its lines are dashed.
+ * @param projection What it draws.
+ * @returns One row for each.
+ */
+function effectRows(model: Model, projection: Projection): readonly LegendEffect[] {
+	/**
+	 * The effects that some lines' dashes say.
+	 * @param connections The lines.
+	 * @returns The effects, with undefined for a line whose dash says none.
+	 */
+	const said = (connections: readonly Connection[]): ReadonlySet<string | undefined> =>
+		new Set(connections.map(({ line }) => drawnEffect(line, model.policy)));
+	const held = said(projection.allConnections);
+	const shown = said(projection.connections);
+	return effectKey()
+		.filter(({ effect }) => held.has(effect))
+		.map((entry) => ({ ...entry, dimmed: !shown.has(entry.effect) }));
+}
+
+/**
  * The groups of the reading.
  * @param model The reading, whose policy names them.
  * @param projection What it draws.
@@ -222,10 +261,12 @@ function groupRows(model: Model, projection: Projection): readonly LegendGroup[]
 }
 
 export {
+	effectRows,
 	groupRows,
 	kindRows,
 	lineRows,
 	markRows,
+	type LegendEffect,
 	type LegendGroup,
 	type LegendLine,
 	type LegendMark,

@@ -9,6 +9,7 @@ import { useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "re
 
 import {
 	HEAD_LENGTH,
+	lineDash,
 	lineInk,
 	OPEN_ARM,
 	neutralPulse,
@@ -60,24 +61,26 @@ function LineFrame(props: {
 
 /**
  * A sample's line up to where its head starts: two rails for a mixed line, as the
- * picture draws it, and otherwise one line in its dash.
- * @param props Where it ends and its dash.
+ * picture draws it, and otherwise one line, either in its dash.
+ * @param props Where it ends, its dash and whether it is two rails.
  * @param props.end Where the line stops.
  * @param props.dash The line's dash.
+ * @param props.rails Whether it is drawn as two rails.
  * @returns The line.
  */
 function SampleRun(props: {
 	readonly end: number;
 	readonly dash: AppliedAppearance["dash"];
+	readonly rails: boolean;
 }): JSX.Element {
+	const dash = lineDash(props.dash);
 	/**
 	 * One line of the sample.
 	 * @param row How far down the sample it stands.
 	 * @param width How thick it is.
-	 * @param dash How it is broken, if it is.
 	 * @returns The line.
 	 */
-	const run = (row: number, width: number, dash?: string): JSX.Element => (
+	const run = (row: number, width: number): JSX.Element => (
 		<path
 			key={row}
 			d={`M1 ${row}H${props.end}`}
@@ -85,9 +88,10 @@ function SampleRun(props: {
 			stroke="currentColor"
 			strokeWidth={width}
 			strokeDasharray={dash}
+			strokeLinecap="round"
 		/>
 	);
-	if (props.dash === "mixed") {
+	if (props.rails) {
 		return (
 			<>
 				{run(LINE_BOX.middle - RAIL_STEP, RAIL_WIDTH)}
@@ -95,8 +99,7 @@ function SampleRun(props: {
 			</>
 		);
 	}
-	const dash = props.dash === "dotted" ? "1 4" : props.dash === "dashed" ? "6 4" : undefined;
-	return run(LINE_BOX.middle, PLAIN_WIDTH, dash);
+	return run(LINE_BOX.middle, PLAIN_WIDTH);
 }
 
 /**
@@ -121,7 +124,7 @@ function RelationshipSample(props: {
 	const end = filled ? tip - HEAD_LENGTH / 2 : tip;
 	return (
 		<LineFrame width={width} color={ink}>
-			<SampleRun end={end} dash={appearance.dash} />
+			<SampleRun end={end} dash={appearance.dash} rails={appearance.rails} />
 			{appearance.arrowhead !== "none" && <ArrowHead filled={filled} tip={tip} />}
 		</LineFrame>
 	);
@@ -161,8 +164,30 @@ function ArrowHead(props: { readonly filled: boolean; readonly tip: number }): J
 	);
 }
 
-/** The neutral line the two line marks are keyed on. */
+/** The neutral line the line marks are keyed on. */
 const NEUTRAL_LINE = "var(--diagram-edge)";
+
+/**
+ * What a line's dash says it does, keyed on a headless neutral line in that dash.
+ * @param props The dash and how wide the sample is.
+ * @param props.dash The dash.
+ * @param props.width The width.
+ * @returns The sample.
+ */
+function EffectSample(props: { readonly dash: string; readonly width: number }): JSX.Element {
+	return (
+		<LineFrame width={props.width} color={NEUTRAL_LINE}>
+			<path
+				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
+				fill="none"
+				stroke="currentColor"
+				strokeWidth={PLAIN_WIDTH}
+				strokeDasharray={lineDash(props.dash)}
+				strokeLinecap="round"
+			/>
+		</LineFrame>
+	);
+}
 
 /**
  * A heavier line than the kinds' samples, at the width the picture draws the
@@ -341,4 +366,11 @@ function StandingSample(props: { readonly standing: SubjectStanding }): JSX.Elem
 	);
 }
 
-export { EmphasisSample, RelationshipSample, StandingSample, TrafficSample, TypeSample };
+export {
+	EffectSample,
+	EmphasisSample,
+	RelationshipSample,
+	StandingSample,
+	TrafficSample,
+	TypeSample,
+};

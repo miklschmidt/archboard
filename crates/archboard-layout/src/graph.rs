@@ -133,5 +133,10 @@ pub(crate) const GROUP_CAPTIONS: &str = "archboard.group.captions";
 pub(crate) const ENTRY_POINT: &str = "archboard.entry";
 /// The option marking a card a door, which keeps its measured size in any cell.
 pub(crate) const DOOR: &str = "archboard.door";
+/// The option naming what a relationship does, where it states it: lines of
+/// one kind share a trunk only when they do the same, because a trunk draws one dash.
+pub(crate) const EFFECT: &str = "archboard.relationship.effect";
+/// The effect of a relationship as the variant's own reading draws it, beside its held kind.
+pub(crate) const HELD_EFFECT: &str = "archboard.relationship.held-effect";
 /// The option carrying each size a container's header can take.
 pub(crate) const HEADER_STEPS: &str = "archboard.header.steps";

@@ -40,7 +40,7 @@ const STEM: f64 = 24.0;
 const LEADS: f64 = 33.0;
 
 /// The lines of every door's trunk, each with whether its part is its source: from
-/// three lines of one kind to one door, each way, the lines share a trunk (rule 5).
+/// three lines of one kind and effect to one door, each way, the lines share a trunk (rule 5).
 fn trunk_lines(model: &Model<'_>) -> BTreeMap<usize, bool> {
     let door = |endpoint: usize| {
         let end = &model.endpoints[endpoint];
@@ -53,9 +53,10 @@ fn trunk_lines(model: &Model<'_>) -> BTreeMap<usize, bool> {
             let end = if part_first { to } else { from };
             let line = &model.edges[edge];
             let kind = line.option("archboard.relationship.kind");
+            let effect = line.option(crate::graph::EFFECT);
             let two_way = line.option(TWO_WAY);
             trunks
-                .entry((end, part_first, kind, two_way))
+                .entry((end, part_first, kind, effect, two_way))
                 .or_default()
                 .push(edge);
         }

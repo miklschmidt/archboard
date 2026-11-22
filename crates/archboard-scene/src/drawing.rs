@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::geometry::{Curve, Rect};
+use crate::request::Effect;
 
 /// Which of the two families a piece of text is set in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
@@ -290,6 +291,10 @@ pub struct EdgeFacts {
     pub to: String,
     /// The key of its kind in the vault's policy.
     pub kind: String,
+    /// What it does at its target; absent where it states none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub effect: Option<Effect>,
     /// How loudly it speaks.
     pub emphasis: Emphasis,
     /// The traffic it carries; absent for a line with none.

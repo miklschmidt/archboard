@@ -1,5 +1,5 @@
 //! The ink of a route that another route of its trunk draws. Routes of one
-//! kind that lie on one line are a trunk: one drawn line, whose ink the
+//! kind and one effect that lie on one line are a trunk: one drawn line, whose ink the
 //! heaviest of them draws (then the earliest painted), so a trunk shows one
 //! stroke, one dash pattern and one arrowhead. A two-way line keeps the ink at
 //! its start, because a trunk draws no head there.
@@ -112,9 +112,10 @@ fn on_line(a: &Run, b: &Run) -> bool {
         && (fixed_of(a) - fixed_of(b)).abs() <= SHARED_INK
 }
 
-/// Whether two routes can share their ink: relationships of one kind.
+/// Whether two routes can share their ink: relationships of one kind and one
+/// effect, so the trunk draws one ink and one dash.
 fn one_ink(a: &Edge, b: &Edge) -> bool {
-    a.edge.kind == b.edge.kind
+    a.edge.kind == b.edge.kind && a.edge.effect == b.edge.effect
 }
 
 /// Whether two runs are one drawn line: on one line, and routes that can share their ink.
@@ -263,6 +264,7 @@ mod tests {
                 from: "a".to_owned(),
                 to: "b".to_owned(),
                 kind: "mixed".to_owned(),
+                effect: None,
                 emphasis: Emphasis::Normal,
                 traffic: None,
                 two_way,
