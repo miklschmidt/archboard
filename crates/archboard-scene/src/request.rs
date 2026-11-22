@@ -222,7 +222,7 @@ pub struct FlowchartParts {
 pub struct ArchitecturePicture {
     /// What the picture draws.
     pub drawing: Painted,
-    /// Every node the page lays out, drawn or not.
+    /// How each laid-out node appears, by node id.
     pub appearances: BTreeMap<String, NodeAppearance>,
     /// How each drawn line reads, by relationship id.
     pub lines: BTreeMap<String, LineAppearance>,

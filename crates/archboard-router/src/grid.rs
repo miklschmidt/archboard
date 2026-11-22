@@ -31,7 +31,6 @@ impl Buffer {
             bottom: rect.y + rect.height + clearance,
         }
     }
-
 }
 
 /// Where a pin's route leaves its own obstacle's buffer, going the way the
