@@ -12,7 +12,10 @@ import type { SemanticBox } from "#ui/architecture-drawing/canvas/picture/reads/
 import { moduleOrder } from "#ui/architecture-drawing/model-reader/rules/module-tree.ts";
 
 type Projection = ReturnType<typeof projectModel>;
-type ReadingFilters = { readonly hideKinds: NonNullable<ModelFilters["hideKinds"]> };
+type ReadingFilters = {
+	readonly lens: ModelFilters["lens"];
+	readonly hideKinds: NonNullable<ModelFilters["hideKinds"]>;
+};
 
 /** The fields of an address that decide what a reading draws and what an agent is told about it. */
 interface SceneReading {

@@ -12,6 +12,7 @@ import {
 import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
+import { ModelLens } from "#ui/architecture-drawing/model-reader/reading/components/ModelLens.tsx";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
@@ -53,7 +54,9 @@ interface ModelLegendProps {
 	readonly look: KindLook;
 	readonly filters: Pick<ModelFilters, "hideKinds">;
 	readonly onToggle: (field: "hideKinds", id: string) => void;
-	/** Draw every kind of line again. */
+	/** Read the picture through another lens, or nothing for a flow, which draws every message. */
+	readonly onLens: ((id: string) => void) | undefined;
+	/** Read the picture through the lens of every relationship, with no kind hidden. */
 	readonly onShowAll: () => void;
 	readonly selection: ModelSelection;
 }
@@ -76,6 +79,12 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 			<Lines
 				lines={lineRows(reading)}
 				marks={markRows(projection)}
+				lens={
+					props.onLens === undefined ? undefined : (
+						<ModelLens model={model} projection={projection} onSelect={props.onLens} />
+					)
+				}
+				leftOut={projection.leftOut}
 				onToggle={props.onToggle}
 				onShowAll={props.onShowAll}
 			/>
@@ -180,20 +189,25 @@ function LegendChip(props: {
 interface LinesProps {
 	readonly lines: readonly LegendLine[];
 	readonly marks: readonly LegendMark[];
+	/** The lens control of a structural picture. */
+	readonly lens: ReactNode;
+	/** How many lines the reading leaves out. */
+	readonly leftOut: number;
 	readonly onToggle: ModelLegendProps["onToggle"];
 	readonly onShowAll: () => void;
 }
 
 /**
- * The line types of the reading, one to a row, each row the switch that draws its lines or leaves
- * them out. Under them, in two columns and with no switch, stand what no reader hides: a mixed
- * line, which is no kind of relationship, and the marks that lines wear beside their kinds.
- * @param props The line types and how to change their visibility.
+ * The lens the reading is read through, then the line types of the reading, one to a row, each row
+ * the switch that leaves its lines out besides what the lens leaves out. Under them, in two columns
+ * and with no switch, stand what no reader hides: a mixed line, which is no kind of relationship,
+ * and the marks that lines wear beside their kinds.
+ * @param props The lens, the line types and how to change their visibility.
  * @returns Their list, or nothing when the reading has no line.
  */
 function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, marks, onToggle, onShowAll } = props;
-	const hidden = lines.some((line) => line.hidden);
+	const { lines, marks, lens, onToggle, onShowAll } = props;
+	const hidden = lens === undefined ? lines.some((line) => line.hidden) : props.leftOut > 0;
 	const action = useMemo(
 		() =>
 			hidden ? (
@@ -218,6 +232,7 @@ function Lines(props: LinesProps): JSX.Element | null {
 			slot="model-legend-lines-section"
 			action={action}
 		>
+			{lens}
 			{types.length > 0 && (
 				<li>
 					<ul data-slot="model-legend-lines" className="flex flex-col">

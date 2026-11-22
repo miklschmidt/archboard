@@ -22,6 +22,9 @@ interface ModelAddress {
 	readonly grammar?: string | undefined;
 	readonly flow?: string | undefined;
 	readonly focus?: readonly string[] | undefined;
+	/** The lens the picture is read through, or absent for the vault's default lens. */
+	readonly lens?: string | undefined;
+	/** The relationship kinds hidden besides what the lens leaves out. */
 	readonly hideKinds?: readonly string[] | undefined;
 	/** The modules opened beside the scope in the same picture. */
 	readonly expand?: readonly string[] | undefined;
@@ -223,6 +226,7 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 				"subject",
 				"grammar",
 				"flow",
+				"lens",
 				"file",
 				"fileRepo",
 			] as const

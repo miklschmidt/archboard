@@ -13,7 +13,7 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
-import { projectModel, type Model } from "@archboard/model/content";
+import { ALL_LENS, projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
@@ -32,6 +32,16 @@ const ModelDiagram = lazy(async () => {
 const NO_MISSING_SUBJECTS: readonly string[] = Object.freeze([]);
 type Playback = NonNullable<Model["playback"]>;
 type Reading = Playback["walkthrough"]["beats"][number]["reading"];
+
+/**
+ * What a beat's picture shows. A beat keeps no lens: its author saw every relationship, so it
+ * reads through all, with the kinds it hid.
+ * @param reading The beat's reading.
+ * @returns Its filters.
+ */
+function beatFilters(reading: Reading) {
+	return { lens: ALL_LENS, hideKinds: reading.filters.relationships };
+}
 type Picture = Parameters<NonNullable<ComponentProps<typeof ModelDiagram>["onPresentation"]>>[0];
 
 interface WalkthroughProps {
@@ -89,7 +99,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 			scope: reading.scope ?? null,
 			focus: reading.focus,
 			expand: [],
-			filters: { hideKinds: reading.filters.relationships },
+			filters: beatFilters(reading),
 			grammar: reading.grammar,
 			flow: reading.flow ?? null,
 		}),
@@ -221,7 +231,7 @@ function projectionOf(model: Model, reading: Reading) {
 		model,
 		reading.scope ?? null,
 		reading.focus.length === 0 ? null : reading.focus,
-		{ hideKinds: reading.filters.relationships },
+		beatFilters(reading),
 		undefined,
 		reading.visibility,
 	);
