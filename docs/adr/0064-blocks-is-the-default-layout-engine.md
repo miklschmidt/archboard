@@ -20,8 +20,7 @@ The canvas, walkthroughs, and renders share it.
 An embed recipe that names no engine follows this default, under [ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md).
 An explicit engine in a recipe stays explicit.
 
-Superseded (2026-11-22, TASK-672,
-[ADR 0096](0096-blocks-is-the-only-layout-engine.md)):
-Track and `--layout` are gone, and so is the default. Blocks is the only layout engine, and
-`DEFAULT_LAYOUT_ENGINE` no longer exists. A version 1 recipe that names an engine still reads, and is
-drawn with Blocks.
+Superseded in part (2026-11-22, TASK-672,
+[ADR 0096](0096-track-is-replaced-by-lanes.md)):
+Lanes replaces Track. `--layout` takes `blocks` or `lanes`, and Blocks stays the default.
+A saved `track` reads as Lanes.

@@ -69,6 +69,6 @@ Superseded in part (2026-10-30, TASK-554,
 Blocks is the default for renders, rasterized pictures, walkthroughs, and browsers that name no engine.
 An unavailable remembered engine also falls back to Blocks.
 
-Superseded (2026-11-22, TASK-672,
-[ADR 0096](0096-blocks-is-the-only-layout-engine.md)):
-Track is deleted. Blocks is the only layout engine, and nothing names an engine.
+Superseded in part (2026-11-22, TASK-672,
+[ADR 0096](0096-track-is-replaced-by-lanes.md)):
+Track is deleted. Lanes replaces it beside Blocks.
