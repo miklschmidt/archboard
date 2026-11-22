@@ -4,6 +4,7 @@ title: A read during an agent's write shows no error toast
 status: To Do
 assignee: []
 created_date: '2026-11-22T13:35:00Z'
+updated_date: '2026-11-22T13:38:00Z'
 labels:
   - bug
 dependencies: []
@@ -22,3 +23,9 @@ While an agent writes the model, the write holds the model lock, and a browser r
 - [ ] #2 The reader shows the written model once the write lands
 - [ ] #3 A model that stays unreadable still shows its error
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner, 2026-11-22: fix it on its own stack layer (fix/busy-reads). Suggested direction: retry a busy read a default number of times before any error notice reaches the user.
+<!-- SECTION:NOTES:END -->
