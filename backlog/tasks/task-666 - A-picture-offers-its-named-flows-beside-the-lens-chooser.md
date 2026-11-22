@@ -4,6 +4,7 @@ title: A picture offers its named flows beside the lens chooser
 status: To Do
 assignee: []
 created_date: '2026-11-22T14:12:00Z'
+updated_date: '2026-11-22T14:18:00Z'
 labels:
   - feature
 dependencies: []
@@ -21,3 +22,9 @@ A module of pure synchronous computation, such as Painting, reads as one field o
 - [ ] #1 A picture whose scope has flows offers them next to the lens chooser
 - [ ] #2 Choosing one draws that flow through the scope
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner, 2026-11-22: "our flow charts are a god send here" (for a module of pure sync computation such as Painting).
+<!-- SECTION:NOTES:END -->
