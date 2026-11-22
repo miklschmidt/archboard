@@ -28,7 +28,7 @@ owner split the two questions into two fields.
 
 ### The kind says how a relationship travels
 
-The kind names the mechanism between the two named ends. Archboard has eleven built-in kinds:
+The kind names the mechanism between the two named ends. Archboard has ten built-in kinds:
 
 | Kind         | How it travels                                                                     |
 | ------------ | ---------------------------------------------------------------------------------- |
@@ -42,7 +42,11 @@ The kind names the mechanism between the two named ends. Archboard has eleven bu
 | `render`     | The source places the target's component in its output.                            |
 | `storage`    | The source reads or writes through a store's own interface: files, SQL, keys.      |
 | `dependency` | A declared requirement. Nothing of the target runs at run time.                    |
-| `other`      | A labelled relationship that fits no kind.                                         |
+
+A relationship that fits no built-in kind takes a kind that the vault adds. The owner retired
+`other` on 2026-11-22: a kind that fits everything says nothing, as the plain `call` did, and no
+relationship of this repository used it. The upgrade tool refuses a relationship that keeps
+`other` and names the two ways out.
 
 The built-in kinds sit under a vault's own. A vault adds a kind with an id of its own, and its
 entry for a built-in id replaces that kind whole. A kind that the vault adds must name its color,

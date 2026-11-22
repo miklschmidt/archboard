@@ -163,9 +163,9 @@ const NETWORK: EvidenceKind[] = ["call", "configured-path"];
  * The relationship kinds every vault has, by how a relationship travels. Every
  * kind but an in-process call draws in an ink of its own, so the kind is the
  * colour of its lines (TASK-663). A vault's own entry replaces the built-in of
- * its id whole, and a vault adds a kind with an id of its own. `other` is a labelled relationship that fits no
- * kind. Every kind but `other` names the evidence kinds that prove it to the
- * code check (ADR 0046); `other` has no key, so it accepts every kind.
+ * its id whole, and a vault adds a kind with an id of its own, which is where a
+ * relationship that fits no built-in kind goes. Every built-in kind names the
+ * evidence kinds that prove it to the code check (ADR 0046).
  */
 const BUILT_IN_RELATIONSHIP_KINDS: Record<string, RelationshipPolicy> = {
 	call: { name: "Call", arrowhead: "filled", evidence: ["call"] },
@@ -183,7 +183,6 @@ const BUILT_IN_RELATIONSHIP_KINDS: Record<string, RelationshipPolicy> = {
 		arrowhead: "open",
 		evidence: ["call", "configured-path", "import", "build-dependency"],
 	},
-	other: { name: "Other", color: "lime", arrowhead: "filled" },
 };
 /**
  * The lens of every relationship. A vault may rename it but not narrow it, so
@@ -292,7 +291,7 @@ function authoredPolicySchema(icon: z.ZodType<string>) {
 				icon,
 				z.record(VocabularyNameSchema, RelationshipPolicySchema).default({}).meta({
 					description:
-						"The relationship kinds this vault adds, or replaces by id. The built-in kinds sit under them: call, http, rpc, event, queue, stream, spawn, render, storage, dependency and other. A kind the vault adds names its color.",
+						"The relationship kinds this vault adds, or replaces by id. The built-in kinds sit under them: call, http, rpc, event, queue, stream, spawn, render, storage and dependency. A relationship that fits none of them takes a kind the vault adds, which names its color.",
 				}),
 			),
 			lenses: z.record(VocabularyNameSchema, LensSchema).default({}).meta({

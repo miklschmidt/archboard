@@ -116,6 +116,24 @@ test("installing an inventory that leaves an effect out is refused, naming each 
 	expect(readArchitectureModel(vault)).toMatchObject({ readOnly: { code: "UPGRADE_REQUIRED" } });
 });
 
+test("a relationship that keeps the retired kind other is refused with its two ways out", async () => {
+	const vault = oldVault();
+	const refused = await upgradeArchitectureModel(vault, {
+		inventories: fill(await inventory(vault), {
+			"Shop#Dispatch": { kind: "call", effect: "mutation" },
+			"Shop#Record": { kind: "other", effect: "mutation" },
+		}),
+		writer: "test-agent",
+		doing: "upgrading the vault",
+	});
+	if (refused.success) throw new Error("The upgrade was not refused.");
+	const [diagnostic] = refused.diagnostics;
+	expect(diagnostic?.subjects).toEqual(["Shop#Record"]);
+	expect(diagnostic?.message).toContain(
+		"keeps the retired kind other: use the kind that says how it travels, or add a kind of the vault's own",
+	);
+});
+
 test("installing a complete inventory writes the current format, keeps every id, and lists its gaps", async () => {
 	const vault = oldVault();
 	const old = readArchitectureModel(vault);

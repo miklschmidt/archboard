@@ -9,8 +9,25 @@ import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
 import type { ModelDiagnostic } from "#shared/canonical-contracts/schemas/model.ts";
 import type { InventoryRelationship, UpgradeInventory } from "#shared/upgrade/schemas/upgrade.ts";
 
-/** The kind the current format retired: a storage access is now `storage`, and data that passes is no kind. */
-const RETIRED_KIND = "data";
+/**
+ * The kinds the current format retired, with what replaces each: a storage access is now
+ * `storage` and data that passes is no kind, and a relationship that fits no kind takes one the
+ * vault adds.
+ */
+const RETIRED_KINDS: Readonly<Record<string, string>> = {
+	data: "use storage for a store the source reads or writes directly, or the kind that carries the data",
+	other:
+		"use the kind that says how it travels, or add a kind of the vault's own under relationshipKinds in .archboard/config.yaml",
+};
+
+/**
+ * Whether the current format retired a kind.
+ * @param kind The kind.
+ * @returns True for a retired kind.
+ */
+function isRetiredKind(kind: string): boolean {
+	return Object.hasOwn(RETIRED_KINDS, kind);
+}
 /**
  * The relationship kinds an old vault was written with, as `model init` wrote
  * them before kinds were layered. An entry that only restates one of these is
@@ -35,7 +52,7 @@ const OLD_BUILT_IN_KINDS: Record<string, SemanticPolicy["relationshipKinds"][str
 
 /**
  * The configuration of an old vault in the current format: no kind has a
- * dash, the retired `data` kind goes, and so does each entry that restates an
+ * dash, the retired kinds `data` and `other` go, and so does each entry that restates an
  * old default, its dash aside. What the vault chose itself stays.
  * @param policy The policy of the old configuration.
  * @returns The configuration to validate and write.
@@ -47,7 +64,7 @@ function upgradedConfiguration(policy: SemanticPolicy): Record<string, unknown> 
 		const restated =
 			old !== undefined &&
 			sameSemanticValue({ ...kind, evidence: kind.evidence ?? old.evidence }, old);
-		return id === RETIRED_KIND || restated ? [] : [[id, kind] as const];
+		return isRetiredKind(id) || restated ? [] : [[id, kind] as const];
 	});
 	return { ...vocabulary, relationshipKinds: Object.fromEntries(kinds) };
 }
@@ -68,9 +85,10 @@ type Refusal = readonly [Listed, string];
 function kindProblem(kind: string | null, kinds: ReadonlySet<string>): string | undefined {
 	if (kind === null) return "states no kind";
 	if (kinds.has(kind)) return undefined;
-	return kind === RETIRED_KIND
-		? "keeps the retired kind data: use storage for a store the source reads or writes directly, or the kind that carries the data"
-		: `names the unknown kind ${kind}: use one of ${[...kinds].join(", ")}`;
+	const replacement = RETIRED_KINDS[kind];
+	return replacement === undefined
+		? `names the unknown kind ${kind}: use one of ${[...kinds].join(", ")}`
+		: `keeps the retired kind ${kind}: ${replacement}`;
 }
 
 /**
@@ -201,7 +219,7 @@ function upgradedRelationship(
 export {
 	type Held,
 	classification,
-	RETIRED_KIND,
+	isRetiredKind,
 	upgradedConfiguration,
 	inventoryDiagnostics,
 	inventoryDigest,

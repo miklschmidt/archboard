@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-22T03:38:00Z'
-updated_date: '2026-11-22T13:08:00Z'
+updated_date: '2026-11-22T13:15:00Z'
 labels: []
 dependencies: []
 ordinal: 1144000
@@ -30,4 +30,6 @@ Pictures of many modules are unreadable: this model's 1328 relationships are 78%
 Owner chose 2026-11-22: a reading that names no lens reads through all where the default lens would draw no line, and the legend says the default draws none there. A named lens never gives way. ADR 0095 records it.
 
 Owner decided 2026-11-22: a lens follows the TASK-647 rule (PR 134): a part whose every line the lens leaves out leaves the picture. ADR 0095, CONTEXT.md and the archboard skill updated. A named lens that leaves no part shows the empty state with Show every relationship.
+
+Owner decided 2026-11-22: the built-in relationship kind other is retired. A relationship that fits no built-in kind takes a kind the vault adds; the upgrade tool refuses other with both ways out. ADR 0094, authoring and upgrade references updated. The part kind other stays.
 <!-- SECTION:NOTES:END -->

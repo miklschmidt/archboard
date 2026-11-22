@@ -35,9 +35,9 @@ Choose the kind by the mechanism at the two named ends:
 | `render`     | Places the target's component in its output.                                                         |
 | `storage`    | Reads or writes through a store's own interface: files, SQL, keys or objects.                        |
 | `dependency` | Declares a requirement and runs nothing of the target: a type-only import, a package or a build.     |
-| `other`      | Relies on the target in a way that no kind names. Say how in the label.                              |
 
 Take the most specific contract that the source relies on.
+When none of these says how a relationship travels, add a kind of the vault's own under `relationshipKinds` in `.archboard/config.yaml`, with its name and color.
 JSON-RPC over HTTP is `rpc`.
 A service that asks a repository object for orders is a `call`, and the repository that issues the SQL is `storage`.
 A function or a value that the source uses at run time is a `call`, never a `dependency`.

@@ -101,7 +101,6 @@ test("the built-in kinds sit under a vault's own, and a kind the vault adds name
 			"render",
 			"storage",
 			"dependency",
-			"other",
 			"ledger",
 		].toSorted(),
 	);

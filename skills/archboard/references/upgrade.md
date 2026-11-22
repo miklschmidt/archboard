@@ -20,7 +20,7 @@ The files are disjoint, so give each one to its own agent. Fill every entry. Eac
 Open the anchor, or the bindings of both ends, and read the operation the source asks the target to do. Follow delegated work to the code that does it, and read a library's contract when the target is one.
 
 Set `kind` and `effect` as [choose the kind and the effect](authoring.md#choose-the-kind-and-the-effect) says.
-Correct the old kind where the code says otherwise. A former `data` relationship takes the kind that carries it: `storage` only for direct store access.
+Correct the old kind where the code says otherwise. A former `data` relationship takes the kind that carries it: `storage` only for direct store access. A former `other` relationship takes the kind that says how it travels, or a kind that the vault adds.
 When you cannot rule a side effect out, write `mutation` and say why in `gap`.
 
 ## Review and install

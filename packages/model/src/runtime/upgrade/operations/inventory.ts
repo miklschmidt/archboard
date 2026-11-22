@@ -7,7 +7,7 @@ import {
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
 import { modelBoundaryFailure } from "#runtime/canonical/installation/store/model-state.ts";
-import { RETIRED_KIND, inventoryKey, type Held } from "#shared/upgrade/rules/upgrade.ts";
+import { inventoryKey, isRetiredKind, type Held } from "#shared/upgrade/rules/upgrade.ts";
 import type {
 	InventoryRelationship,
 	UpgradeInventory,
@@ -166,7 +166,7 @@ function entryOf(
 		...(description === undefined ? {} : { description }),
 		...(anchor === undefined ? {} : { anchor }),
 		oldKind: kind,
-		kind: kind === RETIRED_KIND ? null : kind,
+		kind: isRetiredKind(kind) ? null : kind,
 		effect: null,
 		gap: null,
 	};
