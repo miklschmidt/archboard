@@ -226,9 +226,10 @@ test("each line type is its own switch, the legend's words stay put while a read
 
 	await browser.run(["click", '[data-slot="model-lens"]']);
 	await pollUntil(
-		() => browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.textContent)`,
-		),
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.textContent)`,
+			),
 		(items) => items.length > 0,
 		"the lenses of the reading",
 		WAIT,
