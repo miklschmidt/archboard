@@ -68,6 +68,14 @@ const RELATIONS: readonly Relation[] = [
 	["telemetry.staleClaim", "<", "telemetry.keep"],
 	// A post ends long before the next round.
 	["telemetry.send", "<", "telemetry.round"],
+	// A recorder waits out the longest a live page stays on one state, a step's talk or voice going live.
+	[["recording.stepMax", "recording.voiceStart"], "<=", "recorder.stall"],
+	// Voice goes live within a realtime start, and a page's readiness serves its three waits.
+	["codex.realtimeStart", "<", "recording.voiceStart"],
+	["recorder.pageLoad", "=", "recorder.pageReady"],
+	["recorder.replayReady", "=", "recorder.pageReady"],
+	// A frame call waits past the page's own frame bound, so the page's reason reaches the caller.
+	["replay.frameReady", "<", "recorder.frameCall"],
 ];
 
 export { RELATIONS };

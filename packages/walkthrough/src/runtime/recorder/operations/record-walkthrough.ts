@@ -28,7 +28,7 @@ import { join } from "node:path";
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import type { LegacyBoard } from "@archboard/model/legacy-board";
 import { shellSize } from "@archboard/renderer/shell-geometry";
-import { recorderMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
 import {
 	RECORDING_AGAINST_SEARCH_PARAM,
 	RECORDING_LANGUAGE_SEARCH_PARAM,
@@ -232,7 +232,7 @@ function pageHandle(window: HeadlessWindow): RecordingPageHandle {
 		saveBlob: async (expression, path, readTimeoutMs) => {
 			const remote = await page.evaluate(expression, {
 				returnByValue: false,
-				timeoutMs: recorderMs("call"),
+				timeoutMs: ms("recorder.call"),
 			});
 			const objectId = isJsonRecord(remote) ? remote["objectId"] : undefined;
 			if (typeof objectId !== "string") {
@@ -260,20 +260,20 @@ async function openRecordingPage(
 		await chromium.browser.call(
 			"Browser.grantPermissions",
 			{ origin: new URL(url).origin, permissions: ["audioCapture"] },
-			recorderMs("call"),
+			ms("recorder.call"),
 		);
 		const window = await chromium.openWindow(
 			"about:blank",
 			shellSize("viewport"),
-			recorderMs("call"),
+			ms("recorder.call"),
 		);
 		const { page } = window;
 		await page.call(
 			"Emulation.setEmulatedMedia",
 			{ features: [{ name: "prefers-color-scheme", value: request.theme }] },
-			recorderMs("call"),
+			ms("recorder.call"),
 		);
-		const navigation = await page.call("Page.navigate", { url }, recorderMs("call"));
+		const navigation = await page.call("Page.navigate", { url }, ms("recorder.call"));
 		const refused = navigation["errorText"];
 		if (typeof refused === "string" && refused !== "") {
 			throw new Error(
@@ -450,9 +450,9 @@ async function keptTalk(
 	request.say(`Kept the talk in ${directory}.`);
 	const lost = talk.audio.reception?.concealedSamples ?? 0;
 	if (lost > 0) {
-		const ms = Math.round(talkSamplesMs(lost));
+		const dropped = Math.round(talkSamplesMs(lost));
 		request.say(
-			`The voice dropped out for ${ms} ms while it was recorded. Record again for a clean voice.`,
+			`The voice dropped out for ${dropped} ms while it was recorded. Record again for a clean voice.`,
 		);
 	}
 	return { talk, directory, leftBehind: talked.leftBehind };

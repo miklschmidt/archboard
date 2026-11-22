@@ -47,13 +47,6 @@ export type {
 // ── Groups still read by their old getters, until their owners move ────────
 export { processGroupPollMs } from "#shared/constants/process-groups.ts";
 export { localityDefaultSinceSeconds } from "#shared/constants/history-lens.ts";
-export {
-	recorderMs,
-	recorderPageReadyDeadline,
-	recorderPageReadySeconds,
-	recordingMs,
-} from "#shared/constants/walkthrough-recording.ts";
-export { replayMs } from "#shared/constants/walkthrough-replay.ts";
 export { skillEvalMs } from "#shared/constants/skill-eval.ts";
 export { paneMs } from "#shared/constants/pane.ts";
 export { modelCacheMs, shellClockMs } from "#shared/constants/shell.ts";

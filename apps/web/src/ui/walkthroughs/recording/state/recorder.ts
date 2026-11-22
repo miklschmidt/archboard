@@ -10,7 +10,7 @@
 // stamped as they happen. The recorder outside the page reads the state and
 // takes the talk; this owns nothing else (TASK-381).
 
-import { recordingMs } from "@archboard/timing";
+import { every } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { talkSamplesMs } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
@@ -186,7 +186,8 @@ class WalkthroughRecorder {
 	#kept: { readonly voice: Blob; readonly log: TalkLog } | null = null;
 	#failure: string | null = null;
 	#view: RecordedView;
-	#timer: ReturnType<typeof setInterval> | null = null;
+	/** Stops the pace of the talk, while it is kept. */
+	#stopPace: (() => void) | null = null;
 	/** The transport whose transcript the talk follows, and how to stop following it. */
 	#following: { readonly transport: object; readonly stop: () => void } | null = null;
 
@@ -312,7 +313,7 @@ class WalkthroughRecorder {
 			walkthrough,
 			recording: { language, ...(against === null ? {} : { against }) },
 		});
-		this.#timer = setInterval(this.#tick.bind(this), recordingMs("paceTick"));
+		this.#stopPace = every("recording.paceTick", this.#tick.bind(this));
 	}
 
 	/**
@@ -496,8 +497,8 @@ class WalkthroughRecorder {
 
 	/** Stop the tick. */
 	#halt(): void {
-		if (this.#timer !== null) clearInterval(this.#timer);
-		this.#timer = null;
+		this.#stopPace?.();
+		this.#stopPace = null;
 	}
 }
 

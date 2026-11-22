@@ -10,6 +10,8 @@ import { CLAIMS, MODEL_LOCKS } from "#shared/constants/model-locks.ts";
 import { RASTER } from "#shared/constants/raster.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
 import { TELEMETRY } from "#shared/constants/telemetry.ts";
+import { RECORDER, RECORDING } from "#shared/constants/walkthrough-recording.ts";
+import { REPLAY } from "#shared/constants/walkthrough-replay.ts";
 
 /** Every declared duration, by its name. */
 const WAITS = Object.freeze({
@@ -21,6 +23,9 @@ const WAITS = Object.freeze({
 	...MODEL_LOCKS,
 	...CLAIMS,
 	...TELEMETRY,
+	...RECORDING,
+	...RECORDER,
+	...REPLAY,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;
