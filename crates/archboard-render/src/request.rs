@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use archboard_flows::Flow;
 use archboard_flows::flowchart::KindLook;
-use archboard_layout::{Content, Edge, Engine, Node};
+use archboard_layout::{Content, Edge, Node};
 use archboard_scene::request::{
     Arrowhead, Dash, ExportFrame, PaletteColor, Relief, StandaloneTheme, Standing, ThemeColors,
 };
@@ -128,10 +128,6 @@ pub struct RenderRequest {
     /// The variant's own reading of the view, when the content is more than that.
     #[serde(default)]
     pub(crate) held: Option<Reading>,
-    /// The whole variant, before a view narrows it, which a container's
-    /// interface is read from (ADR 0044).
-    #[serde(default)]
-    pub(crate) variant: Option<Reading>,
     /// The subjects nobody has decided yet.
     #[serde(default)]
     pub(crate) unsettled: Vec<String>,
@@ -144,8 +140,6 @@ pub struct RenderRequest {
     /// The level of the picture drawn (ADR 0029).
     #[serde(default)]
     pub(crate) level: Option<String>,
-    /// Which engine lays an architecture out, resolved by the host from its shared default.
-    pub(crate) layout: Engine,
     /// A title and a legend an exported picture carries beside its drawing.
     #[serde(default)]
     pub(crate) frame: Option<ExportFrame>,
@@ -172,10 +166,5 @@ impl RenderRequest {
         } else {
             &self.content
         }
-    }
-
-    /// The whole variant the picture reads.
-    pub(crate) fn variant(&self) -> &Reading {
-        self.variant.as_ref().unwrap_or_else(|| self.held())
     }
 }

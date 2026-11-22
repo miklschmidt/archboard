@@ -223,7 +223,7 @@ impl<'t> CardLayout<'t> {
             if name == header_of(self.block) {
                 PORT
             } else {
-                width + super::peers::room(self.tree, name)
+                width
             },
             height,
         )
@@ -319,9 +319,9 @@ impl<'t> CardLayout<'t> {
         gv: &mut Engine<'_>,
         mut lined: Lined,
     ) -> Result<Rc<Laid>, String> {
-        let (tree, id, laid, insets) = (self.tree, self.id, self.laid, self.insets);
+        let (tree, id, insets) = (self.tree, self.id, self.insets);
         let (laid, left) = loop {
-            match routed(tree, id, laid, insets, &lined.placed, &Settling::First) {
+            match routed(tree, id, insets, &lined.placed, &Settling::First) {
                 Ok(done) => break done,
                 Err(widths) if self.reserve_ports(&widths) => lined = self.place(gv)?,
                 Err(_) => {
@@ -330,7 +330,7 @@ impl<'t> CardLayout<'t> {
                         held: 0.0,
                         ports: &ports,
                     };
-                    break routed(tree, id, laid, insets, &lined.placed, &again)
+                    break routed(tree, id, insets, &lined.placed, &again)
                         .expect("a routing that stands stops for no card");
                 }
             }
@@ -427,7 +427,6 @@ impl<'t> CardLayout<'t> {
             },
         );
         self.arranged.lowered = lowered;
-        super::peers::arrange(self.tree, self.block, self.laid, &mut centres, &mut boxes);
         let placed = self.placed(&graph, &centres, &polylines, &clusters);
         Ok(Lined {
             placed,
@@ -582,7 +581,6 @@ impl Reroute {
         routed(
             tree,
             self.block,
-            laid,
             self.insets,
             &placed,
             &Settling::Again {

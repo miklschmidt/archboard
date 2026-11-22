@@ -1,17 +1,15 @@
 //! The invisible edges that hold a block's items where they belong (TASK-349):
-//! a wrap's lowered cards down, a container's hidden parts below its first
-//! entry points, the items no line enters on the first rank and the
+//! a wrap's lowered cards down, the items no line enters on the first rank and the
 //! items no line leaves above the bottom ports.
 
 use crate::geometry::Side;
 use crate::track::grid::wrap_edges;
-use crate::track::scene::{Map, Set};
+use crate::track::scene::Set;
 use crate::track::score::anchored;
 use crate::viz::{Attrs, Edge, Subgraph, Value};
 
 use super::card_layout::{Arrangement, CardLayout, Sub};
-use super::cycles::Below;
-use super::tree::{ClusterKind, header_of};
+use super::tree::header_of;
 
 impl<'t> CardLayout<'t> {
     /// The invisible edges that hold a wrap's lowered cards down: each under
@@ -47,78 +45,6 @@ impl<'t> CardLayout<'t> {
             ));
         }
         held
-    }
-
-    /// The invisible edges that stand each container's hidden parts below its
-    /// first entry points: the parts its callers reach take its
-    /// first row, under its title, and what they hide sits beneath them.
-    pub(super) fn entry_row_edges(&self) -> Vec<Edge> {
-        let entries = &self.tree.entries;
-        if !entries.values().any(|&first| first) {
-            return Vec::new();
-        }
-        let mut below = Below::default();
-        for edge in &self.edges {
-            below.add(&edge.tail, &edge.head);
-        }
-        let mut edges = Vec::new();
-        for members in self.parts_by_frame().values() {
-            self.hold_hidden_parts(members, &mut below, &mut edges);
-        }
-        edges
-    }
-
-    /// The parts of each container: its cards and frames, by the frame around them.
-    fn parts_by_frame(&self) -> Map<String, Vec<&'t str>> {
-        let block = self.block;
-        let is_part = |member: &str| {
-            self.tree.cards.contains_key(member)
-                || block
-                    .clusters
-                    .get(member)
-                    .is_some_and(|cluster| cluster.kind == ClusterKind::Frame)
-        };
-        let mut parts: Map<String, Vec<&str>> = Map::default();
-        for (member, around) in &block.cluster_of {
-            if let Some(frame) = block.frame_around(Some(around))
-                && is_part(member)
-            {
-                parts.entry(frame).or_default().push(member);
-            }
-        }
-        parts
-    }
-
-    /// Stand a container's hidden parts below its first entry points, where
-    /// nothing stands them so already.
-    fn hold_hidden_parts(&self, members: &[&str], below: &mut Below, edges: &mut Vec<Edge>) {
-        let entries = &self.tree.entries;
-        let first: Vec<String> = members
-            .iter()
-            .filter(|&&one| entries.get(one) == Some(&true))
-            .map(|one| self.clusters.vendor_of(one))
-            .collect();
-        let under: Set<String> = first.iter().flat_map(|entry| below.reach(entry)).collect();
-        let hidden: Vec<String> = members
-            .iter()
-            .filter(|&&one| !entries.contains_key(one))
-            .map(|one| self.clusters.vendor_of(one))
-            .collect();
-        for part in hidden.iter().filter(|part| !under.contains(*part)) {
-            let above = below.reach(part);
-            let held: Vec<&String> = first
-                .iter()
-                .filter(|entry| !above.contains(*entry))
-                .collect();
-            for entry in held {
-                below.add(entry, part);
-                edges.push(Edge::new(
-                    entry.clone(),
-                    part.clone(),
-                    Attrs::of([("style", Value::from("invis")), ("weight", Value::Num(0.0))]),
-                ));
-            }
-        }
     }
 
     /// Hold every item no line enters on a block's first rank of items, when

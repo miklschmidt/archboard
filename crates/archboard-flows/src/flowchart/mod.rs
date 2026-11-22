@@ -442,7 +442,6 @@ pub fn picture(request: FlowchartRequest) -> PaintRequest {
     PaintRequest {
         picture: Picture::Architecture(Box::new(ArchitecturePicture {
             drawing,
-            whole: None,
             appearances,
             lines,
             steps: Vec::new(),

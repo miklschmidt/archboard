@@ -2,18 +2,16 @@
 //! geometry, and dropping the layout cancels its pending solve.
 
 use std::cell::RefCell;
-use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
-use archboard_layout::{Content, Engine, Measured, Solver, Unsolved, draw};
+use archboard_layout::{Content, Measured, Solver, Unsolved, draw};
 use archboard_scene::drawing::{MeasuredNode, Painted};
 use serde_json::{Value, json};
 
 /// One solve held by the test host until it is answered explicitly.
 struct Asked {
-    graph: Value,
     answer: Option<Result<String, Unsolved>>,
     waker: Option<Waker>,
     dropped: bool,
@@ -52,8 +50,8 @@ impl Solver for Host {
     fn solve(&self, graph: String) -> Solving<'_> {
         let mut asked = self.0.borrow_mut();
         let index = asked.len();
+        serde_json::from_str::<Value>(&graph).expect("the core asks for a JSON graph");
         asked.push(Asked {
-            graph: serde_json::from_str(&graph).expect("the core asks for a JSON graph"),
             answer: None,
             waker: None,
             dropped: false,
@@ -100,17 +98,9 @@ fn picture() -> (Content, Measured) {
     (content, measured)
 }
 
-/// The production choice, with no comparison or entry points.
+/// The production choice, with no comparison.
 async fn drawing(host: &Host, content: &Content, measured: &Measured) -> Result<Painted, String> {
-    draw(
-        content,
-        measured,
-        None,
-        &BTreeMap::new(),
-        Engine::Track,
-        host,
-    )
-    .await
+    draw(content, measured, None, host).await
 }
 
 /// A full solve reply with no stackable block. Its width identifies the drawing.
@@ -217,17 +207,13 @@ fn a_graph_with_containers_asks_one_whole_solve() {
 }
 
 #[test]
-fn nesting_is_fixed_before_the_only_solve() {
+fn a_picture_takes_one_solve_and_its_failure() {
     let host = Host::default();
     let (content, measured) = picture();
     let mut layout = Box::pin(drawing(&host, &content, &measured));
     waits(layout.as_mut());
     let asked = host.0.borrow();
     assert_eq!(asked.len(), 1);
-    assert_eq!(
-        asked[0].graph["layoutOptions"]["archboard.blocks.nesting"],
-        "inline"
-    );
     drop(asked);
     host.answer(0, Err(Unsolved::Failed("host failure".to_owned())));
     host.fails(

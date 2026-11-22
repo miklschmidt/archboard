@@ -12,10 +12,10 @@ use crate::track::scene::{ItemId, Map, Placement, Set};
 use crate::track::score::laps_of;
 use crate::track::sides::fit_sides;
 
-use super::laid::{Band, Insets, Laid, LaidMap};
-use super::leaves::{let_ports_slide, mark_regions, rim_of};
+use super::laid::{Band, Insets, Laid};
+use super::leaves::{mark_regions, rim_of};
 use super::lone::frame_shape;
-use super::tree::{Block, BlockId, BlockTree, Kind, Nesting};
+use super::tree::{Block, BlockId, BlockTree, Kind};
 use super::walls::{
     beside_points, beside_walls, channel_wall, enters_by, inner_points, labelled_out, mark_besides,
     wall_lines,
@@ -47,7 +47,6 @@ impl<'a> Settling<'a> {
 pub(super) fn routed(
     tree: &BlockTree,
     id: BlockId,
-    laid: &LaidMap,
     insets: Insets,
     placed: &PlacedBlock,
     settling: &Settling<'_>,
@@ -64,26 +63,15 @@ pub(super) fn routed(
             one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of);
         }
     }
-    let inline = tree.nesting != Nesting::Blocks;
-    scene.edges_page = inline && block.kind == Kind::Root;
-    scene.inline = inline;
     mark_regions(&mut scene, block, tree);
-    if inline {
-        let_ports_slide(&mut scene, block);
-    }
     let edges: Edges<'_> = placed
         .edges
         .iter()
         .map(|edge| (edge.id.as_str(), edge))
         .collect();
     crate::track::sides::place_headers(&mut scene, &edges);
-    let peers = super::peers::Peers::new(tree, block, laid, &mut scene);
     let beside = beside_walls(block, tree, &scene);
-    let straight: Set<&str> = beside
-        .iter()
-        .map(|one| one.key.as_str())
-        .chain(peers.keys.iter().map(String::as_str))
-        .collect();
+    let straight: Set<&str> = beside.iter().map(|one| one.key.as_str()).collect();
     mark_besides(&mut scene, &beside);
     let lines: Vec<SceneLine<'_>> = placed
         .edges
@@ -109,7 +97,6 @@ pub(super) fn routed(
     for (key, points) in beside_points(&scene, &beside, insets.side) {
         routes.insert(key, points);
     }
-    peers.finish(tree, block, laid, &mut scene, &mut routes, insets.side);
     let settled = Map::default();
     let (held, ports) = settling.kept(&settled);
     let (mut laid, left) = read(block, insets, &scene, routes, &edges, held);

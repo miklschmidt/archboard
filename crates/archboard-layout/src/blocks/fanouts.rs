@@ -3,7 +3,7 @@
 use crate::track::route::trunk_kind;
 use crate::track::scene::{Map, Set};
 
-use super::tree::{BlockId, BlockTree, Nesting, Projection};
+use super::tree::{BlockId, BlockTree, Projection};
 
 #[derive(Default)]
 struct Branches {
@@ -76,9 +76,6 @@ pub(super) fn entry_fanouts(
     before: &Set<String>,
     back: &Set<String>,
 ) -> Set<(BlockId, String)> {
-    if tree.nesting != Nesting::Blocks {
-        return Set::default();
-    }
     let incoming = interior_sources(tree, back);
     let mut groups: Map<(BlockId, String, String, bool), Branches> = Map::default();
     for projection in &tree.projections {

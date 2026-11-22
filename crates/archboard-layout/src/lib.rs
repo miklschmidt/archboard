@@ -1,5 +1,5 @@
 //! The renderer core's layout of architecture pictures (ADR 0059): a picture's
-//! parts and relationships, measured, drawn by Track or Blocks ([`draw`]). A
+//! parts and relationships, measured, drawn by Blocks ([`draw`]). A
 //! drawing is chosen between the solves of one picture, each a measured graph
 //! laid out one way ([`lay_out_picture`]) and read for what the choice weighs;
 //! the host runs the solves ([`Solver`]), side by side where it can, and each
@@ -25,8 +25,7 @@ mod track;
 mod viz;
 
 pub use architecture::{
-    Content, Edge, Engine, Measured, Node, Solver, Standings, Unsolved, draw, lay_out_across,
-    shown_drawing,
+    Content, Edge, Measured, Node, Solver, Standings, Unsolved, draw, lay_out_across, shown_drawing,
 };
 pub use blocks::place::lay_out_picture;
 pub use constants::fit_in;

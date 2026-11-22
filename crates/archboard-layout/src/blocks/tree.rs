@@ -33,34 +33,6 @@ use super::laid::Size;
 use super::lone::{Card, Lone, captions_of};
 use super::projection::labels_before_joins;
 
-/// How a picture's containers and group regions are drawn: each packed as a
-/// block of its own, every one inline as a cluster of the picture's layout, or
-/// containers inline with each group's region packed as a block.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Nesting {
-    Blocks,
-    Inline,
-    Groups,
-}
-
-impl Nesting {
-    /// The way a solve's options name: `blocks`, `inline` or `groups`.
-    ///
-    /// # Errors
-    ///
-    /// When it names another.
-    pub(crate) fn named(name: &str) -> Result<Nesting, String> {
-        match name {
-            "blocks" => Ok(Nesting::Blocks),
-            "inline" => Ok(Nesting::Inline),
-            "groups" => Ok(Nesting::Groups),
-            other => Err(format!(
-                "A picture is drawn as blocks, inline or with its groups packed (blocks, inline or groups); not {other}."
-            )),
-        }
-    }
-}
-
 /// A block's place in the tree.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct BlockId(pub usize);
@@ -293,8 +265,6 @@ pub(crate) struct BlockTree {
     pub cards: Map<String, Card>,
     /// Every card alone in its group's region, by id.
     pub lone: Map<String, Lone>,
-    /// Nodes drawn inline that are entry points of their container, each true when first.
-    pub entries: Map<String, bool>,
     /// Every relationship's projection, in the picture's order.
     pub projections: Vec<Projection>,
     /// How each relationship is drawn, by id.
@@ -303,14 +273,11 @@ pub(crate) struct BlockTree {
     pub pins: Map<String, Pin>,
     /// The wall each port moves to, keyed by `exit_key`.
     pub exits: Map<String, Side>,
-    pub nesting: Nesting,
     /// Whether this candidate compares all wraps and geometric packings.
     pub expanded: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
     pub(super) fanouts: Set<(BlockId, String)>,
-    /// Parents whose graph calls for a local composition.
-    pub local_frames: Set<String>,
     /// The ports each block holds in an order on a face, keyed `block|face` (`orders.rs`).
     pub orders: Map<String, Vec<String>>,
 }
@@ -396,7 +363,7 @@ impl BlockTree {
     ///
     /// When the hierarchy's measured options are unreadable, or a relationship
     /// names a node the hierarchy does not hold.
-    pub(crate) fn new(graph: &Node, kept: Kept, nesting: Nesting) -> Result<BlockTree, String> {
+    pub(crate) fn new(graph: &Node, kept: Kept) -> Result<BlockTree, String> {
         let mut tree = BlockTree {
             arena: Vec::new(),
             blocks: Map::default(),
@@ -405,16 +372,13 @@ impl BlockTree {
             captions: captions_of(graph)?,
             cards: Map::default(),
             lone: Map::default(),
-            entries: Map::default(),
             projections: Vec::new(),
             routes: Map::default(),
             pins: Map::default(),
             exits: kept.exits,
-            nesting,
             expanded: kept.expanded,
             feedback: Set::default(),
             fanouts: Set::default(),
-            local_frames: super::composition::local_frames(graph),
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);

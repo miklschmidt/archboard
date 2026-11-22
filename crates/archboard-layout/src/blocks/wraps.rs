@@ -14,7 +14,7 @@ use crate::track::score::{
 
 use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
-use super::tree::{BlockId, BlockTree, Kind, Nesting};
+use super::tree::{BlockId, BlockTree, Kind};
 
 /// How much better a wrap must fit the page than the picture whole.
 const WORTH_WRAPPING: f64 = 1.1;
@@ -99,24 +99,15 @@ pub(crate) fn search_of(
         candidates.push(Candidate::Grid);
     }
     for lowered in wraps_of(laying.whole, tree, block) {
-        if !tree.expanded
-            && !try_wrap(
-                &lowered,
-                tree.nesting,
-                laying.whole.boxes.len(),
-                tree.cards.len(),
-            )
-        {
+        if !tree.expanded && !try_wrap(&lowered, laying.whole.boxes.len(), tree.cards.len()) {
             continue;
         }
-        candidates.extend(
-            column_choices(&lowered, tree.nesting, tree.expanded)
-                .into_iter()
-                .map(|columns| Candidate::Lowered {
-                    lowered: lowered.clone(),
-                    columns,
-                }),
-        );
+        candidates.extend(column_choices(tree.expanded).into_iter().map(|columns| {
+            Candidate::Lowered {
+                lowered: lowered.clone(),
+                columns,
+            }
+        }));
     }
     (!candidates.is_empty()).then_some(Search { needed, candidates })
 }
@@ -243,15 +234,10 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 }
 
 /// Whether a wrap's rows may be laid with their columns free, as well as held.
-/// Track keeps its existing choices. The first Blocks hierarchy holds columns;
-/// the bounded placement comparison can also try the hierarchy with free columns.
-fn column_choices(lowered: &Plan, nesting: Nesting, free: bool) -> Vec<bool> {
-    let deep = lowered.values().copied().max().unwrap_or(0) > 1;
-    if deep && nesting != Nesting::Blocks || nesting == Nesting::Blocks && !free {
-        vec![true]
-    } else {
-        vec![false, true]
-    }
+/// The first hierarchy holds columns; the bounded placement comparison can also
+/// try the hierarchy with free columns.
+fn column_choices(free: bool) -> Vec<bool> {
+    if !free { vec![true] } else { vec![false, true] }
 }
 
 /// The ways to wrap a block's widest rank of items into rows, when the block
@@ -317,8 +303,8 @@ fn peer_runs(
         .collect()
 }
 
-fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize, cards: usize) -> bool {
-    if nesting != Nesting::Blocks || boxes <= 24 {
+fn try_wrap(lowered: &Plan, boxes: usize, cards: usize) -> bool {
+    if boxes <= 24 {
         return true;
     }
     let rows = lowered.values().copied().max().unwrap_or(0) + 1;

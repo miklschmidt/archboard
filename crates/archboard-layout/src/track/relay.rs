@@ -25,8 +25,6 @@ use crate::track::traffic::Traffic;
 const STRAY: f64 = 2.0 * LANE;
 /// How much cheaper a new route must be than the old one before the chain takes it.
 const SAVING: f64 = 8.0 * LANE;
-/// How much of a lap round the drawing a line's cost counts: a quarter of its length.
-const BEYOND_SHARE: f64 = 4.0;
 /// How many times the chains not yet relaid are tried again.
 const PASSES: usize = 3;
 /// The spacing of the columns a route may take, besides the edges of what stands on its bands.
@@ -343,31 +341,10 @@ impl Relay {
                 - track.meets_at(stations[index + 1], top, Some(bottom)))
             .abs();
         }
-        let far = self.beyond(track, stations, xs);
-        let lap = js_min(far / BEYOND_SHARE, CROSSING + SAVING);
-        let run = travel + lap;
+        let run = travel;
         [
             run + CROSSING * crossings,
             run + CROSSING * self.trunks_crossed(track, stations, xs),
         ]
-    }
-
-    /// How far a chain's line runs down beyond everything the drawing holds,
-    /// where the drawing's edge is the page's.
-    fn beyond(&self, track: &Track<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
-        let scene = &*track.scene;
-        if !scene.edges_page {
-            return 0.0;
-        }
-        let mut sum = 0.0;
-        for (index, &station) in stations[1..stations.len() - 1].iter().enumerate() {
-            if outside(xs[index + 1], self.extent) <= 0.0 {
-                continue;
-            }
-            let band = track.station(station).band;
-            let (above, below) = (scene.bands[band - 1], scene.bands[band + 1]);
-            sum += (below.top + below.bottom - above.top - above.bottom) / 2.0;
-        }
-        sum
     }
 }

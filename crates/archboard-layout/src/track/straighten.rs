@@ -210,17 +210,6 @@ impl Track<'_> {
             })
             .collect();
         let fewest = min_of(&counts);
-        let crosses_more = self.scene.inline && fewest > self.standing_crossings(run, bands);
-        let standing_clear = run.lanes.iter().all(|&lane| {
-            let station = self.station(lane);
-            let x = self.x(lane);
-            occupancy.taken[station.band]
-                .iter()
-                .all(|&(low, high)| x <= low || x >= high)
-        });
-        if crosses_more && standing_clear {
-            return None;
-        }
         counts
             .iter()
             .position(|&count| count == fewest)
@@ -253,15 +242,5 @@ impl Track<'_> {
             own: own.to_vec(),
             others,
         }
-    }
-
-    /// How many other chains a run crosses where its lanes stand.
-    fn standing_crossings(&self, run: &LaneRun, bands: &[ByBand]) -> f64 {
-        let own: Vec<StationId> = std::iter::once(run.before)
-            .chain(run.lanes.iter().copied())
-            .chain([run.after])
-            .collect();
-        let xs: Vec<f64> = own.iter().map(|&station| self.x(station)).collect();
-        self.crossings_of(&own, &xs, bands, None)
     }
 }

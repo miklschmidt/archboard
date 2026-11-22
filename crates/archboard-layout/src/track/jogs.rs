@@ -133,13 +133,10 @@ impl Track<'_> {
 
     /// Move a card's own port along its face to an x, when the port is no
     /// trunk's and clear of the face's corners and its
-    /// other ports; a block's own port slides along the block's edge instead.
+    /// other ports.
     fn move_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let station = self.net(net).at(end);
         let item = self.station(station).item;
-        if item.is_some_and(|item| self.scene.slides.contains_key(&item)) {
-            return self.slide_port(nets, net, end, x);
-        }
         if self.shared_at(net, end).is_some() || !self.on_face(station, x) {
             return false;
         }
@@ -200,11 +197,7 @@ impl Track<'_> {
         let mut boxes: Map<StationId, Item> = Map::default();
         for &station in stations {
             let one = self.station(station);
-            if one.kind == Kind::Label
-                || one
-                    .item
-                    .is_some_and(|item| self.scene.slides.contains_key(&item))
-            {
+            if one.kind == Kind::Label {
                 boxes.insert(station, *self.scene.item(one.item.expect("a box")));
             }
         }
@@ -531,9 +524,7 @@ impl Track<'_> {
                 for index in 0..routes[route].len() {
                     let net = routes[route][index];
                     let wants = (kinked(self, net)
-                        || (pass == 0
-                            && !self.scene.inline
-                            && self.turns_back(&routes[route], index)))
+                        || (pass == 0 && self.turns_back(&routes[route], index)))
                         && self.net(net).wall.is_none();
                     closed.push(
                         wants && self.close(chains, routes, &nets, Place { route, index }, kept),

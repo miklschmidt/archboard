@@ -19,21 +19,6 @@ impl Below {
             .push(head.to_owned());
     }
 
-    /// Every item one leads down to, itself among them.
-    pub(crate) fn reach(&self, from: &str) -> Set<String> {
-        let mut seen: Set<String> = Set::default();
-        let mut open = vec![from.to_owned()];
-        while let Some(at) = open.pop() {
-            if !seen.contains(&at)
-                && let Some(next) = self.next.get(&at)
-            {
-                open.extend(next.iter().cloned());
-            }
-            seen.insert(at);
-        }
-        seen
-    }
-
     /// Whether one item leads down to another.
     pub(crate) fn reaches(&self, from: &str, target: &str) -> bool {
         let mut seen: Set<String> = Set::default();
@@ -196,6 +181,5 @@ mod tests {
         below.add("b", "c");
         assert!(below.reaches("a", "c"));
         assert!(!below.reaches("c", "a"));
-        assert_eq!(below.reach("b").len(), 2);
     }
 }

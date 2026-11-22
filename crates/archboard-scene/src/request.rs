@@ -222,11 +222,6 @@ pub struct FlowchartParts {
 pub struct ArchitecturePicture {
     /// What the picture draws.
     pub drawing: Painted,
-    /// The whole layout, when the picture draws only part of it: the page is
-    /// fitted to the whole, so leaving some out moves nothing that is kept.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub whole: Option<Painted>,
     /// Every node the page lays out, drawn or not.
     pub appearances: BTreeMap<String, NodeAppearance>,
     /// How each drawn line reads, by relationship id.

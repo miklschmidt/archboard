@@ -3,7 +3,7 @@
 //! pins on its blocks' edges, or the block's own port or header, and how much
 //! room the routes spend running round the blocks.
 
-use archboard_router::{Connector, Dir, End, Params, Route, Scene, route};
+use archboard_router::{Connector, Dir, End, Params, Route, Scene};
 
 use crate::ecma::abs;
 use crate::geometry::{Point, Rect, Side};
@@ -227,10 +227,8 @@ impl TrunkRouter<'_> {
         estimate
     }
 
-    /// Route every trunk around the packed blocks: into the block's own ports
-    /// as pins, or, where the router finds no route that way for some trunk,
-    /// every trunk to them as free points, and a trunk it still finds none for
-    /// as a plain dogleg. Answers each line's points, by key, from its source end.
+    /// Route every trunk around the packed blocks into the block's own ports,
+    /// and a trunk the router finds no route for as a plain dogleg. Answers each line's points, by key, from its source end.
     pub(crate) fn route(&self) -> Map<String, Vec<Point>> {
         let lines: Vec<&Line> = self
             .block
@@ -238,7 +236,7 @@ impl TrunkRouter<'_> {
             .values()
             .filter(|line| !self.block.header_line(line))
             .collect();
-        let routes = if self.tree.nesting == super::super::tree::Nesting::Blocks {
+        let routes: Vec<Vec<Point>> =
             super::super::planned::route_trunks(&self.scene(&lines, true))
                 .into_iter()
                 .map(|route| match route {
@@ -248,15 +246,7 @@ impl TrunkRouter<'_> {
                         .collect(),
                     Route::Unroutable => Vec::new(),
                 })
-                .collect()
-        } else {
-            let pinned = self.routed(&lines, true);
-            if pinned.iter().any(Vec::is_empty) {
-                self.routed(&lines, false)
-            } else {
-                pinned
-            }
-        };
+                .collect();
         lines
             .iter()
             .zip(routes)
@@ -358,26 +348,6 @@ impl TrunkRouter<'_> {
                 crossing: TRUNK_CROSSING,
             },
         }
-    }
-
-    /// Every trunk as the router routes it, the router given every obstacle
-    /// (the packed blocks, the header and, directed, the block's own ports)
-    /// and each trunk's two ends. Answers each trunk's points, in order; none
-    /// where the router found no route.
-    fn routed(&self, lines: &[&Line], directed: bool) -> Vec<Vec<Point>> {
-        debug_assert_ne!(self.tree.nesting, super::super::tree::Nesting::Blocks);
-        let scene = self.scene(lines, directed);
-        let routed = route(&scene);
-        routed
-            .into_iter()
-            .map(|one| match one {
-                Route::Routed(points) => points
-                    .into_iter()
-                    .map(|at| Point { x: at.x, y: at.y })
-                    .collect(),
-                Route::Unroutable => Vec::new(),
-            })
-            .collect()
     }
 }
 

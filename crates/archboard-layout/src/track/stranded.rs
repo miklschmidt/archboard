@@ -10,7 +10,6 @@
 
 use crate::ecma::{abs, js_max, js_min};
 use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
-use crate::track::channels::{End, NetId};
 use crate::track::occupancy::Occupancy;
 use crate::track::readings::by_band;
 use crate::track::scene::{Map, Set, centre_x};
@@ -219,22 +218,5 @@ impl Track<'_> {
             occupancy.take(self, lane);
         }
         moved
-    }
-
-    /// Slide each of a block's own ports onto the column of the lane its line
-    /// runs on beside it, where the port may stand there.
-    pub(crate) fn ports_onto_lanes(&mut self, nets: &[NetId]) {
-        for &net in nets {
-            for end in [End::Top, End::Bottom] {
-                let far = self.net(net).at(end.other());
-                let item = self.station(self.net(net).at(end)).item;
-                if item.is_some_and(|item| self.scene.slides.contains_key(&item))
-                    && self.station(far).kind == Kind::Lane
-                {
-                    let x = self.x(far);
-                    self.slide_port(nets, net, end, x);
-                }
-            }
-        }
     }
 }

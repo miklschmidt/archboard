@@ -164,15 +164,8 @@ pub(crate) struct Placement {
     pub(super) wall_numbers: RefCell<FxHashMap<String, usize>>,
     pub regions: Vec<Region>,
     pub bands: Vec<Band>,
-    /// A block's own ports that may still slide along its top or bottom edge,
-    /// each with the stretch it may stand on.
-    pub slides: Map<ItemId, (f64, f64)>,
     /// The blocks of group regions packed whole among the scene's cards.
     pub region_blocks: Set<ItemId>,
-    /// Whether the scene's sides are the page's: the whole picture drawn inline.
-    pub edges_page: bool,
-    /// Whether the scene is drawn by the Track engine, its containers and regions inline.
-    pub inline: bool,
     /// The stretch of each band that a line drawn straight from a card's side
     /// to the block's wall runs along, by band.
     pub besides: Map<usize, Vec<(f64, f64)>>,

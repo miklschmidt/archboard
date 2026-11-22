@@ -1,6 +1,6 @@
 //! An architecture drawn from one graph plan through the host's [`Solver`].
-//! Track or Blocks places its parts and relationships, fits its page, and
-//! settles its crossings. The painter and flowcharts consume that drawing.
+//! Blocks places its parts and relationships, fits its page, and settles its
+//! crossings. The painter and flowcharts consume that drawing.
 
 mod choosing;
 mod content;
@@ -16,8 +16,6 @@ use std::hash::BuildHasher;
 use archboard_scene::drawing::{
     ArchitectureDrawing, EdgeFacts, NodeFacts, Painted, PaintedDrawing,
 };
-use serde::{Deserialize, Serialize};
-
 pub use content::{Content, Edge, Node};
 pub use graph::Standings;
 pub use measured::Measured;
@@ -25,23 +23,11 @@ pub use solving::{Solver, Unsolved, lay_out_across};
 
 use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
 
-/// Which engine lays an architecture out (TASK-348, ADR 0040).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum Engine {
-    /// Every relationship on an assigned track between ranks, with containers
-    /// drawn inline.
-    Track,
-    /// Each container packed as a block of its own.
-    Blocks,
-}
-
-/// A picture drawn: laid out by the engine named, on a page fitted to it, with
+/// A picture drawn: laid out by Blocks, on a page fitted to it, with
 /// its crossings settled.
 ///
 /// `standings` keeps relationships that stand differently in a comparison on
-/// separate trunks; `entries` names each child that is an entry point of its
-/// container, true when it is first (ADR 0044).
+/// separate trunks.
 ///
 /// # Errors
 ///
@@ -50,13 +36,10 @@ pub async fn draw<S: Solver>(
     content: &Content,
     measured: &Measured,
     standings: Option<&Standings>,
-    entries: &BTreeMap<String, bool>,
-    engine: Engine,
     solver: &S,
 ) -> Result<Painted, String> {
-    let inline = engine == Engine::Track;
-    let graph = graph::compound_graph(content, measured, standings, entries, inline);
-    let placed = choosing::placed_blocks(solver, &graph, inline).await?;
+    let graph = graph::compound_graph(content, measured, standings);
+    let placed = choosing::placed_blocks(solver, graph).await?;
     let drawing = page::fitted_page(drawn::drawing_of(content, measured, &placed));
     let frozen = placed.planned;
     let bridged = if frozen {

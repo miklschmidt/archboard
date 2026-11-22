@@ -190,9 +190,7 @@ fn sequence_far_scale(picture: &SequencePicture) -> f64 {
 /// The one type scale of a picture's far cards.
 fn picture_far_scale(picture: &Picture) -> f64 {
     match picture {
-        Picture::Architecture(picture) => {
-            far_scale(picture, picture.whole.as_ref().unwrap_or(&picture.drawing))
-        }
+        Picture::Architecture(picture) => far_scale(picture, &picture.drawing),
         Picture::Sequence(picture) => sequence_far_scale(picture),
     }
 }
@@ -225,7 +223,7 @@ pub fn paint(request: &PaintRequest) -> Scene {
                         shapes: &parts.shapes,
                         palette,
                     });
-            let page_drawing = picture.whole.as_ref().unwrap_or(&picture.drawing);
+            let page_drawing = &picture.drawing;
             let vocabulary = architecture::Vocabulary {
                 appearances: &picture.appearances,
                 lines: &picture.lines,

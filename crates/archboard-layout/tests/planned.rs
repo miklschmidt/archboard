@@ -40,7 +40,7 @@ fn graphs_laid(relationships: usize) -> usize {
             json!({"id":format!("e{i}{j}"),"sources":[format!("c{i}")],"targets":[format!("c{j}")],
                 "labels":[{"id":format!("l{i}{j}"),"text":"calls","width":40,"height":16}]})
         });
-    let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    let graph = json!({"id":"root","layoutOptions":{},
         "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()});
     let mut host = Counting(0);
     lay_out_picture(&graph.to_string(), &mut host).expect("a planned drawing");
@@ -66,7 +66,7 @@ fn frame_of(parts: usize) -> Value {
         .chain([("p0".to_owned(), "door".to_owned())])
         .map(|(from, to)| line(from, to))
         .collect();
-    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    json!({"id":"root","layoutOptions":{},
         "children":[{"id":"frame","width":200,"height":36,
             "layoutOptions":{"archboard.header.size":"36"},"children":children},
             {"id":"door","width":160,"height":34}],
@@ -117,7 +117,7 @@ fn a_door_on_a_crowded_reading_keeps_its_own_size_beside_taller_cards() {
         .map(|(from, to)| line(from, to))
         .collect();
     let children: Vec<Value> = cards.chain([door]).collect();
-    let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    let graph = json!({"id":"root","layoutOptions":{},
         "children":children,"edges":edges});
     let placed = drawing(&graph);
     let drawn = placed["cards"].as_array().expect("the drawn cards");
@@ -142,7 +142,7 @@ fn two_frames_stand_apart_with_their_own_parts_and_a_line_between_their_parts() 
     };
     let line =
         |from: &str, to: &str| json!({"id":format!("{from}{to}"),"sources":[from],"targets":[to]});
-    let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    let graph = json!({"id":"root","layoutOptions":{},
         "children":[frame("a",parts("a")),frame("b",parts("b")),{"id":"door","width":160,"height":34}],
         "edges":[line("a0","b1"),line("a1","a2"),line("b0","door")]});
     let placed = drawing(&graph);
@@ -197,11 +197,9 @@ fn nested_comparison_repairs_channels_through_enclosing_blocks() {
 
 #[test]
 fn an_adjacent_pair_uses_a_direct_channel_with_measured_cards() {
-    let placed = drawing(
-        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    let placed = drawing(&json!({"id":"root","layoutOptions":{},
         "children":[{"id":"a","width":200,"height":80},{"id":"b","width":160,"height":80}],
-        "edges":[{"id":"ab","sources":["a"],"targets":["b"]}]}),
-    );
+        "edges":[{"id":"ab","sources":["a"],"targets":["b"]}]}));
     let points = placed["edges"][0]["points"].as_array().unwrap();
     assert_eq!(points.len(), 2);
     assert_eq!(placed["cards"][0]["box"]["height"], 80.0);
@@ -209,13 +207,11 @@ fn an_adjacent_pair_uses_a_direct_channel_with_measured_cards() {
 
 #[test]
 fn an_isolated_nested_group_keeps_semantic_frame_depth_and_measured_caption() {
-    let placed = drawing(
-        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks",
+    let placed = drawing(&json!({"id":"root","layoutOptions":{
         "archboard.group.captions":"[[\"g\",90,20]]"},
         "children":[{"id":"outer","width":240,"height":60,"children":[
             {"id":"inner","width":200,"height":60,"layoutOptions":{"archboard.group":"g"},
-                "children":[{"id":"leaf","width":160,"height":80}]}]}],"edges":[]}),
-    );
+                "children":[{"id":"leaf","width":160,"height":80}]}]}],"edges":[]}));
     let frames = placed["frames"].as_array().unwrap();
     let depth = |id| {
         frames.iter().find(|frame| frame["id"] == id).unwrap()["depth"]
@@ -231,11 +227,9 @@ fn an_isolated_nested_group_keeps_semantic_frame_depth_and_measured_caption() {
 #[test]
 fn a_label_fits_its_own_run_and_keeps_its_measured_rectangle() {
     for orders in [["0", "1"], ["1", "0"]] {
-        let placed = drawing(
-            &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        let placed = drawing(&json!({"id":"root","layoutOptions":{},
         "children":[{"id":"a","width":200,"height":80,"layoutOptions":{"archboard.order":orders[0]}},{"id":"b","width":200,"height":80,"layoutOptions":{"archboard.order":orders[1]}}],
-        "edges":[{"id":"ab","sources":["a"],"targets":["b"],"labels":[{"width":80,"height":24}]}]}),
-        );
+        "edges":[{"id":"ab","sources":["a"],"targets":["b"],"labels":[{"width":80,"height":24}]}]}));
         let label = &placed["edges"][0]["label"];
         assert_eq!(
             (label["width"].as_f64(), label["height"].as_f64()),
@@ -249,12 +243,10 @@ fn a_label_fits_its_own_run_and_keeps_its_measured_rectangle() {
 #[test]
 fn a_nested_source_or_header_keeps_its_label_clear_of_frame_walls() {
     for source in ["a", "frame"] {
-        let placed = drawing(
-            &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        let placed = drawing(&json!({"id":"root","layoutOptions":{},
             "children":[{"id":"frame","width":240,"height":60,"children":[{"id":"a","width":200,"height":80}]},
                 {"id":"b","width":200,"height":80}],
-            "edges":[{"id":"ab","sources":[source],"targets":["b"],"labels":[{"width":80,"height":24}]}]}),
-        );
+            "edges":[{"id":"ab","sources":[source],"targets":["b"],"labels":[{"width":80,"height":24}]}]}));
         let label = &placed["edges"][0]["label"];
         let frame = &placed["frames"][0]["box"];
         let interval = |r: &Value, axis: &str, size: &str| {
@@ -292,10 +284,8 @@ fn a_large_label_fan_and_parallel_relationships_keep_their_private_words() {
             "labels":[{"width":80,"height":24}]}),
         );
     }
-    let placed = drawing(
-        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
-        "children":children,"edges":edges}),
-    );
+    let placed = drawing(&json!({"id":"root","layoutOptions":{},
+        "children":children,"edges":edges}));
     let routes = placed["edges"].as_array().unwrap();
     assert_eq!(routes.len(), 30);
     for edge in routes {
@@ -317,9 +307,8 @@ fn mixed_treatments_keep_distinct_routes() {
         .collect();
     let edges: Vec<_> = (0..7).map(|i| json!({"id":format!("edge{i}"),"sources":["source"],"targets":[format!("target{i}")],
         "layoutOptions":{"archboard.relationship.kind":format!("kind{i}")},"labels":[{"width":100,"height":31}]})).collect();
-    let placed = drawing(
-        &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},"children":children,"edges":edges}),
-    );
+    let placed =
+        drawing(&json!({"id":"root","layoutOptions":{},"children":children,"edges":edges}));
     assert_eq!(placed["edges"].as_array().unwrap().len(), 7);
 }
 
@@ -331,11 +320,9 @@ fn self_loops_keep_their_owned_routes_and_labels_on_cards_and_parent_headers() {
                 .then(|| json!({"width":100,"height":24}))
                 .into_iter()
                 .collect();
-            let placed = drawing(
-                &json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+            let placed = drawing(&json!({"id":"root","layoutOptions":{},
                 "children":[{"id":"frame","width":240,"height":72,"children":[{"id":"card","width":200,"height":80}]}],
-                "edges":[{"id":"loop","sources":[from],"targets":[from],"labels":labels}]}),
-            );
+                "edges":[{"id":"loop","sources":[from],"targets":[from],"labels":labels}]}));
             let line = &placed["edges"][0];
             assert_eq!(line["id"], "loop");
             assert!(line["points"].as_array().unwrap().len() >= 4);
@@ -364,7 +351,6 @@ fn label_fits(label: &Value, pair: &[Value]) -> bool {
 #[test]
 fn reciprocal_labeled_calls_keep_the_short_gap_between_neighbors() {
     let placed = drawing(&json!({"id":"root","layoutOptions":{
-        "archboard.blocks.nesting":"blocks",
         "archboard.group.captions":"[[\"panes\",126.44,42]]"},
         "children":[
             {"id":"session","width":340,"height":122,"layoutOptions":{"archboard.order":"0"}},
@@ -464,7 +450,7 @@ fn frame_with_doors() -> Value {
         .collect();
     let frame = json!({"id":"frame","width":396,"height":36,
         "layoutOptions":{"archboard.header.size":"36"},"children":parts});
-    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    json!({"id":"root","layoutOptions":{},
         "children":doors.chain([frame]).collect::<Vec<_>>(),"edges":edges})
 }
 
@@ -499,7 +485,7 @@ fn crowded_card() -> String {
                 "archboard.relationship.held-kind":kind},
             "labels":[{"id":format!("l{at}"),"text":"calls","width":40,"height":16}]})
     });
-    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+    json!({"id":"root","layoutOptions":{},
         "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()})
     .to_string()
 }

@@ -8,7 +8,7 @@
 //! stretch. Two lines that end at one point are never parted.
 
 use crate::ecma::{abs, number_key, or, sorted_by};
-use crate::track::chains::{ChainId, Kind, LANE, Track};
+use crate::track::chains::{ChainId, LANE, Track};
 use crate::track::channels::{End, NetId};
 use crate::track::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
 use crate::track::scene::{Map, Set};
@@ -79,23 +79,6 @@ impl Track<'_> {
         count
     }
 
-    /// The stretches of a line a part may move beyond one end of a net: the
-    /// whole straight stretch, and, drawn inline, when that runs on through
-    /// lanes into a label or a card, its lanes alone.
-    fn stretches_beyond(&self, routes: &[Vec<NetId>], place: Place, end: End) -> Vec<Vec<Reach>> {
-        let whole = self.stretch_beyond(&routes[place.route], place.index, end);
-        let cut = whole
-            .iter()
-            .position(|one| self.station(one.station).kind != Kind::Lane);
-        match cut {
-            Some(cut) if self.scene.inline && cut > 0 => {
-                let lanes = whole[..cut].to_vec();
-                vec![whole, lanes]
-            }
-            _ => vec![whole],
-        }
-    }
-
     /// Part one pair of lines that read as one, by the nearest move that
     /// parts more pairs than it makes and makes no two lines cross.
     fn part(
@@ -120,15 +103,14 @@ impl Track<'_> {
             .map(number_key)
             .collect();
         let mut moves: Vec<(f64, f64, Vec<Reach>)> = Vec::new();
+        let leaving_stretch = self.stretch_beyond(&routes[leaving.route], leaving.index, End::Top);
         for x in [lower.bottom_x - LANE, lower.bottom_x + LANE, upper.bottom_x] {
-            for stretch in self.stretches_beyond(routes, leaving, End::Top) {
-                moves.push((x, upper.top_x, stretch));
-            }
+            moves.push((x, upper.top_x, leaving_stretch.clone()));
         }
+        let entering_stretch =
+            self.stretch_beyond(&routes[entering.route], entering.index, End::Bottom);
         for x in [upper.top_x - LANE, upper.top_x + LANE, lower.top_x] {
-            for stretch in self.stretches_beyond(routes, entering, End::Bottom) {
-                moves.push((x, lower.bottom_x, stretch));
-            }
+            moves.push((x, lower.bottom_x, entering_stretch.clone()));
         }
         let away = |x: f64| f64::from(u8::from(!own.contains(&number_key(x))));
         let moves = sorted_by(&moves, |one, other| {

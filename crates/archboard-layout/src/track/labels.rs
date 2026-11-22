@@ -359,17 +359,13 @@ impl Track<'_> {
             .iter()
             .map(|&net| (self.net(net).bottom, self.net(net).top))
             .collect();
-        let pairs: Vec<(StationId, StationId)> = (if self.scene.inline {
-            [below, above]
-        } else {
-            [above, below]
-        })
-        .concat()
-        .into_iter()
-        .filter(|&(label, other)| {
-            self.station(label).kind == Kind::Label && self.station(other).kind != Kind::Label
-        })
-        .collect();
+        let pairs: Vec<(StationId, StationId)> = [above, below]
+            .concat()
+            .into_iter()
+            .filter(|&(label, other)| {
+                self.station(label).kind == Kind::Label && self.station(other).kind != Kind::Label
+            })
+            .collect();
         let mut settled: Set<ItemId> = Set::default();
         for (label, other) in pairs {
             let item = self.station(label).item.expect("a label");
@@ -402,34 +398,6 @@ impl Track<'_> {
             return false;
         }
         self.scene.item_mut(item).bx = moved;
-        true
-    }
-
-    /// Slide a block's own port along the block's edge to an x, when only this
-    /// net runs through it, the x is on its stretch, and it keeps a lane from
-    /// the block's other sliding ports. Answers whether it moved.
-    pub(crate) fn slide_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
-        let item = self.station(self.net(net).at(end)).item.expect("a port");
-        let (low, high) = self.scene.slides[&item];
-        let shared = nets.iter().any(|&other| {
-            other != net && {
-                let one = self.net(other);
-                self.station(one.top).item == Some(item)
-                    || self.station(one.bottom).item == Some(item)
-            }
-        });
-        let band = self.scene.item(item).band;
-        let crowded = self.scene.slides.keys().any(|&other| {
-            other != item
-                && self.scene.item(other).band == band
-                && abs(centre_x(self.scene.item(other)) - x) < LANE
-        });
-        if x < low || x > high || shared || crowded {
-            return false;
-        }
-        let one = self.scene.item_mut(item);
-        one.bx.x = x - one.bx.width / 2.0;
-        self.net_mut(net).set_x_at(end, x);
         true
     }
 

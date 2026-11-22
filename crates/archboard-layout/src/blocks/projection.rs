@@ -14,8 +14,8 @@ use crate::track::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
-    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Nesting, Piece, Pin, Projection, Route,
-    exit_key, header_of, holds,
+    BlockId, BlockTree, ClusterKind, Ends, Kind, Line, Piece, Pin, Projection, Route, exit_key,
+    header_of, holds,
 };
 
 impl BlockTree {
@@ -303,9 +303,6 @@ impl BlockTree {
     /// its target that can hold one, or with the label before a join its
     /// source's, else the block that holds both ends.
     pub(super) fn label_holder(&self, projection: &Projection, before: bool) -> BlockId {
-        if self.nesting != Nesting::Blocks && self.peer_of(projection.edge.target()).is_some() {
-            return projection.at;
-        }
         if projection.edge.label_count() > 0
             && let Some(frame) = self
                 .block_of(projection.edge.source())
@@ -339,12 +336,10 @@ impl BlockTree {
             .unwrap_or(own)
     }
 
-    /// Whether a block can hold a line's label: every block drawn inline can,
-    /// and of the blocks packed each on its own, a block of cards. A block of
+    /// Whether a block can hold a line's label: a block of cards. A block of
     /// blocks draws only trunks between them (`pack.rs`).
     fn holds_labels(&self, block: BlockId) -> bool {
-        self.nesting != Nesting::Blocks
-            || !self.get(block).items.iter().any(|item| self.is_block(item))
+        !self.get(block).items.iter().any(|item| self.is_block(item))
     }
 
     /// The edge a port crosses: the wall an earlier layout moved it to, or its

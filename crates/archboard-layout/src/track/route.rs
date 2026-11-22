@@ -455,8 +455,6 @@ impl Track<'_> {
     /// Part the lines that read as one, then close the jogs that frees, and
     /// open a step still too short for its bends.
     fn part_and_close(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
-        let nets: Vec<NetId> = routes.concat();
-        self.ports_onto_lanes(&nets);
         self.part_collinear(chains, routes);
         // Closing a jog never stands two lines parted just now back on one column.
         self.close_jogs(chains, routes, &|track: &Track<'_>, nets: &[NetId]| {

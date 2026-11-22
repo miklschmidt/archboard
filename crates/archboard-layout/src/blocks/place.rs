@@ -4,22 +4,12 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 
 use super::planned::{Routed, Split, Step};
-use super::tree::Nesting;
 use crate::{Graphviz, graph::Node, json::J};
 
 /// The root option carrying the placed drawing.
 const BLOCKS_PLACED: &str = "archboard.blocks.placed";
-/// The root option selecting Blocks or one of Track's nesting policies.
-const BLOCKS_NESTING: &str = "archboard.blocks.nesting";
 /// Whether this solve owns the final route coordinates.
 const BLOCKS_PLANNED: &str = "archboard.blocks.planned";
-
-/// The root option that asks a solve for a drawing with group nesting fixed by membership:
-/// inline, or as Blocks.
-pub(crate) fn nesting_option(inline: bool) -> (&'static str, String) {
-    let nesting = if inline { "inline" } else { "blocks" };
-    (BLOCKS_NESTING, nesting.to_owned())
-}
 
 /// The drawing a solve's answer carries in its root options, and whether the solve owns its
 /// final route coordinates; none when it carries no drawing.
@@ -61,7 +51,7 @@ fn answer(graph: &Node, width: f64, height: f64, told: Vec<(&str, String)>) -> S
 ///
 /// # Errors
 ///
-/// An unreadable graph or a refusal from the selected layout engine.
+/// An unreadable graph or a refusal from Graphviz.
 pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, String> {
     let unreadable =
         |error: serde_json::Error| format!("The measured graph is unreadable: {error}");
@@ -74,20 +64,11 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
     if let Some(Asked { part }) = asked {
         return super::planned::solve_part(&graph, &part);
     }
-    let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
-    let planned = if mode == "blocks" {
-        hybrid(&graph, host)?
-    } else {
-        None
-    };
-    // Track, and a Blocks reading that no placement gives every line a clear planned channel,
-    // take the retained placement, whose routes the drawing settles as Track's (TASK-624).
-    let (placed, frozen) = match planned {
+    // A reading that no placement gives every line a clear planned channel takes the retained
+    // placement, whose routes the drawing settles afterwards (TASK-624).
+    let (placed, frozen) = match hybrid(&graph, host)? {
         Some(placed) => (placed, true),
-        None => (
-            super::legacy::place(&graph, Nesting::named(mode)?, host)?,
-            false,
-        ),
+        None => (super::legacy::place(&graph, host)?, false),
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {
@@ -133,9 +114,6 @@ impl Across {
     /// The solve in parts of a Blocks graph that takes a dense placement.
     pub(crate) fn of(graph: &str) -> Option<Across> {
         let graph: Node = serde_json::from_str(graph).ok()?;
-        if graph.option(BLOCKS_NESTING) != Some("blocks") {
-            return None;
-        }
         let quiet = super::planned::without_trunk_words(&graph);
         let plain = quiet.is_none();
         let split = Split::of(quiet.unwrap_or_else(|| graph.clone()), plain)?;

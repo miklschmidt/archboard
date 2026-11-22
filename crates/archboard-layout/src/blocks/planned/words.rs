@@ -407,7 +407,7 @@ mod tests {
     fn reading(lines: &[serde_json::Value], parts: &[&str]) -> Node {
         let parts: Vec<_> = parts.iter().map(|id| card(id)).collect();
         serde_json::from_value(json!({"id":"root",
-            "layoutOptions":{"archboard.blocks.nesting":"blocks"},
+            "layoutOptions":{},
             "children":[{"id":"open","width":400,"height":36,
                 "layoutOptions":{"archboard.header.size":"36"},"children":parts},
                 card("door")],

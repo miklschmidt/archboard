@@ -4,8 +4,8 @@
 //! routed on tracks (`card_layout.rs`), its widest rank wrapped into rows
 //! (`wraps.rs`) or its ranks folded into columns (`fold.rs`) where that is
 //! worth taking. Last, assembly places every block and joins each relationship's
-//! lines through its ports (`assembly.rs`). The graph fixes the nesting,
-//! acyclic entry order and fan-in labels before the one solve starts.
+//! lines through its ports (`assembly.rs`). The graph fixes the acyclic
+//! entry order and fan-in labels before the one solve starts.
 
 use std::rc::Rc;
 
@@ -27,7 +27,7 @@ use super::orders::held_orders;
 use super::packing::{PackLayout, Packing};
 use super::settle::{Settling, settle_ports};
 use super::sides::sides_of;
-use super::tree::{Block, BlockId, BlockTree, Kept, Kind, Nesting};
+use super::tree::{Block, BlockId, BlockTree, Kept, Kind};
 use super::wraps::{Unwrapped, Wrapping, best_wrap, weighed};
 
 /// The insets a block keeps: left and right, above its first rank, below its
@@ -147,7 +147,6 @@ struct Earlier {
 
 /// Lay one block out: packed with its child blocks as the pieces when it
 /// holds child blocks alone, with no inline clusters or labels, else as cards.
-/// Track packs complete parent frames here; group regions keep shared ranks.
 fn lay_block(
     gv: &mut Engine<'_>,
     picture: &mut Picture,
@@ -158,11 +157,7 @@ fn lay_block(
     let one = tree.get(block);
     let packs = !one.items.is_empty()
         && one.clusters.is_empty()
-        && one.items.iter().all(|item| {
-            tree.block_of(item).is_some_and(|child| {
-                tree.nesting == Nesting::Blocks || tree.get(child).kind == Kind::Frame
-            })
-        })
+        && one.items.iter().all(|item| tree.block_of(item).is_some())
         && !tree
             .get(block)
             .lines
@@ -193,7 +188,6 @@ fn lay_all(
             expanded: way.expanded,
             ..earlier.kept.clone()
         },
-        way.nesting,
     )?;
     reserve_room(&mut tree, way);
     let mut picture = Picture {
@@ -282,11 +276,9 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, Stri
     Ok(chosen)
 }
 
-/// The retained placement path: Track's, and Blocks' for a reading that no planned placement
-/// routes.
+/// The retained placement path, for a reading that no planned placement routes.
 pub(super) fn place(
     graph: &Node,
-    nesting: Nesting,
     host: &mut dyn Graphviz,
 ) -> Result<super::assembly::Placed, String> {
     let mut gv = Engine::new(host);
@@ -294,7 +286,6 @@ pub(super) fn place(
         &mut gv,
         graph,
         &Way {
-            nesting,
             expanded: false,
             room: Vec::new(),
             extra: 0.0,
@@ -379,7 +370,6 @@ pub(super) fn candidates<'g>(
     }
     let mut gv = Engine::new(host);
     let way = Way {
-        nesting: Nesting::Blocks,
         expanded: false,
         room: room.to_vec(),
         extra,
@@ -474,7 +464,6 @@ fn expanded_candidates(
 
 #[derive(Clone)]
 struct Way {
-    nesting: Nesting,
     expanded: bool,
     room: Vec<String>,
     extra: f64,

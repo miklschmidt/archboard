@@ -56,7 +56,7 @@ fn crowded() -> String {
                 "sources": [format!("p{from}")], "targets": [format!("p{to}")]})
         })
     });
-    json!({"id": "root", "layoutOptions": {"archboard.blocks.nesting": "blocks"},
+    json!({"id": "root", "layoutOptions": {},
         "children": cards.collect::<Vec<_>>(), "edges": lines.collect::<Vec<_>>()})
     .to_string()
 }
@@ -82,7 +82,7 @@ fn a_dense_reading_in_parts_answers_what_one_solve_answers() {
 #[test]
 fn a_reading_without_a_dense_placement_is_one_solve() {
     let cards = ["a", "b", "c"].map(|id| json!({"id": id, "width": 160, "height": 60}));
-    let graph = json!({"id": "root", "layoutOptions": {"archboard.blocks.nesting": "blocks"},
+    let graph = json!({"id": "root", "layoutOptions": {},
         "children": cards,
         "edges": [{"id": "ab", "sources": ["a"], "targets": ["b"]},
                   {"id": "bc", "sources": ["b"], "targets": ["c"]}]})
