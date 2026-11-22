@@ -93,6 +93,8 @@ const checkout = fixtureCheckout({
 		"    match part { Part::Card => card(node), Part::Container => one_line(node, 2), Part::FlowFrame => flow_frame(node) }",
 		"}",
 		"pub fn tab(node: N, container: bool) -> M { if container { one_line(node, 2) } else { card(node) } }",
+		"pub fn returned(part: Part) -> M { return match part { Part::Card => card(), _ => frame() }; }",
+		"pub fn bound(part: Part) -> M { let x = match part { Part::Card => 1, _ => 2 }; let result = match part { Part::Card => card(x), _ => frame(x) }; result }",
 		"pub fn early(node: N, container: bool) -> M {",
 		"    if container {",
 		"        return one_line(node, 2);",
@@ -177,6 +179,8 @@ test("a Rust function picks one operation for each enum variant or boolean whose
 		tab: { key: "container", keys: [["true"], ["false"]] },
 		// A branch that returns leaves the rest of the body to the other key.
 		early: { key: "container", keys: [["true"], ["false"]] },
+		returned: { key: "part", keys: [["Card"], ["*"]] },
+		bound: { key: "part", keys: [["Card"], ["*"]] },
 	});
 });
 

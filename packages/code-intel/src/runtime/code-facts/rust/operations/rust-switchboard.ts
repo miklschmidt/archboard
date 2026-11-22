@@ -358,33 +358,35 @@ function flagOf(
 	return { key, picks: !negated, logic: 1 + logicIn(condition) };
 }
 
-/** How each expression that can pick reads its pick. */
-const PICKS: Readonly<
-	Record<
-		string,
-		(
-			expression: Node,
-			parameters: ReadonlyMap<string, string>,
-			rest: readonly Node[],
-		) => Dispatch | undefined
-	>
-> = { match_expression: matchOn, if_expression: ifOn };
+/**
+ * The expression evaluated by a statement, including a returned or bound value.
+ * @param statement The statement with its trailing semicolon removed.
+ * @returns The expression it evaluates.
+ */
+function dispatchExpression(statement: Node | undefined): Node | undefined {
+	if (statement?.type === "return_expression") return part(statement, "");
+	if (statement?.type === "let_declaration") return part(statement, "value");
+	return statement;
+}
 
 /**
- * The pick a body makes, after any preparation: the first statement that picks by a parameter.
- * @param body The body.
+ * The dispatch evaluated by a statement.
+ * @param statement The statement to read.
  * @param parameters The function's parameters.
- * @returns The pick, or undefined.
+ * @param rest The statements after this one.
+ * @returns The dispatch, if the statement picks by a parameter.
  */
-function dispatchOf(body: Node, parameters: ReadonlyMap<string, string>): Dispatch | undefined {
-	const statements = codeOf(body);
-	for (const [index, statement] of statements.entries()) {
-		const expression = statement.type === "expression_statement" ? part(statement, "") : statement;
-		const rest = statements.slice(index + 1);
-		const found =
-			expression === undefined ? undefined : PICKS[expression.type]?.(expression, parameters, rest);
-		if (found !== undefined) return found;
-	}
+function dispatchAt(
+	statement: Node,
+	parameters: ReadonlyMap<string, string>,
+	rest: readonly Node[],
+): Dispatch | undefined {
+	const value = statement.type === "expression_statement" ? part(statement, "") : statement;
+	const expression = dispatchExpression(value);
+	if (expression === undefined) return undefined;
+	if (expression.type === "match_expression") return matchOn(expression, parameters);
+	if (expression.type === "if_expression")
+		return ifOn(expression, parameters, expression === value ? rest : []);
 	return undefined;
 }
 
@@ -501,7 +503,23 @@ function armOf(arm: ArmCode): Arm {
  */
 function switchboardOf(fn: Node): Switchboard | undefined {
 	const body = fn.type === "function_item" ? part(fn, "body") : undefined;
-	const dispatch = body === undefined ? undefined : dispatchOf(body, parametersOf(fn));
+	if (body === undefined) return undefined;
+	const parameters = parametersOf(fn);
+	const statements = codeOf(body);
+	for (const [index, statement] of statements.entries()) {
+		const dispatch = dispatchAt(statement, parameters, statements.slice(index + 1));
+		const found = switchboardFrom(dispatch);
+		if (found !== undefined) return found;
+	}
+	return undefined;
+}
+
+/**
+ * The operations and logic discount of a dispatch with multiple operations.
+ * @param dispatch The dispatch to measure.
+ * @returns Its switchboard, if it runs different operations.
+ */
+function switchboardFrom(dispatch: Dispatch | undefined): Switchboard | undefined {
 	if (dispatch === undefined) return undefined;
 	const picked = operationsOf(dispatch.arms.map(armOf));
 	const operations = dispatch.boolean ? restSpelled(picked, ["true", "false"]) : picked;
