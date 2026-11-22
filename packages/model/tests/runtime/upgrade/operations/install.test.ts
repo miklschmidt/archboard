@@ -30,12 +30,19 @@ function checkout(): string {
 	homes.push(home);
 	const vault = join(home, "repo", ".archboard", "vault");
 	mkdirSync(vault, { recursive: true });
+	const repo = join(home, "repo");
+	const key = join(home, "signing-key");
+	const generated = Bun.spawnSync(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", key]);
+	if (generated.exitCode !== 0) throw new Error(generated.stderr.toString());
 	for (const args of [
 		["init", "--quiet", "--initial-branch=main"],
 		["config", "user.name", "Upgrade Author"],
 		["config", "user.email", "upgrade@example.test"],
+		["config", "gpg.format", "ssh"],
+		["config", "user.signingkey", key],
+		["config", "commit.gpgsign", "true"],
 	]) {
-		const git = Bun.spawnSync(["git", "-C", join(home, "repo"), ...args]);
+		const git = Bun.spawnSync(["git", "-C", repo, ...args]);
 		if (git.exitCode !== 0) throw new Error(git.stderr.toString());
 	}
 	return vault;
