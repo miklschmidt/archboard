@@ -1,8 +1,8 @@
 import type { JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
 import {
-	kindNames,
 	lineEnds,
+	pairNames,
 } from "#ui/architecture-drawing/model-reader/reading/components/ModelConnections.tsx";
 import { TipCard } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSubjectTip.tsx";
 import type { TipTarget } from "#ui/architecture-drawing/canvas/picture/clients/subject-tips.ts";
@@ -31,7 +31,7 @@ function ModelLineTip(props: ModelLineTipProps): JSX.Element | null {
 			<p className="text-body font-semibold">
 				{lineEnds(connection.line, model, projection.reference)}
 			</p>
-			<p className="text-technical text-muted-foreground">{kindNames(model, connection.joins)}</p>
+			<p className="text-technical text-muted-foreground">{pairNames(model, connection.joins)}</p>
 			<TipRelationships edges={connection.joins} model={model} reference={projection.reference} />
 		</TipCard>
 	);

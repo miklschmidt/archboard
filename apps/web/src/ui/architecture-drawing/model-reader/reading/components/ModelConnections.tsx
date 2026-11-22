@@ -5,6 +5,8 @@ import { ModelSubjectStanding } from "#ui/architecture-drawing/model-reader/read
 import type { JSX, ReactNode } from "react";
 import { RiArrowLeftRightLine, RiArrowRightLine } from "@remixicon/react";
 import type { Model, projectModel } from "@archboard/model/content";
+import { lineEffect } from "@archboard/model/policy";
+import { effectKey } from "@archboard/renderer/picture";
 
 import { useModelPick } from "#ui/architecture-drawing/model-reader/reading/hooks/use-model-pick.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
@@ -36,7 +38,12 @@ function RelationshipRow(props: RelationshipRowProps): JSX.Element {
 			{...peek}
 			stacked
 			name={`${moduleName(model, edge.from, reference)} → ${moduleName(model, edge.to, reference)}`}
-			detail={edge.label ?? kindNames(model, [edge])}
+			detail={
+				<>
+					{edge.label !== undefined && `${edge.label} · `}
+					<span data-slot="model-relationship-pair">{pairNames(model, [edge])}</span>
+				</>
+			}
 		/>
 	);
 }
@@ -98,7 +105,7 @@ function ConnectionSummary(props: ConnectionSummaryProps): JSX.Element {
 	return (
 		<ModelPanel.Body slot="model-connection-details">
 			<ModelPanel.Head title={lineEnds(ends, model, reference)}>
-				<span data-slot="model-connection-kinds">{kindNames(model, joins)}</span>
+				<span data-slot="model-connection-kinds">{pairNames(model, joins)}</span>
 			</ModelPanel.Head>
 			{props.children}
 			{one ? <OneRelationship {...props} edge={joins[0]} /> : <JoinedRelationships {...props} />}
@@ -227,6 +234,26 @@ function kindNames(model: Model, joins: Connection["joins"]): string {
 	return [...kinds].map((kind) => model.policy.relationshipKinds[kind]?.name ?? kind).join(", ");
 }
 
+/** The words for each effect, as the legend says them. */
+const EFFECT_WORDS: ReadonlyMap<string, string> = new Map(
+	effectKey().map(({ effect, word }) => [effect, word]),
+);
+
+/**
+ * Every kind and effect that a line joins, as the legend names them: "Sync · Mutation".
+ * @param model The model that names its vocabulary.
+ * @param joins The relationships behind the line.
+ * @returns Their distinct pairs, in authored order.
+ */
+function pairNames(model: Model, joins: Connection["joins"]): string {
+	const pairs = joins.map((edge) => {
+		const kind = model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind;
+		const effect = lineEffect(edge);
+		return effect === undefined ? kind : `${kind} · ${EFFECT_WORDS.get(effect) ?? effect}`;
+	});
+	return [...new Set(pairs)].join(", ");
+}
+
 /**
  * Resolve an authored identity without inventing a replacement endpoint.
  * @param model The complete model.
@@ -242,4 +269,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ConnectionSummary, LineTitle, kindNames, lineEnds, moduleName };
+export { ConnectionSummary, LineTitle, kindNames, lineEnds, moduleName, pairNames };
