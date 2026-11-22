@@ -262,6 +262,16 @@ function closedPick(declaration: Node): ClosedPick | undefined {
 }
 
 /**
+ * The forwarding arms in the selector's own body.
+ * @param dispatch The selector.
+ * @returns Its forwarding overhead.
+ */
+function forwardingArms(dispatch: Dispatch): number {
+	return dispatch.arms.slice(dispatch.table?.length ?? 0).filter((arm) => forwards(arm.code))
+		.length;
+}
+
+/**
  * The switchboard a declaration is, if it is one.
  * @param declaration The declaration.
  * @returns The switchboard, or undefined.
@@ -272,7 +282,9 @@ function switchboardOf(declaration: Node): Switchboard | undefined {
 	const operations = operationsFor(pick);
 	if (operations.length < 2) return undefined;
 	const { dispatch, closure } = pick;
-	const forwarding = dispatch.arms.filter((arm) => forwards(arm.code)).length;
+	// Table entries describe the handlers' own bodies. Only arms in the
+	// selector itself can be forwarding overhead.
+	const forwarding = forwardingArms(dispatch);
 	const call = bareCall(dispatch.call) ? 1 : 0;
 	return {
 		key: dispatch.key,

@@ -439,13 +439,14 @@ function tableReturned(
 }
 
 /**
- * The pieces of logic of a guard's test.
- * @param statement The guard.
- * @returns The `if` and its condition.
+ * The overhead of a guard that tests the same key as the table lookup.
+ * @param statement The return or its guard.
+ * @param parameters The callable's parameters.
+ * @param key The table's selector.
+ * @returns The counted selector overhead.
  */
-function guardLogic(statement: Node): number {
-	const condition = part(statement, "condition");
-	return 1 + (condition === undefined ? 0 : logicIn(condition));
+function tableGuardLogic(statement: Node, parameters: readonly Parameter[], key: string): number {
+	return isGuard(statement) ? (branchOf(statement, parameters, key)?.logic ?? 0) : 0;
 }
 
 /**
@@ -466,10 +467,11 @@ function tableDispatch(
 	const guarded = isGuard(statement);
 	const table = tableReturned(guarded ? part(statement, "consequence") : statement, parameters);
 	if (table === undefined) return undefined;
+
 	return {
 		key: table.key,
 		arms: withRest(table.arms, guarded ? statements.slice(start + 1) : []),
-		logic: guarded ? guardLogic(statement) : 0,
+		logic: tableGuardLogic(statement, parameters, table.key),
 		truthy: false,
 		table: table.arms.flatMap((arm) => arm.keys),
 		call: table.call,
