@@ -370,12 +370,12 @@ A group has no frame or region and no tinted face.
 
 **Legend**:
 What explains the marks of a picture: kinds, line types and groups.
-It always stands at the foot of the Right panel on a Diagram reading, over the engine switch.
+It always stands at the foot of the Right panel on a Diagram reading.
 _Avoid_: Key, filters
 
 **Right panel**:
 The permanent right column of a reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, a module's code and evidence, and its Trace controls.
-The Legend and the engine switch close it, and long lists stay in About.
+The Legend closes it, and long lists stay in About.
 _Avoid_: inspector
 
 **Interface line**:
@@ -702,8 +702,8 @@ _Avoid_: engine (that is a layout engine), WASM module
 
 **Layout engine**:
 The part of the renderer core that places a picture's cards and routes its lines.
-Blocks is the default, and Tracks is the alternative, which the switch in the Right panel offers and a render asks for with `--layout track` (ADR 0064).
-_Avoid_: renderer core, layout mode, Track (`track` is only the value of a flag or a field)
+Blocks is the only layout engine (ADR 0096).
+_Avoid_: renderer core, layout mode
 
 **Dense placement**:
 What Blocks tries first on a reading of one open frame of cards, or of a root with 18 or more lines: the parts start on a grid, and the doors stand round the frame.
