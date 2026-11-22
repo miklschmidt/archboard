@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { codexApprovalMs } from "@archboard/timing";
+import { expiresAt, lapsed } from "@archboard/timing";
 import {
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_STATES,
@@ -183,11 +183,14 @@ export function createDynamicApprovalBrowserSchemas(
 		.superRefine((approval, refinementContext) => {
 			validateIdentityAndBrowserEffect(approval.identity, approval.effect, refinementContext);
 			const window = approval.expiresAtMs - approval.createdAtMs;
-			if (window <= 0 || window > codexApprovalMs("expiry")) {
+			if (
+				window <= 0 ||
+				lapsed("codex.approvalExpiry", approval.createdAtMs, approval.expiresAtMs)
+			) {
 				addIssue(
 					refinementContext,
 					["expiresAtMs"],
-					`approval expiry must be after creation and at most ${codexApprovalMs("expiry")}ms after it`,
+					`approval expiry must be after creation and no later than ${expiresAt("codex.approvalExpiry", approval.createdAtMs)}`,
 				);
 			}
 			validateDecisionEcho(

@@ -1,6 +1,6 @@
 import type { SessionNotificationHandler } from "@archboard/codex-app-server/session";
 import type { ThreadId } from "@archboard/codex-app-server/identity";
-import { codexSessionMs } from "@archboard/timing";
+import { after, TimedOut } from "@archboard/timing";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,
@@ -450,7 +450,7 @@ function createCoordinatorStarter(
 		const promise = new Promise<SettingsNotificationOutcome>((promiseResolve) => {
 			resolve = promiseResolve;
 		});
-		let timer: ReturnType<typeof setTimeout> | undefined;
+		let cancelTimeout: (() => void) | undefined;
 		const pending: PendingSettingsNotification = {
 			threadId,
 			started,
@@ -464,13 +464,11 @@ function createCoordinatorStarter(
 					return;
 				}
 				pendingSettings = null;
-				if (timer !== undefined) {
-					clearTimeout(timer);
-				}
+				cancelTimeout?.();
 			},
 		};
 		pendingSettings = pending;
-		timer = setTimeout(() => {
+		cancelTimeout = after("codex.requestSettlement", () => {
 			if (pendingSettings !== pending) {
 				return;
 			}
@@ -479,10 +477,10 @@ function createCoordinatorStarter(
 				kind: "expired",
 				error: new CodexCoordinatorError(
 					"settings_timeout",
-					`The coordinator settings notification did not match within ${codexSessionMs("requestSettlement")} ms; inspect the authoritative thread list.`,
+					`The coordinator settings notification did not match. ${new TimedOut("codex.requestSettlement").message} Inspect the authoritative thread list.`,
 				),
 			});
-		}, codexSessionMs("requestSettlement"));
+		});
 		return {
 			promise,
 			cancel: pending.cancel,

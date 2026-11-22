@@ -1,5 +1,5 @@
 import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
-import { codexProcessMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 import {
 	attachChildListeners,
 	destroyQuietly,
@@ -75,7 +75,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	let state: TransportState = "open";
 	let inputEndStarted = false;
 	let inputFinished = false;
-	let shutdownTimer: ReturnType<typeof setTimeout> | undefined;
+	let cancelShutdownBound: (() => void) | undefined;
 	let shutdownPromise: Promise<void> | undefined;
 	let resolveShutdown: (() => void) | undefined;
 	let shutdownSetupComplete = false;
@@ -227,10 +227,8 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 
 	/** Cancels the composed shutdown bound, if armed. */
 	const cancelShutdownTimer = (): void => {
-		if (shutdownTimer !== undefined) {
-			clearTimeout(shutdownTimer);
-		}
-		shutdownTimer = undefined;
+		cancelShutdownBound?.();
+		cancelShutdownBound = undefined;
 	};
 
 	/** Resolves a waiting shutdown promise and cancels its bound timer. */
@@ -409,7 +407,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		if (isClosed()) {
 			return promise;
 		}
-		shutdownTimer = setTimeout(abortShutdown, codexProcessMs("composedShutdown"));
+		cancelShutdownBound = after("codex.transportShutdown", abortShutdown);
 		finishShutdown();
 		return promise;
 	};

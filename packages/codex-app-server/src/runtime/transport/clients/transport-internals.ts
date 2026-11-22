@@ -14,7 +14,8 @@ interface PendingRequest {
 	readonly reject: (reason: unknown) => void;
 	readonly signal: AbortSignal | undefined;
 	abortListener?: () => void;
-	timer?: ReturnType<typeof setTimeout>;
+	/** Cancels the request's settlement timeout, while one is armed. */
+	timer?: () => void;
 	job: FrameWriterJob<WriteJob> | undefined;
 	accepted: boolean;
 	settled: boolean;

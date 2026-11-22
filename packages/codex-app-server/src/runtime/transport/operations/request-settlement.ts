@@ -80,9 +80,7 @@ function createRequestSettlement(options: RequestSettlementOptions): RequestSett
 		}
 		options.pendingRequests.delete(pending.key);
 		pending.settled = true;
-		if (pending.timer !== undefined) {
-			clearTimeout(pending.timer);
-		}
+		pending.timer?.();
 		if (pending.signal && pending.abortListener) {
 			pending.signal.removeEventListener("abort", pending.abortListener);
 		}

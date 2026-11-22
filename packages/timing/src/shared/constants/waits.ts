@@ -4,8 +4,9 @@
 
 import type { Use } from "#shared/constants/uses.ts";
 import { CHECKS } from "#shared/constants/checks.ts";
-import { CODEX_PROCESS } from "#shared/constants/codex-process.ts";
+import { CODEX } from "#shared/constants/codex.ts";
 import { GIT } from "#shared/constants/git.ts";
+import { RASTER } from "#shared/constants/raster.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
 
 /** Every declared duration, by its name. */
@@ -13,7 +14,8 @@ const WAITS = Object.freeze({
 	...SERVER_LIFECYCLE,
 	...GIT,
 	...CHECKS,
-	...CODEX_PROCESS,
+	...CODEX,
+	...RASTER,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;

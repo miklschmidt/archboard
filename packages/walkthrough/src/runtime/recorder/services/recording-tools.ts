@@ -2,7 +2,6 @@
 // it, and a private Chromium started with the flags its page needs. All are found before anything
 // is recorded (TASK-381).
 
-import { recorderMs } from "@archboard/timing";
 import { extname } from "node:path";
 
 import {
@@ -72,8 +71,6 @@ async function startBrowser(options: {
 		return await launchHeadlessChromium({
 			chromiumPath: options.chromiumPath ?? discoveredChromiumPath(),
 			extraArgs: options.flags,
-			startupTimeoutMs: recorderMs("browserStart"),
-			cleanupTimeoutMs: recorderMs("browserStop"),
 			tempRootPrefix: options.tempRootPrefix,
 			signal: options.signal,
 		});

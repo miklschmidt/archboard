@@ -6,7 +6,7 @@
 // attempt, until one opens, the server's contract proves unreadable, or the
 // client is disposed. The attempts leave the page's failure as it is.
 
-import { codexRealtimeMs } from "@archboard/timing";
+import { expiresAt } from "@archboard/timing";
 import type { RealtimeState } from "#shared/protocol/realtime-contract.ts";
 import { INITIAL_REALTIME_STATE } from "#shared/rules/realtime-state.ts";
 import type { BrowserWorkbenchMediaOwner } from "#ui/media/clients/media-state.ts";
@@ -199,13 +199,13 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 	};
 
 	/**
-	 * Connect again after a delay, unless the socket is connected by then, and
+	 * Connect again at a time, unless the socket is connected by then, and
 	 * try again after each attempt that does not open. One attempt waits at a time.
-	 * @param delayMs How long to wait.
+	 * @param retryAtMs When to try, in milliseconds since the epoch.
 	 */
-	const reconnectAfter = (delayMs: number) => {
+	const reconnectAt = (retryAtMs: number) => {
 		if (disposed || cancelReconnect !== null) return;
-		cancelReconnect = owners.after(Math.max(0, delayMs), () => {
+		cancelReconnect = owners.after(Math.max(0, retryAtMs - Date.now()), () => {
 			cancelReconnect = null;
 			if (disposed || transport.state().connection === "connected") return;
 			void reconnect();
@@ -238,12 +238,11 @@ function openVoiceClient(options: VoiceClientOptions, owners: VoiceClientOwners)
 			publish();
 			return;
 		}
-		if (!unreadableServer()) reconnectAfter(codexRealtimeMs("clientReconnect"));
+		if (!unreadableServer()) reconnectAt(expiresAt("codex.clientReconnect", Date.now()));
 	};
 	const unsubscribeLoss = transport.subscribe(() => {
 		const state = transport.state();
-		if (state.kind === "connection" && state.state === "backoff")
-			reconnectAfter(state.retryAtMs - Date.now());
+		if (state.kind === "connection" && state.state === "backoff") reconnectAt(state.retryAtMs);
 	});
 
 	/**

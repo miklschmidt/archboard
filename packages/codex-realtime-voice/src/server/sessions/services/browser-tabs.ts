@@ -1,4 +1,4 @@
-import { codexRealtimeMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 import type { TabSessionId } from "#server/tab-session/rules/tab-session.ts";
 
 /** The chats on screen by tab, and when each tab that has none left ends. */
@@ -41,12 +41,11 @@ function subscribe<Listener>(listeners: Set<Listener>, listener: Listener): () =
 
 /**
  * The chats on screen by tab, and the grace each tab with no chat left has to come back in.
- * @param graceMs How long a tab with no chat left still holds its conversation.
  * @returns The tab sessions.
  */
-function createTabSessions(graceMs: number = codexRealtimeMs("tabSessionGrace")): TabSessions {
+function createTabSessions(): TabSessions {
 	const byBrowser = new Map<string, TabSessionId>();
-	const graces = new Map<TabSessionId, ReturnType<typeof setTimeout>>();
+	const graces = new Map<TabSessionId, () => void>();
 	const listeners = new Set<(tabSessionId: TabSessionId) => void>();
 	const shownByTab = new Map<TabSessionId, string>();
 	const shownListeners = new Set<(tabSessionId: TabSessionId) => void>();
@@ -67,13 +66,12 @@ function createTabSessions(graceMs: number = codexRealtimeMs("tabSessionGrace"))
 		if (present(tabSessionId) || graces.has(tabSessionId)) {
 			return;
 		}
-		const grace = setTimeout(() => {
+		const cancel = after("codex.tabSessionGrace", () => {
 			graces.delete(tabSessionId);
 			shownByTab.delete(tabSessionId);
 			for (const listener of listeners) listener(tabSessionId);
-		}, graceMs);
-		grace.unref();
-		graces.set(tabSessionId, grace);
+		});
+		graces.set(tabSessionId, cancel);
 	};
 
 	/**
@@ -81,7 +79,7 @@ function createTabSessions(graceMs: number = codexRealtimeMs("tabSessionGrace"))
 	 * @param tabSessionId The tab.
 	 */
 	const arrived = (tabSessionId: TabSessionId): void => {
-		clearTimeout(graces.get(tabSessionId));
+		graces.get(tabSessionId)?.();
 		graces.delete(tabSessionId);
 	};
 
@@ -123,7 +121,7 @@ function createTabSessions(graceMs: number = codexRealtimeMs("tabSessionGrace"))
 		/** Forget every chat and every grace, ending nothing. */
 		forgetAll: () => {
 			byBrowser.clear();
-			for (const grace of graces.values()) clearTimeout(grace);
+			for (const cancel of graces.values()) cancel();
 			graces.clear();
 			shownByTab.clear();
 		},

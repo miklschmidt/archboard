@@ -6,7 +6,7 @@ import {
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { logger } from "@archboard/diagnostics/logger";
-import { codexSessionMs } from "@archboard/timing";
+import { TimedOut, within } from "@archboard/timing";
 import type { CodexWorkbenchDomainScope } from "#runtime/voice/protocol/extension.ts";
 import type { Entry, Workhorse } from "#server/explanations/services/contract.ts";
 
@@ -125,9 +125,9 @@ async function awaitTurn(entry: Entry) {
 		entry.action.status = "queued";
 		const { promise, resolve } = Promise.withResolvers<void>();
 		entry.turnNamed = resolve;
-		const timer = setTimeout(resolve, codexSessionMs("explanationTurnStart"));
-		await promise;
-		clearTimeout(timer);
+		await within("codex.explanationTurnStart", () => promise).catch((error: unknown) => {
+			if (!(error instanceof TimedOut)) throw error;
+		});
 		delete entry.turnNamed;
 	}
 	requireCorrelatedTurn(entry);

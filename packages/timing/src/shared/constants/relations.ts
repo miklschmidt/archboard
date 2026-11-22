@@ -38,6 +38,14 @@ const RELATIONS: readonly Relation[] = [
 	[["codex.stdinEofGrace", "codex.termGrace", "codex.groupFreeze"], "<", "codex.composedShutdown"],
 	// A killed group's drain runs for the rest of the composed cap, which ends it first.
 	["codex.killDrain", "=", "codex.composedShutdown"],
+	// Chromium's port arrives inside its start, and a page opens within as long.
+	["chromium.devToolsPort", "=", "chromium.start"],
+	["chromium.openPage", "=", "chromium.start"],
+	// Stopping Chromium takes two phases, inside the CLI's interrupt grace with room to remove its profile.
+	[["chromium.groupExit", "chromium.groupExit"], "<", "git.cliInterruptCleanup"],
+	// A job's document loads inside the job's bound, and a DevTools call fits inside a job.
+	["raster.documentLoad", "=", "raster.job"],
+	["chromium.call", "<=", "raster.job"],
 ];
 
 export { RELATIONS };

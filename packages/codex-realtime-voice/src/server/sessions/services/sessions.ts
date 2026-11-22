@@ -319,7 +319,7 @@ function createCodexWorkbenchSessions(
 			return Promise.all(
 				[...workhorses.values()]
 					.filter((candidate) => checkout === null || candidate.checkout === checkout)
-					.map((candidate) => stopWorkTree(candidate, options.session, askedBy, options.stopClock)),
+					.map((candidate) => stopWorkTree(candidate, options.session, askedBy)),
 			);
 		};
 		const built = options.build({

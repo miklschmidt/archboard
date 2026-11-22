@@ -1,6 +1,5 @@
 import { afterEach, expect, jest, test } from "bun:test";
 
-import { codexSessionMs } from "@archboard/timing";
 import { createBrowserWorkbenchTransport } from "#ui/transport/clients/transport.ts";
 import { type BrowserWorkbenchTransport } from "#ui/transport/state/contract.ts";
 import {
@@ -20,6 +19,9 @@ import {
 	type FakeSocketRequest,
 	type WireRecord,
 } from "#tests/ui/support/transport/fake-socket.ts";
+
+/** The reviewed request settlement, which timing pins: how far the fake clock moves to expire a request. */
+const REQUEST_SETTLEMENT_MS = 30_000;
 
 const tracker = createTransportTracker();
 
@@ -44,7 +46,7 @@ test("settles an open-socket request once at the deadline and ignores a late res
 		socket.onRequest = hold;
 
 		const settled = rejection(transport.command(startDraft()));
-		jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+		jest.advanceTimersByTime(REQUEST_SETTLEMENT_MS);
 		expect(await settled).toMatchObject({
 			name: "BrowserWorkbenchTransportError",
 			code: "response_lost",

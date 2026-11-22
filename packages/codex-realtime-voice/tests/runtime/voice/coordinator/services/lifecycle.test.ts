@@ -15,13 +15,15 @@ import {
 	createCoordinatorThreadStartParams,
 } from "#runtime/voice/coordinator/services/model.ts";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
-import { codexSessionMs } from "@archboard/timing";
 import {
 	WORKING_DIRECTORY,
 	coordinatorModel,
 	fixture,
 	type Fixture,
 } from "#tests/runtime/voice/coordinator/services/support.ts";
+
+/** The reviewed request settlement, which timing pins: how far the fake clock moves to expire a request. */
+const REQUEST_SETTLEMENT_MS = 30_000;
 
 async function flushMicrotasks(): Promise<void> {
 	for (let turn = 0; turn < 8; turn += 1) {
@@ -215,7 +217,7 @@ describe("coordinator lifecycle", () => {
 		try {
 			const pending = fixtureValue.coordinator.ensure({ operationId: "settings-timeout" });
 			await flushMicrotasks();
-			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+			jest.advanceTimersByTime(REQUEST_SETTLEMENT_MS);
 			const snapshot = await pending;
 			const retry = await fixtureValue.coordinator.ensure({
 				operationId: "settings-timeout-retry",
@@ -248,7 +250,7 @@ describe("coordinator lifecycle", () => {
 			await flushMicrotasks();
 			expect(fixtureValue.session.updateParams).toHaveLength(1);
 
-			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+			jest.advanceTimersByTime(REQUEST_SETTLEMENT_MS);
 			await flushMicrotasks();
 			expect(fixtureValue.epoch.unknownCalls).toBe(0);
 

@@ -11,7 +11,6 @@ import {
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
 } from "#runtime/schemas/authored-schemas.ts";
-import { codexSessionMs } from "@archboard/timing";
 import {
 	captureRejection,
 	createHarness,
@@ -22,6 +21,9 @@ import {
 	sendJson,
 	sendRaw,
 } from "#tests/runtime/support/transport-fake-child.ts";
+
+/** The reviewed request settlement, which timing pins: how far the fake clock moves to expire a request. */
+const REQUEST_SETTLEMENT_MS = 30_000;
 
 describe("Codex app-server transport", () => {
 	test("frames client requests, errors, notifications, and correlated server events", async () => {
@@ -331,7 +333,7 @@ describe("Codex app-server transport", () => {
 			fakeTimers = true;
 			const timedOut = transport.request("turn/steer", {});
 			const timedOutId = frameAt(child, 0)["id"];
-			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+			jest.advanceTimersByTime(REQUEST_SETTLEMENT_MS);
 			expect(await captureRejection(timedOut)).toMatchObject({
 				reason: "timeout",
 				outcome: "outcome_unknown",
@@ -361,7 +363,7 @@ describe("Codex app-server transport", () => {
 
 			await flushStreams();
 			const idempotent = transport.request("turn/steer", {}, { idempotent: true });
-			jest.advanceTimersByTime(codexSessionMs("requestSettlement"));
+			jest.advanceTimersByTime(REQUEST_SETTLEMENT_MS);
 			let idempotentError: unknown;
 			try {
 				await idempotent;

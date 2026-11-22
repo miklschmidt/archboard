@@ -4,29 +4,47 @@
 // classifications matter: an expiry bounds a retry, lease, readiness,
 // freshness, approval, recovery, or shutdown operation, but never proves that
 // a remote mutation failed. Consumers must use these names and must not add a
-// local duration or an override hook.
+// local duration or an override hook. Their reviewed values are pinned by
+// `tests/shared/constants/codex-workbench-policy.test.ts`.
 //
-// Restart delay doubles after each failed child attempt, caps at the maximum,
-// and resets only after one account-ready session (`codexRestartDelayMs`).
 // Shutdown is ordered around the child lifecycle: stop realtime, settle local
 // waiters, close stdin, wait for EOF, TERM, then freeze and KILL the group, all
 // within the composed cap.
 
-import { durations } from "#shared/constants/durations.ts";
+import { backoff, bound, delay, handed, polled, span } from "#shared/constants/uses.ts";
 
-/** The `codex app-server` child: its restart backoff and its ordered shutdown. */
-const CODEX_PROCESS_MS = durations({
-	/** Retry-delay classification. Pulls against the first restart attempt. */
-	restartBase: 1000,
-	/** Retry-delay cap classification. Pulls against request settlement and the backoff ceiling. */
-	restartMax: 30_000,
+/** `codex.composedShutdown`, named once so that its other uses last as long. */
+const COMPOSED_SHUTDOWN_MS = 10_000;
+
+/** `codex.termGrace`, named once so that a failed server start's cleanup gets the same grace. */
+const TERM_GRACE_MS = 5000;
+
+/** `codex.dynamicWait`, named once so that its looks last as long. */
+const DYNAMIC_WAIT_MS = 120_000;
+
+/** `codex.requestSettlement`, named once so that the child's readiness can wait as long. */
+const REQUEST_SETTLEMENT_MS = 30_000;
+
+/** The `codex app-server` child: its readiness, its restart backoff and its ordered shutdown. */
+const CODEX_PROCESS = {
+	/**
+	 * Restart delay: it doubles after each failed child attempt from its first second, caps at the
+	 * maximum, and resets only after one account-ready session. Its cap pulls against request
+	 * settlement and the backoff ceiling.
+	 */
+	"codex.restart": backoff(1000, 30_000),
+	/** How long a spawned child may take to acknowledge typed readiness: one request settlement. */
+	"codex.readiness": delay(
+		REQUEST_SETTLEMENT_MS,
+		"the Codex app-server to acknowledge typed readiness",
+	),
 	/**
 	 * Stdin EOF grace lets the child consume drained frames before TERM and ends on closure.
 	 * Realtime stop, EOF and TERM leave one second of the composed cap for group absence proof.
 	 */
-	stdinEofGrace: 1000,
+	"codex.stdinEofGrace": bound(1000, "the Codex child to exit on stdin EOF"),
 	/** TERM grace classification. Pulls against realtime stop before TERM-to-KILL escalation. */
-	termGrace: 5000,
+	"codex.termGrace": polled(TERM_GRACE_MS, "a TERMed Codex process group to exit"),
 	/**
 	 * How long KILL waits for the TERMed group to freeze. A group freezes in a few
 	 * observation polls, but a member in a killable kernel wait never reads as stopped
@@ -34,83 +52,77 @@ const CODEX_PROCESS_MS = durations({
 	 * shutdown cap keeps, so a freeze that cannot finish leaves time to prove the
 	 * killed group gone.
 	 */
-	groupFreeze: 500,
+	"codex.groupFreeze": polled(500, "a TERMed Codex process group to freeze"),
+	/** How long a killed group may take to disappear: the rest of the composed cap. */
+	"codex.killDrain": polled(COMPOSED_SHUTDOWN_MS, "a killed Codex process group to disappear"),
 	/** Composed-shutdown cap classification. Pulls against realtime stop, stdin EOF grace, and TERM grace. */
-	composedShutdown: 10_000,
-});
-
-/**
- * The delay before the next restart of a failed `codex app-server` child: the
- * base delay doubled once for every restart already attempted since the last
- * account-ready session, capped at the maximum.
- * @param restartAttempt Restarts already attempted since account readiness.
- * @returns The delay in milliseconds.
- */
-function codexRestartDelayMs(restartAttempt: number): number {
-	return Math.min(
-		CODEX_PROCESS_MS.restartMax,
-		CODEX_PROCESS_MS.restartBase * 2 ** Math.min(restartAttempt, 30),
-	);
-}
+	"codex.composedShutdown": bound(
+		COMPOSED_SHUTDOWN_MS,
+		"the Codex child and its process group to shut down",
+	),
+	/** How long the transport waits for the child to close once it shut down, before it aborts. */
+	"codex.transportShutdown": delay(COMPOSED_SHUTDOWN_MS),
+	/** The composed cap, handed to the cleanup of a failed server start. */
+	"codex.startupCleanup": handed(COMPOSED_SHUTDOWN_MS),
+	/** The TERM grace, handed to the cleanup of a failed server start. */
+	"codex.startupGrace": handed(TERM_GRACE_MS),
+};
 
 /** Requests to the app-server session, and how often its thread state is read. */
-const CODEX_SESSION_MS = durations({
+const CODEX_SESSION = {
 	/**
 	 * How long an explanation waits for the turn of a message that an idle thread took from the
 	 * queue by itself, before it tells the reader to look at the conversation.
 	 */
-	explanationTurnStart: 15_000,
+	"codex.explanationTurnStart": bound(15_000, "Codex to start the turn of a queued message"),
 	/** How often an answer that Codex writes reaches the panel: a reader sees it arrive in steps. */
-	explanationText: 150,
-	/** Uncertainty-bound classification. Pulls against a lost non-idempotent response before `outcome_unknown`. */
-	requestSettlement: 30_000,
+	"codex.explanationText": delay(150),
 	/**
-	 * Bounds dynamic wait detection latency against app-server thread status
-	 * reads. Request uncertainty must contain a whole number of polls so the last
-	 * observation cannot cross the settlement boundary.
+	 * Uncertainty-bound classification. Pulls against a lost non-idempotent response before
+	 * `outcome_unknown`. Each request, and the coordinator's settings notification, waits this long.
 	 */
-	waitTargetPoll: 250,
+	"codex.requestSettlement": delay(REQUEST_SETTLEMENT_MS, "Codex to answer a request"),
+	/** The request settlement, handed to the bounded `codex --version` proof. */
+	"codex.versionProof": handed(REQUEST_SETTLEMENT_MS),
 	/**
-	 * Read-amplification floor classification. Pulls against the wait-target poll
-	 * below and request settlement above.
+	 * The longest dynamic wait an agent may ask for on the threads it waits on; each wait names
+	 * its own length up to this. Pulls against the browser-command lease, which outlasts it.
+	 */
+	"codex.dynamicWait": bound(DYNAMIC_WAIT_MS, "the awaited threads to report"),
+	/** The looks of a dynamic wait at the thread status, inside its bound. */
+	"codex.dynamicWaitLook": polled(DYNAMIC_WAIT_MS, "the awaited threads to report"),
+	/**
+	 * Read-amplification floor classification. Pulls against request settlement above.
 	 *
 	 * Serving a browser snapshot request re-reads the authoritative workhorse
 	 * queue, which is a paginated app-server call. A client is free to ask for a
 	 * snapshot as often as it likes, so the server coalesces concurrent re-reads and
-	 * will not start a new one inside this floor. It sits at or above one
-	 * wait-target poll, because a browser must not out-run the cadence the server
-	 * observes thread state at, and far below request settlement, so a person's
-	 * refresh still reads as immediate.
+	 * will not start a new one inside this floor. It sits far below request settlement,
+	 * so a person's refresh still reads as immediate.
 	 */
-	queueRereadFloor: 1000,
-	/**
-	 * How often a workhorse stop reads its work tree again after it sent interrupts. Pulls against
-	 * the wait-target poll, the same cadence the server observes thread state at, and against the
-	 * stop settlement below, which must hold several passes.
-	 */
-	workTreeStopPoll: 250,
+	"codex.queueRereadFloor": span(1000),
 	/**
 	 * How long a workhorse stop observes its work tree before it reports what still runs as a
 	 * partial or unconfirmed stop. Pulls against the coordinator's tool call, which waits for the
 	 * stop while the person waits for the voice to answer, and against an interrupt's settlement,
 	 * which Codex acknowledges before the turn reports that it ended.
 	 */
-	workTreeStopSettle: 5000,
-});
+	"codex.workTreeStop": polled(5000, "the workhorse's work tree to stop"),
+};
 
 /**
  * The voice: its realtime start, stop, recovery and the freshness it needs, and how soon the
  * browser's voice client opens its socket again.
  */
-const CODEX_REALTIME_MS = durations({
+const CODEX_REALTIME = {
 	/** Realtime-readiness timeout classification. Pulls against permission-independent SDP/start readiness. */
-	start: 15_000,
+	"codex.realtimeStart": span(15_000, "the voice to start"),
 	/** Realtime-stop timeout classification. Pulls against TERM grace so realtime stops first. */
-	stop: 3000,
+	"codex.realtimeStop": handed(3000),
 	/** Realtime-recovery window classification. Pulls against context freshness while reconnecting. */
-	recovery: 45_000,
+	"codex.realtimeRecovery": span(45_000),
 	/** How long an announced context change stays fresh enough to deliver. Pulls against realtime recovery. */
-	contextFreshness: 30_000,
+	"codex.contextFreshness": span(30_000),
 	/**
 	 * How long the voice client waits before opening its socket again after the
 	 * socket is lost, and between failed attempts after that. Pulls against the tab
@@ -118,94 +130,27 @@ const CODEX_REALTIME_MS = durations({
 	 * ends the conversation before the client is back. It is also the beat of a
 	 * retry, so a shorter value would hammer a server that is restarting.
 	 */
-	clientReconnect: 3000,
+	"codex.clientReconnect": span(3000),
 	/**
 	 * How long a browser tab's conversation outlives its last browser socket. Pulls against a
-	 * reload plus CODEX_REALTIME_MS.clientReconnect redials, which it must outlast or a reload loses the
-	 * conversation, and CODEX_APPROVAL_MS.expiry, which it must stay under so a closed tab's approvals
+	 * reload plus `codex.clientReconnect` redials, which it must outlast or a reload loses the
+	 * conversation, and `codex.approvalExpiry`, which it must stay under so a closed tab's approvals
 	 * end as "tab session ended" rather than expiring unanswered.
 	 */
-	tabSessionGrace: 60_000,
-});
+	"codex.tabSessionGrace": delay(60_000),
+};
 
 /** A browser command an agent leases, and the approvals a person answers. */
-const CODEX_APPROVAL_MS = durations({
+const CODEX_APPROVAL = {
 	/** Browser-command lease classification. Pulls against the public browser wait contract and approval expiry. */
-	browserCommandLease: 150_000,
+	"codex.browserCommandLease": span(150_000),
 	/** Visual-approval expiry classification. Pulls against the browser-command lease. */
-	expiry: 90_000,
+	"codex.approvalExpiry": span(90_000),
 	/** Spoken-approval gate expiry classification. Pulls against visual approval expiry. */
-	spokenGate: 60_000,
-});
-
-/**
- * One duration of the Codex process.
- * @param key Which one.
- * @param startedAtMs When the duration starts, if asking for a deadline.
- * @returns A duration in milliseconds, or a deadline on the supplied clock.
- */
-function codexProcessMs(key: "composedShutdown", startedAtMs: number): number;
-function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS): number;
-function codexProcessMs(key: keyof typeof CODEX_PROCESS_MS, startedAtMs?: number): number {
-	const duration = CODEX_PROCESS_MS[key];
-	return startedAtMs === undefined ? duration : startedAtMs + duration;
-}
-
-/**
- * One duration of a Codex session.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function codexSessionMs(key: keyof typeof CODEX_SESSION_MS): number {
-	return CODEX_SESSION_MS[key];
-}
-
-/**
- * One duration of the voice.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function codexRealtimeMs(key: keyof typeof CODEX_REALTIME_MS): number {
-	return CODEX_REALTIME_MS[key];
-}
-
-/**
- * One duration of a lease or an approval.
- * @param key Which one.
- * @returns It, in milliseconds.
- */
-function codexApprovalMs(key: keyof typeof CODEX_APPROVAL_MS): number {
-	return CODEX_APPROVAL_MS[key];
-}
-
-/**
- * When an approval asked for now expires unanswered.
- * @param nowMs The current time, in milliseconds since the epoch.
- * @param kind Whether this is an approval or a browser command lease.
- * @returns The expiry, in milliseconds since the epoch.
- */
-function codexApprovalExpiresAt(
-	nowMs: number,
-	kind: "expiry" | "browserCommandLease" = "expiry",
-): number {
-	return nowMs + CODEX_APPROVAL_MS[kind];
-}
-
-/**
- * Until when a context change captured at a time stays fresh enough to deliver.
- * @param capturedAtMs When it was captured, in milliseconds since the epoch.
- * @returns The end of its freshness, in milliseconds since the epoch.
- */
-function codexContextFreshUntil(capturedAtMs: number): number {
-	return capturedAtMs + CODEX_REALTIME_MS.contextFreshness;
-}
-
-export {
-	codexRestartDelayMs,
-	codexProcessMs,
-	codexSessionMs,
-	codexRealtimeMs,
-	codexApprovalMs,
-	codexApprovalExpiresAt,
-	codexContextFreshUntil,
+	"codex.spokenGate": span(60_000),
 };
+
+/** Every duration of the Codex workbench. */
+const CODEX = { ...CODEX_PROCESS, ...CODEX_SESSION, ...CODEX_REALTIME, ...CODEX_APPROVAL };
+
+export { CODEX };
