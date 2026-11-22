@@ -4,7 +4,7 @@
 
 use crate::ecma::{abs, js_max, js_min, max, min};
 use crate::geometry::{Point, Rect};
-use crate::track::chains::LANE;
+use crate::lanes::chains::LANE;
 
 use super::super::laid::{SAME, moved};
 use super::super::tree::Line;

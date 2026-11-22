@@ -2,7 +2,7 @@
 //! to another through the edges added so far, and which relationships close a
 //! cycle in a block, found by a depth-first walk.
 
-use crate::track::scene::{Map, Set};
+use crate::lanes::scene::{Map, Set};
 
 /// Whether one item leads down to another, as edges are added.
 #[derive(Default)]

@@ -77,7 +77,7 @@ impl Host {
     }
 }
 
-/// A card, optionally placed in a multi-member group that Track packs as a block.
+/// A card, optionally placed in a multi-member group that Blocks packs as a block.
 fn picture() -> (Content, Measured) {
     let content: Content = serde_json::from_value(json!({
         "nodes": [{ "id": "card", "name": "Card", "kind": "service" }],

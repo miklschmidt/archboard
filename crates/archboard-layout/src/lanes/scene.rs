@@ -376,7 +376,7 @@ impl Placement {
             .get(id)
             .or_else(|| self.titles.get(id))
             .copied()
-            .unwrap_or_else(|| panic!("Track placement omitted endpoint {id}"))
+            .unwrap_or_else(|| panic!("A placement omitted endpoint {id}"))
     }
 
     /// The card or title row of a member, if the scene holds it.

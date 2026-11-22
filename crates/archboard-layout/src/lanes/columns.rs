@@ -6,11 +6,11 @@
 
 use crate::constants::LABEL_CARD_CLEARANCE;
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
-use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
-use crate::track::labels::extent_of;
-use crate::track::occupancy::{Occupancy, nearest};
-use crate::track::readings::{Relaid, by_band, on_band};
-use crate::track::scene::{Item, Set};
+use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
+use crate::lanes::labels::extent_of;
+use crate::lanes::occupancy::{Occupancy, nearest};
+use crate::lanes::readings::{Relaid, by_band, on_band};
+use crate::lanes::scene::{Item, Set};
 
 /// What a line costs: the other lines it crosses, then the sideways steps it takes.
 type Cost = [f64; 2];

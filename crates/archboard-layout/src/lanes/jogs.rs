@@ -17,9 +17,9 @@
 
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
 use crate::ecma::{abs, js_min, sign, to_fixed};
-use crate::track::chains::{ChainId, Kind, LANE, StationId, Track};
-use crate::track::channels::{End, NetId};
-use crate::track::scene::{Item, Map, Set, card_face, centre_x};
+use crate::lanes::chains::{ChainId, Kind, LANE, StationId, Track};
+use crate::lanes::channels::{End, NetId};
+use crate::lanes::scene::{Item, Map, Set, card_face, centre_x};
 
 /// Under this, two stations stand in one column.
 pub(crate) const STRAIGHT: f64 = 0.5;

@@ -13,9 +13,9 @@ use crate::Graphviz;
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::geometry::Side;
 use crate::graph::Node;
-use crate::track::route::PAGE_MARGIN;
-use crate::track::scene::Map;
-use crate::track::score::crossings_of;
+use crate::lanes::route::PAGE_MARGIN;
+use crate::lanes::scene::Map;
+use crate::lanes::score::crossings_of;
 
 use super::assembly::Assembly;
 use super::card_layout::{Arrangement, CardLayout, Engine};

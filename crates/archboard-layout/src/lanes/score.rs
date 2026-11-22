@@ -4,7 +4,7 @@ use archboard_scene::geometry::{Point, Rect};
 
 use crate::constants::fit_in;
 use crate::ecma::{abs, js_min, max, min, number_key, pow, round, via_text};
-use crate::track::scene::{Map, Set};
+use crate::lanes::scene::{Map, Set};
 
 /// What one crossing costs a layout, as the share of its fit it keeps.
 const CROSSING_COST: f64 = 0.97;
@@ -242,7 +242,7 @@ mod tests {
     // hand. What this catches: a group region the wrap lowers whole refused,
     // because its topmost cards stand under cards of the fan rather than of
     // the region, so the region stands on a row of its own above the fan's
-    // other cards (Starting a workhorse, Track); and a lowered card under no
+    // other cards (Starting a workhorse); and a lowered card under no
     // card at all taken.
 
     /// Where the wrap lays each card: a fan of two over the two cards of one region, and one card astray.

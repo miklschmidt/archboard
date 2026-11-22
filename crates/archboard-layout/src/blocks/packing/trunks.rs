@@ -7,9 +7,9 @@ use archboard_router::{Connector, Dir, End, Params, Route, Scene};
 
 use crate::ecma::abs;
 use crate::geometry::{Point, Rect, Side};
-use crate::track::chains::LANE;
-use crate::track::scene::Map;
-use crate::track::score::{Weighed, crossings_of};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::Map;
+use crate::lanes::score::{Weighed, crossings_of};
 
 use super::super::laid::LaidMap;
 use super::super::tree::{Block, BlockTree, Line, header_of};
@@ -290,7 +290,7 @@ impl TrunkRouter<'_> {
         let identities: Vec<_> = lines
             .iter()
             .map(|line| {
-                let kind = crate::track::route::trunk_kind(&line.edge);
+                let kind = crate::lanes::route::trunk_kind(&line.edge);
                 let mut identify = |id: Option<&str>| {
                     id.map(|id| {
                         let next = subjects.len();

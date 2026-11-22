@@ -19,8 +19,8 @@ use rustc_hash::FxHashSet;
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS};
 use crate::ecma::{abs, js_max, js_min, number_key, round, sign, via_text};
 use crate::geometry::{Point, Rect, inflate};
-use crate::track::chains::{LANE, REGION_CLEARANCE};
-use crate::track::scene::Map;
+use crate::lanes::chains::{LANE, REGION_CLEARANCE};
+use crate::lanes::scene::Map;
 
 use super::laid::corners;
 

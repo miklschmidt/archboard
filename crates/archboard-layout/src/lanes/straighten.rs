@@ -3,10 +3,10 @@
 //! relationship descends in one line instead of jogging at every channel.
 
 use crate::ecma::{min_of, sort_by, sorted_by};
-use crate::track::chains::{ByBand, ChainId, Kind, LaneRun, StationId, Track};
-use crate::track::occupancy::{Occupancy, nearest};
-use crate::track::readings::by_band;
-use crate::track::scene::Set;
+use crate::lanes::chains::{ByBand, ChainId, Kind, LaneRun, StationId, Track};
+use crate::lanes::occupancy::{Occupancy, nearest};
+use crate::lanes::readings::by_band;
+use crate::lanes::scene::Set;
 
 /// [`Track::crossings_for`]: how many other chains a line would cross, for
 /// any x its own stations stand at.

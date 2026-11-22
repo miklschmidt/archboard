@@ -11,7 +11,7 @@
 
 use crate::ecma::js_max;
 use crate::geometry::{Rect, Side};
-use crate::track::scene::Map;
+use crate::lanes::scene::Map;
 
 use super::laid::LaidMap;
 use super::lone::grown_by;
@@ -33,7 +33,7 @@ pub(crate) fn sides_of(tree: &BlockTree, laid: &LaidMap) -> Map<String, Side> {
         } else {
             (Side::Bottom, Side::Top)
         };
-        let kind = crate::track::route::trunk_kind(&projection.edge);
+        let kind = crate::lanes::route::trunk_kind(&projection.edge);
         for &block in &projection.out {
             sides.insert(
                 exit_key(

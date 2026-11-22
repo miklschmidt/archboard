@@ -1,11 +1,7 @@
-//! Drawn as blocks (the Blocks engine), the picture, every container and every
-//! group region round more than one node is a block, laid out on its own from
+//! The picture, every container and every group region round more than one node is a block, laid out on its own from
 //! its cards and child blocks; its parent places it as one box, as compact as
 //! what it holds. A block of blocks gathers the cards it holds outside every
 //! block into a cluster, so each block holds cards alone or blocks alone.
-//! Drawn inline (the Track engine), only the picture and every group region
-//! packed as a block of its own (`groups`) are blocks, and every container and
-//! every other region is a cluster of the block that lays it out (TASK-349).
 //! A folded block's columns are blocks too (`fold.rs`).
 //!
 //! A relationship is drawn in the lowest block that holds both its ends, and
@@ -18,15 +14,15 @@
 //! between two blocks is drawn once, as a trunk.
 //!
 //! This file holds the blocks and what they hold. Filling them from the
-//! hierarchy is `inline.rs`, drawing the relationships through them is
+//! hierarchy is `nested.rs`, drawing the relationships through them is
 //! `projection.rs`, and the cycles those find are `cycles.rs`.
 
 use std::rc::Rc;
 
 use crate::geometry::Side;
 use crate::graph::{Edge, Node};
-use crate::track::chains::LANE;
-use crate::track::scene::{Map, Set};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{Map, Set};
 
 use super::headers::Header;
 use super::laid::Size;

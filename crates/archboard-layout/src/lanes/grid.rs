@@ -6,8 +6,8 @@
 
 use crate::constants::LAYOUT_ASPECT;
 use crate::ecma::{js_max, js_min, max, round};
-use crate::track::score::Plan;
-use crate::track::spacing::EMPTY_CHANNEL;
+use crate::lanes::score::Plan;
+use crate::lanes::spacing::EMPTY_CHANNEL;
 use crate::viz::{Attrs, Edge, Value};
 
 /// The fewest loose cards set out as a grid rather than left on one rank.

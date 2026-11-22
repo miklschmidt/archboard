@@ -6,9 +6,9 @@ use std::rc::Rc;
 use crate::constants::LAYOUT_ASPECT;
 use crate::ecma::{abs, sorted_by};
 use crate::geometry::Rect;
-use crate::track::grid::grids;
-use crate::track::scene::Map;
-use crate::track::score::{
+use crate::lanes::grid::grids;
+use crate::lanes::scene::Map;
+use crate::lanes::score::{
     Plan, Weighed, crossings_of, score_of, scores_better, sinks, wrap_plans,
 };
 

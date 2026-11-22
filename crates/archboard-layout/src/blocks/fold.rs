@@ -8,9 +8,9 @@ use std::rc::Rc;
 
 use crate::ecma::{max, min};
 use crate::geometry::Side;
-use crate::track::scene::{Map, Set};
-use crate::track::score::{Weighed, crossings_of, score_of, scores_better};
-use crate::track::spacing::channel_height;
+use crate::lanes::scene::{Map, Set};
+use crate::lanes::score::{Weighed, crossings_of, score_of, scores_better};
+use crate::lanes::spacing::channel_height;
 
 use super::laid::{Band, Insets, Laid};
 use super::tree::{Block, BlockId, BlockTree, Kind, Line, Piece, Route, header_of};

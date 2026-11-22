@@ -7,8 +7,8 @@
 //! are spaced.
 
 use crate::ecma::{max, min};
-use crate::track::chains::{ChainId, Kind, LANE, Track};
-use crate::track::scene::{ItemId, Placement, Set, TitleStep};
+use crate::lanes::chains::{ChainId, Kind, LANE, Track};
+use crate::lanes::scene::{ItemId, Placement, Set, TitleStep};
 use archboard_scene::paint::design::header_words_width;
 
 /// How far a title row's words may reach in from its left edge.

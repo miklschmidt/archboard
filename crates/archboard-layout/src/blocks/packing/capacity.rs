@@ -1,7 +1,7 @@
 //! Parallel lanes needed where two packed boxes actually face each other.
 
 use crate::geometry::{Point, Rect};
-use crate::track::chains::LANE;
+use crate::lanes::chains::LANE;
 
 use super::super::laid::SAME;
 use super::trunks::TRUNK_CLEARANCE;
@@ -13,7 +13,7 @@ struct Run {
 }
 
 /// Several overlapping runs of one route still occupy only one lane.
-fn occupy(active: &mut crate::track::scene::Map<usize, usize>, route: usize, starts: bool) {
+fn occupy(active: &mut crate::lanes::scene::Map<usize, usize>, route: usize, starts: bool) {
     if starts {
         *active.entry(route).or_default() += 1;
     } else if let Some(count) = active.get_mut(&route) {
@@ -33,7 +33,7 @@ fn peak(runs: &[Run]) -> usize {
     // Ends precede starts at one coordinate. A midpoint can round onto an end,
     // where only runs strictly containing that coordinate occupy a lane.
     events.sort_by(|one, other| one.0.total_cmp(&other.0).then(one.2.cmp(&other.2)));
-    let mut active = crate::track::scene::Map::<usize, usize>::default();
+    let mut active = crate::lanes::scene::Map::<usize, usize>::default();
     let (mut cursor, mut most) = (0, 0);
     for span in events.windows(2).filter(|span| span[0].0 != span[1].0) {
         let at = f64::midpoint(span[0].0, span[1].0);
@@ -163,7 +163,7 @@ mod tests {
                     runs.iter()
                         .filter(|run| run.low < at && run.high > at)
                         .map(|run| run.route)
-                        .collect::<crate::track::scene::Set<_>>()
+                        .collect::<crate::lanes::scene::Set<_>>()
                         .len()
                 })
                 .max()

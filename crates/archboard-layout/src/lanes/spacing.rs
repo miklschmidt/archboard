@@ -4,9 +4,9 @@
 
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{abs, js_max, js_min};
-use crate::track::chains::{LANE, Track};
-use crate::track::channels::NetId;
-use crate::track::scene::{ItemId, Placement, Set};
+use crate::lanes::chains::{LANE, Track};
+use crate::lanes::channels::NetId;
+use crate::lanes::scene::{ItemId, Placement, Set};
 
 /// How far apart two ends may be and still be drawn as one straight drop.
 const STRAIGHT: f64 = 0.5;

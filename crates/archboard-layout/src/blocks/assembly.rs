@@ -4,7 +4,7 @@
 
 use crate::geometry::{Point, Rect};
 use crate::json::J;
-use crate::track::scene::Map;
+use crate::lanes::scene::Map;
 
 use super::laid::{CAPTION_INSET, Laid, LaidMap, corners, moved, shifted};
 use super::lone::{Lone, Stop, caption_in, card_in, carried_line};

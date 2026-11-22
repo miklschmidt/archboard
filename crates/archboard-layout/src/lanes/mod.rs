@@ -1,4 +1,4 @@
-//! The track router (TASK-349): a block's placement read back as bands of
+//! The lane router (TASK-349): a block's placement read back as bands of
 //! items, and every line inside it drawn on tracks of its own in the channels
 //! between them.
 

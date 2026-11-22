@@ -8,10 +8,10 @@
 //! stretch. Two lines that end at one point are never parted.
 
 use crate::ecma::{abs, number_key, or, sorted_by};
-use crate::track::chains::{ChainId, LANE, Track};
-use crate::track::channels::{End, NetId};
-use crate::track::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
-use crate::track::scene::{Map, Set};
+use crate::lanes::chains::{ChainId, LANE, Track};
+use crate::lanes::channels::{End, NetId};
+use crate::lanes::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
+use crate::lanes::scene::{Map, Set};
 
 impl Track<'_> {
     /// Whether two nets belong to one line or one trunk.

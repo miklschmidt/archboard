@@ -10,8 +10,8 @@
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{js_min, or, sorted_by};
-use crate::track::graphviz::Join;
-use crate::track::scene::{Map, Set};
+use crate::lanes::graphviz::Join;
+use crate::lanes::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Node, Value, box_node};
 
 use super::laid::Size;

@@ -1,11 +1,8 @@
-//! The block engine (TASK-349, TASK-351): every block is laid out on its own
-//! from its cards and child blocks, Graphviz ranking the cards and the track
-//! router drawing their lines, and a block of blocks packed with the trunks
-//! between them routed round them (`packing`). Drawn as blocks, every
-//! container and group region is a block; drawn inline (Track), only the
-//! picture, every group region packed whole and every column a block folds
-//! into are, and every other container and region is a cluster of the block
-//! that lays it out (`tree.rs`).
+//! Blocks (TASK-351): every block is laid out on its own from its cards and
+//! child blocks, Graphviz ranking the cards and the lane router drawing their
+//! lines, and a block of blocks packed with the trunks between them routed
+//! round them (`packing`). The picture, every container, every group region
+//! and every column a block folds into is a block (`tree.rs`).
 
 mod assembly;
 mod card_graph;

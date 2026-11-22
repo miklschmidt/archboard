@@ -5,8 +5,8 @@
 
 use crate::constants::LABEL_LABEL_CLEARANCE;
 use crate::ecma::{abs, js_max, js_min, or, sorted_by, unique};
-use crate::track::chains::LANE;
-use crate::track::scene::{ItemId, Placement};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{ItemId, Placement};
 
 /// A label box that may slide, where it wants its centre, and where its line reaches it straight.
 #[derive(Clone, Debug)]
@@ -260,7 +260,7 @@ mod tests {
     use archboard_scene::geometry::Rect;
 
     use super::*;
-    use crate::track::scene::Item;
+    use crate::lanes::scene::Item;
 
     /// A label box on a line that runs straight through one x above and
     /// below it, Graphviz standing its left edge at `x`.

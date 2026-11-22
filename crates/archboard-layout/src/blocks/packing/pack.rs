@@ -9,9 +9,9 @@
 use crate::constants::BEND_RADIUS;
 use crate::ecma::{abs, js_max, max, min, or, sorted_by};
 use crate::geometry::{Point, Rect, Side};
-use crate::track::chains::LANE;
-use crate::track::scene::{Map, Set};
-use crate::track::score::scores_better;
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{Map, Set};
+use crate::lanes::score::scores_better;
 
 use super::super::headers::{Header, Room, Taken, header_within};
 use super::super::laid::{Insets, Laid, LaidMap, Size, moved};

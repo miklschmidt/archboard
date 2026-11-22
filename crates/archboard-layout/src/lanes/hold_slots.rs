@@ -8,7 +8,7 @@
 
 use crate::ecma::abs;
 use crate::geometry::Rect;
-use crate::track::graphviz::{Columns, Holds};
+use crate::lanes::graphviz::{Columns, Holds};
 
 /// How near a card must stand to a wall, or to a slot in from it, to stand there.
 const AT: f64 = 1.0;

@@ -4,7 +4,7 @@
 
 use std::rc::Rc;
 
-use crate::track::scene::{Item, Map, Placement, Region, Spot, Walls, centre_x};
+use crate::lanes::scene::{Item, Map, Placement, Region, Spot, Walls, centre_x};
 
 impl Placement {
     /// The band of a member's card or title row, zero where the scene lacks it.

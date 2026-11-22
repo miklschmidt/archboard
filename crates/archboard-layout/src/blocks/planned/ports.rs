@@ -3,7 +3,7 @@
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
-use crate::track::chains::LANE;
+use crate::lanes::chains::LANE;
 
 #[derive(Clone, Copy, PartialEq)]
 pub(super) struct Port {

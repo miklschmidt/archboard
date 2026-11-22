@@ -1,4 +1,4 @@
-//! The Track router assigns each relationship its own tracks (TASK-349).
+//! The lane router assigns each relationship its own tracks (TASK-349).
 //!
 //! Placement groups cards, labels, and frame titles into ranked bands.
 //! A channel is the space between two bands. Relationships have stations on
@@ -10,13 +10,13 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
+use crate::lanes::chains::{ChainId, Kind, LANE, Station, StationId, Track, chain_kind};
+use crate::lanes::channels::{End, Net, NetId};
+use crate::lanes::containers::{Containers, Edges};
+use crate::lanes::jogs::nothing;
+use crate::lanes::scene::{ItemId, Map, Placement, Set, centre_x};
+use crate::lanes::spacing::Rim;
 use crate::placed::PlacedEdge;
-use crate::track::chains::{ChainId, Kind, LANE, Station, StationId, Track, chain_kind};
-use crate::track::channels::{End, Net, NetId};
-use crate::track::containers::{Containers, Edges};
-use crate::track::jogs::nothing;
-use crate::track::scene::{ItemId, Map, Placement, Set, centre_x};
-use crate::track::spacing::Rim;
 
 /// Space kept around the drawing.
 pub(crate) const PAGE_MARGIN: f64 = 24.0;

@@ -1,13 +1,13 @@
 //! Reading a block's clusters back from Graphviz (TASK-349): every cluster's
 //! box, the cards and labels lined up inside them, and the frames nested as
 //! nodes around their members with their title rows, and the regions as rows
-//! on the block's root, the shape the track scene reads.
+//! on the block's root, the shape the lane scene reads.
 
 use crate::ecma::{abs, js_min};
 use crate::geometry::{Point, Rect};
+use crate::lanes::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
+use crate::lanes::scene::Map;
 use crate::placed::{PlacedNode, PlacedRegion};
-use crate::track::graphviz::{Holds, Join, Output, Room, Wrap, align_columns, numbers};
-use crate::track::scene::Map;
 use archboard_scene::paint::design::header_words_width;
 
 use super::clusters::{Clusters, NODE_GAP, title_of};
@@ -155,7 +155,7 @@ impl Clusters<'_> {
         }
     }
 
-    /// The placed block's children nested as the track scene reads them: every
+    /// The placed block's children nested as the lane scene reads them: every
     /// frame a node around its members with its title row, every region a row
     /// on the root.
     pub(crate) fn nest(
@@ -214,7 +214,7 @@ impl Clusters<'_> {
             .collect()
     }
 
-    /// Every region as the track scene reads it: its group, frame, direct
+    /// Every region as the lane scene reads it: its group, frame, direct
     /// members, band and caption.
     fn region_rows(
         &self,

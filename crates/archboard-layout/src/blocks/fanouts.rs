@@ -1,7 +1,7 @@
 //! A source can share an entry before its branches acquire their labels.
 
-use crate::track::route::trunk_kind;
-use crate::track::scene::{Map, Set};
+use crate::lanes::route::trunk_kind;
+use crate::lanes::scene::{Map, Set};
 
 use super::tree::{BlockId, BlockTree, Projection};
 

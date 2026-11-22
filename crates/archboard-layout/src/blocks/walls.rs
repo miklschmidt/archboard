@@ -4,8 +4,8 @@
 //! parent must route around.
 
 use crate::geometry::{Point, Rect, Side};
-use crate::track::chains::LANE;
-use crate::track::scene::{ItemId, Map, Placement};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{ItemId, Map, Placement};
 
 use super::leaves::PORT;
 use super::tree::{Block, BlockTree, Kind, Line};

@@ -8,18 +8,14 @@
 //! share one, or else as near each other as their edges allow; each block
 //! inside is routed again with its ports there, and the block is packed or
 //! routed again as it was.
-//!
-//! A block of cards drawn inline (Track) holds its ports where its lines
-//! first turn, and a line settling a pin there reaches it only where it drops
-//! straight (`turns_from`, `clear_of`).
 
 use std::rc::Rc;
 
 use crate::ecma::{js_max, js_min, max, min, sort_by};
 use crate::geometry::{Rect, Side};
-use crate::track::chains::LANE;
-use crate::track::channels::port_reach;
-use crate::track::scene::Map;
+use crate::lanes::chains::LANE;
+use crate::lanes::channels::port_reach;
+use crate::lanes::scene::Map;
 
 use super::laid::{Laid, LaidMap};
 use super::legacy::insets_of;
@@ -334,8 +330,7 @@ impl Settling<'_> {
     }
 
     /// Settle a block and everything inside it: route it again with its own
-    /// ports where its parent settled them, after the blocks inside it. A
-    /// block of cards drawn inline settles the blocks it holds first.
+    /// ports where its parent settled them, after the blocks inside it.
     fn block(&mut self, id: BlockId, own: &Map<String, f64>) {
         let tree = self.tree;
         let block = tree.get(id);

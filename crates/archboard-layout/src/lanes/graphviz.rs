@@ -6,8 +6,8 @@ use serde::Deserialize;
 
 use crate::ecma::{abs, js_max, js_min, max, min, number_of, via_text};
 use crate::geometry::{Point, Rect};
-use crate::track::scene::{Map, Set};
-use crate::track::{hold_slots, wrap_columns};
+use crate::lanes::scene::{Map, Set};
+use crate::lanes::{hold_slots, wrap_columns};
 use crate::viz::Node;
 
 /// One object Graphviz placed: a node or a cluster.

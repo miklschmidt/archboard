@@ -5,12 +5,12 @@ use archboard_scene::paint::design::tab_width;
 
 use crate::ecma::{js_max, max, min};
 use crate::geometry::{Point, Rect};
+use crate::lanes::containers::Edges;
+use crate::lanes::route::{SceneLine, order_of, route_scene, trunk_kind};
+use crate::lanes::scene::{ItemId, Map, Placement, Set};
+use crate::lanes::score::laps_of;
+use crate::lanes::sides::fit_sides;
 use crate::placed::PlacedBlock;
-use crate::track::containers::Edges;
-use crate::track::route::{SceneLine, order_of, route_scene, trunk_kind};
-use crate::track::scene::{ItemId, Map, Placement, Set};
-use crate::track::score::laps_of;
-use crate::track::sides::fit_sides;
 
 use super::laid::{Band, Insets, Laid};
 use super::leaves::{mark_regions, rim_of};
@@ -69,7 +69,7 @@ pub(super) fn routed(
         .iter()
         .map(|edge| (edge.id.as_str(), edge))
         .collect();
-    crate::track::sides::place_headers(&mut scene, &edges);
+    crate::lanes::sides::place_headers(&mut scene, &edges);
     let beside = beside_walls(block, tree, &scene);
     let straight: Set<&str> = beside.iter().map(|one| one.key.as_str()).collect();
     mark_besides(&mut scene, &beside);
@@ -235,8 +235,8 @@ fn read(
 fn shift_left(
     boxes: &mut Map<String, Rect>,
     walled: &mut Map<String, Vec<Point>>,
-    drawn: &mut [crate::track::containers::FrameShape],
-    regions: &mut [crate::track::containers::RegionShape],
+    drawn: &mut [crate::lanes::containers::FrameShape],
+    regions: &mut [crate::lanes::containers::RegionShape],
     left: f64,
 ) {
     for bx in boxes.values_mut() {

@@ -1,7 +1,7 @@
 //! Reserve distinct lines across opposite walls before accepting a route.
 
 use super::{model::Model, shape::Shape};
-use crate::{blocks::assembly::PlacedLine, geometry::Point, track::chains::LANE};
+use crate::{blocks::assembly::PlacedLine, geometry::Point, lanes::chains::LANE};
 
 /// How far apart two lines at opposite walls of one card must stand to read
 /// as two lines, not as one line behind the card: one lane, the gap between

@@ -1,4 +1,4 @@
-//! The side walls of the frames and group regions a track scene draws, fitted
+//! The side walls of the frames and group regions a lane scene draws, fitted
 //! once every line is routed. Graphviz sizes a cluster to hold each label box
 //! where Graphviz stood it; the router then slides some labels onto their
 //! lines, and the strip kept for a label's old place stayed empty beside the
@@ -10,9 +10,9 @@ use archboard_scene::paint::design::header_width_for;
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{abs, js_max, js_min, max, min, sorted_by};
 use crate::geometry::{Point, Rect};
-use crate::track::chains::{LANE, REGION_CLEARANCE};
-use crate::track::containers::{Edges, FrameShape, RegionShape, frame_shapes, region_shapes};
-use crate::track::scene::{Placement, REGION_CAPTION_INSET};
+use crate::lanes::chains::{LANE, REGION_CLEARANCE};
+use crate::lanes::containers::{Edges, FrameShape, RegionShape, frame_shapes, region_shapes};
+use crate::lanes::scene::{Placement, REGION_CAPTION_INSET};
 
 /// One container whose side walls are fitted.
 struct Fitting {

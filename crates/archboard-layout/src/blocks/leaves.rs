@@ -4,10 +4,10 @@
 use crate::constants::CONTAINER_INSET;
 use crate::ecma::{js_max, js_min, max, min, via_text};
 use crate::geometry::{Point, Rect};
+use crate::lanes::chains::LANE;
+use crate::lanes::scene::{Map, Placement};
+use crate::lanes::spacing::Rim;
 use crate::placed::PlacedNode;
-use crate::track::chains::LANE;
-use crate::track::scene::{Map, Placement};
-use crate::track::spacing::Rim;
 
 use super::headers::{Room, header_within};
 use super::laid::{Insets, LaidMap};

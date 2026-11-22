@@ -1,4 +1,4 @@
-//! The frames and group regions a track scene draws (TASK-349). Each reaches
+//! The frames and group regions a lane scene draws (TASK-349). Each reaches
 //! one inset below the lowest thing it holds, the containers inside it
 //! included, so nested containers never share a bottom edge; and the channel
 //! below the band a container ends on starts its tracks below that edge.
@@ -9,8 +9,8 @@ use archboard_scene::geometry::Rect;
 
 use crate::constants::{CONTAINER_INSET, REGION_INSET};
 use crate::ecma::{js_max, max};
+use crate::lanes::scene::{ItemId, Map, Placement, Set};
 use crate::placed::PlacedEdge;
-use crate::track::scene::{ItemId, Map, Placement, Set};
 
 /// A frame's box once the scene is spaced, and how deep in frames it sits.
 #[derive(Clone, Debug, PartialEq)]

@@ -1,4 +1,4 @@
-//! A block as Graphviz placed it, the way the track scene reads it: every
+//! A block as Graphviz placed it, the way the lane scene reads it: every
 //! card, port, header and pin a leaf, every container a node round its
 //! members carrying its title row, every line its ends, its label's box and
 //! the polyline Graphviz drew it on, and every group region a row on the root.
@@ -27,7 +27,7 @@ pub(crate) struct PlacedNode {
     pub frame: Option<FrameRow>,
 }
 
-/// What a container laid out inline tells the track scene of itself.
+/// What a container tells the lane scene of itself.
 #[derive(Clone, Debug)]
 pub(crate) struct FrameRow {
     /// Its title row's box, as `x, y, width, height`, and how far its words reach in.

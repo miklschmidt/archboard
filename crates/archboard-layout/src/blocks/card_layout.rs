@@ -1,5 +1,5 @@
 //! A block of cards laid out on its own. Graphviz ranks and orders its cards,
-//! its labels, its header and its ports; the track router then draws every
+//! its labels, its header and its ports; the lane router then draws every
 //! line inside it on tracks in the channels between its ranks, growing each
 //! channel to fit, so the block's size is final when this answers. Its graph
 //! is built in `card_graph.rs`, held in place by `holding.rs` and routed by
@@ -14,11 +14,11 @@ use crate::Graphviz;
 use crate::constants::CONTAINER_INSET;
 use crate::ecma::{abs, js_max, js_min};
 use crate::geometry::{Point, Rect, Side};
+use crate::lanes::graphviz::{boxes_of, centres_of, numbers, output_of, polyline_points};
+use crate::lanes::grid::Loose;
+use crate::lanes::scene::{Map, Set};
+use crate::lanes::score::Plan;
 use crate::placed::{PlacedBlock, PlacedEdge, PlacedNode};
-use crate::track::graphviz::{boxes_of, centres_of, numbers, output_of, polyline_points};
-use crate::track::grid::Loose;
-use crate::track::scene::{Map, Set};
-use crate::track::score::Plan;
 use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node, nodes_in};
 
 use super::clusters::{Clusters, Holder, Link, is_title, title_of};
@@ -435,7 +435,7 @@ impl<'t> CardLayout<'t> {
         })
     }
 
-    /// The block as the track scene reads it: its items, header, ports and pins
+    /// The block as the lane scene reads it: its items, header, ports and pins
     /// as cards, and its lines as placed relationships.
     fn placed(
         &self,

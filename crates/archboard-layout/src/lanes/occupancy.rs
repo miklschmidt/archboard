@@ -5,10 +5,10 @@
 use std::rc::Rc;
 
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
-use crate::track::chains::{LANE, LaneRun, REGION_CLEARANCE, StationId, Track};
-use crate::track::clear::ClearOf;
-use crate::track::scene::{ItemId, Map, Placement, Set, Spot, WallStretches};
-use crate::track::walls::KeepsFrames;
+use crate::lanes::chains::{LANE, LaneRun, REGION_CLEARANCE, StationId, Track};
+use crate::lanes::clear::ClearOf;
+use crate::lanes::scene::{ItemId, Map, Placement, Set, Spot, WallStretches};
+use crate::lanes::walls::KeepsFrames;
 
 /// How many quarter lanes either way a lane looks for a free column.
 const SEARCH_STEPS: usize = 64;

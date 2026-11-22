@@ -5,7 +5,7 @@
 //! pair of what the earlier one costs above the later one.
 
 use crate::ecma::{abs, max, min, or, sign, sorted_by};
-use crate::track::chains::LANE;
+use crate::lanes::chains::LANE;
 
 /// The cost of an order that runs two lines down one column: never taken when avoidable.
 const STACKED: f64 = 100.0;

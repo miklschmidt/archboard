@@ -8,10 +8,10 @@
 
 use crate::ecma::{abs, js_max, js_min, sorted_by};
 use crate::geometry::Rect;
-use crate::track::chains::{FACE_MARGIN, LANE};
-use crate::track::graphviz::{Columns, Join, Wrap};
-use crate::track::scene::{Map, Set};
-use crate::track::score::sinks;
+use crate::lanes::chains::{FACE_MARGIN, LANE};
+use crate::lanes::graphviz::{Columns, Join, Wrap};
+use crate::lanes::scene::{Map, Set};
+use crate::lanes::score::sinks;
 
 /// The furthest a card standing in a line's way steps aside: four lanes.
 const STEP_ASIDE: f64 = 4.0 * LANE;

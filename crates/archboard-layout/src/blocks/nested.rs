@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use crate::ecma::sorted_by;
 use crate::graph::{Edge, Node, semantic_order};
-use crate::track::scene::Set;
+use crate::lanes::scene::Set;
 
 use super::headers::Header;
 use super::laid::tab_of;

@@ -12,9 +12,9 @@ use crate::constants::REGION_INSET;
 use crate::ecma::{abs, js_max, js_min, number_of, sorted_by};
 use crate::geometry::{Point, Rect};
 use crate::graph::{DOOR, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
+use crate::lanes::containers::FrameShape;
+use crate::lanes::scene::Map;
 use crate::placed::FrameRow;
-use crate::track::containers::FrameShape;
-use crate::track::scene::Map;
 
 use super::headers::{Header, steps_of};
 use super::laid::{CAPTION_INSET, Insets, Size};
@@ -241,7 +241,7 @@ pub(crate) struct Head<'a> {
     pub steps: Option<&'a [Size]>,
 }
 
-/// The title row a container drawn inline gives the track scene, and the room
+/// The title row a container drawn inline gives the lane scene, and the room
 /// it keeps below what it holds. Alone in its region, the scene reads it as
 /// the region.
 pub(crate) fn title_row(bounds: Rect, head: &Head<'_>, lone: Option<&Lone>) -> FrameRow {

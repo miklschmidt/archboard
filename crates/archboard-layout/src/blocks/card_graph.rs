@@ -3,8 +3,8 @@
 //! label's box, the first rank and the last held by invisible edges.
 
 use crate::geometry::Side;
-use crate::track::grid::grid_edges;
-use crate::track::scene::{Map, Set};
+use crate::lanes::grid::grid_edges;
+use crate::lanes::scene::{Map, Set};
 use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node};
 
 use super::card_layout::{CardLayout, Sub};

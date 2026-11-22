@@ -4,12 +4,12 @@
 //! that would hold it.
 
 use crate::constants::{CONTAINER_INSET, LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
-use crate::track::chains::{ChainId, Kind, LANE, StationId, Track};
-use crate::track::occupancy::Occupancy;
-use crate::track::readings::on_band;
-use crate::track::relay::Relay;
-use crate::track::scene::{Item, ItemId, Placement, Set};
-use crate::track::sweep::{EDGE, Span, block};
+use crate::lanes::chains::{ChainId, Kind, LANE, StationId, Track};
+use crate::lanes::occupancy::Occupancy;
+use crate::lanes::readings::on_band;
+use crate::lanes::relay::Relay;
+use crate::lanes::scene::{Item, ItemId, Placement, Set};
+use crate::lanes::sweep::{EDGE, Span, block};
 
 impl Track<'_> {
     /// The frames a chain's two ends stand inside.

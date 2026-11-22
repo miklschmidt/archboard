@@ -7,10 +7,10 @@
 
 use crate::ecma::{js_max, js_min};
 use crate::geometry::{Point, polyline_x};
+use crate::lanes::channels::{Net, NetId, Trunk};
+use crate::lanes::occupancy::Occupancy;
+use crate::lanes::scene::{ItemId, Placement, Set, Spot, centre_x};
 use crate::placed::PlacedEdge;
-use crate::track::channels::{Net, NetId, Trunk};
-use crate::track::occupancy::Occupancy;
-use crate::track::scene::{ItemId, Placement, Set, Spot, centre_x};
 
 /// Distance between neighbouring lanes and tracks.
 pub(crate) const LANE: f64 = 16.0;

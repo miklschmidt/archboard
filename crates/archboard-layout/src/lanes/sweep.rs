@@ -5,7 +5,7 @@
 
 use crate::constants::BEND_RADIUS;
 use crate::ecma::abs;
-use crate::track::chains::LANE;
+use crate::lanes::chains::LANE;
 
 /// What a change of column costs a route while it is searched: two bends and the run between them.
 const JOG: f64 = 2.0 * LANE;

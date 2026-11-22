@@ -9,8 +9,8 @@ use std::rc::Rc;
 
 use crate::geometry::Side;
 use crate::graph::Edge;
-use crate::track::route::trunk_kind;
-use crate::track::scene::{Map, Set};
+use crate::lanes::route::trunk_kind;
+use crate::lanes::scene::{Map, Set};
 
 use super::cycles::CycleWalk;
 use super::tree::{
@@ -356,7 +356,7 @@ impl BlockTree {
             && own.kind == Kind::Frame
             && own.lone.as_ref().is_some_and(|lone| {
                 own.header.as_ref().is_some_and(|header| {
-                    super::lone::caption_width(lone) + 2.0 * crate::track::chains::LANE
+                    super::lone::caption_width(lone) + 2.0 * crate::lanes::chains::LANE
                         >= header.width
                 })
             })

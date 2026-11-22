@@ -3,10 +3,10 @@
 //! least costly way down through the columns a chain's stations may take.
 
 use crate::ecma::{js_max, js_min, sort_by};
-use crate::track::chains::{StationId, Track};
-use crate::track::relay::Relay;
-use crate::track::scene::Map;
-use crate::track::sweep::{CROSSING, Span, backtrack, descend, from_reach, spanned, warp};
+use crate::lanes::chains::{StationId, Track};
+use crate::lanes::relay::Relay;
+use crate::lanes::scene::Map;
+use crate::lanes::sweep::{CROSSING, Span, backtrack, descend, from_reach, spanned, warp};
 
 /// What the other lines do in one channel, read onto the columns.
 pub(super) struct Traffic {

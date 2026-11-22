@@ -9,10 +9,10 @@
 //! before sliding.
 
 use crate::ecma::{abs, js_max, js_min};
-use crate::track::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
-use crate::track::occupancy::Occupancy;
-use crate::track::readings::by_band;
-use crate::track::scene::{Map, Set, centre_x};
+use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
+use crate::lanes::occupancy::Occupancy;
+use crate::lanes::readings::by_band;
+use crate::lanes::scene::{Map, Set, centre_x};
 
 /// How a run is moved, by [`Track::each_run`].
 #[derive(Clone, Copy)]
