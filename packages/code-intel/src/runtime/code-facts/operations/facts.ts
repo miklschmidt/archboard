@@ -156,7 +156,9 @@ interface Switchboard {
 	readonly type?: string;
 	/** The keys the body names, including arms that run no operation, when closure is deferred. */
 	readonly namedKeys?: readonly string[];
-	/** Each operation, in the order the body first picks it: two or more. */
+	/** Operations regrouped without the catch-all, for a deferred key whose named arms exhaust it. */
+	readonly exhaustiveOperations?: readonly PickedOperation[];
+	/** Each operation, in the order the body first picks it. */
 	readonly operations: readonly PickedOperation[];
 	/**
 	 * The pieces of logic that exist only to pick: each test of the key, and

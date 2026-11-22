@@ -13,11 +13,7 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Switchboard } from "#runtime/code-facts/operations/facts.ts";
-import {
-	type Arm,
-	operationsOf,
-	restSpelled,
-} from "#runtime/code-facts/operations/switchboard-arms.ts";
+import { type Arm, dispatchOperations } from "#runtime/code-facts/operations/switchboard-arms.ts";
 
 /** The syntax the query counts as a piece of logic (rust.scm). */
 const LOGIC = new Set([
@@ -502,19 +498,14 @@ function armOf(arm: ArmCode): Arm {
 }
 
 /**
- * Closure facts for a match whose catch-all depends on the enum's variants.
+ * The type needed to close an enum catch-all.
  * @param dispatch The match.
  * @param type The parameter's type.
- * @param namedKeys The keys the arms name.
- * @returns The deferred closure, when needed.
+ * @returns The type's symbol when a catch-all needs it.
  */
-function enumPick(
-	dispatch: Dispatch,
-	type: string | undefined,
-	namedKeys: readonly string[],
-): Pick<Switchboard, "type" | "namedKeys"> {
-	if (dispatch.boolean || type === undefined || !namedKeys.includes("*")) return {};
-	return { type: type.replaceAll("::", "."), namedKeys };
+function enumType(dispatch: Dispatch, type: string | undefined): string | undefined {
+	if (dispatch.boolean || !dispatch.arms.some((arm) => arm.keys.includes("*"))) return undefined;
+	return type?.replaceAll("::", ".");
 }
 
 /**
@@ -546,15 +537,16 @@ function switchboardFrom(
 	parameters: Map<string, string>,
 ): Switchboard | undefined {
 	if (dispatch === undefined) return undefined;
-	const picked = operationsOf(dispatch.arms.map(armOf));
-	const namedKeys = dispatch.arms.flatMap((arm) => arm.keys);
-	const operations = dispatch.boolean ? restSpelled(picked, ["true", "false"], namedKeys) : picked;
-	if (operations.length < 2) return undefined;
+	const operations = dispatchOperations(
+		dispatch.arms.map(armOf),
+		dispatch.boolean ? ["true", "false"] : undefined,
+		enumType(dispatch, parameters.get(dispatch.key)),
+	);
+	if (operations === undefined) return undefined;
 	const forwarding = dispatch.arms.filter((arm) => forwards(arm.code)).length;
 	return {
 		key: dispatch.key,
-		...enumPick(dispatch, parameters.get(dispatch.key), namedKeys),
-		operations,
+		...operations,
 		logic: dispatch.logic + forwarding,
 	};
 }

@@ -61,7 +61,20 @@ async function closedKeys(
  * @returns Its reachable operations.
  */
 function closeOperations(picks: Switchboard, keys: readonly string[]): Switchboard["operations"] {
-	return restSpelled(picks.operations, keys, picks.namedKeys ?? []);
+	const exhaustive = picks.exhaustiveOperations;
+	const named = picks.namedKeys ?? [];
+	if (exhaustive !== undefined && keys.every((key) => named.includes(key))) return exhaustive;
+	return restSpelled(picks.operations, keys, named);
+}
+
+/**
+ * The widest operation set that closing the key could expose.
+ * @param picks The deferred pick.
+ * @returns The operations for the conservative verdict.
+ */
+function widestOperations(picks: Switchboard): Switchboard["operations"] {
+	const exhaustive = picks.exhaustiveOperations ?? [];
+	return exhaustive.length > picks.operations.length ? exhaustive : picks.operations;
 }
 
 /**
@@ -77,7 +90,7 @@ async function switchboardOf(
 	const picks = await picksOf(reading, name);
 	if (picks === undefined) return undefined;
 	const keys = await closedKeys(reading, name, picks);
-	const operations = keys === undefined ? picks.operations : closeOperations(picks, keys);
+	const operations = keys === undefined ? widestOperations(picks) : closeOperations(picks, keys);
 	if (operations.length < 2) return undefined;
 	const open = picks.type !== undefined && keys === undefined ? { open: picks.type } : {};
 	return {

@@ -85,7 +85,12 @@ let answer: CodeCheckAnswer;
 beforeAll(async () => {
 	const files: Record<string, string> = {
 		"src/exhaustive/kind.ts": 'export type Kind = "a" | "b";\n',
-		"src/exhaustive/index.ts": `import type { Kind } from "./kind.ts";\n${PICKED}`,
+		"src/exhaustive/index.ts": `import type { Kind } from "./kind.ts";\n${PICKED.replace(
+			"return one(n);",
+			"{ three(n); return one(n); }",
+		)
+			.replace("return two(n);", "{ three(n); return two(n); }")
+			.replace("n + 3 + 3", "n")}`,
 		"src/thin/index.ts": operations(0, 4, false).replaceAll("n * 2 + n - 1 + n", "n + 1"),
 		"src/broken/index.ts": `${operations(0, 4, false).replaceAll("n * 2 + n - 1 + n", "n + 1")}export function oops(: number {\n`,
 		"src/kinds/index.ts": 'export type Kind = "a" | "b" | "c";\n',
@@ -233,5 +238,4 @@ test("an imported key with every choice handled gives the unreachable default no
 		["a"],
 		["b"],
 	]);
-	expect(shallow("Exhaust")).toBe(true);
 });

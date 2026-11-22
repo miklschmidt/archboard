@@ -11,7 +11,7 @@
 // `variantContent` parses with the shared schema path and checks more. So a
 // shared default arm counts once, and each bespoke arm beside it counts too.
 
-import type { PickedOperation } from "#runtime/code-facts/operations/facts.ts";
+import type { PickedOperation, Switchboard } from "#runtime/code-facts/operations/facts.ts";
 
 /** One arm of a pick, as a grammar reads it. */
 interface Arm {
@@ -58,9 +58,14 @@ function operationOf(arm: Arm, arms: readonly Arm[]): string | undefined {
 /**
  * The operations the arms of a pick run, in the order the body first picks each.
  * @param arms The arms, in the order the body tests them.
+ * @param closed The closed key set, when known.
  * @returns The operations, with the keys of every arm that runs each.
  */
-function operationsOf(arms: readonly Arm[]): PickedOperation[] {
+function operationsOf(arms: readonly Arm[], closed?: readonly string[]): PickedOperation[] {
+	if (closed !== undefined) {
+		const named = arms.flatMap((arm) => arm.keys);
+		return operationsOf(restSpelled(arms, closed, named));
+	}
 	const operations = new Map<string, { keys: string[]; line: number }>();
 	for (const arm of arms) {
 		const identity = operationOf(arm, arms);
@@ -74,16 +79,17 @@ function operationsOf(arms: readonly Arm[]): PickedOperation[] {
 
 /**
  * The operations with `*` spelled out as the keys of the closed set that no arm names.
+ * @template T An operation or an arm with its effects.
  * @param operations The operations.
  * @param closed Every key of the closed set.
  * @param named The explicitly handled keys, including arms that run no operation.
  * @returns The reachable operations.
  */
-function restSpelled(
-	operations: readonly PickedOperation[],
+function restSpelled<T extends PickedOperation>(
+	operations: readonly T[],
 	closed: readonly string[],
 	named: readonly string[],
-): PickedOperation[] {
+): T[] {
 	const rest = closed.filter((key) => !named.includes(key));
 	return operations.flatMap((each) => {
 		const keys = each.keys.flatMap((key) => (key === "*" ? rest : [key]));
@@ -91,4 +97,27 @@ function restSpelled(
 	});
 }
 
-export { type Arm, operationsOf, restSpelled };
+/**
+ * Measure a dispatch, retaining both outcomes when the catch-all's reach is deferred.
+ * @param arms The dispatch arms.
+ * @param closed The closed keys, when known.
+ * @param type The type that can close the key later.
+ * @returns The operation facts, if either outcome can widen the interface.
+ */
+function dispatchOperations(
+	arms: readonly Arm[],
+	closed: readonly string[] | undefined,
+	type: string | undefined,
+): Pick<Switchboard, "type" | "namedKeys" | "exhaustiveOperations" | "operations"> | undefined {
+	const operations = operationsOf(arms, closed);
+	const namedKeys = arms.flatMap((arm) => arm.keys);
+	const exhaustiveOperations =
+		type !== undefined && namedKeys.includes("*") ? operationsOf(arms, namedKeys) : operations;
+	if (Math.max(operations.length, exhaustiveOperations.length) < 2) return undefined;
+	return {
+		operations,
+		...(type === undefined ? {} : { type, namedKeys, exhaustiveOperations }),
+	};
+}
+
+export { type Arm, dispatchOperations, restSpelled };

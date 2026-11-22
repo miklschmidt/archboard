@@ -9,12 +9,8 @@
 // call site is read, since a choice can cross HTTP or WebAssembly as data.
 
 import type { Node } from "web-tree-sitter";
-import type { PickedOperation, Switchboard } from "#runtime/code-facts/operations/facts.ts";
-import {
-	type Arm,
-	operationsOf,
-	restSpelled,
-} from "#runtime/code-facts/operations/switchboard-arms.ts";
+import type { Switchboard } from "#runtime/code-facts/operations/facts.ts";
+import { type Arm, dispatchOperations } from "#runtime/code-facts/operations/switchboard-arms.ts";
 import {
 	type ArmCode,
 	codeOf,
@@ -262,13 +258,14 @@ function closedPick(declaration: Node): ClosedPick | undefined {
 }
 
 /**
- * The forwarding arms in the selector's own body.
+ * The forwarding calls in the selector's own body.
  * @param dispatch The selector.
  * @returns Its forwarding overhead.
  */
-function forwardingArms(dispatch: Dispatch): number {
-	return dispatch.arms.slice(dispatch.table?.length ?? 0).filter((arm) => forwards(arm.code))
-		.length;
+function forwardingLogic(dispatch: ClosedPick["dispatch"]): number {
+	// Table entries describe the handlers' own bodies.
+	const arms = dispatch.arms.slice(dispatch.table?.length ?? 0);
+	return arms.filter((arm) => forwards(arm.code)).length + Number(bareCall(dispatch.call));
 }
 
 /**
@@ -279,39 +276,20 @@ function forwardingArms(dispatch: Dispatch): number {
 function switchboardOf(declaration: Node): Switchboard | undefined {
 	const pick = closedPick(declaration);
 	if (pick === undefined) return undefined;
-	const operations = operationsFor(pick);
-	if (operations.length < 2) return undefined;
-	const { dispatch, closure } = pick;
-	// Table entries describe the handlers' own bodies. Only arms in the
-	// selector itself can be forwarding overhead.
-	const forwarding = forwardingArms(dispatch);
-	const call = bareCall(dispatch.call) ? 1 : 0;
-	return {
-		key: dispatch.key,
-		...("type" in closure
-			? { type: closure.type, namedKeys: dispatch.arms.flatMap((arm) => arm.keys) }
-			: {}),
-		operations,
-		logic: dispatch.logic + forwarding + call,
-	};
-}
-
-/**
- * The operations a pick runs, with `*` spelled out where the closure names every key.
- * @param pick The pick and its closure.
- * @returns The operations.
- */
-function operationsFor(pick: ClosedPick): PickedOperation[] {
 	const { callable, dispatch, closure } = pick;
 	const line = callable.startPosition.row + 1;
-	const picked = operationsOf(dispatch.arms.map((arm) => armOf(arm, line)));
-	return "whole" in closure && closure.whole
-		? restSpelled(
-				picked,
-				closure.keys,
-				dispatch.arms.flatMap((arm) => arm.keys),
-			)
-		: picked;
+	const arms = dispatch.arms.map((arm) => armOf(arm, line));
+	const operations = dispatchOperations(
+		arms,
+		"whole" in closure && closure.whole ? closure.keys : undefined,
+		"type" in closure ? closure.type : undefined,
+	);
+	if (operations === undefined) return undefined;
+	return {
+		key: dispatch.key,
+		...operations,
+		logic: dispatch.logic + forwardingLogic(dispatch),
+	};
 }
 
 export { switchboardOf };
