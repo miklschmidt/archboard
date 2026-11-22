@@ -474,7 +474,19 @@ line just behind a small open point, and its body stops before the bars. Only a 
 states no effect has a broken body: long strokes, thinner than a solid line, ending in a detached
 open chevron. A head, a ring and the bars keep a minimum size on screen, and the eye's center and
 the gap of the "=" keep at least 2 clear pixels, so each survives the opening zoom of a wide scope.
-Emphasis thickens the body and keeps the openings. A compared line takes its standing's color for its ink and keeps its shapes, so its
+Emphasis thickens the body and keeps the openings.
+
+**The Line Sizes Rule.** Sizes are in picture units, one CSS pixel at 100%. A line is 2.4 wide, an
+emphasised one 3.6, and a declared-only body 0.7 of that. Every mark is drawn at one size whatever
+the line's weight, in a 24-unit square: the wedge is 15 long and 15 wide, about six times the line's
+width; the eye about 16 long; the "=" with its point reaches 21 back from the tip, its bars 13 across
+the line and 8 apart; the detached chevron about 8 long, clear of the body's end; the ring at the
+caller is 4.2 round. A mutation's imprint reaches 9 to either side of the tip and is 2.6 thick. A
+line runs straight for 30 after its last bend, the longest head and some body, so no head sits on
+or just past a bend; a line with no bend needs only 23, its marks and a little body. Seen from far
+out, a viewer grows each mark about its tip until its square is 8 CSS pixels: at the opening zoom
+of a large picture that keeps the "=" open, and from about a third of full size inward every mark
+keeps its own size. A compared line takes its standing's color for its ink and keeps its shapes, so its
 effect still reads. A reading from before effects keeps the dash and the head its policy recorded.
 
 Relationships between the same two drawn ends join into one line only when they share their kind
