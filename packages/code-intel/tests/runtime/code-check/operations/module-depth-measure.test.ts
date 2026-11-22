@@ -88,6 +88,9 @@ beforeAll(async () => {
 		"src/broken/index.ts": `${operations(0, 4, false).replaceAll("n * 2 + n - 1 + n", "n + 1")}export function oops(: number {\n`,
 		"src/kinds/index.ts": 'export type Kind = "a" | "b" | "c";\n',
 		"src/keys/index.ts": `import type { Kind } from "../kinds/index.ts";\n${PICKED}`,
+		"src/aliases/pick.ts": `import type { Kind } from "../kinds/index.ts";\n${PICKED}`,
+		"src/aliases/index.ts": 'export { pick, pick as choose } from "./pick.ts";\n',
+		"src/barrel/index.ts": 'export { pick } from "../keys/index.ts";\n',
 		"src/unclosed/index.ts": `import type { Kind } from "elsewhere";\n${PICKED}`,
 		"crate/Cargo.toml": '[package]\nname = "thin"\nversion = "0.1.0"\n',
 		"crate/src/lib.rs": THIN_RUST,
@@ -99,6 +102,8 @@ beforeAll(async () => {
 		Broken: "src/broken",
 		Kinds: "src/kinds",
 		Keys: "src/keys",
+		Aliases: "src/aliases",
+		Barrel: "src/barrel",
 		Unclosed: "src/unclosed",
 		Crate: "crate",
 		Picker: "picker",
@@ -173,6 +178,16 @@ test("a switchboard whose key an imported type closes counts each operation it p
 		(each) => each.subject?.name === "Keys" && each.code === "MODULE_SHALLOW",
 	);
 	expect(finding?.message).toContain("pick picks 3 by its key (a, b, c)");
+});
+
+test("switchboard re-exports add width and discount a counted body only once", () => {
+	const depth = depthByModule(answer);
+	const aliases = depth.get("Aliases");
+	const barrel = depth.get("Barrel");
+	expect(aliases?.width).toBe(6);
+	expect(aliases?.logic).toBe(depth.get("Keys")?.logic);
+	expect(barrel?.width).toBe(3);
+	expect(barrel?.logic).toBe(0);
 });
 
 test("a key no type closes counts one name, and withholds the shallow verdict counting its operations would give", () => {

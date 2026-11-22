@@ -58,12 +58,12 @@ async function closedKeys(
  * The switchboard a name is, with its key closed where a type another file declares closes it.
  * @param reading The module.
  * @param name The name.
- * @returns The switchboard as the answer lists it, and the logic that only picks.
+ * @returns The switchboard as the answer lists it, and the facts about its body.
  */
 async function switchboardOf(
 	reading: DepthReading,
 	name: ExposedName,
-): Promise<{ readonly listed: ModuleSwitchboard; readonly logic: number } | undefined> {
+): Promise<{ readonly listed: ModuleSwitchboard; readonly picks: Switchboard } | undefined> {
 	const picks = await picksOf(reading, name);
 	if (picks === undefined) return undefined;
 	const keys = await closedKeys(reading, name, picks);
@@ -77,8 +77,35 @@ async function switchboardOf(
 			operations: operations.map((each) => ({ keys: [...each.keys], line: each.line })),
 			...open,
 		},
-		logic: picks.logic,
+		picks,
 	};
+}
+
+/**
+ * The callable exports that pick operations, with one logic discount per body the module counted.
+ * @param reading The module.
+ * @param judged Each judged export with its kind.
+ * @returns The switchboards and their logic discounts, in export order.
+ */
+async function switchboardsOf(
+	reading: DepthReading,
+	judged: readonly (readonly [ExposedName, NameKind])[],
+): Promise<{ readonly listed: ModuleSwitchboard; readonly discount: number }[]> {
+	const files = new Set(reading.files);
+	const discounted = new Set<Switchboard>();
+	const switchboards: { listed: ModuleSwitchboard; discount: number }[] = [];
+	for (const [name, kind] of judged) {
+		if (!CALLED.has(kind)) continue;
+		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
+		const found = await switchboardOf(reading, name);
+		if (found === undefined) continue;
+		const { listed, picks } = found;
+		// Export aliases add width, but the body contributes logic at most once.
+		const discount = files.has(name.path) && !discounted.has(picks) ? picks.logic : 0;
+		discounted.add(picks);
+		switchboards.push({ listed, discount });
+	}
+	return switchboards;
 }
 
 /** The width of a module and its logic once its switchboards are counted. */
@@ -105,29 +132,24 @@ async function widthsOf(
 	let width = counts.functions + counts.classes + counts.methods + counts.values;
 	let picking = 0;
 	let open = { width: 0, logic: 0 };
-	const switchboards: ModuleSwitchboard[] = [];
+	const switchboards = await switchboardsOf(reading, judged);
 	const gaps: string[] = [];
-	for (const [name, kind] of judged) {
-		if (!CALLED.has(kind)) continue;
-		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
-		const found = await switchboardOf(reading, name);
-		if (found === undefined) continue;
-		switchboards.push(found.listed);
-		const more = found.listed.operations.length - 1;
-		if (found.listed.open === undefined) {
+	for (const { listed: found, discount } of switchboards) {
+		const more = found.operations.length - 1;
+		if (found.open === undefined) {
 			width += more;
-			picking += found.logic;
+			picking += discount;
 		} else {
-			open = { width: open.width + more, logic: open.logic + found.logic };
-			gaps.push(`${name.name}: ${found.listed.open}`);
+			open = { width: open.width + more, logic: open.logic + discount };
+			gaps.push(`${found.name}: ${found.open}`);
 		}
 	}
 	const counted = logic - picking;
 	return {
 		width,
 		logic: counted,
-		switchboards,
-		widened: switchboards.flatMap((each) =>
+		switchboards: switchboards.map(({ listed }) => listed),
+		widened: switchboards.flatMap(({ listed: each }) =>
 			each.open === undefined
 				? [{ name: each.name, operations: each.operations.map((operation) => operation.keys) }]
 				: [],
