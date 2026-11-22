@@ -126,10 +126,11 @@ function policyPart(model: Model, id: string): AppliedAppearance {
  * @returns Its appearance.
  */
 function policyLine(model: Model, id: string): AppliedAppearance {
-	const look = { ...UNKNOWN_KIND, ...model.policy.relationshipKinds[id] };
+	const stated = model.policy.relationshipKinds[id];
+	const look = { ...UNKNOWN_KIND, ...stated };
 	// A kind whose policy records no dash samples solid with a filled head: its
 	// lines' dashes say their effects, and every head says only direction.
-	const recorded = look.dash !== undefined;
+	const recorded = stated?.dash !== undefined;
 	return {
 		id,
 		typeName: kindLookOf(model.policy, new Map()).relationship(id).name,
