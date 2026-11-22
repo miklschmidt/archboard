@@ -30,6 +30,7 @@ Each card holds:
 - **Files**: the modules and files it touches, in a monospaced list.
 - **Friction**: one sentence on what hurts, with the findings and locality that show it.
 - **Change**: one sentence on what the deepened module hides, and where its seam goes.
+- **Jobs**: what callers stop having to know, from the renegotiation: each job kept, served by a mechanism, dropped or moved out, and the owner questions it raises.
 - **Locality and leverage**: short bullets in those words, such as "leverage: one interface, 14 call sites" or "locality: retry logic moves out of 3 callers".
 - **Tests**: which tests survive at the seam, which ones the seam replaces, and what was untestable before.
 - **Before and after**: two pictures side by side with the same scope, Current on the left and the sketch proposal on the right, each with a caption that names its state.
