@@ -1,18 +1,10 @@
 import type { JSX, ReactNode } from "react";
 import { ModelSwitch } from "#ui/architecture-drawing/model-reader/reading/components/ModelSwitch.tsx";
 import {
-	LAYOUT_ENGINES,
-	chooseLayoutEngine,
-} from "#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts";
-import {
 	HOVER_LIGHTS,
 	chooseHoverLight,
 } from "#ui/architecture-drawing/canvas/picture/clients/hover-light.ts";
-import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import { useHoverLight } from "#ui/architecture-drawing/canvas/picture/hooks/use-hover-light.ts";
-
-/** The engines as the switch offers them. */
-const ENGINES = LAYOUT_ENGINES.map(({ name, label }) => ({ value: name, label }));
 
 /**
  * One setting: its name and what it does, with its control at the end.
@@ -41,27 +33,13 @@ function SettingRow(props: {
 }
 
 /**
- * How this browser draws pictures: the engine that lays out every structural picture, and whether
- * a part the pointer rests on dims the rest. Each choice takes effect at once and stays in this
- * browser.
+ * How this browser draws pictures: whether a part the pointer rests on dims the rest. The choice
+ * takes effect at once and stays in this browser.
  * @returns The settings.
  */
 function PictureSettings(): JSX.Element {
 	return (
 		<div data-slot="picture-settings" className="flex flex-col">
-			<SettingRow
-				slot="model-engine"
-				name="Layout engine"
-				gloss="Lays out every architecture picture in this browser. A flow keeps its own layout."
-			>
-				<ModelSwitch
-					label="Layout engine"
-					slot="model-engine-choice"
-					choices={ENGINES}
-					value={useLayoutEngine()}
-					onChange={chooseLayoutEngine}
-				/>
-			</SettingRow>
 			<SettingRow
 				slot="model-hover-light"
 				name="Dim on hover"

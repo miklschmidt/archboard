@@ -1,7 +1,6 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type JSX, type ReactNode } from "react";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
 import type { SceneRequest } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 import { SHOP, shopRequest } from "#tests/ui/support/model-reader/scene.ts";
 
@@ -58,8 +57,6 @@ const { useAcceptedScene } =
 	await import("#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts");
 const { modelDrawingQuery } =
 	await import("#ui/architecture-drawing/model-reader/access/clients/drawing.ts");
-const { chooseLayoutEngine } =
-	await import("#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts");
 const { EMPTY_DRAWING } = await import("#ui/architecture-drawing/model-reader/rules/scene.ts");
 
 const NOTHING: ReadonlySet<string> = new Set();
@@ -86,15 +83,13 @@ function withClient(client: InstanceType<typeof QueryClient>) {
  * @param client The query client.
  * @param asked The destination.
  * @param svg Its picture.
- * @param layout The engine that drew it.
  */
 async function draw(
 	client: InstanceType<typeof QueryClient>,
 	asked: SceneRequest,
 	svg: string,
-	layout: LayoutEngineName = "blocks",
 ): Promise<void> {
-	const { queryKey } = modelDrawingQuery(SHOP, asked.projection, "architecture", layout);
+	const { queryKey } = modelDrawingQuery(SHOP, asked.projection, "architecture");
 	await act(async () => {
 		client.setQueryData(queryKey, { ...EMPTY_DRAWING, svg });
 		await new Promise((settled) => setTimeout(settled));
@@ -104,7 +99,6 @@ async function draw(
 afterEach(() => {
 	cleanup();
 	renderer = neverDrawn;
-	chooseLayoutEngine("blocks");
 });
 afterAll(() => GlobalRegistrator.unregister());
 
@@ -126,22 +120,6 @@ test("a drawing that arrives late never replaces a newer destination", async () 
 	expect(pane.result.current.scene?.picture.svg).toBe("<svg>gateway</svg>");
 	await draw(client, third, "<svg>handler</svg>");
 	expect(pane.result.current.scene?.picture.svg).toBe("<svg>handler</svg>");
-	expect(pane.result.current.pending).toBe(false);
-});
-
-test("a drawing of one engine never answers for the other", async () => {
-	const client = new QueryClient();
-	const gateway = shopRequest({ scope: "Shop#Gateway" });
-	await draw(client, gateway, "<svg>blocks</svg>");
-	const pane = renderHook(() => useAcceptedScene(gateway, NOTHING), {
-		wrapper: withClient(client),
-	});
-	await waitFor(() => expect(pane.result.current.scene?.picture.svg).toBe("<svg>blocks</svg>"));
-	act(() => chooseLayoutEngine("track"));
-	expect(pane.result.current.pending).toBe(true);
-	expect(pane.result.current.scene?.picture.svg).toBe("<svg>blocks</svg>");
-	await draw(client, gateway, "<svg>tracks</svg>", "track");
-	expect(pane.result.current.scene?.picture.svg).toBe("<svg>tracks</svg>");
 	expect(pane.result.current.pending).toBe(false);
 });
 

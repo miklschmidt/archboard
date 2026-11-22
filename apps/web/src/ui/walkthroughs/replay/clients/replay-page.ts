@@ -31,7 +31,6 @@ import {
 	driveFramesFrom,
 	type SteppedClock,
 } from "@archboard/ui-kit/frame-clock";
-import { chooseLayoutEngine } from "#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts";
 import {
 	pictureSource,
 	takePicturesFrom,
@@ -220,14 +219,13 @@ class WalkthroughReplay {
 	/**
 	 * Put a talk on the page and play the model's entrance through.
 	 * @param talk The talk.
-	 * @param options The theme and layout engine to render it in, and how loud its voice is on each frame.
+	 * @param options The theme to render it in, and how loud its voice is on each frame.
 	 * @throws {Error} When the page already has a talk, or the model never draws.
 	 */
 	async load(talk: Talk, options: Parameters<ReplayRenderer["load"]>[1]): Promise<void> {
 		if (this.#rendering !== null) throw new Error("This page already has a talk; open it again.");
-		const { theme, layout, levels } = options;
+		const { theme, levels } = options;
 		document.documentElement.dataset["theme"] = theme;
-		chooseLayoutEngine(layout);
 		const clock = createSteppedClock(-PREROLL_FRAMES * FRAME_MS);
 		driveFramesFrom(clock);
 		clock.install(window);

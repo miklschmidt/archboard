@@ -37,7 +37,6 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-down.ts";
 import { useDrillMoves } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts";
 import { useKindLook } from "#ui/architecture-drawing/canvas/picture/hooks/use-kind-look.ts";
-import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import { useLevelReading } from "#ui/architecture-drawing/canvas/picture/hooks/use-level-reading.ts";
 import { usePicking } from "#ui/architecture-drawing/canvas/picture/hooks/use-picking.ts";
 import { usePresentationPosition } from "#ui/architecture-drawing/canvas/picture/hooks/use-presentation-position.ts";
@@ -268,7 +267,6 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	// long as that beat is the one being read, and hands it straight back: the
 	// narrative decides the reading while somebody is following it, and what the
 	// person chose is what they come back to.
-	const layout = useLayoutEngine();
 	const render = useQuery(
 		semanticRenderQuery({
 			vault,
@@ -276,7 +274,6 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 			variant: level.variant,
 			view: viewToRead(narrative.beat, level.view),
 			comparison,
-			layout,
 		}),
 	);
 	// The model on screen, not the pane's own: a change to the model somebody is
@@ -305,8 +302,8 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	const client = useQueryClient();
 	const drawForDive = useCallback(
 		async (to: Destination): Promise<SemanticDrawing | null> =>
-			drawingIn(await client.fetchQuery(semanticRenderQuery({ ...to, vault, comparison, layout }))),
-		[client, vault, comparison, layout],
+			drawingIn(await client.fetchQuery(semanticRenderQuery({ ...to, vault, comparison }))),
+		[client, vault, comparison],
 	);
 	const dive = useDive({
 		camera,

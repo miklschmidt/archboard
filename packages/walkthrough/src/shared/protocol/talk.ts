@@ -17,11 +17,7 @@ import { architectureModelReadSchema } from "@archboard/model/contract";
 
 import { z } from "zod";
 
-import {
-	defaultLayoutEngine,
-	diagramThemeSchema,
-	layoutEngineSchema,
-} from "@archboard/model/render-reply";
+import { diagramThemeSchema } from "@archboard/model/render-reply";
 import {
 	addressedVariant,
 	type LegacyBoard,
@@ -140,10 +136,13 @@ const TalkSchema = z
 		/** The theme the talk is rendered in unless another is asked for. */
 		theme: diagramThemeSchema(),
 		/**
-		 * The layout engine the talk is rendered with unless another is asked for (TASK-469). A talk
-		 * kept before it was stated was drawn with the default engine, and reads as that.
+		 * A talk kept while Track was an engine states which one it was drawn with. Blocks draws every
+		 * picture now, so the statement is read to keep that talk rendering and then dropped.
 		 */
-		layout: layoutEngineSchema().default(defaultLayoutEngine()),
+		layout: z
+			.enum(["track", "blocks"])
+			.transform(() => undefined)
+			.optional(),
 		board: TalkBoardSchema,
 		/** The voice, beside `talk.json`: mono 16-bit PCM at the talk's sample rate. */
 		audio: z
@@ -178,7 +177,7 @@ type Talk = z.infer<typeof TalkSchema>;
  */
 type TalkParts = Omit<
 	z.input<typeof TalkSchema>,
-	"format" | "version" | "recordedAt" | "audio" | "events"
+	"format" | "version" | "recordedAt" | "layout" | "audio" | "events"
 > & {
 	readonly recordedAt: Date;
 	readonly log: TalkLog;
@@ -196,7 +195,6 @@ function talkFrom(parts: TalkParts): ReturnType<typeof TalkSchema.safeParse> {
 		recordedAt: parts.recordedAt.toISOString(),
 		language: parts.language,
 		theme: parts.theme,
-		layout: parts.layout,
 		board: parts.board,
 		audio: {
 			file: TALK_VOICE_FILE,
@@ -400,13 +398,12 @@ function voiceLevels(samples: Int16Array): number[] {
 }
 
 /**
- * How a talk is rendered: in which theme, with which layout engine, and how loud its voice is on
+ * How a talk is rendered: in which theme, and how loud its voice is on
  * each frame (`voiceLevels`).
  */
 const ReplayOptionsSchema = z
 	.object({
 		theme: diagramThemeSchema(),
-		layout: layoutEngineSchema(),
 		levels: z.array(z.number().min(0).max(1)),
 	})
 	.strict();

@@ -1,17 +1,14 @@
 // The owner of what the right column adds to a reading: the flows and walkthroughs that touch what
-// a reader looks at, the interface measures and the door that opens at one click. It also owns the
-// layout engine, which the Settings dialog chooses for every picture.
+// a reader looks at, the interface measures and the door that opens at one click.
 
 import { expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
-import { pressSettings } from "./support/shell-dom.ts";
 import { chooseFlow, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const DOOR = `[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]`;
-const SWITCH = `[data-slot="model-engine-choice"]`;
 const CLEAR = `[data-slot="semantic-selection-clear"]`;
 const LEAVE = `[data-slot="semantic-presentation-leave"]`;
 const MEASURES = `:is([data-slot="model-panel-interface"], [data-slot="model-panel-implementation"])`;
@@ -124,22 +121,6 @@ async function lists(
 		`the lists ${JSON.stringify(expected)}`,
 		WAIT,
 	);
-}
-
-/**
- * What the picture draws, as the geometry of its root and its cards.
- * @param browser The page.
- * @returns The geometry.
- */
-function geometry(browser: AgentBrowserSession) {
-	return browser.eval<string>(`(() => {
-		const picture = document.querySelector('[data-slot="model-diagram"] svg');
-		const cards = [...picture.querySelectorAll('[data-semantic-kind="node"]')].map((card) => {
-			const { x, y } = card.getBBox();
-			return [Math.round(x), Math.round(y)];
-		});
-		return JSON.stringify([picture.getAttribute('width'), picture.getAttribute('height'), cards]);
-	})()`);
 }
 
 /**
@@ -399,37 +380,5 @@ test("the right column follows what a reader looks at, and the left column holds
 	await settledOn(browser, "Shop#Gateway");
 	await drawn(browser);
 
-	// The engine redraws the picture, keeps the selection, and stays through a reload.
-	await pick(browser, "Shop#Handler");
-	await pollUntil(
-		() => explained(browser),
-		(id) => id === "Shop#Handler",
-		"the selected card",
-		WAIT,
-	);
-	await drawn(browser);
-	const blocks = await geometry(browser);
-	await pressSettings(browser);
-	await browser.run(["click", `${SWITCH} [data-choice="track"]`]);
-	await browser.run(["press", "Escape"]);
-	await pollUntil(
-		() => geometry(browser),
-		(now) => now !== blocks,
-		"the picture of the other engine",
-		WAIT,
-	);
-	await drawn(browser);
-	const tracks = await geometry(browser);
-	expect(await explained(browser)).toBe("Shop#Handler");
-	await browser.run(["reload"]);
-	await drawn(browser);
-	expect(await geometry(browser)).toBe(tracks);
-	await pressSettings(browser);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('${SWITCH} [data-choice="track"]').getAttribute('aria-pressed')`,
-		),
-	).toBe("true");
-	await browser.run(["press", "Escape"]);
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);

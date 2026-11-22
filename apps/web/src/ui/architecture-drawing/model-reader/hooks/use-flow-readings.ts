@@ -47,7 +47,7 @@ function useFlowReadings(inputs: FlowReadingInputs) {
 			 * @returns Its size, or null when it could not be drawn.
 			 */
 			const size = (grammar: FlowGrammar): Promise<Size | null> =>
-				client.fetchQuery(modelDrawingQuery(model, projection, grammar, undefined)).then(
+				client.fetchQuery(modelDrawingQuery(model, projection, grammar)).then(
 					({ width, height }) => ({ width, height }),
 					() => null,
 				);

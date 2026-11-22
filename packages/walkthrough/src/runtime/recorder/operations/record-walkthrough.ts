@@ -25,7 +25,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
+import type { DiagramTheme } from "@archboard/model/render-reply";
 import type { LegacyBoard } from "@archboard/model/legacy-board";
 import { shellSize } from "@archboard/renderer/shell-geometry";
 import { recorderMs } from "@archboard/timing";
@@ -88,8 +88,6 @@ interface RecordingOptions {
 	readonly container: RecordingContainer;
 	/** Which palette the picture is rendered in. */
 	readonly theme: DiagramTheme;
-	/** Which layout engine the picture is laid out with, which the talk keeps. */
-	readonly layout: LayoutEngineName;
 	/** The file to write, absolute. */
 	readonly out: string;
 	/** Where the talk is kept, already proven free. */
@@ -377,7 +375,6 @@ function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: numbe
 		recordedAt: new Date(),
 		language: request.language,
 		theme: request.theme,
-		layout: request.layout,
 		...talkSubject(request, steps),
 		log,
 		policy: request.policy,
@@ -492,7 +489,6 @@ async function recordWalkthrough(
 			directory: kept.directory,
 			container: request.container,
 			theme: request.theme,
-			layout: request.layout,
 			out: request.out,
 			signal: request.signal,
 			say: request.say,

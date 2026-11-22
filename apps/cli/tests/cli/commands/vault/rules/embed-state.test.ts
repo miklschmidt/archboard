@@ -21,7 +21,6 @@ const kept: RenderRecipe = {
 	view: "overview",
 	comparison: "on",
 	theme: "dark",
-	layout: null,
 	title: null,
 	legend: { layout: "horizontal", alone: false },
 	fingerprint: digest("1"),

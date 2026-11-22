@@ -5,8 +5,8 @@
 // whose voice and end disagree, which would pad or cut the sound against the
 // picture; and one whose pictures were drawn from another version of the board
 // than the snapshot it carries, which would render a picture the voice never
-// spoke over. They catch a talk kept before talks stated their layout engine
-// that can no longer be rendered (TASK-469). Of its voice, they catch an orb
+// spoke over. They catch a talk kept while talks stated their layout engine
+// that can no longer be rendered. Of its voice, they catch an orb
 // that moves a frame early, before the sound that moves it, or that reads the
 // voice on another scale than the shell's meter.
 
@@ -159,10 +159,12 @@ describe("a talk", () => {
 		);
 	});
 
-	test("keeps an explicit recorded engine and defaults an omitted engine to Blocks", () => {
-		expect(TalkSchema.parse(talk({ layout: "blocks" })).layout).toBe("blocks");
-		expect(TalkSchema.parse(talk({ layout: "track" })).layout).toBe("track");
-		expect(TalkSchema.parse(talk()).layout).toBe("blocks");
+	test("a talk kept while it named a layout engine still reads, and drops the name", () => {
+		for (const layout of ["blocks", "track"]) {
+			const kept = TalkSchema.parse(talk({ layout }));
+			expect(kept.layout).toBeUndefined();
+			expect(kept.events).toEqual(TalkSchema.parse(talk()).events);
+		}
 	});
 
 	test("keeps the original diagnostic keys in a recorded policy", () => {

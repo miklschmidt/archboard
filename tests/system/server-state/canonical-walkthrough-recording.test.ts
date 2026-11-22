@@ -69,7 +69,6 @@ test(
 			language: "en",
 			container: "mp4",
 			theme: "light",
-			layout: "track",
 			out: join(fixture.root, "tour.mp4"),
 			talk: freshTalkPlace(directory, architecture.manifest.name, new Date()),
 			signal: AbortSignal.timeout(TEST_RECORDING_CLI_MS),

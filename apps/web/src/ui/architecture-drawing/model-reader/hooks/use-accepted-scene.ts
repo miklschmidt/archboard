@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { modelDrawingQuery } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
-import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import {
 	EMPTY_DRAWING,
 	leavingTo,
@@ -20,10 +19,10 @@ import {
  * @returns The query for its picture, and the drawing it can be accepted with.
  */
 function useSceneDrawing(request: SceneRequest) {
-	const { model, projection, grammar, settled, layout } = request;
+	const { model, projection, grammar, settled } = request;
 	const options = useMemo(
-		() => modelDrawingQuery(model, projection, grammar ?? "architecture", layout),
-		[model, projection, grammar, layout],
+		() => modelDrawingQuery(model, projection, grammar ?? "architecture"),
+		[model, projection, grammar],
 	);
 	const drawable = grammar !== null && projection.content.nodes.length > 0;
 	const query = useQuery({ ...options, enabled: drawable && settled });
@@ -31,18 +30,13 @@ function useSceneDrawing(request: SceneRequest) {
 }
 
 /**
- * Hold one accepted scene while another reading, or another engine's picture of it, is drawn.
- * @param asked The destination the pane asks for.
+ * Hold one accepted scene while another reading is drawn.
+ * @param request The destination the pane asks for.
  * @param selected The selection the pane holds now.
  * @returns The scene on screen, what inspection reads, the state of the destination, and how
  * to draw it again.
  */
-function useAcceptedScene(asked: SceneRequest, selected: ReadonlySet<string>) {
-	const engine = useLayoutEngine();
-	const request = useMemo(
-		() => ({ ...asked, layout: asked.reading.grammar === "architecture" ? engine : undefined }),
-		[asked, engine],
-	);
+function useAcceptedScene(request: SceneRequest, selected: ReadonlySet<string>) {
 	const { query, drawing } = useSceneDrawing(request);
 	const [accepted, setAccepted] = useState<AcceptedScene | null>(null);
 	const scene = nextScene(accepted, request, drawing, selected);

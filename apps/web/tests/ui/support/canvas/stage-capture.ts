@@ -216,7 +216,6 @@ async function capturedDrawing(request: SemanticRenderRequest) {
 		view: request.view,
 		against: request.against,
 		comparison: request.comparison === false ? "off" : undefined,
-		layout: request.layout,
 	};
 	const parameters = new URLSearchParams(
 		Object.entries(fields).flatMap(([key, value]) => (value === undefined ? [] : [[key, value]])),

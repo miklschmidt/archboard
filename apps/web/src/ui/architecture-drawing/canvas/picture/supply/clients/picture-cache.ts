@@ -27,11 +27,7 @@ import { z } from "zod";
 import { architectureRenderResultSchema } from "@archboard/model/contract";
 import type { prepareContentHere } from "@archboard/renderer/browser";
 
-import {
-	defaultLayoutEngine,
-	semanticRenderReplySchema,
-	type SemanticRenderReply,
-} from "@archboard/model/render-reply";
+import { semanticRenderReplySchema, type SemanticRenderReply } from "@archboard/model/render-reply";
 import {
 	comparisonKey,
 	type SemanticRenderRequest,
@@ -193,7 +189,7 @@ function browserPictureStorage(): PictureStorage | undefined {
 }
 
 /** How many fields a key of this module has: a key of any other length is of an older page. */
-const KEY_FIELDS = 9;
+const KEY_FIELDS = 8;
 
 /**
  * The key one render request is kept under, stamped. A picture is of a model of
@@ -209,7 +205,6 @@ function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string
 		request.variant ?? "",
 		request.view ?? "",
 		comparisonKey(request),
-		request.layout ?? defaultLayoutEngine(),
 		stamp.version,
 		stamp.fingerprint,
 		stamp.renderer,
@@ -282,7 +277,7 @@ async function forgetStalePictures(
 		const stale = (await storage.keys()).filter(isModelPicture).filter((key) => {
 			const parts = keyParts(key);
 			if (parts.length !== KEY_FIELDS) return true;
-			const [ofVault, model, , , , , version, , drawnBy] = parts;
+			const [ofVault, model, , , , version, , drawnBy] = parts;
 			if (ofVault !== vault) return false;
 			const listed = models.find(
 				({ name, key: listedKey }) =>
@@ -309,7 +304,7 @@ function isModelPicture(key: IDBValidKey): key is string {
 /**
  * The fields of a kept key, or none for a key this module did not write.
  * @param key A stored key.
- * @returns Vault, model, variant, view, comparison, engine, version, fingerprint, renderer.
+ * @returns Vault, model, variant, view, comparison, version, fingerprint, renderer.
  */
 function keyParts(key: string): unknown[] {
 	try {

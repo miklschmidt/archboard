@@ -1,5 +1,4 @@
 import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
 import { diagramGrammarSchema, type DiagramGrammar } from "@archboard/model/views";
 import type { ModelDrawing } from "#ui/architecture-drawing/model-reader/access/clients/drawing.ts";
 import type {
@@ -49,8 +48,6 @@ interface SceneRequest {
 	readonly presentation?: ScenePresentation | undefined;
 	/** The history entry of this reading. A later visit to the entry returns its camera. */
 	readonly entry?: string | undefined;
-	/** The engine that lays a structural reading out. A flow has none, because no engine lays it out. */
-	readonly layout?: LayoutEngineName | undefined;
 }
 
 /** A drawing, named for the transitions that move it. */
@@ -116,24 +113,14 @@ function sceneView(reading: SceneReading): { readonly id: string } | null {
 }
 
 /**
- * Which reading a camera is fitted to. An edit of the same reading keeps the camera, and
- * another engine draws another picture, so it fits afresh.
- * @param request The reading and its engine.
+ * Which reading a camera is fitted to. An edit of the same reading keeps the camera.
+ * @param request The reading.
  * @returns A value that changes with each reading the camera fits afresh.
  */
-function sceneFit(request: Pick<SceneRequest, "reading" | "layout">): string {
-	const { reading, layout } = request;
+function sceneFit(request: Pick<SceneRequest, "reading">): string {
+	const { reading } = request;
 	const { state, checkpoint, against, filters, focus, expand } = reading;
-	return JSON.stringify([
-		sceneModel(reading),
-		focus,
-		expand,
-		state,
-		checkpoint,
-		against,
-		filters,
-		layout,
-	]);
+	return JSON.stringify([sceneModel(reading), focus, expand, state, checkpoint, against, filters]);
 }
 
 /**
@@ -147,7 +134,6 @@ function sceneKey(request: SceneRequest): string {
 		request.model.comparison?.revision.digest,
 		request.reading,
 		request.presentation?.key,
-		request.layout,
 	]);
 }
 

@@ -42,17 +42,6 @@ type StandaloneTheme = z.infer<typeof StandaloneThemeSchema>;
 const LegendLayoutSchema = z.enum(["horizontal", "vertical"]);
 type LegendLayout = z.infer<typeof LegendLayoutSchema>;
 
-/**
- * Which engine lays an architecture out, behind one seam (TASK-348, ADR 0040).
- * `track` routes every relationship on an assigned track in the channels
- * between ranks (TASK-349); `blocks` packs each container as a block and
- * routes shared trunks between them (TASK-351).
- */
-const LayoutEngineSchema = z.enum(["track", "blocks"]);
-type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
-/** The engine a render uses when it names none. */
-const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "blocks";
-
 /** A rectangle in the drawn document's own viewBox units. */
 const DiagramBoxSchema = z.object({
 	x: z.number(),
@@ -310,9 +299,6 @@ export {
 	type StandaloneTheme,
 	LegendLayoutSchema,
 	type LegendLayout,
-	DEFAULT_LAYOUT_ENGINE,
-	LayoutEngineSchema,
-	type LayoutEngineName,
 	type DiagramBox,
 	DiagramAtlasSchema,
 	type DiagramAtlas,
@@ -328,27 +314,11 @@ export {
 };
 
 /**
- * The value `DEFAULT_LAYOUT_ENGINE`, for callers that read it.
- * @returns The value.
- */
-export function defaultLayoutEngine(): typeof DEFAULT_LAYOUT_ENGINE {
-	return DEFAULT_LAYOUT_ENGINE;
-}
-
-/**
  * The schema `DiagramThemeSchema`, for callers that parse it or build on it.
  * @returns The schema.
  */
 export function diagramThemeSchema(): typeof DiagramThemeSchema {
 	return DiagramThemeSchema;
-}
-
-/**
- * The schema `LayoutEngineSchema`, for callers that parse it or build on it.
- * @returns The schema.
- */
-export function layoutEngineSchema(): typeof LayoutEngineSchema {
-	return LayoutEngineSchema;
 }
 
 /**
