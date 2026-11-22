@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 
 import {
+	type FixtureControl,
 	HOST_RECORD_PREFIX,
 	createHarness,
 	latestState,
@@ -143,114 +144,114 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 });
 
 test("real process rejects wrong child/thread/session/version, stale SDP, and flat transcript content", async () => {
-	await withHarness(
-		{
-			startDelayMs: 50,
-			startEvents: [
-				{
-					method: "thread/realtime/sdp",
-					params: { threadId: "other-thread", sdp: "wrong-thread" },
-					delayMs: 0,
-				},
-				{
-					method: "thread/realtime/started",
-					params: { threadId: "$THREAD", realtimeSessionId: "wrong-session", version: "v3" },
-					delayMs: 20,
-				},
-				{
-					method: "thread/realtime/started",
-					params: { threadId: "$THREAD", realtimeSessionId: "$SESSION", version: "v2" },
-					delayMs: 20,
-				},
-				{
-					method: "thread/realtime/sdp",
-					params: { threadId: "$THREAD", sdp: "answer-sdp" },
-					delayMs: 20,
-				},
-				{
-					method: "thread/realtime/started",
-					params: { threadId: "$THREAD", realtimeSessionId: "$SESSION", version: "v3" },
-					delayMs: 20,
-				},
-			],
-			afterStartEvents: [
-				{
-					method: "thread/realtime/transcript/delta",
-					params: { threadId: "$THREAD", role: "assistant", delta: "flat" },
-					delayMs: 150,
-				},
-			],
-		},
-		async (harness, generation) => {
-			const browser = browserCorrelation("-gates");
-			let settled = false;
-			const pending = generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" }).then(
-				(answer) => {
-					settled = true;
-					return answer;
-				},
-				(error: unknown) => {
-					settled = true;
-					throw error;
-				},
-			);
-			await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
-			const foreign = createIdentityAuthorities().identity;
-			const sendSdp = (
-				identity: typeof generation.identity,
-				threadId: string,
-				sdp: string,
-				overrides: Parameters<typeof makeNotification>[3] = {},
-			): void =>
-				generation.adapter.onNotification(
-					makeNotification(identity, "thread/realtime/sdp", { threadId, sdp }, overrides),
-				);
-			sendSdp(foreign, "coordinator-thread", "wrong-child", {
-				epoch: generation.identity.validator.epoch,
-			});
-			expectPendingOffer(harness, settled);
-			sendSdp(generation.identity, "coordinator-thread", "wrong-epoch-current-child", {
-				epoch: foreign.validator.epoch,
-			});
-			expectPendingOffer(harness, settled);
-			const wrongThread = generation.identity.decoder.adoptThreadId("other-thread");
-			sendSdp(generation.identity, wrongThread, "wrong-thread-current-child");
-			expectPendingOffer(harness, settled);
-			const start = requestParams(harness, "thread/realtime/start")[0];
-			if (typeof start?.["realtimeSessionId"] !== "string") {
-				throw new Error("Pending start identity missing.");
-			}
+	const control = {
+		startDelayMs: 50,
+		startEvents: [
+			{
+				method: "thread/realtime/sdp",
+				params: { threadId: "other-thread", sdp: "wrong-thread" },
+				delayMs: 0,
+			},
+			{
+				method: "thread/realtime/started",
+				params: { threadId: "$THREAD", realtimeSessionId: "wrong-session", version: "v3" },
+				delayMs: 20,
+			},
+			{
+				method: "thread/realtime/started",
+				params: { threadId: "$THREAD", realtimeSessionId: "$SESSION", version: "v2" },
+				delayMs: 20,
+				after: "wrong version",
+			},
+			{
+				method: "thread/realtime/sdp",
+				params: { threadId: "$THREAD", sdp: "answer-sdp" },
+				delayMs: 20,
+				after: "answer",
+			},
+			{
+				method: "thread/realtime/started",
+				params: { threadId: "$THREAD", realtimeSessionId: "$SESSION", version: "v3" },
+				delayMs: 20,
+			},
+			{
+				method: "thread/realtime/transcript/delta",
+				params: { threadId: "$THREAD", role: "assistant", delta: "flat" },
+				delayMs: 150,
+			},
+		],
+	} satisfies FixtureControl;
+	await withHarness(control, async (harness, generation) => {
+		const browser = browserCorrelation("-gates");
+		let settled = false;
+		const pending = generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" }).then(
+			(answer) => {
+				settled = true;
+				return answer;
+			},
+			(error: unknown) => {
+				settled = true;
+				throw error;
+			},
+		);
+		void pending.catch(() => undefined);
+		await waitFor(() => requestParams(harness, "thread/realtime/start").length === 1);
+		const foreign = createIdentityAuthorities().identity;
+		const sendSdp = (
+			identity: typeof generation.identity,
+			threadId: string,
+			sdp: string,
+			overrides: Parameters<typeof makeNotification>[3] = {},
+		): void =>
 			generation.adapter.onNotification(
-				makeNotification(generation.identity, "thread/realtime/started", {
-					threadId: "coordinator-thread",
-					realtimeSessionId: start["realtimeSessionId"],
-					version: "v3",
-				}),
+				makeNotification(identity, "thread/realtime/sdp", { threadId, sdp }, overrides),
 			);
-			// A matching started event must not make an invalid SDP answer usable.
-			expectPendingOffer(harness, settled);
-			await waitForDiagnostic(harness, 1);
-			expectPendingOffer(harness, settled);
-			await waitForDiagnostic(harness, 2);
-			expectPendingOffer(harness, settled);
-			const answer = await pending;
-			expect(answer.sdp).toBe("answer-sdp");
-			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
-			await waitForDiagnostic(harness, 3);
-			expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
-			expect(generation.adapter.transcript()).toEqual([]);
-			const diagnostics = harness.events.filter((event) => event.kind === "diagnostic");
-			expect(diagnostics).toHaveLength(3);
-			expect(diagnostics.map((event) => event.kind === "diagnostic" && event.code)).toEqual([
-				"protocol",
-				"protocol",
-				"protocol",
-			]);
-			expect(JSON.stringify(harness.events)).not.toContain("flat");
-		},
-	);
+		sendSdp(foreign, "coordinator-thread", "wrong-child", {
+			epoch: generation.identity.validator.epoch,
+		});
+		expectPendingOffer(harness, settled);
+		sendSdp(generation.identity, "coordinator-thread", "wrong-epoch-current-child", {
+			epoch: foreign.validator.epoch,
+		});
+		expectPendingOffer(harness, settled);
+		const wrongThread = generation.identity.decoder.adoptThreadId("other-thread");
+		sendSdp(generation.identity, wrongThread, "wrong-thread-current-child");
+		expectPendingOffer(harness, settled);
+		const start = requestParams(harness, "thread/realtime/start")[0];
+		if (typeof start?.["realtimeSessionId"] !== "string") {
+			throw new Error("Pending start identity missing.");
+		}
+		generation.adapter.onNotification(
+			makeNotification(generation.identity, "thread/realtime/started", {
+				threadId: "coordinator-thread",
+				realtimeSessionId: start["realtimeSessionId"],
+				version: "v3",
+			}),
+		);
+		// A matching started event must not make an invalid SDP answer usable.
+		expectPendingOffer(harness, settled);
+		await waitForDiagnostic(harness, 1);
+		expectPendingOffer(harness, settled);
+		harness.setControl({ ...control, released: ["wrong version"] });
+		await Promise.race([waitForDiagnostic(harness, 2), pending]);
+		expectPendingOffer(harness, settled);
+		harness.setControl({ ...control, released: ["wrong version", "answer"] });
+		const answer = await pending;
+		expect(answer.sdp).toBe("answer-sdp");
+		expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
+		await waitForDiagnostic(harness, 3);
+		expect(latestState(harness)).toEqual({ phase: "listening", reason: "negotiation_succeeded" });
+		expect(generation.adapter.transcript()).toEqual([]);
+		const diagnostics = harness.events.filter((event) => event.kind === "diagnostic");
+		expect(diagnostics).toHaveLength(3);
+		expect(diagnostics.map((event) => event.kind === "diagnostic" && event.code)).toEqual([
+			"protocol",
+			"protocol",
+			"protocol",
+		]);
+		expect(JSON.stringify(harness.events)).not.toContain("flat");
+	});
 });
-
 test("real process probes the pinned binary before spawn and rejects a wrong version", async () => {
 	const harness = await createHarness({}, { version: "codex-cli 0.150.0" });
 	try {

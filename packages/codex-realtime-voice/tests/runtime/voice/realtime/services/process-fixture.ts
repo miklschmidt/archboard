@@ -51,17 +51,22 @@ const DEFAULTS = {
 	drop: [],
 };
 
+/**
+ * A notification the fake sends after a realtime start, in list order, each `delayMs` after the
+ * one before it. One with `after` waits, from then on, until the control names it in `released`.
+ */
+type FixtureEvent = {
+	readonly method: string;
+	readonly params: unknown;
+	readonly delayMs?: number;
+	readonly after?: string;
+};
+
 type FixtureControl = {
-	readonly startEvents?: readonly {
-		readonly method: string;
-		readonly params: unknown;
-		readonly delayMs?: number;
-	}[];
-	readonly afterStartEvents?: readonly {
-		readonly method: string;
-		readonly params: unknown;
-		readonly delayMs?: number;
-	}[];
+	readonly startEvents?: readonly FixtureEvent[];
+	readonly afterStartEvents?: readonly FixtureEvent[];
+	/** The names of the events with `after` that the fake may send now. */
+	readonly released?: readonly string[];
 	readonly pages?: readonly unknown[];
 	readonly startDelayMs?: number;
 	readonly exitOn?: string | null;
@@ -118,6 +123,16 @@ const replace=(value,sessionId,threadId)=>JSON.parse(JSON.stringify(value).repla
 const send=value=>process.stdout.write(JSON.stringify(value)+"\\n");
 const response=(frame,result)=>{record({kind:"response",method:frame.method,result});send({id:frame.id,result});};
 const notification=(method,params)=>{record({kind:"notification",method,params});send({method,params});};
+function released(name,run,deadline=Date.now()+2000){
+if((control().released??[]).includes(name)){run();return;}
+if(Date.now()>=deadline){
+const message="Timed out waiting for realtime fixture release: "+name;
+record({kind:"fixture-error",message});
+fs.writeSync(2,message+"\\n");
+process.exit(19);
+}
+setTimeout(()=>released(name,run,deadline),5);
+}
 const configResponse=()=>({config:{model:null,review_model:null,model_context_window:null,model_auto_compact_token_limit:null,model_auto_compact_token_limit_scope:null,model_provider:null,approval_policy:null,approvals_reviewer:null,sandbox_mode:null,sandbox_workspace_write:null,forced_chatgpt_workspace_id:null,forced_login_method:null,web_search:null,tools:null,instructions:null,developer_instructions:null,compact_prompt:null,model_reasoning_effort:null,model_reasoning_summary:null,model_verbosity:null,service_tier:null,analytics:null,apps:null,browser_use:null,computer_use:null,desktop:null,sqlite_home:process.env.CODEX_SQLITE_HOME},origins:{sqlite_home:{name:{type:"user",file:process.env.CODEX_HOME+"/config.toml",profile:null},version:"fixture"}},layers:null});
 function handle(frame){record({kind:"frame",frame});
 if(frame.method==="initialize"){response(frame,{userAgent:"Codex Desktop/${codexProtocolVersion()}",codexHome:process.env.CODEX_HOME,platformFamily:"unix",platformOs:"linux"});return;}
@@ -126,7 +141,7 @@ if(frame.method==="configRequirements/read"){response(frame,{supportsIndependent
 if(frame.method==="config/read"){response(frame,configResponse());return;}
 if(frame.method==="account/read"){response(frame,{account:{type:"chatgpt",email:null,planType:"pro",workspaceName:null},requiresOpenaiAuth:true,workspaceRouting:null});return;}
 const current=control();record({kind:"request",method:frame.method,params:frame.params});
-if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const emitEvents=values=>{let delay=0;for(const event of values){delay+=event.delayMs??0;setTimeout(()=>notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId)),delay);}};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
+if(frame.method==="thread/realtime/start"){realtimeSessionId=frame.params.realtimeSessionId;response(frame,{});const emitEvents=(values,index=0)=>{const event=values[index];if(!event)return;const emit=()=>setTimeout(()=>{notification(event.method,replace(event.params,realtimeSessionId,frame.params.threadId));emitEvents(values,index+1);},event.delayMs??0);if(event.after)released(event.after,emit);else emit();};const emitStart=()=>{const latest=control();emitEvents(latest.startEvents??${JSON.stringify(DEFAULTS.startEvents)});emitEvents(latest.afterStartEvents??[]);};if(current.startDelayMs)setTimeout(emitStart,current.startDelayMs);else emitStart();return;}
 if(frame.method==="thread/timeline/list"){const pages=current.pages??[];const page=pages[pageIndex++]??{data:[],nextCursor:null,activeRealtimeSessionAtPageStart:null};response(frame,replace(page,realtimeSessionId,frame.params.threadId));return;}
 if(current.exitOn===frame.method){process.exit(17);return;} if((current.drop??[]).includes(frame.method))return; response(frame,{});
 }
@@ -416,6 +431,14 @@ async function withHarness(
 	try {
 		const generation = await harness.start();
 		await operation(harness, generation);
+	} catch (error) {
+		const fixtureError = readFileSync(harness.logPath, "utf8")
+			.split("\n")
+			.find((line) => line.startsWith('{"kind":"fixture-error",'));
+		if (fixtureError) {
+			throw new Error(`Realtime process fixture failed. ${fixtureError}`, { cause: error });
+		}
+		throw error;
 	} finally {
 		await harness.close();
 	}
