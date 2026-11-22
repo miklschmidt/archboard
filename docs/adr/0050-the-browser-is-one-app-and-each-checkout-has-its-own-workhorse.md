@@ -18,7 +18,8 @@ Board names need to be unique only inside one vault, because the identity
 groups them.
 
 Each identity has a menu of its known checkouts. Choosing one is `repo use`,
-so the choice is for the whole machine, and every tab follows it.
+so the choice is for the whole machine, and every tab follows it. Every tab is
+sent the list of repositories (amended below).
 
 A pane can show a board of any listed repository, and the two panes of a tab
 can show two repositories. The URL gives each pane its own repository
@@ -85,6 +86,28 @@ checkout.
   workhorse.
 - The pane address, the picture cache, the socket messages and the change feed
   name the vault of each board.
+
+## Amendment of 2026-11-22: every tab is sent the list
+
+The owner agreed to this with the deepening of the repository queries in the
+browser. Before it, a choice of a checkout told every tab to read the list of
+repositories again, and each tab kept the list fresh in its own ways: it read
+the list again on focus, every two seconds on the start page, after its own
+choice, and after a pane's socket came back.
+
+Now the server sends every tab the list. A tab follows the repositories over its
+architecture feed, the one socket that also carries the events of its vaults.
+The server sends the list when the tab starts to follow and when its socket
+comes back. After that it sends the list each time it differs from the one it
+sent last. The server compares the list, not the registry file, because the list
+also reads the disk: a checkout or a vault can come or go while the registry
+stays the same. So it looks again on each change of the registry file, and on a
+slow tick while any tab follows. The answer to a choice is the list, so the page
+that chose has it at once. Each list carries the count of the lists that its
+server sent since it started, so a tab keeps the newer of an answer and a frame.
+
+So the list has no Refresh. A page that cannot reach the server says so and
+keeps trying, and the list replaces that message when it comes.
 
 ## Canonical explanation actions
 
