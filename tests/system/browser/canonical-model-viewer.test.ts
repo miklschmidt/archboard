@@ -287,8 +287,12 @@ test("current model readings refresh after external edits and reconnect with exp
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	const retry =
 		'[data-sonner-toast]:not([data-removed="true"]) [data-notice="reading:A"]:not([data-code]) [data-slot="notice-actions"] button';
+	// The toast slides in from below the stage, so Retry is clickable only once it has settled.
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(retry)}) !== null`),
+		() =>
+			browser.eval<boolean>(
+				`(() => { const action = document.querySelector(${JSON.stringify(retry)}); if (!action) return false; if (action.closest('[data-sonner-toast]').getAnimations({ subtree: true }).some(animation => animation.playState === 'running')) return false; const r = action.getBoundingClientRect(); return action.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
+			),
 		Boolean,
 		"the unconfirmed reading's Retry action",
 		WAIT,
