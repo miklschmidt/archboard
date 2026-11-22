@@ -98,7 +98,9 @@ const shop = drawings.webShop;
 		scale: var(--scale);
 		transform-origin: 0 0;
 		display: grid;
-		grid-template-columns: 280px 1fr 360px;
+		/* The right panel is narrower than the shell's 360px, so the picture keeps more of the
+		   window at the size the site shows it. */
+		grid-template-columns: 280px 1fr 320px;
 		grid-template-rows: 44px 1fr;
 		width: var(--window-width);
 		height: var(--window-height);

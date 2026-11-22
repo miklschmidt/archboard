@@ -336,9 +336,10 @@ function LineSwitch(props: {
 				<Mark name={item.typeName} dimmed={dimmed}>
 					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
 				</Mark>
+				{/* The glyph leaves 0.75px inside its box, so its ink ends where the panel's words end. */}
 				<Eye
 					aria-hidden="true"
-					className="text-muted-foreground group-hover:text-foreground mx-1 size-4 shrink-0"
+					className="text-muted-foreground group-hover:text-foreground -mr-[0.75px] ml-1 size-4 shrink-0"
 				/>
 			</button>
 		</li>
