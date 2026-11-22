@@ -2,18 +2,18 @@
 // model of the dogfood vault and of the vaults under examples/, its current
 // state and every proposal, the whole model, each module that holds parts, and
 // each flow as a sequence and a flowchart.
-// Each engine, theme and comparison setting applies to every reading. `render`
+// Each theme and comparison setting applies to every reading. `render`
 // writes the hash, size and time of each drawing; `compare` says which
 // drawings differ between two runs and how their times moved.
 //
 // Run from the repository root:
-//   bun scripts/render-corpus.ts render <out> [--engines track,blocks]
+//   bun scripts/render-corpus.ts render <out>
 //     [--variants all|current] [--themes light,dark] [--comparison on,off]
 //     [--jobs 8] [--svg]
 //   bun scripts/render-corpus.ts compare <before> <after>
 //
 // A run's times are honest only with --jobs 1: parallel drawings wait for the
-// same engine workers. --svg also writes each drawing and its painting, which
+// same layout workers. --svg also writes each drawing and its painting, which
 // the full corpus makes into gigabytes, so name a smaller corpus with it.
 
 import { createHash } from "node:crypto";
@@ -21,7 +21,6 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import { projectFlow, projectModel, type Model } from "@archboard/model/content";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { renderArchitecture } from "@archboard/renderer/bun";
@@ -54,7 +53,6 @@ interface Job {
 	readonly key: string;
 	readonly state: State;
 	readonly reading: Reading;
-	readonly engine: z.infer<ReturnType<typeof layoutEngineSchema>>;
 	readonly theme: "light" | "dark";
 	readonly comparison: boolean;
 }
@@ -67,7 +65,6 @@ interface DrawingKey {
 	readonly variant: string;
 	/** The reading: `(whole model)`, a module's id, or a flow's id and grammar. */
 	readonly view: string;
-	readonly engine: string;
 	readonly theme: string;
 	readonly comparison: boolean;
 }
@@ -81,28 +78,10 @@ const KEY_SEPARATOR = " | ";
  * @returns The key.
  */
 function keyOf(drawing: DrawingKey): string {
-	const { vault, model, variant, view, engine, theme, comparison } = drawing;
-	return [vault, model, variant, view, engine, theme, comparison ? "comparison" : "plain"].join(
+	const { vault, model, variant, view, theme, comparison } = drawing;
+	return [vault, model, variant, view, theme, comparison ? "comparison" : "plain"].join(
 		KEY_SEPARATOR,
 	);
-}
-
-/**
- * What a key names.
- * @param key A key a run recorded.
- * @returns Its fields.
- */
-function drawingOf(key: string): DrawingKey {
-	const [vault, model, variant, view, engine, theme, comparison] = key.split(KEY_SEPARATOR);
-	return {
-		vault: vault!,
-		model: model!,
-		variant: variant!,
-		view: view!,
-		engine: engine!,
-		theme: theme!,
-		comparison: comparison === "comparison",
-	};
 }
 
 /**
@@ -237,7 +216,6 @@ async function draw(
 		grammar,
 		policy: model.policy,
 		theme: job.theme,
-		layout: job.engine,
 	});
 	const ms = Math.round(performance.now() - started);
 	const sha256 = createHash("sha256").update(svg).digest("hex");
@@ -265,7 +243,6 @@ function runOf(dir: string): Record<string, Drawn> {
 
 /** What each drawing of a model is drawn under, besides its state and reading. */
 interface Axes {
-	readonly engines: readonly Job["engine"][];
 	readonly themes: readonly Job["theme"][];
 	readonly comparisons: readonly boolean[];
 	readonly every: boolean;
@@ -278,7 +255,6 @@ interface Axes {
  */
 function axesOf(options: Record<string, string | boolean | undefined>): Axes {
 	return {
-		engines: z.array(layoutEngineSchema()).parse(listOf(options["engines"], "track,blocks")),
 		themes: z.array(z.enum(["light", "dark"])).parse(listOf(options["themes"], "light,dark")),
 		comparisons: listOf(options["comparison"], "on,off").map((value) => value === "on"),
 		every: (options["variants"] ?? "all") === "all",
@@ -298,25 +274,21 @@ function jobsOfState(vault: string, state: State, axes: Axes): Job[] {
 		(comparison) => !comparison || state.reference !== undefined,
 	);
 	return readingsOf(state.model).flatMap((reading) =>
-		axes.engines.flatMap((engine) =>
-			axes.themes.flatMap((theme) =>
-				comparisons.map((comparison) => ({
-					key: keyOf({
-						vault,
-						model: state.model.manifest.name,
-						variant: state.name,
-						view: reading.view,
-						engine,
-						theme,
-						comparison,
-					}),
-					state,
-					reading,
-					engine,
+		axes.themes.flatMap((theme) =>
+			comparisons.map((comparison) => ({
+				key: keyOf({
+					vault,
+					model: state.model.manifest.name,
+					variant: state.name,
+					view: reading.view,
 					theme,
 					comparison,
-				})),
-			),
+				}),
+				state,
+				reading,
+				theme,
+				comparison,
+			})),
 		),
 	);
 }
@@ -381,7 +353,7 @@ async function render(out: string, options: Record<string, string | boolean | un
 }
 
 /**
- * Compare two runs: which drawings differ, and how the time of each engine moved.
+ * Compare two runs: which drawings differ, and how the time moved.
  * @param before The earlier run's directory.
  * @param after The later run's directory.
  */
@@ -393,30 +365,24 @@ function compare(before: string, after: string) {
 		console.log(
 			`differs: ${key}${one[key] === undefined ? " (only after)" : other[key] === undefined ? " (only before)" : ""}`,
 		);
-	const engines = [...new Set(keys.map((key) => drawingOf(key).engine))];
-	for (const engine of engines) {
-		const shared = keys.filter(
-			(key) =>
-				drawingOf(key).engine === engine && one[key] !== undefined && other[key] !== undefined,
-		);
-		/**
-		 * The time a run spent on the shared drawings.
-		 * @param run The run.
-		 * @returns Milliseconds.
-		 */
-		function total(run: Record<string, Drawn>): number {
-			return shared.reduce((sum, key) => sum + run[key]!.ms, 0);
-		}
-		const slower = shared
-			.map((key) => ({ key, by: other[key]!.ms - one[key]!.ms }))
-			.toSorted((a, b) => b.by - a.by)
-			.slice(0, 5);
-		console.log(
-			`${engine}: ${shared.length} drawings, ${total(one)} ms before, ${total(other)} ms after; most slower: ${slower
-				.map(({ key, by }) => `${key} ${by > 0 ? "+" : ""}${by} ms`)
-				.join("; ")}`,
-		);
+	const shared = keys.filter((key) => one[key] !== undefined && other[key] !== undefined);
+	/**
+	 * The time a run spent on the shared drawings.
+	 * @param run The run.
+	 * @returns Milliseconds.
+	 */
+	function total(run: Record<string, Drawn>): number {
+		return shared.reduce((sum, key) => sum + run[key]!.ms, 0);
 	}
+	const slower = shared
+		.map((key) => ({ key, by: other[key]!.ms - one[key]!.ms }))
+		.toSorted((a, b) => b.by - a.by)
+		.slice(0, 5);
+	console.log(
+		`${shared.length} drawings, ${total(one)} ms before, ${total(other)} ms after; most slower: ${slower
+			.map(({ key, by }) => `${key} ${by > 0 ? "+" : ""}${by} ms`)
+			.join("; ")}`,
+	);
 	console.log(`${differ.length} of ${keys.length} drawings differ`);
 }
 
@@ -425,7 +391,6 @@ async function main() {
 	const { positionals, values } = parseArgs({
 		allowPositionals: true,
 		options: {
-			engines: { type: "string" },
 			variants: { type: "string" },
 			themes: { type: "string" },
 			comparison: { type: "string" },

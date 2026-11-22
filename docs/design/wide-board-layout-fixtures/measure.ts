@@ -13,7 +13,6 @@
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
 // ALL=1              measure every variant of every document, not only the current one
-// ENGINE=track       lay every document out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
@@ -23,7 +22,6 @@ import path from "node:path";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { shellSize } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { defaultLayoutEngine, layoutEngineSchema } from "@archboard/model/render-reply";
 import { defaultSemanticPolicy, type SemanticPolicy } from "@archboard/model/policy";
 import { readVaultConfiguration } from "@archboard/model/vault-policy";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
@@ -37,7 +35,6 @@ const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const out = process.argv[2] ?? ".skill-evals/repro";
 const every = process.env["ALL"] === "1";
-const layout = layoutEngineSchema().parse(process.env["ENGINE"] ?? defaultLayoutEngine());
 const pictures = process.env["PICTURES"] === "1";
 const save = process.env["SAVE"];
 const against = process.env["AGAINST"];
@@ -118,7 +115,6 @@ for (const item of items) {
 	const drawn = await renderArchitecture({
 		content,
 		theme: "light",
-		layout,
 		policy: item.policy,
 	});
 	const key = `${item.name} ${item.variant}`;

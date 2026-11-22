@@ -6,7 +6,7 @@
 //
 // Make a corpus with paintings, then run from the repository root in `nix develop`,
 // after `bun run build:core`:
-//   bun scripts/render-corpus.ts render <corpus> --engines blocks --svg
+//   bun scripts/render-corpus.ts render <corpus> --svg
 //   bun scripts/paint-parity.ts <corpus> <out> [--painters gpu,webgl,cpu] [--views near,far,traffic]
 //     [--only substring] [--browser google-chrome] [--worst 12] [--every 7]
 //
