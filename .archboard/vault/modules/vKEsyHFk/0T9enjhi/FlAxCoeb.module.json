@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#PA8QWoMK",
       "order": 202000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "read one selected state with navigation",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#FheDJtzv",
       "order": 225000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "resolve captured canonical subjects",
       "emphasis": "normal",

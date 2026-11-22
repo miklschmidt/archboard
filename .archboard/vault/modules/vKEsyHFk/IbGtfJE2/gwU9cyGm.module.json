@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#NzNYGL6D",
       "order": 40000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a private codex home for the grader",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#DElPMBfe",
       "order": 45000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "unwrap the grader's shell commands",
       "emphasis": "normal",

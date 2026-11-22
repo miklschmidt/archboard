@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#68lKuaPg",
       "order": 10000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the size of the answered bitmap",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#noNd5J0o",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the size the bitmap must be",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#DDGmqL3f",
       "order": 49000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the guard for a page's answer",
       "emphasis": "muted",

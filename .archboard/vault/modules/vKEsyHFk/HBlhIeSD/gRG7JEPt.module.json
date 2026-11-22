@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#5eMr0hkn",
       "order": 120000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "renderArchitecture with grammar",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#WpbKgDdF",
       "order": 121000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readArchitectureModel and readArchitectureCheckpoint",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#7fKX6THX",
       "order": 122000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "requireVault and vaultOfRequest",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#txWnt33L",
       "order": 184000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "ArchitectureFlowRenderRequestSchema",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#OFwD2rtg",
       "order": 1008030,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "name the vault of a checkout",
       "emphasis": "normal",

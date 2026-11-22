@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#7wUmdcxh",
       "order": 19000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "which fields each request issues",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#s0Qx9DbR",
       "order": 23000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "refuse params that are no object",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#cGImVr7b",
       "order": 24000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "request methods and their parameters",
       "emphasis": "normal",

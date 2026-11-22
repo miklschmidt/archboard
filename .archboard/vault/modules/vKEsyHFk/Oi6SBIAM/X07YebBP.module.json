@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#BIqHpV5C",
       "order": 15000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "register the page's socket; admit it once it knows its place",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#4fPIYyd3",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "upgrades on the same listener",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#2ssPZnZc",
       "order": 38000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "description": "Guards the WebSocket handshake through the shared public request policy",
       "emphasis": "muted",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#kUKOPjAB",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "refuses an upgrade naming none",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#FrlPt4zQ",
       "order": 53000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "name the repository the pane starts in",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
       "order": 84000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -114,7 +114,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
       "order": 143000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "vault-scoped current event stream",
       "emphasis": "normal",
@@ -128,7 +128,7 @@
     {
       "id": "vKEsyHFk#ImhHUqRg",
       "order": 1008000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "keep a vault's news running; send a new page the snapshots",
       "emphasis": "normal",
@@ -142,7 +142,7 @@
     {
       "id": "vKEsyHFk#yO0Gg6Lz",
       "order": 1009000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "a returning pane's vault; a new pane's model",
       "emphasis": "normal",

@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "own each evaluation process group",
       "emphasis": "normal",

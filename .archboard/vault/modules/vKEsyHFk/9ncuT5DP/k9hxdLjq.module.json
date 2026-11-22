@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#DGC0nyAH",
       "order": 70049,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "install generation hooks",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#JAa1keHs",
       "order": 80000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "compose and own the shared generation",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#d57vavqj",
       "order": 85000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "own the tab store and its lifetime",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#ZzCMx2ZI",
       "order": 93000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "announce: to the live generation's tab sessions",
       "emphasis": "normal",

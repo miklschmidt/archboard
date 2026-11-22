@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#XkZUEZcj",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a queued message as the authored user input",
       "emphasis": "muted",

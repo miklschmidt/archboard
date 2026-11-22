@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#9g0Uli0a",
       "order": 31000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "run: the models, the plans, the pass and behind",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#T6lWsdFm",
       "order": 32000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "keep what a finished pass found",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
       "order": 53000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "requires a vault",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#miCieAcV",
       "order": 128000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "prepare complete candidate",
       "emphasis": "hero",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#1CMGODuG",
       "order": 129000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "resume durable installation",
       "emphasis": "hero",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#9eRTT5wz",
       "order": 144000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "parse complete intent",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Ei40PGJf",
       "order": 150000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "editResult",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#CT2AMZDt",
       "order": 153000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchiveError",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#5eI7is0k",
       "order": 156000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "operationRef",
       "emphasis": "normal",

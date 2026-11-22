@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#W2BXIpq7",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "admits writes",
       "emphasis": "muted",

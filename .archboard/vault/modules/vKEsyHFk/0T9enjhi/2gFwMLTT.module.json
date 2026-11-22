@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#IAJ0ChHL",
       "order": 70033,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "inspect portable history trees",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#EXqmey6d",
       "order": 70051,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "inspect the signed Git archive",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#5PFwNTjm",
       "order": 248000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "install verified inputs",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#S8zTZBw6",
       "order": 249000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "retain immutable history",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#1SXh5OFf",
       "order": 250000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "share lease and journal",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#W1fBWglm",
       "order": 251000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "readArchitectureModel",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#IyzXWhR8",
       "order": 252000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "historyResult",
       "emphasis": "normal",
@@ -115,7 +115,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#7r71xcNW",
       "order": 254000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchiveError",
       "emphasis": "normal",
@@ -129,7 +129,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#8KIXscUH",
       "order": 255000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "subjectsOf",
       "emphasis": "normal",

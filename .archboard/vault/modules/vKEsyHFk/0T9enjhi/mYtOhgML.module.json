@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the chosen checkouts and untracked vaults",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the vault layout",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "find vaults through the chosen checkouts",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
       "order": 76000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read models bound to a repository",
       "emphasis": "normal",

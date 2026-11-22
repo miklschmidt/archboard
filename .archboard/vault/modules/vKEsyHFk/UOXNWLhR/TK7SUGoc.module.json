@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#55rosWUN",
       "order": 3000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the legacy board",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#IJQe6RQy",
       "order": 4000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the render answer, code findings, a model's locality",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#HPCTlv5B",
       "order": 16000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "draw this reading",
       "emphasis": "hero",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#f43RMTLN",
       "order": 70044,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "share captured read queries",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#p9gP1ZtC",
       "order": 123000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the keys its queries subscribe under",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#GNx2x7VX",
       "order": 124000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a listing: read again what moved since",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#H1PT503W",
       "order": 125000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "run one code pass over a reading",
       "emphasis": "normal",

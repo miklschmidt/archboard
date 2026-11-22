@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#bEmVBBGp",
       "order": 17000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "answer the clock, refuse the rest",
       "emphasis": "normal",

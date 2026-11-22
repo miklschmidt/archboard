@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#83qFfI7k",
       "order": 55000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "reserve a fresh talk directory",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#VXPf7fBP",
       "order": 57000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "resolve a supported video container",
       "emphasis": "normal",

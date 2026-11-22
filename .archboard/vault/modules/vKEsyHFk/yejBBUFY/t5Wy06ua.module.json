@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#yRl53uvR",
       "order": 38000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "dock and voice parts",
       "emphasis": "normal",

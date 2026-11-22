@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#gNPRCnlg",
       "order": 47000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the host's toolset, for each role's profile",
       "emphasis": "normal",

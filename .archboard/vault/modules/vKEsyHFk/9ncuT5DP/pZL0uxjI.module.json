@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#ItrMo4q3",
       "order": 70004,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read narrated presentation position",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#FdocgDPR",
       "order": 98000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve the narrated pane tab",
       "emphasis": "normal",

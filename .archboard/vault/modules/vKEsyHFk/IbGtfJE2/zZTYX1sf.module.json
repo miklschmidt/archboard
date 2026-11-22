@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#x8jCskDI",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "classify the stored commands",
       "emphasis": "normal",

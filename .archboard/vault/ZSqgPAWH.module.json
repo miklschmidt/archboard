@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "thread/start with the coordinator's body and settings",
       "emphasis": "hero",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#QEitA6l5",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "capture exact role instruction and tool bytes",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#cDFB96mF",
       "order": 27000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "unload the thread a fresh one replaced",
       "description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",

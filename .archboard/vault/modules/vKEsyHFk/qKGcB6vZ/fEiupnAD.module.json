@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#0yGbIQl9",
       "order": 11000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "answer the one it was armed for",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
       "order": 35000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "parse the resolve call's input",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
       "order": 36000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the classifier turn, as authored",
       "emphasis": "muted",

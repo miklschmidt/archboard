@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#PmRXYBFT",
       "order": 104000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "shared canonical operations",
       "emphasis": "hero",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#6JptLyJB",
       "order": 105000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "explicit doing line",
       "emphasis": "normal",

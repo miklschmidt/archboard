@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#F1500O9D",
       "order": 16000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "is this notification news?",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#z89BWp39",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "answer a tell_coordinator call",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#LJ71MbJ0",
       "order": 21000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "one at a time, in order",
       "emphasis": "hero",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#2gd6s71s",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "which workhorse is this event about?",
       "emphasis": "normal",

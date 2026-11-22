@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#vQQRWMBS",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "compile each target",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#uOcot5Gw",
       "order": 3000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the Codex version that a package pins",
       "emphasis": "normal",

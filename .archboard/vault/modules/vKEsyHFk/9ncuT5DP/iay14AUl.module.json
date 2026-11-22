@@ -50,7 +50,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#CPG4pMzU",
       "order": 28000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "unload an ended tab's threads",
       "description": "The caller receives the unload method of the public createCodexThreadUnload factory imported from the module root; the module is drawn whole.",
@@ -79,7 +79,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#pXUOBmiu",
       "order": 34000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "refuse a call no session owns",
       "description": "The server imports answerUnownedTellCoordinator from the callbacks root, which re-exports the implementation in tell-coordinator.ts.",
@@ -94,7 +94,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#ELaAYJKS",
       "order": 36000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "cancel an ended session's approvals",
       "emphasis": "muted",
@@ -108,7 +108,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#etaTfLee",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "note a turn's start and the work its operations give",
       "emphasis": "normal",
@@ -122,7 +122,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#wMqJn1nW",
       "order": 58000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "build one workhorse for each checkout, on first use",
       "emphasis": "normal",
@@ -136,7 +136,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#Ikp3Fwwc",
       "order": 59000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "a delegation starts the named checkout's workhorse first",
       "emphasis": "normal",
@@ -150,7 +150,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#azMem83I",
       "order": 73000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the conversation shown when a coordinator turn starts",
       "emphasis": "normal",
@@ -164,7 +164,7 @@
     {
       "id": "vKEsyHFk#4D4Brise",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "refuse new work to a workhorse that is stopping",
       "emphasis": "normal",
@@ -178,7 +178,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#fa4FSkpO",
       "order": 99000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "own the voice start trace",
       "emphasis": "normal",

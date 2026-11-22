@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#jY19Jvh2",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how long a Git call may run",
       "emphasis": "normal",

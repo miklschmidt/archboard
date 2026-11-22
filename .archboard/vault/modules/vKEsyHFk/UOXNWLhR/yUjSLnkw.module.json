@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "read the target model",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#61t3maku",
       "order": 105000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the target model's document, in the vault it is in",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#1mkfOmRs",
       "order": 106000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the vault the target is read in",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#1YBYgVBE",
       "order": 112000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the vault of the repository a link names",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#X1i20uYe",
       "order": 131000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "hear the target model change, by the name it has now",
       "emphasis": "muted",

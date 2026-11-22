@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#i7r1YcDJ",
       "order": 73000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the root of the installation to build",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#eSv7lgu3",
       "order": 74000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "stop, then start again",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#e3hkROQO",
       "order": 75000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "silence the warning about the server it replaces",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#2JxXOGhK",
       "order": 76000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the bundle a release serves, which it does not build",
       "emphasis": "normal",

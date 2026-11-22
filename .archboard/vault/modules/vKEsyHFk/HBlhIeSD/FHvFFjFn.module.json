@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
       "order": 6000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve in the vault's checkout or the chosen one",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#0L2qr5ja",
       "order": 45000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "description": "Holds the list and the choice of a checkout to the browser origin, as the opener settings are",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#aXFI100m",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "list the repositories and their vaults",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#YawQAO0P",
       "order": 47000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "move each pane out of an unchosen checkout",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#ic9G2qN4",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "tell every pane where it is now; a moved one its model",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#yqfoZW5w",
       "order": 61000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "chooses a known checkout and watches the registry file",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
       "order": 83000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -100,7 +100,7 @@
     {
       "id": "vKEsyHFk#TPbJlF5o",
       "order": 84000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "tell every tab repositories_changed",
       "emphasis": "normal",

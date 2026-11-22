@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the page's own renderer",
       "emphasis": "hero",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#A87QndqZ",
       "order": 70032,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "preserve retained read refusals",
       "emphasis": "muted",

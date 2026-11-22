@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#ET4L5Dvk",
       "order": 10,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the selected state, then its comparison state",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#NfuvWVgE",
       "order": 20,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the policy and diagnostics of the selected state",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#3LxjuzuP",
       "order": 30,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the paths of the policy's icons",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#2yOgQL3i",
       "order": 40,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "validates the file before it is written",
       "emphasis": "normal",

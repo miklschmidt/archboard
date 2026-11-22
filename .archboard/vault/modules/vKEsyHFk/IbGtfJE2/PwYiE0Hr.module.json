@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#Kj1Dd9Y2",
       "order": 16000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "one chunk of blinded runs",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#GfcZMk6V",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "one chunk of blinded runs",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#pDhY9kXG",
       "order": 33000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "which answers fell short",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#DzWFLBp6",
       "order": 34000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the Flask sources the grader reads",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#Ln5uDLuM",
       "order": 42000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the kept skill is unchanged",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#s7YzBWCX",
       "order": 43000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where the kept skill lives",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#7IJFtNQk",
       "order": 70026,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "deliver captured grading images",
       "emphasis": "muted",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk#EX4mlIeV",
       "order": 71000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how long a grader may run",
       "emphasis": "normal",

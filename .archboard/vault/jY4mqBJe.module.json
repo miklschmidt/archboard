@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#FHm5EAjC",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the core directory, and the hash it must record",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#LzlhpsS7",
       "order": 20000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "each grader's filed verdicts",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#dYaaUdXS",
       "order": 35000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "one grader's report",
       "emphasis": "hero",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#t7IxZjEX",
       "order": 36000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "exposure as today's classifier reads it",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#7Gbj2xDB",
       "order": 38000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve each finding's passage",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#QqI9VPd1",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the selection the batch saved",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk#jkSstw4e",
       "order": 70040,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read captured grading evidence",
       "emphasis": "muted",

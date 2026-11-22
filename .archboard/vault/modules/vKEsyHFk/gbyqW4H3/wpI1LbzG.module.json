@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#7pBgojOh",
       "order": 60100,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "draw the reading in the core",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#b5O0WPQs",
       "order": 60200,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "what this host gives the core",
       "emphasis": "normal",

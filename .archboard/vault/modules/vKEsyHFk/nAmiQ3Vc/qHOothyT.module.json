@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "help, and a failure's usage line",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "capture flags",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
       "order": 3000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "select",
       "emphasis": "hero",
@@ -53,7 +53,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "execute",
       "emphasis": "hero",
@@ -71,7 +71,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
       "order": 6000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "on failure",
       "emphasis": "normal",
@@ -85,7 +85,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
       "order": 10000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the stated model, doing and version",
       "emphasis": "normal",
@@ -103,7 +103,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
       "order": 14000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "find the command's vault",
       "emphasis": "normal",
@@ -117,7 +117,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
       "order": 54000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "is it a help request",
       "emphasis": "normal",
@@ -131,7 +131,7 @@
     {
       "id": "vKEsyHFk#Rd2cwGPl",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "records each command and unexpected error",
       "emphasis": "normal",

@@ -1,4 +1,268 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#N8bivOLt",
+      "order": 70028,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "retain original migration trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/install-candidate.ts",
+        "symbol": "tree"
+      },
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#PvjdCCub",
+      "order": 110000,
+      "kind": "sync",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
+        "symbol": "decodeLegacyBoard"
+      },
+      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#yTYxw24a",
+      "order": 112000,
+      "kind": "sync",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
+        "symbol": "writeFileAtomic"
+      },
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#m8cmnXnS",
+      "order": 116000,
+      "kind": "sync",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
+        "symbol": "parseVaultPolicy"
+      },
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#AlSqD5eq",
+      "order": 118000,
+      "kind": "sync",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
+        "symbol": "LegacyMappingWriteSchema"
+      },
+      "to": "vKEsyHFk/0T9enjhi#O3Pczt31"
+    },
+    {
+      "id": "vKEsyHFk#054drdG7",
+      "order": 130020,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "readingDiagnostics",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "selectBookmark"
+      },
+      "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#mIgQpKmS",
+      "order": 227000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "Validate the complete candidate",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/compose.ts",
+        "symbol": "decodeModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#E7pOpTZi",
+      "order": 242000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "validates exact checkpoint identities",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "GitObjectIdSchema"
+      },
+      "to": "vKEsyHFk#8539szQJ"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#9xNbt1EA",
+      "order": 243000,
+      "kind": "async",
+      "effect": "query",
+      "label": "opens retained originals through the checkpoint reader",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "exactReading"
+      },
+      "to": "vKEsyHFk#v5jpAVBo"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#zIB2QVeH",
+      "order": 244000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "retains and reopens exact original input objects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/retain.ts",
+        "symbol": "archiveCommit"
+      },
+      "to": "vKEsyHFk#1RhUzmyZ"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#88iNMHt6",
+      "order": 246000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "reports original archive and source failures",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "ArchiveError"
+      },
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#xGduus4r",
+      "order": 247000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "derives explicit compact draft changes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/drafts.ts",
+        "symbol": "compactChanges"
+      },
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#DZAdVgog",
+      "order": 257000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "resolve and capture converted playback",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
+        "symbol": "walkthroughOf"
+      },
+      "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#WTjwnArK",
+      "order": 258000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "Resume the shared installation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
+        "symbol": "applyMigration"
+      },
+      "to": "vKEsyHFk#reKeqHVo"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#tnCVPY3T",
+      "order": 259000,
+      "kind": "async",
+      "effect": "mutation",
+      "label": "write the cutover journal under the held lease",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
+        "symbol": "applyMigration"
+      },
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#rl3PMdWJ",
+      "order": 260000,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "Announce completed canonical cutover",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
+        "symbol": "migrateArchitectureModel"
+      },
+      "to": "vKEsyHFk#P9dwhB8m"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#FngTyF3H",
+      "order": 262000,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "Build the existing checked file delta",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/prepare-cutover.ts",
+        "symbol": "prepareCutover"
+      },
+      "to": "vKEsyHFk/0T9enjhi#e0GTqv1k"
+    },
+    {
+      "id": "vKEsyHFk#X4APDE6a",
+      "order": 980100,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "original model addresses",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "parsePaneKey"
+      },
+      "to": "vKEsyHFk#9VahN2IU"
+    },
+    {
+      "id": "vKEsyHFk#ewLuX29P",
+      "order": 981100,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "open the variant that a legacy address names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
+        "symbol": "addressedVariant"
+      },
+      "to": "vKEsyHFk#vZUWUgyb"
+    }
+  ],
   "order": 49000,
   "name": "Legacy migration",
   "kind": "function",
@@ -33,270 +297,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 70028,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "retain original migration trees",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/install-candidate.ts",
-        "symbol": "tree"
-      },
-      "id": "vKEsyHFk#N8bivOLt",
-      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
-    },
-    {
-      "order": 110000,
-      "kind": "call",
-      "effect": "compute",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
-        "symbol": "decodeLegacyBoard"
-      },
-      "id": "vKEsyHFk/0T9enjhi#PvjdCCub",
-      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
-    },
-    {
-      "order": 112000,
-      "kind": "call",
-      "effect": "mutation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
-        "symbol": "writeFileAtomic"
-      },
-      "id": "vKEsyHFk/0T9enjhi#yTYxw24a",
-      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
-    },
-    {
-      "order": 116000,
-      "kind": "call",
-      "effect": "compute",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
-        "symbol": "parseVaultPolicy"
-      },
-      "id": "vKEsyHFk/0T9enjhi#m8cmnXnS",
-      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
-    },
-    {
-      "order": 118000,
-      "kind": "call",
-      "effect": "compute",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/save-plan.ts",
-        "symbol": "LegacyMappingWriteSchema"
-      },
-      "id": "vKEsyHFk/0T9enjhi#AlSqD5eq",
-      "to": "vKEsyHFk/0T9enjhi#O3Pczt31"
-    },
-    {
-      "order": 130020,
-      "kind": "call",
-      "effect": "compute",
-      "label": "readingDiagnostics",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
-        "symbol": "selectBookmark"
-      },
-      "id": "vKEsyHFk#054drdG7",
-      "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
-    },
-    {
-      "order": 227000,
-      "kind": "call",
-      "effect": "compute",
-      "label": "Validate the complete candidate",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/compose.ts",
-        "symbol": "decodeModel"
-      },
-      "id": "vKEsyHFk/0T9enjhi#mIgQpKmS",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 242000,
-      "kind": "call",
-      "effect": "compute",
-      "label": "validates exact checkpoint identities",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
-        "symbol": "GitObjectIdSchema"
-      },
-      "id": "vKEsyHFk/0T9enjhi#E7pOpTZi",
-      "to": "vKEsyHFk#8539szQJ"
-    },
-    {
-      "order": 243000,
-      "kind": "call",
-      "effect": "query",
-      "label": "opens retained originals through the checkpoint reader",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
-        "symbol": "exactReading"
-      },
-      "id": "vKEsyHFk/0T9enjhi#9xNbt1EA",
-      "to": "vKEsyHFk#v5jpAVBo"
-    },
-    {
-      "order": 244000,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "retains and reopens exact original input objects",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/retain.ts",
-        "symbol": "archiveCommit"
-      },
-      "id": "vKEsyHFk/0T9enjhi#zIB2QVeH",
-      "to": "vKEsyHFk#1RhUzmyZ"
-    },
-    {
-      "order": 246000,
-      "kind": "call",
-      "effect": "compute",
-      "label": "reports original archive and source failures",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
-        "symbol": "ArchiveError"
-      },
-      "id": "vKEsyHFk/0T9enjhi#88iNMHt6",
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
-    },
-    {
-      "order": 247000,
-      "kind": "call",
-      "effect": "compute",
-      "label": "derives explicit compact draft changes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/drafts.ts",
-        "symbol": "compactChanges"
-      },
-      "id": "vKEsyHFk/0T9enjhi#xGduus4r",
-      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
-    },
-    {
-      "order": 257000,
-      "kind": "call",
-      "effect": "compute",
-      "label": "resolve and capture converted playback",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/preview.ts",
-        "symbol": "walkthroughOf"
-      },
-      "id": "vKEsyHFk/0T9enjhi#DZAdVgog",
-      "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
-    },
-    {
-      "order": 258000,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "Resume the shared installation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
-        "symbol": "applyMigration"
-      },
-      "id": "vKEsyHFk/0T9enjhi#WTjwnArK",
-      "to": "vKEsyHFk#reKeqHVo"
-    },
-    {
-      "order": 259000,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "write the cutover journal under the held lease",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
-        "symbol": "applyMigration"
-      },
-      "id": "vKEsyHFk/0T9enjhi#tnCVPY3T",
-      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
-    },
-    {
-      "order": 260000,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "Announce completed canonical cutover",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/apply.ts",
-        "symbol": "migrateArchitectureModel"
-      },
-      "id": "vKEsyHFk/0T9enjhi#rl3PMdWJ",
-      "to": "vKEsyHFk#P9dwhB8m"
-    },
-    {
-      "order": 262000,
-      "kind": "call",
-      "effect": "compute",
-      "label": "Build the existing checked file delta",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/prepare-cutover.ts",
-        "symbol": "prepareCutover"
-      },
-      "id": "vKEsyHFk/0T9enjhi#FngTyF3H",
-      "to": "vKEsyHFk/0T9enjhi#e0GTqv1k"
-    },
-    {
-      "order": 980100,
-      "kind": "call",
-      "effect": "compute",
-      "label": "original model addresses",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
-        "symbol": "parsePaneKey"
-      },
-      "id": "vKEsyHFk#X4APDE6a",
-      "to": "vKEsyHFk#9VahN2IU"
-    },
-    {
-      "order": 981100,
-      "kind": "call",
-      "effect": "compute",
-      "label": "open the variant that a legacy address names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/addresses.ts",
-        "symbol": "addressedVariant"
-      },
-      "id": "vKEsyHFk#ewLuX29P",
-      "to": "vKEsyHFk#vZUWUgyb"
     }
   ]
 }

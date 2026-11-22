@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#7gIxznvp",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "refuse what is past the limits first",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#IiA7nIxT",
       "order": 3000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "capture, one job at a time",
       "emphasis": "hero",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
       "order": 14000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "which Chromium",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -50,7 +50,7 @@
     {
       "id": "vKEsyHFk#zAZwER1T",
       "order": 15000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "raster job, start-up and cleanup durations",
       "emphasis": "normal",

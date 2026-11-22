@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#Iwat3bQG",
       "order": 36000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "glide there, a frame at a time",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#OgfM5Zfx",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "ease wheel and key moves",
       "description": "usePictureCamera creates useCameraMotion(stage, reducedMotion); wheel and key controls call its zoomAt and ease, while pinches write immediately.",
@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#9gYlic2p",
       "order": 93000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "pan, pinch and zoom arithmetic",
       "description": "use-picture-camera.ts panBy calls panCamera, pinch calls pinchCamera and ctrl-wheel calls zoomCameraAbout.",
@@ -47,7 +47,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#HTxBOFb9",
       "order": 94000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "create, write, settle, hold and subscribe",
       "description": "usePictureCamera creates createCameraStore; its controls call write, comeToRest calls settle and hold, and useCameraView/useCameraWith expose subscriptions.",
@@ -62,7 +62,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#4snMrMQ0",
       "order": 95000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "rest timer, then one frame after zoom",
       "description": "restLater calls frameClock().after(cameraRest); comeToRest calls requestFrame to release the held rest after the layer drops.",

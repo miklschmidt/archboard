@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#e1viO4QT",
       "order": 2000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "delegate, steer, inspect or queue in the named checkout",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#FRlXCCgx",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "validate against the frozen manifest",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
       "order": 9000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "route the sustained work to the named checkout",
       "emphasis": "hero",
@@ -53,7 +53,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#jWYpMYjr",
       "order": 10000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "resolve the approval answered aloud",
       "emphasis": "normal",
@@ -67,7 +67,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#bK9QB2R5",
       "order": 34000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "stop_workhorses: stop every workhorse's work tree",
       "emphasis": "normal",
@@ -81,7 +81,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#au7MY0Yt",
       "order": 40000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "stop_workhorses: stop every running workhorse of the tab",
       "emphasis": "normal",
@@ -109,7 +109,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#veSu4QHr",
       "order": 49000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the role a call came through, by name and digest",
       "emphasis": "normal",

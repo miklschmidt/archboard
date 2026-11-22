@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#hwJPR59O",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "start the app-server child its generations run over",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#nw9nYSMn",
       "order": 11000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "bind the gateway to this generation",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#PqSkt9px",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "one store per child, dropped when it exits",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
       "order": 50000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the transport a restarted child rejoins",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#Ao3t2Mgx",
       "order": 1007000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "open the epoch store for this generation",
       "emphasis": "normal",

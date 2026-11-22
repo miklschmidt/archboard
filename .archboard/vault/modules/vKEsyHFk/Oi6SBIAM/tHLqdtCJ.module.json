@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#hRBLvJyD",
       "order": 50000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "name the checkout in model context",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#GSMazGUv",
       "order": 70005,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "subscribe to durable changes",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#Q85nTD4V",
       "order": 76000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "compose the captured canonical context",
       "emphasis": "normal",

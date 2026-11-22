@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#Inhz9zl3",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the hash of the core sources it records",
       "emphasis": "normal",

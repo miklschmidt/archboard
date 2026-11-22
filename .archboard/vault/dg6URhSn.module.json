@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#4gojuhlc",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "lay out each graph with dot",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#fydOT1rP",
       "order": 200,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "spell each attribute number as JavaScript does",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#dontbmL6",
       "order": 91013,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "write each graph statement by statement",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#jsgdn0M9",
       "order": 91014,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "set the y axis of each run",
       "emphasis": "normal",

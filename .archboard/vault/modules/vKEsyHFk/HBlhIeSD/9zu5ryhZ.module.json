@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#DDgCzWpy",
       "order": 109000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "shared operations and coherent subscriptions",
       "emphasis": "hero",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#ncTGv1jp",
       "order": 110000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "explicit vault guard",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#GtwK4egT",
       "order": 111000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "track accepted mutations",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#gCSSYsMT",
       "order": 158000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "claimArchitectureSubjects",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#yIlWm0s3",
       "order": 50000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "every read takes the vault from the pane",
       "emphasis": "normal",

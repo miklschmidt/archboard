@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
       "order": 13000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the generation that may act",
       "emphasis": "normal",
@@ -30,7 +30,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#VOPbBx8O",
       "order": 20000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the workhorse instructions, by digest",
       "emphasis": "muted",
@@ -58,7 +58,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#IxtTYfQ6",
       "order": 32000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the calling thread's tab session",
       "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",

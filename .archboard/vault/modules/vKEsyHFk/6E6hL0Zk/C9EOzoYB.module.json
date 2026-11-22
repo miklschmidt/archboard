@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
       "order": 104000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "capture the exact model reading",
       "description": "read that model for the agent's brief",

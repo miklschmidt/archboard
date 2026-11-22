@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#NqQSFaBz",
       "order": 900,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the selected module's export names and lines",
       "emphasis": "normal",

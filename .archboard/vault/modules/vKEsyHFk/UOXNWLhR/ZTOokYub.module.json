@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#JtOygu0b",
       "order": 47000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the time, and a frame at a time",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#cWcMSCKs",
       "order": 97000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "camera transforms when easing is disabled",
       "emphasis": "muted",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#tJ3SgMcL",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "launch, open a page, stop",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -22,7 +22,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#aYI0EhkT",
       "order": 6000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "one socket to the page",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -41,7 +41,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#TBd33jdx",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "prove the page before shooting",
       "emphasis": "hero",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#6dBMtPdX",
       "order": 9000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the clip region",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
       "order": 50000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a page that would not open, as the browser's own failure",
       "emphasis": "muted",

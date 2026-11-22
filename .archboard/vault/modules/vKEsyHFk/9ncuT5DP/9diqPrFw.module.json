@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#pxP5bkpx",
       "order": 11000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "prepare, write its config",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
       "order": 43000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "own the Codex process group",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#9SuYTCBQ",
       "order": 44000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the variables a native binary needs",
       "emphasis": "normal",

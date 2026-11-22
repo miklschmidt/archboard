@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#YBT0ys2i",
       "order": 60000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "locate the recorded talks in state storage",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#IrR2bIPK",
       "order": 980080,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the schema of a kept talk",
       "emphasis": "muted",

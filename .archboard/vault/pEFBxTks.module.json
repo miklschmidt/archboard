@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#YOV84Hm5",
       "order": 980100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the icons to fetch before drawing",
       "emphasis": "normal",

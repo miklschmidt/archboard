@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#tCxB82K4",
       "order": 70034,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "create browser media ownership",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#RPZfWIL0",
       "order": 70037,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "create the browser transport",
       "emphasis": "muted",

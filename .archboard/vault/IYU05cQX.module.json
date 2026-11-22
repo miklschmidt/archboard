@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#uDNOaatU",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the painter that answers",
       "emphasis": "normal",

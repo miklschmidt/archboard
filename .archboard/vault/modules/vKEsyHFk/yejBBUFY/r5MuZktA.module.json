@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#tEO0oHDD",
       "order": 88000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve one complete playback target",
       "emphasis": "normal",

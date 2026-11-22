@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#cLBlxUZe",
       "order": 162000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Tay0NoqL",
       "order": 163000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -29,7 +29,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#6v2wIOX0",
       "order": 165000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -42,7 +42,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#XCyLrwKb",
       "order": 180000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {

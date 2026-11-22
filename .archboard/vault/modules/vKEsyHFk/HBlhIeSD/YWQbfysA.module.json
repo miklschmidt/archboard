@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#Z7IOHBEv",
       "order": 107000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#EJAnYLlO",
       "order": 113000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "asyncEndpoint",
       "emphasis": "normal",
@@ -30,7 +30,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#VoM3JXyO",
       "order": 122000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {
@@ -43,7 +43,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#LF1VUIUY",
       "order": 124000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {

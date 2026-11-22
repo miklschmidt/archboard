@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
       "order": 18000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the vault an untracked holder keeps",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#VqSf4PHA",
       "order": 24000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "git in its own process group",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#LfkZEor0",
       "order": 70058,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "read registry fields",
       "emphasis": "muted",

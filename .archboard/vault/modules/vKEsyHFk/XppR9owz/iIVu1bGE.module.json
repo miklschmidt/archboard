@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
       "order": 7000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "argv",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
       "order": 9000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "registryOf, for the contract proof",
       "emphasis": "muted",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#l1mVF45a",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "its contract",
       "emphasis": "normal",
@@ -49,7 +49,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#T67XkF7L",
       "order": 98000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -62,7 +62,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#4PgjyVVt",
       "order": 103000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "register model edit, claim and recovery",
       "emphasis": "normal",
@@ -76,7 +76,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#cluonY9L",
       "order": 106000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -89,7 +89,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#TLj1cMMq",
       "order": 108000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -102,7 +102,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#yiZPCy4w",
       "order": 112000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {

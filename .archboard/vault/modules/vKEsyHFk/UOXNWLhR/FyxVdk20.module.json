@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#DtoJyBxi",
       "order": 43000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "what a press landed on",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#RSxtiSv5",
       "order": 44000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "pan immediately, and delegate touch pinch",
       "description": "useDiagramGestures calls camera.panBy; its useTouchPinch helper calls camera.pinch for two touch pointers.",
@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk#CokUWpsM",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "what a press landed on",
       "emphasis": "normal",

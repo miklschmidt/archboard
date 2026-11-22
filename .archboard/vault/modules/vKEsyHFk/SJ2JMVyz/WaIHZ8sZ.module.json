@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#kK1YexMf",
       "order": 18000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the news this message is",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#35DJDouE",
       "order": 19000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "queue it, wait for its delivery",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#5EeoHuyh",
       "order": 20000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "answer the workhorse",
       "emphasis": "muted",

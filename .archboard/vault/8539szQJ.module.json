@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#PatiT3PG",
       "order": 130000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the binding schema of a module",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#DbjpaJZI",
       "order": 186000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "FlowCollectionSchema",
       "emphasis": "normal",

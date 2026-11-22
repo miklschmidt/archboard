@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#YrKMY0LM",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the live tab session that holds the asking thread",
       "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
@@ -60,7 +60,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
       "order": 66000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "when an approval expires",
       "emphasis": "normal",

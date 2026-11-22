@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#gbjuMdZa",
       "order": 34000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "one per page, in software, 1920x1080; stop them all",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#8rmq24D9",
       "order": 36000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "evaluate in the page; screenshot each frame as JPEG q92",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -37,7 +37,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#eq4BIHlx",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "open it with voice.wav",
       "emphasis": "normal",
@@ -51,7 +51,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#sXypEOAH",
       "order": 41000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start each page's browser; prove ffmpeg if not handed one",
       "emphasis": "normal",
@@ -65,7 +65,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#g7m7u2iu",
       "order": 43000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "each page's captured frames; wait for room",
       "emphasis": "normal",
@@ -79,7 +79,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#uJ0o2UWM",
       "order": 47000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the kept voice, to level each frame",
       "emphasis": "normal",

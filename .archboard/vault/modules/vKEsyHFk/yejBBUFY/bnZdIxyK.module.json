@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",
       "order": 30000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "live and loud yet; stop",
       "emphasis": "normal",

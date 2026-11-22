@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#iBUsuXmL",
       "order": 10,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "name the owners of a file",
       "emphasis": "normal",

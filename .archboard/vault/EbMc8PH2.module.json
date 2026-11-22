@@ -12,7 +12,7 @@
     {
       "id": "vKEsyHFk#HscFxd1C",
       "order": 10100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "keeps its records in the state directory",
       "emphasis": "normal",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk#fzTE6of7",
       "order": 10200,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "writes settings and error reports whole",
       "emphasis": "normal",
@@ -30,7 +30,7 @@
     {
       "id": "vKEsyHFk#9izxe3Ys",
       "order": 10300,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "reads the version, mode and program root",
       "emphasis": "normal",
@@ -39,7 +39,7 @@
     {
       "id": "vKEsyHFk#iFWjFhbg",
       "order": 10400,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how close two agents' use counts as overlap",
       "emphasis": "normal",

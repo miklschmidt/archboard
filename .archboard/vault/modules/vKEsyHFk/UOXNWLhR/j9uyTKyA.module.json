@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#YW2ffPdZ",
       "order": 91000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "description": "Reads the vault check query",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#WXHpoWFo",
       "order": 128000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "a vault's policy changed: draw its pictures again",
       "emphasis": "normal",

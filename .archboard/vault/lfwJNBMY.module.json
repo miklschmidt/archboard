@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#SZnO6aFz",
       "order": 80000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mark the warnings on the model's picture",
       "emphasis": "normal",

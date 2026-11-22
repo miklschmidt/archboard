@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",
       "order": 73000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "what the last pass found on the version drawn",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#4msTmvFC",
       "order": 80000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mark the warnings on the drawn picture",
       "emphasis": "normal",

@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "names the pane's vault on each read",
       "emphasis": "normal",
@@ -49,7 +49,7 @@
     {
       "id": "vKEsyHFk#aFx2toJd",
       "order": 1008080,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "read remembered findings",
       "emphasis": "normal",

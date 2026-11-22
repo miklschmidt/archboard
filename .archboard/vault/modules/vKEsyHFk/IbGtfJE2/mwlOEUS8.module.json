@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#HVWgimVj",
       "order": 44000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the closed catalogue of rows",
       "emphasis": "normal",

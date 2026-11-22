@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#l3RkMYAH",
       "order": 3000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "queue a delegation behind the running turn",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#iwsP4kmN",
       "order": 27000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a delegation as the authored user input",
       "emphasis": "muted",
@@ -49,7 +49,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#FSTG1rQt",
       "order": 35000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "classify and recheck the captured links",
       "emphasis": "normal",
@@ -63,7 +63,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#iK5V95pN",
       "order": 36000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "stage and follow the operation",
       "emphasis": "normal",

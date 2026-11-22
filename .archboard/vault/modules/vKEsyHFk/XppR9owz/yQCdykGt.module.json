@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#QmcmQeFK",
       "order": 17000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "model operation",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#QiGtsvq5",
       "order": 42000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the code check, in check, check all and check code",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#g8rnkuaR",
       "order": 86000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the embeds check, in check, check all and check embeds",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#BnbTGVun",
       "order": 1008070,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "read a code check answer",
       "emphasis": "normal",

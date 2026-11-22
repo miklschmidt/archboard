@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#iyXO5GUb",
       "order": 12000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "renderSemanticView",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
       "order": 29000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the legacy board",
       "emphasis": "normal",

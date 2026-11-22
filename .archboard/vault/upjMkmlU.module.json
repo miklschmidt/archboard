@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#i32p6taI",
       "order": 5010,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read registered repositories",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#7EsWuSSD",
       "order": 5020,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read model authority",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#2yPtg2Dm",
       "order": 100,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the model or a named state",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#GJ8lMAjK",
       "order": 200,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "draw each reading with each engine",
       "emphasis": "normal",

@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
       "order": 96000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -62,7 +62,7 @@
     {
       "id": "vKEsyHFk#hbm71jgF",
       "order": 1008040,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "read an answer",
       "emphasis": "normal",

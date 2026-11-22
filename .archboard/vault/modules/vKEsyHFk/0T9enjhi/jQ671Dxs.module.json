@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#RQgSYJGP",
       "order": 213000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "git",
       "emphasis": "normal",

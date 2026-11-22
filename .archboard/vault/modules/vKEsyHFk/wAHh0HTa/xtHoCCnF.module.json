@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#qQrqNYdt",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "initialize, once",
       "description": "The caller invokes initialize on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",

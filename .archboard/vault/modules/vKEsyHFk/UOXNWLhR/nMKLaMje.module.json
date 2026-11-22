@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
       "order": 132000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the comparison part of a drawing's key",
       "emphasis": "normal",

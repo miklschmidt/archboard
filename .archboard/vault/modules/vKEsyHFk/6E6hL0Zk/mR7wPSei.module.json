@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#ZKvJWd4O",
       "order": 121000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "select the adapters for each checkout",
       "emphasis": "normal",

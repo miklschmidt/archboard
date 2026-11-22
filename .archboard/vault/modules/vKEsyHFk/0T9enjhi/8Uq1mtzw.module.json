@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#RnWLqued",
       "order": 70013,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "prepare exact architecture trees",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#WpAdVbQ4",
       "order": 130000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "require subject ownership",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#gj0AysX5",
       "order": 131000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "sign candidate checkpoint",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#aI4dCY36",
       "order": 157000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "checkoutContext",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#I3nQ73xf",
       "order": 168000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "editCandidate",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#OVYGPqz9",
       "order": 178000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -86,7 +86,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#5J0MoNa1",
       "order": 207000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "captureReferencePins",
       "emphasis": "normal",
@@ -100,7 +100,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#WIHdjwjn",
       "order": 220000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "recheck exact current inputs after signing",
       "emphasis": "normal",
@@ -114,7 +114,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#OkD6iLu5",
       "order": 229000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "Recheck the corrected logical checkpoint",
       "emphasis": "normal",

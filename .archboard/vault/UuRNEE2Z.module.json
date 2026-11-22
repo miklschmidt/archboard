@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#JLh2Mj0G",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the outline of a glyph",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#ovGUX3xQ",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "unwrap commands, and find the vault in the checkout",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#GsciFned",
       "order": 70043,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "identify the retained reading",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#51taDpRp",
       "order": 122000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "every reading the tab holds, and the names it asked by",
       "emphasis": "normal",

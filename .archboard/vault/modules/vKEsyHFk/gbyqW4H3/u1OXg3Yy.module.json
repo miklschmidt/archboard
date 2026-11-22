@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#I1lGjMES",
       "order": 6000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "each role's colour, as page tokens",
       "emphasis": "normal",

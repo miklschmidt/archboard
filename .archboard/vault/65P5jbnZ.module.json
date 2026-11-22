@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#f0RC9khM",
       "order": 70017,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "cache and interact with pictures",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
       "order": 76000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "prepareContentHere",
       "emphasis": "normal",

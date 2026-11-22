@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#MWwtJ07I",
       "order": 132000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "require explicit current target",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Unx9ZNwy",
       "order": 133000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "serialize claim records",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#pwwBQjxG",
       "order": 139000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "announce claim changes",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#L9qSRNoR",
       "order": 149000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "archiveFailure",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#VTZKWgse",
       "order": 152000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "refuse with the shared archive failure",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#FNRbx70t",
       "order": 159000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchitectureClaimRequestSchema",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#icqdO00L",
       "order": 160000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how long a claim lasts",
       "emphasis": "normal",

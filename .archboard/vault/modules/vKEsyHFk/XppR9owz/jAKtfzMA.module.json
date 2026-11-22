@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
       "order": 14000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "register its checkout; choose and forget checkouts",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#KpH0k8PU",
       "order": 15000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "show and write a repository's or this machine's servers",
       "emphasis": "normal",

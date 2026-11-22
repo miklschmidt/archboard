@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#jhNZqAiD",
       "order": 13000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "read or mutate, behind its gate",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#wVgRmbf8",
       "order": 20000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "did a failed logout reach the child",
       "emphasis": "muted",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#40GtFaKL",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "supported and refused login variants",
       "emphasis": "muted",

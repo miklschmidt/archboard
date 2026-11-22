@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#veScCirT",
       "order": 9000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "installRendererHost",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#TveKMtfC",
       "order": 27000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "Bun Workers, as the host's solve",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#3Vj0qb9d",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "load the core, and hand its module to each worker",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#Rc1uXY6J",
       "order": 29000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the program root, where the layout worker lies",
       "emphasis": "normal",

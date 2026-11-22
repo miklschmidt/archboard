@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",
       "order": 49000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the grader names",
       "emphasis": "normal",

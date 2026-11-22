@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#WjFwNiFy",
       "order": 980150,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "whether a group still runs",
       "emphasis": "muted",

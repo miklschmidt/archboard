@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#ACKA5I1k",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the picture of this reading",
       "emphasis": "hero",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#UubWA3xG",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "fit until the camera is moved",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#IPiFENAY",
       "order": 22500,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the pane's camera, kept across pictures",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#aZWI05I3",
       "order": 23000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "open step, and any driven one",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#ReedyDWe",
       "order": 24000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the step's focus, once its picture is up",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#zhpc5qbc",
       "order": 27000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "what is on screen",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#Kx7K0XLU",
       "order": 29000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "hear the model on screen change",
       "emphasis": "normal",
@@ -115,7 +115,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#cKc7k19t",
       "order": 55000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the pick, and the picture's atlas",
       "emphasis": "normal",
@@ -129,7 +129,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#rywgYYWx",
       "order": 58000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the card opened, and the model above",
       "emphasis": "normal",
@@ -143,7 +143,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#teXwe1ys",
       "order": 58500,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mount the flight on the pane's camera",
       "emphasis": "normal",
@@ -157,7 +157,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#mhEYDOOE",
       "order": 101000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the vault of the reading it draws and listens to",
       "emphasis": "normal",
@@ -171,7 +171,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#B0UbZ22U",
       "order": 108000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the model on screen, and the trail behind it",
       "emphasis": "normal",
@@ -185,7 +185,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#XFDnxQCC",
       "order": 129000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "does another pane share the centre",
       "emphasis": "normal",

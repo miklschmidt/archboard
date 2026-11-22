@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#MTXzrty6",
       "order": 10,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the footprint, the source refs and the states at head",
       "emphasis": "normal",
@@ -12,7 +12,7 @@
     {
       "id": "vKEsyHFk#XaEKZyKX",
       "order": 20,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "open the shared parent, at the head's branch reading",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#4TwcHVXq",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "owns listener",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
       "order": 12000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start and stop",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#4Uvqzrek",
       "order": 70045,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "start pane socket ownership",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#RZ5ulVj7",
       "order": 75000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "a stop waits for the admitted writes",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
       "order": 79000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "watch the registry file while the server runs",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk#EGELSMZa",
       "order": 90000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "starts the usage sender",
       "emphasis": "normal",
@@ -82,7 +82,7 @@
     {
       "id": "vKEsyHFk#25xiZ6jI",
       "order": 1008050,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "log the server",
       "emphasis": "normal",

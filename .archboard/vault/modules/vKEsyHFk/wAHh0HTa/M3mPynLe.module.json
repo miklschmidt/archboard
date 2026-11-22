@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#JOmIweJF",
       "order": 15000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "which identities each result holds",
       "emphasis": "muted",

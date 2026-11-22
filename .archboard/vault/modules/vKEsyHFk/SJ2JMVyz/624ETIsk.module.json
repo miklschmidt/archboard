@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#9ymbrMYT",
       "order": 40000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "retain the shared link reasons and refusal order",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#qU9USAdL",
       "order": 45000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "domain instructions for each role's profile",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "build domain turns through the shared input contract",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",
       "order": 57000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "interpret selected model subjects",
       "emphasis": "normal",

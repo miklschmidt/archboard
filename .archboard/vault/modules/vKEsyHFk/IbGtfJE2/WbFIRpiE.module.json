@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#ETX9M5TU",
       "order": 29000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "one command per step and read",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
       "order": 55000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "validate canonical evaluation inputs",
       "emphasis": "normal",

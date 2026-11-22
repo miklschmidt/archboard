@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#TyhSCbgO",
       "order": 65000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "error codes",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#9MKtlnoC",
       "order": 4000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the warning mark on a warned subject",
       "emphasis": "normal",

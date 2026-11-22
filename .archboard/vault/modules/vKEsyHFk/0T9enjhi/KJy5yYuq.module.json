@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#4VRYr6RT",
       "order": 90,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "read the vault at a source ref",
       "emphasis": "normal",
@@ -12,7 +12,7 @@
     {
       "id": "vKEsyHFk#c0DxX92y",
       "order": 70020,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "materialize exact proposal trees",
       "emphasis": "muted",
@@ -26,7 +26,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#HuWEB6r9",
       "order": 193000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "canonical decoder",
       "emphasis": "normal",
@@ -40,7 +40,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#26VVxTms",
       "order": 194000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "retained baseline",
       "emphasis": "normal",
@@ -54,7 +54,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#7ArYACBc",
       "order": 195000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "prepare and serialize complete definitions",
       "emphasis": "normal",
@@ -68,7 +68,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#HQwxAHRe",
       "order": 196000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "complete claim scope",
       "emphasis": "normal",
@@ -82,7 +82,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#pOm4j7QN",
       "order": 197000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "signed baseline ancestry",
       "emphasis": "normal",
@@ -96,7 +96,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Wb4yWBbs",
       "order": 198000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "complete model contract",
       "emphasis": "normal",
@@ -123,7 +123,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#OePzvDJW",
       "order": 201000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "same source or private archive",
       "emphasis": "normal",
@@ -137,7 +137,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#KU0dnode",
       "order": 215000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "captureReferencePins",
       "emphasis": "normal",
@@ -151,7 +151,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#NmLgBfWk",
       "order": 216000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "reconcile complete meaning",
       "emphasis": "normal",
@@ -165,7 +165,7 @@
     {
       "id": "vKEsyHFk#UDGtsZfv",
       "order": 998000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "each compared state's interface",
       "emphasis": "normal",

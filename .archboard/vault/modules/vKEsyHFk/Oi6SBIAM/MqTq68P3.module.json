@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
       "order": 13000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "record the pane; wait for one the shell opens or closes",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the pane's focus, for its agent",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#hDNka8yA",
       "order": 40000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "requires a vault",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#wX9a448V",
       "order": 61000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts the panes report",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#wvK4SWe1",
       "order": 61500,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts the show route",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
       "order": 66000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts the activation route",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#kEIA3Iaa",
       "order": 70029,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "wrap addressed pane requests",
       "emphasis": "muted",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
       "order": 71000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "only the page reaches the activation route",
       "emphasis": "normal",
@@ -115,7 +115,7 @@
     {
       "id": "vKEsyHFk#4gRaPRO3",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "whether the tab's bundle is current",
       "emphasis": "normal",
@@ -129,7 +129,7 @@
     {
       "id": "vKEsyHFk#vTfr79yF",
       "order": 91000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the address a browser opens",
       "emphasis": "normal",
@@ -143,7 +143,7 @@
     {
       "id": "vKEsyHFk#lncCBP74",
       "order": 92000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the panes on screen; ask the answering pane to open one",
       "emphasis": "normal",

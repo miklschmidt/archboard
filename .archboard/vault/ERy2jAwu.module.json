@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#5U5bpM9T",
       "order": 17000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "report the pane, show a model, pick a checkout",
       "emphasis": "normal",

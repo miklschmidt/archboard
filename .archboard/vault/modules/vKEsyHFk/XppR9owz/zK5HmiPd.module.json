@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#OPwTCiKt",
       "order": 16000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read a kept talk to render again",
       "emphasis": "normal",

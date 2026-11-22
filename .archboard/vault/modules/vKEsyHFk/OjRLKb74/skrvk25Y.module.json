@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#PYJsIDYm",
       "order": 18000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "orthogonal routes around the blocks",
       "emphasis": "normal",

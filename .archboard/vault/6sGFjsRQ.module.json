@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#80dwcLyq",
       "order": 100,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "one render, its picture and its key",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#3LA3rFOo",
       "order": 200,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "one solve of a measured graph",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#bSDPUhGh",
       "order": 300,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the Graphviz of each solve",
       "emphasis": "normal",

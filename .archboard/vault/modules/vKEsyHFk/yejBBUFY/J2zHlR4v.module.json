@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#DTvtRXMv",
       "order": 81000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "change the canonical reading address",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
       "order": 11000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "resolve a module's canonical code binding and target",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#LLVzjl11",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "locate and persist opener configuration",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#rzta8x5j",
       "order": 52000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "interpret and validate opener selections",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#ZAbHs2zZ",
       "order": 70000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the line where a bound symbol is defined",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#6MddSKIu",
       "order": 70019,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "enforce the local browser origin",
       "emphasis": "muted",

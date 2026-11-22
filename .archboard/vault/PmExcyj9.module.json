@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#o56610zg",
       "order": 54000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the model addresses of panes",
       "emphasis": "normal",

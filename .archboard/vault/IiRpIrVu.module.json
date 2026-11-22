@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#8HTCy24H",
       "order": 10000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "choose and step",
       "emphasis": "normal",

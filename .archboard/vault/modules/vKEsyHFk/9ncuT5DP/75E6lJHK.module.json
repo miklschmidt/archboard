@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#KGiq6epE",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "classify both linked threads through the thread-link port",
       "description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#r2qUGCrz",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the role a call came through, by name and digest",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
       "order": 7000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "classify and bind the checkout's link",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "stage, commit or roll back the start",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#7dDHchT9",
       "order": 9000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "thread/start with a new workhorse's authored body",
       "description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
@@ -50,7 +50,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#joxzVFXq",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "capture immutable core and host role evidence",
       "emphasis": "normal",

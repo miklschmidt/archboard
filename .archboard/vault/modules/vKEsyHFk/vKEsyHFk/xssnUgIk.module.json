@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#mUABZOPx",
       "order": 89000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "createVoiceAgent, served through bunHandlers",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#qbAR52W1",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "createVoiceClient, read through the React hooks",
       "emphasis": "normal",

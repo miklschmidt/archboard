@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#WxUHKpD6",
       "order": 63000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the running root, to refuse another's server",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#PlQAGfVL",
       "order": 70042,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "retain invocation claims",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#V2ti26xJ",
       "order": 70056,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "report local request failures",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#bLHIqSzi",
       "order": 77000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the warning for a server of another version",
       "emphasis": "normal",

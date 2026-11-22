@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#sUAWU5K9",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "description": "Draws the measured card body, selection seat and removed shadow through shared slabs.",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#0dHSQwEC",
       "order": 40000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the frame's well and its tab",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#Hl0Ohdhv",
       "order": 994000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the tab's near and far words",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#j0ETUaNy",
       "order": 995000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a frame's standing",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#k1FrCHMg",
       "order": 996000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the tab's shaped words",
       "emphasis": "normal",

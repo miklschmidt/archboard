@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#JBISovVb",
       "order": 23000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "route the trunks",
       "emphasis": "normal",

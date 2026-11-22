@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#iDjPNIJS",
       "order": 59000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "what answers at its address",
       "emphasis": "normal",

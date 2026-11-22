@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#5yYA6WLY",
       "order": 1008020,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the checkouts embeds read from",
       "emphasis": "normal",

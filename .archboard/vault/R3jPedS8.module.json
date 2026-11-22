@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#H6GBSJO0",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "error codes",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
       "order": 23000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "cleanup durations",
       "emphasis": "normal",

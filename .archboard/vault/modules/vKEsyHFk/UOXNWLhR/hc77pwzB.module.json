@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#h0Y3tFJb",
       "order": 60000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where the model sits and where the camera goes",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#1PbM9cTg",
       "order": 61000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the parts of the pane a flight happens on, and what ends it",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#gR2omDZs",
       "order": 62000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "hold rest, glide to the card, and back",
       "description": "use-dive.ts fly calls camera.hold before startDive, camera.glide for the leg, and releases the hold after pane takeover.",
@@ -46,7 +46,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#9T6sHrUv",
       "order": 63000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the picture of the model, asked for ahead",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#RORIgWix",
       "order": 65000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the model above, put up to fly out of its card",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#115rtbFD",
       "order": 66000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the wait for a picture that is not to hand",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk#fDFYdO1w",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the model inside the card, and the flight's fades",
       "emphasis": "normal",

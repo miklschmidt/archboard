@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
       "order": 20000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "evaluate in the page, stream its Blob",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#m9ReACWz",
       "order": 21000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "drive the open page",
       "emphasis": "hero",
@@ -36,7 +36,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#fiurAdpc",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "write the talk before the render",
       "emphasis": "normal",
@@ -50,7 +50,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#jAnbZCzu",
       "order": 29000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "render the talk just written",
       "emphasis": "hero",
@@ -68,7 +68,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "order": 51000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "starts the recording browser",
       "emphasis": "normal",
@@ -82,7 +82,7 @@
     {
       "id": "vKEsyHFk#109Kq4Cc",
       "order": 980070,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the talk it records",
       "emphasis": "muted",
@@ -96,7 +96,7 @@
     {
       "id": "vKEsyHFk#Y3nWPghd",
       "order": 981000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "recording durations",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#294aYIvD",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the voice box's wait while it leaves",
       "emphasis": "normal",

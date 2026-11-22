@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
       "order": 36000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "pane registrations and messages",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
       "order": 79000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "confirm model readability",
       "description": "Pane registration checks whether canonical architecture remains readable. It does not establish that a legacy board or variant exists.",

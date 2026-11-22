@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#mNv08eg5",
       "order": 109000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#OanwxJtd",
       "order": 110000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "renderArchitectureFlowOnServer",
       "emphasis": "normal",

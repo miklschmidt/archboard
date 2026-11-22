@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#rzORtiO1",
       "order": 54000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the bytes are a PNG",
       "emphasis": "normal",

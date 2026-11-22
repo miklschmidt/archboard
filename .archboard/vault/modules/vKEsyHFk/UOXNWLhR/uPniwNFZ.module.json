@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#30W5BmLd",
       "order": 51000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the pointer's rest and its grace",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#8CcPSJbf",
       "order": 54000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how far each subject is",
       "emphasis": "normal",

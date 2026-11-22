@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#a5ULzncp",
       "order": 95000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "await captured host narrative",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#4taYdz5M",
       "order": 97000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "create the existing realtime offer",
       "emphasis": "normal",

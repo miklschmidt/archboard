@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#Ba2uml5A",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "childOf",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#pVNsw2ko",
       "order": 53000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "shared options, usage errors",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#5oeVTCuJ",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "name the found vault on every request",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
       "order": 20000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "which known vaults bind a checkout with none",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
       "order": 23000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "find the vault and register what holds it",
       "emphasis": "normal",

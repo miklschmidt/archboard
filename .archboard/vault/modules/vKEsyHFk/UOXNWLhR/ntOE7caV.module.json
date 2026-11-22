@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#axWdg78p",
       "order": 5000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "inspection and standing",
       "emphasis": "normal",

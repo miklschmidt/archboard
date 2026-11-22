@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#HO533F7P",
       "order": 78000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "forward pane presence and shown-conversation operations",
       "emphasis": "normal",

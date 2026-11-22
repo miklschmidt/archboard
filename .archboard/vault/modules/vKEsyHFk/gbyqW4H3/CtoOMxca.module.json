@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#KgeoU8Mf",
       "order": 31000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where every subject landed",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#FQBxwNeT",
       "order": 32000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "round a self-call's turns",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#HDZqKmN4",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "selection seats and removed ghosts; helper slabs",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#qtD8CVTd",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the neutral well and edge tab of a flow's frame",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#t5CUCz5T",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "flow heading, and participant content through cards",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#XVvCNvvX",
       "order": 72000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "mark the subject and its standing",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#D62cZNEq",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the phase it is in",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#wzL4gP8d",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "how many sockets",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#2mo2WPJK",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "records unhandled route errors",
       "emphasis": "normal",
@@ -40,7 +40,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
       "order": 120000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "whether writes are admitted, and how many run",
       "emphasis": "normal",
@@ -54,7 +54,7 @@
     {
       "id": "vKEsyHFk#hhuZHtcv",
       "order": 121000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "whether source and bundle are current",
       "emphasis": "normal",
@@ -68,7 +68,7 @@
     {
       "id": "vKEsyHFk#k8KGwI7m",
       "order": 122000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the version and the mode that health names",
       "emphasis": "normal",

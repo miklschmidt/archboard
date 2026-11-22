@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
       "order": 51000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "read the repositories; choose a checkout",
       "emphasis": "normal",

@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#4BbNhYeL",
       "order": 134000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "record durable progress",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#lihhHpxZ",
       "order": 135000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "prepare signing then conditionally retain completion",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#VESQgtYF",
       "order": 136000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "durable atomic replacement",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#06G2g8VM",
       "order": 151000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "editResult",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#D5n9O1JP",
       "order": 155000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "git",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#MGi2prjj",
       "order": 179000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {

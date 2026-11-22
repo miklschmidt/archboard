@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
       "order": 5000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "contract + signal",
       "emphasis": "hero",

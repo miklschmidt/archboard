@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#kggkjerM",
       "order": 52000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the registry, for the generated proof",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#GNKmFWDI",
       "order": 53000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the root to write the artifacts into",
       "emphasis": "normal",

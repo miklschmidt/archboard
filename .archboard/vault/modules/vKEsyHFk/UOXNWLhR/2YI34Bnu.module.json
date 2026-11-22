@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#HDMEL0tc",
       "order": 104000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "where the double-click leads, asked once",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#2CWfWIJr",
       "order": 119000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the model and variant to open, once read",
       "emphasis": "normal",

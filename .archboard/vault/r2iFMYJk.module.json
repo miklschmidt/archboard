@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#qtFUIpvR",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "record what a pane reports",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#N2puYRTF",
       "order": 200,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how long a layout request waits",
       "emphasis": "normal",

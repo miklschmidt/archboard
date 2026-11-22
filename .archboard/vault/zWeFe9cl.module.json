@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#lUJ8v08V",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "solve a dense placement in parts",
       "emphasis": "normal",

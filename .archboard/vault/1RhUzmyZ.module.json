@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#1RheXFhl",
       "order": 104000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#WjLC9RCr",
       "order": 106000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -29,7 +29,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#2fr60kVw",
       "order": 160000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchitectureModuleEditSchema",
       "emphasis": "normal",
@@ -43,7 +43,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#QrFo5jjd",
       "order": 171000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "archive context and shared failure contract",
       "emphasis": "normal",
@@ -57,7 +57,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#kn7RIsa6",
       "order": 210000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "captureBoundSources",
       "emphasis": "normal",
@@ -71,7 +71,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#108U3Rhl",
       "order": 221000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "read inputs and build trees",
       "description": "Uses checkpointBlobs for retained reads and tree for exact batched writes.",

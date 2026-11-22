@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#hHG2mx8m",
       "order": 121000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "include the comparison in the picture cache key",
       "emphasis": "normal",

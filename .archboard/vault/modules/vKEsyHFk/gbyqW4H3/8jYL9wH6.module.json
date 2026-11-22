@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#lQFfcKXc",
       "order": 27000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a card's far words and their size",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#qnIHdYgf",
       "order": 60800,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "color words for the standing",
       "emphasis": "normal",

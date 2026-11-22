@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#eLpodERU",
       "order": 70012,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "retain exact architecture trees",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#4FIz4BRr",
       "order": 100000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {
@@ -44,7 +44,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#RavprwX4",
       "order": 102000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -57,7 +57,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#QsvpEo8K",
       "order": 173000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "initializePrivateArchive",
       "emphasis": "normal",
@@ -71,7 +71,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#QxbSLLGA",
       "order": 175000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "serialize explicit initialization",
       "emphasis": "normal",
@@ -85,7 +85,7 @@
     {
       "id": "vKEsyHFk#0HzNfqV6",
       "order": 980000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "what is published of a checkpoint",
       "emphasis": "muted",
@@ -99,7 +99,7 @@
     {
       "id": "vKEsyHFk#bWBjHjjK",
       "order": 980020,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "capture the foreign pins",
       "emphasis": "muted",
@@ -113,7 +113,7 @@
     {
       "id": "vKEsyHFk#HnfPersG",
       "order": 980060,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the walkthrough targets it keeps",
       "emphasis": "muted",

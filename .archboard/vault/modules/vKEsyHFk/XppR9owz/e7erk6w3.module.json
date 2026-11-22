@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#BLYJHegI",
       "order": 100000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#aENuebFB",
       "order": 122000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "Submit explicit migration cutover",
       "emphasis": "normal",
@@ -30,7 +30,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#LyrDsLte",
       "order": 123000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "Reuse installation command metadata",
       "emphasis": "normal",

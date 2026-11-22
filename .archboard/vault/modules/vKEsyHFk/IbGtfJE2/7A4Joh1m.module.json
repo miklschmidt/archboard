@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ",
       "order": 6000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "one arm, one scenario, one repetition",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#e1NAqCVh",
       "order": 26000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "keep the candidate this batch runs",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#coFF39nO",
       "order": 27000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "fill the bare cache",
       "emphasis": "muted",
@@ -49,7 +49,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#jjJXKT2q",
       "order": 41000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "digest the kept skill",
       "emphasis": "normal",

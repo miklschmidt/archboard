@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#ODr5oszF",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "shape words and break them to a width",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#VTOV1R1u",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "round and trim as JavaScript does",
       "emphasis": "normal",

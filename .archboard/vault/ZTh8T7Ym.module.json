@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#gu53WGgU",
       "order": 130040,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "useVoiceBoxPresence",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#34TPgaMW",
       "order": 7000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "lifecycle command",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#BsJL3bGP",
       "order": 9000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "validated input",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#06f3KVxy",
       "order": 10000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "validated input",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#0b4tib6n",
       "order": 11000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "validated input",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#yUWUF6TZ",
       "order": 13000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "validated input",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#lkwXJ78e",
       "order": 25000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "ensure what the command needs",
       "emphasis": "muted",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#OzD86zWV",
       "order": 30000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "validated input",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#Xrd124y5",
       "order": 31000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "validated input",
       "emphasis": "normal",
@@ -115,7 +115,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#LL4azQxP",
       "order": 32000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "validated input",
       "emphasis": "normal",
@@ -129,7 +129,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#dXmsg74n",
       "order": 39000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "validated input",
       "emphasis": "normal",
@@ -143,7 +143,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#h9ztm3mp",
       "order": 43000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "validated input",
       "emphasis": "normal",
@@ -157,7 +157,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#LmUmfrVG",
       "order": 45000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "validated input",
       "emphasis": "normal",
@@ -171,7 +171,7 @@
     {
       "id": "vKEsyHFk#t0tSmqVd",
       "order": 1001000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "validated input",
       "emphasis": "normal",

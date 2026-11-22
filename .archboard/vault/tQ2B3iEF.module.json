@@ -20,7 +20,7 @@
     {
       "id": "vKEsyHFk#w8kCmXJj",
       "order": 1004000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the code history of every part",
       "emphasis": "normal",

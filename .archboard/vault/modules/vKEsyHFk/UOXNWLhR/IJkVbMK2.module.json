@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#rlrH32yx",
       "order": 13000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the model and policy it draws from",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#R4zJCAXX",
       "order": 14000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "a drawing stamped for this version, kept under its vault",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#9yW8SET1",
       "order": 15000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "draw it here",
       "emphasis": "hero",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#J52Bs9ep",
       "order": 70031,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "identify the captured picture",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#2euPzA3Q",
       "order": 76000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "description": "A model the page cannot read is refused as the reads' own error, so the stage shows one kind of failure.",
       "emphasis": "muted",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#AVy3q4Ja",
       "order": 117000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "drop pictures of a moved model",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#tpK411FR",
       "order": 125000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "mark a model stale, with no read, before drawing ahead",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#ld2PjHvA",
       "order": 126000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "every picture and document held, by view",
       "emphasis": "normal",

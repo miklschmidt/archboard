@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#iZim0JO9",
       "order": 96000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "resolve one exact walkthrough",
       "emphasis": "normal",

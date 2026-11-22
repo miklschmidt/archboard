@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#vD1f2SWx",
       "order": 174000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "bare initialization and location proof",
       "emphasis": "normal",

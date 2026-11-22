@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#1LB0Qkb3",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "a line's linger and its fades",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#dAbW4tjz",
       "order": 60500,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "break a subtitle box's lines",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#QqSMvn6U",
       "order": 996000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the theme's colours of a door",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#4tSdqitW",
       "order": 997000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the door's shadow and seat",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#2O7PSXBM",
       "order": 998000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the door's near and far words",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#V38aoFC1",
       "order": 999000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a door's standing",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#HXLXTybX",
       "order": 1000000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the door's shaped words",
       "emphasis": "normal",

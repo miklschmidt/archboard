@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#oc71QCiH",
       "order": 21000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "register the run's checkout",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#iq4BoP3P",
       "order": 117000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#ofrMAblk",
       "order": 118000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -29,7 +29,7 @@
     {
       "id": "vKEsyHFk#5vteOoed",
       "order": 119000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "Track accepted work",
       "emphasis": "normal",

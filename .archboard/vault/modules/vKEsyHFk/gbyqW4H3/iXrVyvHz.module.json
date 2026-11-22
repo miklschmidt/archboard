@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#jrbBTxz5",
       "order": 50000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "lay out the legend",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#UTRklvpv",
       "order": 52000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "count the marks of what the drawing placed",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#2DOiQ4Pi",
       "order": 60900,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the width of a legend entry",
       "emphasis": "normal",

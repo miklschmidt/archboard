@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#IybnFJlJ",
       "order": 79000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "reads the writing session for a pane show",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#4qdyTWGi",
       "order": 82000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the pane routes",
       "emphasis": "normal",

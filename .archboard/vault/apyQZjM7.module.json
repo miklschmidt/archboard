@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#iviIcqXR",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the root to compare, and the frontend directory",
       "emphasis": "normal",

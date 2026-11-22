@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#UHKlormM",
       "order": 182000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "applyFlowChanges",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#erkB0gWt",
       "order": 187000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "selectModule",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Idigw8VU",
       "order": 188000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchiveError",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#JGBxddlN",
       "order": 236000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "applyWalkthroughChanges",
       "emphasis": "normal",

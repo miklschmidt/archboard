@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "controllers over the focused pane's",
       "emphasis": "normal",

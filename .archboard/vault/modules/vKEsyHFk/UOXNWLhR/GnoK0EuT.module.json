@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#l3AXCLw5",
       "order": 38000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the time, and a callback each frame",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
       "order": 96000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the transform of each glide frame",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#OJfwSbjr",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the stage's camera, each frame of a glide",
       "emphasis": "normal",

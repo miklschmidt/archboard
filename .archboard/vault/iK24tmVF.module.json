@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#qJrkH2Qg",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "round the routed polylines",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#notKnIIz",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "one solve, with its nesting",
       "emphasis": "hero",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#lbUaPzWc",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "state the graph",
       "emphasis": "normal",

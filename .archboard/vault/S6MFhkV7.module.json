@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#NZXdvNpk",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the vault's policy",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#xTpg1eOM",
       "order": 71000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "render measured layout fixtures",
       "emphasis": "muted",

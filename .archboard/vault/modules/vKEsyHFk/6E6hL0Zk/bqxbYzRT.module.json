@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#KBBwvHf9",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "place a pane whose vault is gone",
       "emphasis": "normal",

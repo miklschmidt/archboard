@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#GlD7SMi0",
       "order": 42000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the selection seat and ghost of a frame",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#KYdxUOD0",
       "order": 990000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the ink and dash of a frame's standing",
       "emphasis": "normal",

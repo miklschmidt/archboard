@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#zAQcPUKN",
       "order": 70035,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "compose the host role profile",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#cWzsQnxC",
       "order": 70036,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "admit addressed browser sessions",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#0TffzzEo",
       "order": 86000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "one workbench, with the host's role profiles",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
       "order": 87000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "each admitted socket's requests and its close",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#0U4c1hjN",
       "order": 88000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve and verify Codex if no executable path is given",
       "emphasis": "normal",

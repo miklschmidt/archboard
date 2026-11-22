@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#iPPIY0dg",
       "order": 148000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchitectureModuleSchema",
       "emphasis": "normal",

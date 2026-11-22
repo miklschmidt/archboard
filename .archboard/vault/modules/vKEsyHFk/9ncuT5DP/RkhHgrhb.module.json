@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#jbxp553Z",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "check the link of its checkout's workhorse again",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#zEsrkAfC",
       "order": 54000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "only while its generation is current",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#lBMb2LoN",
       "order": 70021,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "share thread context policy",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#C12Ez7nd",
       "order": 70046,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "apply shared thread profiles",
       "emphasis": "muted",

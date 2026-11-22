@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#azJqVDzi",
       "order": 1002000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "read the state it inspects",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#ImS2FjJd",
       "order": 1003000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "derive the interface and its counts",
       "emphasis": "normal",

@@ -1,20 +1,9 @@
 {
-  "order": 8000,
-  "name": "Author run",
-  "kind": "module",
-  "responsibility": "Brings the world up, runs one author turn, and reads everything back",
-  "description": "The author's stream is kept whole: its commands, its file changes, its usage and its failure are read from it afterwards, never reported by the author.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts"
-  },
-  "schemaVersion": 2,
-  "id": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
-  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
   "outgoing": [
     {
+      "id": "vKEsyHFk/IbGtfJE2#r76TBNwY",
       "order": 7000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a private world for this run",
       "emphasis": "normal",
@@ -23,12 +12,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "prepareRunDirectory"
       },
-      "id": "vKEsyHFk/IbGtfJE2#r76TBNwY",
       "to": "vKEsyHFk/IbGtfJE2#IsMHIzoa"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#ZexKQEJK",
       "order": 8000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the commit this scenario is about, or an empty repository",
       "emphasis": "normal",
@@ -37,12 +26,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "checkoutFlask"
       },
-      "id": "vKEsyHFk/IbGtfJE2#ZexKQEJK",
       "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#i1FABJCb",
       "order": 9000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "a server of its own",
       "emphasis": "normal",
@@ -51,12 +40,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "startServer"
       },
-      "id": "vKEsyHFk/IbGtfJE2#i1FABJCb",
       "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#25DiejPQ",
       "order": 10000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "install the arm being measured",
       "emphasis": "hero",
@@ -65,10 +54,10 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "installSkill"
       },
-      "id": "vKEsyHFk/IbGtfJE2#25DiejPQ",
       "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#9sL5gPEN",
       "order": 11000,
       "kind": "spawn",
       "effect": "mutation",
@@ -83,12 +72,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "authorArgv"
       },
-      "id": "vKEsyHFk/IbGtfJE2#9sL5gPEN",
       "to": "vKEsyHFk/IbGtfJE2#1snXnK3G"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#VYAeNogH",
       "order": 12000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "what the run was not allowed to do",
       "emphasis": "normal",
@@ -97,12 +86,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "evaluateGuardrails"
       },
-      "id": "vKEsyHFk/IbGtfJE2#VYAeNogH",
       "to": "vKEsyHFk/IbGtfJE2#7LcGoxWH"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#cm1J9TGU",
       "order": 13000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "what the vault now says",
       "emphasis": "normal",
@@ -111,12 +100,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "evaluateOutcomes"
       },
-      "id": "vKEsyHFk/IbGtfJE2#cm1J9TGU",
       "to": "vKEsyHFk/IbGtfJE2#xzOQOY33"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#b3s3lWZn",
       "order": 14000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "photograph everything declared",
       "emphasis": "hero",
@@ -125,12 +114,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "captureDeclared"
       },
-      "id": "vKEsyHFk/IbGtfJE2#b3s3lWZn",
       "to": "vKEsyHFk/IbGtfJE2#RqoYaLTK"
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "a fixture's talk, read back to replay",
       "emphasis": "normal",
@@ -139,12 +128,12 @@
         "path": "packages/skills/src/runtime/evaluation/operations/replay.ts",
         "symbol": "readTalk"
       },
-      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
       "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#UcQvakTJ",
       "order": 28000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "lay the fixture, read back, forget an unregistered checkout",
       "emphasis": "normal",
@@ -153,12 +142,12 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "layFixture"
       },
-      "id": "vKEsyHFk/IbGtfJE2#UcQvakTJ",
       "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#ZgOzpUec",
       "order": 30000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "class and exposure of each command",
       "emphasis": "normal",
@@ -167,8 +156,19 @@
         "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts",
         "symbol": "classifyCommands"
       },
-      "id": "vKEsyHFk/IbGtfJE2#ZgOzpUec",
       "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
     }
-  ]
+  ],
+  "order": 8000,
+  "name": "Author run",
+  "kind": "module",
+  "responsibility": "Brings the world up, runs one author turn, and reads everything back",
+  "description": "The author's stream is kept whole: its commands, its file changes, its usage and its failure are read from it afterwards, never reported by the author.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
 }

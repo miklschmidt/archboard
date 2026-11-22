@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#6ZMHr90w",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the page's colours",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#Hb3narYc",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a standing's pin and the warning glyph",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#HknvbW9e",
       "order": 10,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "decode the inputs at the ref",
       "emphasis": "normal",
@@ -12,7 +12,7 @@
     {
       "id": "vKEsyHFk#7QUw7diG",
       "order": 20,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "read the vault's blobs at the commit",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#WBfvIs2I",
       "order": 45000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a card's near and far words",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#djrx53Aq",
       "order": 70000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "color words for the standing",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#QT3hte5K",
       "order": 990000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where a card's tags stand",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#SvY26YAN",
       "order": 62000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "every checkout and untracked vault",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#SyLH2N4H",
       "order": 70041,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "recognize the canonical vault layout",
       "emphasis": "muted",

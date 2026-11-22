@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#CBwiWYsr",
       "order": 50000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "argv and the checkout",
       "emphasis": "normal",

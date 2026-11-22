@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#OFpAXpvp",
       "order": 70024,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "reuse delivered image evidence",
       "emphasis": "muted",

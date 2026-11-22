@@ -44,7 +44,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
       "order": 67000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "Fetch the canonical model",
       "emphasis": "normal",

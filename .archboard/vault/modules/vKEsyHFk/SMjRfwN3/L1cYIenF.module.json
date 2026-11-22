@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#a0oemoX5",
       "order": 18000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "which Chromium",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#BN01aJai",
       "order": 19000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start a private headless Chromium to record or render",
       "emphasis": "normal",
@@ -36,7 +36,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#5cL4zDLx",
       "order": 27000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "find ffmpeg and probe it, before any browser starts",
       "emphasis": "normal",

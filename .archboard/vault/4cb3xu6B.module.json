@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#CUcyRuxr",
       "order": 10,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the icons a policy names",
       "emphasis": "normal",

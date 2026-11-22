@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#jBpM272B",
       "order": 222000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "shared archive refusal",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#zlSipRtX",
       "order": 223000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "read blobs in one Git command",
       "emphasis": "normal",

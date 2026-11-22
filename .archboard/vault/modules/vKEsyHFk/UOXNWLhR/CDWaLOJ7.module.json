@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#sQKwKrth",
       "order": 56000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "glide to show the part",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#iIrpYDWg",
       "order": 57000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where the part is",
       "emphasis": "normal",

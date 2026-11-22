@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#NAzwezpK",
       "order": 64000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the --url default",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#3SaNwlJk",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "re-key the pane's sockets and registration",
       "emphasis": "normal",

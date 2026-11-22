@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
       "order": 14000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "edit the queue of the shown checkout's workhorse",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
       "order": 29000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the workhorse of the shown checkout, built on first use",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#89ivSTaM",
       "order": 31000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the tab session of this connection",
       "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
@@ -46,7 +46,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#b9yFBXHz",
       "order": 42000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "create, on the tab's first message or Talk",
       "description": "The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition.",

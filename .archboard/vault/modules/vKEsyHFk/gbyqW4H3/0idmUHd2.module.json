@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#fXxVxFvc",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the chart's boxes as the layout's nodes",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#MooLuYkK",
       "order": 56000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "measure the boxes",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#LJUm7E1m",
       "order": 58000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "round each line's corners",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#PLVZZKxC",
       "order": 60000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the kind a flow's node is drawn as",
       "emphasis": "normal",

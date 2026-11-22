@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#2FWAcHpG",
       "order": 10,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "the logic behind exports and the expression around uses",
       "emphasis": "normal",
@@ -12,7 +12,7 @@
     {
       "id": "vKEsyHFk#3lLeTRtE",
       "order": 20,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "whether a file lies inside a module",
       "emphasis": "normal",

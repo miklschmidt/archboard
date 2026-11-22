@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk#gdsIiF8h",
       "order": 980160,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "route each decoded frame",
       "emphasis": "muted",

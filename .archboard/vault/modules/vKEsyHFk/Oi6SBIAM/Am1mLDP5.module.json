@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#hiqkoWmI",
       "order": 63000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "every pane and the model it shows",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
       "order": 64000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "each pane's repository and checkout",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#ugb7cB3Q",
       "order": 65000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the caller's vault, when it names one",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#ZX8UUIpb",
       "order": 82000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -58,7 +58,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
       "order": 85000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {
@@ -71,7 +71,7 @@
     {
       "id": "vKEsyHFk#oEoVWYcz",
       "order": 86000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the address a browser opens",
       "emphasis": "normal",

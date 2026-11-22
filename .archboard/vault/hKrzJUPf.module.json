@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#irHUnOY7",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start the WebGPU, WebGL2 or CPU painter",
       "emphasis": "normal",

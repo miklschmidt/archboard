@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#HQYCIoIC",
       "order": 90,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "read the selected state, at the head",
       "emphasis": "normal",
@@ -12,7 +12,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
       "order": 51000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "select the source files of a binding",
       "emphasis": "normal",
@@ -26,7 +26,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
       "order": 113000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "reads declarations from historical source bytes",
       "description": "TASK-448 reuses code facts and Terraform module resolution to attribute Git changes to symbol bindings.",
@@ -41,7 +41,7 @@
     {
       "id": "vKEsyHFk#ID37nw1v",
       "order": 120000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "share one cached fact reader across a repository walk",
       "emphasis": "normal",

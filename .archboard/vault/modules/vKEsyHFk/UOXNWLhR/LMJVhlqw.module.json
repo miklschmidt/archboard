@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "whether this page is a replay",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
       "order": 82000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#156cyBe3",
       "order": 102000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -58,7 +58,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
       "order": 125000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "Start local layout workers",
       "emphasis": "normal",
@@ -86,7 +86,7 @@
     {
       "id": "vKEsyHFk#rNKtHZ06",
       "order": 70000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mount the application under the workspace route",
       "emphasis": "normal",

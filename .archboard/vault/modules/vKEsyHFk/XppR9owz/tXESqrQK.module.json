@@ -55,7 +55,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#KLeoJwpA",
       "order": 113000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readArchitectureModelOnServer",
       "emphasis": "normal",
@@ -69,7 +69,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#O0mnsHg3",
       "order": 114000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "recordWalkthrough",
       "emphasis": "normal",
@@ -83,7 +83,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#YvyympOn",
       "order": 118000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve the canonical talk destination",
       "emphasis": "normal",

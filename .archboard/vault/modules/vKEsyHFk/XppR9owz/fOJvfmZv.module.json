@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#Hb5DPGx6",
       "order": 21000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start and stop the child",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#y3Bs3xSs",
       "order": 72000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "restart on a new bundle",
       "emphasis": "normal",

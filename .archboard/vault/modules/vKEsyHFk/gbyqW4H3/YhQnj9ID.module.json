@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#0ylLwMwH",
       "order": 51000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "what the picture draws",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#ryvCaAp5",
       "order": 68000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "draw the standing key",
       "emphasis": "normal",

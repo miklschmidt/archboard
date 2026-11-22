@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "narrated walkthroughs",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
       "order": 86000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "address the exact pane socket",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#md5cpNZV",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "send, Talk, narrate",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#qKwYD1B2",
       "order": 25000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a session for voice's pane; mute, stop",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#NVu6WtHx",
       "order": 68000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "one pane's controllers, over the focused pane's transport",
       "emphasis": "normal",

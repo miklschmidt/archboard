@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
       "order": 26000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the pane's agent and media state",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#bFY85rkM",
       "order": 64000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "control the shared browser voice lifecycle",
       "emphasis": "normal",

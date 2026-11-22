@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#KCxoznsN",
       "order": 161000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {
@@ -25,7 +25,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#LfosB6s2",
       "order": 167000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -38,7 +38,7 @@
     {
       "id": "vKEsyHFk#A1U73QNd",
       "order": 980050,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "reopen what it publishes",
       "emphasis": "muted",

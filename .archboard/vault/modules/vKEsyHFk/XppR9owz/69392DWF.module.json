@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#inbTEHtR",
       "order": 1008010,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "draw a recipe to PNG",
       "emphasis": "normal",

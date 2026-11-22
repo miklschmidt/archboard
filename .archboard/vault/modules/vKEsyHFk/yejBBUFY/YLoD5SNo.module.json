@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#RaEm0Enu",
       "order": 83000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "read and control the temporary answer",
       "emphasis": "normal",
@@ -26,7 +26,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#FmzPTTiB",
       "order": 85000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "address the existing tab",
       "emphasis": "normal",

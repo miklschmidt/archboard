@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#De1J26nB",
       "order": 12000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "spawn, read the port, stop the group",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#ZP5lfDZ6",
       "order": 13000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "connect the browser and each page",
       "emphasis": "normal",

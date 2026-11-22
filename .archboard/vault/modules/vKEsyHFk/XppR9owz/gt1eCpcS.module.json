@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#T7wRpA8y",
       "order": 41000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "executeCommand",
       "emphasis": "hero",

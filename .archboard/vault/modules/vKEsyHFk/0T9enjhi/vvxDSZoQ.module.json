@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#aEqCF5VY",
       "order": 203000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "resolveModelReferences",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#wlWo6SPu",
       "order": 204000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "modelCodeTarget",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#gcijTSIS",
       "order": 205000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readSelectedState",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#AjGkFCES",
       "order": 212000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readCheckpointModel",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#WdOzlOvq",
       "order": 226000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "build read diagnostics",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#YU9IQsiJ",
       "order": 228000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "Read the explicit migration preview",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#hVCOfnrb",
       "order": 235000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readPlayback",
       "emphasis": "normal",

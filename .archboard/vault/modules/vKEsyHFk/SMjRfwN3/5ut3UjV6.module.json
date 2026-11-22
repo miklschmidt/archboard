@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#Kiapa8dj",
       "order": 52000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "description": "Reads captured picture dimensions when grading",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#0teCdOOO",
       "order": 70025,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "inspect captured image regions",
       "emphasis": "muted",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#CHkvrU1f",
       "order": 12000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "register and release a wait edge",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#xpOUXS7t",
       "order": 12000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "one changed model, in this vault",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#rHkIhwXz",
       "order": 116000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "hear which model moved",
       "emphasis": "normal",

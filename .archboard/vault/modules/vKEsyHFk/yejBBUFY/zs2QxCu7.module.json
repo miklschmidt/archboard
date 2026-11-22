@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#FWzvKaC4",
       "order": 23000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "sign in, create the tab's conversation, deliver",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#UBmrpsBg",
       "order": 24000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start voice",
       "emphasis": "normal",

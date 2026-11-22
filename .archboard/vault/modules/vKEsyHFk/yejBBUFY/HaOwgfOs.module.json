@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#cwSIvbl4",
       "order": 66000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "voice commands on exact leases and session handles",
       "emphasis": "normal",

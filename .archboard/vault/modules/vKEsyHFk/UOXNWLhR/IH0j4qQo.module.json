@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#SEYMj3ln",
       "order": 69000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the card's box in the picture",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#1ZI1Njp7",
       "order": 98000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the child and parent flight fits",
       "emphasis": "muted",

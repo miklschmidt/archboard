@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk#HIkVOOeA",
       "order": 62000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "move the pane into the vault it shows",
       "emphasis": "normal",
@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#57KDyakx",
       "order": 65000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the repository and checkout of a pane's vault",
       "emphasis": "normal",
@@ -46,7 +46,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#ALYb99sn",
       "order": 80000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "an agent's show chooses the checkout it shows",
       "emphasis": "normal",
@@ -60,7 +60,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#epRLrdt6",
       "order": 81000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a show that chose: every pane follows",
       "emphasis": "normal",

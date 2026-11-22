@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#E7MfWknr",
       "order": 231000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "Read newly retained operations",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#1H1Ks46q",
       "order": 232000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "Read durable completion receipts",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#zRILT0vc",
       "order": 233000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "Locate the common Git directory",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#iKreIhYm",
       "order": 234000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "Resolve the addressed archive",
       "emphasis": "normal",

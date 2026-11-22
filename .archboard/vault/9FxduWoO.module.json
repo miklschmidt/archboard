@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#NWxlWRCj",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start the painter of this canvas",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#kIIEgwrt",
       "order": 2000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the picture, how it arrives, how it is seen, and the time",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#uiCl86wq",
       "order": 3000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "frames, only while something moves",
       "emphasis": "normal",

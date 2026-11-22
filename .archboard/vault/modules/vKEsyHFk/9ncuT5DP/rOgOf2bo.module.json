@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#PfZvhB8I",
       "order": 60000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start its thread when it has none that can run turns",
       "emphasis": "normal",

@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
       "order": 23000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "requestJson",
       "emphasis": "hero",

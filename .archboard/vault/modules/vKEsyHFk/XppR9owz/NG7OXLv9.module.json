@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#heZZYGsd",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the checkout root, and the test for an archboard checkout",
       "emphasis": "normal",

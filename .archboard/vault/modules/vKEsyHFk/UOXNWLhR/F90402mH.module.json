@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#NFop37Ak",
       "order": 10000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "renderLegacyBoard, linked faces",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#aN2ABUiR",
       "order": 11000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "installRendererHost",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#mKaf3NN2",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "Web Workers, as the host's solve",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#EwDGu9IN",
       "order": 60600,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "serve solves in a Web Worker",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
       "order": 74000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "render scoped semantic content",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk#pRZRhE3w",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "warm the painter while a picture is prepared",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#X9EXFsm9",
       "order": 980110,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "load the icons before drawing",
       "emphasis": "normal",

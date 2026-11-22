@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#eIAHRejk",
       "order": 900,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the brief for a missing server, in a fix asked for",
       "emphasis": "normal",
@@ -26,7 +26,7 @@
     {
       "id": "vKEsyHFk#6HrhFftD",
       "order": 8100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "open a file an agent's answer names",
       "emphasis": "normal",
@@ -54,7 +54,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#ep2NF6Z5",
       "order": 14000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "read canonical repository summaries",
       "emphasis": "normal",
@@ -82,7 +82,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the recorder, when the address asks",
       "emphasis": "normal",
@@ -110,7 +110,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
       "order": 59000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "a pane focused, a model opened, a fix asked for",
       "emphasis": "normal",
@@ -138,7 +138,7 @@
     {
       "id": "vKEsyHFk#c77ph39b",
       "order": 980130,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the panes the address opens",
       "emphasis": "muted",

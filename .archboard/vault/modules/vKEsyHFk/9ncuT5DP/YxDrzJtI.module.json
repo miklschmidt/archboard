@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#XB5TwXA3",
       "order": 29000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "thread/read, then thread/unsubscribe once idle",
       "emphasis": "normal",

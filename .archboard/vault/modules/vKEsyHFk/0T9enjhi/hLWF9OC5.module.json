@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#dsLuZ7fl",
       "order": 140000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "subscribe to local durable news",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#U1wBMUoF",
       "order": 141000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "fresh coherent snapshot and observation",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Mu9aMjws",
       "order": 142000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "fresh visible claims",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#GnhBsOl1",
       "order": 230000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "Observe retained writes",
       "emphasis": "normal",

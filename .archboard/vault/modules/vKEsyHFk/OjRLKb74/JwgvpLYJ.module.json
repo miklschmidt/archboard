@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#T4hTbGVM",
       "order": 14000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "solve one graph",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk#kF19dfsx",
       "order": 60300,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "whether the engine aborted",
       "emphasis": "normal",

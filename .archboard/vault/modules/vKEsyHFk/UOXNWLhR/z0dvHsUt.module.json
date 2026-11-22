@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#ttcJkRoJ",
       "order": 11000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the step's focus",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#pjGLTugH",
       "order": 25000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "subject boxes in the atlas",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#5oNIinxP",
       "order": 30000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ends of named lines and steps, lines between named cards",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#gPCozayF",
       "order": 99000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the region a walkthrough beat focuses",
       "emphasis": "muted",

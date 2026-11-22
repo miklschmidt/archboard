@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#4RcfNmFu",
       "order": 241000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchiveError",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#34fI1JB6",
       "order": 79000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "createVoiceAgent with Archboard's options",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#3494fDAK",
       "order": 81000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "announce the tabs' model changes, focus and selection",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#tef70baL",
       "order": 82000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "project each tab workhorse for the visual shell",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#UE6yrRV7",
       "order": 83000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "attach pane registration to core-owned tab presence",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#6umALxwj",
       "order": 84000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "its skill, the bin directory and where its Codex lies",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk#xFfU9fxu",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "gives its Codex the telemetry environment",
       "emphasis": "normal",
@@ -82,7 +82,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#8iYy7AoA",
       "order": 100000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "subscribe to arrived narration changes",
       "emphasis": "normal",

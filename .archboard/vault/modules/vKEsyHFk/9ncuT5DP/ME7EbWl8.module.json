@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#95g4rJnq",
       "order": 70000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "which workhorse waits for an approval or an answer",
       "emphasis": "normal",

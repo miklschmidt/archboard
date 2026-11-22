@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
       "order": 8000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "drawLegacyBoard on the core",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
       "order": 29000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "a picture with no model around it",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
       "order": 73000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the recipe of a render that stands alone",
       "emphasis": "normal",
@@ -49,7 +49,7 @@
     {
       "id": "vKEsyHFk#OeBKmvkq",
       "order": 130030,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "installBunHost",
       "emphasis": "normal",

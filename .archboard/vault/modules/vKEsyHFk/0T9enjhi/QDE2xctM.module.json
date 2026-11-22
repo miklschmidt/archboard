@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
       "order": 209000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "resolveModelReferences",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#Wg3meI2l",
       "order": 980030,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "list the checkpoints that can pin",
       "emphasis": "muted",

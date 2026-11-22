@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#bNZaCkOt",
       "order": 70023,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "resolve selected proposal content",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#vpsNmFef",
       "order": 206000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readCheckpointModel",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Yw4B2gp3",
       "order": 211000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readArchitectureModel",
       "emphasis": "normal",

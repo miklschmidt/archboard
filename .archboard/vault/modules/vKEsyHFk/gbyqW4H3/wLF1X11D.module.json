@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#IvQqev1K",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where every column, message and frame goes",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#oCH6TGpi",
       "order": 26000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "wrap responsibilities and step notes",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#N9jW1gq2",
       "order": 28000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "how far a message stops short of its lifeline",
       "emphasis": "normal",

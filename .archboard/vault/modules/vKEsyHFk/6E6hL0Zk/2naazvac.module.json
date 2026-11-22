@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts the pane routes",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
       "order": 3000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mount canonical model routes",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
       "order": 5000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts opener",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#wYcfvDau",
       "order": 35000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts every route on the one app",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
       "order": 42000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "requires a vault on the code opener's route",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
       "order": 43000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mounts the repository routes",
       "emphasis": "muted",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#FD1BZf8Q",
       "order": 62000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "admit each request before its route",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
       "order": 96000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "description": "The icon route answers the path data of one icon that a picture drawn in the browser names.",
       "emphasis": "muted",
@@ -115,7 +115,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
       "order": 97000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "checks browser request origin before routing",
       "emphasis": "normal",
@@ -129,7 +129,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
       "order": 124000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mount the voice agent's start trace route",
       "emphasis": "normal",

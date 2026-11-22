@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#NxCpSlMJ",
       "order": 43000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "make the tab coordinator ready first, keep it after",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#nRRQSBu7",
       "order": 44000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "then start the workhorse of the shown checkout",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#ukZDYnKd",
       "order": 45000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "move context delivery to the new workhorse",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#ZGfdJlmG",
       "order": 46000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "claim its threads, retire the old workhorse",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#dOVhNk7R",
       "order": 75000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read the link the chat named before starting anything",
       "emphasis": "normal",

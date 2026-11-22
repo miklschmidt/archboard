@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#PxGHOuMG",
       "order": 70050,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "report structured failures",
       "emphasis": "muted",
@@ -29,7 +29,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#Zf3j7TZc",
       "order": 190000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "reopen exact draft",
       "emphasis": "normal",
@@ -43,7 +43,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#T1wYjUBf",
       "order": 245000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "decodes original migration coverage",
       "emphasis": "normal",
@@ -57,7 +57,7 @@
     {
       "id": "vKEsyHFk#Rutvvekt",
       "order": 980010,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "refuse an incomplete archive",
       "emphasis": "muted",

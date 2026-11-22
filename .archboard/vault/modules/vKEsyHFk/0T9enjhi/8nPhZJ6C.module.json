@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#IUelf4x1",
       "order": 237000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "readSelectedState",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#vVbPUTQy",
       "order": 238000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "readCurrentModel",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#8yI2otaH",
       "order": 239000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "historyResult",
       "emphasis": "normal",

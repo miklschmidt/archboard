@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#SI5PTs6X",
       "order": 3000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "serialize issued identities",
       "emphasis": "hero",
@@ -39,7 +39,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#HlhfxXJm",
       "order": 5000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "adopt returned identities",
       "emphasis": "normal",
@@ -57,7 +57,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#mpJAeANo",
       "order": 6000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "settle mutation failure",
       "emphasis": "normal",
@@ -71,7 +71,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#d2caVqCr",
       "order": 14000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "decode parameters and answer",
       "emphasis": "normal",
@@ -89,7 +89,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#JTrBju8L",
       "order": 16000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "prove storage after config/read",
       "emphasis": "normal",
@@ -103,7 +103,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#cDYih9Cs",
       "order": 18000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "install the answers to the child's requests",
       "emphasis": "muted",

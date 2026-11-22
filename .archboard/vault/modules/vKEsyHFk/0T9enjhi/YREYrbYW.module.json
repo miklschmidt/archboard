@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#ROJixHYk",
       "order": 145000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "durable state files and parent directories",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#2PHWJ0zL",
       "order": 154000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "ArchiveError",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#oX4usVcY",
       "order": 172000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "privateArchivePath",
       "emphasis": "normal",

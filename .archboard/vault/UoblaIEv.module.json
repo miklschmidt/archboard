@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
       "order": 61000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the dock's actions: send, Talk, pick a workhorse",
       "emphasis": "normal",

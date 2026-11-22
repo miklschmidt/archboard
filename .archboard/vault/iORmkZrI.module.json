@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#rcSUaP1b",
       "order": 19000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "one per socket generation",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#w9Qrw2Xe",
       "order": 32000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the id each of this tab's sockets carries",
       "emphasis": "normal",
@@ -74,7 +74,7 @@
     {
       "id": "vKEsyHFk#2UrR4Yp6",
       "order": 980210,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "send the report",
       "emphasis": "muted",

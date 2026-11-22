@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#iIhqiAPk",
+      "order": 91005,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "the graph it lays out",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-layout/src/lib.rs",
+        "symbol": "textfont_layout_begin"
+      },
+      "to": "vKEsyHFk#FLnwES7I"
+    },
+    {
+      "id": "vKEsyHFk#HQ2GooJp",
+      "order": 91006,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "route the splines around the shapes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure-layout/src/fdpgen/clusteredges.rs",
+        "symbol": "proutespline"
+      },
+      "to": "vKEsyHFk#1Af2oLOM"
+    }
+  ],
   "order": 90002,
   "name": "graphviz-pure-layout",
   "kind": "external",
@@ -10,35 +40,5 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#kEeWzBGr",
-  "parent": "vKEsyHFk#HgZPVIE2",
-  "outgoing": [
-    {
-      "order": 91005,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "the graph it lays out",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure-layout/src/lib.rs",
-        "symbol": "textfont_layout_begin"
-      },
-      "id": "vKEsyHFk#iIhqiAPk",
-      "to": "vKEsyHFk#FLnwES7I"
-    },
-    {
-      "order": 91006,
-      "kind": "call",
-      "effect": "compute",
-      "label": "route the splines around the shapes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure-layout/src/fdpgen/clusteredges.rs",
-        "symbol": "proutespline"
-      },
-      "id": "vKEsyHFk#HQ2GooJp",
-      "to": "vKEsyHFk#1Af2oLOM"
-    }
-  ]
+  "parent": "vKEsyHFk#HgZPVIE2"
 }

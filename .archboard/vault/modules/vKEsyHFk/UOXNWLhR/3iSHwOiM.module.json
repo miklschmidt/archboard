@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#xi1UCkyt",
       "order": 39000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the time, frames, and the picture's clock",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#iVizf8Iu",
       "order": 40000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "how the picture arrives",
       "emphasis": "normal",

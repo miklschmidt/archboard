@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#wP2zZutN",
       "order": 147000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "decodeModel",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#L2flrrBd",
       "order": 169000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "requireSubjectClaim",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#b4Ac9wPx",
       "order": 181000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "refuse with the shared archive failure",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#nanqex2o",
       "order": 183000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "applyStructure",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#5EqQZzLi",
       "order": 192000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "materialize target and prepare proposals",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#ZcLsTS33",
       "order": 219000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "retain identity reservations",
       "emphasis": "normal",
@@ -101,7 +101,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#bMnT3nY6",
       "order": 240000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "walkthroughDependencies",
       "emphasis": "normal",

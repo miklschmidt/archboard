@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
       "order": 51000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "agent.announce: one change, worded for each audience",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#uTLOYjNB",
       "order": 70000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "capture canonical context",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#GFyFbH49",
       "order": 92000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "agent.announce, one change at a time",
       "emphasis": "normal",

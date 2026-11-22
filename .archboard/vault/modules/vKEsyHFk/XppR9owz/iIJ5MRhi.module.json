@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#U2DjfZHj",
       "order": 1009080,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "ask the server about itself",
       "emphasis": "muted",

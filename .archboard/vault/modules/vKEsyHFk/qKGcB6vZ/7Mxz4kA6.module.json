@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#uLGJACZb",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the coordinator namespace, named by the host",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#VFlVLSkl",
       "order": 30000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "fill each role's template with the host's name",
       "emphasis": "muted",

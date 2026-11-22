@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#WMtzvSOO",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "where every subject landed",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#xKJERQyv",
       "order": 36000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "slab labels and member-tagged card shadows",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#pYtAAlpK",
       "order": 43000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "slots, clips, inside paint and pulse rides",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#s3eeTdzY",
       "order": 47000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "description": "Delegates measured architecture cards, frames and headers to their direct painter.",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#Mi41O26J",
       "order": 69000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "mark the subject and its standing",
       "emphasis": "normal",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk#7xW4xT94",
       "order": 992000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a frame and its edge tab",
       "emphasis": "normal",
@@ -87,7 +87,7 @@
     {
       "id": "vKEsyHFk#0Cf3WQEw",
       "order": 993000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a module outside the open one",
       "emphasis": "normal",

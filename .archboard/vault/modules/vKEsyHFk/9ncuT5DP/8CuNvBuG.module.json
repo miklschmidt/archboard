@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
       "order": 15000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "stage the operation, then commit or roll it back",
       "emphasis": "normal",

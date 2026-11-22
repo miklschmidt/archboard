@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#dMtR5BqB",
       "order": 55000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start it when nothing answers",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#EywCr04W",
       "order": 56000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "how many browsers show the canvas",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#sYoTKyHa",
       "order": 57000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the address a browser opens",
       "emphasis": "normal",

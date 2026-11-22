@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#iaq6pG14",
       "order": 56000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "keep model and rendering schemas in a talk",
       "emphasis": "normal",

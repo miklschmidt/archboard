@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#ygbcyDVT",
       "order": 8000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "code-target and opener requests, replies read strictly",
       "emphasis": "normal",

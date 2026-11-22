@@ -11,7 +11,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#TPRWw9F4",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "measure every word",
       "emphasis": "hero",
@@ -29,7 +29,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#oYEzQ4k5",
       "order": 13000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "paint the settled drawing",
       "emphasis": "hero",
@@ -47,7 +47,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#eJO5yog2",
       "order": 14000,
-      "kind": "call",
+      "kind": "async",
       "effect": "compute",
       "label": "content and measured sizes",
       "emphasis": "hero",
@@ -65,7 +65,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#NSEpn12D",
       "order": 16000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "lay out every flow",
       "emphasis": "normal",
@@ -79,7 +79,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#rZknAbkb",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "write the scene as one document",
       "emphasis": "hero",
@@ -97,7 +97,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#RSHH7EN4",
       "order": 55000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "draw a flow's logic",
       "emphasis": "normal",
@@ -111,7 +111,7 @@
     {
       "id": "vKEsyHFk#gJg0IMG5",
       "order": 61000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the icon a card falls back to",
       "emphasis": "normal",
@@ -125,7 +125,7 @@
     {
       "id": "vKEsyHFk#d0AyIVw1",
       "order": 300,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "print the viewer's marks as constants for the pane",
       "emphasis": "normal",

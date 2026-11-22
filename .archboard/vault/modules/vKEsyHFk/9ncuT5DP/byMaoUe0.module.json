@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#CT2H47EW",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "prove the linked thread current",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#qdsTcqWf",
       "order": 25000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the link reasons the context policy orders",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#mAyzTmDD",
       "order": 55000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "prove the linked thread current",
       "emphasis": "muted",

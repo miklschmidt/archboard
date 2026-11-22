@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#6kjJSJqv",
       "order": 60700,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the colours of each standing",
       "emphasis": "normal",

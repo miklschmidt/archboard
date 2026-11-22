@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",
       "order": 25000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "every citation lands",
       "emphasis": "muted",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#NlBGf3Sj",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the outline of each glyph it defines",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#baNgC045",
       "order": 200,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the samples of the picture's key",
       "emphasis": "normal",

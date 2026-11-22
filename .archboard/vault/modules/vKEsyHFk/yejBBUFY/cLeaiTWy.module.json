@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#zd3E41io",
       "order": 60000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "say which checkout the person activated",
       "emphasis": "normal",

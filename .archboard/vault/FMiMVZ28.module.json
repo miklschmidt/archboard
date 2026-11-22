@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#hy1dunTj",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "whether Archboard has a TypeScript of its own",
       "emphasis": "normal",

@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk/wAHh0HTa#OjFVoTcz",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "decode each inbound frame",
       "emphasis": "muted",

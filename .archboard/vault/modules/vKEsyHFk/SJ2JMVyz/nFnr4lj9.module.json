@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#zIWijDn9",
       "order": 10000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "Archboard tools supplied through the host profile",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#jAdLjEha",
       "order": 11000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "captured role instructions and exact hashes",
       "emphasis": "muted",

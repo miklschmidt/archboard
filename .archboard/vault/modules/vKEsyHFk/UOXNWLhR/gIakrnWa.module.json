@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#WLWCyeOY",
       "order": 59000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the plain move, to end the flight with",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#Ob2qNlXS",
       "order": 109000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "open a model down, go back along the trail",
       "emphasis": "normal",

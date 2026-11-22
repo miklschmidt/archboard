@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
       "order": 34000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "read models from the talk, in place of the server",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
       "order": 35000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "install the stepped clock; step it each frame",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
       "order": 45000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a model cache of its own, under the tab's defaults",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#VIqC762A",
       "order": 120000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "draw every picture against the talk's variant",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#9m54YaTh",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "wait for the painter to start",
       "emphasis": "normal",

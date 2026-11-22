@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#fFiMvo56",
       "order": 21000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a block of cards",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#luMz0TJo",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "a block of blocks",
       "emphasis": "normal",

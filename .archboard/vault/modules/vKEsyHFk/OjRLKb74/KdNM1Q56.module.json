@@ -1,4 +1,74 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#2pseYTlP",
+      "order": 91000,
+      "kind": "dependency",
+      "label": "its errors and diagnostics",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/decoded.rs",
+        "symbol": "GraphvizError"
+      },
+      "to": "vKEsyHFk#FLnwES7I"
+    },
+    {
+      "id": "vKEsyHFk#d7yWvhGj",
+      "order": 91001,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "lay the graph out",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/decoded.rs",
+        "symbol": "LayoutOptions"
+      },
+      "to": "vKEsyHFk#kEeWzBGr"
+    },
+    {
+      "id": "vKEsyHFk#iE5MSVo4",
+      "order": 91002,
+      "kind": "sync",
+      "effect": "compute",
+      "label": "parse the DOT text",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/plugins.rs",
+        "symbol": "parse_dot_all"
+      },
+      "to": "vKEsyHFk#hBkjiO4k"
+    },
+    {
+      "id": "vKEsyHFk#q7glsoJH",
+      "order": 91003,
+      "kind": "sync",
+      "effect": "mutation",
+      "label": "write the laid-out graph",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/src/lib.rs",
+        "symbol": "reset_render_state"
+      },
+      "to": "vKEsyHFk#7yGUY6ta"
+    },
+    {
+      "id": "vKEsyHFk#5iytjWV7",
+      "order": 91012,
+      "kind": "dependency",
+      "label": "build with the shapes and path planning",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/vendor/graphviz-pure/Cargo.toml",
+        "symbol": "graphviz-pure-geom"
+      },
+      "to": "vKEsyHFk#1Af2oLOM"
+    }
+  ],
   "order": 40600,
   "name": "Graphviz",
   "kind": "external",
@@ -10,75 +80,5 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
-  "parent": "vKEsyHFk#HgZPVIE2",
-  "outgoing": [
-    {
-      "order": 91000,
-      "kind": "dependency",
-      "label": "its errors and diagnostics",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/src/decoded.rs",
-        "symbol": "GraphvizError"
-      },
-      "id": "vKEsyHFk#2pseYTlP",
-      "to": "vKEsyHFk#FLnwES7I"
-    },
-    {
-      "order": 91001,
-      "kind": "call",
-      "effect": "compute",
-      "label": "lay the graph out",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/src/decoded.rs",
-        "symbol": "LayoutOptions"
-      },
-      "id": "vKEsyHFk#d7yWvhGj",
-      "to": "vKEsyHFk#kEeWzBGr"
-    },
-    {
-      "order": 91002,
-      "kind": "call",
-      "effect": "compute",
-      "label": "parse the DOT text",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/src/plugins.rs",
-        "symbol": "parse_dot_all"
-      },
-      "id": "vKEsyHFk#iE5MSVo4",
-      "to": "vKEsyHFk#hBkjiO4k"
-    },
-    {
-      "order": 91003,
-      "kind": "call",
-      "effect": "mutation",
-      "label": "write the laid-out graph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/src/lib.rs",
-        "symbol": "reset_render_state"
-      },
-      "id": "vKEsyHFk#q7glsoJH",
-      "to": "vKEsyHFk#7yGUY6ta"
-    },
-    {
-      "order": 91012,
-      "kind": "dependency",
-      "label": "build with the shapes and path planning",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure/Cargo.toml",
-        "symbol": "graphviz-pure-geom"
-      },
-      "id": "vKEsyHFk#5iytjWV7",
-      "to": "vKEsyHFk#1Af2oLOM"
-    }
-  ]
+  "parent": "vKEsyHFk#HgZPVIE2"
 }

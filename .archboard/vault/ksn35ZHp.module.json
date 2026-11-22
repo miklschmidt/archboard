@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "order": 53000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "read the picture's key",
       "emphasis": "normal",

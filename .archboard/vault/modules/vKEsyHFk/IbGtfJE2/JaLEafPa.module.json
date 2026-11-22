@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
       "order": 1000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "load and validate the inputs",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#gkJMDrW9",
       "order": 3000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "run the selected arms",
       "emphasis": "hero",
@@ -39,7 +39,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#DJsFb8l6",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "grade what has not been graded",
       "emphasis": "hero",
@@ -53,7 +53,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#hlCNYU50",
       "order": 5000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "write the report",
       "emphasis": "normal",
@@ -67,7 +67,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",
       "order": 48000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "pin the executable versions",
       "emphasis": "normal",

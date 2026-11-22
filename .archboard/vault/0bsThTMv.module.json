@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#cdwXdyXo",
       "order": 6000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "pan and zoom by hand",
       "description": "SemanticDiagram reads the supplied camera controller through useCameraWith; the viewer entry point creates it once for the pane.",
@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
       "order": 7000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "pick attention",
       "emphasis": "normal",
@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "carry the drawn picture in from the last",
       "emphasis": "normal",
@@ -46,7 +46,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#bZN2wZZn",
       "order": 42000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the pointer on the picture",
       "emphasis": "normal",
@@ -60,7 +60,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#dH2wBxla",
       "order": 48000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the pick, and the part the pointer rests on",
       "emphasis": "normal",
@@ -74,7 +74,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "order": 70000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the host of the canvases the picture is painted on",
       "emphasis": "normal",
@@ -88,7 +88,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
       "order": 72000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the code check's warnings on the picture",
       "emphasis": "normal",
@@ -102,7 +102,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#CB6Uuw6y",
       "order": 103000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the card picked, when it links down",
       "emphasis": "normal",
@@ -116,7 +116,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",
       "order": 113000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the camera as a transform",
       "emphasis": "normal",
@@ -130,7 +130,7 @@
     {
       "id": "vKEsyHFk#LOCiLRdW",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the lit subjects, to draw on",
       "emphasis": "normal",

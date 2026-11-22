@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#3C7aLx0q",
       "order": 8000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the link of this tab session and the shown checkout",
       "description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
       "order": 67000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the checkout the chat's tab shows, pinned on first read",
       "emphasis": "normal",
@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#kUptUGCI",
       "order": 69000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the tab's live workhorses, for the page's list",
       "emphasis": "normal",
@@ -46,7 +46,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#vScn8k62",
       "order": 71000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the coordinator turns the shown conversation keeps",
       "emphasis": "normal",
@@ -60,7 +60,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#IubzjsMw",
       "order": 94000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start admitted voice session",
       "emphasis": "normal",

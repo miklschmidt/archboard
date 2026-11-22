@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#tAq4DxjV",
       "order": 10,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "footprint, locality and source refs",
       "emphasis": "normal",

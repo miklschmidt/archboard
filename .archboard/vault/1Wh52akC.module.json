@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#QOAXIPZe",
       "order": 90000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "archboard telemetry turns usage on or off",
       "emphasis": "normal",

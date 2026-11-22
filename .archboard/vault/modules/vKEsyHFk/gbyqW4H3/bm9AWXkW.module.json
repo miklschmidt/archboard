@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#wsEMWmNJ",
       "order": 70039,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "read image dimensions from recipes",
       "emphasis": "muted",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#Xn6zGm0D",
       "order": 300,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the recipe a PNG carries",
       "emphasis": "normal",

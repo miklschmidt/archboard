@@ -18,7 +18,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
       "order": 29000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "Talk as a recording, in its own tab session",
       "emphasis": "normal",
@@ -32,7 +32,7 @@
     {
       "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
       "order": 30000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the voice's stream; each step, line and version shown",
       "emphasis": "normal",
@@ -46,7 +46,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
       "order": 31000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the step to show",
       "emphasis": "normal",
@@ -60,7 +60,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
       "order": 40000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "each change of the voice's transcript",
       "emphasis": "normal",

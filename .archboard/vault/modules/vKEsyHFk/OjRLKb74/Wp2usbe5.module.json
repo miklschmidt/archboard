@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#Md6tqK1p",
       "order": 17000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "rank and order the cards",
       "emphasis": "normal",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#c6EtTjBt",
       "order": 24000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "hold hidden parts below the first entry points",
       "emphasis": "normal",

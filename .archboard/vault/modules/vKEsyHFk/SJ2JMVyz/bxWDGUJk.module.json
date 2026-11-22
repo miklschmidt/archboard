@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#iBhsibnc",
       "order": 43000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#QvQYycYS",
       "order": 44000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -29,7 +29,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
       "order": 45000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -42,7 +42,7 @@
     {
       "id": "vKEsyHFk#DxnUwbpm",
       "order": 70014,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve the captured tab",
       "emphasis": "muted",
@@ -56,7 +56,7 @@
     {
       "id": "vKEsyHFk#3YLhUCde",
       "order": 70015,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "resolve the captured pane",
       "emphasis": "muted",
@@ -70,7 +70,7 @@
     {
       "id": "vKEsyHFk#e00V8dhv",
       "order": 70057,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "publish structured local diagnostics",
       "emphasis": "muted",
@@ -84,7 +84,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
       "order": 126000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {

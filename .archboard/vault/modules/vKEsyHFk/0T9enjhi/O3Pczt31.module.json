@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#VRAAecug",
       "order": 120000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk#YvPtAKu5",
       "order": 980090,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "original legacy boards",
       "emphasis": "muted",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#eRYh0zYO",
       "order": 4000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "the realtime leg: thread/realtime/start, append and stop",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/qKGcB6vZ#jKgud5yQ",
       "order": 5000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the start's brief: the host's coordinator context",
       "emphasis": "normal",

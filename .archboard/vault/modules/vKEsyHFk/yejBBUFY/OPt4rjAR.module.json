@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#QPqsk43l",
       "order": 130000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the pane's letter, controls, notice and focus",
       "emphasis": "normal",

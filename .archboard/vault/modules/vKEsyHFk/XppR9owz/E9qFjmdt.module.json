@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#z6yIhc7O",
       "order": 120000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "export and import",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#WYi9Yxym",
       "order": 121000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "defineCommand",
       "emphasis": "normal",

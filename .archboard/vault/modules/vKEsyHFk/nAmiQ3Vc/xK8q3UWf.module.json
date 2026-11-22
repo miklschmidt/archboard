@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
       "order": 15000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "label": "-C or the working directory",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
       "order": 16000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "register it on first use",
       "emphasis": "normal",

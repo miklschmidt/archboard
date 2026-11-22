@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#V4rI4i48",
       "order": 49000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "frame the page for export",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#xV0HwjdR",
       "order": 980240,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "architecture marks",
       "emphasis": "muted",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#rN5226KV",
       "order": 980250,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "sequence marks",
       "emphasis": "muted",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk#0wPxGNoW",
       "order": 980260,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the theme",
       "emphasis": "muted",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk#ETQA4rnI",
       "order": 980270,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "standing marks",
       "emphasis": "muted",
@@ -73,7 +73,7 @@
     {
       "id": "vKEsyHFk#1ohCTBHb",
       "order": 100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the scene it paints",
       "emphasis": "normal",

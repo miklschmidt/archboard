@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
       "order": 26000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "binding and anchor schemas",
       "emphasis": "normal",

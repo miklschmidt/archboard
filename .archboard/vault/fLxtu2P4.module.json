@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
       "order": 13000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "opening address; write what panes show and where",
       "emphasis": "normal",

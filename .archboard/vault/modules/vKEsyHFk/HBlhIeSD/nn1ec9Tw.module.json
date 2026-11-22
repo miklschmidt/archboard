@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#lbpfmZQK",
       "order": 92000,
-      "kind": "call",
+      "kind": "async",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {
@@ -16,7 +16,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#iXs0a5bj",
       "order": 98000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "retains exact local checkpoints",
       "emphasis": "normal",
@@ -30,7 +30,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#2lwNLxzO",
       "order": 99000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "emphasis": "normal",
       "anchor": {
@@ -43,7 +43,7 @@
     {
       "id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
       "order": 108000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "derive the checkpoint request contract",
       "emphasis": "normal",
@@ -57,7 +57,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#x9A8Wn5u",
       "order": 108000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mount canonical operations",
       "emphasis": "normal",
@@ -71,7 +71,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#PS8HhYLZ",
       "order": 116000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -84,7 +84,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#Io53QUgK",
       "order": 123000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mountArchitectureFlowRoutes",
       "emphasis": "normal",
@@ -98,7 +98,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#WaYJBOUv",
       "order": 124000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
@@ -111,7 +111,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#7lIStdzH",
       "order": 130000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "mountArchitecturePortableRoutes",
       "emphasis": "normal",
@@ -125,7 +125,7 @@
     {
       "id": "vKEsyHFk#DmpFz1lt",
       "order": 131000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "Track accepted work",
       "emphasis": "normal",

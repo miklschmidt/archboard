@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#iUsWhMaM",
       "order": 68000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "show the activated checkout in the pane's tab",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#RxeyNuay",
       "order": 69000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the pane, and the vault it is in",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
       "order": 70000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the tab's live workhorses, which a pick may name",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#5odPEFwu",
       "order": 72000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the vault the call names, which the pane must be in",
       "emphasis": "normal",

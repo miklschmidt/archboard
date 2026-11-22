@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
       "order": 64000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "session durations",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk#bobdaYcV",
       "order": 65000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "the Codex version the protocol is built for",
       "emphasis": "normal",

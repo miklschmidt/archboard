@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#oNKZu0fB",
       "order": 990100,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "the sweep of each newly lit relationship",
       "emphasis": "normal",

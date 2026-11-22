@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#vOEGQ4ga",
       "order": 70009,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "read retained content and refusals",
       "emphasis": "muted",

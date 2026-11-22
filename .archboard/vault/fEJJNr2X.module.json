@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk#9FE5IWk9",
       "order": 10000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "write a file whole",
       "emphasis": "normal",

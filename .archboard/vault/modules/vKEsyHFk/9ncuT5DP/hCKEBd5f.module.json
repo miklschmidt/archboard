@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#f4o4iE3G",
       "order": 34000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "end a tab no chat came back to in 60 s",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#02ywpfgL",
       "order": 38000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "forget the ended tab's lease",
       "emphasis": "muted",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/IbGtfJE2#5TtCOktb",
       "order": 23000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "rasterize each picture",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
       "order": 58000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "interpret rasterization receipts",
       "emphasis": "normal",

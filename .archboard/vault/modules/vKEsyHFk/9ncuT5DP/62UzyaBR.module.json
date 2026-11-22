@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#mmo8IFo3",
       "order": 37000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "builds turn input with the prompt and model context",
       "emphasis": "muted",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk#gEsFY1Ps",
       "order": 40000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "Stop control: stop the shown checkout's work tree",
       "emphasis": "normal",

@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
       "order": 25000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the chosen checkouts",
       "emphasis": "normal",
@@ -17,7 +17,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
       "order": 66000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "the checkouts the registry knows",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk#Zv6ZZwJP",
       "order": 26000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "which checkout holds the vault",
       "emphasis": "normal",

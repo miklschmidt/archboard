@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
       "order": 69000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "Read current or retained content",
       "emphasis": "normal",
@@ -31,7 +31,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#uZDbu609",
       "order": 72000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "Read the legacy board listing",
       "emphasis": "normal",
@@ -45,7 +45,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#m551U9Gl",
       "order": 74000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "subscribe to current model updates",
       "emphasis": "normal",
@@ -59,7 +59,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#scByKwmU",
       "order": 75000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "compute",
       "label": "projectModel",
       "emphasis": "normal",

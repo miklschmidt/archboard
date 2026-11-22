@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#SWg7BPZu",
       "order": 1000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "argv, and what bootstrap took",
       "emphasis": "hero",
@@ -21,7 +21,7 @@
     {
       "id": "vKEsyHFk#P06aHDH6",
       "order": 20000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "refuse a non-installation, read the version",
       "emphasis": "normal",
@@ -35,7 +35,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#VN95JmCC",
       "order": 22000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "mutation",
       "label": "take --url",
       "emphasis": "normal",
@@ -81,7 +81,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#4y3I6aju",
       "order": 68000,
-      "kind": "call",
+      "kind": "sync",
       "effect": "query",
       "label": "refuse a removed variable",
       "emphasis": "normal",
@@ -95,7 +95,7 @@
     {
       "id": "vKEsyHFk#9Py1rCVf",
       "order": 69000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "a release imports the server's entry",
       "emphasis": "normal",

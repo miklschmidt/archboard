@@ -3,7 +3,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#PKAaizYP",
       "order": 92000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start the server",
       "emphasis": "normal",
