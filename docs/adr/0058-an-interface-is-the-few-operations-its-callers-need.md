@@ -31,20 +31,15 @@ Callers sometimes import several pieces of a package and connect them.
 Then that assembly moves into the package as one operation.
 The callers use the operation, and the pieces become private.
 
-Interface width is visible and ratcheted.
-The width of a package is the number of names that the code entries of its `exports` export,
-summed over the entries.
-`tests/system/repository-policy/interface-width.test.ts` counts the width of each package.
-It fails when a package exceeds the ceiling recorded for it in `interface-width-ceilings.json`
-beside the test.
-A ceiling goes down when a package gets narrower.
-A ceiling never goes up to make room for a name: design a deeper operation instead.
-
-This width is not the width of `INTERFACE_WIDE` in the code check
-([ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md), TASK-651).
-The ceiling test counts every exported name of a package, its types included.
-The code check counts the exported functions, classes, public methods and values of each bound
-module, and counts no type.
+Interface width was visible and ratcheted until 2026-11-22.
+`tests/system/repository-policy/interface-width.test.ts` counted the names that the code entries of
+each package's `exports` export, its types included, and failed when a package exceeded a ceiling
+recorded in `interface-width-ceilings.json`, which never went up.
+[ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md) superseded that ratchet
+(TASK-659): a flat cap per package rewarded splitting a package and folding names behind one key,
+and held those folds in place. The code check now judges each bound module by the logic behind
+each name its callers learn, at any width, and counts a key that picks an operation as a name.
+The design rule above stands.
 
 ## Considered options
 
@@ -56,10 +51,11 @@ Merging files lowers it and keeps every name.
 
 A name count does not see types, invariants, ordering or error modes.
 It is still cheap and deterministic, and it goes up each time a caller must learn a new name.
-The check uses it to make width visible, and design review judges the rest.
+The code check uses it against the logic behind the names, and design review judges the rest.
 
 Hiding the same names behind one object or in one large file only moves the width.
-The count cannot see that move, so this rule names it.
+The ceiling's count could not see that move, so this rule names it, and the code check now counts
+the operations behind a key as names (ADR 0082).
 
 ## Consequences
 

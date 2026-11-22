@@ -790,7 +790,7 @@ Its severity is warning or information (ADR 0046).
 _Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
 
 **Module depth**:
-What the code check measures of one bound module from its code: its exports by kind, the pieces of logic behind them, and the findings on its exported names, at most one for each name (ADR 0082).
+What the code check measures of one bound module from its code: its exports by kind, its width, the pieces of logic behind them, and the findings on its exported names, at most one for each name (ADR 0082).
 The counts are evidence and never a score; only the findings are verdicts.
 _Avoid_: depth score, depth ratio, interface measures (those are what the model claims)
 
@@ -835,24 +835,24 @@ A folder module that declares no interface, with no file that stands for it (suc
 _Avoid_: missing barrel, missing index
 
 **Module width**:
-The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. It differs from the interface width of ADR 0058, which counts types.
-_Avoid_: export count, surface area
+The names that callers of a bound module must learn: its exported functions, classes, public methods and values, getters included, with a switchboard counted once for each operation it picks. Exported types count zero, and so does a type that holds data with no public method, such as a Rust struct or a Python dataclass: with a method it is a class. No width is too wide on its own: the shallow-module rule weighs it against the logic behind it.
+_Avoid_: export count, surface area, wide interface (no flat cap judges width since TASK-659)
 
-**Wide interface**:
-A module whose width is above 20: `INTERFACE_WIDE`, a warning. A narrow interface is the few operations callers need.
-_Avoid_: fat module, large API
+**Switchboard**:
+An exported function or public method that picks the operation it runs by a closed key its caller passes: literal overloads, a literal or boolean union, a property of a request that tells its kind, or a Rust enum parameter. Each arm that runs a different operation is a name its callers learn; an arm that only selects data, or runs the shared path plus checks, adds none. A keyed getter is no switchboard. Its tests of the key count no logic.
+_Avoid_: dispatcher, router, multiplexer, verb parameter
 
 **Shallow module**:
-A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding, or whose width is at least 8 with fewer than 4 pieces of logic behind each name: `MODULE_SHALLOW`, a warning. A deep module hides much logic behind few names. The measured grounds need a complete reading of judged languages, and an `external` module gets neither code.
+A module whose every export that is not a type carries an exposed-value, repeated-math or pass-through finding, or whose W > 0 names have fewer than 4W pieces of logic behind them, at any width: `MODULE_SHALLOW`, a warning. Equality passes. A deep module hides much logic behind few names, and a name moved to another module, or behind a key, is still a name its callers learn. The measured ground needs a complete reading of judged languages and a closed key for each switchboard that could change it, and an `external` module gets no verdict.
 _Avoid_: thin module, wrapper, pass-through container (that is about the model)
 
 **Shallow-module gate**:
-What fails `archboard check` on an information `MODULE_SHALLOW` or `INTERFACE_WIDE` of a module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`. Both codes are warnings without a rule, so the gate matters where a rule sets them to information: debt mode, where old modules stay information and touched ones fail.
+What fails `archboard check` on an information `MODULE_SHALLOW` of a module that the branch touched since its base, working tree included: `--fail-shallow-modules`, or the vault policy's `codeCheck.failShallowModules`. It is a warning without a rule, so the gate matters where a rule sets it to information: debt mode, where old modules stay information and touched ones fail.
 The CLI applies it to the answer, whose severities never depend on the caller.
 _Avoid_: depth gate, shallow check
 
 **Module-depth rule**:
-The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers, and `failShallowModules` stays the only promotion. `off` on `MODULE_SHALLOW` or `INTERFACE_WIDE` beside the gate is an invalid configuration.
+The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers, and `failShallowModules` stays the only promotion. `off` on `MODULE_SHALLOW` beside the gate is an invalid configuration, and so is any rule on the retired `INTERFACE_WIDE`.
 _Avoid_: lint rule, suppression, allow list (that is the Action's `allow-codes`)
 
 **Touched module**:
