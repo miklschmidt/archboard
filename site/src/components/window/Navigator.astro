@@ -189,7 +189,7 @@ const selected = "Checkout API";
 		position: sticky;
 		top: 0;
 		z-index: 1;
-		padding-right: 12px;
+		padding-right: 8px;
 		font-size: 12.5px;
 		background: var(--chrome);
 	}
@@ -201,6 +201,8 @@ const selected = "Checkout API";
 	.end {
 		display: inline-flex;
 		margin-left: auto;
+		/* The ink of the chevron, not its box, ends where the rows' facts end. */
+		margin-right: -3.75px;
 		color: var(--ink-muted);
 	}
 	.count {

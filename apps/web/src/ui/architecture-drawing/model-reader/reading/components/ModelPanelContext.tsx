@@ -47,6 +47,7 @@ function ModelPanelContext(props: ModelPanelContextProps): JSX.Element {
 				title="Flows"
 				slot="model-panel-flows"
 				entries={flows}
+				folded={!flows.some((entry) => entry.id === props.flow)}
 				groupOf={collectionOf}
 			>
 				{(entry) => (
@@ -65,6 +66,7 @@ function ModelPanelContext(props: ModelPanelContextProps): JSX.Element {
 				title="Walkthroughs"
 				slot="model-panel-walkthroughs"
 				entries={walkthroughs}
+				folded
 			>
 				{(entry) => (
 					<ContextRow
@@ -92,12 +94,14 @@ function stepsOf(walkthrough: Model["walkthroughs"][number]): string {
 }
 
 /**
- * One list, which a reading with nothing to list leaves out.
+ * One list, which a reading with nothing to list leaves out. It starts folded unless it holds what
+ * is on screen, because a reader opens it seldom and it would push the code down.
  * @param props The list.
  * @param props.icon What kind of thing it lists.
  * @param props.title What it lists.
  * @param props.slot Where a test finds it.
  * @param props.entries What it lists.
+ * @param props.folded Whether it starts folded.
  * @param props.groupOf The group of an entry, when its entries belong to groups.
  * @param props.children One row.
  * @returns The list, or nothing.
@@ -107,6 +111,7 @@ function ContextList<Entry>(props: {
 	readonly title: string;
 	readonly slot: string;
 	readonly entries: readonly Entry[];
+	readonly folded: boolean;
 	readonly groupOf?: ((entry: Entry) => string) | undefined;
 	readonly children: (entry: Entry) => ReactNode;
 }): JSX.Element | null {
@@ -118,6 +123,7 @@ function ContextList<Entry>(props: {
 			title={props.title}
 			count={entries.length}
 			slot={props.slot}
+			folded={props.folded}
 		>
 			<ModelPanel.Rows items={entries} limit={FEW_ROWS} groupOf={props.groupOf}>
 				{props.children}

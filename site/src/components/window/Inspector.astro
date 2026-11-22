@@ -31,6 +31,7 @@ const interfaceCounts = [
 			<p class="label">
 				<SectionLabel icon="plug" title="Interface" />
 				<span class="small">Open in About</span>
+				<span class="fold"><Icon name="chevronDown" size={16} /></span>
 			</p>
 			<ul class="rows">
 				{
@@ -112,12 +113,22 @@ const interfaceCounts = [
 		padding-top: 14px;
 		border-top: 1px solid var(--rule);
 	}
-	/* A section's label is the left column's, and a key of the section stands at its end. */
+	/* A section's label is the left column's. A key of the section stands at its end, before the
+	   chevron that folds the section, as in the left column. */
 	.label {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: 8px;
 		min-height: 24px;
+	}
+	.small {
+		margin-left: auto;
+	}
+	.fold {
+		display: inline-flex;
+		/* The ink of the chevron, not its box, ends where the rows' words and numbers end. */
+		margin-right: -3.75px;
+		color: var(--ink-muted);
 	}
 	.small {
 		padding: 3px 8px;
