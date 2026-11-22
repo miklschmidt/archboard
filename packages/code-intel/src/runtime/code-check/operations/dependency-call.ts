@@ -20,6 +20,7 @@ import { describeSubject, isEffectlessKind } from "@archboard/model/policy";
  * @param site Where the relationship sits, and its subject, which names both ends.
  * @param kind Its kind.
  * @param evidence Its anchored uses, or the evidence from its start to its end.
+ * The finding cites one call of each symbol.
  * @returns The finding, or undefined for another kind or evidence with no call.
  */
 function dependencyCalled(
@@ -28,9 +29,12 @@ function dependencyCalled(
 	evidence: readonly CodeEvidence[],
 ): CodeFinding | undefined {
 	if (!isEffectlessKind(kind)) return undefined;
-	const calls = evidence.filter((piece) => piece.kind === "call");
+	const bySymbol = new Map(
+		evidence.filter((piece) => piece.kind === "call").map((piece) => [piece.symbol, piece]),
+	);
+	const calls = [...bySymbol.values()];
 	if (calls.length === 0) return undefined;
-	const what = [...new Set(calls.map((piece) => JSON.stringify(piece.symbol)))].join(", ");
+	const what = [...bySymbol.keys()].map((symbol) => JSON.stringify(symbol)).join(", ");
 	const unsure = calls.every((piece) => piece.resolution === "candidate")
 		? " The use is a candidate, matched by name only until a language server resolves it."
 		: "";

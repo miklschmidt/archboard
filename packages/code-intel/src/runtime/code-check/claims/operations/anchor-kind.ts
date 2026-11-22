@@ -118,6 +118,18 @@ function joinUses(
 }
 
 /**
+ * Whether the check judges the evidence kind of an anchor: a relationship's,
+ * whose kind names the evidence it accepts or is a dependency.
+ * @param claim The anchor.
+ * @returns True when it does.
+ */
+function judgesKind(claim: AnchorClaim): boolean {
+	const { relationship } = claim;
+	if (relationship === undefined) return false;
+	return relationship.accepts !== undefined || isEffectlessKind(relationship.kind);
+}
+
+/**
  * The uses that decide the evidence kind of an anchor, when the check judges it.
  * @param claim The anchor.
  * @param facts The anchored file's facts.
@@ -132,13 +144,25 @@ async function judgedUses(
 	facts: FileFacts | undefined,
 	resolution: KindResolution,
 ): Promise<readonly CodeEvidence[]> {
-	const { relationship } = claim;
-	if (relationship === undefined || facts === undefined) return [];
-	if (relationship.accepts === undefined && !isEffectlessKind(relationship.kind)) return [];
-	if (facts.adapter === "text") return [];
+	if (!judgesKind(claim) || facts === undefined || facts.adapter === "text") return [];
 	const defined = findSymbol(facts, claim.anchor.symbol, "definition");
 	if (defined.status !== "found") return usesOf(facts, claim.anchor, resolution);
 	return joinUses(facts, defined.definition, claim.anchor);
+}
+
+/**
+ * The finding about an anchor whose uses are all of evidence kinds its
+ * relationship's kind does not accept, if any.
+ * @param claim The anchor.
+ * @param uses Its uses, one of each kind.
+ * @returns The finding, or undefined when its kind accepts every evidence kind or one of its uses.
+ */
+function kindMismatch(claim: AnchorClaim, uses: readonly CodeEvidence[]): CodeFinding | undefined {
+	const accepted = claim.relationship?.accepts;
+	if (accepted === undefined || uses.length === 0) return undefined;
+	return uses.some((use) => accepted.includes(use.kind))
+		? undefined
+		: mismatchOf(claim, accepted, uses);
 }
 
 /**
@@ -149,7 +173,7 @@ async function judgedUses(
  * @param uses Its uses, one of each kind.
  * @returns The finding: a warning when a use is resolved, else information.
  */
-function kindMismatch(
+function mismatchOf(
 	claim: AnchorClaim,
 	accepted: readonly string[],
 	uses: readonly CodeEvidence[],
@@ -188,11 +212,8 @@ async function judgeAnchorKind(
 	resolution: KindResolution,
 ): Promise<CodeFinding | undefined> {
 	const uses = await judgedUses(claim, facts, resolution);
-	const called = dependencyCalled(claim.site, claim.relationship?.kind ?? "", uses);
-	const accepted = claim.relationship?.accepts;
-	if (called !== undefined || accepted === undefined) return called;
-	const supported = uses.some((use) => accepted.includes(use.kind));
-	return uses.length === 0 || supported ? undefined : kindMismatch(claim, accepted, uses);
+	const kind = claim.relationship?.kind ?? "";
+	return dependencyCalled(claim.site, kind, uses) ?? kindMismatch(claim, uses);
 }
 
 export { judgeAnchorKind };
