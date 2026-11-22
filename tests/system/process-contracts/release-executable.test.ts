@@ -171,7 +171,7 @@ test.skipIf(!RELEASED.has(platform))(
 						{
 							type: "add-relationship",
 							source: "Shop",
-							relationship: { to: "Store", kind: "call", effect: "mutation", order: 10 },
+							relationship: { to: "Store", kind: "sync", effect: "mutation", order: 10 },
 						},
 					],
 				}),

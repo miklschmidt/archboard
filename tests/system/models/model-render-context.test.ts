@@ -386,7 +386,8 @@ test("a picture through a lens counts the lines it left out, with or without a l
 		if (recipe.kind !== "recipe" || recipe.recipe.recipe !== 2)
 			throw new Error(JSON.stringify(recipe));
 		const note = /<g data-slot="export-note">[^]*?<text [^>]*>([^<]*)<\/text><\/g>/u.exec(svg)?.[1];
-		return { svg, note, lens: recipe.recipe.reading.lens };
+		const { lens, hideEffects } = recipe.recipe.reading;
+		return { svg, note, lens, hideEffects };
 	};
 	// The default lens leaves out the declared dependency, and says so with and without a legend.
 	const main = drawn([]);
@@ -403,6 +404,15 @@ test("a picture through a lens counts the lines it left out, with or without a l
 	});
 	const all = drawn(["--lens", "all"]);
 	expect(all).toMatchObject({ note: undefined, lens: "all" });
+	// A hidden effect filters after the lens, and the recipe keeps it.
+	expect(drawn(["--lens", "all", "--hide-effect", "declared"])).toMatchObject({
+		note: "All relationships: 1 line left out",
+		lens: "all",
+		hideEffects: ["declared"],
+	});
+	const call = renderCli("--hide-kind", "call", "--out", join(home, "lenses", "call.svg"));
+	expect(call.status).toBe(2);
+	expect(call.stderr).toMatch(/use sync .* or async/u);
 	const refused = renderCli(
 		"--lens",
 		"main",
@@ -418,5 +428,7 @@ test("a picture through a lens counts the lines it left out, with or without a l
 	const unknown = renderCli("--lens", "nowhere", "--out", join(home, "lenses", "nowhere.svg"));
 	expect(unknown.status).toBe(2);
 	expect(unknown.stdout).toContain("LENS_NOT_FOUND");
-	expect(unknown.stderr).toContain("main, effects, reads, network, dependencies, all");
+	expect(unknown.stderr).toContain(
+		"main, effects, sync-compute, network, reads, dependencies, all",
+	);
 }, 30000);

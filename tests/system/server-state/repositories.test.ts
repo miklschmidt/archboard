@@ -322,7 +322,7 @@ describe.serial("the repositories of the navigator", () => {
 			state: "Current",
 			scope: "Shop#Gateway",
 			focus: ["Shop#Gateway"],
-			hideKinds: ["call"],
+			hideKinds: ["sync"],
 		};
 		const shown = await inMain("/api/panes/show", {
 			method: "POST",
