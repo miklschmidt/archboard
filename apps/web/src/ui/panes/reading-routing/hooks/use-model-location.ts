@@ -7,9 +7,14 @@ import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
-import { allLens } from "@archboard/model/content";
+import { allLens, type ModelFilters } from "@archboard/model/content";
+import { lineEffect, lineEffectSchema } from "@archboard/model/policy";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
+/** An effect a reader can hide. */
+type HiddenEffect = NonNullable<ModelFilters["hideEffects"]>[number];
+/** The two lists of what a reader hid besides the lens. */
+type FilterField = "hideKinds" | "hideEffects";
 
 /** A reading to open: the vault at a ref or on disk, one of its states, and the module it opens. */
 interface ReadingTarget {
@@ -69,6 +74,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const focused = search[`focus${paneId}`];
 	const lens = search[`lens${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
+	const hiddenEffects = search[`hideEffects${paneId}`];
 	const expanded = search[`expand${paneId}`];
 	const file = nullableParameter(search[`file${paneId}`]);
 	const fileRepo = search[`fileRepo${paneId}`];
@@ -76,8 +82,9 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		() => ({
 			lens,
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
+			hideEffects: effectList(hiddenEffects),
 		}),
-		[lens, hiddenKinds],
+		[lens, hiddenKinds, hiddenEffects],
 	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
@@ -128,6 +135,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 							flow: flow ?? undefined,
 							lens: filters.lens,
 							hideKinds: filters.hideKinds,
+							hideEffects: filters.hideEffects,
 							bookmark: undefined,
 						}),
 				...patch,
@@ -147,6 +155,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				flow: undefined,
 				lens: undefined,
 				hideKinds: undefined,
+				hideEffects: undefined,
 				subject: undefined,
 			});
 		},
@@ -172,6 +181,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				flow: undefined,
 				lens: undefined,
 				hideKinds: undefined,
+				hideEffects: undefined,
 				subject: undefined,
 				against: undefined,
 			});
@@ -204,6 +214,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					expand: undefined,
 					lens: undefined,
 					hideKinds: undefined,
+					hideEffects: undefined,
 				},
 				false,
 				repository,
@@ -231,6 +242,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					expand: reading.expand,
 					lens: reading.lens,
 					hideKinds: reading.hideKinds,
+					hideEffects: reading.hideEffects,
 				},
 				!push,
 				repository ?? undefined,
@@ -312,22 +324,19 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[explore],
 	);
-	const toggleFilter = useCallback(
-		(field: "hideKinds", id: string): void => {
+	// The legend decides what a switch or a row's name hides; the address only holds the list.
+	const setHidden = useCallback(
+		(field: FilterField, ids: readonly string[]): void => {
 			userChanged?.("view");
-			const current = filters[field];
-			const next = current.includes(id)
-				? current.filter((value) => value !== id)
-				: [...current, id];
-			void navigate({ [field]: next.length === 0 ? undefined : next.toSorted() });
+			void navigate({ [field]: ids.length === 0 ? undefined : [...new Set(ids)].toSorted() });
 		},
-		[filters, navigate, userChanged],
+		[navigate, userChanged],
 	);
-	// A lens is a question of its own, so choosing one shows every kind it selects.
+	// A lens is a question of its own, so choosing one shows every kind and effect it selects.
 	const selectLens = useCallback(
 		(id: string): void => {
 			userChanged?.("view");
-			void navigate({ lens: id, hideKinds: undefined });
+			void navigate({ lens: id, hideKinds: undefined, hideEffects: undefined });
 		},
 		[navigate, userChanged],
 	);
@@ -335,16 +344,20 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		selectLens(allLens());
 	}, [selectLens]);
 	const reveal = useCallback(
-		(ids: readonly string[], kinds: readonly string[], widen: boolean): void => {
-			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
+		(ids: readonly string[], edges: readonly Parameters<typeof lineEffect>[0][], widen: boolean): void => {
+			const kinds = new Set(edges.map((edge) => edge.kind));
+			const effects = new Set(edges.map(lineEffect));
+			const hidden = filters.hideKinds.filter((kind) => !kinds.has(kind));
+			const muted = filters.hideEffects.filter((effect) => !effects.has(effect));
 			explore({
 				grammar: undefined,
 				focus: [...new Set(ids)].toSorted(),
 				...(widen ? { lens: allLens() } : {}),
 				hideKinds: hidden.length === 0 ? undefined : hidden,
+				hideEffects: muted.length === 0 ? undefined : muted,
 			});
 		},
-		[filters.hideKinds, explore],
+		[filters.hideKinds, filters.hideEffects, explore],
 	);
 	const selectGrammar = useCallback(
 		(next: string): void => {
@@ -400,7 +413,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, userChanged],
 	);
 	const showWholeScope = useCallback((): void => {
-		explore({ focus: undefined, hideKinds: undefined, lens: undefined });
+		explore({ focus: undefined, hideKinds: undefined, hideEffects: undefined, lens: undefined });
 	}, [explore]);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {
@@ -441,7 +454,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		fileRepo,
 		showFile,
 		filters,
-		toggleFilter,
+		setHidden,
 		selectLens,
 		showAll,
 		reveal,
@@ -479,6 +492,7 @@ function referenceAddress(reading: Model): ModelAddress {
 		expand: undefined,
 		lens: undefined,
 		hideKinds: undefined,
+		hideEffects: undefined,
 	};
 }
 
@@ -522,6 +536,18 @@ function filePicture(
 }
 
 /**
+ * The effects an address hides, leaving out a word that names no effect.
+ * @param value The validated search value, or absence.
+ * @returns The effects.
+ */
+function effectList(value: string | undefined): HiddenEffect[] {
+	return (value?.split(",") ?? []).flatMap((word) => {
+		const parsed = lineEffectSchema().safeParse(word);
+		return parsed.success ? [parsed.data] : [];
+	});
+}
+
+/**
  * Missing optional address fields have one absent-value convention in the reader.
  * @param value A validated string parameter, or absence.
  * @returns The requested value or null.
@@ -542,7 +568,7 @@ function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefine
 	return value.length === 0 ? undefined : value.join(",");
 }
 
-export { useModelLocation, type FileTarget, type ReadingTarget };
+export { useModelLocation, type FileTarget, type FilterField, type ReadingTarget };
 
 /**
  * The address field of a resolved request's comparison.

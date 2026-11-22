@@ -40,7 +40,7 @@ type Reading = Playback["walkthrough"]["beats"][number]["reading"];
  * @returns Its filters.
  */
 function beatFilters(reading: Reading) {
-	return { lens: allLens(), hideKinds: reading.filters.relationships };
+	return { lens: allLens(), hideKinds: reading.filters.relationships, hideEffects: [] };
 }
 type Picture = Parameters<NonNullable<ComponentProps<typeof ModelDiagram>["onPresentation"]>>[0];
 

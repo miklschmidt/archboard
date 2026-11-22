@@ -162,7 +162,7 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 		// A relationship that the lens leaves out shows through the lens of every relationship.
 		reveal(
 			[...selection.ids].filter((id) => !behavioralIds.has(id)),
-			edges.map((edge) => edge.kind),
+			edges,
 			!edges.every(lens.draws),
 		);
 	}, [model.relationships, model.policy, drawnLens, selection.ids, reveal, behavioralIds]);
