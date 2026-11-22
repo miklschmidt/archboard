@@ -17,6 +17,8 @@ import type { PickedOperation, Switchboard } from "#runtime/code-facts/operation
 interface Arm {
 	/** The keys that pick it; `*` stands for every key no other arm names. */
 	readonly keys: readonly string[];
+	/** Whether a guard can let a named key continue to the catch-all. */
+	readonly guarded?: boolean;
 	/** The line it starts on. */
 	readonly line: number;
 	/** The calls it makes, outermost only, each as `callee/arguments`. */
@@ -58,14 +60,9 @@ function operationOf(arm: Arm, arms: readonly Arm[]): string | undefined {
 /**
  * The operations the arms of a pick run, in the order the body first picks each.
  * @param arms The arms, in the order the body tests them.
- * @param closed The closed key set, when known.
  * @returns The operations, with the keys of every arm that runs each.
  */
-function operationsOf(arms: readonly Arm[], closed?: readonly string[]): PickedOperation[] {
-	if (closed !== undefined) {
-		const named = arms.flatMap((arm) => arm.keys);
-		return operationsOf(restSpelled(arms, closed, named));
-	}
+function operationsOf(arms: readonly Arm[]): PickedOperation[] {
 	const operations = new Map<string, { keys: string[]; line: number }>();
 	for (const arm of arms) {
 		const identity = operationOf(arm, arms);
@@ -109,10 +106,16 @@ function dispatchOperations(
 	closed: readonly string[] | undefined,
 	type: string | undefined,
 ): Pick<Switchboard, "type" | "namedKeys" | "exhaustiveOperations" | "operations"> | undefined {
-	const operations = operationsOf(arms, closed);
-	const namedKeys = arms.flatMap((arm) => arm.keys);
+	const namedKeys = arms.flatMap((arm) =>
+		arm.guarded ? [] : arm.keys.filter((key) => key !== "*"),
+	);
+	const operations = operationsOf(
+		closed === undefined ? arms : restSpelled(arms, closed, namedKeys),
+	);
 	const exhaustiveOperations =
-		type !== undefined && namedKeys.includes("*") ? operationsOf(arms, namedKeys) : operations;
+		type !== undefined && arms.some((arm) => arm.keys.includes("*"))
+			? operationsOf(restSpelled(arms, namedKeys, namedKeys))
+			: operations;
 	if (Math.max(operations.length, exhaustiveOperations.length) < 2) return undefined;
 	return {
 		operations,

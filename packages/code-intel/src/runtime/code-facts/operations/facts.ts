@@ -154,7 +154,7 @@ interface Switchboard {
 	 * type and it `closes` the key.
 	 */
 	readonly type?: string;
-	/** The keys the body names, including arms that run no operation, when closure is deferred. */
+	/** The keys handled unconditionally by named arms, including arms that run no operation. */
 	readonly namedKeys?: readonly string[];
 	/** Operations regrouped without the catch-all, for a deferred key whose named arms exhaust it. */
 	readonly exhaustiveOperations?: readonly PickedOperation[];

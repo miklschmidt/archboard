@@ -69,6 +69,7 @@ const STATE = new Set(["field_expression", "index_expression"]);
 interface ArmCode {
 	readonly keys: readonly string[];
 	readonly code: readonly Node[];
+	readonly guarded?: boolean;
 }
 
 /** A pick the body makes. */
@@ -262,7 +263,9 @@ function matchArm(arm: Node): ArmCode | undefined {
 	const first = (pattern === undefined ? [] : codeOf(pattern)).find((each) => each.id !== guard);
 	const keys = first === undefined ? ["*"] : patternKeys(first);
 	const value = part(arm, "value");
-	return keys === undefined || value === undefined ? undefined : { keys, code: [value] };
+	return keys === undefined || value === undefined
+		? undefined
+		: { keys, code: [value], guarded: guard !== undefined };
 }
 
 /**
@@ -494,7 +497,12 @@ function forwards(code: readonly Node[]): boolean {
 function armOf(arm: ArmCode): Arm {
 	const found = { calls: new Set<string>(), writes: new Set<string>() };
 	for (const node of arm.code) effectsIn(node, found);
-	return { keys: arm.keys, line: (arm.code[0]?.startPosition.row ?? 0) + 1, ...found };
+	return {
+		keys: arm.keys,
+		guarded: arm.guarded ?? false,
+		line: (arm.code[0]?.startPosition.row ?? 0) + 1,
+		...found,
+	};
 }
 
 /**
