@@ -8,8 +8,8 @@ import {
 	readCheckpointInputs,
 	ArchiveError,
 	type ArchiveContext,
-	type CheckpointRecordSchema,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { type CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 import { isDeepStrictEqual } from "node:util";
 import { decodeModel, discoveryFailure } from "#runtime/canonical/read/operations/model-read.ts";
 import { proposalBaseline, decodeProposal } from "#runtime/canonical/proposals/operations/read.ts";

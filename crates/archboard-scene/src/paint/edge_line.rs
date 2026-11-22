@@ -8,7 +8,7 @@ use crate::paint::Edge;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, point, route, shape};
 use crate::paint::cards::halo;
-use crate::paint::heads::{body_short_of, ink_reach, mark_marker};
+use crate::paint::heads::{IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
@@ -31,11 +31,6 @@ use crate::sizes::PILL_RADIUS;
 /// Width added to a connection's unseen stroke, which takes the pointer. Its
 /// label wears the selection ring.
 const EDGE_HALO_EXTRA: f64 = 5.0;
-/// How thick a mutation's imprint on its target's edge is drawn.
-const IMPRINT_WIDTH: f64 = 2.0;
-/// How far a mutation's imprint reaches along its target's edge to either side
-/// of the tip, where the edge has room: a little wider than its wedge.
-pub(super) const IMPRINT_REACH: f64 = 7.0;
 
 /// How far back from a route's end its head's ink reaches.
 pub(super) fn arrowhead_reach(head: Head) -> f64 {

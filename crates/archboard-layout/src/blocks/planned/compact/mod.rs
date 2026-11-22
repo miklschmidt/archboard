@@ -20,8 +20,10 @@ use sheet::{Kind, Piece, Sheet};
 const CARD_GAP: f64 = 2.0 * LANE;
 /// The room a line needs off a card it ends on: its arrow and the bend behind it.
 const APPROACH: f64 = APPROACH_STRAIGHT + BEND_RADIUS + 1.0;
-/// Cards that stood on one station stay on one while parting would bring them less than this.
-const STAY_ALIGNED: f64 = 40.0;
+/// Cards that stood on one station stay on one while parting would bring them less than this:
+/// about the room one line takes passing a card, its approach and a lane, so a row with no
+/// line between its cards keeps the columns of the rows that have one.
+const STAY_ALIGNED: f64 = APPROACH + LANE;
 /// How near a card's corner a straight line to a neighbour can slide along its wall.
 const SLIDE_MARGIN: f64 = 24.0;
 /// Two pieces nearer than this touch, as a line's end touches its wall.

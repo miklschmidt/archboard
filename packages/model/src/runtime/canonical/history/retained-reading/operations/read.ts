@@ -12,7 +12,6 @@ import {
 } from "#runtime/canonical/read/operations/model-read.ts";
 import {
 	ArchiveError,
-	CheckpointRecordSchema,
 	archiveContext,
 	readCheckpointInputs,
 	archiveRecords,
@@ -21,6 +20,7 @@ import {
 	isArchiveAncestor,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 import {
 	archiveFailure,
 	historyResult,

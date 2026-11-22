@@ -278,6 +278,8 @@ After restoration, Refresh reopens the browser checkpoint.
 Switch that worktree to another branch before retrying retention.
 `ARCHIVE_UNREADABLE` means damaged storage or an unrelated branch using the reserved name.
 Preserve that branch and resolve its ownership before retrying.
+`ARCHIVE_NEWER` means a newer Archboard wrote the history.
+Update Archboard; never restore, fetch or roll back `archboard-history` for it.
 
 ## Edit one module description
 

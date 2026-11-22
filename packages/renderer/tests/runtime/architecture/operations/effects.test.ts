@@ -146,9 +146,12 @@ describe("a line's ends say its effect", () => {
 		const query = lineOf(svg, "read").markup;
 		expect(markerAt(query, "marker-start")).toContain("<circle");
 		expect(markerAt(lineOf(svg, "write").markup, "marker-start")).toBeUndefined();
-		// The imprint is a short bar across the end of the line.
-		expect(lineOf(svg, "write").markup).toMatch(/<line [^>]*stroke-width="2"/u);
-		expect(query).not.toMatch(/<line [^>]*stroke-width="2"/u);
+		// The imprint is a short bar across the end of the line, beside the
+		// line's ports.
+		const outsidePorts = (markup: string) =>
+			markup.replaceAll(/<g class="ab-port">.*?<\/g>/gsu, "");
+		expect(outsidePorts(lineOf(svg, "write").markup)).toContain("<line ");
+		expect(outsidePorts(query)).not.toContain("<line ");
 	});
 
 	test("a line's body stops short of its head, and its halo runs to the tip", async () => {

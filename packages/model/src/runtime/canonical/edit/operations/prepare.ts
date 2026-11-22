@@ -12,11 +12,14 @@ import {
 	assertArchiveWritable,
 	archiveCommit,
 	captureSource,
-	CheckpointRecordSchema,
 	tree,
 	ArchiveError,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import {
+	CheckpointRecordSchema,
+	RECORD_FORMAT,
+} from "#runtime/canonical/archive/store/model-archive-record.ts";
 import {
 	operationRef,
 	checkoutContext,
@@ -73,7 +76,7 @@ async function candidateRecord(
 ) {
 	const references = await captureReferencePins(vault, candidate.model, request);
 	return CheckpointRecordSchema.parse({
-		schemaVersion: 1,
+		schemaVersion: RECORD_FORMAT,
 		kind: "checkpoint",
 		vault: context.vault,
 		model: candidate.current.manifest.id,

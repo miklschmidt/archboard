@@ -1,18 +1,14 @@
-import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
-import { UpgradeInstallationSchema } from "#shared/upgrade/schemas/upgrade.ts";
 import {
 	checkpointBlobs,
 	tree,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive-blobs.ts";
-import { FamilyStandingSchema } from "#shared/schemas/model-proposals.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import {
 	archiveContext,
 	ARCHIVE_REF,
 	ArchiveError,
 } from "#runtime/canonical/archive/store/model-archive-location.ts";
-import { z } from "zod";
 import { git, GitCommandError } from "@archboard/process/git";
 import { repoIdentityAt } from "@archboard/workspace/checkouts";
 import { join } from "node:path";
@@ -22,52 +18,15 @@ import {
 	type CheckoutSnapshot,
 } from "@archboard/code-binding/resolution";
 import {
-	ArchitectureCheckpointSchema,
-	QualifiedSubjectIdSchema,
 	type ArchitectureCheckpoint,
 	type ArchitectureModel,
 } from "#shared/canonical-contracts/schemas/model.ts";
-
 import {
-	RecordedModuleEditSchema,
-	ArchitectureEditSuccessSchema,
-} from "#shared/canonical-contracts/schemas/model-operations.ts";
+	decodeRecord,
+	RECORD_FORMAT,
+} from "#runtime/canonical/archive/store/model-archive-record.ts";
+
 import { captureBoundSources } from "#runtime/canonical/archive/store/model-source.ts";
-
-import {
-	PortableInstallationSchema,
-	InitializationInstallationSchema,
-} from "#shared/schemas/model-portable.ts";
-
-const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, publication: true })
-	.extend({
-		schemaVersion: z.literal(1),
-		kind: z.literal("checkpoint"),
-		vault: z.string(),
-		narrativeDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
-		referenceDependencies: z.array(ArchitectureCheckpointSchema.shape.id).optional(),
-		edit: RecordedModuleEditSchema.optional(),
-		installation: z
-			.union([
-				PortableInstallationSchema,
-				InitializationInstallationSchema,
-				MigrationInstallationSchema,
-				UpgradeInstallationSchema,
-			])
-			.optional(),
-		reconciliations: FamilyStandingSchema.optional(),
-		confirmed: ArchitectureEditSuccessSchema.shape.confirmed,
-		subjects: z.array(QualifiedSubjectIdSchema).optional(),
-	})
-	.strict()
-	.refine(
-		(record) => record.correction === undefined || record.state !== null,
-		"A correction requires an existing state identity.",
-	);
-const ArchiveRecordSchema = z.discriminatedUnion("kind", [
-	CheckpointRecordSchema,
-	z.object({ schemaVersion: z.literal(1), kind: z.literal("synchronization") }).strict(),
-]);
 
 /**
  * Read an optional Git value without hiding other failures.
@@ -134,7 +93,7 @@ async function readRecord(context: ArchiveContext, id: string) {
 		context.reader === undefined
 			? await readBlob(context, `${id}:record.json`)
 			: (await checkpointBlobs(context, [`${id}:record.json`]))[0]!.toString();
-	return ArchiveRecordSchema.parse(JSON.parse(bytes));
+	return decodeRecord(id, bytes);
 }
 
 /**
@@ -246,7 +205,10 @@ async function synchronization(
 	const markerTree = await tree(
 		context,
 		new Map([
-			["record.json", Buffer.from(JSON.stringify({ schemaVersion: 1, kind: "synchronization" }))],
+			[
+				"record.json",
+				Buffer.from(JSON.stringify({ schemaVersion: RECORD_FORMAT, kind: "synchronization" })),
+			],
 		]),
 	);
 	return archiveCommit(
@@ -278,14 +240,13 @@ async function assertTipWritable(context: ArchiveContext, tip: string | undefine
 	if (worktrees?.split("\n").includes(`branch ${ARCHIVE_REF}`))
 		throw new ArchiveError("ARCHIVE_IN_USE", "A worktree has the archive branch checked out.");
 	if (tip === undefined) return;
-	try {
-		await readRecord(context, tip);
-	} catch (error) {
+	await readRecord(context, tip).catch((error: unknown) => {
+		if (error instanceof ArchiveError && error.code === "ARCHIVE_NEWER") throw error;
 		throw new ArchiveError(
 			"ARCHIVE_UNREADABLE",
 			error instanceof Error ? error.message : String(error),
 		);
-	}
+	});
 }
 
 /**
@@ -563,7 +524,7 @@ async function archiveRecords(context: ArchiveContext, tips?: string[]) {
 	);
 	return ids.map((id, index) => ({
 		id,
-		record: ArchiveRecordSchema.parse(JSON.parse(records[index]!.toString())),
+		record: decodeRecord(id, records[index]!.toString()),
 	}));
 }
 
@@ -576,7 +537,6 @@ export {
 	retainOperation,
 	ARCHIVE_REF,
 	ArchiveError,
-	CheckpointRecordSchema,
 	archiveContext,
 	archiveTip,
 	assertArchiveWritable,

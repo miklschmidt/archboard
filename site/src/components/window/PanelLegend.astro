@@ -1,6 +1,9 @@
 ---
-// The last section of the mock shell's right panel: the legend of the shop's picture, as the shell
-// shows it, with the kind chip of the panel's head.
+// The last sections of the mock shell's right panel: the legend of the shop's picture, as the
+// shell shows it on the shop under its default lens. The kinds of the parts, then the
+// relationships: the lens presets, a row for each kind of line and for each effect, each with its
+// switch, and the marks no reader hides. The shop's lines are all HTTP or storage, so the default
+// lens leaves none of them out, and the shell shows no left-out rows.
 import Icon from "../Icon.astro";
 import KindChip from "../KindChip.astro";
 import SectionLabel from "./SectionLabel.astro";
@@ -13,9 +16,18 @@ const kinds: [Kind, string][] = [
 	["external", "External"],
 	["ui", "User interface"],
 ];
+const lenses = [
+	"Main lines",
+	"Side effects",
+	"Sync compute",
+	"Network",
+	"Reads",
+	"Declared dependencies",
+	"All relationships",
+];
 const lines = [
 	["HTTP", "var(--sky)"],
-	["Data", "var(--emerald)"],
+	["Storage", "var(--emerald)"],
 ] as const;
 ---
 
@@ -31,27 +43,53 @@ const lines = [
 		}
 	</ul>
 	<p class="head"><SectionLabel icon="share" title="Relationships" /></p>
-	<ul class="lines">
+	<ul class="lenses">
+		{lenses.map((name, index) => <li class:list={{ "is-on": index === 0 }}>{name}</li>)}
+	</ul>
+	<ul class="rows">
 		{
 			lines.map(([name, color]) => (
 				<li>
-					<span class="line" style={`--c: ${color}`}></span> {name}
+					<span class="line" style={`--c: ${color}`} />
+					{name}
 					<Icon name="eye" size={16} class="eye" />
 				</li>
 			))
 		}
 	</ul>
+	<ul class="rows effects">
+		<li>
+			<svg class="sample" viewBox="0 0 36 28" aria-hidden="true">
+				<path d="M1 14H17" class="stroke" />
+				<path d="M17 6.5L32 14L17 21.5Z" class="fill" />
+				<path d="M33.5 5V23" class="stroke" />
+			</svg>
+			Mutation
+			<Icon name="eye" size={16} class="eye" />
+		</li>
+		<li>
+			<svg class="sample" viewBox="0 0 36 28" aria-hidden="true">
+				<circle cx="6" cy="14" r="4.2" class="stroke" />
+				<path d="M11.3 14H18" class="stroke" />
+				<path d="M18.3 14Q21.5 7.7 25.4 8.3L34 14L25.4 19.7Q21.5 20.3 18.3 14Z" class="stroke" />
+				<circle cx="24.7" cy="14" r="1.4" class="fill" />
+			</svg>
+			Query
+			<Icon name="eye" size={16} class="eye" />
+		</li>
+	</ul>
 	<ul class="grid marks">
-		<li><span class="line" style="--c: var(--neutral)"></span> Illustrated traffic</li>
+		<li><span class="line traffic"></span> Illustrated traffic</li>
 	</ul>
 	<p class="head"><SectionLabel icon="priceTag" title="Groups" /></p>
 	<p class="tags"><span class="tag payments">Payments</span><span class="tag fulfilment">Fulfilment</span></p>
 </div>
 
 <style>
-	/* The legend has three parts, each under the label of any section of the panel. A line type
-	   stands on a row of its own, and the row is its switch, with an eye at its end. The marks of
-	   lines, which no reader hides, stand under the types in two columns. A row is 28px, with no
+	/* The legend has two sections, each under the label of any section of the panel. The lens
+	   presets open the relationships in a well, the chosen one raised with the gold foot. A kind of
+	   line or an effect stands on a row of its own, and the row is its switch, with an eye at its
+	   end. The marks of lines, which no reader hides, stand under them. A row is 28px, with no
 	   plate under it. */
 	.legend {
 		display: flex;
@@ -84,20 +122,50 @@ const lines = [
 		padding: 0;
 	}
 	.grid li,
-	.lines li {
+	.rows li {
 		display: flex;
 		align-items: center;
 		gap: 8px;
 		min-height: 28px;
 		font-size: 13px;
 	}
-	.lines {
+	.lenses {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 2px;
+		list-style: none;
+		margin: 2px 0 4px;
+		padding: 2px;
+		border-radius: 3px;
+		background: var(--well);
+		box-shadow: var(--shadow-well);
+	}
+	.lenses li {
+		padding: 3px 6px;
+		border-radius: 3px;
+		font-size: 12px;
+		text-align: center;
+		white-space: nowrap;
+		color: var(--ink-muted);
+	}
+	.lenses .is-on {
+		color: var(--ink);
+		background: var(--raised);
+		box-shadow:
+			var(--shadow-raised),
+			inset 0 -2px 0 var(--gold-mark);
+	}
+	.rows {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
+	/* The effects stand a little apart from the kinds over them. */
+	.effects {
+		margin-top: 4px;
+	}
 	/* The eye stands at the end of its own row, where a click on the row hides the type. */
-	.lines :global(.eye) {
+	.rows :global(.eye) {
 		margin: 0 4px 0 auto;
 		color: var(--ink-muted);
 	}
@@ -105,6 +173,31 @@ const lines = [
 		width: 24px;
 		height: 2px;
 		background: var(--c);
+	}
+	.traffic {
+		height: 3px;
+		border-radius: 2px;
+		background: var(--neutral);
+	}
+	/* An effect's sample is the picture's own line in the neutral ink, with the head and the marks
+	   that say the effect: a wedge and the imprint for a mutation, the caller's ring and an eye for
+	   a query. */
+	.sample {
+		flex: none;
+		width: 24px;
+		height: 19px;
+		overflow: visible;
+		color: var(--neutral);
+	}
+	.sample .stroke {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+	.sample .fill {
+		fill: currentColor;
 	}
 	.tags {
 		display: flex;

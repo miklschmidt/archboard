@@ -3,7 +3,9 @@
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
 use crate::geometry::{Point, Rect, Side};
+use crate::graph::Node;
 use crate::track::chains::LANE;
+use crate::track::channels::PORT_MARGIN;
 
 #[derive(Clone, Copy, PartialEq)]
 pub(super) struct Port {
@@ -43,14 +45,7 @@ fn choose_port(
     }
     let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
-    let door = model.endpoints[endpoint].door;
-    // A door cannot widen for its incoming fan. Keep its ports inside the rounded corners
-    // with the twelve-point line gap that the geometry guard requires.
-    let (margin, spacing) = match (source, door) {
-        (true, _) => (12.0, 8.0),
-        (false, true) => (12.0, 12.0),
-        (false, false) => (20.0, LANE),
-    };
+    let (margin, spacing) = spacing(source, model.endpoints[endpoint].door);
     if !room(at, side, kinds.len(), margin, spacing) {
         return None;
     }
@@ -269,6 +264,57 @@ fn kinds_of<'a>(model: &'a Model<'_>, incidents: &[usize]) -> Vec<&'a str> {
         }
     }
     kinds
+}
+
+/// How far a wall keeps the ports of one end of its lines from its corners, and how far apart:
+/// a head a lane from the next, as wide as it is, and a tail closer. A door's corners are
+/// rounder than a card's, so its ports stand nearer them.
+fn spacing(source: bool, door: bool) -> (f64, f64) {
+    match (source, door) {
+        (true, _) => (12.0, 8.0),
+        (false, true) => (12.0, LANE),
+        (false, false) => (PORT_MARGIN, LANE),
+    }
+}
+
+/// The graph with each door as wide as one wall needs to hold a port for each kind of line the
+/// door takes in, and one for each it sends out, each head a lane from the next. A door's words
+/// set its width only while its lines need less.
+pub(in crate::blocks) fn doors_widened(graph: &Node) -> Node {
+    let widths: rustc_hash::FxHashMap<String, f64> = Model::new(graph)
+        .map(|model| {
+            (model.endpoints.iter().enumerate())
+                .filter(|(_, end)| end.door)
+                .filter_map(|(at, end)| {
+                    let width = [(true, &model.outgoing[at]), (false, &model.incoming[at])]
+                        .map(|(source, lines)| {
+                            let (margin, spacing) = spacing(source, true);
+                            let ports = kinds_of(&model, lines).len().saturating_sub(1);
+                            2.0 * margin + ports as f64 * spacing
+                        })
+                        .into_iter()
+                        .fold(0.0, f64::max);
+                    (width > end.node.width.unwrap_or_default())
+                        .then(|| (end.node.id.clone(), width))
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut wide = graph.clone();
+    if !widths.is_empty() {
+        widen(&mut wide, &widths);
+    }
+    wide
+}
+
+/// Give each node the width named for it, through the whole hierarchy.
+fn widen(node: &mut Node, widths: &rustc_hash::FxHashMap<String, f64>) {
+    if let Some(&width) = widths.get(&node.id) {
+        node.width = Some(width);
+    }
+    for child in node.children.iter_mut().flatten() {
+        widen(child, widths);
+    }
 }
 
 fn room(at: Rect, side: Side, count: usize, margin: f64, spacing: f64) -> bool {

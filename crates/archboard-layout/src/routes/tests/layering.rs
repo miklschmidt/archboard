@@ -41,7 +41,10 @@ fn a_solid_line_rises_over_a_dashed_one_and_where_no_hop_fits_the_two_cross_plai
 // the longer one rose, and hops moved about with every edit far away.
 #[test]
 fn between_two_lines_with_all_the_room_a_hop_wants_the_later_painted_rises() {
-    let result = bridged(&drawing(&[down_from(50.0, 0.0, 300.0), across(100.0)]));
+    let result = bridged(&drawing(&[
+        down_from(50.0, 0.0, 300.0),
+        across_from(100.0, -50.0, 150.0),
+    ]));
     assert_eq!(result.bridges.len(), 1);
     assert_eq!(
         (

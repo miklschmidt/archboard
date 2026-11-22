@@ -19,16 +19,26 @@ use crate::scene::{Colour, Geometry, Head, Marker, MarkerId, PathStep, Purpose, 
 const MARK_BOX: f64 = 16.0;
 /// How far back from its tip the longest mark, an "=" and its point, lets the
 /// body end, in its square's units.
-const EQUALS_BACK: f64 = 11.6;
-/// The straight run a line needs after its last bend: the longest mark, and a
-/// little of the body straight before it, so a head reads along its line and
-/// never sits on a bend.
-pub(super) const APPROACH: f64 = 16.0;
+const EQUALS_BACK: f64 = 13.8;
+/// The straight run a line needs after its last bend: the longest mark, about
+/// 21 units, and about 9 units of body straight before it, so a head reads
+/// along its line and never sits on or just after a bend.
+pub(super) const APPROACH: f64 = 30.0;
+/// The least length of a line with no bend: its longest marks, a head and a
+/// ring at its start, and a little of the body between them. Such a line has
+/// no bend for a head to sit on, so it needs no approach.
+pub(super) const STRAIGHT_RUN: f64 = 23.0;
 
-/// How many picture units one unit of a new mark's square is: a wedge a
-/// little longer than a classic head, about five times as long as its line is
-/// thick, so it reads as the end of its line and never competes with a card.
-const MARK_UNIT: f64 = 1.15;
+/// How many picture units one unit of a new mark's square is: a wedge 15
+/// units long and as wide, about six times as long as its line is thick, so it
+/// reads as the end of its line at the opening zoom and never competes with a
+/// card.
+const MARK_UNIT: f64 = 1.5;
+/// How far a mutation's imprint reaches along its target's edge to either
+/// side of the tip, where the edge has room: a little wider than its wedge.
+pub(super) const IMPRINT_REACH: f64 = 6.0 * MARK_UNIT;
+/// How thick a mutation's imprint is drawn: a little thinner than its line.
+pub(super) const IMPRINT_WIDTH: f64 = 1.75 * MARK_UNIT;
 /// The side of the square a classic head is drawn in, in its own units.
 const CLASSIC_BOX: f64 = 10.0;
 /// Where a new head's tip lies in its square.
@@ -98,6 +108,11 @@ pub(super) fn mark_length(head: Head) -> f64 {
         Head::Filled | Head::Open => HEAD_LENGTH,
         _ => MARK_BOX * MARK_UNIT,
     }
+}
+
+/// How far a ring at the caller reaches from its centre, in picture units.
+pub(super) fn ring_reach() -> f64 {
+    (RING_RADIUS + OUTLINE / 2.0) * MARK_UNIT
 }
 
 /// The side of a relationship mark's square in picture units: what a viewer
@@ -214,10 +229,12 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
                 .filled(ink),
             ]
         }
+        // The bars stand wide apart and reach well past the line, so the "="
+        // keeps its gap open and reads apart from its line at the opening zoom.
         Head::Equals => vec![
-            point(3.6, 3.0, ink, OUTLINE),
-            stroked(&[back(6.4, -3.2), back(6.4, 3.2)], ink, OUTLINE),
-            stroked(&[back(9.4, -3.2), back(9.4, 3.2)], ink, OUTLINE),
+            point(3.0, 3.0, ink, OUTLINE),
+            stroked(&[back(5.6, -4.5), back(5.6, 4.5)], ink, OUTLINE),
+            stroked(&[back(11.2, -4.5), back(11.2, 4.5)], ink, OUTLINE),
         ],
         Head::Detached => vec![point(5.25, 3.75, ink, DETACHED_OUTLINE)],
         Head::Ring => vec![
@@ -252,13 +269,19 @@ pub(super) fn mark_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colo
 
 #[cfg(test)]
 mod tests {
-    use super::{APPROACH, body_short_of};
+    use super::{APPROACH, STRAIGHT_RUN, body_short_of};
     use crate::scene::Head;
 
     #[test]
-    fn every_mark_and_a_little_body_fit_the_straight_approach() {
+    fn every_mark_and_a_little_body_fit_the_straight_approach_and_a_straight_line() {
         for head in [Head::Wedge, Head::Eye, Head::Equals, Head::Detached] {
             assert!(body_short_of(head) + 2.0 <= APPROACH, "{head:?}");
+            let ring = if head == Head::Eye {
+                body_short_of(Head::Ring)
+            } else {
+                0.0
+            };
+            assert!(body_short_of(head) + ring + 1.5 <= STRAIGHT_RUN, "{head:?}");
         }
     }
 }
