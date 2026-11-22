@@ -87,6 +87,48 @@ const GroupPolicySchema = z
 	})
 	.strict();
 /**
+ * The module-depth findings of the code check (ADR 0082) whose level a vault
+ * sets, and the levels it may set. A rule only lowers: an incomplete read
+ * lowers a finding to information, and no rule may make it a warning again.
+ */
+const DepthRuleSchema = z.partialRecord(
+	z.enum([
+		"EXPOSED_VALUE",
+		"EXPOSED_VALUE_COMPUTED",
+		"CODE_PASS_THROUGH",
+		"REEXPORT_PASS_THROUGH",
+		"EXPOSED_UNUSED",
+		"INTERFACE_UNDECLARED",
+		"MODULE_SHALLOW",
+	]),
+	z.enum(["information", "off"]),
+);
+/**
+ * The vault's code-check policy (TASK-646.04, TASK-650). `failShallowModules`
+ * is the only promotion, so a rule that lowers `MODULE_SHALLOW` beside it
+ * contradicts it, and the refusal names the rule.
+ */
+const CodeCheckPolicySchema = z
+	.object({
+		failShallowModules: z.boolean().optional().meta({
+			description:
+				"Plain `archboard check` fails on a shallow module that the branch touched, working tree included, as `--fail-shallow-modules` makes it (TASK-646.04).",
+		}),
+		rules: DepthRuleSchema.optional().meta({
+			description:
+				"The level of each module-depth finding, by code: `information` keeps it and never fails the check, `off` removes it from the answer. A code without a rule keeps its built-in level. Keys: EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH, EXPOSED_UNUSED, INTERFACE_UNDECLARED and MODULE_SHALLOW. A rule on MODULE_SHALLOW beside `failShallowModules: true` is invalid.",
+		}),
+	})
+	.strict()
+	.refine(
+		(policy) => policy.failShallowModules !== true || policy.rules?.MODULE_SHALLOW === undefined,
+		{
+			path: ["rules", "MODULE_SHALLOW"],
+			message:
+				"failShallowModules fails the check on MODULE_SHALLOW, and this rule lowers it: remove one of them",
+		},
+	);
+/**
  * Build the policy contract with the icon vocabulary available at this boundary.
  * @param icon Valid icon names; browser readers only need the transport spelling.
  * @returns The policy schema shared by authoring validation and read contracts.
@@ -113,16 +155,10 @@ function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.s
 				.meta({ minProperties: 1 }),
 			/** Groups nodes may belong to, by stable id. None by default. */
 			groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}),
-			codeCheck: z
-				.object({
-					failShallowModules: z.boolean().meta({
-						description:
-							"Plain `archboard check` fails on a shallow module that the branch touched, working tree included, as `--fail-shallow-modules` makes it (TASK-646.04).",
-					}),
-				})
-				.strict()
-				.optional()
-				.meta({ description: "What the code check fails on beyond its warnings. Off by default." }),
+			codeCheck: CodeCheckPolicySchema.optional().meta({
+				description:
+					"What the code check fails on beyond its warnings, and the level of each module-depth finding. Without it, every module-depth finding keeps its built-in level and no gate is on.",
+			}),
 		})
 		.strict();
 }

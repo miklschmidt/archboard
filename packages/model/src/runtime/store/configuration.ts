@@ -100,6 +100,18 @@ function configurationWarnings(
 export { VaultConfigurationSchema, readVaultConfiguration };
 
 /**
+ * The key a schema issue refuses, as a path. An unknown key is refused at the object that holds
+ * it, so its name ends the path.
+ * @param issue The first issue, if any.
+ * @returns The path.
+ */
+function refusedKey(issue: z.core.$ZodIssue | undefined): PropertyKey[] {
+	if (issue === undefined) return [];
+	if (issue.code !== "unrecognized_keys") return issue.path;
+	return [...issue.path, ...issue.keys.slice(0, 1)];
+}
+
+/**
  * Validate shape and installed icon vocabulary together.
  * @param source Current YAML bytes.
  * @returns A usable policy, and the failure and the first key it refused, if any.
@@ -111,7 +123,7 @@ function parsePolicy(source: string): {
 } {
 	const parsed = VaultConfigurationSchema.safeParse(Bun.YAML.parse(source));
 	if (!parsed.success) {
-		const refused = parsed.error.issues[0]?.path ?? [];
+		const refused = refusedKey(parsed.error.issues[0]);
 		return {
 			configuration: DEFAULT_SEMANTIC_POLICY,
 			problem: `Invalid semantic policy: ${z.prettifyError(parsed.error)}`,
