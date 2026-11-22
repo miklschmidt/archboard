@@ -3,7 +3,7 @@
   "name": "Basket cache",
   "kind": "cache",
   "responsibility": "Holds each shopper's basket for a day",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/MKhTEYqf#Q2XClLOC",
   "outgoing": []
 }

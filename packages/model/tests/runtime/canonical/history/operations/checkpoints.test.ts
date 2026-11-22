@@ -92,11 +92,11 @@ test("retained architecture reopens exact bytes without reading damaged current 
 });
 
 test("a vault in the old format reads once as read-only, refuses writes, and its history keeps its own policy", async () => {
-	const { vault } = fixture("examples/canonical-model/.archboard/vault");
+	const { vault } = fixture("tests/fixtures/old-format-vault");
 	const old = readArchitectureModel(vault);
 	if (!old.success) throw new Error(JSON.stringify(old));
 	expect(old.readOnly).toMatchObject({ code: "UPGRADE_REQUIRED" });
-	expect(Object.keys(old.policy.relationshipKinds)).toEqual(["call"]);
+	expect(Object.keys(old.policy.relationshipKinds)).toEqual(["call", "data"]);
 	const claimed = await claimArchitectureSubjects(vault, {
 		target: { model: old.manifest.id, state: old.selectedState!.id },
 		writer: "test-agent",

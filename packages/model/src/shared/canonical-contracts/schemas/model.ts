@@ -248,6 +248,8 @@ const ArchitectureModelFailureSchema = z
 		success: z.literal(false),
 		code: z.enum([
 			"UPGRADE_REQUIRED",
+			"UPGRADE_NOT_NEEDED",
+			"INVENTORY_INCOMPLETE",
 			"WALKTHROUGH_NOT_FOUND",
 			"BOOKMARK_NOT_FOUND",
 			"BOOKMARK_AMBIGUOUS",

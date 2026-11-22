@@ -21,7 +21,7 @@ A reading selects what you see without copying architecture.
 
 Before the first architecture operation, read [canonical models](references/canonical-models.md) for discovery, reads, writes, and history.
 For `LEGACY_AUTHORITY` or requested migration, follow [legacy migration](references/legacy-migration.md).
-`UPGRADE_REQUIRED` means that the vault is in the format from before effects: it reads, and every write is refused until it is upgraded.
+`UPGRADE_REQUIRED` means the vault is in the format from before effects: it reads, and every write is refused until [the upgrade](references/upgrade.md).
 Before describing implemented architecture or authoring changes, read [authoring](references/authoring.md) for evidence and modeling rules.
 Before preparing a request, read [schemas](references/schemas.md).
 

@@ -45,19 +45,29 @@ type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }> & {
 };
 
 /**
+ * The part of an intent a retained baseline records: who wrote it, what it read,
+ * and the correction it carries, when it is one. An edit is one; so is an upgrade.
+ */
+type BaselineIntent = Pick<
+	ArchitectureModuleEdit,
+	"operationId" | "writer" | "doing" | "expectedRevision"
+> &
+	Partial<Pick<Extract<ArchitectureModuleEdit, { correction: unknown }>, "correction">>;
+
+/**
  * Preserve the exact ancestry behind a materialized predecessor.
  * @param request The complete architectural intent.
  * @param predecessor The selected complete reading.
  * @returns Every required baseline parent.
  */
-function baselineDependencies(request: ArchitectureModuleEdit, predecessor: ArchitectureModel) {
+function baselineDependencies(request: BaselineIntent, predecessor: ArchitectureModel) {
 	return [
 		...new Set([
 			...(predecessor.selectedState?.baseline === undefined
 				? []
 				: [predecessor.selectedState.baseline]),
 			...(predecessor.checkpoint === undefined ? [] : [predecessor.checkpoint.id]),
-			...("correction" in request ? [request.correction.previous] : []),
+			...(request.correction === undefined ? [] : [request.correction.previous]),
 		]),
 	];
 }
@@ -74,9 +84,9 @@ function baselineSources(
 	context: Awaited<ReturnType<typeof archiveContext>>,
 	vault: string,
 	predecessor: ArchitectureModel,
-	request: ArchitectureModuleEdit,
+	request: BaselineIntent,
 ) {
-	if ("correction" in request)
+	if (request.correction !== undefined)
 		return request.correction.revisions.map((revision) => ({ ...revision, uncommitted: false }));
 	return predecessor.checkpoint?.sources ?? captureSource(context, predecessor, vault);
 }
@@ -90,7 +100,7 @@ function baselineSources(
  */
 async function retainBaseline(
 	vault: string,
-	request: ArchitectureModuleEdit,
+	request: BaselineIntent,
 	predecessor: ArchitectureModel,
 	state: Pick<z.infer<typeof ProposalSchema>, "id" | "name">,
 ) {

@@ -68,6 +68,12 @@ import {
 import { repoRoute } from "#cli/commands/repo/operations/repo.ts";
 import { initContract } from "#cli/commands/init/operations/init.ts";
 import { telemetryContract } from "#cli/commands/telemetry/operations/telemetry.ts";
+import {
+	NAMESPACE_USAGE as UPGRADE_USAGE,
+	upgradeContract,
+	upgradeInstallContract,
+	upgradeInventoryContract,
+} from "#cli/commands/upgrade/operations/upgrade.ts";
 import { type CliBootstrap, runCliWith } from "#cli/routing/operations/session.ts";
 import {
 	type CliRegistryEntry,
@@ -243,6 +249,24 @@ const COMMANDS: Record<string, CommandRoute> = {
 		},
 	},
 	repo: repoRoute(),
+	upgrade: {
+		owner: contract(upgradeContract, "apps/cli/src/cli/commands/upgrade/operations/upgrade.ts"),
+		children: {
+			inventory: child(
+				contract(
+					upgradeInventoryContract,
+					"apps/cli/src/cli/commands/upgrade/operations/upgrade.ts",
+				),
+			),
+			install: child(
+				contract(upgradeInstallContract, "apps/cli/src/cli/commands/upgrade/operations/upgrade.ts"),
+			),
+		},
+		bare: {
+			kind: "namespace-refusal",
+			message: UPGRADE_USAGE,
+		},
+	},
 	init: {
 		owner: contract(initContract, "apps/cli/src/cli/commands/init/operations/init.ts"),
 	},

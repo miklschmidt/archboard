@@ -3,12 +3,13 @@
   "name": "archboard CLI",
   "kind": "app",
   "responsibility": "Takes one complete intent at a time",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#jOiYJByJ",
   "outgoing": [
     {
       "order": 50,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "mutation",
       "label": "one intent",
       "emphasis": "hero",
       "traffic": {
@@ -20,7 +21,8 @@
     },
     {
       "order": 55,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "mutation",
       "label": "drafts",
       "emphasis": "normal",
       "traffic": {

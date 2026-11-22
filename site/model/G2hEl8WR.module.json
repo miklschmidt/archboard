@@ -3,13 +3,14 @@
   "name": "Code check",
   "kind": "service",
   "responsibility": "Finds where the map and the code disagree",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#G2hEl8WR",
   "parent": "q9TUBeZT#cJMRcSvL",
   "outgoing": [
     {
       "order": 80,
-      "kind": "dependency",
+      "kind": "storage",
+      "effect": "query",
       "label": "reads",
       "emphasis": "normal",
       "id": "q9TUBeZT#W5P2fkc8",
@@ -17,7 +18,8 @@
     },
     {
       "order": 90,
-      "kind": "dependency",
+      "kind": "storage",
+      "effect": "query",
       "label": "compares",
       "emphasis": "normal",
       "id": "q9TUBeZT#Ryr48jLY",

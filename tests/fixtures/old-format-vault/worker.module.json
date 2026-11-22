@@ -1,0 +1,16 @@
+{
+	"schemaVersion": 1,
+	"id": "Shop#Worker",
+	"name": "Worker",
+	"kind": "service",
+	"order": 10,
+	"outgoing": [
+		{
+			"id": "Shop#Record",
+			"to": "Shop#Gateway",
+			"kind": "data",
+			"order": 10,
+			"label": "Record the result"
+		}
+	]
+}

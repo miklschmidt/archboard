@@ -3,13 +3,14 @@
   "name": "Availability route",
   "kind": "route",
   "responsibility": "GET /stock/{product}: how many can still be sold",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/5IZTN4RT#Nmg4K8ge",
   "parent": "Shop/5IZTN4RT#1tJdSOqs",
   "outgoing": [
     {
       "order": 6000,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "query",
       "label": "count minus reserved",
       "emphasis": "normal",
       "traffic": {

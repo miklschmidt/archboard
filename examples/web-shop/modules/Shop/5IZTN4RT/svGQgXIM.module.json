@@ -3,13 +3,14 @@
   "name": "Release route",
   "kind": "route",
   "responsibility": "DELETE /reservations/{order}: puts a cancelled order's items back",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "Shop/5IZTN4RT#svGQgXIM",
   "parent": "Shop/5IZTN4RT#1tJdSOqs",
   "outgoing": [
     {
       "order": 5000,
       "kind": "call",
+      "effect": "mutation",
       "label": "put the order's items back",
       "emphasis": "normal",
       "id": "Shop/5IZTN4RT#y1iIj3Xn",

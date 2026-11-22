@@ -1,5 +1,5 @@
 {
-	"schemaVersion": 1,
+	"schemaVersion": 2,
 	"id": "Shop#Handler",
 	"name": "Handler",
 	"kind": "module",
@@ -11,6 +11,7 @@
 			"id": "Shop#Dispatch",
 			"to": "Shop#Worker",
 			"kind": "call",
+			"effect": "mutation",
 			"order": 10,
 			"label": "Dispatch request",
 			"description": "Sends the accepted request",
