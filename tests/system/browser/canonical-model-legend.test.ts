@@ -149,7 +149,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-	expect(await switches(browser)).toEqual(["call: true", "data: true", "event: true"]);
+	expect(await switches(browser)).toEqual(["call: true", "event: true", "data: true"]);
 	expect(
 		await browser.eval<{ marks: number; switches: number }>(`(() => {
 			const marks = document.querySelector('[data-slot="model-legend-marks"]');
@@ -183,7 +183,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
-	expect(await switches(browser)).toEqual(["call: false", "data: true", "event: false"]);
+	expect(await switches(browser)).toEqual(["call: false", "event: false", "data: true"]);
 	expect(await wordsAt(browser)).toBe(rest);
 
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
