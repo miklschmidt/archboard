@@ -56,6 +56,8 @@ const checkout = fixtureCheckout({
 		"\treturn refs(vault, request);",
 		"}",
 		'export type Kind = "a" | "b";',
+		'export function request(input: Req) { if (input.kind === "x") return one(); return two(); }',
+		'export function inlineRequest(input: { kind: "x"; a: 1 } | { kind: "y" }) { if (input.kind === "x") return one(); return two(); }',
 		'export type Req = { kind: "x"; a: 1 } | { kind: "y" };',
 		"",
 	].join("\n"),
@@ -131,6 +133,8 @@ test("a TypeScript callable picks one operation for each arm that runs different
 	expect(await switchboards("src/picks.ts")).toEqual({
 		change: { key: "intent", keys: [["claim"], ["release"], ["takeBack"]] },
 		findVault: { key: "options.register", keys: [["true"], ["false"]] },
+		request: { key: "input.kind", keys: [["x"], ["y"]] },
+		inlineRequest: { key: "input.kind", keys: [["x"], ["y"]] },
 		history: { key: "input.analysis", keys: [["locality"], ["footprint"], ["refs"]] },
 		// The table closes its handlers, and the arm that parses with the shared schema path plus a check is the default.
 		parseDocument: {

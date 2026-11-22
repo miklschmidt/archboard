@@ -150,10 +150,24 @@ function namedClosure(type: Node): Closure {
 function closureOf(annotation: Node | undefined, property: string | undefined): Closure {
 	const type = typeOf(annotation);
 	if (type === undefined) return undefined;
-	if (property !== undefined) return heldClosure(propertyType(type, property));
+	if (property !== undefined) return propertyClosure(type, property);
 	if (type.type === "type_identifier") return namedClosure(type);
 	const keys = literalKeys(type);
 	return keys === undefined ? undefined : { keys, whole: true };
+}
+
+/**
+ * The closure of a request property, including a union of tagged requests.
+ * @param type The request type.
+ * @param property The selected property.
+ * @returns The closure.
+ */
+function propertyClosure(type: Node, property: string): Closure {
+	const declaration =
+		type.type === "type_identifier" ? typeDeclaration(type.tree.rootNode, type.text) : undefined;
+	const members = unionMembers(part(declaration, "value") ?? type);
+	const keys = members.length > 1 ? propertyKeys(members, property) : undefined;
+	return keys === undefined ? heldClosure(propertyType(type, property)) : { keys, whole: true };
 }
 
 /**
