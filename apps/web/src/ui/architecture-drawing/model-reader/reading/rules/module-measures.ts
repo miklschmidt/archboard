@@ -25,8 +25,11 @@ type HistorySource = "bound" | "unbound" | "original" | "branch";
 /** How the code history of a reading stands, each with one thing to say. */
 type HistoryState = Exclude<HistorySource, "bound"> | "reading" | "read" | "failed";
 
-/** What the last code pass counts of a module: its exports, its values, its logic and its findings. */
-type CodeKey = "codeExports" | "codeValues" | "codeLogic" | "codeFindings";
+/**
+ * What the last code pass counts of a module: its exports, the names its callers learn, its
+ * values, its logic and its findings.
+ */
+type CodeKey = "codeExports" | "codeWidth" | "codeValues" | "codeLogic" | "codeFindings";
 
 /** What a reader can sort the modules of a model by. */
 type MeasureKey = "commits" | "together" | "unjoined" | InterfaceKey | CodeKey;
@@ -140,6 +143,13 @@ const MEASURES: readonly Measure[] = [
 		label: "Exports",
 		description:
 			"Names its code exports: functions, classes, public methods, values and types. Shows how wide the code's interface is.",
+	},
+	{
+		key: "codeWidth",
+		group: "code",
+		label: "Width",
+		description:
+			"Names its callers learn: exports that are not types, and a switchboard once for each operation it picks by a key. Below 4 pieces of logic for each, the module is shallow.",
 	},
 	{
 		key: "codeValues",
@@ -344,6 +354,7 @@ function codeMeasure(row: MeasureRow, key: CodeKey): number | undefined {
 	if (code?.kind !== "read") return undefined;
 	const { exports } = code;
 	if (key === "codeValues") return exports.values;
+	if (key === "codeWidth") return code.width;
 	if (key === "codeLogic") return code.logic;
 	if (key === "codeFindings") return code.findings;
 	return exports.functions + exports.classes + exports.methods + exports.values + exports.types;

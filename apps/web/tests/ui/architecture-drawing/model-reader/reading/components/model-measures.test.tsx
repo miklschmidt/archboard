@@ -466,6 +466,8 @@ function measured(
 		unjudged: languages.unjudged,
 		exports,
 		logic: exports.functions * 3,
+		width: exports.functions + exports.classes + exports.methods + exports.values,
+		switchboards: [],
 	};
 }
 

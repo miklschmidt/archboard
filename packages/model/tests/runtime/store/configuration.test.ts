@@ -1,7 +1,8 @@
-// The vault policy's module-depth rules (TASK-650, TASK-651): `codeCheck.rules`
-// sets the level of each module-depth code to `information` or `off`, and
-// refuses any other code or level, and `off` on a code the shallow-module gate
-// fails on beside the gate, with the diagnostic that names the entry.
+// The vault policy's module-depth rules (TASK-650, TASK-651, TASK-659):
+// `codeCheck.rules` sets the level of each module-depth code to `information`
+// or `off`, and refuses any other code or level, the retired `INTERFACE_WIDE`
+// with a message that says so, and `off` on `MODULE_SHALLOW` beside the
+// shallow-module gate, with the diagnostic that names the entry.
 
 import { afterAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -29,11 +30,8 @@ function read(codeCheck: unknown) {
 
 test("a rule sets a module-depth code to information or off, and information beside the gate is debt mode", () => {
 	for (const codeCheck of [
-		{ rules: { EXPOSED_VALUE: "information", CODE_PASS_THROUGH: "off", INTERFACE_WIDE: "off" } },
-		{
-			failShallowModules: true,
-			rules: { MODULE_SHALLOW: "information", INTERFACE_WIDE: "information" },
-		},
+		{ rules: { EXPOSED_VALUE: "information", CODE_PASS_THROUGH: "off", MODULE_SHALLOW: "off" } },
+		{ failShallowModules: true, rules: { MODULE_SHALLOW: "information" } },
 	] as const) {
 		const configuration = read(codeCheck);
 		expect(configuration.diagnostics).toEqual([]);
@@ -49,10 +47,6 @@ test("a rule on another code, a warning level, or off beside the gate is an inva
 			{ failShallowModules: true, rules: { MODULE_SHALLOW: "off" } },
 			"codeCheck.rules.MODULE_SHALLOW",
 		],
-		[
-			{ failShallowModules: true, rules: { INTERFACE_WIDE: "off" } },
-			"codeCheck.rules.INTERFACE_WIDE",
-		],
 	] as const) {
 		const configuration = read(codeCheck);
 		expect(configuration.ok, path).toBe(false);
@@ -62,4 +56,11 @@ test("a rule on another code, a warning level, or off beside the gate is an inva
 		// Bundled defaults are active, so no rule from the refused file applies.
 		expect(configuration.configuration.codeCheck).toBeUndefined();
 	}
+});
+
+test("a rule on the retired INTERFACE_WIDE says it is retired and asks for the entry's removal", () => {
+	const [diagnostic] = read({ rules: { INTERFACE_WIDE: "off" } }).diagnostics;
+	expect(diagnostic?.path).toBe("codeCheck.rules.INTERFACE_WIDE");
+	expect(diagnostic?.message).toContain("INTERFACE_WIDE is retired");
+	expect(diagnostic?.message).toContain("Remove this entry");
 });

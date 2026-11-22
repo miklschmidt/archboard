@@ -32,7 +32,6 @@ interface ExportKind {
 /** The findings on a module's exports as a whole, which stand over its list. */
 const MODULE_CODES: ReadonlySet<string> = new Set([
 	"MODULE_SHALLOW",
-	"INTERFACE_WIDE",
 	"INTERFACE_UNDECLARED",
 ]);
 

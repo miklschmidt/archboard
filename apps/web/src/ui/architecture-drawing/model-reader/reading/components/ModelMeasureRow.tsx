@@ -165,7 +165,27 @@ function cellNote(row: MeasureRow, measure: MeasureKey): string | undefined {
 	if (code?.kind !== "read") return undefined;
 	const partial = partialWords(code);
 	if (measure === "codeExports") return [exportKinds(code), partial].join(" ").trim();
+	if (measure === "codeWidth") return switchboardWords(code);
 	return measure === "codeFindings" ? partial : undefined;
+}
+
+/**
+ * The switchboards of a module: what each picks by its key, and where each operation starts.
+ * @param code What the pass says of it.
+ * @returns The words, or nothing for a module with none.
+ */
+function switchboardWords(code: ReadCode): string | undefined {
+	if (code.switchboards.length === 0) return undefined;
+	return code.switchboards
+		.map(({ name, path, key, operations, open }) => {
+			const picked = operations.map(({ keys, line }) => `${keys.join(" or ")} (${path}:${line})`);
+			const counted =
+				open === undefined
+					? `${name} picks ${operations.length} operations by ${key}`
+					: `${name} counts once: no closed keys found in ${open}, the type of ${key}`;
+			return `${counted}: ${picked.join(", ")}.`;
+		})
+		.join(" ");
 }
 
 /** What the code pass says of a module it read. */

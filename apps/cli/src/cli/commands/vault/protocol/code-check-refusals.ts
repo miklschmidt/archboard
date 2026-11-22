@@ -39,7 +39,7 @@ const ruleRefusal = {
 	exit: 2,
 	stream: "stderr" as const,
 	description:
-		"`--fail-shallow-modules` fails the check on MODULE_SHALLOW and INTERFACE_WIDE in a touched module, and the vault policy's `codeCheck.rules` turns one of them off. Leave out the flag, or set the rule to information.",
+		"`--fail-shallow-modules` fails the check on MODULE_SHALLOW in a touched module, and the vault policy's `codeCheck.rules` turns it off. Leave out the flag, or set the rule to information.",
 };
 
 /** The code check's refusals, in the order the help lists them. */

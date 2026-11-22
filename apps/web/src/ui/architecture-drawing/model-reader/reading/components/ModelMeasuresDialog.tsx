@@ -71,6 +71,7 @@ const EXPOSES: readonly MeasureKey[] = [
 	"callers",
 	"wholeModule",
 	"codeExports",
+	"codeWidth",
 	"codeValues",
 	"codeLogic",
 	"codeFindings",

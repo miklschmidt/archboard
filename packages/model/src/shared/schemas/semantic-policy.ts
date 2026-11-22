@@ -99,42 +99,45 @@ const DepthRuleSchema = z.partialRecord(
 		"REEXPORT_PASS_THROUGH",
 		"EXPOSED_UNUSED",
 		"INTERFACE_UNDECLARED",
-		"INTERFACE_WIDE",
 		"MODULE_SHALLOW",
 	]),
 	z.enum(["information", "off"]),
+	{
+		// TASK-659 retired the flat cap; a vault that still sets it is told so by name. The record
+		// reports an unknown key as `unrecognized_keys`, which its own issue type does not list.
+		error: (issue) =>
+			"keys" in issue && Array.isArray(issue["keys"]) && issue["keys"].includes("INTERFACE_WIDE")
+				? "INTERFACE_WIDE is retired: MODULE_SHALLOW judges the logic behind each name at any width (ADR 0082). Remove this entry"
+				: undefined,
+	},
 );
-/** The codes that `failShallowModules` fails on, on a module that the branch touched. */
-const GATED_CODES = ["MODULE_SHALLOW", "INTERFACE_WIDE"] as const;
 /**
- * The vault's code-check policy (TASK-646.04, TASK-650, TASK-651).
+ * The vault's code-check policy (TASK-646.04, TASK-650, TASK-651, TASK-659).
  * `failShallowModules` is the only promotion: it fails the check on an
- * information `MODULE_SHALLOW` or `INTERFACE_WIDE` of a touched module, so a
- * rule that turns either off beside it contradicts it, and the refusal names
- * the rule.
+ * information `MODULE_SHALLOW` of a touched module, so a rule that turns it
+ * off beside it contradicts it, and the refusal names the rule. A rule on
+ * `INTERFACE_WIDE`, the flat cap that TASK-659 retired, is refused by name.
  */
 const CodeCheckPolicySchema = z
 	.object({
 		failShallowModules: z.boolean().optional().meta({
 			description:
-				"Plain `archboard check` fails on MODULE_SHALLOW and INTERFACE_WIDE in a module that the branch touched, working tree included, where a rule set them to information, as `--fail-shallow-modules` does (TASK-646.04, TASK-651). Both are warnings on every module without a rule.",
+				"Plain `archboard check` fails on MODULE_SHALLOW in a module that the branch touched, working tree included, where a rule set it to information, as `--fail-shallow-modules` does (TASK-646.04, TASK-651). It is a warning on every module without a rule.",
 		}),
 		rules: DepthRuleSchema.optional().meta({
 			description:
-				"The level of each module-depth finding, by code: `information` keeps it and never fails the check, `off` removes it from the answer. A code without a rule keeps its built-in level, so INTERFACE_WIDE and MODULE_SHALLOW are warnings on every module. Keys: EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH, EXPOSED_UNUSED, INTERFACE_UNDECLARED, INTERFACE_WIDE and MODULE_SHALLOW. With `failShallowModules: true`, an information MODULE_SHALLOW or INTERFACE_WIDE fails the check on a module that the branch touched (debt mode), and `off` on either is invalid.",
+				"The level of each module-depth finding, by code: `information` keeps it and never fails the check, `off` removes it from the answer. A code without a rule keeps its built-in level, so MODULE_SHALLOW is a warning on every module. Keys: EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH, EXPOSED_UNUSED, INTERFACE_UNDECLARED and MODULE_SHALLOW. With `failShallowModules: true`, an information MODULE_SHALLOW fails the check on a module that the branch touched (debt mode), and `off` on it is invalid.",
 		}),
 	})
 	.strict()
 	.superRefine((policy, context) => {
-		if (policy.failShallowModules !== true) return;
-		for (const code of GATED_CODES) {
-			if (policy.rules?.[code] !== "off") continue;
-			context.addIssue({
-				code: "custom",
-				path: ["rules", code],
-				message: `failShallowModules fails the check on ${code} in a touched module, and this rule turns it off: set it to information, or remove one of them`,
-			});
-		}
+		if (policy.failShallowModules !== true || policy.rules?.MODULE_SHALLOW !== "off") return;
+		context.addIssue({
+			code: "custom",
+			path: ["rules", "MODULE_SHALLOW"],
+			message:
+				"failShallowModules fails the check on MODULE_SHALLOW in a touched module, and this rule turns it off: set it to information, or remove one of them",
+		});
 	});
 /**
  * Build the policy contract with the icon vocabulary available at this boundary.
