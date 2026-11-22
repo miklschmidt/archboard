@@ -31,7 +31,7 @@ function SectionHead(props: SectionHeadProps): JSX.Element {
 	const Heading = `h${props.level}` as const;
 	return (
 		<div className={cn("group/head relative flex items-center gap-2", props.className)}>
-			<Heading className="m-0 flex min-w-0">
+			<Heading className="m-0 flex min-w-0 self-stretch">
 				<button
 					type="button"
 					aria-expanded={!props.folded}
