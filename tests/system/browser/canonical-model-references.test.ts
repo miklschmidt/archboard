@@ -153,6 +153,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 		id: "Ledger#Audit",
 		to: "Ledger#Worker",
 		kind: "call",
+		effect: "mutation",
 		order: 30,
 		label: "Audit dispatch",
 	});

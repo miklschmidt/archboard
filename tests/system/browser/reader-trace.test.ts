@@ -34,6 +34,7 @@ function writeModule(
 				id: `Shop#${name.slice(0, 4)}${to.slice(0, 4)}`,
 				to: `Shop#${to}`,
 				kind: "call",
+				effect: "mutation",
 				order: 10,
 			})),
 		}),

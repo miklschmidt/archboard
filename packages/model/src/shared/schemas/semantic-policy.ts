@@ -61,7 +61,6 @@ type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
  * how a relationship travels and the effect what it does (TASK-663).
  */
 const RelationshipEffectSchema = z.enum(["mutation", "query", "compute"]);
-type RelationshipEffect = z.infer<typeof RelationshipEffectSchema>;
 /**
  * The one kind whose relationships may state no effect: a declared
  * requirement, of which nothing runs at run time. Every other kind, a vault's
@@ -259,30 +258,23 @@ function vocabularyShape<Kinds extends z.ZodType>(
 	};
 }
 /**
- * Build the policy a reading carries: the vocabulary in effect, built-ins
- * included, with the lenses it is read through.
- * @param icon Valid icon names; browser readers only need the transport spelling.
- * @returns The policy schema shared by readers and read contracts.
+ * The policy a reading carries: the vocabulary in effect, built-ins included,
+ * with the lenses it is read through. Readers need only the transport spelling
+ * of an icon.
  */
-function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.shape.icon) {
-	return z
-		.object({
-			...vocabularyShape(
-				icon,
-				z
-					.record(VocabularyNameSchema, RelationshipLookSchema)
-					.refine(
-						(values) => Object.keys(values).length > 0,
-						"Define at least one relationship kind",
-					)
-					.meta({ minProperties: 1 }),
-			),
-			lenses: z.record(VocabularyNameSchema, LensSchema).default({ [ALL_LENS_ID]: ALL_LENS }),
-			defaultLens: VocabularyNameSchema.default(ALL_LENS_ID),
-		})
-		.strict();
-}
-const SemanticPolicySchema = createSemanticPolicySchema();
+const SemanticPolicySchema = z
+	.object({
+		...vocabularyShape(
+			NodePolicySchema.shape.icon,
+			z
+				.record(VocabularyNameSchema, RelationshipLookSchema)
+				.refine((values) => Object.keys(values).length > 0, "Define at least one relationship kind")
+				.meta({ minProperties: 1 }),
+		),
+		lenses: z.record(VocabularyNameSchema, LensSchema).default({ [ALL_LENS_ID]: ALL_LENS }),
+		defaultLens: VocabularyNameSchema.default(ALL_LENS_ID),
+	})
+	.strict();
 type SemanticPolicy = z.infer<typeof SemanticPolicySchema>;
 type AuthoredPolicy = z.infer<ReturnType<typeof authoredPolicySchema>>;
 /**
@@ -522,15 +514,12 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = createVaultConfigurationSchema()
 });
 export {
 	VocabularyNameSchema,
-	createSemanticPolicySchema,
 	createVaultConfigurationSchema,
 	createLegacyVaultConfigurationSchema,
 	configurationOf,
 	DEFAULT_VAULT_CONFIGURATION,
 	RelationshipEffectSchema,
-	type RelationshipEffect,
 	EFFECTLESS_KIND,
-	type Lens,
 	PaletteColorSchema,
 	SemanticPolicySchema,
 	type SemanticPolicy,
