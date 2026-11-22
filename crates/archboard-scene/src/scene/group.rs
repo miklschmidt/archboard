@@ -110,6 +110,8 @@ pub enum EntryKind {
     Kind,
     /// A relationship kind.
     Relationship,
+    /// What a line's dash says it does.
+    Effect,
     /// A line drawn with more emphasis.
     Emphasis,
     /// A line's traffic.

@@ -3,9 +3,9 @@
 //! marks a comparison puts on what it changed, and the lists of entries those
 //! make (TASK-468).
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-use crate::request::{Arrowhead, Dash, NodeAppearance, PaletteColor, Standing};
+use crate::request::{Arrowhead, Dash, LineEffect, NodeAppearance, PaletteColor, Standing};
 use crate::scene::{EntryKind, Group, Icon, Item, LineFacts, Role};
 
 /// How the picture drew a subject: as a part of some appearance, or as a
@@ -28,16 +28,18 @@ pub struct Applied {
 }
 
 /// What two subjects share when one sample keys them both: the icon's name,
-/// the kind, its name, the kind's colour, the line's colour, dash and
-/// arrowhead. Not the icon's size and ink: a card, a container's header and a
-/// door draw one kind's icon at different sizes and inks, and the legend
-/// redraws it at its own.
+/// the kind, its name, the kind's colour, and the line its kind samples, in
+/// its colour, rails, dash and arrowhead. Not the icon's size and ink: a card,
+/// a container's header and a door draw one kind's icon at different sizes and
+/// inks, and the legend redraws it at its own. Not a line's effect: the effect
+/// key says that.
 type SampleKey<'a> = (
     Option<&'a str>,
     &'a str,
     &'a str,
     Option<PaletteColor>,
     Option<PaletteColor>,
+    bool,
     Dash,
     Arrowhead,
 );
@@ -61,18 +63,45 @@ impl Applied {
                 &appearance.type_name,
                 appearance.type_color,
                 None,
+                false,
                 Dash::Solid,
                 Arrowhead::Filled,
             ),
-            Drawn::Line(facts) => (
-                icon,
-                &facts.kind,
-                &facts.appearance.name,
-                None,
-                facts.appearance.color,
-                facts.appearance.dash,
-                facts.appearance.arrowhead,
-            ),
+            Drawn::Line(facts) => {
+                let sample = facts.appearance.kind_sample();
+                (
+                    icon,
+                    &facts.kind,
+                    &facts.appearance.name,
+                    None,
+                    sample.color,
+                    sample.rails,
+                    sample.dash,
+                    sample.arrowhead,
+                )
+            }
+        }
+    }
+
+    /// The sample its kind's legend row draws: a line as its kind samples it.
+    fn kind_sample(self) -> Applied {
+        match self.drawn {
+            Drawn::Line(facts) => Applied {
+                drawn: Drawn::Line(LineFacts {
+                    appearance: facts.appearance.kind_sample(),
+                    kind: facts.kind,
+                }),
+                icon: self.icon,
+            },
+            Drawn::Part(_) => self,
+        }
+    }
+
+    /// What its dash says it does, when it is a line whose dash says so.
+    fn effect(&self) -> Option<LineEffect> {
+        match &self.drawn {
+            Drawn::Line(facts) => facts.appearance.effect,
+            Drawn::Part(_) => None,
         }
     }
 }
@@ -175,6 +204,7 @@ pub(super) enum Keys {
     Mark(Standing, usize),
     Kind(Applied),
     Relationship(Applied),
+    Effect(LineEffect),
     Emphasis,
     Traffic,
 }
@@ -186,6 +216,7 @@ impl Keys {
             Keys::Mark(..) => EntryKind::Mark,
             Keys::Kind(_) => EntryKind::Kind,
             Keys::Relationship(_) => EntryKind::Relationship,
+            Keys::Effect(_) => EntryKind::Effect,
             Keys::Emphasis => EntryKind::Emphasis,
             Keys::Traffic => EntryKind::Traffic,
         }
@@ -240,16 +271,20 @@ pub(super) fn mark_counts(
 }
 
 /// What a picture's key lists, read back from its scene: each subject it
-/// draws with an appearance, in the order it draws them, and one sample of
-/// each distinct part kind and relationship kind among them.
+/// draws with an appearance, in the order it draws them, one sample of each
+/// distinct part kind and relationship kind among them, and the effects their
+/// lines' dashes say.
 #[derive(Clone, Debug)]
 pub struct PictureLegend {
     /// Each subject and what it was drawn as, where it was first met, as it was last met.
     pub subjects: Vec<(String, Applied)>,
     /// One sample of each distinct part kind drawn, and the last subject drawn so.
     pub kinds: Vec<(String, Applied)>,
-    /// One sample of each distinct relationship kind drawn, likewise.
+    /// One sample of each distinct relationship kind drawn, as its kind samples
+    /// it, and the last subject drawn so.
     pub relationships: Vec<(String, Applied)>,
+    /// Each effect a drawn line's dash says, in the key's order.
+    pub effects: Vec<LineEffect>,
 }
 
 /// What a picture's key lists, read back from the items of its body.
@@ -265,16 +300,25 @@ pub fn picture_legend(body: &[Item]) -> PictureLegend {
         )
     };
     let kinds = of(true);
-    let relationships = of(false);
+    let relationships = of(false)
+        .into_iter()
+        .map(|(id, applied)| (id, applied.kind_sample()))
+        .collect();
+    let drawn: BTreeSet<LineEffect> = subjects
+        .iter()
+        .filter_map(|(_, applied)| applied.effect())
+        .collect();
     PictureLegend {
         subjects,
         kinds,
         relationships,
+        effects: drawn.into_iter().collect(),
     }
 }
 
 /// The legend's lists, empty ones left out: the comparison's marks, the part
-/// kinds drawn, and the relationship kinds drawn followed by emphasis and traffic.
+/// kinds drawn, and the relationship kinds drawn followed by the effects their
+/// dashes say, emphasis and traffic.
 pub(super) fn entries_of(
     body: &[Item],
     marks: &[(Standing, &'static str, usize)],
@@ -282,6 +326,7 @@ pub(super) fn entries_of(
     let PictureLegend {
         kinds,
         relationships,
+        effects,
         ..
     } = picture_legend(body);
     let kinds = kinds.into_iter().map(|(_, applied)| applied);
@@ -314,6 +359,10 @@ pub(super) fn entries_of(
         });
     }
     if any {
+        lined.extend(effects.into_iter().map(|effect| Entry {
+            keys: Keys::Effect(effect),
+            words: effect.words().to_owned(),
+        }));
         lined.push(Entry {
             keys: Keys::Emphasis,
             words: "More emphasis".to_owned(),

@@ -97,6 +97,27 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
  */
 const MIXED_KIND = "mixed kinds";
 
+/**
+ * The effects a joined line can wear, strongest first. A line that holds a
+ * mutation changes state whatever else it holds, as one relationship covering
+ * several operations takes the strongest (TASK-663). A declared dependency
+ * states none and adds nothing to the join.
+ */
+const EFFECTS_BY_STRENGTH = [
+	"mutation",
+	"query",
+	"compute",
+] as const satisfies readonly NonNullable<SemanticEdge["effect"]>[];
+
+/**
+ * The strongest effect that some relationships state.
+ * @param edges The relationships.
+ * @returns The effect, or undefined when none states one.
+ */
+function strongestEffect(edges: readonly SemanticEdge[]): SemanticEdge["effect"] {
+	return EFFECTS_BY_STRENGTH.find((effect) => edges.some((edge) => edge.effect === effect));
+}
+
 /** The most parts inside a card that a joined line names. */
 const NAMED_PARTS = 2;
 
@@ -330,7 +351,8 @@ function rootOf(content: VariantContent): (id: string) => string {
  * A lone relationship is drawn as stated. A joined line keeps the identity of
  * the first relationship in model order, so a comparison marks it, and it runs
  * the way that relationship runs. It wears the kind they share, or the neutral
- * mixed kind when they differ, because a majority kind would be a false mark.
+ * mixed kind when they differ, because a majority kind would be a false mark,
+ * and the strongest effect they state, because effects are ordered.
  * What only one of them says, its description, emphasis, traffic and anchor,
  * is not said of the line, and {@link wordsOnJoinedLine} decides its words.
  * @param edges The relationships, in model order.
@@ -346,12 +368,14 @@ function oneLine(edges: Readonly<JoinedEdges>, ends: LineEnds, reached: PartsRea
 	}
 	const kinds = new Set(edges.map(({ kind }) => kind));
 	const label = wordsOnJoinedLine(edges, ends, reached);
+	const effect = strongestEffect(edges);
 	return {
 		id: first.id,
 		order: first.order,
 		from,
 		to,
 		kind: kinds.size === 1 ? first.kind : MIXED_KIND,
+		...(effect === undefined ? {} : { effect }),
 		...(label === undefined ? {} : { label }),
 		emphasis: "normal",
 		...(twoWay ? { twoWay } : {}),

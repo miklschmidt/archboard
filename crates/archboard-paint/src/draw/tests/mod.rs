@@ -522,8 +522,10 @@ fn drawn_line(id: &str, x: f64) -> Item {
         appearance: LineAppearance {
             name: "Call".to_owned(),
             color: None,
+            rails: false,
             dash: Dash::Solid,
             arrowhead: Arrowhead::Filled,
+            effect: None,
         },
         kind: "call".to_owned(),
     };

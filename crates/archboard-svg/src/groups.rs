@@ -106,6 +106,10 @@ fn line(group: &Group, facts: Option<&LineFacts>, names: &Names, out: &mut Attri
             .set("data-line-color", colour_word(look.color))
             .set("data-line-dash", word(&look.dash))
             .set("data-arrowhead", word(&look.arrowhead));
+        out.maybe("data-line-effect", look.effect.as_ref().map(word));
+        if look.rails {
+            out.set("data-line-rails", "true");
+        }
     }
 }
 

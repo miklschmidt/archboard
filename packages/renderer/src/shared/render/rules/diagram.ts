@@ -15,7 +15,6 @@
 // (`@archboard/timing`). So one host draws the same content, theme and policy
 // to the same bytes in any order.
 
-import type { SemanticPolicy } from "@archboard/model/policy";
 import { defaultTrafficSpeed } from "@archboard/model/content";
 import { defaultLayoutEngine } from "@archboard/model/render-reply";
 import { pictureMs } from "@archboard/timing";
@@ -65,22 +64,6 @@ function coreHost(): RenderHost {
 }
 
 /**
- * The policy as the core reads it, which dashes each kind. Only the old format
- * records a kind's dash; a kind without one draws solid.
- * @param policy The policy in effect.
- * @returns The policy with a dash on every kind.
- */
-function corePolicy(policy: SemanticPolicy) {
-	const relationshipKinds = Object.fromEntries(
-		Object.entries(policy.relationshipKinds).map(([kind, look]) => [
-			kind,
-			{ ...look, dash: look.dash ?? "solid" },
-		]),
-	);
-	return { ...policy, relationshipKinds };
-}
-
-/**
  * One reading of a variant, drawn in the grammar its view asked for.
  *
  * Two pictures of the same identities: a participant column and an
@@ -96,7 +79,6 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 	const rendered = await host.core().render(
 		JSON.stringify({
 			...request,
-			policy: corePolicy(request.policy),
 			layout: request.layout ?? defaultLayoutEngine(),
 			clock: CLOCK,
 			themeColors: host.themeColors,

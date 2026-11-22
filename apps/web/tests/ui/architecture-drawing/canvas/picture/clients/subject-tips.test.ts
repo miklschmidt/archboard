@@ -74,6 +74,8 @@ const LINE: AppliedAppearance = {
 	lineColor: "sky",
 	dash: "dashed",
 	arrowhead: "open",
+	rails: false,
+	effect: "",
 };
 
 /** The container's appearance, including the icon drawn in its separate header. */
@@ -88,6 +90,8 @@ const CONTAINER: AppliedAppearance = {
 	lineColor: "neutral",
 	dash: "solid",
 	arrowhead: "filled",
+	rails: false,
+	effect: "",
 };
 
 /**

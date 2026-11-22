@@ -238,6 +238,10 @@ const AppliedAppearanceSchema = z.object({
 	lineColor: z.string(),
 	dash: z.string(),
 	arrowhead: z.string(),
+	/** Whether a line joins several kinds and is drawn as two rails. */
+	rails: z.boolean(),
+	/** What a line's dash says it does, as the effect key names it; empty where the dash is its kind's own. */
+	effect: z.string(),
 });
 
 /**

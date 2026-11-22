@@ -528,6 +528,29 @@ export {
 };
 
 /**
+ * What a line's dash says it does under a policy, as the renderer core draws
+ * it (`line_appearance` in `crates/archboard-render`): the effect the line
+ * states, `declared` for a dependency that states none, and nothing on a
+ * reading whose kinds record their dash, which keeps its recorded look (ADR 0065).
+ * @param line The line's kind and effect.
+ * @param line.kind Its kind.
+ * @param line.effect Its effect, if it states one.
+ * @param policy The policy in effect.
+ * @returns The effect its dash says, or undefined.
+ */
+export function drawnEffect(
+	line: {
+		readonly kind: string;
+		readonly effect?: z.infer<typeof RelationshipEffectSchema> | undefined;
+	},
+	policy: SemanticPolicy,
+): z.infer<typeof RelationshipEffectSchema> | "declared" | undefined {
+	if (Object.values(policy.relationshipKinds).some((kind) => kind.dash !== undefined))
+		return undefined;
+	return line.effect ?? (line.kind === EFFECTLESS_KIND ? "declared" : undefined);
+}
+
+/**
  * The value `DEFAULT_SEMANTIC_POLICY`, for callers that read it.
  * @returns The value.
  */

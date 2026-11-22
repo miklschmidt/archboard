@@ -39,6 +39,7 @@ fn facts(index: usize) -> EdgeFacts {
         from: format!("source{index}"),
         to: format!("target{index}"),
         kind: "call".to_owned(),
+        effect: None,
         emphasis: Emphasis::Normal,
         traffic: None,
         two_way: false,

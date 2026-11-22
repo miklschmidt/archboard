@@ -5,6 +5,7 @@ import type { Model, ModelFilters, projectModel } from "@archboard/model/content
 import { cn } from "@archboard/ui-kit/components";
 import { KindChip } from "#ui/architecture-drawing/canvas/presentation/components/KindMarks.tsx";
 import {
+	EffectSample,
 	EmphasisSample,
 	RelationshipSample,
 	TrafficSample,
@@ -16,10 +17,12 @@ import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/compon
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import {
+	effectRows,
 	groupRows,
 	kindRows,
 	lineRows,
 	markRows,
+	type LegendEffect,
 	type LegendGroup,
 	type LegendLine,
 	type LegendMark,
@@ -60,8 +63,9 @@ interface ModelLegendProps {
 
 /**
  * What the marks of a picture mean, as the last section of the right panel, under every subject,
- * with no click: its kinds, its line types and its groups. Each line type that a reader can hide
- * is its own switch, and a group's tag selects the group's parts.
+ * with no click: its kinds, its relationship kinds with the effects their dashes say, and its
+ * groups. Each relationship kind that a reader can hide is its own switch, and a group's tag
+ * selects the group's parts.
  * @param props The reading and its visibility choices.
  * @returns The section, or nothing while no picture stands.
  */
@@ -75,6 +79,7 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 			<Kinds model={model} look={props.look} rows={kindRows(reading)} />
 			<Lines
 				lines={lineRows(reading)}
+				effects={effectRows(model, projection)}
 				marks={markRows(projection)}
 				onToggle={props.onToggle}
 				onShowAll={props.onShowAll}
@@ -176,23 +181,25 @@ function LegendChip(props: {
 	return <KindChip look={props.look} kind={props.kind} icon={markup} />;
 }
 
-/** Inputs for the line types. */
+/** Inputs for the relationship kinds. */
 interface LinesProps {
 	readonly lines: readonly LegendLine[];
+	readonly effects: readonly LegendEffect[];
 	readonly marks: readonly LegendMark[];
 	readonly onToggle: ModelLegendProps["onToggle"];
 	readonly onShowAll: () => void;
 }
 
 /**
- * The line types of the reading, one to a row, each row the switch that draws its lines or leaves
- * them out. Under them, in two columns and with no switch, stand what no reader hides: a mixed
- * line, which is no kind of relationship, and the marks that lines wear beside their kinds.
- * @param props The line types and how to change their visibility.
+ * The relationship kinds of the reading, one to a row, each row the switch that draws its lines or
+ * leaves them out. Under them, in two columns and with no switch, stand what no reader hides: the
+ * effects that the dashes say, a mixed line, which is no kind of relationship, and the marks that
+ * lines wear beside their kinds.
+ * @param props The relationship kinds, the effects, the marks and how to change visibility.
  * @returns Their list, or nothing when the reading has no line.
  */
 function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, marks, onToggle, onShowAll } = props;
+	const { lines, effects, marks, onToggle, onShowAll } = props;
 	const hidden = lines.some((line) => line.hidden);
 	const action = useMemo(
 		() =>
@@ -227,9 +234,16 @@ function Lines(props: LinesProps): JSX.Element | null {
 					</ul>
 				</li>
 			)}
-			{mixed.length + marks.length > 0 && (
+			{effects.length + mixed.length + marks.length > 0 && (
 				<li>
 					<ul data-slot="model-legend-marks" className={cn(CELLS, types.length > 0 && "mt-1")}>
+						{effects.map(({ effect, word, dash, dimmed }) => (
+							<Cell key={effect}>
+								<Mark name={word} dimmed={dimmed}>
+									<EffectSample dash={dash} width={SAMPLE_WIDTH} />
+								</Mark>
+							</Cell>
+						))}
 						{mixed.map(({ item, dimmed }) => (
 							<Cell key={item.typeKind}>
 								<Mark name={item.typeName} dimmed={dimmed}>

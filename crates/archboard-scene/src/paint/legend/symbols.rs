@@ -1,6 +1,7 @@
 //! The symbol a legend entry stands beside: a comparison's pin, a part kind's
-//! chip, a relationship's line and head, and the two things a line says beside
-//! its kind, its emphasis and its traffic, each drawn as the picture draws it.
+//! chip, a relationship kind's line and head, and the three things a line says
+//! beside its kind, its effect, its emphasis and its traffic, each drawn as the
+//! picture draws it.
 
 use crate::drawing::Emphasis;
 use crate::geometry::{Point, Rect, round_coord};
@@ -12,7 +13,7 @@ use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
 use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, dash_array, drawn_ink, head_of, stroke_width};
 use crate::paint::traffic::pulse_look;
-use crate::request::{Arrowhead, Dash};
+use crate::request::{Arrowhead, Dash, LineEffect};
 use crate::scene::traffic::pulse_breadth;
 use crate::scene::{
     Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Head, Icon, Item, PathStep,
@@ -63,16 +64,17 @@ fn line_at(x: f64, y: f64, stroke: Stroke, end: f64) -> Items {
     )
 }
 
-/// A relationship kind's symbol: a short line in its ink and dash, with the
-/// arrowhead its lines end in.
+/// A relationship kind's symbol: a short line in its ink and dash, or two
+/// rails for a line of several kinds, with the arrowhead its lines end in.
 fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
-    let (color, dash, ends) = match &applied.drawn {
+    let (color, rails, dash, ends) = match &applied.drawn {
         Drawn::Line(facts) => (
             facts.appearance.color,
+            facts.appearance.rails,
             facts.appearance.dash,
             facts.appearance.arrowhead,
         ),
-        Drawn::Part(_) => (None, Dash::Solid, Arrowhead::Filled),
+        Drawn::Part(_) => (None, false, Dash::Solid, Arrowhead::Filled),
     };
     let named = semantic_ink(color);
     let ink = drawn_ink(
@@ -90,7 +92,7 @@ fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> 
         1.0
     };
     let rail = (RAILS - RAIL_GAP) / 2.0;
-    let run = if dash == Dash::Mixed {
+    let run = if rails {
         let beside = f64::midpoint(RAIL_GAP, rail);
         let stroke = Stroke::new(&ink, rail);
         lines(vec![
@@ -165,6 +167,15 @@ fn kind_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> Items {
     let mut symbol = shape(chip);
     symbol.extend(glyph);
     symbol
+}
+
+/// What a line's dash says it does: a short headless line in the neutral ink,
+/// in the dash that says it.
+fn effect_symbol(effect: LineEffect, palette: &Palette, x: f64, y: f64) -> Items {
+    let ink = drawn_ink(&palette.edge, palette, Emphasis::Normal);
+    let stroke =
+        Stroke::new(&ink, stroke_width(Emphasis::Normal)).dashed(dash_array(effect.dash()));
+    line_at(x, y, stroke, 1.0)
 }
 
 /// A line drawn with more emphasis.
@@ -252,6 +263,7 @@ pub(super) fn symbol_of(entry: &Entry, palette: &Palette, x: f64, y: f64) -> Ite
         }
         Keys::Kind(applied) => kind_symbol(applied, palette, x, y),
         Keys::Relationship(applied) => relationship_symbol(applied, palette, x, y),
+        Keys::Effect(effect) => effect_symbol(*effect, palette, x, y),
         Keys::Emphasis => emphasis_symbol(palette, x, y),
         Keys::Traffic => traffic_symbol(palette, x, y),
     }

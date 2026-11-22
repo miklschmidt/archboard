@@ -57,7 +57,9 @@ fn template(shape: &Shape) -> &'static [Key] {
         (Geometry::Path { .. }, Purpose::Halo | Purpose::Ring) => {
             &[Class, Place, Width, Opacity, Cap, Join, Fill, Stroke]
         }
-        (Geometry::Path { .. }, Purpose::Rail) => &[Class, Place, Fill, Stroke, Width, Cap, Join],
+        (Geometry::Path { .. }, Purpose::Rail) => {
+            &[Class, Place, Fill, Stroke, Width, Cap, Join, Dash]
+        }
         (Geometry::Path { .. }, Purpose::LitLine) => {
             &[Class, Place, Marker, Fill, Stroke, Width, Cap, Join, Dash]
         }
