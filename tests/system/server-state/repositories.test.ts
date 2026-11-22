@@ -6,7 +6,7 @@ import { canonicalCapture, seedCanonicalFixture } from "../support/canonical-fix
 // a show of another vault's model moves a named pane into that vault.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { cpSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, realpathSync, rmSync, symlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { WebSocket, type RawData } from "ws";
@@ -20,6 +20,7 @@ import { packageBin } from "../cli/support/package-cli.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import { holderOf } from "../support/test-vault.ts";
+import { openRepositoryFeed, type RepositoriesFrame } from "../support/architecture-feed.ts";
 import { createRequester } from "./support/http.ts";
 import { openPaneSession } from "./support/pane-session.ts";
 
@@ -32,6 +33,9 @@ interface Listed {
 	state: string;
 	checkouts: { root: string; chosen: boolean; hasVault: boolean }[];
 }
+
+/** The answer to a choice: the listing that follows it. */
+type Answer = Omit<RepositoriesFrame, "type">;
 
 let fixture: RepositoryFixture;
 let server: OwnedServer;
@@ -156,26 +160,22 @@ describe.serial("the repositories of the navigator", () => {
 		});
 		resources.defer(() => pane.close());
 		// A pane of another tab, in a vault the choice does not touch.
-		const elsewhere = await openPaneSession(server.base, inServed, {
-			clientId: "pane-elsewhere",
-			model: "notes",
-		});
-		resources.defer(() => elsewhere.close());
+		// A tab that follows the repositories, in no vault the choice touches.
+		const tab = resources.use(await openRepositoryFeed(server.base));
+		const snapshot = await tab.next();
 
 		// Choosing the worktree moves the pane into its vault and keeps its model,
-		// which the worktree has not got, and every tab is told to list again.
+		// which the worktree has not got. The answer is the new listing, and every
+		// tab that follows the repositories is sent it.
 		const mark = pane.mark();
-		const elsewhereMark = elsewhere.mark();
-		const chose = await fetch(`${server.base}/api/repositories/chosen`, {
-			method: "PUT",
-			headers: { ...pageHeaders(), "Content-Type": "application/json" },
-			body: JSON.stringify({ repository: ORDERS, root: worktree }),
-		});
+		const chose = await choose(worktree);
 		expect(chose.status).toBe(200);
+		const { revision, repositories } = (await chose.json()) as Answer;
+		expect(revision).toBeGreaterThan(snapshot.revision);
+		expect(ordersVault(repositories)).toBe(worktreeVault);
 		const moved = await pane.waitFor("pane_place", mark);
 		expect(moved).toMatchObject({ paneKey: "payments", vault: worktreeVault, repository: ORDERS });
-		await pane.waitFor("repositories_changed", mark);
-		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
+		expect(await tab.next()).toEqual({ type: "repositories", revision, repositories });
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
 
 		// A show names the pane and the vault of another repository's model, and the
@@ -290,6 +290,39 @@ describe.serial("the repositories of the navigator", () => {
 		expect(moved).toMatchObject({ paneKey: "payments", vault: fixVault, repository: ORDERS });
 	});
 
+	test("a tab is sent a vault that leaves the disk while the registry stays, and a returning tab the listing as it is", async () => {
+		const holder = join(fixture.root, "zz-scratch");
+		vaultOf(holder);
+		cli("repo", "add", holder);
+		{
+			using tab = await openRepositoryFeed(server.base);
+			expect(names(await tab.next())).toContain("zz-scratch");
+			// Nothing writes the registry: the server finds the change on its own look at the disk.
+			rmSync(holder, { recursive: true, force: true });
+			await tab.until((listing) => !names(listing).includes("zz-scratch"));
+		}
+		// While no tab follows, a choice changes the listing; a tab that comes back is sent it.
+		expect((await choose(main)).status).toBe(200);
+		using back = await openRepositoryFeed(server.base);
+		const snapshot = await back.next();
+		expect(names(snapshot)).not.toContain("zz-scratch");
+		expect(ordersVault(snapshot.repositories)).toBe(vaultOf(main));
+	});
+
+	test("two choices at once are each answered with the listing that follows them, in order", async () => {
+		using tab = await openRepositoryFeed(server.base);
+		await tab.next();
+		const answers = await Promise.all(
+			[main, worktree].map(async (root) => (await (await choose(root)).json()) as Answer),
+		);
+		const [first, last] = answers.toSorted((a, b) => a.revision - b.revision);
+		expect(first!.revision).toBeLessThan(last!.revision);
+		const sent = await tab.until((listing) => listing.revision === last!.revision);
+		expect(ordersVault(sent.repositories)).toBe(ordersVault(last!.repositories));
+		const now = (await listed()).find((each) => each.name === ORDERS);
+		expect(now?.vault).toBe(ordersVault(last!.repositories));
+	});
+
 	test("a vault that a link leads out of the layout is not listed", async () => {
 		// Every call naming it is refused (TASK-472.09), so no page may open there.
 		const holder = join(fixture.root, "aaa-linked-out");
@@ -368,6 +401,24 @@ describe.serial("the repositories of the navigator", () => {
 		});
 	});
 });
+
+/**
+ * The names a listing lists.
+ * @param listing The listing.
+ * @returns The names.
+ */
+function names(listing: RepositoriesFrame): string[] {
+	return listing.repositories.map((each) => each.name);
+}
+
+/**
+ * The vault the fixture's repository reads in a listing.
+ * @param repositories The listing.
+ * @returns The vault of its chosen checkout.
+ */
+function ordersVault(repositories: RepositoriesFrame["repositories"]): string | null | undefined {
+	return repositories.find((each) => each.name === ORDERS)?.vault;
+}
 
 /**
  * Run the CLI against this server's registry, as a command that reaches no

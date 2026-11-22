@@ -53,6 +53,15 @@ const PANE_MS = durations({
 	 */
 	contactLost: 2 * SOCKET_RECONNECT_MS,
 	/**
+	 * How often the server looks at the repositories of this machine again while a tab follows
+	 * them. A command that registers or chooses a checkout writes the registry, which the server
+	 * watches, but a checkout or a vault can come or go on disk with the registry unchanged. A
+	 * person who runs `archboard init` in a registered checkout expects its row soon after the
+	 * command ends. One look reads the registry and a few directories, once per server and not
+	 * once per tab.
+	 */
+	repositoryRecheck: 2_000,
+	/**
 	 * How long the server waits for the panes to say where they ended up, after
 	 * asking the browser to split or close one.
 	 *

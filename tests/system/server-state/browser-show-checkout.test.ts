@@ -17,6 +17,7 @@ import {
 	type RepositoryFixture,
 } from "../cli/support/repository-fixture.ts";
 import { openObservedPane } from "../support/observed-pane.ts";
+import { openRepositoryFeed, type RepositoriesFrame } from "../support/architecture-feed.ts";
 import { startOwnedServer, type OwnedServer } from "../support/owned-server.ts";
 import { ensureSemanticVaultConfiguration } from "../support/semantic-vault.ts";
 import { createRequester } from "./support/http.ts";
@@ -63,6 +64,26 @@ function vaultOf(holder: string): string {
 	mkdirSync(vault, { recursive: true });
 	ensureSemanticVaultConfiguration(vault);
 	return realpathSync(vault);
+}
+
+/**
+ * The repository of the fixture in a listing the server sent.
+ * @param listing The listing.
+ * @returns Its entry.
+ */
+function ordersIn(listing: RepositoriesFrame): RepositoriesFrame["repositories"][number] {
+	const orders = listing.repositories.find((each) => each.name === ORDERS);
+	if (orders === undefined) throw new Error(`${ORDERS} is not listed`);
+	return orders;
+}
+
+/**
+ * The chosen checkout of the fixture's repository in a listing the server sent.
+ * @param listing The listing.
+ * @returns Its root.
+ */
+function chosenIn(listing: RepositoriesFrame): string | undefined {
+	return ordersIn(listing).checkouts.find((checkout) => checkout.chosen)?.root;
 }
 
 /**
@@ -210,6 +231,8 @@ describe.serial("browser show and the chosen checkout", () => {
 
 	test("a show from a checkout that is not chosen chooses it, and every pane of the repository follows", async () => {
 		await using resources = new AsyncDisposableStack();
+		const tab = resources.use(await openRepositoryFeed(server.base));
+		expect(chosenIn(await tab.next())).toBe(main);
 		const left = await paneIn(mainVault, "pane-left");
 		resources.defer(() => left.close());
 		const right = await paneIn(mainVault, "pane-right", 640);
@@ -264,7 +287,8 @@ describe.serial("browser show and the chosen checkout", () => {
 			vault: worktreeVault,
 			repository: ORDERS,
 		});
-		expect(await left.waitFor("repositories_changed", mark)).toBeDefined();
+		// Every tab that follows the repositories is sent the listing with the new choice.
+		await tab.until((listing) => chosenIn(listing) === worktree);
 		const after = panesFrom(worktree);
 		for (const paneId of ["pane-left", "pane-right"]) {
 			expect(after[paneId]).toMatchObject({ vault: worktreeVault, checkout: worktree, own: true });
@@ -279,8 +303,8 @@ describe.serial("browser show and the chosen checkout", () => {
 
 	test("no model command changes the choice, and a command that registers a checkout tells the server", async () => {
 		await using resources = new AsyncDisposableStack();
-		const pane = await paneIn(worktreeVault, "pane-watch");
-		resources.defer(() => pane.close());
+		const tab = resources.use(await openRepositoryFeed(server.base));
+		await tab.next();
 		archboard(main, ["model", "read"]);
 		// The first command in a new worktree registers it without choosing it.
 		const target = join(fixture.root, "orders-fix");
@@ -290,11 +314,13 @@ describe.serial("browser show and the chosen checkout", () => {
 		});
 		const fix = realpathSync.native(target);
 		await createModel(vaultOf(fix), "payments");
-		const mark = pane.mark();
 		expect(archboard(fix, ["model", "read"])).toMatchObject({
 			vault: { registered: { root: fix, chosen: false } },
 		});
-		expect(await pane.waitFor("repositories_changed", mark)).toBeDefined();
+		const listed = await tab.until((listing) =>
+			ordersIn(listing).checkouts.some((checkout) => checkout.root === fix),
+		);
+		expect(chosenIn(listed)).toBe(worktree);
 		expect(chosenCheckout()).toBe(worktree);
 	});
 

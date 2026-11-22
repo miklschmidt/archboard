@@ -43,7 +43,7 @@ test("one socket follows every vault of a tab and names a vault it cannot read",
 		socket.send(JSON.stringify({ type: "subscribe", vault }));
 	await heard;
 	socket.close();
-	expect(frames.map(({ type, vault }) => [vault, type]).toSorted()).toEqual(
+	expect(frames.map((frame) => ["vault" in frame && frame.vault, frame.type]).toSorted()).toEqual(
 		[
 			[first, "architecture_snapshot"],
 			[missing, "architecture_unavailable"],

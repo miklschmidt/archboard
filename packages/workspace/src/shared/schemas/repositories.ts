@@ -1,5 +1,6 @@
-// The repositories of this machine as the navigator lists them, the answer of
-// `GET /api/repositories` (ADR 0050).
+// The repositories of this machine as the navigator lists them (ADR 0050): the answer of
+// `GET /api/repositories` and of `PUT /api/repositories/chosen`, and what the architecture feed
+// sends every tab that follows them.
 //
 // A repository is named by its identity, or an untracked vault by its registry
 // name. Its models are read from the vault of its chosen checkout. The vault is
@@ -34,9 +35,13 @@ const RepositoryEntrySchema = z.object({
 	checkouts: z.array(CheckoutEntrySchema),
 });
 
-/** The answer of `GET /api/repositories`. */
+/**
+ * The listing as the server last published it. Its revision counts the changes one server has
+ * published since it started, so a tab keeps the newest of the answers and frames it gets.
+ */
 const RepositoryListingSchema = z.object({
 	success: z.literal(true),
+	revision: z.number().int().nonnegative(),
 	repositories: z.array(RepositoryEntrySchema),
 });
 
