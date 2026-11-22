@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ArchitectureModelSchema } from "#shared/canonical-contracts/schemas/model.ts";
-import { VaultCheckSchema } from "#shared/schemas/semantic-policy.ts";
+import { VaultCheckSchema } from "#shared/schemas/vault-diagnostic.ts";
 
 /**
  * One state of a model and its comparison state in one portable file.

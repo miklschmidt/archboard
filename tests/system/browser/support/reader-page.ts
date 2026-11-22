@@ -47,7 +47,7 @@ async function openReader(
 ): Promise<AgentBrowserSession> {
 	const root = join(browserTestRoots().ownerRoot, name);
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	write(vault);

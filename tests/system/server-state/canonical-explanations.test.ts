@@ -282,7 +282,7 @@ test("a signed-out local agent retains an unavailable capture without starting a
 		resources,
 		join(import.meta.dir, "fixtures/fake-codex-production.ts"),
 	);
-	cpSync("examples/canonical-model/.archboard/vault", fixture.vault, { recursive: true });
+	cpSync("tests/fixtures/current-format-vault", fixture.vault, { recursive: true });
 	writeFileSync(
 		fixture.controlPath,
 		JSON.stringify({ signedOut: true, ordinaryOnly: true, explanationQueue: true }),
@@ -343,7 +343,7 @@ test("comparison and narrative deliveries retain exact readings after current an
 		resources,
 		join(import.meta.dir, "fixtures/fake-codex-production.ts"),
 	);
-	cpSync("examples/canonical-model/.archboard/vault", fixture.vault, { recursive: true });
+	cpSync("tests/fixtures/current-format-vault", fixture.vault, { recursive: true });
 	seedGit(fixture.root);
 	const initial = readArchitectureModel(fixture.vault);
 	if (!initial.success) throw new Error(JSON.stringify(initial));

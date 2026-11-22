@@ -59,7 +59,7 @@ test("saved architecture publishes only after the reader chooses its destination
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "published-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	initializeSource(root);

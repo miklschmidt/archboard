@@ -26,7 +26,7 @@ const BILLING = '[data-group-id="billing"]';
 
 /** One outgoing relationship of a fixture module. */
 function line(id: string, to: string, kind: string): Record<string, unknown> {
-	return { id: `Shop#${id}`, to: `Shop#${to}`, kind, order: 10 };
+	return { id: `Shop#${id}`, to: `Shop#${to}`, kind, effect: "mutation", order: 10 };
 }
 
 /**
@@ -36,7 +36,7 @@ function line(id: string, to: string, kind: string): Record<string, unknown> {
  * @param vault The vault.
  */
 function seedReading(vault: string): void {
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const policyPath = join(vault, ".archboard/config.yaml");
@@ -49,14 +49,14 @@ function seedReading(vault: string): void {
 			)
 			.replace(
 				"groups:\n",
-				"  data: { name: Data, dash: solid, arrowhead: filled, color: teal }\n  event: { name: Event, dash: dashed, arrowhead: open, color: rose }\ngroups:\n",
+				"  data: { name: Data, arrowhead: filled, color: teal }\n  event: { name: Event, arrowhead: open, color: rose }\ngroups:\n",
 			)}  billing: { name: Billing, color: amber }\n`,
 	);
 	const module = (name: string, fields: Record<string, unknown>): void =>
 		writeFileSync(
 			join(vault, `${name.toLowerCase()}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${name}`,
 				name,
 				order: 40,
@@ -149,7 +149,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-	expect(await switches(browser)).toEqual(["call: true", "data: true", "event: true"]);
+	expect(await switches(browser)).toEqual(["call: true", "event: true", "data: true"]);
 	expect(
 		await browser.eval<{ marks: number; switches: number }>(`(() => {
 			const marks = document.querySelector('[data-slot="model-legend-marks"]');
@@ -183,7 +183,7 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
-	expect(await switches(browser)).toEqual(["call: false", "data: true", "event: false"]);
+	expect(await switches(browser)).toEqual(["call: false", "event: false", "data: true"]);
 	expect(await wordsAt(browser)).toBe(rest);
 
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);

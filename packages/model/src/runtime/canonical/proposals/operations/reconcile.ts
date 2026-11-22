@@ -1,3 +1,5 @@
+import { MODULE_FORMAT } from "#shared/schemas/model-definitions.ts";
+import { configurationFile } from "#runtime/store/configuration.ts";
 import { reconcileNarratives } from "#runtime/canonical/proposals/operations/reconcile-narratives.ts";
 import { everyStep } from "#shared/rules/flow-steps.ts";
 import type {
@@ -47,7 +49,7 @@ function writeModules(
 			.map(({ from: _from, ...edge }) => edge);
 		inputs.set(
 			moduleFile(mine, theirs, node.id),
-			Buffer.from(JSON.stringify({ ...node, schemaVersion: 1, outgoing })),
+			Buffer.from(JSON.stringify({ ...node, schemaVersion: MODULE_FORMAT, outgoing })),
 		);
 	}
 }
@@ -123,7 +125,7 @@ function canonicalContent(
 		};
 	const inputs = materializedInputs(
 		{ ...mine, modules: [], collections: [], walkthroughs },
-		Buffer.from(Bun.YAML.stringify(theirs.policy)),
+		configurationFile(theirs.policy),
 	);
 	writeModules(inputs, mine, theirs, content);
 	writeCollections(inputs, mine.manifest.id, content, collections);

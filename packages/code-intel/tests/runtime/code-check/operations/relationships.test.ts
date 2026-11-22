@@ -182,8 +182,8 @@ beforeAll(async () => {
 					edge("e2", ["pW", "pR"], "call"),
 					// Drawn from the sender, while the listener's code calls the sender.
 					edge("e3", ["pN", "pI"], "event"),
-					// A data relationship that only a type joins.
-					edge("e4", ["pL", "pB"], "data"),
+					// A storage relationship that only a type joins.
+					edge("e4", ["pL", "pB"], "storage"),
 					// A dependency accepts the import that only a type gives.
 					edge("e5", ["pW", "pB"], "dependency"),
 					// A kind without the evidence key accepts every evidence kind.

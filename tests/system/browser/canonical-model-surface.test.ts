@@ -27,13 +27,13 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "one-surface");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	writeFileSync(
 		join(vault, "decode.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Decode",
 			name: "Decode",
 			kind: "module",
@@ -45,7 +45,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 	writeFileSync(
 		join(vault, "sibling.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Sibling",
 			name: "Sibling",
 			kind: "module",

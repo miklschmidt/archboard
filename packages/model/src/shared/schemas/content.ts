@@ -74,6 +74,7 @@ import { SemanticFlowSchema } from "#shared/schemas/views.ts";
 import { everyStep } from "#shared/rules/flow-steps.ts";
 import { SemanticWalkthroughSchema } from "#shared/schemas/walkthrough.ts";
 import { EdgeEmphasisSchema, EdgeKindSchema, NodeKindSchema } from "#shared/schemas/vocabulary.ts";
+import { RelationshipEffectSchema } from "#shared/schemas/semantic-policy.ts";
 
 /**
  * Which variant of the board one level down a drill-down opens.
@@ -176,6 +177,10 @@ type SemanticNode = z.infer<typeof SemanticNodeSchema>;
  * `anchor` is the place in code the author cites as proof of the mechanism. It
  * is bookkeeping (ADR 0046): comparison ignores it, so a better citation never
  * reads as a changed relationship, and reconciliation merges it like `emphasis`.
+ *
+ * `kind` says how the relationship travels and `effect` what it does at its
+ * target. The current module format requires an effect on every kind but
+ * `dependency`; content of the old format and retained history state none.
  */
 const SemanticEdgeSchema = z
 	.object({
@@ -184,6 +189,7 @@ const SemanticEdgeSchema = z
 		from: SemanticIdSchema,
 		to: SemanticIdSchema,
 		kind: EdgeKindSchema,
+		effect: RelationshipEffectSchema.optional(),
 		label: EdgeLabelSchema.optional(),
 		description: DescriptionSchema.optional(),
 		emphasis: EdgeEmphasisSchema.default("normal"),

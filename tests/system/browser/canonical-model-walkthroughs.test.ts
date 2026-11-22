@@ -45,7 +45,7 @@ test("walkthrough beats change readings while one revision stays captured until 
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "model-walkthrough");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	initializeSource(root);

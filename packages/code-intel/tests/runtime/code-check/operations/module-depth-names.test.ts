@@ -67,7 +67,7 @@ function module(
 ): void {
 	write(vault, {
 		[`${id}.module.json`]: JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${id}`,
 			name: id,
 			kind,
@@ -77,6 +77,7 @@ function module(
 				id: `Shop#r${id.slice(0, 3)}${index}`,
 				order: (index + 1) * 10,
 				kind: "call",
+				effect: "compute",
 				to: `Shop#${to}`,
 			})),
 		}),

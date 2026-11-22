@@ -163,7 +163,7 @@ const COMPARED = {
 		"binding",
 		"drillDown",
 	],
-	edge: ["from", "to", "kind", "label", "description", "traffic"],
+	edge: ["from", "to", "kind", "effect", "label", "description", "traffic"],
 	flow: ["name", "summary", "participants"],
 	step: [
 		"from",
@@ -202,6 +202,14 @@ const COMPARED = {
  * as no field or as an empty list: both are the empty set, and compared as it.
  */
 const UNORDERED: ReadonlySet<string> = new Set(["participants", "subjects", "groups"]);
+
+/**
+ * Fields compared only when both sides state one. A relationship's effect is
+ * stated by the current format and by neither the old one nor a declared
+ * dependency, so a side that states none says nothing about it: against a
+ * base from before the upgrade, a first effect is no change.
+ */
+const STATED_ONLY: ReadonlySet<string> = new Set(["effect"]);
 
 /**
  * One field's value as it is compared, which is not always as it is written.
@@ -244,6 +252,8 @@ function moved(
 ): FieldChange[] {
 	const changes: FieldChange[] = [];
 	for (const field of fields) {
+		if (STATED_ONLY.has(field) && (before[field] === undefined || after[field] === undefined))
+			continue;
 		if (!same(comparable(field, before[field]), comparable(field, after[field]))) {
 			// What is reported is what is written, not what was compared: a reader
 			// asking what moved wants the flow's own order back, not a sorted copy.

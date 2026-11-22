@@ -49,7 +49,7 @@ async function depthCheckout(
 	for (const [index, [name, path]] of Object.entries(modules).entries()) {
 		write(vault, {
 			[`${name}.module.json`]: JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${name}`,
 				name,
 				kind: "module",

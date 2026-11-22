@@ -24,7 +24,7 @@ test("canonical modules use the existing opener and refuse a mismatched model id
 	resources.defer(() => invocation.releaseAndWait());
 	const vault = join(fixture.checkout, ".archboard/vault");
 	options.vault = vault;
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), vault, { recursive: true });
 	const path = join(vault, "gateway.module.json");
 	const gateway = JSON.parse(readFileSync(path, "utf8"));
 	writeFileSync(
@@ -63,7 +63,7 @@ test("canonical code activation opens the selected draft binding instead of curr
 	resources.defer(() => invocation.releaseAndWait());
 	const vault = join(fixture.checkout, ".archboard/vault");
 	options.vault = vault;
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), vault, { recursive: true });
 	for (const [key, value] of [
 		["user.name", "Opener Author"],
 		["user.email", "opener@example.test"],

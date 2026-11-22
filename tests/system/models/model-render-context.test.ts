@@ -28,18 +28,21 @@ let server: OwnedServer | undefined;
 const dom = new Window();
 
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	const gateway = JSON.parse(readFileSync(join(vault, "gateway.module.json"), "utf8"));
 	gateway.outgoing.push({
 		id: "Shop#Second",
 		to: "Shop#Worker",
 		kind: "call",
+		effect: "mutation",
 		order: 20,
 		label: "Second route",
 	});
 	writeFileSync(join(vault, "gateway.module.json"), JSON.stringify(gateway));
 	const worker = JSON.parse(readFileSync(join(vault, "worker.module.json"), "utf8"));
-	worker.outgoing = [{ id: "Shop#Enter", to: "Shop#Handler", kind: "call", order: 10 }];
+	worker.outgoing = [
+		{ id: "Shop#Enter", to: "Shop#Handler", kind: "call", effect: "mutation", order: 10 },
+	];
 	writeFileSync(join(vault, "worker.module.json"), JSON.stringify(worker));
 	for (const [id, order, parent] of [
 		["Job", 40, "Shop#Gateway"],
@@ -49,14 +52,16 @@ beforeAll(async () => {
 		writeFileSync(
 			join(vault, `${id}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${id}`,
 				name: id,
 				kind: "module",
 				order,
 				parent,
 				outgoing:
-					id === "Job" ? [{ id: "Shop#Tick", to: "Shop#Core", kind: "call", order: 10 }] : [],
+					id === "Job"
+						? [{ id: "Shop#Tick", to: "Shop#Core", kind: "call", effect: "mutation", order: 10 }]
+						: [],
 			}),
 		);
 	}

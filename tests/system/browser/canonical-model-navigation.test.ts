@@ -33,13 +33,13 @@ test("module decomposition follows breadcrumbs and browser history", async () =>
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "recursive-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	writeFileSync(
 		join(vault, "decode.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Decode",
 			name: "Decode",
 			kind: "module",
@@ -51,7 +51,7 @@ test("module decomposition follows breadcrumbs and browser history", async () =>
 	writeFileSync(
 		join(vault, "sibling.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Sibling",
 			name: "Sibling",
 			kind: "module",
@@ -181,7 +181,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "addressed-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
@@ -285,7 +285,7 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "connected-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const policy = join(vault, ".archboard/config.yaml");
@@ -293,7 +293,7 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		policy,
 		readFileSync(policy, "utf8").replace(
 			"groups:",
-			"  http: { name: HTTP, dash: solid, arrowhead: filled }\ngroups:",
+			"  http: { name: HTTP, arrowhead: filled }\ngroups:",
 		),
 	);
 	const gatewayPath = join(vault, "gateway.module.json");
@@ -302,6 +302,7 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 		id: "Shop#Self",
 		to: "Shop#Gateway",
 		kind: "call",
+		effect: "mutation",
 		order: 50,
 		label: "Re-enter",
 		description: "Retries the same request.",
@@ -311,27 +312,50 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 	const handlerPath = join(vault, "internal/handler.module.json");
 	const handler = JSON.parse(readFileSync(handlerPath, "utf8"));
 	handler.outgoing.push(
-		{ id: "Shop#OutA", to: "Shop#Worker", kind: "call", order: 20, label: "Deliver" },
-		{ id: "Shop#Web", to: "Shop#Worker", kind: "http", order: 40, label: "Request" },
+		{
+			id: "Shop#OutA",
+			to: "Shop#Worker",
+			kind: "call",
+			effect: "mutation",
+			order: 20,
+			label: "Deliver",
+		},
+		{
+			id: "Shop#Web",
+			to: "Shop#Worker",
+			kind: "http",
+			effect: "mutation",
+			order: 40,
+			label: "Request",
+		},
 	);
 	writeFileSync(handlerPath, JSON.stringify(handler));
 	writeFileSync(
 		join(vault, "decode.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Decode",
 			name: "Decode",
 			kind: "module",
 			parent: "Shop#Handler",
 			order: 40,
-			outgoing: [{ id: "Shop#OutB", to: "Shop#Worker", kind: "call", order: 30, label: "Deliver" }],
+			outgoing: [
+				{
+					id: "Shop#OutB",
+					to: "Shop#Worker",
+					kind: "call",
+					effect: "mutation",
+					order: 30,
+					label: "Deliver",
+				},
+			],
 		}),
 	);
 	// A second part of the gateway keeps its reading from folding into its one child.
 	writeFileSync(
 		join(vault, "hidden.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Hidden",
 			name: "Hidden",
 			kind: "module",
@@ -343,7 +367,7 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 	writeFileSync(
 		join(vault, "other.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Other",
 			name: "Other",
 			kind: "service",
@@ -354,9 +378,30 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 	const workerPath = join(vault, "worker.module.json");
 	const worker = JSON.parse(readFileSync(workerPath, "utf8"));
 	worker.outgoing = [
-		{ id: "Shop#In", to: "Shop#Decode", kind: "call", order: 5, label: "Enter" },
-		{ id: "Shop#Whole", to: "Shop#Gateway", kind: "call", order: 6, label: "Public API" },
-		{ id: "Shop#Outside", to: "Shop#Other", kind: "call", order: 60, label: "Unrelated" },
+		{
+			id: "Shop#In",
+			to: "Shop#Decode",
+			kind: "call",
+			effect: "mutation",
+			order: 5,
+			label: "Enter",
+		},
+		{
+			id: "Shop#Whole",
+			to: "Shop#Gateway",
+			kind: "call",
+			effect: "mutation",
+			order: 6,
+			label: "Public API",
+		},
+		{
+			id: "Shop#Outside",
+			to: "Shop#Other",
+			kind: "call",
+			effect: "mutation",
+			order: 60,
+			label: "Unrelated",
+		},
 	];
 	writeFileSync(workerPath, JSON.stringify(worker));
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });

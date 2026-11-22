@@ -40,7 +40,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "model-modes");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	writeFileSync(
@@ -248,7 +248,7 @@ test("behavioral addresses restore exact flows and recover missing definitions w
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "model-mode-recovery");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const collection = {

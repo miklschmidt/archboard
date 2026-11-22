@@ -22,7 +22,7 @@ import { pick } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 6_000 } as const;
-const FIXTURE = resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault");
+const FIXTURE = resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault");
 
 /** The rows of the left column that a claim can mark, by the subject that each one shows. */
 const ROWS = {

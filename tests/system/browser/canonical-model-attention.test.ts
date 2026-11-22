@@ -123,7 +123,7 @@ test("attention lights canonical connections without hiding labels or cutting sh
 		edges: [
 			{ from: "Writer", to: "Renderer", kind: "call", label: "draws" },
 			{ from: "Renderer", to: "Viewer", kind: "call", label: "shows" },
-			{ from: "Archive", to: "Viewer", kind: "data", label: "replays" },
+			{ from: "Archive", to: "Viewer", kind: "storage", label: "replays" },
 			...FAN.map((to) => ({ from: "Hub", to, kind: "call" })),
 		],
 	});

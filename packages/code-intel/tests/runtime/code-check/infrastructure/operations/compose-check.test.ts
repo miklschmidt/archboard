@@ -128,10 +128,10 @@ beforeAll(async () => {
 				edges: [
 					edge("e1", ["pW", "pA"], "http"),
 					// The anchor holds: the API's dependency names the database's declaration.
-					edge("e2", ["pA", "pD"], "data", "services.db"),
+					edge("e2", ["pA", "pD"], "storage", "services.db"),
 					// Drawn from the database, while the API's configuration reaches it.
 					edge("e3", ["pD", "pA"], "dependency"),
-					edge("e4", ["pW", "pD"], "data", "services.nope"),
+					edge("e4", ["pW", "pD"], "storage", "services.nope"),
 				],
 			},
 		},

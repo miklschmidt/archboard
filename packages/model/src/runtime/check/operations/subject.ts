@@ -4,7 +4,7 @@
 // a flow step by its flow, these ends and its label.
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "#shared/schemas/content.ts";
-import type { DiagnosticSubject } from "#shared/schemas/semantic-policy.ts";
+import type { DiagnosticSubject } from "#shared/schemas/vault-diagnostic.ts";
 
 /**
  * A part as a diagnostic names it.

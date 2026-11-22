@@ -129,7 +129,7 @@ const StructureChangeSchema = z.discriminatedUnion("type", [
 			set: RelationshipFieldsSchema.partial()
 				.extend({ emphasis: RelationshipFieldsSchema.shape.emphasis.removeDefault().optional() })
 				.optional(),
-			clear: z.array(z.enum(["label", "description", "traffic", "anchor"])).optional(),
+			clear: z.array(z.enum(["effect", "label", "description", "traffic", "anchor"])).optional(),
 		})
 		.strict(),
 	z.object({ type: z.literal("add-module"), module: ModuleFieldsSchema }).strict(),

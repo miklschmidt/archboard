@@ -106,7 +106,7 @@ beforeAll(async () => {
 	writeFileSync(
 		join(vault, "checkout.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Checkout",
 			name: "Checkout",
 			kind: "module",

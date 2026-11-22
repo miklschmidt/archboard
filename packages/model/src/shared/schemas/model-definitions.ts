@@ -7,6 +7,7 @@ import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import { LegacyBoardSchema, SemanticVariantSchema } from "#shared/schemas/legacy-board.ts";
 import { documentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
+import { EFFECTLESS_KIND } from "#shared/schemas/semantic-policy.ts";
 import {
 	SemanticIdSchema,
 	DisplayNameSchema,
@@ -134,12 +135,20 @@ const OwnedRelationshipSchema = SemanticEdgeSchema.omit({ id: true, from: true, 
 	id: QualifiedSubjectIdSchema,
 	to: QualifiedSubjectIdSchema,
 });
+/**
+ * The module file format every write produces. Format 2 states each
+ * relationship's effect; format 1, the old one, states none, and only an old
+ * vault and retained history hold it (TASK-663).
+ */
+const MODULE_FORMAT = 2;
+const OLD_MODULE_FORMAT = 1;
+/** One module as a reading carries it, in either format. */
 const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	id: true,
 	parent: true,
 	drillDown: true,
 }).extend({
-	schemaVersion: z.literal(1),
+	schemaVersion: z.union([z.literal(MODULE_FORMAT), z.literal(OLD_MODULE_FORMAT)]),
 	id: QualifiedSubjectIdSchema,
 	parent: QualifiedSubjectIdSchema.optional(),
 	formerNames: z.array(DisplayNameSchema).optional(),
@@ -147,8 +156,37 @@ const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	references: z.array(ModelReferenceSchema).optional(),
 	outgoing: z.array(OwnedRelationshipSchema),
 });
+/**
+ * A module file in the current format: every relationship states its effect,
+ * except a dependency, which may omit it to say it is a declared requirement
+ * only. The refusal names the relationship and the field.
+ */
+const ModuleDocumentSchema = ArchitectureModuleSchema.extend({
+	schemaVersion: z.literal(MODULE_FORMAT),
+}).superRefine((module, context) => {
+	for (const [index, relationship] of module.outgoing.entries())
+		if (relationship.effect === undefined && relationship.kind !== EFFECTLESS_KIND)
+			context.addIssue({
+				code: "custom",
+				path: ["outgoing", index, "effect"],
+				message: `Relationship ${relationship.id} (${relationship.kind}) states no effect: set effect to mutation, query or compute. Only a ${EFFECTLESS_KIND} may omit it.`,
+			});
+});
+/** A module file in the old format, read exactly: its relationships state no effect. */
+const OldModuleDocumentSchema = ArchitectureModuleSchema.extend({
+	schemaVersion: z.literal(OLD_MODULE_FORMAT),
+	outgoing: z.array(OwnedRelationshipSchema.omit({ effect: true })),
+});
+/** A module file in the format its `schemaVersion` names. */
+const ModuleFileSchema = z.discriminatedUnion("schemaVersion", [
+	ModuleDocumentSchema,
+	OldModuleDocumentSchema,
+]);
 
 export {
+	MODULE_FORMAT,
+	OLD_MODULE_FORMAT,
+	ModuleFileSchema,
 	GitObjectIdSchema,
 	ModelReferenceSchema,
 	ModelRevisionSchema,

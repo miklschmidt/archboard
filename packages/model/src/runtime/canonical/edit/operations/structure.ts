@@ -1,3 +1,4 @@
+import { MODULE_FORMAT } from "#shared/schemas/model-definitions.ts";
 import { applyWalkthroughChanges } from "#runtime/canonical/edit/operations/walkthroughs.ts";
 import { assignFields } from "#runtime/canonical/edit/operations/fields.ts";
 import { everyStep } from "#shared/rules/flow-steps.ts";
@@ -168,7 +169,7 @@ function addModule(state: Structure, change: Extract<Change, { type: "add-module
 	const id = freshIdentity(state);
 	const module: Module = {
 		...change.module,
-		schemaVersion: 1,
+		schemaVersion: MODULE_FORMAT,
 		id,
 		outgoing: [],
 		file: `${id.split("#")[1]}.module.json`,

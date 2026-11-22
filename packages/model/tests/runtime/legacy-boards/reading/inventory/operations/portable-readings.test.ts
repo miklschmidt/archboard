@@ -39,7 +39,7 @@ async function portableOriginals() {
 	if (!retained.success) throw new Error(JSON.stringify(retained));
 	// Seed an already canonical source. Product cutover remains TASK-549.23.
 	rmSync(source.vault, { recursive: true, force: true });
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), source.vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), source.vault, { recursive: true });
 	const { file: _file, ...walk } = preview.walkthroughs[0]!;
 	writeFileSync(
 		join(source.vault, "original.walkthrough.json"),

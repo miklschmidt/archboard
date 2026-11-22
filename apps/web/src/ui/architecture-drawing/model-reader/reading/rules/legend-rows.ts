@@ -124,7 +124,7 @@ function policyLine(model: Model, id: string): AppliedAppearance {
 		depiction: "",
 		typeColor: UNKNOWN_KIND.color,
 		lineColor: look.color ?? UNKNOWN_KIND.color,
-		dash: look.dash,
+		dash: look.dash ?? UNKNOWN_KIND.dash,
 		arrowhead: look.arrowhead,
 	};
 }

@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import { mintId } from "#shared/rules/ids.ts";
 import { mappedIdentity } from "#shared/legacy-inventory/rules/plan.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
@@ -15,9 +16,9 @@ import {
 import {
 	decodeSubjects,
 	materializedInputs,
-	predecessorRevision,
 	requireModel,
 } from "#runtime/canonical/proposals/operations/read.ts";
+import { predecessorRevision } from "#runtime/canonical/proposals/operations/predecessor-revision.ts";
 import {
 	archiveCommit,
 	tree,
@@ -39,7 +40,7 @@ type Mapping = NonNullable<LegacyInventory["plan"]["drafts"]>[number];
  * @returns The signed retained baseline.
  */
 async function retainBaseline(state: Conversion, model: ArchitectureModel, suffix: string) {
-	const inputs = materializedInputs(model, Buffer.from(Bun.YAML.stringify(model.policy)));
+	const inputs = materializedInputs(model, configurationFile(model.policy));
 	const dependencies = [...state.dependencies];
 	const request = state.request;
 	const record = CheckpointRecordSchema.parse({
@@ -105,7 +106,7 @@ function conversionState(
 	originals: string,
 	request: Request,
 ) {
-	const inputs = materializedInputs(preview, Buffer.from(Bun.YAML.stringify(preview.policy)));
+	const inputs = materializedInputs(preview, configurationFile(preview.policy));
 	const canonical = requireModel(
 		decodeModel({ inputs, revision: modelRevision(inputs), diagnostics: [] }),
 	);
@@ -367,10 +368,7 @@ async function migrationCandidate(
 		// oxlint-disable-next-line no-await-in-loop -- retain and convert each predecessor before its dependent draft
 		await convertDraft(state, entry.legacy);
 	}
-	const inputs = materializedInputs(
-		state.current,
-		Buffer.from(Bun.YAML.stringify(state.current.policy)),
-	);
+	const inputs = materializedInputs(state.current, configurationFile(state.current.policy));
 	for (const { file, ...proposal } of state.proposals)
 		inputs.set(file, Buffer.from(`${JSON.stringify(proposal, null, 2)}\n`));
 	return {

@@ -19,7 +19,7 @@ test("the existing talk store and page address preserve exact canonical playback
 	const home = mkdtempSync(join(tmpdir(), "archboard-canonical-talk-"));
 	homes.push(home);
 	const vault = join(home, ".archboard/vault");
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), vault, { recursive: true });
 	for (const args of [
 		["init", "--quiet"],
 		["config", "user.name", "Talk Author"],

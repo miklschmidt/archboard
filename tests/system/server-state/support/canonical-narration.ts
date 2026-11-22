@@ -31,7 +31,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 		resources,
 		join(import.meta.dir, "../fixtures/fake-codex-production.ts"),
 	);
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), fixture.vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), fixture.vault, { recursive: true });
 	for (const args of [
 		["init", "--quiet"],
 		["config", "user.name", "Narration Author"],

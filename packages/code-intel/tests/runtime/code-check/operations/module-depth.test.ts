@@ -64,7 +64,7 @@ function policy(codeCheck?: object): void {
 function module(id: string, path: string, order: number, parent?: string): void {
 	write(vault, {
 		[`${id}.module.json`]: JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${id}`,
 			name: id,
 			kind: "module",

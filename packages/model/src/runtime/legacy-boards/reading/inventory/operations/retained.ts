@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import type { z } from "zod";
 import { LegacyOriginalInputsSchema } from "#shared/schemas/migration-inputs.ts";
 import { createHash } from "node:crypto";
@@ -124,7 +125,7 @@ function originalsOnly(
 					}),
 				),
 			],
-			[".archboard/config.yaml", Buffer.from(Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY))],
+			[".archboard/config.yaml", configurationFile(DEFAULT_SEMANTIC_POLICY)],
 		]),
 		revision: captured.revision,
 		diagnostics: [],
