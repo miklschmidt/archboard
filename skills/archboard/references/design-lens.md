@@ -21,8 +21,8 @@ Inspect and compare write prose to standard error and JSON to standard output.
 ## Interface
 
 An interface is the set of parts that callers reach.
-`model inspect <module>` reads the complete state before scope or filters narrow it.
-Every relationship kind counts. Flow steps do not.
+`model inspect <module>` reads the complete state before scope, lens, or filters narrow it.
+Every relationship kind and effect counts. Flow steps do not.
 Use `check code` to compare the modeled interface with source.
 
 The result reports:

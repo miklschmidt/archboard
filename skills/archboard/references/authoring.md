@@ -15,6 +15,77 @@ If they represent one module, keep the identity located with that code.
 In one intent, move relationships, flow steps, and walkthrough references to it, then remove the duplicate.
 Tell the user which modules you combined and which code proved the match.
 
+### Choose the kind and the effect
+
+Every relationship states its `kind`, how it travels between its two ends, and its `effect`, what it asks the target to do.
+The kind is the color of its line and the effect its line type, and lenses select by both.
+Read the sending code and the callee or its contract before you choose either.
+
+Choose the kind by the mechanism at the two named ends:
+
+| Kind         | The source                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| `call`       | Uses a function, a method or a value of the target in its own process.                               |
+| `http`       | Sends the target an HTTP request.                                                                    |
+| `rpc`        | Calls the target through a remote procedure contract, such as gRPC or JSON-RPC.                      |
+| `event`      | Publishes a named message that the target receives.                                                  |
+| `queue`      | Puts work on a queue that the target works off.                                                      |
+| `stream`     | Sends or receives successive bytes or records with no message name: a pipe, a stream, a media track. |
+| `spawn`      | Starts the target as a process.                                                                      |
+| `render`     | Places the target's component in its output.                                                         |
+| `storage`    | Reads or writes through a store's own interface: files, SQL, keys or objects.                        |
+| `dependency` | Declares a requirement and runs nothing of the target: a type-only import, a package or a build.     |
+| `other`      | Relies on the target in a way that no kind names. Say how in the label.                              |
+
+Take the most specific contract that the source relies on.
+JSON-RPC over HTTP is `rpc`.
+A service that asks a repository object for orders is a `call`, and the repository that issues the SQL is `storage`.
+A function or a value that the source uses at run time is a `call`, never a `dependency`.
+
+Choose the effect by asking in order:
+
+1. Can the operation have a side effect? Write `mutation`.
+   A conditional write, a publication, an acknowledgement that removes work and installing a subscription are side effects.
+   Follow work that the target delegates. A return value does not make a write a read.
+2. Otherwise, does it read held or fetched state, such as a store, the clock or a context? Write `query`.
+3. Otherwise, the answer follows from what the source hands over alone. Write `compute`.
+
+Judge every kind by its operation, as these examples do:
+
+| Code                                                             | Kind         | Effect     |
+| ---------------------------------------------------------------- | ------------ | ---------- |
+| A POST that creates an order                                     | `http`       | `mutation` |
+| A getter that fills a cache that other callers read              | `call`       | `mutation` |
+| A function that formats the bytes that it is given               | `call`       | `compute`  |
+| A component that places a child component with no mount behavior | `render`     | `compute`  |
+| An event publication or a queue submission                       | `event`      | `mutation` |
+| A read of retained events that consumes none                     | `event`      | `query`    |
+| A short-lived process that lays out the graph that it is given   | `spawn`      | `compute`  |
+| A Git command that reads a ref                                   | `spawn`      | `query`    |
+| The start of a server that outlives the request                  | `spawn`      | `mutation` |
+| A type-only import                                               | `dependency` | none       |
+
+When the code does not rule a side effect out, write `mutation` and name the gap in your report.
+A relationship that stands for several operations takes the strongest effect: `mutation`, then `query`, then `compute`.
+A `dependency` states no effect, which says that it is a declared requirement only.
+Give it one only when loading the target does the work that the relationship stands for, such as a registration on import.
+`check code` reports a dependency whose evidence is a call into the target, so that you state the call and its effect.
+
+Add a kind of the vault's own when several relationships travel by one mechanism of this repository's domain that no built-in kind names, such as starting a durable workflow.
+Define it under `relationshipKinds` in `.archboard/config.yaml`, with a name, a color from the palette, an arrowhead and the evidence kinds that prove it:
+
+```yaml
+relationshipKinds:
+  workflow: { name: Workflow, color: violet, arrowhead: filled, evidence: [call, configured-path] }
+```
+
+Its color is required, because the kind is the color of its lines.
+Relationships of the vault's own kind state an effect too.
+An entry with a built-in id replaces that kind whole.
+`archboard model schema vault-config` prints the fields and the colors.
+
+Done: every relationship that you author or touch names the kind whose row matches its code, and the effect that the three questions give.
+
 ## Give each container a job
 
 A container is a module with parts.
@@ -73,7 +144,7 @@ If no part owns that responsibility, add a part for it.
 Model boundaries that callers name and architects need, not a part for every file.
 
 If two parts perform different jobs across a boundary, state two relationships.
-State each dependency once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind and label say what the code does.
+State each relationship once. `RELATIONSHIP_REPEATED` warns on a relationship with the same ends and anchor as another. Keep the one whose kind, effect and label say what the code does.
 One relationship represents other calls across the same boundary.
 `RELATIONSHIP_UNDRAWN` reports those calls as information.
 

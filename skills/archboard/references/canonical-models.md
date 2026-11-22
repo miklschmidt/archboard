@@ -55,6 +55,7 @@ A connection to a container never invents a child endpoint.
 
 Use these controls:
 
+- Choose a lens for the question that the picture answers. `Show all` draws every relationship.
 - Drag from empty space to select several subjects.
 - Use Ctrl/Cmd-click or Ctrl/Cmd+Enter on a focused list button to toggle a subject.
 - Press Escape to clear selection.
@@ -346,7 +347,7 @@ These are separate examples, not one valid combined intent:
 	{
 		"type": "add-relationship",
 		"source": "Shop#Gateway",
-		"relationship": { "to": "Shop#Worker", "kind": "call", "order": 20 }
+		"relationship": { "to": "Shop#Worker", "kind": "call", "effect": "mutation", "order": 20 }
 	},
 	{
 		"type": "edit-relationship",
@@ -372,6 +373,8 @@ That pair allocates a new identity and compares as one removal and one addition.
 Matching endpoints or labels never imply replacement.
 
 Archboard allocates new IDs in the model namespace and uses them for module filenames.
+Each relationship states its `kind` and its `effect`, chosen as [authoring](authoring.md#choose-the-kind-and-the-effect) says.
+A batch that leaves a relationship without an effect is refused at `outgoing.<n>.effect`, unless its kind is `dependency`.
 Additions accept no supplied ID, schema version, former names, or outgoing array.
 Read allocated IDs from the result's subjects or the next model read.
 Refer to a module added in the batch through its unique name.
@@ -981,8 +984,15 @@ After an interrupted response, retry the exact operation identity. A different i
 Occupied vaults refuse. Legacy vaults require [migration](legacy-migration.md).
 
 `model render --out picture.svg` draws structure by default.
-Choose `--module`, exact `--scope`, repeated `--focus`, or `--hide-kind` for the reading.
-Each relationship in that reading has a drawn line.
+Choose `--module`, exact `--scope`, repeated `--focus`, `--lens`, or `--hide-kind` for the reading.
+
+A picture is read through a lens: a named question that chooses which relationships draw.
+`--lens <id>` names one. Without it, the picture reads through the vault's default lens, `main` unless the vault names another.
+The built-in lenses are `main` (every mutation and all traffic between processes, without dependencies and in-process queries and computes), `effects`, `reads`, `network`, `dependencies`, and `all`.
+A lens keeps every part of its scope. Each relationship that it shows has a drawn line, and the picture says how many lines the lens left out.
+Pass `--lens all` to draw every relationship. `--hide-kind` hides a kind beyond the lens.
+A sequence or a flowchart refuses `--lens`, because it draws its whole flow.
+A vault adds or replaces lenses under `lenses` in its configuration, and names its default with `defaultLens`.
 The legend is drawn under the picture. Use `--legend vertical` to draw it beside the picture, or `--legend none` to leave it out.
 Use `--state` or `--checkpoint` for the architecture selection.
 For behavior, follow [flow rendering](#render-a-selected-flow).
