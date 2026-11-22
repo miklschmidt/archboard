@@ -515,6 +515,24 @@ fn a_reading_no_placement_routes_is_drawn_unplanned_by_its_legacy_placement() {
     }));
 }
 
+#[test]
+fn a_reading_no_placement_routes_draws_no_words_and_keeps_no_room_for_them() {
+    let worded: Value = serde_json::from_str(&crowded_card()).unwrap();
+    let mut wordless = worded.clone();
+    for edge in wordless["edges"].as_array_mut().expect("its lines") {
+        edge.as_object_mut().expect("a line").remove("labels");
+    }
+    let placed = drawing(&worded);
+    assert!(
+        placed["edges"]
+            .as_array()
+            .expect("its lines")
+            .iter()
+            .all(|edge| edge.get("label").is_none_or(Value::is_null))
+    );
+    assert_eq!(placed, drawing(&wordless));
+}
+
 #[derive(Default)]
 struct CountedGraphviz {
     calls: usize,

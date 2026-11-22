@@ -77,14 +77,14 @@ pub(in crate::blocks) fn without_trunk_words(graph: &Node) -> Option<Node> {
         .filter(|&&edge| model.edges[edge].label().is_some())
         .map(|&edge| model.edges[edge].id.as_str())
         .collect();
-    (!worded.is_empty()).then(|| without_words(graph, &worded))
+    (!worded.is_empty()).then(|| without_words(graph, |line| worded.contains(&line)))
 }
 
-/// A graph with the words of some lines taken off.
-fn without_words(graph: &Node, lines: &[&str]) -> Node {
+/// A graph with the words of the lines `taken` names taken off.
+pub(in crate::blocks) fn without_words(graph: &Node, taken: impl Fn(&str) -> bool) -> Node {
     let mut quiet = graph.clone();
     for edge in quiet.edges.iter_mut().flatten() {
-        if lines.contains(&edge.id.as_str()) {
+        if edge.labels.is_some() && taken(&edge.id) {
             *edge = Rc::new(Edge {
                 labels: None,
                 ..(**edge).clone()
@@ -383,7 +383,7 @@ pub(in crate::blocks) fn dress(graph: &Node, drawing: Placed) -> Result<Placed, 
         .iter()
         .map(|&edge| model.edges[edge].id.as_str())
         .collect();
-    let kept = without_words(graph, &wordless);
+    let kept = without_words(graph, |line| wordless.contains(&line));
     let model = Model::new(&kept)?;
     settled(&model, &Topology::new(&model), &mut shape)
 }

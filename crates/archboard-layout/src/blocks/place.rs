@@ -74,8 +74,10 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
         }
         return super::planned::solve_part(&graph, &part);
     }
-    // Lanes always takes the lanes' placement, and so does a Blocks reading that no placement
-    // gives every line a clear planned channel (TASK-624). The drawing settles its routes.
+    // Lanes is Blocks' fallback: Blocks takes it for a reading that no placement gives every
+    // line a clear planned channel (TASK-624), and Lanes takes it always. The drawing settles
+    // its routes. It draws no line's words and keeps no room for them: the selection still
+    // names each line.
     let planned = if lanes(&graph) {
         None
     } else {
@@ -83,7 +85,10 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
     };
     let (placed, frozen) = match planned {
         Some(placed) => (placed, true),
-        None => (super::legacy::place(&graph, host)?, false),
+        None => {
+            let quiet = super::planned::without_words(&graph, |_| true);
+            (super::legacy::place(&quiet, host)?, false)
+        }
     };
     let mut told = vec![(BLOCKS_PLACED, placed.json().text())];
     if frozen {
