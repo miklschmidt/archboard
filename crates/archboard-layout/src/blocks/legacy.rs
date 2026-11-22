@@ -275,7 +275,8 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, Stri
     Ok(chosen)
 }
 
-/// The retained placement path, for a reading that no planned placement routes.
+/// The lanes' placement: every Lanes drawing, and a Blocks reading that no planned placement
+/// routes.
 pub(super) fn place(
     graph: &Node,
     host: &mut dyn Graphviz,

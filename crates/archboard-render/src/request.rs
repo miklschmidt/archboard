@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use archboard_flows::Flow;
 use archboard_flows::flowchart::KindLook;
-use archboard_layout::{Content, Edge, Node};
+use archboard_layout::{Content, Edge, Engine, Node};
 use archboard_scene::request::{
     Arrowhead, Dash, ExportFrame, PaletteColor, Relief, StandaloneTheme, Standing, ThemeColors,
 };
@@ -140,6 +140,8 @@ pub struct RenderRequest {
     /// The level of the picture drawn (ADR 0029).
     #[serde(default)]
     pub(crate) level: Option<String>,
+    /// Which engine lays an architecture out, resolved by the host from its shared default.
+    pub(crate) layout: Engine,
     /// A title and a legend an exported picture carries beside its drawing.
     #[serde(default)]
     pub(crate) frame: Option<ExportFrame>,

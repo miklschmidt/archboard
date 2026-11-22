@@ -230,6 +230,7 @@ pub(crate) fn compound_graph(
     content: &Content,
     measured: &Measured,
     standings: Option<&Standings>,
+    engine: super::Engine,
 ) -> String {
     let places = gathered_order(content);
     let by_id: BTreeMap<&str, &Node> = content
@@ -259,8 +260,12 @@ pub(crate) fn compound_graph(
             edge_of(edge, measured, standing)
         })
         .collect();
+    let options = match engine {
+        super::Engine::Blocks => "{}",
+        super::Engine::Lanes => "{\"archboard.layout.engine\":\"lanes\"}",
+    };
     let mut graph =
-        String::from("{\"id\":\"architecture:root\",\"layoutOptions\":{},\"children\":");
+        format!("{{\"id\":\"architecture:root\",\"layoutOptions\":{options},\"children\":");
     J::Arr(children).write(&mut graph);
     graph.push_str(",\"edges\":");
     J::Arr(edges).write(&mut graph);

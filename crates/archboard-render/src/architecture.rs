@@ -129,6 +129,7 @@ fn layout_key(
         })
         .collect();
     serde_json::to_string(&(
+        request.layout,
         &laid.nodes,
         &laid.edges,
         steps,
@@ -186,7 +187,7 @@ fn standings_of(request: &RenderRequest, laid: &Reading) -> Option<Standings> {
     )
 }
 
-/// The drawing Blocks lays a reading out as, its words measured first,
+/// The drawing the engine named lays a reading out as, its words measured first,
 /// remembered by everything it was laid out from.
 async fn laid_out<H: Host>(
     request: &RenderRequest,
@@ -206,7 +207,7 @@ async fn laid_out<H: Host>(
         .collect();
     let key = layout_key(request, laid, steps, standings.as_ref());
     let content = laid.content();
-    let solving = draw(&content, &measure, standings.as_ref(), host);
+    let solving = draw(&content, &measure, standings.as_ref(), request.layout, host);
     layouts.laid(&key, solving).await
 }
 

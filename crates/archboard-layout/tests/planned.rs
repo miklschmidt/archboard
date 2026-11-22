@@ -551,3 +551,24 @@ fn a_reading_the_planner_refuses_still_fails_when_graphviz_fails() {
         );
     }
 }
+
+#[test]
+fn lanes_takes_the_lanes_placement_where_blocks_plans() {
+    for graph in [
+        include_str!("fixtures/refused-dense.json"),
+        include_str!("fixtures/trunk-words.json"),
+    ] {
+        let mut graph: Value = serde_json::from_str(graph).unwrap();
+        let told = |graph: &Value| {
+            let answer = lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore)
+                .expect("a drawing");
+            let answer: Value = serde_json::from_str(&answer).expect("an answer");
+            answer["layoutOptions"]
+                .get("archboard.blocks.planned")
+                .is_some()
+        };
+        assert!(told(&graph), "Blocks plans this reading");
+        graph["layoutOptions"]["archboard.layout.engine"] = json!("lanes");
+        assert!(!told(&graph), "Lanes never plans");
+    }
+}

@@ -6,7 +6,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
-use archboard_layout::{Content, Measured, Solver, Unsolved, draw};
+use archboard_layout::{Content, Engine, Measured, Solver, Unsolved, draw};
 use archboard_scene::drawing::{MeasuredNode, Painted};
 use serde_json::{Value, json};
 
@@ -100,7 +100,7 @@ fn picture() -> (Content, Measured) {
 
 /// The production choice, with no comparison.
 async fn drawing(host: &Host, content: &Content, measured: &Measured) -> Result<Painted, String> {
-    draw(content, measured, None, host).await
+    draw(content, measured, None, Engine::Blocks, host).await
 }
 
 /// A full solve reply with no stackable block. Its width identifies the drawing.

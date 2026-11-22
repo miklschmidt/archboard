@@ -10,6 +10,13 @@ use crate::{Graphviz, graph::Node, json::J};
 const BLOCKS_PLACED: &str = "archboard.blocks.placed";
 /// Whether this solve owns the final route coordinates.
 const BLOCKS_PLANNED: &str = "archboard.blocks.planned";
+/// The root option naming the engine, present for Lanes alone: a graph without it is Blocks.
+const ENGINE: &str = "archboard.layout.engine";
+
+/// Whether a graph asks for Lanes: the lanes' placement, never planned.
+fn lanes(graph: &Node) -> bool {
+    graph.option(ENGINE) == Some("lanes")
+}
 
 /// The drawing a solve's answer carries in its root options, and whether the solve owns its
 /// final route coordinates; none when it carries no drawing.
@@ -64,9 +71,14 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
     if let Some(Asked { part }) = asked {
         return super::planned::solve_part(&graph, &part);
     }
-    // A reading that no placement gives every line a clear planned channel takes the retained
-    // placement, whose routes the drawing settles afterwards (TASK-624).
-    let (placed, frozen) = match hybrid(&graph, host)? {
+    // Lanes always takes the lanes' placement, and so does a Blocks reading that no placement
+    // gives every line a clear planned channel (TASK-624). The drawing settles its routes.
+    let planned = if lanes(&graph) {
+        None
+    } else {
+        hybrid(&graph, host)?
+    };
+    let (placed, frozen) = match planned {
         Some(placed) => (placed, true),
         None => (super::legacy::place(&graph, host)?, false),
     };
@@ -114,6 +126,9 @@ impl Across {
     /// The solve in parts of a Blocks graph that takes a dense placement.
     pub(crate) fn of(graph: &str) -> Option<Across> {
         let graph: Node = serde_json::from_str(graph).ok()?;
+        if lanes(&graph) {
+            return None;
+        }
         let quiet = super::planned::without_trunk_words(&graph);
         let plain = quiet.is_none();
         let split = Split::of(quiet.unwrap_or_else(|| graph.clone()), plain)?;
