@@ -513,6 +513,7 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = createVaultConfigurationSchema()
 	levels: ["system", "service", "module"],
 });
 export {
+	ALL_LENS_ID,
 	VocabularyNameSchema,
 	createVaultConfigurationSchema,
 	createLegacyVaultConfigurationSchema,

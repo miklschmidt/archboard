@@ -13,16 +13,26 @@ const InputSchema = architectureRenderRequestSchema().extend({
 	theme: standaloneThemeSchema().default("auto"),
 });
 /**
- * Refuse a flow that the architecture grammar would silently ignore.
+ * Refuse a selector that the grammar would silently ignore: a flow in the architecture grammar, and
+ * a lens in a behavioral one, which draws every message of its flow.
  * @param request The selected reading.
  * @param request.flow The named flow, when there is one.
+ * @param request.lens The named lens, when there is one.
  * @param request.grammar The grammar the reading draws.
- * @throws {CliUsageError} When a flow is named without a behavioral grammar.
+ * @throws {CliUsageError} When a selector does not fit the grammar.
  */
-function requireGrammarForFlow(request: { flow?: string | undefined; grammar: string }): void {
+function requireGrammarForFlow(request: {
+	flow?: string | undefined;
+	lens?: string | undefined;
+	grammar: string;
+}): void {
 	if (request.flow !== undefined && request.grammar === "architecture")
 		throw new CliUsageError(
 			`--flow ${request.flow} needs a behavioral grammar: add --grammar sequence or --grammar flowchart.`,
+		);
+	if (request.lens !== undefined && request.grammar !== "architecture")
+		throw new CliUsageError(
+			`--lens ${request.lens} reads a structural picture: a ${request.grammar} draws every message of its flow. Leave out --lens.`,
 		);
 }
 const modelRenderContract = defineCommand({
@@ -38,6 +48,10 @@ const modelRenderContract = defineCommand({
 				["module", "Select a module by identity or unique name"],
 				["state", "Select an explicit architectural state"],
 				["scope", "Open an exact module scope"],
+				[
+					"lens",
+					"Show the relationships this lens selects, by id. Without it, the vault's default lens",
+				],
 			] as const
 		).map(([key, description]) => ({
 			kind: "option" as const,
@@ -50,7 +64,7 @@ const modelRenderContract = defineCommand({
 		...(
 			[
 				["focus", "--focus", "Focus these identities"],
-				["hideKinds", "--hide-kind", "Hide these relationship kinds"],
+				["hideKinds", "--hide-kind", "Also hide this relationship kind. Repeat to hide more kinds"],
 				["expand", "--expand", "Open these modules beside the scope"],
 			] as const
 		).map(([key, spelling, description]) => ({

@@ -7,6 +7,7 @@ import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
+import { allLens } from "@archboard/model/content";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 
@@ -66,15 +67,17 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const grammar = search[`grammar${paneId}`] ?? "architecture";
 	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
+	const lens = search[`lens${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
 	const expanded = search[`expand${paneId}`];
 	const file = nullableParameter(search[`file${paneId}`]);
 	const fileRepo = search[`fileRepo${paneId}`];
 	const filters = useMemo(
 		() => ({
+			lens,
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
 		}),
-		[hiddenKinds],
+		[lens, hiddenKinds],
 	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
@@ -123,6 +126,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 							expand,
 							grammar,
 							flow: flow ?? undefined,
+							lens: filters.lens,
 							hideKinds: filters.hideKinds,
 							bookmark: undefined,
 						}),
@@ -141,6 +145,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
+				lens: undefined,
 				hideKinds: undefined,
 				subject: undefined,
 			});
@@ -165,6 +170,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
+				lens: undefined,
 				hideKinds: undefined,
 				subject: undefined,
 				against: undefined,
@@ -196,6 +202,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: undefined,
 					focus: undefined,
 					expand: undefined,
+					lens: undefined,
 					hideKinds: undefined,
 				},
 				false,
@@ -222,6 +229,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: reading.flow,
 					focus: reading.focus,
 					expand: reading.expand,
+					lens: reading.lens,
 					hideKinds: reading.hideKinds,
 				},
 				!push,
@@ -315,16 +323,24 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[filters, navigate, userChanged],
 	);
-	const showAllKinds = useCallback((): void => {
-		userChanged?.("view");
-		void navigate({ hideKinds: undefined });
-	}, [navigate, userChanged]);
+	// A lens is a question of its own, so choosing one shows every kind it selects.
+	const selectLens = useCallback(
+		(id: string): void => {
+			userChanged?.("view");
+			void navigate({ lens: id, hideKinds: undefined });
+		},
+		[navigate, userChanged],
+	);
+	const showAll = useCallback((): void => {
+		selectLens(allLens());
+	}, [selectLens]);
 	const reveal = useCallback(
-		(ids: readonly string[], kinds: readonly string[]): void => {
+		(ids: readonly string[], kinds: readonly string[], widen: boolean): void => {
 			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
 			explore({
 				grammar: undefined,
 				focus: [...new Set(ids)].toSorted(),
+				...(widen ? { lens: allLens() } : {}),
 				hideKinds: hidden.length === 0 ? undefined : hidden,
 			});
 		},
@@ -426,7 +442,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		showFile,
 		filters,
 		toggleFilter,
-		showAllKinds,
+		selectLens,
+		showAll,
 		reveal,
 		setFocus,
 		open,
@@ -460,6 +477,7 @@ function referenceAddress(reading: Model): ModelAddress {
 		against: undefined,
 		focus: referenceFocus(reading, location.subject),
 		expand: undefined,
+		lens: undefined,
 		hideKinds: undefined,
 	};
 }
@@ -554,11 +572,13 @@ function requestedGrammar(reading: PaneModelRequest["reading"]): ModelAddress["g
  */
 function bookmarkSearch(reading: Reading | undefined, paneId: string): Record<string, string> {
 	if (reading === undefined) return {};
+	// A bookmark keeps no lens: it was made of every relationship, so it opens through all.
 	const values = {
 		scope: reading.scope,
 		grammar: reading.grammar,
 		flow: reading.flow,
 		focus: reading.focus,
+		lens: allLens(),
 		hideKinds: reading.filters.relationships,
 	};
 	return Object.fromEntries(

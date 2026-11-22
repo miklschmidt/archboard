@@ -1,6 +1,7 @@
-// The owner of the legend's workflow: each line type is its own switch, its rows stay where they
-// stand while a reader hides and shows lines, and a group's tag selects what the picture draws of
-// that group, from the pointer and from the keyboard.
+// The owner of the legend's workflow: the picture is read through a lens that the address keeps,
+// each line type is its own switch, its rows stay where they stand while a reader hides and shows
+// lines, Show all reads the picture through the lens of every relationship, and a group's tag
+// selects what the picture draws of that group, from the pointer and from the keyboard.
 
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -32,7 +33,8 @@ function line(id: string, to: string, kind: string): Record<string, unknown> {
 /**
  * A reading of Gateway whose line kinds carry things off the picture: hiding `event` takes the door
  * Bank, its kind and its group, and hiding `call` takes the door Worker, the marks of its line and
- * the mixed line between Handler and Router.
+ * the mixed line between Handler and Router. The default lens leaves out Handler's dependency on
+ * Bank, which every relationship shows.
  * @param vault The vault.
  */
 function seedReading(vault: string): void {
@@ -82,6 +84,7 @@ function seedReading(vault: string): void {
 				...handler.outgoing,
 				line("Route", "Router", "call"),
 				line("Copy", "Router", "data"),
+				{ id: "Shop#Needs", to: "Shop#Bank", kind: "dependency", order: 20 },
 			],
 		}),
 	);
@@ -124,6 +127,17 @@ function pressed(browser: AgentBrowserSession, tag: string): Promise<string | nu
 	);
 }
 
+/** What the lens control says, and the count of lines it left out beside it. */
+function lensOf(browser: AgentBrowserSession): Promise<string> {
+	return browser.eval<string>(
+		`[...document.querySelectorAll('[data-slot="model-lens"], [data-slot="model-lens-left-out"]')].map((part) => part.textContent.trim()).join(" | ")`,
+	);
+}
+
+function addressed(browser: AgentBrowserSession, key: string): Promise<string | null> {
+	return browser.eval<string | null>(`new URLSearchParams(location.search).get('${key}')`);
+}
+
 /** Press where a control stands, with the pointer, as a person who does not move it again does. */
 async function clickAt(browser: AgentBrowserSession, at: { x: number; y: number }): Promise<void> {
 	await browser.run(["mouse", "move", String(at.x), String(at.y)]);
@@ -149,7 +163,13 @@ test("each line type is its own switch, the legend's words stay put while a read
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-	expect(await switches(browser)).toEqual(["call: true", "event: true", "data: true"]);
+	expect(await switches(browser)).toEqual([
+		"call: true",
+		"event: true",
+		"dependency: true",
+		"data: true",
+	]);
+	expect(await lensOf(browser)).toBe("Main lines | 1 line left out");
 	expect(
 		await browser.eval<{ marks: number; switches: number }>(`(() => {
 			const marks = document.querySelector('[data-slot="model-legend-marks"]');
@@ -183,20 +203,65 @@ test("each line type is its own switch, the legend's words stay put while a read
 		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
-	expect(await switches(browser)).toEqual(["call: false", "event: false", "data: true"]);
+	expect(await switches(browser)).toEqual([
+		"call: false",
+		"event: false",
+		"dependency: true",
+		"data: true",
+	]);
 	expect(await wordsAt(browser)).toBe(rest);
 
 	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
 	await pollUntil(
-		async () => (await drawn(browser, "Shop#Bank")) && (await drawn(browser, "Shop#Worker")),
-		Boolean,
-		"every line back in one step",
+		() => lensOf(browser),
+		(lens) => lens === "All relationships",
+		"every line back in one step, through the lens of every relationship",
+		WAIT,
+	);
+	expect(await drawn(browser, "Shop#Needs")).toBe(true);
+	expect(await drawn(browser, "Shop#Worker")).toBe(true);
+	expect(await addressed(browser, "hideKindsA")).toBeNull();
+	expect(await addressed(browser, "lensA")).toBe("all");
+	expect(await wordsAt(browser)).toBe(rest);
+
+	await browser.run(["click", '[data-slot="model-lens"]']);
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.textContent)`,
+			),
+		(items) => items.length > 0,
+		"the lenses of the reading",
 		WAIT,
 	);
 	expect(
-		await browser.eval<boolean>(`new URLSearchParams(location.search).has('hideKindsA')`),
-	).toBe(false);
-	expect(await wordsAt(browser)).toBe(rest);
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.getAttribute('data-lens-id'))`,
+		),
+	).toEqual(["main", "effects", "reads", "network", "dependencies", "all"]);
+	await browser.run(["click", '[data-lens-id="dependencies"]']);
+	await pollUntil(
+		() => lensOf(browser),
+		(lens) => lens === "Declared dependencies | 3 lines left out",
+		"the picture read through the lens chosen",
+		WAIT,
+	);
+	await browser.run(["reload"]);
+	await settledOn(browser, "Shop#Gateway");
+	await pollUntil(
+		() => lensOf(browser),
+		(lens) => lens.startsWith("Declared dependencies"),
+		"the lens kept by the address",
+		WAIT,
+	);
+	expect(await drawn(browser, "Shop#Router")).toBe(true);
+	await browser.run(["click", '[data-slot="model-legend-show-all"]']);
+	await pollUntil(
+		() => addressed(browser, "lensA"),
+		(lens) => lens === "all",
+		"every line again",
+		WAIT,
+	);
 
 	const tag = await browser.eval<{ x: number; y: number }>(`(() => {
 		const { x, y, width, height } = document.querySelector('${PUBLIC}').getBoundingClientRect();
@@ -211,11 +276,15 @@ test("each line type is its own switch, the legend's words stay put while a read
 	);
 	expect(await pressed(browser, PUBLIC)).toBe("true");
 	expect(await wordsAt(browser)).toBe(rest);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map((row) => row.getAttribute('data-subject-id')).sort()`,
-		),
-	).toEqual(["Shop#Bank", "Shop#Handler", "Shop#Router"]);
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map((row) => row.getAttribute('data-subject-id')).sort()`,
+			),
+		(ids) => ids.join() === "Shop#Bank,Shop#Handler,Shop#Router",
+		"the panel's rows of the group's parts",
+		WAIT,
+	);
 
 	await clickAt(browser, tag);
 	await pollUntil(

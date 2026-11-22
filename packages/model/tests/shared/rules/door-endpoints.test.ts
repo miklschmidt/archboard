@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { projectModel, type Model } from "#shared/rules/model-projection.ts";
 import { doorEndpoints } from "#shared/rules/door-endpoints.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
 
 const model = {
 	modules: [
@@ -18,6 +19,7 @@ const model = {
 		{ id: "own", from: "open", to: "door", kind: "data", order: 3, emphasis: "normal" },
 	],
 	collections: [],
+	policy: DEFAULT_SEMANTIC_POLICY,
 } as unknown as Model;
 
 test("a door lists its real endpoints, grouped by the child that reaches them", () => {

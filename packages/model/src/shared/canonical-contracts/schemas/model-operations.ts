@@ -35,6 +35,9 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	scope: QualifiedSubjectIdSchema.optional(),
 	focus: z.array(QualifiedSubjectIdSchema).optional(),
 	expand: z.array(QualifiedSubjectIdSchema).optional(),
+	/** The lens a structural picture is read through, by id; the vault's default lens when absent. */
+	lens: z.string().min(1).optional(),
+	/** Relationship kinds hidden besides what the lens leaves out. */
 	hideKinds: z.array(z.string()).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),

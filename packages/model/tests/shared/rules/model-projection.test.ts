@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { projectModel, type Model } from "#shared/rules/model-projection.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "#shared/schemas/semantic-policy.ts";
 
 type Module = Partial<Model["modules"][number]> & { id: string };
 type Relationship = Pick<Model["relationships"][number], "id" | "from" | "to"> &
@@ -26,6 +27,7 @@ function modelOf(modules: Module[], relationships: Relationship[]): Model {
 			...edge,
 		})),
 		collections: [],
+		policy: DEFAULT_SEMANTIC_POLICY,
 	} as unknown as Model;
 }
 
@@ -102,6 +104,77 @@ describe("a hidden kind", () => {
 	test("leaves the subjects of a focus, which the reader named", () => {
 		const reading = projectModel(model, "system", ["a", "b", "c"], { hideKinds: ["event"] });
 		expect(cards(reading)).toEqual(["a", "b", "c"]);
+	});
+});
+
+describe("a lens", () => {
+	const model = modelOf(
+		[
+			{ id: "system" },
+			{ id: "a", parent: "system" },
+			{ id: "b", parent: "system" },
+			{ id: "c", parent: "system" },
+			{ id: "d", parent: "system" },
+			{ id: "outside" },
+		],
+		[
+			{ id: "write", from: "a", to: "b", kind: "call", effect: "mutation" },
+			{ id: "read", from: "a", to: "c", kind: "call", effect: "query" },
+			{ id: "sum", from: "c", to: "d", kind: "call", effect: "compute" },
+			{ id: "fetch", from: "b", to: "c", kind: "http", effect: "query" },
+			{ id: "needs", from: "d", to: "outside", kind: "dependency" },
+			{ id: "tell", from: "b", to: "d", kind: "event", effect: "mutation" },
+		],
+	);
+	const read = (lens?: string, hideKinds?: string[]) =>
+		projectModel(model, "system", null, { lens, hideKinds });
+	const drawn = (reading: ReturnType<typeof projectModel>) =>
+		reading.connections.flatMap(({ joins }) => joins.map((edge) => edge.id)).toSorted();
+
+	test.each([
+		["main", ["fetch", "tell", "write"]],
+		["effects", ["tell", "write"]],
+		["reads", ["fetch", "read"]],
+		["network", ["fetch", "tell"]],
+		["dependencies", ["needs"]],
+		["all", ["fetch", "needs", "read", "sum", "tell", "write"]],
+	])("%s draws what its definition shows and keeps every part", (lens, lines) => {
+		const reading = read(lens);
+		expect(drawn(reading)).toEqual(lines);
+		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "c", "d"]);
+		expect(reading.lens.id).toBe(lens);
+		expect(reading.leftOut).toBe(6 - lines.length);
+	});
+
+	test("the default lens is main, and a lens the policy lacks reads as the default", () => {
+		expect(read().lens).toEqual({ id: "main", name: "Main lines" });
+		expect(read("nowhere").lens.id).toBe("main");
+	});
+
+	test("a hidden kind subtracts from the lens and counts among the lines left out", () => {
+		const reading = read("main", ["event"]);
+		expect(drawn(reading)).toEqual(["fetch", "write"]);
+		expect(reading.leftOut).toBe(4);
+		expect(reading.children.map((node) => node.id)).toEqual(["a", "b", "c"]);
+	});
+
+	test("a line that keeps one of its relationships is not left out", () => {
+		const joined = modelOf(
+			[{ id: "a" }, { id: "b" }],
+			[
+				{ id: "write", from: "a", to: "b", kind: "call", effect: "mutation" },
+				{ id: "read", from: "a", to: "b", kind: "call", effect: "query" },
+			],
+		);
+		const reading = projectModel(joined);
+		expect(reading.connections[0]?.joins.map((edge) => edge.id)).toEqual(["write"]);
+		expect(reading.leftOut).toBe(0);
+	});
+
+	test("a focus is read through the lens too", () => {
+		const reading = projectModel(model, "system", ["a", "b", "c"], { lens: "reads" });
+		expect(drawn(reading)).toEqual(["fetch", "read"]);
+		expect(reading.leftOut).toBe(3);
 	});
 });
 

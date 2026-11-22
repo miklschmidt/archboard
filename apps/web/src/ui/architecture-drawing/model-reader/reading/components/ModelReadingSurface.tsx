@@ -7,6 +7,7 @@ import {
 	type ReactNode,
 } from "react";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
+import { readingLens } from "@archboard/model/content";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout } from "#ui/architecture-drawing/model-reader/reading/components/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/architecture-drawing/model-reader/reading/components/ModelAboutFrame.tsx";
@@ -129,7 +130,7 @@ function ReadingPicture(props: {
 function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	const { reader } = props;
 	const { model, vault, location, accepted, selection, comparison, page, onPage } = reader;
-	const { reveal, grammar, scope } = location;
+	const { reveal, grammar, scope, filters } = location;
 	const { shown } = accepted;
 	const code = useModelCodeFindings(vault, shown.model);
 	const reporting = useMemo(
@@ -150,14 +151,15 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 		[reader, behavioralIds, explanation, menu],
 	);
 	const revealSelection = useCallback((): void => {
-		const kinds = model.relationships
-			.filter((edge) => selection.ids.has(edge.id))
-			.map((edge) => edge.kind);
+		const edges = model.relationships.filter((edge) => selection.ids.has(edge.id));
+		const lens = readingLens(model.policy, filters.lens);
+		// A relationship that the lens leaves out shows through the lens of every relationship.
 		reveal(
 			[...selection.ids].filter((id) => !behavioralIds.has(id)),
-			kinds,
+			edges.map((edge) => edge.kind),
+			!edges.every(lens.draws),
 		);
-	}, [model.relationships, selection.ids, reveal, behavioralIds]);
+	}, [model.relationships, model.policy, filters.lens, selection.ids, reveal, behavioralIds]);
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
 	const subjectMenu = useSubjectMenu(reader);
 	useReaderKeys(reader.onMove);
