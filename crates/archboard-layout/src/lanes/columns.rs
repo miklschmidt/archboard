@@ -5,7 +5,7 @@
 //! step fewer times, and never to cross more lines.
 
 use crate::ecma::{abs, js_max, js_min, or, sorted_by};
-use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
+use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, Router, StationId};
 use crate::lanes::labels::extent_of;
 use crate::lanes::occupancy::{Occupancy, nearest};
 use crate::lanes::readings::{Relaid, by_band, on_band};
@@ -39,7 +39,7 @@ impl Stretch {
     }
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Stand every line that has a label on one column from card to card,
     /// where one is free, the one that crosses fewest other lines and then
     /// steps fewest times. Longer lines choose first.
@@ -269,7 +269,7 @@ impl Track<'_> {
         &self,
         occupancy: &mut Occupancy,
         stretch: &Stretch,
-    ) -> impl Fn(&Track<'_>, f64) -> bool + use<> {
+    ) -> impl Fn(&Router<'_>, f64) -> bool + use<> {
         let lanes: Vec<StationId> = stretch
             .middle
             .iter()
@@ -320,7 +320,7 @@ impl Track<'_> {
     }
 }
 
-/// [`Track::label_room`]: what a label box keeps clear of on its band.
+/// [`Router::label_room`]: what a label box keeps clear of on its band.
 struct LabelRoom {
     width: f64,
     taken: Vec<(f64, f64)>,

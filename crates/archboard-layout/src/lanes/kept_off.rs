@@ -3,7 +3,7 @@
 //! chains' lanes.
 
 use crate::constants::{LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
-use crate::lanes::chains::{ChainId, Kind, LANE, StationId, Track};
+use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::occupancy::Occupancy;
 use crate::lanes::relay::Relay;
 use crate::lanes::scene::{ItemId, Placement};
@@ -24,7 +24,7 @@ impl Relay {
     /// Which columns a station may stand on.
     pub(super) fn free_at(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         chain: ChainId,
         station: StationId,
         xs: &[f64],
@@ -40,7 +40,7 @@ impl Relay {
     /// Where a station may not stand.
     fn kept_off(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         chain: ChainId,
         station: StationId,
         occupancy: &Occupancy,
@@ -65,7 +65,7 @@ impl Relay {
     /// the other chains there.
     fn lanes_off(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         chain: ChainId,
         band: usize,
         half: f64,
@@ -85,7 +85,7 @@ impl Relay {
     /// Where a label box's centre may not stand on its band.
     fn label_walls(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         chain: ChainId,
         label: ItemId,
         band: usize,

@@ -5,7 +5,7 @@
 use std::rc::Rc;
 
 use crate::ecma::{abs, or, sorted_by};
-use crate::lanes::chains::{LANE, LaneRun, REGION_CLEARANCE, StationId, Track};
+use crate::lanes::chains::{LANE, LaneRun, REGION_CLEARANCE, Router, StationId};
 use crate::lanes::clear::ClearOf;
 use crate::lanes::scene::{ItemId, Map, Placement, Set};
 
@@ -43,7 +43,7 @@ impl Occupancy {
     }
 
     /// Every edge of what some lanes' bands hold.
-    pub(crate) fn edges(&self, track: &Track<'_>, lanes: &[StationId]) -> Vec<f64> {
+    pub(crate) fn edges(&self, track: &Router<'_>, lanes: &[StationId]) -> Vec<f64> {
         lanes
             .iter()
             .flat_map(|&lane| {
@@ -55,12 +55,12 @@ impl Occupancy {
     }
 
     /// Whether a whole run may move to one column.
-    pub(crate) fn fits(&mut self, track: &Track<'_>, run: &LaneRun, x: f64) -> bool {
+    pub(crate) fn fits(&mut self, track: &Router<'_>, run: &LaneRun, x: f64) -> bool {
         self.fitting(track, run).passes(x)
     }
 
     /// [`Occupancy::fits`], read once for a search that tries column after column and takes no lane meanwhile.
-    pub(crate) fn fitting(&mut self, track: &Track<'_>, run: &LaneRun) -> Rc<ClearOf> {
+    pub(crate) fn fitting(&mut self, track: &Router<'_>, run: &LaneRun) -> Rc<ClearOf> {
         let bands: Vec<usize> = run
             .lanes
             .iter()
@@ -80,7 +80,7 @@ impl Occupancy {
     }
 
     /// Take a lane's column on its band.
-    pub(crate) fn take(&mut self, track: &Track<'_>, lane: StationId) {
+    pub(crate) fn take(&mut self, track: &Router<'_>, lane: StationId) {
         let x = track.x(lane);
         let band = track.station(lane).band;
         let span = (x - LANE, x + LANE);
@@ -91,7 +91,7 @@ impl Occupancy {
     /// Take many lanes' columns, in turn, making room on each band once.
     pub(crate) fn take_all(
         &mut self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         lanes: impl IntoIterator<Item = StationId>,
     ) {
         let lanes: Vec<StationId> = lanes.into_iter().collect();

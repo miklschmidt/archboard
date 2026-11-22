@@ -10,7 +10,7 @@
 use crate::constants::{LABEL_CARD_CLEARANCE, LABEL_LABEL_CLEARANCE};
 use crate::ecma::{abs, js_max, js_min, max, min, number_key, sort_by, sorted_by, via_text};
 use crate::geometry::Rect;
-use crate::lanes::chains::{Kind, LANE, StationId, Track};
+use crate::lanes::chains::{Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId};
 use crate::lanes::label_runs::{Slider, place_run};
 use crate::lanes::scene::{Item, ItemId, Map, Placement, Set, centre_x};
@@ -137,7 +137,7 @@ fn clear_on_band(scene: &Placement, item: ItemId, bx: &Rect, lanes: &[f64]) -> b
         && within(bx, extent_of(scene))
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// The x a station's line can reach it at: a card's face, or a single x.
     fn reach(&self, station: StationId) -> (f64, f64) {
         let one = self.station(station);

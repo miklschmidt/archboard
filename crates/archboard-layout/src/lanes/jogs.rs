@@ -17,7 +17,7 @@
 
 use crate::constants::{BEND_RADIUS, CARD_RADIUS};
 use crate::ecma::{abs, js_min, sign, to_fixed};
-use crate::lanes::chains::{ChainId, Kind, LANE, StationId, Track};
+use crate::lanes::chains::{ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::channels::{End, NetId};
 use crate::lanes::scene::{Item, Map, Set, card_face, centre_x};
 
@@ -46,7 +46,7 @@ pub(crate) struct Reach {
 }
 
 /// Which steps count as new ones a move must not open.
-pub(crate) type Guard = fn(&Track<'_>, NetId) -> bool;
+pub(crate) type Guard = fn(&Router<'_>, NetId) -> bool;
 
 /// What a stretch's move must keep: no new step `guard` counts on another
 /// line, and a drawing `better` calls better when it is given; `piece` moves
@@ -55,14 +55,14 @@ pub(crate) type Guard = fn(&Track<'_>, NetId) -> bool;
 pub(crate) struct Keeping<'b> {
     pub guard: Guard,
     pub piece: bool,
-    pub better: Option<&'b dyn Fn(&Track<'_>) -> bool>,
+    pub better: Option<&'b dyn Fn(&Router<'_>) -> bool>,
 }
 
 /// What a pass keeps from growing: a count over every net, never more after a move than before it.
-pub(crate) type Kept<'k> = &'k dyn Fn(&Track<'_>, &[NetId]) -> f64;
+pub(crate) type Kept<'k> = &'k dyn Fn(&Router<'_>, &[NetId]) -> f64;
 
 /// What a pass that runs first keeps: nothing.
-pub(crate) fn nothing(_: &Track<'_>, _: &[NetId]) -> f64 {
+pub(crate) fn nothing(_: &Router<'_>, _: &[NetId]) -> f64 {
     0.0
 }
 
@@ -74,19 +74,19 @@ struct Saved {
 }
 
 /// How far a net steps sideways.
-pub(crate) fn step(track: &Track<'_>, net: NetId) -> f64 {
+pub(crate) fn step(track: &Router<'_>, net: NetId) -> f64 {
     let net = track.net(net);
     abs(net.top_x - net.bottom_x)
 }
 
 /// Whether a net steps sideways by less than its two bends need.
-pub(crate) fn notched(track: &Track<'_>, net: NetId) -> bool {
+pub(crate) fn notched(track: &Router<'_>, net: NetId) -> bool {
     let step = step(track, net);
     step > STRAIGHT && step < 2.0 * BEND_RADIUS
 }
 
 /// Whether a net steps sideways by no more than a kink.
-pub(crate) fn kinked(track: &Track<'_>, net: NetId) -> bool {
+pub(crate) fn kinked(track: &Router<'_>, net: NetId) -> bool {
     let step = step(track, net);
     step > STRAIGHT && step <= KINK + STRAIGHT
 }
@@ -97,7 +97,7 @@ fn too_short(one: f64, other: f64) -> bool {
     gap > STRAIGHT && gap < 2.0 * BEND_RADIUS
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Whether a net from or to a label steps back against the line's last step before it.
     fn turns_back(&self, route: &[NetId], index: usize) -> bool {
         let net = self.net(route[index]);
@@ -393,7 +393,7 @@ impl Track<'_> {
         kept: Kept<'_>,
     ) -> bool {
         let before = kept(self, nets);
-        let better = |track: &Track<'_>| kept(track, nets) <= before;
+        let better = |track: &Router<'_>| kept(track, nets) <= before;
         let keeping = Keeping {
             guard: kinked,
             piece: false,

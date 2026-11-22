@@ -13,7 +13,7 @@
 use std::rc::Rc;
 
 use crate::ecma::{js_max, js_min, sorted_by, sorted_unique};
-use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, StationId, Track};
+use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, Router, StationId};
 use crate::lanes::labels::extent_of;
 use crate::lanes::occupancy::Occupancy;
 use crate::lanes::readings::{Relaid, by_band};
@@ -72,7 +72,7 @@ pub(super) struct Relay {
     kinds: Vec<Option<Rc<str>>>,
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Whether a chain laps: a station between its ends stands more than a
     /// couple of lanes outside where either end reaches.
     fn strays(&self, chain: ChainId) -> bool {
@@ -119,7 +119,7 @@ impl Track<'_> {
 
 impl Relay {
     /// Lay the columns out across the scene.
-    fn new(track: &Track<'_>, kinds: &[(ChainId, Rc<str>)]) -> Relay {
+    fn new(track: &Router<'_>, kinds: &[(ChainId, Rc<str>)]) -> Relay {
         let chains: Vec<ChainId> = kinds.iter().map(|(chain, _)| *chain).collect();
         let extent = extent_of(track.scene);
         let (left, right) = extent;
@@ -147,7 +147,7 @@ impl Relay {
     }
 
     /// Read a chain's stations into its place in the bands again.
-    fn reread(&mut self, track: &Track<'_>, index: usize, stations: &[StationId]) {
+    fn reread(&mut self, track: &Router<'_>, index: usize, stations: &[StationId]) {
         self.bands[index] = by_band(track, stations);
         self.kinds[index] = None;
     }
@@ -155,7 +155,7 @@ impl Relay {
     /// How many trunks the chains a line crosses in one channel make.
     fn trunks_among(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         crossed: &[usize],
         upper: StationId,
         lower: StationId,
@@ -181,13 +181,13 @@ impl Relay {
     }
 
     /// How many lines a chain's stations at some x cross.
-    fn lines_crossed(&self, track: &Track<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
+    fn lines_crossed(&self, track: &Router<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
         track.crossings_of(stations, xs, &self.bands, None)
     }
 
     /// How many trunks the lines a chain's stations at some x cross make.
-    fn trunks_crossed(&self, track: &Track<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
-        let mut counted = |track: &Track<'_>, crossed: &[usize], upper, lower| {
+    fn trunks_crossed(&self, track: &Router<'_>, stations: &[StationId], xs: &[f64]) -> f64 {
+        let mut counted = |track: &Router<'_>, crossed: &[usize], upper, lower| {
             self.trunks_among(track, crossed, upper, lower)
         };
         track.crossings_of(stations, xs, &self.bands, Some(&mut counted))
@@ -195,7 +195,7 @@ impl Relay {
 
     /// Relay one chain onto its cheapest free route when that saves enough.
     /// Answers whether it moved.
-    fn relay(&mut self, track: &mut Track<'_>, chain: ChainId) -> bool {
+    fn relay(&mut self, track: &mut Router<'_>, chain: ChainId) -> bool {
         let index = self
             .chains
             .iter()
@@ -246,7 +246,7 @@ impl Relay {
     /// saves enough over where the chain stands.
     fn relaid(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         search: &mut Search,
         stations: &[StationId],
         moved: bool,
@@ -278,7 +278,7 @@ impl Relay {
     }
 
     /// Find which columns a station may stand on, once per search.
-    fn find_mask(&self, track: &Track<'_>, search: &mut Search, station: StationId) {
+    fn find_mask(&self, track: &Router<'_>, search: &mut Search, station: StationId) {
         if !search.masks.contains_key(&station) {
             let mask = self.free_at(track, search.chain, station, &search.xs, &search.occupancy);
             search.masks.insert(station, mask);
@@ -287,7 +287,7 @@ impl Relay {
 
     /// What each band holds besides one chain: every item but its label box,
     /// and every other chain's lanes.
-    fn occupancy_without(&self, track: &Track<'_>, chain: ChainId) -> Occupancy {
+    fn occupancy_without(&self, track: &Router<'_>, chain: ChainId) -> Occupancy {
         let own: Set<ItemId> = track
             .chain(chain)
             .stations
@@ -310,7 +310,7 @@ impl Relay {
     /// The columns a chain's route may take, ascending.
     fn columns_for(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         stations: &[StationId],
         occupancy: &Occupancy,
     ) -> Vec<f64> {
@@ -329,7 +329,7 @@ impl Relay {
     /// it crosses, and for each trunk.
     fn costs(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         stations: &[StationId],
         xs: &[f64],
         crossings: f64,

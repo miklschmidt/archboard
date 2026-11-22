@@ -5,7 +5,7 @@
 
 use crate::ecma::abs;
 use crate::geometry::Rect;
-use crate::lanes::chains::{ByBand, ChainId, Kind, Station, StationId, Track};
+use crate::lanes::chains::{ByBand, ChainId, Kind, Router, Station, StationId};
 use crate::lanes::scene::{Item, ItemId, Placement};
 
 /// A chain's route relaid: its stations, where each stands, and what it costs.
@@ -17,7 +17,7 @@ pub(crate) struct Relaid {
 }
 
 /// A chain's stations by band.
-pub(crate) fn by_band(track: &Track<'_>, stations: &[StationId]) -> ByBand {
+pub(crate) fn by_band(track: &Router<'_>, stations: &[StationId]) -> ByBand {
     stations
         .iter()
         .map(|&station| (track.station(station).band, station))
@@ -36,7 +36,7 @@ pub(crate) fn on_band(scene: &Placement, label: &Item, band: usize) -> Item {
     )
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// The ways a chain's stations may be read: as they stand, and, when it
     /// has a label box, with the box on the band above or below between its
     /// ends, where that band is tall enough to hold it, and a lane where the

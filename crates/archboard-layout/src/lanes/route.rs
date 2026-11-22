@@ -10,7 +10,7 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
-use crate::lanes::chains::{ChainId, Kind, LANE, Station, StationId, Track, chain_kind};
+use crate::lanes::chains::{ChainId, Kind, LANE, Router, Station, StationId, chain_kind};
 use crate::lanes::channels::{End, Net, NetId};
 use crate::lanes::jogs::nothing;
 use crate::lanes::scene::{ItemId, Map, Placement, Set, centre_x};
@@ -66,7 +66,7 @@ pub(crate) fn order_of(edge: &PlacedEdge) -> f64 {
     number_of(edge.option("archboard.order").unwrap_or("0"))
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Where a line to or from a wall aims while ports and tracks are settled.
     fn wall_x(&self, side: Side) -> f64 {
         let boxes = self
@@ -455,7 +455,7 @@ impl Track<'_> {
     fn part_and_close(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
         self.part_collinear(chains, routes);
         // Closing a jog never stands two lines parted just now back on one column.
-        self.close_jogs(chains, routes, &|track: &Track<'_>, nets: &[NetId]| {
+        self.close_jogs(chains, routes, &|track: &Router<'_>, nets: &[NetId]| {
             track.collinear_pairs(nets)
         });
         self.open_notches(chains, routes);
@@ -465,7 +465,7 @@ impl Track<'_> {
 /// Each line's nets: an inner line's on its chain, in the order given, then a
 /// wall line's one net from or to its wall.
 fn routed_of(
-    track: &mut Track<'_>,
+    track: &mut Router<'_>,
     lines: &[SceneLine<'_>],
     inner: &[&SceneLine<'_>],
     chains: &Map<String, ChainId>,
@@ -508,7 +508,7 @@ pub(crate) fn route_scene(
     rim: Option<Rim>,
     reserve: bool,
 ) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
-    let mut track = Track::new(scene);
+    let mut track = Router::new(scene);
     let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
     let chains: Map<String, ChainId> = inner
         .iter()

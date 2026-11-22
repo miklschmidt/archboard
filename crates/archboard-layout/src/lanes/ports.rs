@@ -4,7 +4,7 @@
 
 use crate::ecma::{abs, js_max, max, min, or, sorted_by};
 use crate::geometry::Rect;
-use crate::lanes::chains::{Kind, LANE, Track};
+use crate::lanes::chains::{Kind, LANE, Router};
 use crate::lanes::channels::{End, NetId, PORT_MARGIN, TrunkId, port_reach, spread_along};
 use crate::lanes::scene::{ItemId, Map, Set, card_face};
 
@@ -61,7 +61,7 @@ fn spread_over(asked: &mut [f64], ports: &[usize], start: f64, end: f64) {
     }
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Every port request, by the card it is made on.
     fn port_requests(&self, nets: &[NetId]) -> Map<ItemId, Vec<PortRequest>> {
         let mut faces: Map<ItemId, Vec<PortRequest>> = Map::default();

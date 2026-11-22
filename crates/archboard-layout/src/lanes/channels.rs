@@ -15,7 +15,7 @@ use std::rc::Rc;
 
 use crate::ecma::{abs, js_max, js_min, max, min, sign, sorted_by, unique};
 use crate::geometry::Rect;
-use crate::lanes::chains::{Kind, LANE, StationId, Track};
+use crate::lanes::chains::{Kind, LANE, Router, StationId};
 use crate::lanes::scene::{ItemId, Map, Set};
 use crate::lanes::tracks::{Unit, stack_units};
 
@@ -158,7 +158,7 @@ enum UnitKey {
     Net(NetId),
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Group nets that share a card face, a channel, a kind and a standing
     /// into trunks: first those leaving a face, then, among the rest, those
     /// entering one.

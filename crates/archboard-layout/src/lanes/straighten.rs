@@ -3,12 +3,12 @@
 //! relationship descends in one line instead of jogging at every channel.
 
 use crate::ecma::{min_of, sort_by, sorted_by};
-use crate::lanes::chains::{ByBand, ChainId, Kind, LaneRun, StationId, Track};
+use crate::lanes::chains::{ByBand, ChainId, Kind, LaneRun, Router, StationId};
 use crate::lanes::occupancy::{Occupancy, nearest};
 use crate::lanes::readings::by_band;
 use crate::lanes::scene::Set;
 
-/// [`Track::crossings_for`]: how many other chains a line would cross, for
+/// [`Router::crossings_for`]: how many other chains a line would cross, for
 /// any x its own stations stand at.
 pub(crate) struct CrossingsFor {
     own: Vec<StationId>,
@@ -17,7 +17,7 @@ pub(crate) struct CrossingsFor {
 
 impl CrossingsFor {
     /// The count, for where the line's stations stand.
-    pub(crate) fn count(&self, track: &Track<'_>, xs: &[f64]) -> f64 {
+    pub(crate) fn count(&self, track: &Router<'_>, xs: &[f64]) -> f64 {
         let mut count = 0.0;
         for index in 0..self.own.len().saturating_sub(1) {
             let (above, below) = (xs[index], xs[index + 1]);
@@ -32,7 +32,7 @@ impl CrossingsFor {
     }
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Straighten every run of lanes onto one column where that column is free
     /// on every band the run passes; a run no one column
     /// is free for takes as few columns as hold it, from the top down.

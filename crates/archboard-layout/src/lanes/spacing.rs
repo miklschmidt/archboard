@@ -4,7 +4,7 @@
 
 use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, REGION_INSET};
 use crate::ecma::{abs, js_max, js_min};
-use crate::lanes::chains::{LANE, Track};
+use crate::lanes::chains::{LANE, Router};
 use crate::lanes::channels::NetId;
 use crate::lanes::scene::{ItemId, Placement, Set};
 
@@ -55,7 +55,7 @@ fn rim_of(scene: &Placement, index: usize, rim: Option<Rim>) -> Option<f64> {
     }
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Whether a line on a channel's first track turns there and rises into the band above.
     fn rises_on_first_track(&self, crossing: &[NetId], rising: &Set<NetId>) -> bool {
         crossing.iter().any(|&id| {

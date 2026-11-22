@@ -3,7 +3,7 @@
 //! least costly way down through the columns a chain's stations may take.
 
 use crate::ecma::{js_max, js_min, sort_by};
-use crate::lanes::chains::{StationId, Track};
+use crate::lanes::chains::{Router, StationId};
 use crate::lanes::relay::Relay;
 use crate::lanes::scene::Map;
 use crate::lanes::sweep::{CROSSING, Span, backtrack, descend, from_reach, spanned, warp};
@@ -45,7 +45,7 @@ impl Relay {
     /// What the other lines do in each channel a chain passes, by the band above each channel.
     pub(super) fn traffic_of(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         stations: &[StationId],
         xs: &[f64],
     ) -> Map<usize, Traffic> {
@@ -63,7 +63,7 @@ impl Relay {
     /// What the other lines do in the channel between two of a chain's stations.
     fn traffic_in(
         &self,
-        track: &Track<'_>,
+        track: &Router<'_>,
         upper: StationId,
         lower: StationId,
         xs: &[f64],
@@ -98,7 +98,7 @@ impl Relay {
     /// The cheapest free route over a chain's middle stations, by estimate:
     /// each middle station's x, or nothing when no route is free.
     pub(super) fn cheapest(
-        track: &Track<'_>,
+        track: &Router<'_>,
         stations: &[StationId],
         xs: &[f64],
         masks: &[&[bool]],

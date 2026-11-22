@@ -7,19 +7,19 @@
 //! a lane off its port moves onto the port's column.
 
 use crate::ecma::{abs, js_max, js_min};
-use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, StationId, Track};
+use crate::lanes::chains::{ByBand, ChainId, Kind, LANE, LaneRun, Router, StationId};
 use crate::lanes::occupancy::Occupancy;
 use crate::lanes::readings::by_band;
 use crate::lanes::scene::{Map, centre_x};
 
-/// How a run is moved, by [`Track::each_run`].
+/// How a run is moved, by [`Router::each_run`].
 #[derive(Clone, Copy)]
 enum Move {
     Unstrand,
     CloseSteps,
 }
 
-impl Track<'_> {
+impl Router<'_> {
     /// Where a station meets a line at an x straight: a label at its centre,
     /// or a card anywhere on its face.
     fn meets_straight(&self, station: StationId, x: f64) -> bool {

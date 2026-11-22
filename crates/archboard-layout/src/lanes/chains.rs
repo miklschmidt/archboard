@@ -2,7 +2,7 @@
 //! from its upper end to its lower end: its two cards, its label box and the
 //! lanes it passes on the bands between.
 //!
-//! Stations, chains, nets and trunks are kept by place in one [`Track`], since
+//! Stations, chains, nets and trunks are kept by place in one [`Router`], since
 //! the router asks of each whether it is the same one as another.
 
 use crate::ecma::{js_max, js_min};
@@ -132,10 +132,10 @@ impl FromIterator<(usize, StationId)> for ByBand {
 
 /// What the lines one chain crosses in a channel count, given the chains
 /// crossed and the two stations either side of the channel.
-pub(crate) type Counted<'c> = dyn FnMut(&Track<'_>, &[usize], StationId, StationId) -> f64 + 'c;
+pub(crate) type Counted<'c> = dyn FnMut(&Router<'_>, &[usize], StationId, StationId) -> f64 + 'c;
 
 /// The scene a router works on, and every station, chain, net and trunk it made.
-pub(crate) struct Track<'s> {
+pub(crate) struct Router<'s> {
     pub scene: &'s mut Placement,
     pub stations: Vec<Station>,
     pub chains: Vec<Chain>,
@@ -143,10 +143,10 @@ pub(crate) struct Track<'s> {
     pub trunks: Vec<Trunk>,
 }
 
-impl<'s> Track<'s> {
+impl<'s> Router<'s> {
     /// A router of a scene, with nothing made yet.
-    pub(crate) fn new(scene: &'s mut Placement) -> Track<'s> {
-        Track {
+    pub(crate) fn new(scene: &'s mut Placement) -> Router<'s> {
+        Router {
             scene,
             stations: Vec::new(),
             chains: Vec::new(),

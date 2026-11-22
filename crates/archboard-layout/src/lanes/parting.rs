@@ -8,12 +8,12 @@
 //! stretch. Two lines that end at one point are never parted.
 
 use crate::ecma::{abs, number_key, or, sorted_by};
-use crate::lanes::chains::{ChainId, LANE, Track};
+use crate::lanes::chains::{ChainId, LANE, Router};
 use crate::lanes::channels::{End, NetId};
 use crate::lanes::jogs::{Keeping, PASSES, Place, Reach, STRAIGHT, notched};
 use crate::lanes::scene::{Map, Set};
 
-impl Track<'_> {
+impl Router<'_> {
     /// Whether two nets belong to one line or one trunk.
     fn related(&self, one: NetId, other: NetId) -> bool {
         let (one, other) = (self.net(one), self.net(other));
@@ -119,7 +119,7 @@ impl Track<'_> {
                 abs(one.0 - one.1) - abs(other.0 - other.1),
             )
         });
-        let better = |track: &Track<'_>| {
+        let better = |track: &Router<'_>| {
             track.collinear_pairs(&nets) < count && track.swapped(&nets) <= crossing
         };
         // A lane aside opens a 16 px step on purpose: only a notch is new.
@@ -169,7 +169,7 @@ impl Track<'_> {
 
 /// Items by the channel their net runs in, each in the order given.
 fn by_channel<T>(
-    track: &Track<'_>,
+    track: &Router<'_>,
     items: impl IntoIterator<Item = T>,
     net_of: impl Fn(&T) -> NetId,
 ) -> Map<usize, Vec<T>> {
