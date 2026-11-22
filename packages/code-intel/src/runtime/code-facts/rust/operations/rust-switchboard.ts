@@ -395,9 +395,18 @@ function dispatchOf(body: Node, parameters: ReadonlyMap<string, string>): Dispat
  */
 function lastName(node: Node | undefined): string {
 	if (node === undefined) return "";
-	if (node.type === "generic_function") return lastName(part(node, "function"));
 	const field = LAST_NAME[node.type];
 	return field === undefined ? node.text : (part(node, field)?.text ?? "");
+}
+
+/**
+ * The callee of a call, without its explicit type arguments.
+ * @param call The call expression.
+ * @returns The callee.
+ */
+function calleeOf(call: Node): Node | undefined {
+	const callee = part(call, "function");
+	return callee?.type === "generic_function" ? part(callee, "function") : callee;
 }
 
 /**
@@ -407,13 +416,15 @@ function lastName(node: Node | undefined): string {
  * @param found The effects found so far, which this adds to.
  */
 function callEffects(call: Node, found: Effects): void {
-	const name = lastName(part(call, "function"));
+	const callee = calleeOf(call);
+	if (callee === undefined) return;
+	const name = lastName(callee);
 	const list = part(call, "arguments");
 	if (/^[A-Z]/u.test(name)) {
 		if (list !== undefined) effectsIn(list, found);
 		return;
 	}
-	found.calls.add(`${name}/${String(list === undefined ? 0 : codeOf(list).length)}`);
+	found.calls.add(`${callee.text}/${String(list === undefined ? 0 : codeOf(list).length)}`);
 }
 
 /**

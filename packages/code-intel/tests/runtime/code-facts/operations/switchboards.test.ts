@@ -99,6 +99,7 @@ const checkout = fixtureCheckout({
 		"    }",
 		"    card(node)",
 		"}",
+		"pub fn save(part: Part) { match part { Part::Card => cards::save(), _ => frames::save() } }",
 		'pub fn named(s: &str) -> u8 { match s { "a" => a(), _ => b() } }',
 		"",
 	].join("\n"),
@@ -172,6 +173,7 @@ test("a Rust function picks one operation for each enum variant or boolean whose
 			keys: [["Leaving"], ["Stayed"], ["Cleared"], ["OutOfCard"]],
 		},
 		measure: { key: "part", keys: [["Card"], ["Container"], ["FlowFrame"]] },
+		save: { key: "part", keys: [["Card"], ["*"]] },
 		tab: { key: "container", keys: [["true"], ["false"]] },
 		// A branch that returns leaves the rest of the body to the other key.
 		early: { key: "container", keys: [["true"], ["false"]] },
