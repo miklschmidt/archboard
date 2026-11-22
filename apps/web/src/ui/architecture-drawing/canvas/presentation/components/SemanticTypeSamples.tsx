@@ -1,5 +1,5 @@
-// How the picture draws a kind, in small: a node kind's chip with its icon, and
-// a relationship kind's line with its dash and arrowhead. The legend keys the
+// How the picture draws a kind, in small: a node kind's chip with its icon, a
+// relationship kind's line in its ink, and an effect's line with its head. The legend keys the
 // picture with them, and a subject's tip says with them what the subject is.
 // So do the marks a line and a subject carry beside their kind: how heavy a
 // line is drawn, the pulses that ride it, and the pin a proposal puts on what
@@ -8,6 +8,7 @@
 import { useId, useMemo, type CSSProperties, type JSX, type ReactNode } from "react";
 
 import {
+	effectSampleSize,
 	HEAD_LENGTH,
 	lineDash,
 	lineInk,
@@ -15,6 +16,7 @@ import {
 	neutralPulse,
 	lineWidth,
 	standingMark,
+	type EffectKeyEntry,
 	type SubjectStanding,
 } from "@archboard/renderer/picture";
 import { cn } from "@archboard/ui-kit/components";
@@ -27,9 +29,6 @@ const LINE_BOX = { height: 20, middle: 10 } as const;
 
 /** A line the way the picture draws one its author gave no emphasis. */
 const PLAIN_WIDTH = lineWidth("normal");
-/** A rail of a mixed line, and how far each stands from the line's middle. */
-const RAIL_WIDTH = 1.2;
-const RAIL_STEP = 1.2;
 
 /**
  * A line sample's frame: a box as wide as asked, coloured by `color`.
@@ -60,46 +59,44 @@ function LineFrame(props: {
 }
 
 /**
- * A sample's line up to where its head starts: two rails for a mixed line, as the
- * picture draws it, and otherwise one line, either in its dash.
- * @param props Where it ends, its dash and whether it is two rails.
+ * A sample's line up to where its head starts, in its dash.
+ * @param props Where it ends and its dash.
  * @param props.end Where the line stops.
  * @param props.dash The line's dash.
- * @param props.rails Whether it is drawn as two rails.
  * @returns The line.
  */
-function SampleRun(props: {
-	readonly end: number;
-	readonly dash: AppliedAppearance["dash"];
-	readonly rails: boolean;
-}): JSX.Element {
-	const dash = lineDash(props.dash);
-	/**
-	 * One line of the sample.
-	 * @param row How far down the sample it stands.
-	 * @param width How thick it is.
-	 * @returns The line.
-	 */
-	const run = (row: number, width: number): JSX.Element => (
+function SampleRun(props: { readonly end: number; readonly dash: string }): JSX.Element {
+	return (
 		<path
-			key={row}
-			d={`M1 ${row}H${props.end}`}
+			d={`M1 ${LINE_BOX.middle}H${props.end}`}
 			fill="none"
 			stroke="currentColor"
-			strokeWidth={width}
-			strokeDasharray={dash}
+			strokeWidth={PLAIN_WIDTH}
+			strokeDasharray={lineDash(props.dash)}
 			strokeLinecap="round"
 		/>
 	);
-	if (props.rails) {
-		return (
-			<>
-				{run(LINE_BOX.middle - RAIL_STEP, RAIL_WIDTH)}
-				{run(LINE_BOX.middle + RAIL_STEP, RAIL_WIDTH)}
-			</>
-		);
-	}
-	return run(LINE_BOX.middle, PLAIN_WIDTH);
+}
+
+/**
+ * A relationship kind as the legend keys it: a headless line in the kind's ink, because the head
+ * says the effect and the ink says the kind.
+ * @param props The kind's colour and dash, and how long to draw it.
+ * @param props.color The palette colour its lines are drawn in.
+ * @param props.dash Its dash: solid, or what a reading from before effects recorded.
+ * @param props.width How wide the sample is.
+ * @returns The line sample.
+ */
+function KindSample(props: {
+	readonly color: string;
+	readonly dash: string;
+	readonly width: number;
+}): JSX.Element {
+	return (
+		<LineFrame width={props.width} color={lineInk(props.color)}>
+			<SampleRun end={props.width - 1} dash={props.dash} />
+		</LineFrame>
+	);
 }
 
 /**
@@ -119,12 +116,14 @@ function RelationshipSample(props: {
 	// strength over the page, the neutral line as it is.
 	const ink = lineInk(appearance.lineColor);
 	const tip = width - 1;
-	const filled = appearance.arrowhead === "filled";
+	// A mutation's wedge is a filled head in small; every other head of an effect is open here, and
+	// the legend's effect rows draw each in full.
+	const filled = appearance.arrowhead === "filled" || appearance.arrowhead === "wedge";
 	// A filled head covers the end of its line. An open head's arms meet where its line ends.
 	const end = filled ? tip - HEAD_LENGTH / 2 : tip;
 	return (
 		<LineFrame width={width} color={ink}>
-			<SampleRun end={end} dash={appearance.dash} rails={appearance.rails} />
+			<SampleRun end={end} dash={appearance.dash} />
 			{appearance.arrowhead !== "none" && <ArrowHead filled={filled} tip={tip} />}
 		</LineFrame>
 	);
@@ -168,23 +167,42 @@ function ArrowHead(props: { readonly filled: boolean; readonly tip: number }): J
 const NEUTRAL_LINE = "var(--diagram-edge)";
 
 /**
- * What a line's dash says it does, keyed on a headless neutral line in that dash.
- * @param props The dash and how wide the sample is.
- * @param props.dash The dash.
+ * What a line does, keyed on the renderer's own sample of it: a neutral line with the head and the
+ * body that say the effect. The renderer draws it, so the key is the picture's symbol.
+ * @param props The effect's entry of the key and how wide the sample is.
+ * @param props.entry The effect key's entry, with its sample.
+ * @param props.width How wide the sample stands.
+ * @returns The sample.
+ */
+function EffectSample(props: { readonly entry: EffectKeyEntry; readonly width: number }): JSX.Element {
+	const size = effectSampleSize();
+	const markup = useMemo(() => ({ __html: props.entry.sample }), [props.entry.sample]);
+	return (
+		<svg
+			aria-hidden="true"
+			width={props.width}
+			height={(props.width * size.height) / size.width}
+			viewBox={`0 0 ${size.width} ${size.height}`}
+			className="shrink-0 overflow-visible"
+			dangerouslySetInnerHTML={markup}
+		/>
+	);
+}
+
+/**
+ * The colour a comparison gives the lines of one standing, on a neutral line.
+ * @param props The standing and how wide the sample is.
+ * @param props.standing How the lines stand.
  * @param props.width The width.
  * @returns The sample.
  */
-function EffectSample(props: { readonly dash: string; readonly width: number }): JSX.Element {
+function StandingLineSample(props: {
+	readonly standing: SubjectStanding;
+	readonly width: number;
+}): JSX.Element {
 	return (
-		<LineFrame width={props.width} color={NEUTRAL_LINE}>
-			<path
-				d={`M1 ${LINE_BOX.middle}H${props.width - 1}`}
-				fill="none"
-				stroke="currentColor"
-				strokeWidth={PLAIN_WIDTH}
-				strokeDasharray={lineDash(props.dash)}
-				strokeLinecap="round"
-			/>
+		<LineFrame width={props.width} color={`var(--standing-${props.standing})`}>
+			<SampleRun end={props.width - 1} dash="solid" />
 		</LineFrame>
 	);
 }
@@ -369,7 +387,9 @@ function StandingSample(props: { readonly standing: SubjectStanding }): JSX.Elem
 export {
 	EffectSample,
 	EmphasisSample,
+	KindSample,
 	RelationshipSample,
+	StandingLineSample,
 	StandingSample,
 	TrafficSample,
 	TypeSample,

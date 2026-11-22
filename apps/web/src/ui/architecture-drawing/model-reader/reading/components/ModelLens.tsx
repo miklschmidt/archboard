@@ -1,68 +1,90 @@
 // The lens a structural picture is read through: a named question that chooses which of its
-// relationships draw, with how many lines it left out, or which default lens drew none here.
+// relationships draw. The legend offers each lens as one press, and the line above the picture says
+// which lens draws and what it left out.
 
-import { useCallback, type JSX } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 import type { Model, projectModel } from "@archboard/model/content";
-import { Select } from "@archboard/ui-kit/components";
+import { ToggleGroup } from "@archboard/ui-kit/components";
 
-/** Inputs for the lens control. */
-interface ModelLensProps {
-	readonly model: Model;
-	readonly projection: Pick<ReturnType<typeof projectModel>, "lens" | "leftOut" | "emptyLens">;
-	/** Read the picture through another lens. */
-	readonly onSelect: (id: string) => void;
-}
+type LensOutcome = Pick<ReturnType<typeof projectModel>, "lens" | "leftOut" | "emptyLens">;
 
 /**
- * The lens control on the legend's first column, with the count of the lines the reading leaves
- * out on its second, so that neither another lens nor the count moves a word of the legend.
+ * The lenses of a reading, one press each, in the policy's order, with the one that draws pressed.
  * @param props The reading and how to choose another lens.
- * @returns The control.
+ * @param props.model The reading, whose policy names its lenses.
+ * @param props.lens The lens the picture draws through.
+ * @param props.onSelect Read the picture through another lens.
+ * @returns The presets.
  */
-function ModelLens(props: ModelLensProps): JSX.Element {
-	const { model, projection, onSelect } = props;
-	const { lens, leftOut, emptyLens } = projection;
+function ModelLensPresets(props: {
+	readonly model: Model;
+	readonly lens: string;
+	readonly onSelect: (id: string) => void;
+}): JSX.Element {
+	const { model, lens, onSelect } = props;
+	const pressed = useMemo(() => [lens], [lens]);
 	const choose = useCallback(
-		(value: string | null): void => {
-			if (value !== null && value !== lens.id) onSelect(value);
+		(values: readonly unknown[]): void => {
+			const [value] = values;
+			if (typeof value === "string" && value !== lens) onSelect(value);
 		},
-		[onSelect, lens.id],
+		[onSelect, lens],
 	);
 	return (
-		<li className="grid min-h-7 grid-cols-2 items-center gap-x-2 pb-1">
-			<Select value={lens.id} onValueChange={choose}>
-				<Select.Trigger
-					size="sm"
-					data-slot="model-lens"
-					aria-label="Lens"
-					className="w-full min-w-0"
-				>
-					<Select.Value>{lens.name}</Select.Value>
-				</Select.Trigger>
-				<Select.Content className="w-72 max-w-[80vw]">
-					{Object.entries(model.policy.lenses).map(([id, choice]) => (
-						<Select.Item key={id} value={id} data-lens-id={id} description={choice.question}>
-							{choice.name}
-						</Select.Item>
-					))}
-				</Select.Content>
-			</Select>
-			{(leftOut > 0 || emptyLens !== undefined) && (
-				<span data-slot="model-lens-left-out" className="text-body text-muted-foreground truncate">
-					{emptyLens === undefined ? leftOutNote(leftOut) : `${emptyLens.name} draws none here`}
-				</span>
-			)}
+		<li className="pb-2">
+			<ToggleGroup
+				aria-label="Lens"
+				data-slot="model-lens"
+				size="sm"
+				spacing={0.5}
+				value={pressed}
+				onValueChange={choose}
+				className="trough grid w-full grid-cols-2"
+			>
+				{Object.entries(model.policy.lenses).map(([id, choice]) => (
+					<ToggleGroup.Item
+						key={id}
+						value={id}
+						data-lens-id={id}
+						title={choice.question}
+						className="text-muted-foreground hover:text-foreground aria-pressed:text-foreground aria-pressed:chosen-face rounded-control aria-pressed:bg-face h-6 min-w-0 px-2 hover:bg-transparent"
+					>
+						{choice.name}
+					</ToggleGroup.Item>
+				))}
+			</ToggleGroup>
 		</li>
 	);
 }
 
 /**
- * The note of the lines a lens left out.
- * @param count How many it left out.
- * @returns The note.
+ * What the line above the picture says of its lens: which lens draws, and how many lines it and the
+ * reader's switches left out, or that the default drew none here and every relationship shows.
+ * @param outcome The lens outcome of the reading.
+ * @returns The words.
  */
-function leftOutNote(count: number): string {
-	return count === 1 ? "1 line left out" : `${count} lines left out`;
+function lensStatus(outcome: LensOutcome): string {
+	const { lens, leftOut, emptyLens } = outcome;
+	if (emptyLens !== undefined) return `${emptyLens.name} has no lines here · Showing ${lens.name.toLowerCase()}`;
+	if (leftOut === 0) return lens.name;
+	return `${lens.name} · ${leftOut === 1 ? "1 line" : `${String(leftOut)} lines`} left out`;
 }
 
-export { ModelLens };
+/**
+ * The lens and its outcome, above the picture.
+ * @param props The lens outcome.
+ * @param props.outcome The lens outcome of the reading on screen.
+ * @returns The line.
+ */
+function ModelLensStatus(props: { readonly outcome: LensOutcome }): JSX.Element {
+	return (
+		<output
+			data-slot="model-lens-status"
+			className="text-body text-muted-foreground min-w-0 truncate"
+		>
+			{lensStatus(props.outcome)}
+		</output>
+	);
+}
+
+export { lensStatus, ModelLensPresets, ModelLensStatus };

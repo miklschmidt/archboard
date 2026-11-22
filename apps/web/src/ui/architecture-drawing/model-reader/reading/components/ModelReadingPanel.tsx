@@ -78,7 +78,7 @@ function ReadingLegend(props: { readonly reader: Reader; readonly look: KindLook
 			picture={picture}
 			look={props.look}
 			filters={structural ? location.filters : NO_FILTERS}
-			onToggle={location.toggleFilter}
+			onHide={location.setHidden}
 			onLens={structural ? location.selectLens : undefined}
 			onShowAll={location.showAll}
 			selection={selection}

@@ -7,27 +7,34 @@ import { KindChip } from "#ui/architecture-drawing/canvas/presentation/component
 import {
 	EffectSample,
 	EmphasisSample,
-	RelationshipSample,
+	KindSample,
+	StandingLineSample,
 	TrafficSample,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
 import { iconQuery } from "#ui/architecture-drawing/canvas/picture/reads/clients/queries.ts";
 import type { PictureLegend } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import type { KindLook } from "#ui/architecture-drawing/canvas/picture/rules/kind-look.ts";
-import { ModelLens } from "#ui/architecture-drawing/model-reader/reading/components/ModelLens.tsx";
+import { ModelLensPresets } from "#ui/architecture-drawing/model-reader/reading/components/ModelLens.tsx";
+import type { FilterField } from "#ui/panes/reading-routing/hooks/use-model-location.ts";
 import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { ModelSelection } from "#ui/architecture-drawing/model-reader/hooks/use-model-selection.ts";
 import {
-	effectRows,
+	comparisonRows,
 	groupRows,
 	kindRows,
-	lineRows,
 	markRows,
+	relationshipRows,
+	soloed,
+	toggled,
 	type LegendEffect,
 	type LegendGroup,
-	type LegendLine,
+	type LegendKind,
 	type LegendMark,
 	type LegendRow,
+	type LegendStanding,
+	type LegendSwitch,
+	type RelationshipRows,
 } from "#ui/architecture-drawing/model-reader/reading/rules/legend-rows.ts";
 import { paletteTag } from "#ui/architecture-drawing/canvas/picture/rules/palette.ts";
 import { rowTone } from "#ui/shell/rules/row-tone.ts";
@@ -55,44 +62,44 @@ interface ModelLegendProps {
 	readonly picture: PictureLegend | null;
 	/** How the vault's kinds look, with the icons the picture draws them with. */
 	readonly look: KindLook;
-	readonly filters: Pick<ModelFilters, "hideKinds">;
-	readonly onToggle: (field: "hideKinds", id: string) => void;
+	readonly filters: Pick<ModelFilters, "hideKinds" | "hideEffects">;
+	/** Hide these kinds or effects besides what the lens leaves out, and show the rest. */
+	readonly onHide: (field: FilterField, ids: readonly string[]) => void;
 	/** Read the picture through another lens, or nothing for a flow, which draws every message. */
 	readonly onLens: ((id: string) => void) | undefined;
-	/** Read the picture through the lens of every relationship, with no kind hidden. */
+	/** Read the picture through the lens of every relationship, with nothing hidden. */
 	readonly onShowAll: () => void;
 	readonly selection: ModelSelection;
 }
 
 /**
  * What the marks of a picture mean, as the last section of the right panel, under every subject,
- * with no click: its kinds, its relationship kinds with the effects their dashes say, and its
- * groups. Each relationship kind that a reader can hide is its own switch, and a group's tag
- * selects the group's parts.
+ * with no click: its part kinds, its relationships and its groups. The relationships open with the
+ * lenses, one press each, then each kind and each effect a reader can hide or show alone, then what
+ * the lens leaves out, then the marks no reader hides. A group's tag selects the group's parts.
  * @param props The reading and its visibility choices.
  * @returns The section, or nothing while no picture stands.
  */
 function ModelLegend(props: ModelLegendProps): JSX.Element | null {
-	const { model, projection, picture, selection } = props;
-	const { hideKinds } = props.filters;
+	const { model, projection, picture, selection, filters } = props;
 	if (picture === null) return null;
-	const reading = { model, projection, picture, hideKinds };
+	const rows = relationshipRows({ model, projection, ...filters });
 	return (
 		<div data-slot="model-legend" className="flex flex-col gap-5">
-			<Kinds model={model} look={props.look} rows={kindRows(reading)} />
-			<Lines
-				lines={lineRows(reading)}
-				effects={effectRows(model, projection)}
+			<Kinds model={model} look={props.look} rows={kindRows({ model, projection, picture })} />
+			<Relationships
+				rows={rows}
 				marks={markRows(projection)}
+				standings={comparisonRows(projection)}
 				leftOut={props.onLens === undefined ? 0 : projection.leftOut}
-				onToggle={props.onToggle}
+				onHide={props.onHide}
 				onShowAll={props.onShowAll}
 			>
 				{/* A reading with one lens, as one from before lenses, has nothing to choose. */}
 				{props.onLens !== undefined && Object.keys(model.policy.lenses).length > 1 && (
-					<ModelLens model={model} projection={projection} onSelect={props.onLens} />
+					<ModelLensPresets model={model} lens={projection.lens.id} onSelect={props.onLens} />
 				)}
-			</Lines>
+			</Relationships>
 			<Groups groups={groupRows(model, projection)} selection={selection} />
 		</div>
 	);
@@ -190,30 +197,29 @@ function LegendChip(props: {
 	return <KindChip look={props.look} kind={props.kind} icon={markup} />;
 }
 
-/** Inputs for the relationship kinds. */
-interface LinesProps {
-	readonly lines: readonly LegendLine[];
-	readonly effects: readonly LegendEffect[];
+/** Inputs for the relationships. */
+interface RelationshipsProps {
+	readonly rows: RelationshipRows;
 	readonly marks: readonly LegendMark[];
-	/** The lens control of a structural picture, which opens the list. */
+	readonly standings: readonly LegendStanding[];
+	/** The lens presets of a structural picture, which open the list. */
 	readonly children: ReactNode;
 	/** How many lines a structural reading leaves out; none for a flow. */
 	readonly leftOut: number;
-	readonly onToggle: ModelLegendProps["onToggle"];
+	readonly onHide: ModelLegendProps["onHide"];
 	readonly onShowAll: () => void;
 }
 
 /**
- * The lens the reading is read through, then the relationship kinds of the reading, one to a row,
- * each row the switch that leaves its lines out besides what the lens leaves out. Under them, in two
- * columns and with no switch, stand what no reader hides: the effects that the dashes say, a mixed
- * line, which is no kind of relationship, and the marks that lines wear beside their kinds.
- * @param props The lens, the relationship kinds, the effects, the marks and how to change visibility.
- * @returns Their list, or nothing when the reading has no line.
+ * The relationships of the reading: the lenses, the kinds and the effects a reader can switch, those
+ * the lens leaves out, and the marks that no reader hides.
+ * @param props The rows and how to change what draws.
+ * @returns The section, or nothing when the reading has no line.
  */
-function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, effects, marks, onToggle, onShowAll } = props;
-	const hidden = props.leftOut > 0 || lines.some((line) => line.hidden);
+function Relationships(props: RelationshipsProps): JSX.Element | null {
+	const { rows, onHide, onShowAll } = props;
+	const { kinds, effects } = rows;
+	const hidden = props.leftOut > 0 || [...kinds, ...effects].some((row) => row.hidden);
 	const action = useMemo(
 		() =>
 			hidden ? (
@@ -228,9 +234,9 @@ function Lines(props: LinesProps): JSX.Element | null {
 			) : undefined,
 		[hidden, onShowAll],
 	);
-	if (lines.length === 0) return null;
-	const types = lines.filter((line) => line.hideable);
-	const mixed = lines.filter((line) => !line.hideable);
+	const hideKinds = useCallback((ids: readonly string[]) => onHide("hideKinds", ids), [onHide]);
+	const hideEffects = useCallback((ids: readonly string[]) => onHide("hideEffects", ids), [onHide]);
+	if (kinds.length === 0) return null;
 	return (
 		<ModelPanel.Section
 			icon={SECTION_ICONS.relationships}
@@ -239,47 +245,128 @@ function Lines(props: LinesProps): JSX.Element | null {
 			action={action}
 		>
 			{props.children}
-			{types.length > 0 && (
-				<li>
-					<ul data-slot="model-legend-lines" className="flex flex-col">
-						{types.map((line) => (
-							<LineSwitch key={line.item.typeKind} line={line} onToggle={onToggle} />
-						))}
-					</ul>
-				</li>
-			)}
-			{effects.length + mixed.length + marks.length > 0 && (
-				<li>
-					<ul data-slot="model-legend-marks" className={cn(CELLS, types.length > 0 && "mt-1")}>
-						{effects.map(({ effect, word, dash, dimmed }) => (
-							<Cell key={effect}>
-								<Mark name={word} dimmed={dimmed}>
-									<EffectSample dash={dash} width={SAMPLE_WIDTH} />
-								</Mark>
-							</Cell>
-						))}
-						{mixed.map(({ item, dimmed }) => (
-							<Cell key={item.typeKind}>
-								<Mark name={item.typeName} dimmed={dimmed}>
-									<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
-								</Mark>
-							</Cell>
-						))}
-						{marks.map(({ mark, word, dimmed }) => (
-							<Cell key={mark}>
-								<Mark name={word} dimmed={dimmed}>
-									{mark === "emphasis" ? (
-										<EmphasisSample width={SAMPLE_WIDTH} />
-									) : (
-										<TrafficSample width={SAMPLE_WIDTH} />
-									)}
-								</Mark>
-							</Cell>
-						))}
-					</ul>
-				</li>
-			)}
+			<Switches slot="model-legend-lines" field="kind" rows={kinds} onHide={hideKinds} />
+			<Switches slot="model-legend-effects" field="effect" rows={effects} onHide={hideEffects} spaced />
+			<LeftOut kinds={kinds} effects={effects} />
+			<Marks marks={props.marks} standings={props.standings} />
 		</ModelPanel.Section>
+	);
+}
+
+/**
+ * The sample of a relationship row: a kind's line in its ink, or an effect's line with its head.
+ * @param props The row.
+ * @param props.row A kind or an effect.
+ * @returns The sample.
+ */
+function RowSample(props: { readonly row: LegendKind | LegendEffect }): JSX.Element {
+	const { row } = props;
+	return "entry" in row ? (
+		<EffectSample entry={row.entry} width={SAMPLE_WIDTH} />
+	) : (
+		<KindSample color={row.color} dash={row.dash} width={SAMPLE_WIDTH} />
+	);
+}
+
+/**
+ * The kinds or the effects a reader can switch, one to a row.
+ * @param props The rows and how to hide some of them.
+ * @param props.slot Where a test finds the list.
+ * @param props.field Whether the rows are kinds or effects.
+ * @param props.rows The rows, those the lens leaves out among them.
+ * @param props.onHide Hide these rows and show the rest of the list.
+ * @param props.spaced Whether the list stands a little apart from the list over it.
+ * @returns The list, or nothing when the lens leaves out every row.
+ */
+function Switches(props: {
+	readonly slot: string;
+	readonly field: "kind" | "effect";
+	readonly rows: readonly (LegendKind | LegendEffect)[];
+	readonly onHide: (ids: readonly string[]) => void;
+	/** Whether the list stands a little apart from the list over it. */
+	readonly spaced?: boolean;
+}): JSX.Element | null {
+	const { rows, field, onHide } = props;
+	const shown = rows.filter((row) => !row.leftOut);
+	if (shown.length === 0) return null;
+	return (
+		<li className={cn(props.spaced === true && "mt-2")}>
+			<ul data-slot={props.slot} className="flex flex-col">
+				{shown.map((row) => (
+					<SwitchRow key={row.id} row={row} field={field} rows={rows} onHide={onHide} />
+				))}
+			</ul>
+		</li>
+	);
+}
+
+/**
+ * The rows that the lens leaves out, dimmed under their caption, with no switch: only another lens
+ * draws them.
+ * @param props The rows.
+ * @param props.kinds The kinds.
+ * @param props.effects The effects.
+ * @returns The list, or nothing when the lens leaves out no row.
+ */
+function LeftOut(props: {
+	readonly kinds: readonly LegendKind[];
+	readonly effects: readonly LegendEffect[];
+}): JSX.Element | null {
+	const rows = [...props.kinds, ...props.effects].filter((row) => row.leftOut);
+	if (rows.length === 0) return null;
+	return (
+		<li className="mt-2">
+			<p className="text-body text-muted-foreground">Left out by this lens</p>
+			<ul data-slot="model-legend-left-out" className={CELLS}>
+				{rows.map((row) => (
+					<Cell key={`${"entry" in row ? "effect" : "kind"}:${row.id}`}>
+						<Mark name={row.name} dimmed>
+							<RowSample row={row} />
+						</Mark>
+					</Cell>
+				))}
+			</ul>
+		</li>
+	);
+}
+
+/**
+ * What lines wear beside their kinds and effects, in two columns with no switch: their emphasis,
+ * their traffic, and the colours a comparison gives them.
+ * @param props The marks.
+ * @param props.marks Emphasis and traffic, where the reading has them.
+ * @param props.standings The standings a comparison colours lines with.
+ * @returns The list, or nothing when the reading has none.
+ */
+function Marks(props: {
+	readonly marks: readonly LegendMark[];
+	readonly standings: readonly LegendStanding[];
+}): JSX.Element | null {
+	const { marks, standings } = props;
+	if (marks.length + standings.length === 0) return null;
+	return (
+		<li>
+			<ul data-slot="model-legend-marks" className={cn(CELLS, "mt-1")}>
+				{marks.map(({ mark, word, dimmed }) => (
+					<Cell key={mark}>
+						<Mark name={word} dimmed={dimmed}>
+							{mark === "emphasis" ? (
+								<EmphasisSample width={SAMPLE_WIDTH} />
+							) : (
+								<TrafficSample width={SAMPLE_WIDTH} />
+							)}
+						</Mark>
+					</Cell>
+				))}
+				{standings.map(({ standing, word }) => (
+					<Cell key={standing}>
+						<Mark name={word} dimmed={false}>
+							<StandingLineSample standing={standing} width={SAMPLE_WIDTH} />
+						</Mark>
+					</Cell>
+				))}
+			</ul>
+		</li>
 	);
 }
 
@@ -329,45 +416,56 @@ function Mark(props: {
 }
 
 /**
- * A line type that a reader can hide. The whole row is its switch, a row of the panel like any
- * other, and the eye at its end says whether the picture draws the type's lines.
- * @param props The line type and how to change its visibility.
- * @param props.line The line type.
- * @param props.onToggle Change its visibility.
+ * A kind or an effect that a reader can switch. Its name shows it alone, or every row again when it
+ * already stands alone, and the eye at its end shows or hides it. The row takes the panel's tone
+ * under the pointer.
+ * @param props The row, its list and how to hide rows of it.
+ * @param props.row The row.
+ * @param props.field Whether it is a kind or an effect.
+ * @param props.rows Every row of its list.
+ * @param props.onHide Hide these rows and show the rest of the list.
  * @returns The entry.
  */
-function LineSwitch(props: {
-	readonly line: LegendLine;
-	readonly onToggle: ModelLegendProps["onToggle"];
+function SwitchRow(props: {
+	readonly row: LegendKind | LegendEffect;
+	readonly field: "kind" | "effect";
+	readonly rows: readonly LegendSwitch[];
+	readonly onHide: (ids: readonly string[]) => void;
 }): JSX.Element {
-	const { line, onToggle } = props;
-	const { item, hidden, dimmed } = line;
-	const toggle = useCallback(
-		(): void => onToggle("hideKinds", item.typeKind),
-		[onToggle, item.typeKind],
-	);
+	const { row, field, rows, onHide } = props;
+	const { id, name, hidden, dimmed } = row;
+	const solo = useCallback((): void => onHide(soloed(rows, id)), [onHide, rows, id]);
+	const toggle = useCallback((): void => onHide(toggled(rows, id)), [onHide, rows, id]);
 	const Eye = hidden ? RiEyeOffLine : RiEyeLine;
 	return (
-		<li className="flex">
+		<li
+			className={cn(
+				rowTone({ lit: false }),
+				"group -mx-2 flex min-w-0 items-center gap-2 px-2 transition-colors",
+			)}
+		>
+			<button
+				type="button"
+				{...{ [`data-solo-${field}`]: id }}
+				aria-label={`Show only ${name} lines`}
+				title={`Show only ${name} lines`}
+				onClick={solo}
+				className="flex min-h-7 min-w-0 flex-1 items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-control"
+			>
+				<Mark name={name} dimmed={dimmed}>
+					<RowSample row={row} />
+				</Mark>
+			</button>
 			<button
 				type="button"
 				role="switch"
 				aria-checked={!hidden}
-				aria-label={`Show ${item.typeName} lines`}
-				data-filter-kind={item.typeKind}
+				aria-label={`Show ${name} lines`}
+				{...{ [`data-filter-${field}`]: id }}
 				onClick={toggle}
-				className={cn(
-					rowTone({ lit: false }),
-					"group -mx-2 flex min-w-0 flex-1 items-center gap-2 px-2 transition-colors",
-				)}
+				className="text-muted-foreground hover:text-foreground focus-visible:ring-ring rounded-control flex size-7 shrink-0 items-center justify-center outline-none focus-visible:ring-2"
 			>
-				<Mark name={item.typeName} dimmed={dimmed}>
-					<RelationshipSample appearance={item} width={SAMPLE_WIDTH} />
-				</Mark>
-				<Eye
-					aria-hidden="true"
-					className="text-muted-foreground group-hover:text-foreground mx-1 size-4 shrink-0"
-				/>
+				<Eye aria-hidden="true" className="size-4" />
 			</button>
 		</li>
 	);
