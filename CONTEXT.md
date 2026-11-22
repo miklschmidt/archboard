@@ -62,6 +62,7 @@ _Avoid_: alias, old name, redirect
 
 **Relationship**:
 A directed architectural connection that one module owns and that names another module as its target.
+It states its relationship kind and its effect.
 The model derives incoming relationships, so a relationship has one definition at its source.
 _Avoid_: edge, arrow, link, connector, relation, line (that is what a picture draws)
 
@@ -107,7 +108,8 @@ _Avoid_: repeat (that is a count on one message), iteration
 ### Meaning
 
 **Vault vocabulary**:
-The consumer-defined set of module kinds, relationship kinds and groups that describe architecture across a vault.
+The set of module kinds, relationship kinds and groups that describe architecture across a vault.
+A vault defines its own, and its relationship kinds sit over the built-in ones.
 It names meaning independently of the vault policy that depicts it.
 _Avoid_: palette, theme, model content
 
@@ -122,8 +124,14 @@ Outside the open scope does not mean external, because a door can be a module of
 _Avoid_: third-party kind for our own parts, link node
 
 **Relationship kind**:
-The consumer-defined type of an architectural relationship.
-_Avoid_: line style, arrowhead, emphasis
+How a relationship travels between its two ends: in process (`call`), over HTTP, by an event or a queue, or another of the built-in kinds or a vault's own.
+It is the color of the relationship's line (ADR 0094).
+_Avoid_: line style, arrowhead, emphasis, effect (that is what it does)
+
+**Effect**:
+What a relationship does at its target: `mutation` when it can change state or have an effect outside the caller, `query` when it reads held or fetched state, and `compute` when its answer follows from what it hands over alone.
+Every relationship states one, except a `dependency`, which may omit it to say that it is a declared requirement only. It is the line type of the relationship's line (ADR 0094).
+_Avoid_: command, side effect, read or write, relationship kind (that is how it travels)
 
 **Traffic**:
 An optional illustration of flow along a relationship: a steady train of pulses that fly along its line, with independent volume and speed.
@@ -259,8 +267,8 @@ Module depth is no design lens: the code check gives its verdicts as findings (A
 _Avoid_: score, audit, lint
 
 **Vault policy**:
-The vault configuration that holds the vault vocabulary and how each word looks: its name, icon, color, dash and arrowhead.
-It changes how a model looks and never what it means. It also holds whether plain `archboard check` runs the shallow-module gate.
+The vault configuration that holds the vault vocabulary and how each word looks: its name, icon and color.
+It changes how a model looks and never what it means. It also holds the lenses, the default lens and whether plain `archboard check` runs the shallow-module gate.
 _Avoid_: visual policy, model content, style override
 
 **Color palette**:
@@ -353,10 +361,11 @@ _Avoid_: nearby context, external (that is a kind)
 **Line**:
 The mark that joins a pair of drawn parts in a picture, and it ends on the parts that own it.
 One line can hold several relationships, which makes it a joined line, and it has no identity of its own.
+Its color is its relationship kind and its line type its effect, and a joined line wears the strongest effect of its relationships.
 _Avoid_: edge, relationship (that is authored), connector, aggregate connection
 
 **Shared trunk**:
-The stretch that the lines of one kind between one door and several parts run on together, from three lines each way.
+The stretch that the lines of one kind and one effect between one door and several parts run on together, from three lines each way.
 Each line wears its words on its own branch, beside its part and before it joins.
 _Avoid_: bus
 
@@ -369,7 +378,7 @@ A bright named tag on a card, and the same tag in the Legend, where a press sele
 A group has no frame or region and no tinted face.
 
 **Legend**:
-What explains the marks of a picture: kinds, line types and groups.
+What explains the marks of a picture: module kinds, relationship kinds with their switches, the effect of each line type, and groups.
 It always stands at the foot of the Right panel on a Diagram reading, over the engine switch.
 _Avoid_: Key, filters
 
@@ -404,7 +413,7 @@ A chain of modules with one part each, which the module tree shows as one row an
 ### Reading
 
 **Reading**:
-A content-free selection of what to draw: its model, state, checkpoint or source ref, scope, expanded modules, focus, filters, grammar and optional flow.
+A content-free selection of what to draw: its model, state, checkpoint or source ref, scope, expanded modules, focus, lens, filters, grammar and optional flow.
 It owns no architecture, so agents and users compose readings on demand and nobody authors one first.
 _Avoid_: view, board
 
@@ -438,12 +447,17 @@ The subjects that a user picked out in a pane, held by stable identity.
 It is presentation, so it stays out of the address, adds no browser history and writes nothing.
 _Avoid_: highlight, focus (that is part of a reading)
 
+**Lens**:
+A named question that a picture is read through, which the vault policy defines: one list that shows or hides relationships by their kind, their effect or both (ADR 0095).
+It keeps every part of its scope, and the picture says how many lines it left out. `main` is the default lens, and `all` shows every relationship.
+_Avoid_: filter (that hides by hand), view, layer, design lens (that states facts about a design)
+
 **Filter**:
-A choice in a reading to hide a relationship kind.
+A choice in a reading to hide a relationship kind by hand, beyond its lens.
 It acts on relationships before they join, and the model keeps every relationship.
 A part of a scope that drew only lines of hidden kinds leaves the picture.
 A part that never drew a line stays, and so does each subject of a focus.
-_Avoid_: legend (that explains the marks)
+_Avoid_: legend (that explains the marks), lens (that is a named question)
 
 **Grammar**:
 What a reading draws its subject as: `architecture`, `sequence` or `flowchart`.
@@ -686,7 +700,7 @@ It carries its render recipe, so it can be drawn again and compared.
 _Avoid_: board render, screenshot, pane export, artifact, export
 
 **Render recipe**:
-What a render records about how it was drawn: the model identity, the reading selectors, the input revision and the picture digest.
+What a render records about how it was drawn: the model identity, the reading selectors with the lens id, the input revision and the picture digest.
 It holds no output path, and it names subjects by identity, not by the name somebody typed.
 _Avoid_: render request, render settings, command, export options
 
@@ -1030,4 +1044,9 @@ _Avoid_: dry run, candidate (that is evidence that the code check matched by nam
 
 **Migration**:
 The explicit, authorized installation of a mapped model, which retains the originals first and replaces legacy authority.
-_Avoid_: upgrade, automatic rewrite
+_Avoid_: upgrade (that moves a model to a newer format), automatic rewrite
+
+**Upgrade**:
+The move of a live vault from an older format of the model to the current one, which keeps every identity.
+The current format states each relationship's kind and effect, which agents establish from the code and somebody reviews before it is installed. Until then the vault reads, and every write is refused with `UPGRADE_REQUIRED` (ADR 0094).
+_Avoid_: migration (that replaces legacy boards), conversion, automatic rewrite
