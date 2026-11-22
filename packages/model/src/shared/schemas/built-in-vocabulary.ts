@@ -47,7 +47,7 @@ const BUILT_IN_RELATIONSHIP_KINDS: Record<string, RelationshipLook> = {
 	http: { name: "HTTP", color: "sky", evidence: NETWORK },
 	rpc: { name: "RPC", color: "blue", evidence: NETWORK },
 	event: { name: "Event", color: "violet", evidence: NETWORK },
-	queue: { name: "Queue", color: "purple", evidence: NETWORK },
+	queue: { name: "Queue", color: "lime", evidence: NETWORK },
 	stream: { name: "Stream", color: "cyan", evidence: NETWORK },
 	spawn: { name: "Spawn", color: "fuchsia", evidence: NETWORK },
 	render: { name: "Render", color: "pink", evidence: ["call"] },

@@ -459,7 +459,7 @@ on graphite, and it stays far under the contrast of text. A colored line is
 drawn in its full color on chalk and at four fifths of its color on graphite. A line's color says
 its kind, how it travels, and nothing else: `sync` is a quiet low-chroma slate, the quietest ink
 that keeps the floors above, so the boundary kinds and `async` (amber) stand out over the many
-sync lines; `http` sky, `rpc` blue, `event` violet, `queue` purple, `stream` cyan, `spawn`
+sync lines; `http` sky, `rpc` blue, `event` violet, `queue` lime, `stream` cyan, `spawn`
 fuchsia, `render` pink, `storage` emerald and `dependency` indigo. A line's label starts with its
 kind's name and a middle dot, except on a sync line, so its kind never rests on color alone.
 

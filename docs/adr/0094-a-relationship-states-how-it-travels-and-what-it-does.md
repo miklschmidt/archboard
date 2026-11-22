@@ -172,7 +172,7 @@ at the caller and the body. The owner settled the split: kind by color, effect b
 Every built-in kind has an ink, paired for both themes: `sync` a quiet low-chroma slate, the
 quietest ink that still meets the contrast floors of DESIGN.md, so that the boundary kinds and
 `async` stand out over the many sync lines; `async` amber; `http` sky; `rpc` blue; `event` violet;
-`queue` purple; `stream` cyan; `spawn` fuchsia; `render` pink; `storage` emerald; `dependency`
+`queue` lime; `stream` cyan; `spawn` fuchsia; `render` pink; `storage` emerald; `dependency`
 indigo. A kind no longer sets the arrowhead.
 
 | Effect        | Body                         | At the target                                      | At the caller |
