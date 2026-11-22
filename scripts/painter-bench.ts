@@ -7,8 +7,8 @@
 //
 // Make a corpus with paintings, then run from the repository root in `nix develop`,
 // after `bun run build:core`:
-//   bun scripts/render-corpus.ts render <corpus> --svg
-//   bun scripts/painter-bench.ts <corpus> <out> --only "(whole model) | dark"
+//   bun scripts/render-corpus.ts render <corpus> --engines blocks --svg
+//   bun scripts/painter-bench.ts <corpus> <out> --only "(whole model) | blocks | dark"
 //     [--painters gpu,webgl,cpu] [--sizes 1920x1080] [--runs 3] [--frames 540]
 //     [--browser google-chrome] [--flags=--disable-features=WebGPUService]
 //     [--core <directory of a painter build>]
@@ -187,7 +187,7 @@ function runOfArguments(): Run {
 	const { values, positionals } = parseArgs({
 		allowPositionals: true,
 		options: {
-			only: { type: "string", default: "(whole model) | dark" },
+			only: { type: "string", default: "(whole model) | blocks | dark" },
 			painters: { type: "string", default: "gpu,webgl,cpu" },
 			sizes: { type: "string", default: "1920x1080" },
 			runs: { type: "string", default: "3" },
