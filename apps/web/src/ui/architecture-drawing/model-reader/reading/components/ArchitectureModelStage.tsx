@@ -91,23 +91,13 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 			data-slot="architecture-model-stage"
 			className="bg-background flex min-h-0 flex-1 flex-col"
 		>
-			<ModelHeader
-				name={headerName(undefined, repository)}
-				refresh={reading.refresh}
-				refreshing={reading.query.isFetching}
-			>
-				{null}
-			</ModelHeader>
-			{reading.query.isPending ? (
+			<ModelHeader name={headerName(undefined, repository)}>{null}</ModelHeader>
+			{reading.loading ? (
 				<output className="text-body p-8">Locating repository…</output>
 			) : (
 				<ModelError
 					code="REFERENCE_UNAVAILABLE"
-					message={
-						reading.query.error?.message ??
-						reading.error ??
-						"Repository information is unavailable. Refresh to retry."
-					}
+					message={reading.error ?? "Repository information is unavailable."}
 				/>
 			)}
 		</section>

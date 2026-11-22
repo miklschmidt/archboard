@@ -5,11 +5,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { useRouter } from "@tanstack/react-router";
 
-import { invalidateRepositories } from "#ui/panes/model-catalog/clients/queries.ts";
 import { chooseCheckout } from "#ui/panes/model-catalog/clients/repositories.ts";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
-import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
-import { failureNotice, NOTICE_ACTIONS } from "#ui/application/rules/notices.ts";
+import { failureNotice } from "#ui/application/rules/notices.ts";
 import { PANE_IDS } from "#ui/application/rules/pane-list.ts";
 import { searchOfRepository } from "#ui/panes/reading-routing/rules/search.ts";
 import type { SettingsSurface, ShellActions, ThemeChoice } from "#ui/shell/rules/contracts.ts";
@@ -18,13 +16,12 @@ import type { SettingsSurface, ShellActions, ThemeChoice } from "#ui/shell/rules
 interface StartActionDeps {
 	readonly router: ReturnType<typeof useRouter>;
 	readonly client: QueryClient;
-	readonly catalog: Pick<ModelCatalog, "reload">;
 	readonly notices: NoticeStack;
 	readonly setTheme: (theme: ThemeChoice) => void;
 	readonly openSettings: (surface: SettingsSurface) => void;
 }
 
-/** Nothing to act on before a pane exists. */
+/** Nothing to act on before a pane exists, and no notice of this page offers an action. */
 function noPane(): void {}
 
 /**
@@ -37,7 +34,7 @@ function noModel(): Promise<boolean> {
 
 /**
  * The shell's actions before any pane exists.
- * @param deps The router, the repositories, the notices and the settings.
+ * @param deps The router, the query cache, the notices and the settings.
  * @returns The actions.
  */
 function createStartActions(deps: StartActionDeps): ShellActions {
@@ -55,14 +52,13 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 		return true;
 	};
 	/**
-	 * Choose a checkout of a repository, and read the repositories before opening it.
+	 * Choose a checkout of a repository, and open it once this tab lists the choice.
 	 * @param repository The repository.
 	 * @param root The checkout.
 	 */
 	const choose = async (repository: string, root: string): Promise<void> => {
 		try {
-			await chooseCheckout({ repository, root });
-			await invalidateRepositories(client);
+			await chooseCheckout(client, { repository, root });
 			await open(null, repository);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -87,7 +83,6 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 		chooseCheckout: (repository, root): void => {
 			void choose(repository, root);
 		},
-		refreshModels: deps.catalog.reload,
 		setTheme: deps.setTheme,
 		openSettings: deps.openSettings,
 		selectModel: noModel,
@@ -95,14 +90,7 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 		addPane: noPane,
 		closePane: noPane,
 		present: noPane,
-		/**
-		 * Retry discovery from the chooser's listing notice.
-		 * @param _noticeId The notice.
-		 * @param actionId The chosen action.
-		 */
-		selectNoticeAction: (_noticeId, actionId): void => {
-			if (actionId === NOTICE_ACTIONS.retryListing) deps.catalog.reload();
-		},
+		selectNoticeAction: noPane,
 		dismissNotice: notices.dismiss,
 	};
 }

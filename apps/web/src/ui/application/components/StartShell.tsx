@@ -3,18 +3,16 @@
 // (ADR 0049), so nothing here has a session, a socket or an agent. A choice writes the address,
 // and the address decides the start.
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useCallback, useMemo, useState, type JSX } from "react";
 
 import { IconButton, shownRepository, Tooltip } from "@archboard/ui-kit/components";
-import { modelCacheMs } from "@archboard/timing";
 import { RiFileCopyLine } from "@remixicon/react";
 import { SettingsDialog } from "#ui/application/components/SettingsDialog.tsx";
 import { ModelState } from "#ui/architecture-drawing/model-reader/reading/components/ModelState.tsx";
 import { Shell } from "#ui/shell/components/Shell.tsx";
 import { createStartActions } from "#ui/application/clients/start-actions.ts";
-import { repositoriesQuery } from "#ui/panes/model-catalog/clients/queries.ts";
 import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import { useTheme } from "#ui/application/hooks/use-theme.ts";
 import { useSlowWait } from "#ui/architecture-drawing/model-reader/hooks/use-slow-wait.ts";
@@ -50,10 +48,9 @@ function StartShell(props: StartShellProps): JSX.Element {
 	const closeSettings = useCallback((): void => openSettings(null), []);
 	const client = useQueryClient();
 	const router = useRouter();
-	useQuery({ ...repositoriesQuery(), refetchInterval: modelCacheMs("startListing") });
 	const actions = useMemo(
-		() => createStartActions({ router, client, catalog, notices, setTheme, openSettings }),
-		[router, client, catalog, notices, setTheme],
+		() => createStartActions({ router, client, notices, setTheme, openSettings }),
+		[router, client, notices, setTheme],
 	);
 	const [list] = useState(initialPaneList);
 	const stage = <StartStage start={start} catalog={catalog} />;

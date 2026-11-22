@@ -99,7 +99,6 @@ function optionsFor(
 		onStaleFrontend: callbacks.onStaleFrontend,
 		onCodeTargetNotice: callbacks.onCodeTargetNotice,
 		onAgentActivity: callbacks.onAgentActivity,
-		onRepositoriesChanged: callbacks.onRepositoriesChanged,
 		onModelAdopted: callbacks.onModelAdopted,
 		onLayoutRequest: bound.onLayoutRequest,
 		createWorkbenchSockets: bound.createWorkbenchSockets,

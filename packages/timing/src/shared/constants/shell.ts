@@ -30,14 +30,6 @@ const SHELL_CLOCK_MS = durations({
 /** What the browser keeps of the server's answers (TASK-167). */
 const MODEL_CACHE_MS = durations({
 	/**
-	 * How long the model listing stays fresh. The listing is small and every
-	 * event that can change it invalidates it by name, so this window is only the
-	 * floor under a burst of them. It is the one thing read again when the tab
-	 * comes back to the foreground, since nothing announces that the vault gained
-	 * a note. A model a pane holds is drawn from that pane and never read here.
-	 */
-	listingStale: 30_000,
-	/**
 	 * How long an answer nobody reads any more stays in the cache. It pulls
 	 * against the tab's memory rather than the server: it is what lets a model
 	 * come back showing its last preview instead of an empty card.
@@ -45,12 +37,6 @@ const MODEL_CACHE_MS = durations({
 	gc: 5 * 60_000,
 	/** Notice vault/configuration edits promptly without scanning the whole vault on every frame. */
 	vaultCheck: 5_000,
-	/**
-	 * How often a page that waits for a repository reads the repositories again. It has no pane
-	 * yet, so no socket says that a command in a terminal registered one, and the person watching
-	 * it expects the row soon after the command ends. Only that page asks, and the read is small.
-	 */
-	startListing: 2_000,
 	/**
 	 * How long a read that met a write waits before it reads again. A write holds the model for
 	 * the moment it lands, about 20 ms, and a read in that moment is refused as busy. The reader

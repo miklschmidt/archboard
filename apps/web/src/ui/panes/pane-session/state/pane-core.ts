@@ -290,13 +290,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		get onExplanationsChanged() {
 			return ports.options().onExplanationsChanged;
 		},
-		/**
-		 * Read the current repository change callback.
-		 * @returns The current listener, when installed.
-		 */
-		get onRepositoriesChanged() {
-			return ports.options().onRepositoriesChanged;
-		},
 	};
 
 	/**

@@ -17,13 +17,11 @@ import type { NoticeStack } from "#ui/application/hooks/use-notices.ts";
 import type { PaneReadings } from "#ui/application/hooks/use-pane-reading.ts";
 import type { PaneEvents } from "#ui/application/hooks/use-panes.ts";
 import type { useWorkbench } from "#ui/application/hooks/use-workbench.ts";
-import type { ModelCatalog } from "#ui/panes/model-catalog/hooks/use-model-catalog.ts";
 import type { AgentActivityEntry } from "#ui/panes/pane-session/rules/session-types.ts";
 
 /** The owners the pane events reach. */
 interface PaneEventOwners {
 	readonly notices: NoticeStack;
-	readonly catalog: ModelCatalog;
 	readonly readings: PaneReadings;
 	readonly workbench: ReturnType<typeof useWorkbench>;
 	readonly activity: AgentActivity;
@@ -35,7 +33,7 @@ interface PaneEventOwners {
  * @returns The events.
  */
 function paneEvents(owners: PaneEventOwners): PaneEvents {
-	const { notices, catalog, workbench } = owners;
+	const { notices, workbench } = owners;
 	return {
 		/**
 		 * A pane published its status: its transport may have changed.
@@ -97,14 +95,12 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			notices.raise(codeTargetShellNotice(notice));
 		},
 		/**
-		 * A pane's socket came back: everything this tab caches about the server
-		 * may have moved while it was down, and nothing said so. The agent work it
-		 * heard is forgotten before the socket's first message, which is the
-		 * server's account of every vault where an agent is at work now.
+		 * A pane's socket came back. The agent work it heard is forgotten before
+		 * the socket's first message, which is the server's account of every vault
+		 * where an agent is at work now.
 		 */
 		onPaneReconnected: (): void => {
 			owners.activity.forget();
-			catalog.reconnected();
 		},
 		/**
 		 * Which models an agent is working on in one vault.
@@ -113,10 +109,6 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		 */
 		onAgentActivity: (vault: string, snapshot: readonly AgentActivityEntry[]): void => {
 			owners.activity.replace(vault, snapshot);
-		},
-		/** A checkout was chosen somewhere: the repositories are read again. */
-		onRepositoriesChanged: (): void => {
-			catalog.repositoriesChanged();
 		},
 	};
 }

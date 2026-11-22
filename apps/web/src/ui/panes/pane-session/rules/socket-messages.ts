@@ -61,7 +61,6 @@ interface MessageContext {
 	readonly onAgentActivity:
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
-	readonly onRepositoriesChanged: (() => void) | undefined;
 	readonly onExplanationsChanged: (() => void) | undefined;
 }
 
@@ -141,14 +140,6 @@ function paneClose(context: MessageContext): void {
 }
 
 /**
- * A checkout was chosen somewhere, so the repositories are read again.
- * @param context The pane.
- */
-function repositoriesChanged(context: MessageContext): void {
-	context.onRepositoriesChanged?.();
-}
-
-/**
  * The server asks this pane to go to a step of a walkthrough, or to leave the
  * presentation (TASK-251). Where the pane is in a walkthrough is the pane's own,
  * so the request goes up to whoever draws the model; a request that does not
@@ -170,7 +161,6 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_open: paneOpen,
 	pane_close: paneClose,
 	pane_present: panePresent,
-	repositories_changed: repositoriesChanged,
 	/**
 	 * Refresh the tab answer through the existing query owner.
 	 * @param context The current pane callbacks.

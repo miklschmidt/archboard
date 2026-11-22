@@ -2,6 +2,8 @@
 // and their sessions, the listing, the notices, the fullscreen presentation
 // and the settings surfaces. Pure composition: no state of its own.
 
+import type { QueryClient } from "@tanstack/react-query";
+
 import { NOTICE_ACTIONS, failureNotice } from "#ui/application/rules/notices.ts";
 import type { WorkspaceAddressing } from "#ui/panes/reading-routing/hooks/use-workspace-address.ts";
 import { paneReady, recordFor } from "#ui/application/rules/pane-records.ts";
@@ -30,6 +32,8 @@ type ShownModel = Pick<Awaited<ReturnType<typeof showModel>>, "repository"> & {
 
 /** What the actions act on. */
 interface ShellActionDeps {
+	/** The tab's query cache, which holds the repositories. */
+	readonly client: QueryClient;
 	readonly setTheme: (theme: ThemeChoice) => void;
 	/** Where a person's own move is announced, so the address bar records it. */
 	readonly addressing: WorkspaceAddressing;
@@ -64,13 +68,13 @@ interface ShellActionDeps {
 }
 
 /** The model actions. */
-type ModelActions = Pick<ShellActions, "selectModel" | "refreshModels" | "chooseCheckout">;
+type ModelActions = Pick<ShellActions, "selectModel" | "chooseCheckout">;
 
 /** Every shell action but opening beside, which waits on the panes and is composed over these. */
 type ComposedShellActions = Omit<ShellActions, "openBeside">;
 
 /**
- * The model actions: show a listed model, and read the listing again.
+ * The model actions: show a listed model, and choose a checkout.
  * @param deps The owners.
  * @returns Those actions.
  */
@@ -134,10 +138,6 @@ function modelActions(deps: ShellActionDeps): ModelActions {
 	}
 	return {
 		selectModel,
-		/** Read the listing and every drawing again. */
-		refreshModels: (): void => {
-			deps.catalog.reload();
-		},
 		/**
 		 * Choose the checkout of a repository this machine reads.
 		 * @param repository The repository identity.
@@ -208,15 +208,15 @@ function openFailure(error: unknown): ShellNotice {
 }
 
 /**
- * Choose a checkout, and say so when the server refuses. Every tab hears the
- * choice from the server, this one included, and reads its repositories again.
+ * Choose a checkout, and say so when the server refuses. Every tab is sent the
+ * listing that follows, and this one holds it once the choice resolves.
  * @param deps The owners.
  * @param repository The repository identity.
  * @param root One of its known checkouts.
  */
 async function choose(deps: ShellActionDeps, repository: string, root: string): Promise<void> {
 	try {
-		await chooseCheckout({ repository, root });
+		await chooseCheckout(deps.client, { repository, root });
 		deps.notices.dismiss("checkout-choice");
 	} catch (error) {
 		deps.notices.raise(
@@ -352,11 +352,7 @@ function answerNotice(deps: ShellActionDeps, actionId: string): void {
 		window.location.reload();
 		return;
 	}
-	if (actionId === NOTICE_ACTIONS.retryReading) {
-		deps.catalog.refresh();
-		return;
-	}
-	if (actionId === NOTICE_ACTIONS.retryListing) deps.catalog.reload();
+	if (actionId === NOTICE_ACTIONS.retryReading) deps.catalog.refresh();
 }
 
 /**

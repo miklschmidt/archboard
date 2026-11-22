@@ -6,6 +6,7 @@ import { ModelArrivalContext } from "#ui/panes/reading-routing/state/model-arriv
 
 import { VaultDiagnostics } from "#ui/vault-diagnostics/components/VaultDiagnostics.tsx";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { LiveBinding } from "#ui/application/state/live-binding.ts";
 import { livePanesOver } from "#ui/application/rules/live-panes.ts";
@@ -318,9 +319,10 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	useWorkspaceAddressing({ panes, notices, readings, vaultOf: repositoryVaults }, addressBinding);
 	usePresentationTransfer(panes, fullscreen);
 	// Bound each render, after the owners the events reach exist.
-	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
+	panes.bindEvents(paneEvents({ notices, readings, workbench, activity: agentActivity }));
 
 	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
+	const client = useQueryClient();
 	const router = useRouter();
 	const readRepository = useCallback(
 		(paneId: string, repository: string): Promise<void> =>
@@ -338,6 +340,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const composed = useMemo(
 		() =>
 			createShellActions({
+				client,
 				setTheme,
 				addressing,
 				panes: livePanes,
@@ -349,6 +352,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 				readRepository,
 			}),
 		[
+			client,
 			setTheme,
 			addressing,
 			livePanes,
