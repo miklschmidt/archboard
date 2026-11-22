@@ -11,6 +11,8 @@
 import { Children, type ComponentProps, type JSX, type ReactNode } from "react";
 
 import { Button, cn } from "@archboard/ui-kit/components";
+import { SectionHead } from "#ui/shell/components/SectionHead.tsx";
+import { useSectionFold } from "#ui/shell/hooks/use-section-fold.ts";
 
 /**
  * A section's heading: the body size, semibold and quiet, so it is scanned
@@ -57,7 +59,8 @@ function SidebarRegion(props: {
 }
 
 /**
- * One section of a region: its heading, then what it holds.
+ * One section of a region: its heading, which folds it as a head of either side column does, then
+ * what it holds.
  * @param props The heading and the content.
  * @param props.title The heading.
  * @param props.slot Where tests and styles find it.
@@ -71,10 +74,17 @@ function SidebarSection(props: {
 	readonly level?: 2 | 3 | undefined;
 	readonly children: ReactNode;
 }): JSX.Element {
+	const fold = useSectionFold(false);
 	return (
 		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
-			<SidebarHeading level={props.level}>{props.title}</SidebarHeading>
-			{props.children}
+			<SectionHead level={props.level ?? 2} {...fold} className="-mx-2 min-h-6 px-2">
+				<span className="text-body text-muted-foreground font-semibold">{props.title}</span>
+			</SectionHead>
+			{!fold.folded && (
+				<div id={fold.controls} className="flex flex-col gap-1">
+					{props.children}
+				</div>
+			)}
 		</section>
 	);
 }

@@ -14,7 +14,7 @@
 
 import type { RemixiconComponentType } from "@remixicon/react";
 import { type ChangeObject, diffWords } from "diff";
-import type { JSX } from "react";
+import { useMemo, type JSX } from "react";
 
 import type { ChangeKind, FieldChange } from "@archboard/model/comparison";
 import { cn } from "@archboard/ui-kit/components";
@@ -27,6 +27,8 @@ import {
 	SidebarSection,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticSidebarParts.tsx";
 import { StandingSample } from "#ui/architecture-drawing/canvas/presentation/components/SemanticTypeSamples.tsx";
+import { SectionHead } from "#ui/shell/components/SectionHead.tsx";
+import { useSectionFold } from "#ui/shell/hooks/use-section-fold.ts";
 import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import type { ReconciliationIssueSchema } from "@archboard/model/reconciliation";
 import type { z } from "zod";
@@ -295,21 +297,49 @@ function StandingBlock(props: StandingBlockProps): JSX.Element | null {
 	if (!differs(against)) {
 		return null;
 	}
+	return <AgainstSection against={against} icon={props.icon} />;
+}
+
+/** A section opens with a rule across the panel's words, as every section of the panel does. */
+const AGAINST = "border-border flex flex-col gap-1.5 border-t pt-4";
+
+/**
+ * The section that sets out how a subject that differs stands. Its head folds the fields that
+ * moved, and a subject with no field that moved, such as one that was added, has a head alone,
+ * because a fold would hide nothing.
+ * @param props How it stands and its icon.
+ * @param props.against How it stands against the state it is read against.
+ * @param props.icon The icon of the section.
+ * @returns The section.
+ */
+function AgainstSection(props: {
+	readonly against: StandingProps;
+	readonly icon: StandingBlockProps["icon"];
+}): JSX.Element {
+	const { against } = props;
+	const fold = useSectionFold(false);
 	const title = `Against ${against.against}`;
+	const chip = useMemo(() => <StandingChip standing={against.standing} />, [against.standing]);
+	if (against.moved.length === 0) {
+		return (
+			<section data-slot="semantic-inspector-against" aria-label={title} className={AGAINST}>
+				<div className="flex min-h-6 items-center justify-between gap-2">
+					<h3 className="m-0 min-w-0">
+						<SectionLabel icon={props.icon} title={title} />
+					</h3>
+					{chip}
+				</div>
+			</section>
+		);
+	}
 	return (
-		<section
-			data-slot="semantic-inspector-against"
-			aria-label={title}
-			className="border-border flex flex-col gap-1.5 border-t pt-4"
-		>
-			<div className="flex min-h-6 items-center justify-between gap-2">
-				<h3 className="m-0 min-w-0">
-					<SectionLabel icon={props.icon} title={title} />
-				</h3>
-				<StandingChip standing={against.standing} />
-			</div>
-			{against.moved.length > 0 && (
+		<section data-slot="semantic-inspector-against" aria-label={title} className={AGAINST}>
+			<SectionHead level={3} action={chip} {...fold} className="-mx-2 min-h-6 px-2">
+				<SectionLabel icon={props.icon} title={title} />
+			</SectionHead>
+			{!fold.folded && (
 				<dl
+					id={fold.controls}
 					data-slot="semantic-inspector-moved"
 					className="plate divide-border m-0 flex flex-col divide-y overflow-hidden"
 				>
