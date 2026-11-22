@@ -132,12 +132,13 @@ line type still says the effect. The legend holds the kind switches and a read-o
 
 ### The code check on dependencies
 
-TASK-663.05 builds this and may adjust this section.
-
-A dependency means that nothing of the target runs at run time. The code check reports, as
-information, a dependency whose evidence is a call into a function or a value of the target. Of
-the 157 anchored dependencies in this repository, 102 cited one. The agent then states the call
-and its effect.
+A dependency means that nothing of the target runs at run time. The code check reports
+`DEPENDENCY_CALLED`, as information, for a dependency whose anchor is a call into a function or
+a value of the target, or, with no anchor, whose code from source to target contains one: 111
+dependencies of this repository when it was built. The finding names both ends and the call, and
+the agent then states the call with its kind and effect. It holds whatever evidence a vault
+accepts for a dependency: removing `call` from that list would have been a warning, not
+information, and silent in every vault whose configuration lists `call` itself.
 
 ## Considered and rejected
 
