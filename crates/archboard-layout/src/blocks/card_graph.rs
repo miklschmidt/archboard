@@ -152,9 +152,8 @@ impl<'t> CardLayout<'t> {
             .extend(stubs.iter().map(|stub| box_node(stub.as_str(), PORT, PORT)));
     }
 
-    /// Hold the block's items where a grid, a wrap or an interface put them:
-    /// loose cards in a grid, a wrapped item a row of cards and its labels
-    /// lower per row, hidden parts below entry points.
+    /// Arrange loose cards in a grid, hold wrapped rows, and keep source items
+    /// on the first rank when the block has bottom ports.
     fn arrange(&mut self) {
         let grid = if self.arranged.grid {
             grid_edges(&self.loose_cards())

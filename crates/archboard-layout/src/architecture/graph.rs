@@ -1,6 +1,5 @@
-//! The measured graph Blocks lays out: semantic containment,
-//! measured sizes, and which children are entry points of the container around
-//! them. Each solve chooses ranks and attachment faces.
+//! The graph Blocks and Lanes lay out carries containment and measured sizes.
+//! Each solve chooses ranks and attachment faces.
 
 use std::collections::BTreeMap;
 
@@ -15,7 +14,6 @@ use crate::ecma;
 use crate::graph::{DOOR, GROUPS};
 use crate::json::J;
 
-/// The option marking a child a relationship from outside its container reaches (ADR 0044).
 /// The option carrying each width a container's header can take, as `[width, height]` rows.
 const HEADER_STEPS: &str = "archboard.header.steps";
 
