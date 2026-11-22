@@ -25,6 +25,7 @@ const checkout = fixtureCheckout({
 		'\treturn endClaim(vault, requireRequest("takeBackClaim", input).claim);',
 		"}",
 		'export function exhaustive(kind: Kind) { switch (kind) { case "a": return same(); case "b": return same(); default: return unreachable(); } }',
+		'export function distinctDespiteDefault(kind: Kind) { switch (kind) { case "a": prepareA(); return same(); case "b": prepareB(); return same(); default: return same(); } }',
 		'export function dataArm(kind: "a" | "b" | "c") { switch (kind) { case "a": return 1; case "b": return one(); default: return two(); } }',
 		"export async function findVault(search: S, options: { readonly register?: boolean } = {}) {",
 		"\treturn options.register === true ? findAndRegisterVault(search) : locateVault(search);",
@@ -162,6 +163,7 @@ test("a TypeScript callable picks one operation for each arm that runs different
 			key: "kind",
 			keys: [["legacyBoard"], ["legacyBoardFile"], ["variantContent", "*"]],
 		},
+		distinctDespiteDefault: { key: "kind", keys: [["a"], ["b"]] },
 		dataArm: { key: "kind", keys: [["b"], ["c"]] },
 		// A key another file types is closed only once module depth finds that type.
 		imported: { key: "kind", type: "Remote", keys: [["a"], ["*"]] },
