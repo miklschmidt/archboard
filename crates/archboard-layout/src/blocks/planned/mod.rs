@@ -77,7 +77,7 @@ impl From<&str> for Refused {
 }
 
 pub(super) use parts::{Routed, Split, Step, solve_part};
-pub(super) use words::{dress, without_trunk_words};
+pub(super) use words::{dress, without_trunk_words, without_words};
 
 mod fixed;
 /// Rank guarded candidates against one fixed reference, so an intermediate

@@ -76,14 +76,24 @@ pub fn lay_out_picture(graph: &str, host: &mut dyn Graphviz) -> Result<String, S
     }
     let mode = graph.option(BLOCKS_NESTING).unwrap_or("inline");
     let planned = if mode == "blocks" {
-        hybrid(&graph, host)?
+        Some(hybrid(&graph, host)?)
     } else {
         None
     };
     // Track, and a Blocks reading that no placement gives every line a clear planned channel,
     // take the retained placement, whose routes the drawing settles as Track's (TASK-624).
+    // That Blocks reading draws no line's words and keeps no room for them: the selection
+    // still names each line.
     let (placed, frozen) = match planned {
-        Some(placed) => (placed, true),
+        Some(Some(placed)) => (placed, true),
+        Some(None) => (
+            super::legacy::place(
+                &super::planned::without_words(&graph, |_| true),
+                Nesting::Blocks,
+                host,
+            )?,
+            false,
+        ),
         None => (
             super::legacy::place(&graph, Nesting::named(mode)?, host)?,
             false,
