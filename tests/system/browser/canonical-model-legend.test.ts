@@ -225,6 +225,19 @@ test("each line type is its own switch, the legend's words stay put while a read
 	expect(await wordsAt(browser)).toBe(rest);
 
 	await browser.run(["click", '[data-slot="model-lens"]']);
+	await pollUntil(
+		() => browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.textContent)`,
+		),
+		(items) => items.length > 0,
+		"the lenses of the reading",
+		WAIT,
+	);
+	expect(
+		await browser.eval<string[]>(
+			`[...document.querySelectorAll('[data-lens-id]')].map((item) => item.getAttribute('data-lens-id'))`,
+		),
+	).toEqual(["main", "effects", "reads", "network", "dependencies", "all"]);
 	await browser.run(["click", '[data-lens-id="dependencies"]']);
 	await pollUntil(
 		() => lensOf(browser),
@@ -262,11 +275,15 @@ test("each line type is its own switch, the legend's words stay put while a read
 	);
 	expect(await pressed(browser, PUBLIC)).toBe("true");
 	expect(await wordsAt(browser)).toBe(rest);
-	expect(
-		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map((row) => row.getAttribute('data-subject-id')).sort()`,
-		),
-	).toEqual(["Shop#Bank", "Shop#Handler", "Shop#Router"]);
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map((row) => row.getAttribute('data-subject-id')).sort()`,
+			),
+		(ids) => ids.join() === "Shop#Bank,Shop#Handler,Shop#Router",
+		"the panel's rows of the group's parts",
+		WAIT,
+	);
 
 	await clickAt(browser, tag);
 	await pollUntil(
