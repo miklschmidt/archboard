@@ -11,28 +11,28 @@ use std::rc::Rc;
 use rustc_hash::FxHashMap;
 
 use crate::Graphviz;
-use crate::constants::CONTAINER_INSET;
 use crate::ecma::{abs, js_max, js_min};
 use crate::geometry::{Point, Rect, Side};
-use crate::lanes::graphviz::{boxes_of, centres_of, numbers, output_of, polyline_points};
+use crate::lanes::graphviz::{Join, boxes_of, centres_of, numbers, output_of, polyline_points};
 use crate::lanes::grid::Loose;
 use crate::lanes::scene::{Map, Set};
 use crate::lanes::score::Plan;
 use crate::placed::{PlacedBlock, PlacedEdge, PlacedNode};
 use crate::viz::{Attrs, Edge, Graph, Node, Subgraph, Value, box_node, nodes_in};
 
-use super::clusters::{Clusters, Holder, Link, is_title, title_of};
 use super::laid::{Insets, Laid, LaidMap, Size};
 use super::leaves::{
     PORT, corner_header, hold_resized_children, leaves_of, pinned_leaf, settled_leaf,
 };
-use super::readback::LinedUp;
+use super::line_up::LinedUp;
 use super::routing::{Settling, routed};
 use super::tree::{Block, BlockId, BlockTree, Line, header_of};
 use super::walls::ranks;
 
 /// Vertical room Graphviz keeps between ranks; the router spaces ranks again from its tracks.
 const RANK_GAP: f64 = 28.0;
+/// Horizontal room Graphviz keeps between neighbours in a rank.
+const NODE_GAP: f64 = 40.0;
 
 /// Graphviz asked once for each graph one layout of a picture gives it.
 /// Graphviz answers a graph the same way every time, so a graph it has
@@ -78,12 +78,6 @@ pub(crate) struct Arrangement {
     pub columns: bool,
 }
 
-/// A subgraph of the block's graph: one of its clusters, or a rank of nodes held together.
-pub(super) enum Sub {
-    Cluster(usize),
-    Plain(Subgraph),
-}
-
 /// The block ranked by Graphviz and lined up, its lines not yet routed.
 pub(crate) struct Lined {
     pub placed: PlacedBlock,
@@ -99,12 +93,12 @@ pub(crate) struct CardLayout<'t> {
     pub(super) block: &'t Block,
     insets: Insets,
     pub(super) arranged: Arrangement,
-    /// The containers and regions the block draws inline.
-    pub clusters: Clusters<'t>,
     pub(super) attrs: Attrs,
     pub(super) nodes: Vec<Node>,
     pub(super) edges: Vec<Edge>,
-    pub(super) subgraphs: Vec<Sub>,
+    pub(super) subgraphs: Vec<Subgraph>,
+    /// The width of each card evened with the card over or under it.
+    pub(super) widths: Map<String, f64>,
     /// The card widths reserved for independent ports during this placement.
     pub(super) port_widths: Map<String, f64>,
 }
@@ -119,29 +113,16 @@ impl<'t> CardLayout<'t> {
         arranged: Arrangement,
     ) -> CardLayout<'t> {
         let block = tree.get(id);
-        let clusters = Clusters::new(block);
-        let subgraphs = clusters
-            .top
-            .iter()
-            .map(|&index| Sub::Cluster(index))
-            .collect();
-        let mut attrs = Attrs::of([
+        let attrs = Attrs::of([
             ("rankdir", Value::from("TB")),
             // More passes at ordering each rank, and one more over the whole.
             ("mclimit", Value::Num(4.0)),
             ("remincross", Value::Bool(true)),
             ("splines", Value::from("polyline")),
-            ("nodesep", Value::Num(super::clusters::NODE_GAP / 72.0)),
+            ("nodesep", Value::Num(NODE_GAP / 72.0)),
             ("ranksep", Value::Num(RANK_GAP / 72.0)),
             ("pad", Value::Num(0.0)),
-            // Graphviz keeps the clusters directly in a graph its margin apart on a rank.
-            ("margin", Value::Num(CONTAINER_INSET)),
         ]);
-        // Ranks cross the clusters a block draws inline, as one picture; a block without
-        // any keeps Graphviz's own ranking, which holds its header alone on the first rank.
-        if !block.clusters.is_empty() {
-            attrs.set("newrank", true);
-        }
         CardLayout {
             tree,
             laid,
@@ -149,11 +130,11 @@ impl<'t> CardLayout<'t> {
             block,
             insets,
             arranged,
-            clusters,
             attrs,
             nodes: Vec::new(),
             edges: Vec::new(),
-            subgraphs,
+            subgraphs: Vec::new(),
+            widths: Map::default(),
             port_widths: Map::default(),
         }
     }
@@ -162,9 +143,6 @@ impl<'t> CardLayout<'t> {
     pub(super) fn vendor_of(&self, end: &str) -> String {
         if self.walled(end) {
             return format!("stub:{end}");
-        }
-        if self.block.clusters.contains_key(end) {
-            return title_of(end);
         }
         self.tree
             .pins
@@ -189,9 +167,6 @@ impl<'t> CardLayout<'t> {
 
     /// The size of a vendor node.
     pub(super) fn size_of(&self, name: &str) -> Size {
-        if let Some(title) = self.clusters.size_of(name) {
-            return title;
-        }
         if name == header_of(self.block) {
             return self.block.header.as_ref().expect("a block's header").size();
         }
@@ -229,14 +204,6 @@ impl<'t> CardLayout<'t> {
         )
     }
 
-    /// Put a node where it goes.
-    pub(super) fn push(&mut self, holder: Holder, node: Node) {
-        match holder {
-            Holder::Graph => self.nodes.push(node),
-            Holder::Cluster(index) => self.clusters.graphs[index].nodes.push(node),
-        }
-    }
-
     /// The block's own ports on one side.
     pub(super) fn ports_on(&self, side: Side) -> Vec<String> {
         self.block
@@ -247,53 +214,54 @@ impl<'t> CardLayout<'t> {
             .collect()
     }
 
-    /// Every line Graphviz ranks, between the vendor nodes it joins.
-    pub(crate) fn links(&self) -> Vec<Link> {
-        self.links_by(|end| self.vendor_of(end))
-    }
-
-    /// Every line Graphviz ranks, its ends named as told.
-    fn links_by(&self, end_of: impl Fn(&str) -> String) -> Vec<Link> {
+    /// Every line Graphviz ranks as a join, a line from a child block ended
+    /// at its pin, where it leaves the block.
+    fn joins(&self) -> Vec<Join> {
+        let end_of = |end: &str| {
+            if self.tree.pins.contains_key(end) {
+                end.to_owned()
+            } else {
+                self.vendor_of(end)
+            }
+        };
         self.block
             .lines
             .values()
             .filter(|line| ranks(self.block, line) && !self.block.header_line(line))
-            .map(|line| Link {
+            .map(|line| Join {
                 tail: end_of(&line.tail),
                 head: end_of(&line.head),
-                label: format!("label:{}", line.edge.id),
-                legs: [
+                label: Some(format!("label:{}", line.edge.id)),
+                legs: Some(vec![
                     line.key.clone(),
                     format!("{}:1", line.key),
                     format!("{}:2", line.key),
-                ],
+                ]),
             })
             .collect()
     }
 
-    /// The block's cards no line touches, in the picture's order, with their
-    /// sizes, by the cluster that holds them.
-    pub(crate) fn loose_cards(&self) -> Vec<Vec<Loose>> {
+    /// The block's cards no line touches, in the picture's order, with their sizes.
+    pub(crate) fn loose_cards(&self) -> Vec<Loose> {
         let touched: Set<String> = self
             .block
             .lines
             .values()
             .flat_map(|line| [self.vendor_of(&line.tail), self.vendor_of(&line.head)])
             .collect();
-        let mut loose: Map<Option<&str>, Vec<Loose>> = Map::default();
-        for item in &self.block.items {
-            if self.tree.is_block(item) || touched.contains(item) {
-                continue;
-            }
-            let around = self.block.cluster_of.get(item).map(String::as_str);
-            let Size { width, height } = self.size_of(item);
-            loose.entry(around).or_default().push(Loose {
-                id: item.clone(),
-                width,
-                height,
-            });
-        }
-        loose.into_values().collect()
+        self.block
+            .items
+            .iter()
+            .filter(|item| !self.tree.is_block(item) && !touched.contains(*item))
+            .map(|item| {
+                let Size { width, height } = self.size_of(item);
+                Loose {
+                    id: item.clone(),
+                    width,
+                    height,
+                }
+            })
+            .collect()
     }
 
     /// Lay the block out and route its lines.
@@ -390,7 +358,6 @@ impl<'t> CardLayout<'t> {
             }
         }
         let mut centres = centres_of(&output, origin)?;
-        let clusters = self.clusters.boxes(&output, origin)?;
         let mut boxes = boxes_of(&nodes_in(&graph.nodes, &graph.subgraphs), &centres);
         for pin in self.pins() {
             let leaf = pinned_leaf(self.tree, self.laid, &pin, &centres);
@@ -404,22 +371,13 @@ impl<'t> CardLayout<'t> {
                 },
             );
         }
-        // A line from a child block is lined up where it leaves the block, at its pin.
-        let at_pins = self.links_by(|end| {
-            if self.tree.pins.contains_key(end) {
-                end.to_owned()
-            } else {
-                self.vendor_of(end)
-            }
-        });
-        let joins: Vec<_> = at_pins.iter().map(Link::join).collect();
+        let joins = self.joins();
         let lowered = std::mem::take(&mut self.arranged.lowered);
-        self.clusters.line_up(
+        self.line_up(
             &joins,
             &mut centres,
             LinedUp {
                 boxes: &mut boxes,
-                clusters: &clusters,
                 polylines: &polylines,
                 width: abs(right - left),
                 cards: &self.tree.cards,
@@ -427,7 +385,7 @@ impl<'t> CardLayout<'t> {
             },
         );
         self.arranged.lowered = lowered;
-        let placed = self.placed(&graph, &centres, &polylines, &clusters);
+        let placed = self.placed(&graph, &centres, &polylines);
         Ok(Lined {
             placed,
             centres,
@@ -442,18 +400,17 @@ impl<'t> CardLayout<'t> {
         graph: &Graph,
         centres: &Map<String, Point>,
         polylines: &Map<String, Vec<Point>>,
-        clusters: &Map<String, Rect>,
     ) -> PlacedBlock {
         let mut leaves: Vec<PlacedNode> = nodes_in(&graph.nodes, &graph.subgraphs)
             .into_iter()
-            .filter(|node| !node.name.starts_with("label:") && !is_title(&node.name))
+            .filter(|node| !node.name.starts_with("label:"))
             .map(|node| {
                 let id = &node.name;
                 let size = self.size_of(id);
                 let width = if self.tree.is_block(id) || self.tree.peer_of(id).is_some() {
                     size.width
                 } else {
-                    self.clusters.widths.get(id).copied().unwrap_or(size.width)
+                    self.widths.get(id).copied().unwrap_or(size.width)
                 };
                 let centre = centres[id.as_str()];
                 PlacedNode {
@@ -478,11 +435,10 @@ impl<'t> CardLayout<'t> {
             .filter(|line| !self.block.header_line(line))
             .map(|line| self.placed_line(line, centres, polylines))
             .collect();
-        let (children, regions) = self.clusters.nest(leaves, centres, clusters);
         PlacedBlock {
-            children,
+            children: leaves,
             edges,
-            regions,
+            regions: Vec::new(),
             header,
         }
     }

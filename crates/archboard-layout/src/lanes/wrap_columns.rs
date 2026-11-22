@@ -9,7 +9,7 @@
 use crate::ecma::{abs, js_max, js_min, sorted_by};
 use crate::geometry::Rect;
 use crate::lanes::chains::{FACE_MARGIN, LANE};
-use crate::lanes::graphviz::{Columns, Join, Wrap};
+use crate::lanes::graphviz::{Columns, Join};
 use crate::lanes::scene::{Map, Set};
 use crate::lanes::score::sinks;
 
@@ -110,24 +110,27 @@ fn lines_of(columns: &Columns<'_, '_>, name: &str) -> usize {
 }
 
 /// Whether a card was lowered by the wrap.
-fn lowered(wrap: &Wrap<'_>, name: &str) -> bool {
-    wrap.rows.get(name).copied().unwrap_or(0) > 0
+fn lowered(wrap: &Map<String, usize>, name: &str) -> bool {
+    wrap.get(name).copied().unwrap_or(0) > 0
 }
 
 /// Whether the wrap, as the items now stand, sinks a card off the rows above it.
-fn sunk(columns: &Columns<'_, '_>, wrap: &Wrap<'_>) -> bool {
+fn sunk(columns: &Columns<'_, '_>, wrap: &Map<String, usize>) -> bool {
     let plan: Map<String, usize> = wrap
-        .rows
         .iter()
         .filter(|(card, _)| columns.boxes.contains_key(card.as_str()))
         .map(|(card, &row)| (card.clone(), row))
         .collect();
-    sinks(&plan, columns.boxes, wrap.around)
+    sinks(&plan, columns.boxes)
 }
 
 /// The lowered card at one end of a line whose other end is a block's port,
 /// when the line is the card's only one.
-fn under_port(columns: &Columns<'_, '_>, wrap: &Wrap<'_>, join: &Join) -> Option<(String, String)> {
+fn under_port(
+    columns: &Columns<'_, '_>,
+    wrap: &Map<String, usize>,
+    join: &Join,
+) -> Option<(String, String)> {
     [
         (join.head.clone(), join.tail.clone()),
         (join.tail.clone(), join.head.clone()),
@@ -166,7 +169,7 @@ fn offsets_under(width: f64) -> Vec<f64> {
 
 /// Move a lowered card whose one line comes from a block's port along its
 /// row, as near under the port as it may stand with its line straight.
-fn move_under_port(columns: &mut Columns<'_, '_>, wrap: &Wrap<'_>, join: &Join) -> bool {
+fn move_under_port(columns: &mut Columns<'_, '_>, wrap: &Map<String, usize>, join: &Join) -> bool {
     let Some((card, port)) = under_port(columns, wrap, join) else {
         return false;
     };
@@ -241,7 +244,7 @@ fn into(stretch: (f64, f64), span: (f64, f64)) -> bool {
 }
 
 /// Open a straight column for a line the wrap closed.
-fn clear_line(columns: &mut Columns<'_, '_>, wrap: &Wrap<'_>, join: &Join) {
+fn clear_line(columns: &mut Columns<'_, '_>, wrap: &Map<String, usize>, join: &Join) {
     if move_under_port(columns, wrap, join) || straight(columns, join) {
         return;
     }
@@ -263,11 +266,11 @@ fn clear_line(columns: &mut Columns<'_, '_>, wrap: &Wrap<'_>, join: &Join) {
 }
 
 /// Keep the lines through a wrap straight where a lowered card stood in their way.
-pub(crate) fn clear_wrap(columns: &mut Columns<'_, '_>, wrap: Option<&Wrap<'_>>) {
+pub(crate) fn clear_wrap(columns: &mut Columns<'_, '_>, wrap: Option<&Map<String, usize>>) {
     let Some(wrap) = wrap else {
         return;
     };
-    if !wrap.rows.values().any(|&row| row > 0) {
+    if !wrap.values().any(|&row| row > 0) {
         return;
     }
     for join in columns.stacked() {

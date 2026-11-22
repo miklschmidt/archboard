@@ -209,28 +209,13 @@ fn across(one: &Rect, other: &Rect) -> bool {
 
 /// Whether a wrap, laid out, sinks a card rather than wrapping it: some
 /// lowered card has no card in the row above standing over it.
-pub(crate) fn sinks(
-    plan: &Plan,
-    boxes: &Map<String, Rect>,
-    around: impl Fn(&str) -> Option<String>,
-) -> bool {
-    let cards: Vec<(&String, usize)> = plan.iter().map(|(card, &row)| (card, row)).collect();
-    cards.iter().any(|&(card, row)| {
-        if row == 0 {
-            return false;
-        }
-        let kin: Vec<(&String, usize)> = cards
-            .iter()
-            .copied()
-            .filter(|&(other, _)| around(other) == around(card))
-            .collect();
-        let led = kin.iter().any(|&(_, above)| above < row);
-        let under = (if led { &kin } else { &cards })
-            .iter()
-            .filter(|&&(_, above)| above == row - 1);
-        !under
-            .into_iter()
-            .any(|&(other, _)| across(&boxes[other.as_str()], &boxes[card.as_str()]))
+pub(crate) fn sinks(plan: &Plan, boxes: &Map<String, Rect>) -> bool {
+    plan.iter().any(|(card, &row)| {
+        row != 0
+            && !plan
+                .iter()
+                .filter(|&(_, &above)| above == row - 1)
+                .any(|(other, _)| across(&boxes[other.as_str()], &boxes[card.as_str()]))
     })
 }
 
@@ -239,13 +224,9 @@ mod tests {
     use super::*;
 
     // Whether a wrap sinks a card rather than wrapping it, on wraps laid by
-    // hand. What this catches: a group region the wrap lowers whole refused,
-    // because its topmost cards stand under cards of the fan rather than of
-    // the region, so the region stands on a row of its own above the fan's
-    // other cards (Starting a workhorse); and a lowered card under no
-    // card at all taken.
+    // hand.
 
-    /// Where the wrap lays each card: a fan of two over the two cards of one region, and one card astray.
+    /// Where the wrap lays each card: a fan of two over two cards, and one card astray.
     fn wrapped() -> Map<String, Rect> {
         [
             ("hub", 0.0),
@@ -269,11 +250,6 @@ mod tests {
         .collect()
     }
 
-    /// The cluster round a card: the region's two cards stand in one.
-    fn around(card: &str) -> Option<String> {
-        matches!(card, "first" | "second").then(|| "region".to_owned())
-    }
-
     fn plan(rows: &[(&str, usize)]) -> Plan {
         rows.iter()
             .map(|&(card, row)| (card.to_owned(), row))
@@ -281,14 +257,14 @@ mod tests {
     }
 
     #[test]
-    fn a_region_the_wrap_lowers_whole_may_stand_under_any_card_of_the_row_above() {
+    fn a_lowered_card_under_a_card_of_the_row_above_does_not_sink() {
         let plan = plan(&[("hub", 0), ("peer", 0), ("first", 1), ("second", 1)]);
-        assert!(!sinks(&plan, &wrapped(), around));
+        assert!(!sinks(&plan, &wrapped()));
     }
 
     #[test]
     fn a_lowered_card_under_no_card_of_the_row_above_sinks() {
         let plan = plan(&[("hub", 0), ("peer", 0), ("astray", 1)]);
-        assert!(sinks(&plan, &wrapped(), around));
+        assert!(sinks(&plan, &wrapped()));
     }
 }

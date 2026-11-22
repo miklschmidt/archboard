@@ -14,7 +14,6 @@ use crate::placed::PlacedBlock;
 
 use super::laid::{Band, Insets, Laid};
 use super::leaves::{mark_regions, rim_of};
-use super::lone::frame_shape;
 use super::tree::{Block, BlockId, BlockTree, Kind};
 use super::walls::{
     beside_points, beside_walls, channel_wall, enters_by, inner_points, labelled_out, mark_besides,
@@ -211,18 +210,7 @@ fn read(
             boxes,
             lines: walled,
             bands,
-            frames: Some(
-                drawn
-                    .into_iter()
-                    .map(|shape| {
-                        let lone = block
-                            .clusters
-                            .get(&shape.id)
-                            .and_then(|cluster| cluster.lone.as_ref());
-                        frame_shape(shape, lone)
-                    })
-                    .collect(),
-            ),
+            frames: Some(drawn),
             regions: Some(regions),
             header: None,
             reroute: None,

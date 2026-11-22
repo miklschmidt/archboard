@@ -164,7 +164,7 @@ pub(crate) fn beside_walls(block: &Block, tree: &BlockTree, scene: &Placement) -
             if !tree.cards.contains_key(&line.from) {
                 return None;
             }
-            if block.cluster_of.contains_key(&line.from) || !outermost(scene, item, wall) {
+            if !outermost(scene, item, wall) {
                 return None;
             }
             Some(Beside {

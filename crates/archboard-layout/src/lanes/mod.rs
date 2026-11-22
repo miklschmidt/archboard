@@ -9,7 +9,6 @@ pub(crate) mod columns;
 pub(crate) mod containers;
 pub(crate) mod graphviz;
 pub(crate) mod grid;
-pub(crate) mod hold_slots;
 pub(crate) mod jogs;
 pub(crate) mod kept_off;
 pub(crate) mod label_runs;

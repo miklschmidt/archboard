@@ -180,20 +180,6 @@ impl Placed {
     }
 }
 
-/// How many containers a block draws inline around one of its cards.
-fn frames_around(block: &Block, card: &str) -> usize {
-    block
-        .clusters_from(block.cluster_of.get(card).map(String::as_str))
-        .into_iter()
-        .filter(|cluster| {
-            block
-                .clusters
-                .get(*cluster)
-                .is_some_and(|one| one.kind == super::tree::ClusterKind::Frame)
-        })
-        .count()
-}
-
 /// The innermost container a block is, or stands in.
 fn block_frame(tree: &BlockTree, block: &Block) -> Option<String> {
     let mut at = Some(block);
@@ -202,12 +188,6 @@ fn block_frame(tree: &BlockTree, block: &Block) -> Option<String> {
             return Some(one.id.clone());
         }
         at = one.parent.map(|parent| tree.get(parent));
-        if let Some(parent) = at
-            && let Some(frame) =
-                parent.frame_around(parent.cluster_of.get(&one.id).map(String::as_str))
-        {
-            return Some(frame);
-        }
     }
     None
 }
@@ -268,8 +248,7 @@ impl<'a> Assembly<'a> {
             self.origins
                 .insert(item.clone(), Point { x: at.x, y: at.y });
             let framed = usize::from(self.tree.get(inner).kind == Kind::Frame);
-            self.depths
-                .insert(item.clone(), depth + frames_around(block, item) + framed);
+            self.depths.insert(item.clone(), depth + framed);
             self.descend(inner);
         }
     }
@@ -315,7 +294,7 @@ impl<'a> Assembly<'a> {
                         PlacedCard {
                             id: id.clone(),
                             bx: self.tree.lone.get(id).map_or(at, |lone| card_in(at, lone)),
-                            depth: self.depths[block.id.as_str()] + frames_around(block, id),
+                            depth: self.depths[block.id.as_str()],
                             header: None,
                         }
                     })
@@ -332,12 +311,10 @@ impl<'a> Assembly<'a> {
                 let block = self.tree.get(alone.block);
                 PlacedArea {
                     group: alone.lone.group.clone(),
-                    parent: block
-                        .frame_around(block.cluster_of.get(&alone.id).map(String::as_str))
-                        .or_else(|| block_frame(self.tree, block)),
+                    parent: block_frame(self.tree, block),
                     bx: alone.stop.region,
                     caption: caption_in(alone.stop.region, &alone.lone, lines),
-                    depth: self.depths[block.id.as_str()] + frames_around(block, &alone.id),
+                    depth: self.depths[block.id.as_str()],
                 }
             })
             .collect()
