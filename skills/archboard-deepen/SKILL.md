@@ -47,7 +47,7 @@ Judge each design with these tests:
 - **The interface is the test surface**: callers and tests cross the same seam. A test that has to reach past the interface means the module has the wrong shape.
 - **Two adapters make a seam real**: one adapter is a hypothetical seam and only adds indirection. Production plus a test stand-in is two.
 - **Replace, don't layer**: tests at the deepened interface replace the tests of the shallow modules it absorbs. Delete the old ones.
-- **Relocation test**: count the jobs each caller must know, before and after. When the count holds, the change relocated the jobs and deepened nothing. Splitting a module so each part passes, folding operations behind a key (a switchboard), carrying them as request types and returning them from a factory each fail this test.
+- **Relocation test**: count the jobs each caller must know, before and after. Reject a change that only moves jobs. When the count holds, identify the additional logic the module hides from its callers before calling it deeper. Splitting a module so each part passes, folding operations behind a key (a switchboard), carrying them as request types and returning them from a factory each fail this test.
 
 Classify each dependency of a candidate, because the class decides how its tests cross the seam:
 
