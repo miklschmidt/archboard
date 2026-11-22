@@ -550,9 +550,11 @@ impl Track<'_> {
     }
 
     /// Open every step still too short for its two bends, one no move could
-    /// close, to the shortest step they turn whole.
+    /// close, to the shortest step they turn whole. Opening a step never
+    /// stands two lines on one column, as closing one never does.
     pub(crate) fn open_notches(&mut self, chains: &[ChainId], routes: &[Vec<NetId>]) {
         let nets: Vec<NetId> = routes.concat();
+        let apart = |track: &Track<'_>| track.coincident_pairs(&nets);
         for route in routes {
             for (index, &net) in route.iter().enumerate() {
                 if !notched(self, net) || self.net(net).wall.is_some() {
@@ -562,10 +564,12 @@ impl Track<'_> {
                     let other = self.net(net).x_at(end.other());
                     let x = other + sign(self.net(net).x_at(end) - other) * 2.0 * BEND_RADIUS;
                     let stretch = self.stretch_beyond(route, index, end);
+                    let before = apart(self);
+                    let keeps_apart = |track: &Track<'_>| apart(track) <= before;
                     let keeping = Keeping {
                         guard: notched,
                         piece: false,
-                        better: None,
+                        better: Some(&keeps_apart),
                     };
                     if self.move_stretch(chains, &nets, &stretch, x, keeping) {
                         break;

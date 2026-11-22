@@ -63,6 +63,25 @@ impl Track<'_> {
         count
     }
 
+    /// How many pairs of lines stand on one column: a line leaving a station
+    /// where another line, entering the station below, runs on.
+    pub(crate) fn coincident_pairs(&self, nets: &[NetId]) -> f64 {
+        let mut count = 0.0;
+        for channel in by_channel(self, nets.iter().copied(), |&net| net).values() {
+            for &leaving in channel {
+                for &entering in channel {
+                    let (up, down) = (self.net(leaving), self.net(entering));
+                    if abs(up.top_x - down.bottom_x) <= STRAIGHT
+                        && self.collinear(leaving, entering)
+                    {
+                        count += 1.0;
+                    }
+                }
+            }
+        }
+        count
+    }
+
     /// How many pairs of lines swap sides across a channel.
     fn swapped(&self, nets: &[NetId]) -> f64 {
         let mut count = 0.0;
