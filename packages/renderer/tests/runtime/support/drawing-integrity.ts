@@ -25,8 +25,14 @@ import {
  * Semantic completeness and readable labels across the measured corpus.
  * @param drawing The rendered document.
  * @param content Its authored architecture.
+ * @param engine The layout engine that drew it. Lanes places its ports on a grid of lanes, so
+ * opposite ports can stand on one line there, which Blocks never does (ADR 0064, ADR 0096).
  */
-export function expectDrawingIntact(drawing: RenderedDiagram, content: VariantContent) {
+export function expectDrawingIntact(
+	drawing: RenderedDiagram,
+	content: VariantContent,
+	engine: "blocks" | "lanes" = "blocks",
+) {
 	expect([...routePoints(drawing.svg).keys()].toSorted(), "painted relationships").toEqual(
 		content.edges.map(({ id }) => id).toSorted(),
 	);
@@ -41,7 +47,8 @@ export function expectDrawingIntact(drawing: RenderedDiagram, content: VariantCo
 		"parents with no visible frame or line boundary",
 	).toEqual([]);
 	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
-	expect(collinearPorts(drawing, content), "opposite card ports on one line").toEqual([]);
+	if (engine === "blocks")
+		expect(collinearPorts(drawing, content), "opposite card ports on one line").toEqual([]);
 	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
 	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);
 	expect(labelsOverOwnLine(drawing), "labels over their own line").toEqual([]);

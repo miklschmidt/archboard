@@ -54,6 +54,7 @@ WebAssembly.Instance = new Proxy(WebAssembly.Instance, {
 const core = loadCore();
 const request = JSON.stringify({
 	grammar: "architecture",
+	layout: "blocks",
 	// Blocks asks the host to solve a container, so the resume trap runs.
 	content: {
 		nodes: [

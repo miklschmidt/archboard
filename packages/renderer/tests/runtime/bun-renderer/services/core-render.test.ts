@@ -6,6 +6,7 @@ import type { RenderHost } from "#shared/protocol/generated/core/archboard_rende
 function request(grammar: "sequence" | "architecture" = "sequence"): string {
 	return JSON.stringify({
 		grammar,
+		layout: "blocks",
 		content: {
 			nodes: [
 				{ id: "a", order: 0, name: "A", kind: "service" },

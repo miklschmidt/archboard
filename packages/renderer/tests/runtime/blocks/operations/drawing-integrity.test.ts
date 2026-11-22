@@ -26,3 +26,14 @@ for (const fixture of fixtures) {
 		expectDrawingIntact(drawing, content);
 	});
 }
+
+test("Nested public API on Lanes: complete parts and clear drawing", async () => {
+	const content = orderedFixture(publicApi);
+	const drawing = await renderArchitecture({
+		policy: defaultSemanticPolicy(),
+		content,
+		theme: "light",
+		layout: "lanes",
+	});
+	expectDrawingIntact(drawing, content, "lanes");
+});
