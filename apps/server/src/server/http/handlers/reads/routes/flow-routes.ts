@@ -79,8 +79,23 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 	return renderReceipt(model, reading, vault, drawn, flow);
 }
 /**
- * What an export carries beside its drawing: its legend, and the note of the lines its lens left
- * out, which stands with or without the legend.
+ * What a structural export says of its lens above the picture: how many lines it left out, or
+ * that the default lens drew none here and the picture shows every relationship instead.
+ * @param projection The reading drawn.
+ * @returns The note, or nothing when the lens left nothing out.
+ */
+function lensNote(
+	projection: ReturnType<typeof renderProjection>["projection"],
+): ExportFrame["leftOut"] {
+	if (projection.emptyLens !== undefined)
+		return { lens: projection.emptyLens.name, count: 0, showingAll: true };
+	return projection.leftOut > 0
+		? { count: projection.leftOut, lens: projection.lens.name }
+		: undefined;
+}
+/**
+ * What an export carries beside its drawing: its legend, and the note of its lens, which stands
+ * with or without the legend.
  * @param input The requested presentation.
  * @param projection The reading drawn.
  * @returns The frame, or nothing when it carries neither.
@@ -90,10 +105,7 @@ function exportFrame(
 	projection: ReturnType<typeof renderProjection>["projection"],
 ): ExportFrame | undefined {
 	const legend = input.legend === "none" ? undefined : input.legend;
-	const leftOut =
-		input.grammar === "architecture" && projection.leftOut > 0
-			? { count: projection.leftOut, lens: projection.lens.name }
-			: undefined;
+	const leftOut = input.grammar === "architecture" ? lensNote(projection) : undefined;
 	return legend === undefined && leftOut === undefined ? undefined : { legend, leftOut };
 }
 /**
