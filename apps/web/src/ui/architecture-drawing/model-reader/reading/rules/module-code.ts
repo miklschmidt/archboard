@@ -103,7 +103,8 @@ function skippedLanguage(skip: Skip): string | undefined {
 
 /**
  * What the pass did not read of a module it measured: languages no rule judges, and languages of
- * the module whose server gave no answer in its checkout.
+ * the module whose server gave no answer in its checkout, and unresolved switchboard keys
+ * that withheld the depth verdict.
  * @param depth The module.
  * @param skipped What the pass skipped.
  * @returns The words, one for each.
@@ -119,7 +120,14 @@ function partialOf(depth: Depth, skipped: readonly Skip[]): string[] {
 			: [];
 	});
 	const rules = depth.unjudged.map((language) => `no rule judges ${languageName(language)} yet`);
-	return [...rules, ...new Set(servers)];
+	const keys = skipped
+		.filter((skip) => skip.reason === "key-unclosed" && skip.subject?.id === depth.subject.id)
+		.map((skip) =>
+			skip.detail === undefined
+				? "shallow verdict withheld for an unresolved switchboard key"
+				: `shallow verdict withheld for unresolved switchboard keys (${skip.detail})`,
+		);
+	return [...rules, ...new Set(servers), ...keys];
 }
 
 /**
