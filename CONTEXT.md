@@ -839,7 +839,7 @@ The names that callers of a bound module must learn: its exported functions, cla
 _Avoid_: export count, surface area, wide interface (no flat cap judges width since TASK-659)
 
 **Switchboard**:
-An exported function or public method that picks the operation it runs by a closed key its caller passes: literal overloads, a literal or boolean union, a property of a request that tells its kind, or a Rust enum parameter. Each arm that runs a different operation is a name its callers learn; an arm that only selects data, or runs the shared path plus checks, adds none. A keyed getter is no switchboard. Its tests of the key count no logic.
+An exported function or public method that picks the operation it runs by a closed key its caller passes: literal overloads, a literal or boolean union, a property of a request that tells its kind, or a Rust enum parameter. Each arm that runs a different operation is a name its callers learn; an arm that only selects data, or runs the shared path plus checks, adds none. A keyed getter is no switchboard. For a counted switchboard, the logic total excludes its tests of the key and its bare forwarding calls.
 _Avoid_: dispatcher, router, multiplexer, verb parameter
 
 **Shallow module**:
