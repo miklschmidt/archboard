@@ -430,31 +430,79 @@ impl Track<'_> {
         }
     }
 
-    /// Assign the tracks of one channel, and answer how many it holds.
+    /// Assign the tracks of one channel, and answer how many lanes they take. The rows of
+    /// tracks pack a lane apart, two where a row holds a detour, which turns on the track
+    /// under its own.
     pub(crate) fn assign_tracks(&mut self, nets: &[NetId]) -> usize {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);
-        let detours = nets.iter().any(|&id| self.net(id).detour_x().is_some());
-        let handed = nets
-            .iter()
-            .any(|&one| nets.iter().any(|&other| self.collinear(one, other)));
-        let spacing = if handed {
-            4
-        } else if detours {
-            3
-        } else {
-            1
+        let Some(rows) = tracks.iter().map(|&(_, row)| row + 1).max() else {
+            return 0;
         };
-        for &(unit, track) in &tracks {
-            for &net in &units[unit].1 {
-                self.net_mut(net).track = track * spacing;
+        let mut takes = vec![1; rows];
+        for &(unit, row) in &tracks {
+            if units[unit]
+                .1
+                .iter()
+                .any(|&net| self.net(net).detour_x().is_some())
+            {
+                takes[row] = 2;
             }
         }
-        tracks
+        let lanes: Vec<usize> = takes
             .iter()
-            .map(|&(_, track)| track * spacing + if detours { 2 } else { 1 })
-            .max()
-            .unwrap_or(0)
+            .scan(0, |lane, &take| {
+                let at = *lane;
+                *lane += take;
+                Some(at)
+            })
+            .collect();
+        for &(unit, row) in &tracks {
+            for &net in &units[unit].1 {
+                self.net_mut(net).track = lanes[row];
+            }
+        }
+        takes.iter().sum()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::track::chains::Station;
+    use crate::track::scene::Placement;
+
+    #[test]
+    fn two_lines_that_read_as_one_turn_a_lane_apart() {
+        let mut scene = Placement::default();
+        let mut track = Track::new(&mut scene);
+        // One line comes down at 0 and turns right; the other turns down at 5, within a lane.
+        let nets: Vec<NetId> = [(0.0, 100.0), (200.0, 5.0)]
+            .into_iter()
+            .enumerate()
+            .map(|(at, (top_x, bottom_x))| {
+                let top = track.add(Station::new(Kind::Lane, 0, None, top_x));
+                let bottom = track.add(Station::new(Kind::Lane, 1, None, bottom_x));
+                track.nets.push(Net {
+                    edge: format!("e{at}").into(),
+                    order: 0.0,
+                    channel: 0,
+                    kind: "call".into(),
+                    top,
+                    bottom,
+                    top_x,
+                    bottom_x,
+                    track: 0,
+                    trunk: None,
+                    wall: None,
+                });
+                NetId(at)
+            })
+            .collect();
+        assert!(track.collinear(nets[0], nets[1]));
+        assert_eq!(track.assign_tracks(&nets), 2);
+        let turns: Vec<usize> = nets.iter().map(|&net| track.net(net).track).collect();
+        assert_eq!(turns.iter().max().unwrap() - turns.iter().min().unwrap(), 1);
     }
 }
