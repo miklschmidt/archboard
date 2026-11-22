@@ -24,6 +24,8 @@ const checkout = fixtureCheckout({
 		"\t}",
 		'\treturn endClaim(vault, requireRequest("takeBackClaim", input).claim);',
 		"}",
+		'export function exhaustive(kind: Kind) { switch (kind) { case "a": return same(); case "b": return same(); default: return unreachable(); } }',
+		'export function dataArm(kind: "a" | "b" | "c") { switch (kind) { case "a": return 1; case "b": return one(); default: return two(); } }',
 		"export async function findVault(search: S, options: { readonly register?: boolean } = {}) {",
 		"\treturn options.register === true ? findAndRegisterVault(search) : locateVault(search);",
 		"}",
@@ -160,6 +162,7 @@ test("a TypeScript callable picks one operation for each arm that runs different
 			key: "kind",
 			keys: [["legacyBoard"], ["legacyBoardFile"], ["variantContent", "*"]],
 		},
+		dataArm: { key: "kind", keys: [["b"], ["c"]] },
 		// A key another file types is closed only once module depth finds that type.
 		imported: { key: "kind", type: "Remote", keys: [["a"], ["*"]] },
 	});
@@ -183,14 +186,15 @@ test("a Rust function picks one operation for each enum variant or boolean whose
 			key: "departure",
 			keys: [["Leaving"], ["Stayed"], ["Cleared"], ["OutOfCard"]],
 		},
-		"Stage.apply": { key: "part", keys: [["Card"], ["*"]] },
+		// A catch-all is closed by the enum it picks over.
+		"Stage.apply": { key: "part", type: "Part", keys: [["Card"], ["*"]] },
 		measure: { key: "part", keys: [["Card"], ["Container"], ["FlowFrame"]] },
-		save: { key: "part", keys: [["Card"], ["*"]] },
+		save: { key: "part", type: "Part", keys: [["Card"], ["*"]] },
 		tab: { key: "container", keys: [["true"], ["false"]] },
 		// A branch that returns leaves the rest of the body to the other key.
 		early: { key: "container", keys: [["true"], ["false"]] },
-		returned: { key: "part", keys: [["Card"], ["*"]] },
-		bound: { key: "part", keys: [["Card"], ["*"]] },
+		returned: { key: "part", type: "Part", keys: [["Card"], ["*"]] },
+		bound: { key: "part", type: "Part", keys: [["Card"], ["*"]] },
 	});
 });
 

@@ -84,6 +84,8 @@ let answer: CodeCheckAnswer;
 
 beforeAll(async () => {
 	const files: Record<string, string> = {
+		"src/exhaustive/kind.ts": 'export type Kind = "a" | "b";\n',
+		"src/exhaustive/index.ts": `import type { Kind } from "./kind.ts";\n${PICKED}`,
 		"src/thin/index.ts": operations(0, 4, false).replaceAll("n * 2 + n - 1 + n", "n + 1"),
 		"src/broken/index.ts": `${operations(0, 4, false).replaceAll("n * 2 + n - 1 + n", "n + 1")}export function oops(: number {\n`,
 		"src/kinds/index.ts": 'export type Kind = "a" | "b" | "c";\n',
@@ -98,6 +100,7 @@ beforeAll(async () => {
 		"picker/src/lib.rs": RUST_PICK,
 	};
 	const modules: Record<string, string> = {
+		Exhaust: "src/exhaustive",
 		Thin: "src/thin",
 		Broken: "src/broken",
 		Kinds: "src/kinds",
@@ -221,4 +224,14 @@ test("a file that does not parse names itself in a skip on the module whose shal
 
 test("a crate's manifest leaves its module's reading complete", () => {
 	expect(shallow("Crate")).toBe(true);
+});
+
+test("an imported key with every choice handled gives the unreachable default no width", () => {
+	const exhaustive = depthByModule(answer).get("Exhaust");
+	expect(exhaustive?.width).toBe(2);
+	expect(exhaustive?.switchboards[0]?.operations.map((operation) => operation.keys)).toEqual([
+		["a"],
+		["b"],
+	]);
+	expect(shallow("Exhaust")).toBe(true);
 });
