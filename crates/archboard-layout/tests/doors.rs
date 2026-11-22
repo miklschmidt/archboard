@@ -1,4 +1,5 @@
-//! A door keeps its measured size through ranking and port allocation on both engines.
+//! A door keeps its measured size through ranking on both engines, and widens only as far as
+//! the heads of its lines need to stand a lane apart.
 
 use std::collections::BTreeMap;
 use std::future::{Future, Ready, ready};
@@ -100,27 +101,74 @@ fn a_door_keeps_its_width_when_a_joined_card_is_slightly_wider() {
     }
 }
 
+/// Where each line ends on the door, by the line's id, after checking that the door is no
+/// narrower or shorter than its words and that every line ends on its edge.
+fn door_ends(drawn: &Painted, engine: Engine, incoming: bool) -> Vec<Point> {
+    let door = drawn
+        .drawing
+        .cards
+        .iter()
+        .find(|card| card.measured.node.id == "door")
+        .expect("the door is drawn");
+    assert!(door.bounds.width >= door.measured.width, "{engine:?}");
+    assert_eq!(door.bounds.height, door.measured.height, "{engine:?}");
+    let ends: Vec<Point> = (drawn.drawing.edges.iter())
+        .map(|line| {
+            if incoming {
+                line.curve.end()
+            } else {
+                line.curve.from
+            }
+        })
+        .collect();
+    for &point in &ends {
+        assert!(
+            on_edge(point, door.bounds),
+            "{engine:?}: {point:?}, {:?}",
+            door.bounds
+        );
+    }
+    ends
+}
+
+/// A door that eight lines of eight kinds come into, or leave, drawn by one engine.
+fn fan(incoming: bool, engine: Engine) -> Painted {
+    let nodes: Vec<Value> = std::iter::once(json!({"id":"door","name":"Door",
+        "kind":"service","door":"across"}))
+    .chain((0..8).map(|i| json!({"id":format!("card{i}"),"name":"Card","kind":"service"})))
+    .collect();
+    let edges: Vec<Value> = (0..8)
+        .map(|i| {
+            let (from, to) = if incoming {
+                (format!("card{i}"), "door".to_owned())
+            } else {
+                ("door".to_owned(), format!("card{i}"))
+            };
+            json!({"id":format!("line{i}"),"from":from,"to":to,"order":i,"kind":format!("kind{i}")})
+        })
+        .collect();
+    let mut sizes = vec![(200.0, 100.0); nodes.len()];
+    sizes[0] = (120.0, 34.0);
+    drawing(json!({"nodes":nodes,"edges":edges}), &sizes, engine)
+}
+
+/// Whether every two points stand a lane apart along one axis or the other.
+fn a_lane_apart(points: &[Point]) -> bool {
+    points.iter().enumerate().all(|(at, one)| {
+        points[at + 1..]
+            .iter()
+            .all(|other| (one.x - other.x).abs().max((one.y - other.y).abs()) >= 16.0 - 0.05)
+    })
+}
+
 #[test]
-fn independent_ports_fit_the_door_instead_of_widening_it() {
+fn a_door_widens_until_the_heads_of_its_lines_stand_a_lane_apart() {
     for engine in [Engine::Track, Engine::Blocks] {
         for incoming in [false, true] {
-            let nodes: Vec<Value> = std::iter::once(json!({"id":"door","name":"Door",
-                "kind":"service","door":"across"}))
-            .chain((0..8).map(|i| json!({"id":format!("card{i}"),"name":"Card","kind":"service"})))
-            .collect();
-            let edges: Vec<Value> = (0..8).map(|i| {
-                let (from, to) = if incoming {
-                    (format!("card{i}"), "door".to_owned())
-                } else {
-                    ("door".to_owned(), format!("card{i}"))
-                };
-                json!({"id":format!("line{i}"),"from":from,"to":to,"order":i,"kind":format!("kind{i}")})
-            }).collect();
-            let mut sizes = vec![(200.0, 100.0); nodes.len()];
-            sizes[0] = (120.0, 34.0);
-            let drawn = drawing(json!({"nodes":nodes,"edges":edges}), &sizes, engine);
-            assert_door_size(&drawn, engine);
+            let drawn = fan(incoming, engine);
             assert_eq!(drawn.drawing.edges.len(), 8);
+            let ends = door_ends(&drawn, engine, incoming);
+            assert!(!incoming || a_lane_apart(&ends), "{engine:?}: {ends:?}");
         }
     }
 }
