@@ -76,6 +76,9 @@ const RELATIONS: readonly Relation[] = [
 	["recorder.replayReady", "=", "recorder.pageReady"],
 	// A frame call waits past the page's own frame bound, so the page's reason reaches the caller.
 	["replay.frameReady", "<", "recorder.frameCall"],
+	// An evaluation server's stop outlasts its own composed Codex shutdown, with one more of margin.
+	[["codex.composedShutdown", "codex.composedShutdown"], "<=", "skillEval.serverGroupStop"],
+	["skillEval.reap", "=", "skillEval.groupStop"],
 ];
 
 export { RELATIONS };

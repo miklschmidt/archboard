@@ -2,7 +2,7 @@
 // cancellation, and never leave one behind. Every spawn goes through here so
 // there is one answer to what a timed-out or cancelled process looks like.
 
-import { processGroupPollMs, skillEvalMs } from "@archboard/timing";
+import { type Polled, pollUntil, TimedOut, within } from "@archboard/timing";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
@@ -32,74 +32,74 @@ interface ProcessResult {
 	readonly durationMs: number;
 }
 
+const groups = createCodexProcessGroupOperations();
+
+/** How long each phase of stopping an owned group may take: a polled wait `ownProcess` accepts. */
+type GroupStop = Extract<Polled, "skillEval.groupStop" | "skillEval.serverGroupStop">;
+
 /**
- * Waits for a delay.
- * @param ms The delay.
- * @returns A promise resolved after the delay.
+ * Whether a process has already exited.
+ * @param child The process.
+ * @returns True once it has.
  */
-async function pause(ms: number): Promise<void> {
-	await new Promise<void>((resolve) => {
-		setTimeout(resolve, ms);
-	});
+function exited(child: Bun.Subprocess): boolean {
+	return child.exitCode !== null || child.signalCode !== null;
 }
 
 /**
- * Whether a promise settles before a delay passes.
+ * Whether a promise settles within the reaping bound.
  * @param settled The promise.
- * @param ms The delay.
- * @returns True when it settled first.
+ * @returns True when it settled in time.
  */
-async function settlesWithin(settled: Promise<unknown>, ms: number): Promise<boolean> {
-	let timer: ReturnType<typeof setTimeout> | undefined;
+async function reaped(settled: Promise<unknown>): Promise<boolean> {
 	try {
-		return await Promise.race([
-			settled.then(() => true),
-			new Promise<false>((resolve) => {
-				timer = setTimeout(() => resolve(false), ms);
-			}),
-		]);
-	} finally {
-		clearTimeout(timer);
+		await within("skillEval.reap", () => settled);
+		return true;
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
 	}
 }
-
-const groups = createCodexProcessGroupOperations();
 
 /**
  * Wait until the recorded group has no runnable members, within one bound.
  * @param identity The captured group.
- * @param ms The bound.
+ * @param stop How long it may take.
  * @returns Whether every group member stopped.
  */
-async function groupSettled(identity: CodexProcessGroupIdentity, ms: number): Promise<boolean> {
-	const deadline = Date.now() + ms;
-	while (groups.inspect(identity) !== "quiescent") {
-		if (Date.now() >= deadline) return false;
-		// oxlint-disable-next-line no-await-in-loop -- each group observation decides whether another poll is needed
-		await pause(Math.min(processGroupPollMs(), deadline - Date.now()));
+async function groupSettled(
+	identity: CodexProcessGroupIdentity,
+	stop: GroupStop,
+): Promise<boolean> {
+	try {
+		return await pollUntil(stop, () =>
+			groups.inspect(identity) === "quiescent" ? true : undefined,
+		);
+	} catch (error) {
+		if (error instanceof TimedOut) return false;
+		throw error;
 	}
-	return true;
 }
 
 /**
  * Stop the captured group, including descendants that outlived its leader.
  * @param child The exact spawned child.
  * @param identity The identity captured immediately after its detached spawn.
- * @param graceMs How long each cleanup phase may take.
+ * @param stop How long each cleanup phase may take.
  */
 async function stopGroup(
 	child: Bun.Subprocess,
 	identity: CodexProcessGroupIdentity,
-	graceMs: number,
+	stop: GroupStop,
 ): Promise<void> {
 	groups.signal(identity, "SIGTERM");
-	if (!(await groupSettled(identity, graceMs))) {
+	if (!(await groupSettled(identity, stop))) {
 		groups.signal(identity, "SIGKILL");
-		if (!(await groupSettled(identity, graceMs))) {
+		if (!(await groupSettled(identity, stop))) {
 			throw new Error(`Evaluation process group ${identity.pgid} did not stop after SIGKILL.`);
 		}
 	}
-	if (!(await settlesWithin(child.exited, graceMs))) {
+	if (!(await reaped(child.exited))) {
 		throw new Error(`Evaluation process ${child.pid} did not reap after group cleanup.`);
 	}
 }
@@ -107,19 +107,19 @@ async function stopGroup(
 /**
  * Capture a detached child's identity and give it one idempotent cleanup owner.
  * @param child The freshly spawned, detached process.
- * @param graceMs How long each cleanup phase may take.
+ * @param stop How long each cleanup phase may take.
  * @returns The stop operation shared by normal completion and every failure path.
  */
 async function ownProcess(
 	child: Bun.Subprocess,
-	graceMs = skillEvalMs("codexTermGrace"),
+	stop: GroupStop = "skillEval.groupStop",
 ): Promise<{ readonly stop: () => Promise<void> }> {
 	let identity: CodexProcessGroupIdentity;
 	try {
 		identity = groups.capture(child.pid);
 	} catch (error) {
 		if (
-			(await settlesWithin(child.exited, 0)) &&
+			exited(child) &&
 			listProcessGroupObservations(child.pid).every((member) => member.state === "zombie")
 		) {
 			// A short command can be reaped before capture; an empty group needs no signal.
@@ -128,12 +128,12 @@ async function ownProcess(
 			 * Return the already proven completion without signalling a stale pid.
 			 * @returns The completed cleanup.
 			 */
-			const stop = (): Promise<void> => stopped;
-			return { stop };
+			const alreadyStopped = (): Promise<void> => stopped;
+			return { stop: alreadyStopped };
 		}
 		// Without an identity only the exact child handle may be signalled.
 		child.kill("SIGKILL");
-		await settlesWithin(child.exited, graceMs);
+		await reaped(child.exited);
 		throw error;
 	}
 	let stopping: Promise<void> | undefined;
@@ -141,8 +141,8 @@ async function ownProcess(
 	 * Stop this captured group once, sharing cleanup with every caller.
 	 * @returns The shared cleanup result.
 	 */
-	const stop = (): Promise<void> => (stopping ??= stopGroup(child, identity, graceMs));
-	return { stop };
+	const stopOnce = (): Promise<void> => (stopping ??= stopGroup(child, identity, stop));
+	return { stop: stopOnce };
 }
 
 /**
@@ -243,7 +243,7 @@ async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 		clearTimeout(timer);
 		signal.removeEventListener("abort", onAbort);
 		await owner.stop();
-		if (!(await settlesWithin(output, skillEvalMs("codexTermGrace")))) {
+		if (!(await reaped(output))) {
 			throw new Error(`Evaluation process ${child.pid} left an output pipe open after cleanup.`);
 		}
 		const [stdout, stderr] = await output;
@@ -267,4 +267,4 @@ async function runProcess(request: ProcessRequest): Promise<ProcessResult> {
 	}
 }
 
-export { ownProcess, pause, runProcess, sequentially, settlesWithin, type ProcessResult };
+export { exited, ownProcess, runProcess, sequentially, type ProcessResult };

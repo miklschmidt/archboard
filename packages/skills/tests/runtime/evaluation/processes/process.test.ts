@@ -5,7 +5,10 @@ import path from "node:path";
 import { ownProcess, runProcess } from "#runtime/evaluation/processes/process.ts";
 import { startServer } from "#runtime/evaluation/run-world/processes/server.ts";
 import { readProcessObservation } from "@archboard/process/observation";
-import { skillEvalMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
+
+/** A short pause for the test's own looks, and the shortened phase of a stop. */
+const TEST_POLL_MS = 100;
 
 const env = { PATH: process.env["PATH"] ?? "" };
 const cwd = process.cwd();
@@ -22,7 +25,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["true"],
 				cwd,
 				env,
-				timeoutMs: skillEvalMs("healthRequest"),
+				timeoutMs: ms("skillEval.healthRequest"),
 			});
 			expect(result.exitCode).toBe(0);
 		}
@@ -32,7 +35,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			argv: ["sh", "-c", "sleep 60 & echo $!; echo problem >&2; exit 7"],
 			cwd,
 			env,
-			timeoutMs: skillEvalMs("healthRequest"),
+			timeoutMs: ms("skillEval.healthRequest"),
 		});
 		expect(result).toMatchObject({
 			exitCode: 7,
@@ -52,7 +55,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["sh", "-c", "sleep 60 & echo $!; wait"],
 				cwd,
 				env,
-				timeoutMs: skillEvalMs("healthRequest"),
+				timeoutMs: ms("skillEval.healthRequest"),
 				signal: controller.signal,
 				onStdout: (chunk) => {
 					descendant = Number(chunk.trim());
@@ -82,7 +85,19 @@ describe("evaluation process ownership with local shell fakes", () => {
 			stdout: "pipe",
 			stderr: "ignore",
 		});
-		const owner = await ownProcess(child, skillEvalMs("healthPoll"));
+		// Each phase of the stop is shortened by name, so TERM's refusal costs a tenth of a second.
+		const schedule = globalThis.setTimeout;
+		globalThis.setTimeout = ((
+			handler: (...args: unknown[]) => void,
+			delay?: number,
+			...args: unknown[]
+		) =>
+			schedule(
+				handler,
+				args[0] === "skillEval.groupStop" ? TEST_POLL_MS : delay,
+				...args,
+			)) as typeof globalThis.setTimeout;
+		const owner = await ownProcess(child);
 		try {
 			const reader = child.stdout.getReader();
 			const { value } = await reader.read();
@@ -94,6 +109,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			expectStopped(child.pid);
 			expectStopped(descendant);
 		} finally {
+			globalThis.setTimeout = schedule;
 			await owner.stop();
 		}
 	});
@@ -107,7 +123,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 					argv: ["touch", output],
 					cwd,
 					env,
-					timeoutMs: skillEvalMs("healthRequest"),
+					timeoutMs: ms("skillEval.healthRequest"),
 					signal: AbortSignal.abort(),
 				}),
 			).rejects.toBeInstanceOf(Error);
@@ -135,7 +151,7 @@ test("cancelled server readiness stops the exact fake server and its inherited c
 	try {
 		timer = setInterval(() => {
 			if (existsSync(pids)) controller.abort();
-		}, skillEvalMs("healthPoll"));
+		}, TEST_POLL_MS);
 		await expect(
 			startServer(root, { serverLog: path.join(root, "server.log") }, env, controller.signal),
 		).rejects.toBeInstanceOf(Error);

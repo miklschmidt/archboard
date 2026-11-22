@@ -8,9 +8,9 @@ import fs from "node:fs";
 import { createServer } from "node:net";
 import path from "node:path";
 import { z } from "zod";
-import { skillEvalMs } from "@archboard/timing";
+import { ms, pollUntil, TimedOut } from "@archboard/timing";
 import type { RunPaths } from "#runtime/evaluation/run-world/processes/isolation.ts";
-import { ownProcess, pause, settlesWithin } from "#runtime/evaluation/processes/process.ts";
+import { exited, ownProcess } from "#runtime/evaluation/processes/process.ts";
 
 /** A running server. */
 interface OwnedServer {
@@ -49,7 +49,7 @@ async function freePort(): Promise<number> {
 async function healthPid(url: string): Promise<number | null> {
 	try {
 		const response = await fetch(`${url}/health`, {
-			signal: AbortSignal.timeout(skillEvalMs("healthRequest")),
+			signal: AbortSignal.timeout(ms("skillEval.healthRequest")),
 		});
 		const parsed = HealthSchema.safeParse(await response.json());
 		return parsed.success ? parsed.data.pid : null;
@@ -71,25 +71,23 @@ async function awaitHealthy(
 	log: string,
 	signal = new AbortController().signal,
 ): Promise<void> {
-	const deadline = Date.now() + skillEvalMs("serverStartup");
-	while (Date.now() < deadline) {
-		signal.throwIfAborted();
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		if (await settlesWithin(child.exited, 0)) {
-			throw new Error(
-				`the evaluation server died before answering /health (exit ${child.exitCode ?? child.signalCode}); see ${log}`,
-			);
-		}
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		const pid = await healthPid(url);
-		signal.throwIfAborted();
-		if (pid === child.pid) return;
-		// oxlint-disable-next-line no-await-in-loop -- readiness is polled: each probe decides whether to probe again
-		await pause(skillEvalMs("healthPoll"));
+	try {
+		await pollUntil(
+			"skillEval.serverStartup",
+			async () => {
+				if (exited(child)) {
+					throw new Error(
+						`the evaluation server died before answering /health (exit ${child.exitCode ?? child.signalCode}); see ${log}`,
+					);
+				}
+				return (await healthPid(url)) === child.pid || undefined;
+			},
+			{ signal },
+		);
+	} catch (error) {
+		if (!(error instanceof TimedOut)) throw error;
+		throw new Error(`${error.message} See ${log}.`, { cause: error });
 	}
-	throw new Error(
-		`the evaluation server did not answer /health within ${skillEvalMs("serverStartup")}ms; see ${log}`,
-	);
 }
 
 /**
@@ -128,7 +126,7 @@ async function startServer(
 		// Spawn duplicates the descriptor; the parent never owns the child's copy.
 		fs.closeSync(log);
 	}
-	const owner = await ownProcess(child, skillEvalMs("serverShutdown"));
+	const owner = await ownProcess(child, "skillEval.serverGroupStop");
 	try {
 		await awaitHealthy(child, url, paths.serverLog, signal);
 		return { url, port, pid: child.pid, stop: owner.stop };

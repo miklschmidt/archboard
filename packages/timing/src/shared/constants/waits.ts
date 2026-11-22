@@ -8,6 +8,7 @@ import { CODEX } from "#shared/constants/codex.ts";
 import { GIT } from "#shared/constants/git.ts";
 import { CLAIMS, MODEL_LOCKS } from "#shared/constants/model-locks.ts";
 import { RASTER } from "#shared/constants/raster.ts";
+import { SKILL_EVAL } from "#shared/constants/skill-eval.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
 import { TELEMETRY } from "#shared/constants/telemetry.ts";
 import { RECORDER, RECORDING } from "#shared/constants/walkthrough-recording.ts";
@@ -26,6 +27,7 @@ const WAITS = Object.freeze({
 	...RECORDING,
 	...RECORDER,
 	...REPLAY,
+	...SKILL_EVAL,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;
