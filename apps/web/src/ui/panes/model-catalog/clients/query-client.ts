@@ -12,6 +12,8 @@ import { modelCacheMs } from "@archboard/timing";
  * Archboard server is on this machine, so a refusal is a fact rather than a
  * flutter, and the navigator already shows the reason with its own Refresh
  * beside it — three silent attempts with backoff would only delay that line.
+ * The one exception is a model busy with a write, which a read of the model
+ * waits out by name (`busyRetry`), because that refusal ends by itself.
  * Nothing refetches on focus by default either; the one resource that should
  * asks for it by name, because it is the only one cheap enough to be worth it.
  *
