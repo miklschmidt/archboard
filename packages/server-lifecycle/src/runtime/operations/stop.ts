@@ -2,7 +2,7 @@
 
 import { existsSync } from "node:fs";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
-import { serverLifecycleMs } from "@archboard/timing";
+import { pollUntil, TimedOut } from "@archboard/timing";
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { type HealthStatus } from "#runtime/clients/server-client.ts";
 import { foreignServiceError } from "#runtime/clients/server-client-transport.ts";
@@ -55,21 +55,23 @@ function stuckOwnerError(port: number, pid: number): Error {
  * recorded process still runs after the wait.
  */
 async function awaitPidFileGone(port: number, pid: number): Promise<StopResult | undefined> {
-	const deadline = Date.now() + serverLifecycleMs("stopPidfileWait");
-	for (;;) {
-		if (removePidFileIfOwnerGone(port)) {
-			return {
-				stopped: false,
-				pid,
-				message: `Archboard server is not running; stale pidfile removed (pid ${pid}).`,
-			};
-		}
-		if (!existsSync(pidFilePath(port))) {
-			return { stopped: false, pid, message: "Archboard server is not running." };
-		}
-		if (Date.now() >= deadline) return undefined;
-		// oxlint-disable-next-line no-await-in-loop -- the poll interval between looks at the pidfile
-		await new Promise((resolve) => setTimeout(resolve, serverLifecycleMs("stopPidfilePoll")));
+	try {
+		return await pollUntil("server.stopPidfileWait", () => {
+			if (removePidFileIfOwnerGone(port)) {
+				return {
+					stopped: false,
+					pid,
+					message: `Archboard server is not running; stale pidfile removed (pid ${pid}).`,
+				};
+			}
+			if (!existsSync(pidFilePath(port))) {
+				return { stopped: false, pid, message: "Archboard server is not running." };
+			}
+			return undefined;
+		});
+	} catch (error) {
+		if (error instanceof TimedOut) return undefined;
+		throw error;
 	}
 }
 
@@ -116,20 +118,16 @@ function verifiedServerPid(health: HealthStatus): number | null {
  * @returns The stop result once `/health` stops answering.
  */
 async function awaitServerStop(port: number, pid: number): Promise<StopResult> {
-	const deadline = Date.now() + serverLifecycleMs("stopConfirm");
-	while (Date.now() < deadline) {
-		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
-		const postSignalHealth = await healthOrNull();
-		if (!postSignalHealth) {
-			removePidFile(port);
-			return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
+	try {
+		await pollUntil("server.stopConfirm", async () => ((await healthOrNull()) ? undefined : true));
+	} catch (error) {
+		if (error instanceof TimedOut) {
+			throw new Error(`${error.message} The server's pid is ${pid}.`, { cause: error });
 		}
-		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
-		await new Promise((resolve) => setTimeout(resolve, serverLifecycleMs("stopProbePoll")));
+		throw error;
 	}
-	throw new Error(
-		`Archboard server (pid ${pid}) did not stop within ${serverLifecycleMs("stopConfirm") / 1000}s.`,
-	);
+	removePidFile(port);
+	return { stopped: true, pid, message: `Archboard server (pid ${pid}) stopped.` };
 }
 
 /**

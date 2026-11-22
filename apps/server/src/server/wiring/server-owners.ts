@@ -1,6 +1,5 @@
 import { createAgentActivity } from "#server/panes/announcements/state/agent-activity.ts";
 import { broadcastEverywhere } from "#server/panes/connections/state/pane-vaults.ts";
-import { serverLifecycleMs } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
 	type ServerMutationLease,
@@ -10,9 +9,7 @@ import type { Request } from "express";
 import { createCodeCheck } from "@archboard/code-intel/code-check-run";
 
 /** Admits mutation requests while the server is running and drains them when it stops. */
-const mutationAdmission = createServerMutationAdmission({
-	drainTimeoutMs: serverLifecycleMs("mutationDrain"),
-});
+const mutationAdmission = createServerMutationAdmission();
 
 /** The lease each admitted mutation request holds, so its later work can be tracked. */
 const admittedMutations = new WeakMap<Request, ServerMutationLease>();

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, jest, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -149,7 +149,7 @@ describe("server application lifetime", () => {
 			resources: [
 				{
 					name: "http",
-					stopGraceMs: 5,
+					stopGrace: "server.httpStopGrace",
 					stop: async () => {
 						actions.push("stop:http");
 						await gate;
@@ -250,7 +250,7 @@ describe("server application lifetime", () => {
 	});
 
 	test("tracks mutation work beyond response settlement", async () => {
-		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
+		const admission = createServerMutationAdmission();
 		const lease = admission.admit("POST /api/board-write");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
@@ -270,7 +270,8 @@ describe("server application lifetime", () => {
 	});
 
 	test("bounded mutation refusal is shared, named, resumed, and retryable", async () => {
-		const admission = createServerMutationAdmission({ drainTimeoutMs: 5 });
+		jest.useFakeTimers();
+		const admission = createServerMutationAdmission();
 		const lease = admission.admit("POST /api/selection");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
@@ -285,7 +286,11 @@ describe("server application lifetime", () => {
 		const first = lifetime.stop("SIGTERM");
 		const concurrent = lifetime.stop("SIGINT");
 		expect(concurrent).toBe(first);
-		const refusal = await first.catch((error: unknown) => error);
+		const refused = first.catch((error: unknown) => error);
+		for (let turn = 0; turn < 10; turn++) await Promise.resolve();
+		jest.advanceTimersToNextTimer();
+		const refusal = await refused;
+		jest.useRealTimers();
 		expect(refusal).toBeInstanceOf(ServerApplicationBusyError);
 		expect((refusal as ServerApplicationBusyError).code).toBe("SERVER_BUSY");
 		expect((refusal as Error).message).toContain("POST /api/selection");
@@ -298,7 +303,7 @@ describe("server application lifetime", () => {
 	});
 
 	test("disconnect aborts waitable work and releases request admission", async () => {
-		const admission = createServerMutationAdmission({ drainTimeoutMs: 100 });
+		const admission = createServerMutationAdmission();
 		const lease = admission.admit("POST /api/architecture/edit");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");

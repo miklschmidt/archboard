@@ -1,7 +1,6 @@
 import { closeLogger, forceCloseLogger, logger } from "@archboard/diagnostics/logger";
 import { startTelemetrySender } from "@archboard/telemetry/sender";
 import { removePidFile, reportStartupEnd } from "@archboard/server-lifecycle/server-host";
-import { serverLifecycleMs } from "@archboard/timing";
 import {
 	ServerApplicationBusyError,
 	createServerApplicationLifetime,
@@ -338,7 +337,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 				 * @returns Resolves once the port is released.
 				 */
 				stop: () => stopListening(http),
-				stopGraceMs: serverLifecycleMs("httpStopGrace"),
+				stopGrace: "server.httpStopGrace",
 				/** Drop every connection and close. */
 				forceStop: async () => {
 					server.closeAllConnections();

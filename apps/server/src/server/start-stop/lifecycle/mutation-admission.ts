@@ -1,12 +1,10 @@
+import { TimedOut, within } from "@archboard/timing";
+
 interface ServerMutationLease {
 	readonly signal: AbortSignal;
 	abort(reason?: unknown): void;
 	finish(): void;
 	track<T>(name: string, work: (signal: AbortSignal) => Promise<T> | T): Promise<T>;
-}
-
-interface ServerMutationAdmissionOptions {
-	readonly drainTimeoutMs: number;
 }
 
 interface ServerActiveMutation {
@@ -21,11 +19,11 @@ class ServerApplicationBusyError extends Error {
 	/**
 	 * Refuse a stop, naming the mutation work that did not settle so whoever
 	 * asked can finish or cancel it.
-	 * @param timeoutMs How long the drain waited.
+	 * @param drain The drain's timeout.
 	 * @param active The work still running when it gave up.
 	 */
 	constructor(
-		readonly timeoutMs: number,
+		drain: TimedOut,
 		readonly active: readonly ServerActiveMutation[],
 	) {
 		const now = Date.now();
@@ -35,7 +33,7 @@ class ServerApplicationBusyError extends Error {
 			)
 			.join("; ");
 		super(
-			`Archboard server shutdown refused because mutation work did not settle within ${timeoutMs} ms: ${details}. ` +
+			`Archboard server shutdown refused. ${drain.message} Still running: ${details}. ` +
 				"No resource was torn down; the server resumed write admission. Finish or cancel the named work, then retry stop.",
 		);
 		this.name = "ServerApplicationBusyError";
@@ -46,16 +44,9 @@ class ServerApplicationBusyError extends Error {
  * Admit request parsing separately from mutation work that can outlive a
  * response. A disconnected request aborts waitable work, while work already in
  * a synchronous critical section remains counted until that section returns.
- * @param options How long a stop's drain waits.
  * @returns The admission owner.
  */
-function createServerMutationAdmission(options: ServerMutationAdmissionOptions) {
-	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0) {
-		throw new Error(
-			"Archboard server mutation drain timeout must be a non-negative finite duration.",
-		);
-	}
-
+function createServerMutationAdmission() {
 	let accepting = true;
 	let nextId = 0;
 	const active = new Map<number, ServerActiveMutation>();
@@ -145,29 +136,28 @@ function createServerMutationAdmission(options: ServerMutationAdmissionOptions) 
 				return;
 			}
 
-			let timeout: ReturnType<typeof setTimeout> | null = null;
 			let onDrain!: () => void;
-			const settled = await Promise.race([
-				new Promise<true>((resolve) => {
-					/**
-					 * Settle the race as drained.
-					 * @returns Nothing; the resolver's own return value is unused.
-					 */
-					onDrain = () => resolve(true);
-					drained.add(onDrain);
-				}),
-				new Promise<false>((resolve) => {
-					timeout = setTimeout(() => resolve(false), options.drainTimeoutMs);
-				}),
-			]);
-			// oxlint-disable-next-line typescript/no-unnecessary-condition -- the timer is set inside the promise executor above, which the narrowing from the declaration does not see
-			clearTimeout(timeout ?? undefined);
+			const drain = await within(
+				"server.mutationDrain",
+				() =>
+					new Promise<undefined>((resolve) => {
+						/**
+						 * Settle the race as drained.
+						 * @returns Nothing; the resolver's own return value is unused.
+						 */
+						onDrain = () => resolve(undefined);
+						drained.add(onDrain);
+					}),
+			).catch((error: unknown) => {
+				if (error instanceof TimedOut) return error;
+				throw error;
+			});
 			drained.delete(onDrain);
-			if (settled || active.size === 0) {
+			if (drain === undefined || active.size === 0) {
 				return;
 			}
 			throw new ServerApplicationBusyError(
-				options.drainTimeoutMs,
+				drain,
 				[...active.values()].toSorted((left, right) =>
 					left.startedAt === right.startedAt
 						? left.name.localeCompare(right.name)
