@@ -105,12 +105,15 @@ function PresentationChrome(props: PresentationChromeProps): JSX.Element | null 
 function PaneStages(props: PaneStagesProps): JSX.Element {
 	const { presentation, panes, actions, attachStage, voiceControls, activePaneId, column } = props;
 	const presented = presentation ? paneById(panes, presentation.paneId) : null;
+	// The stage clips rather than scrolls: a toast slides in and out past its foot, and that
+	// overhang would make the resizable panel around it scrollable, so a scroll into view could
+	// lift every pane until the toast leaves.
 	return (
 		<div
 			ref={attachStage}
 			data-slot="pane-stages"
 			data-presenting={presented ? "" : undefined}
-			className="bg-sidebar relative flex min-h-0 min-w-0 flex-1 flex-col"
+			className="bg-sidebar relative flex min-h-0 min-w-0 flex-1 flex-col overflow-clip"
 		>
 			<Notices notices={props.notices} actions={actions} />
 			<PresentationChrome
