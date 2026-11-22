@@ -20,9 +20,7 @@
 
 import type { Node } from "web-tree-sitter";
 import type { Definition, Reference } from "#runtime/code-facts/operations/facts.ts";
-
-/** How a call site runs its callee, as a reader is told it. */
-type CallTiming = "awaited" | "started" | "plain" | "unknown";
+import type { CallTiming } from "#shared/protocol/code-check.ts";
 
 /**
  * How a call site runs its callee, as its file alone says it: `unawaited`
@@ -202,7 +200,6 @@ function timingMark(site: CallSite | undefined): Pick<Reference, "timing"> {
 
 export {
 	type CallSite,
-	type CallTiming,
 	type TimingSyntax,
 	callKindOf,
 	callSiteOf,

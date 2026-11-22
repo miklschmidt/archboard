@@ -39,6 +39,7 @@ import {
 	type ClaimSite,
 } from "#runtime/code-check/claims/operations/claims.ts";
 import { judgeAnchorKind } from "#runtime/code-check/claims/operations/anchor-kind.ts";
+import { judgeCallTiming } from "#runtime/code-check/claims/operations/call-timing-kind.ts";
 import {
 	anchorPathMissing,
 	anchorSymbolMissing,
@@ -356,7 +357,8 @@ async function judgeAnchorSymbol(
 /**
  * Whether an anchor that holds does not support its relationship or step: its
  * symbol is defined outside the bound code of both ends, or its uses are all
- * of an evidence kind its relationship kind does not accept.
+ * of an evidence kind its relationship kind does not accept; or, where it
+ * supports it, whether its kind says how its call runs.
  * @param claim The anchor.
  * @param file The anchored file.
  * @param checkout Its checkout.
@@ -372,7 +374,11 @@ async function anchorMismatch(
 	const context = { ...pass, search: searchOf(checkout, pass) };
 	const outside = await judgeSupport(claim, file, checkout, context);
 	const facts = await pass.facts.read(checkout, file);
-	return outside ?? judgeAnchorKind(claim, facts, { resolve: pass.resolve, checkout });
+	return (
+		outside ??
+		(await judgeAnchorKind(claim, facts, { resolve: pass.resolve, checkout })) ??
+		judgeCallTiming(claim, facts, { ...pass, checkout })
+	);
 }
 
 /**
