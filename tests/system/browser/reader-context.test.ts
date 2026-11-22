@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { pressSettings } from "./support/shell-dom.ts";
-import { openDiagram, pick, settledOn } from "./support/canonical-page.ts";
+import { chooseFlow, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const DOOR = `[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]`;
@@ -84,6 +84,27 @@ function column(browser: AgentBrowserSession) {
 			more: document.querySelectorAll('[data-slot="model-panel-more"]').length,
 		};
 	})()`);
+}
+
+/** The right column's lists of what a reader looks at, which start folded. */
+const LISTS = ["model-panel-flows", "model-panel-walkthroughs"];
+
+/**
+ * Unfold the right column's lists once both stand folded, as they start, from their heads.
+ * @param browser The page.
+ */
+async function unfold(browser: AgentBrowserSession): Promise<void> {
+	const heads = LISTS.map((slot) => `[data-slot="${slot}"] button[aria-expanded]`);
+	await pollUntil(
+		() =>
+			browser.eval<(string | null)[]>(
+				`${JSON.stringify(heads)}.map((head) => document.querySelector(head)?.getAttribute('aria-expanded') ?? null)`,
+			),
+		(expanded) => expanded.every((one) => one === "false"),
+		"the folded lists",
+		WAIT,
+	);
+	for (const head of heads) await browser.run(["click", head]);
 }
 
 /**
@@ -220,8 +241,10 @@ test("the right column follows what a reader looks at, and the left column holds
 	const counts = ["7", "2"];
 	expect(await column(browser)).toMatchObject({ flows: [], walkthroughs: [], counts });
 
-	// A selection decides what the lists say, also at the roots.
+	// A selection decides what the lists say, also at the roots. They start folded, and a head
+	// unfolds its list.
 	await pick(browser, "Shop#Worker");
+	await unfold(browser);
 	await lists(browser, { flows: ["Shop#Drain"], walkthroughs: ["Shop#Work"] });
 
 	// A selected module that holds parts says what it offers. Its one caller names the module itself,
@@ -246,6 +269,7 @@ test("the right column follows what a reader looks at, and the left column holds
 	// The open module decides them while nothing is selected. A long list shows a few rows.
 	await browser.run(["click", '[data-module-row="Shop#Gateway"]']);
 	await settledOn(browser, "Shop#Gateway");
+	await unfold(browser);
 	await lists(browser, { flows: GATEWAY_FLOWS.slice(0, 4), walkthroughs: ["Shop#Handle"] });
 	expect(await column(browser)).toMatchObject({ counts, more: 1 });
 	await browser.run(["click", '[data-slot="model-panel-more"]']);
@@ -262,6 +286,21 @@ test("the right column follows what a reader looks at, and the left column holds
 	);
 	expect(await measures(browser)).toBeNull();
 	await browser.run(["click", CLEAR]);
+
+	// A flow opened from the left column unfolds the list that holds it, which stays open after.
+	await chooseFlow(browser, "Shop#Req1");
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-context-row="${GATEWAY_FLOWS[0]}"]')?.getAttribute('aria-current') ?? null`,
+			),
+		(current) => current === "location",
+		"the flow on screen in the unfolded list",
+		WAIT,
+	);
+	await browser.run(["press", "Backspace"]);
+	await settledOn(browser, "Shop#Gateway");
+	await drawn(browser);
 
 	// A row opens its flow, in the place that offers its representation.
 	await browser.run(["click", `[data-context-row="${GATEWAY_FLOWS[0]}"]`]);
@@ -287,7 +326,8 @@ test("the right column follows what a reader looks at, and the left column holds
 	await settledOn(browser, "Shop#Gateway");
 	await drawn(browser);
 
-	// A row opens its walkthrough.
+	// A row opens its walkthrough, once its head unfolds the list.
+	await browser.run(["click", '[data-slot="model-panel-walkthroughs"] button[aria-expanded]']);
 	await browser.run(["click", '[data-context-row="Shop#Handle"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${LEAVE}') !== null`),

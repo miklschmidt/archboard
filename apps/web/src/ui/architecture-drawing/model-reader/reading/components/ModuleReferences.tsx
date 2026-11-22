@@ -1,5 +1,7 @@
 import { useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
+import { ModelPanel } from "#ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx";
+import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
 import type { Model } from "@archboard/model/content";
 import type { useModelNavigation } from "#ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-model-navigation.ts";
 import { useReferenceNavigation } from "#ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-reference-navigation.ts";
@@ -19,10 +21,14 @@ interface ModuleReferencesProps {
 function ModuleReferences(props: ModuleReferencesProps): JSX.Element {
 	const action = useReferenceNavigation(props.paneId, props.navigation);
 	return (
-		<section className="space-y-3">
-			<h4 className="text-title font-semibold">References</h4>
+		<ModelPanel.Section
+			icon={SECTION_ICONS.references}
+			title="References"
+			slot="module-references"
+			list={false}
+		>
 			{action.error !== null && (
-				<p role="alert" data-slot="module-reference-error" className="text-body">
+				<p role="alert" data-slot="module-reference-error" className="text-body mb-3">
 					{action.error}
 				</p>
 			)}
@@ -38,7 +44,7 @@ function ModuleReferences(props: ModuleReferencesProps): JSX.Element {
 					/>
 				))}
 			</ul>
-		</section>
+		</ModelPanel.Section>
 	);
 }
 

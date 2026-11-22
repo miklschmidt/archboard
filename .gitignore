@@ -35,6 +35,9 @@ site/src/generated/
 # Logs
 *.log
 
+# Run outputs of agents and tools, such as archboard-deepen reports: kept on disk, never tracked
+/artifacts/
+
 # Editor artifacts
 .cursor/
 .agent/
