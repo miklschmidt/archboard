@@ -328,7 +328,8 @@ function Head(props: {
  * @param props.slot Where a test finds it.
  * @param props.action What acts on the list, at the end of its heading before the chevron.
  * @param props.list Whether it holds rows, which is the default, or other content.
- * @param props.folded Whether it starts folded, which a list that a reader seldom needs does.
+ * @param props.folded Whether it asks to stand folded, as a list that a reader seldom needs does. It
+ * unfolds when it stops asking.
  * @param props.children Its rows.
  * @returns The section.
  */

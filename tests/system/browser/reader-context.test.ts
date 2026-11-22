@@ -7,7 +7,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { pressSettings } from "./support/shell-dom.ts";
-import { openDiagram, pick, settledOn } from "./support/canonical-page.ts";
+import { chooseFlow, openDiagram, pick, settledOn } from "./support/canonical-page.ts";
 import { WAIT, drawn, openReader } from "./support/reader-page.ts";
 
 const DOOR = `[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]`;
@@ -287,9 +287,22 @@ test("the right column follows what a reader looks at, and the left column holds
 	expect(await measures(browser)).toBeNull();
 	await browser.run(["click", CLEAR]);
 
-	// A row opens its flow, in the place that offers its representation. The list that holds the
-	// flow on screen stands open.
-	await unfold(browser);
+	// A flow opened from the left column unfolds the list that holds it, which stays open after.
+	await chooseFlow(browser, "Shop#Req1");
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-context-row="${GATEWAY_FLOWS[0]}"]')?.getAttribute('aria-current') ?? null`,
+			),
+		(current) => current === "location",
+		"the flow on screen in the unfolded list",
+		WAIT,
+	);
+	await browser.run(["press", "Backspace"]);
+	await settledOn(browser, "Shop#Gateway");
+	await drawn(browser);
+
+	// A row opens its flow, in the place that offers its representation.
 	await browser.run(["click", `[data-context-row="${GATEWAY_FLOWS[0]}"]`]);
 	await pollUntil(
 		() =>
@@ -313,7 +326,8 @@ test("the right column follows what a reader looks at, and the left column holds
 	await settledOn(browser, "Shop#Gateway");
 	await drawn(browser);
 
-	// A row opens its walkthrough. Back on the same subject, the lists stay as the reader left them.
+	// A row opens its walkthrough, once its head unfolds the list.
+	await browser.run(["click", '[data-slot="model-panel-walkthroughs"] button[aria-expanded]']);
 	await browser.run(["click", '[data-context-row="Shop#Handle"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('${LEAVE}') !== null`),

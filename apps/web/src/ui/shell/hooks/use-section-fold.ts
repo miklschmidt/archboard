@@ -10,14 +10,20 @@ interface SectionFold {
 }
 
 /**
- * The fold of a section that keeps its own, from how it starts.
- * @param startFolded Whether the section starts folded.
+ * The fold of a section that keeps its own. It starts folded when it is asked to, and it unfolds
+ * when it stops being asked, as a list does that comes to hold what is on screen. It never folds
+ * of itself, so a section that a reader unfolded stays open.
+ * @param asked Whether the section asks to stand folded.
  * @returns Whether it is folded, the way to turn it, and the id of its body.
  */
-function useSectionFold(startFolded: boolean): SectionFold {
-	const [folded, setFolded] = useState(startFolded);
-	const onFold = useCallback((): void => setFolded((was) => !was), []);
-	return { folded, onFold, controls: useId() };
+function useSectionFold(asked: boolean): SectionFold {
+	const [fold, setFold] = useState({ asked, folded: asked });
+	if (fold.asked !== asked) setFold({ asked, folded: fold.folded && asked });
+	const onFold = useCallback(
+		(): void => setFold((was) => ({ asked: was.asked, folded: !was.folded })),
+		[],
+	);
+	return { folded: fold.folded, onFold, controls: useId() };
 }
 
 export { useSectionFold, type SectionFold };

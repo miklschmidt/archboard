@@ -653,7 +653,7 @@ module selected, a quiet key at the foot expands or collapses it.
 
 Under what it says, the panel lists the flows and the walkthroughs that touch the
 selection, or else the open module. At the roots with nothing selected it lists neither.
-Both lists start folded, because a reader seldom needs them, unless the flow on screen is among the flows. Every other section starts open.
+Both lists start folded, because a reader seldom needs them, unless the flow on screen is among the flows. A flow that opens from elsewhere unfolds the list that holds it, and the list stays open when the flow closes. Every other section starts open.
 Each list has a count, four rows and a row that says how many more. The flows stand under
 the names of their collections, as in the left column: the name of a collection is a line in
 Control at weight 500 and full ink after the icon of collections, and its flows stand 22px deeper, under the words of its name, on a rail that hangs from that icon and ends in a tick into the last flow. A
