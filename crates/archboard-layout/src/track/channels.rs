@@ -21,6 +21,9 @@ use crate::track::tracks::{Unit, stack_units};
 
 /// How far a port keeps from a card's corner.
 pub(crate) const PORT_MARGIN: f64 = 20.0;
+/// How many lanes apart two lines that read as one turn, past the three lanes within which
+/// one line's drop reads as running on into the other's.
+const HAND_OFF: usize = 4;
 
 /// An end of a net: its upper station's bottom face, or its lower station's top face.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -432,16 +435,26 @@ impl Track<'_> {
 
     /// Assign the tracks of one channel, and answer how many lanes they take. The rows of
     /// tracks pack a lane apart, two where a row holds a detour, which turns on the track
-    /// under its own.
+    /// under its own. Two lines that read as one, the first turning off a column where the
+    /// second turns onto it, keep a hand-off apart, so the gap between their turns parts them.
     pub(crate) fn assign_tracks(&mut self, nets: &[NetId]) -> usize {
         let units = self.units_of(nets);
         let plain: Vec<Unit> = units.iter().map(|(unit, _)| unit.clone()).collect();
         let tracks = stack_units(&plain);
-        let Some(rows) = tracks.iter().map(|&(_, row)| row + 1).max() else {
-            return 0;
-        };
-        let mut takes = vec![1; rows];
+        let lanes = self.lanes_of(&units, &tracks);
         for &(unit, row) in &tracks {
+            for &net in &units[unit].1 {
+                self.net_mut(net).track = lanes[row];
+            }
+        }
+        lanes.last().copied().unwrap_or(0)
+    }
+
+    /// The lane each row of tracks stands on, and last how many lanes the rows take.
+    fn lanes_of(&self, units: &[(Unit, Vec<NetId>)], tracks: &[(usize, usize)]) -> Vec<usize> {
+        let rows = tracks.iter().map(|&(_, row)| row + 1).max().unwrap_or(0);
+        let mut takes = vec![1; rows];
+        for &(unit, row) in tracks {
             if units[unit]
                 .1
                 .iter()
@@ -450,20 +463,24 @@ impl Track<'_> {
                 takes[row] = 2;
             }
         }
-        let lanes: Vec<usize> = takes
-            .iter()
-            .scan(0, |lane, &take| {
-                let at = *lane;
-                *lane += take;
-                Some(at)
-            })
-            .collect();
-        for &(unit, row) in &tracks {
-            for &net in &units[unit].1 {
-                self.net_mut(net).track = lanes[row];
-            }
+        let mut lanes: Vec<usize> = vec![0];
+        for row in 0..rows {
+            let handed = (tracks.iter())
+                .filter(|&&(_, at)| at == row)
+                .flat_map(|&(unit, _)| tracks.iter().map(move |&(other, at)| (unit, other, at)))
+                .filter(|&(unit, other, at)| {
+                    at < row && self.handed(&units[unit].1, &units[other].1)
+                })
+                .map(|(.., at)| lanes[at] + HAND_OFF);
+            lanes[row] = handed.fold(lanes[row], usize::max);
+            lanes.push(lanes[row] + takes[row]);
         }
-        takes.iter().sum()
+        lanes
+    }
+
+    /// Whether a net of one unit and a net of another read as one line.
+    fn handed(&self, one: &[NetId], other: &[NetId]) -> bool {
+        (one.iter()).any(|&a| (other.iter()).any(|&b| self.collinear(a, b) || self.collinear(b, a)))
     }
 }
 
@@ -474,11 +491,12 @@ mod tests {
     use crate::track::scene::Placement;
 
     #[test]
-    fn two_lines_that_read_as_one_turn_a_lane_apart() {
+    fn only_two_lines_that_read_as_one_keep_a_hand_off_apart() {
         let mut scene = Placement::default();
         let mut track = Track::new(&mut scene);
-        // One line comes down at 0 and turns right; the other turns down at 5, within a lane.
-        let nets: Vec<NetId> = [(0.0, 100.0), (200.0, 5.0)]
+        // One line comes down at 0 and turns right; the next turns down at 5, within a lane of
+        // it; the third crosses both and reads as neither.
+        let nets: Vec<NetId> = [(0.0, 100.0), (200.0, 5.0), (50.0, 150.0)]
             .into_iter()
             .enumerate()
             .map(|(at, (top_x, bottom_x))| {
@@ -501,8 +519,9 @@ mod tests {
             })
             .collect();
         assert!(track.collinear(nets[0], nets[1]));
-        assert_eq!(track.assign_tracks(&nets), 2);
-        let turns: Vec<usize> = nets.iter().map(|&net| track.net(net).track).collect();
-        assert_eq!(turns.iter().max().unwrap() - turns.iter().min().unwrap(), 1);
+        track.assign_tracks(&nets);
+        let at = |net: usize| track.net(nets[net]).track;
+        assert!(at(0).abs_diff(at(1)) >= HAND_OFF);
+        assert_eq!(at(2).abs_diff(at(0)).min(at(2).abs_diff(at(1))), 1);
     }
 }
