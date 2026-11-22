@@ -65,7 +65,8 @@ function ModelLensPresets(props: {
  */
 function lensStatus(outcome: LensOutcome): string {
 	const { lens, leftOut, emptyLens } = outcome;
-	if (emptyLens !== undefined) return `${emptyLens.name} has no lines here · Showing ${lens.name.toLowerCase()}`;
+	if (emptyLens !== undefined)
+		return `${emptyLens.name} has no lines here · Showing ${lens.name.toLowerCase()}`;
 	if (leftOut === 0) return lens.name;
 	return `${lens.name} · ${leftOut === 1 ? "1 line" : `${String(leftOut)} lines`} left out`;
 }

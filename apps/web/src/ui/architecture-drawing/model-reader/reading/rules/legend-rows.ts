@@ -239,6 +239,11 @@ function relationshipRows(reading: RelationshipReading): RelationshipRows {
 			dash: policy.relationshipKinds[id]?.dash ?? UNKNOWN_KIND.dash,
 			...standing((edge) => edge.kind === id, hidden.has(id)),
 		}));
+	/**
+	 * What a relationship's line says it does under the policy.
+	 * @param edge The relationship.
+	 * @returns Its effect, or undefined.
+	 */
 	const said = (edge: Edge) => drawnEffect(edge, policy);
 	const effects = effectKey()
 		.filter((entry) => every.some((edge) => said(edge) === entry.effect))

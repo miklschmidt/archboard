@@ -246,7 +246,13 @@ function Relationships(props: RelationshipsProps): JSX.Element | null {
 		>
 			{props.children}
 			<Switches slot="model-legend-lines" field="kind" rows={kinds} onHide={hideKinds} />
-			<Switches slot="model-legend-effects" field="effect" rows={effects} onHide={hideEffects} spaced />
+			<Switches
+				slot="model-legend-effects"
+				field="effect"
+				rows={effects}
+				onHide={hideEffects}
+				spaced
+			/>
 			<LeftOut kinds={kinds} effects={effects} />
 			<Marks marks={props.marks} standings={props.standings} />
 		</ModelPanel.Section>
@@ -450,7 +456,7 @@ function SwitchRow(props: {
 				aria-label={`Show only ${name} lines`}
 				title={`Show only ${name} lines`}
 				onClick={solo}
-				className="flex min-h-7 min-w-0 flex-1 items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-control"
+				className="focus-visible:ring-ring rounded-control flex min-h-7 min-w-0 flex-1 items-center gap-2 outline-none focus-visible:ring-2"
 			>
 				<Mark name={name} dimmed={dimmed}>
 					<RowSample row={row} />

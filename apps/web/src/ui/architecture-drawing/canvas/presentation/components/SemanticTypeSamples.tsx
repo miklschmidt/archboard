@@ -174,7 +174,10 @@ const NEUTRAL_LINE = "var(--diagram-edge)";
  * @param props.width How wide the sample stands.
  * @returns The sample.
  */
-function EffectSample(props: { readonly entry: EffectKeyEntry; readonly width: number }): JSX.Element {
+function EffectSample(props: {
+	readonly entry: EffectKeyEntry;
+	readonly width: number;
+}): JSX.Element {
 	const size = effectSampleSize();
 	const markup = useMemo(() => ({ __html: props.entry.sample }), [props.entry.sample]);
 	return (

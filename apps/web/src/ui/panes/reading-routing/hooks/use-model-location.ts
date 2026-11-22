@@ -1,18 +1,20 @@
 import { useCallback, useContext, useMemo } from "react";
 import { ModelExplanationContext } from "#ui/architecture-drawing/model-reader/state/explanations.ts";
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { validateWorkspaceSearch } from "#ui/panes/reading-routing/rules/search.ts";
+import {
+	effectList,
+	searchValue,
+	validateWorkspaceSearch,
+} from "#ui/panes/reading-routing/rules/search.ts";
 import type { ModelAddress } from "#ui/panes/reading-routing/rules/address.ts";
 import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
-import { allLens, type ModelFilters } from "@archboard/model/content";
-import { lineEffect, lineEffectSchema } from "@archboard/model/policy";
+import { allLens } from "@archboard/model/content";
+import { lineEffect } from "@archboard/model/policy";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
-/** An effect a reader can hide. */
-type HiddenEffect = NonNullable<ModelFilters["hideEffects"]>[number];
 /** The two lists of what a reader hid besides the lens. */
 type FilterField = "hideKinds" | "hideEffects";
 
@@ -344,7 +346,11 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		selectLens(allLens());
 	}, [selectLens]);
 	const reveal = useCallback(
-		(ids: readonly string[], edges: readonly Parameters<typeof lineEffect>[0][], widen: boolean): void => {
+		(
+			ids: readonly string[],
+			edges: readonly Parameters<typeof lineEffect>[0][],
+			widen: boolean,
+		): void => {
 			const kinds = new Set(edges.map((edge) => edge.kind));
 			const effects = new Set(edges.map(lineEffect));
 			const hidden = filters.hideKinds.filter((kind) => !kinds.has(kind));
@@ -536,36 +542,12 @@ function filePicture(
 }
 
 /**
- * The effects an address hides, leaving out a word that names no effect.
- * @param value The validated search value, or absence.
- * @returns The effects.
- */
-function effectList(value: string | undefined): HiddenEffect[] {
-	return (value?.split(",") ?? []).flatMap((word) => {
-		const parsed = lineEffectSchema().safeParse(word);
-		return parsed.success ? [parsed.data] : [];
-	});
-}
-
-/**
  * Missing optional address fields have one absent-value convention in the reader.
  * @param value A validated string parameter, or absence.
  * @returns The requested value or null.
  */
 function nullableParameter(value: string | undefined): string | null {
 	return value ?? null;
-}
-
-/**
- * Reading fields serialize without making missing values into names.
- * @param value A field of the canonical address.
- * @returns Its search value, or absence.
- */
-function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefined {
-	if (value === null || value === undefined) return undefined;
-	if (typeof value === "string") return value;
-	// An empty list narrows nothing, and `focus=` would read back as one empty identity.
-	return value.length === 0 ? undefined : value.join(",");
 }
 
 export { useModelLocation, type FileTarget, type FilterField, type ReadingTarget };

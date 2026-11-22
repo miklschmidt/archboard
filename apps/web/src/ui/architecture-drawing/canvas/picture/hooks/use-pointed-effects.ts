@@ -20,7 +20,9 @@ interface PointedLine {
  */
 function pointedLines(lines: readonly PointedLine[], part: string): readonly string[] {
 	if (lines.some(({ line }) => line.id === part)) return [part];
-	return lines.filter(({ line }) => line.from === part || line.to === part).map(({ line }) => line.id);
+	return lines
+		.filter(({ line }) => line.from === part || line.to === part)
+		.map(({ line }) => line.id);
 }
 
 /**

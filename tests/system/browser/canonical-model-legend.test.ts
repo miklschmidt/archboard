@@ -165,7 +165,12 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 		WAIT,
 	);
 	const rest = await wordsAt(browser);
-	expect(await switches(browser)).toEqual(["sync: true", "event: true", "data: true", "mutation: true"]);
+	expect(await switches(browser)).toEqual([
+		"sync: true",
+		"event: true",
+		"data: true",
+		"mutation: true",
+	]);
 	expect(await lensOf(browser)).toBe("Main lines · 1 line left out");
 	expect(
 		await browser.eval<{ leftOut: string[]; marks: number; switches: number }>(`(() => {
@@ -205,7 +210,12 @@ test("each kind and effect is its own switch, the legend's words stay put while 
 		"the second door gone, hidden from the keyboard",
 		WAIT,
 	);
-	expect(await switches(browser)).toEqual(["sync: false", "event: false", "data: true", "mutation: true"]);
+	expect(await switches(browser)).toEqual([
+		"sync: false",
+		"event: false",
+		"data: true",
+		"mutation: true",
+	]);
 	expect(await wordsAt(browser)).toBe(rest);
 
 	// Data already stands alone, so its name shows every kind again; Sync's name shows Sync alone.

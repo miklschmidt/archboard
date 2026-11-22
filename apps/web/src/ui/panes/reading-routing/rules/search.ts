@@ -22,12 +22,17 @@
 // Search parameters rather than path segments because the Archboard server serves
 // the page at `/` alone, so a path would answer 404 on every direct load.
 
+import type { ModelFilters } from "@archboard/model/content";
+import { lineEffectSchema } from "@archboard/model/policy";
 import {
 	settledAddress,
 	type AddressedPane,
 	type ModelAddress,
 	type WorkspaceAddress,
 } from "#ui/panes/reading-routing/rules/address.ts";
+
+/** An effect a reader can hide. */
+type HiddenEffect = NonNullable<ModelFilters["hideEffects"]>[number];
 
 /** The search parameters this application owns, as they appear in the URL. */
 type WorkspaceSearch = Readonly<Record<string, string>>;
@@ -360,8 +365,34 @@ function searchOfRepository(
 	return { ...Object.fromEntries(kept), [repoParam(paneId)]: repository };
 }
 
+/**
+ * The effects an address hides, leaving out a word that names no effect.
+ * @param value The validated search value, or absence.
+ * @returns The effects.
+ */
+function effectList(value: string | undefined): HiddenEffect[] {
+	return (value?.split(",") ?? []).flatMap((word) => {
+		const parsed = lineEffectSchema().safeParse(word);
+		return parsed.success ? [parsed.data] : [];
+	});
+}
+
+/**
+ * Reading fields serialize without making missing values into names.
+ * @param value A field of the canonical address.
+ * @returns Its search value, or absence.
+ */
+function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefined {
+	if (value === null || value === undefined) return undefined;
+	if (typeof value === "string") return value;
+	// An empty list narrows nothing, and `focus=` would read back as one empty identity.
+	return value.length === 0 ? undefined : value.join(",");
+}
+
 export {
 	addressFromSearch,
+	effectList,
+	searchValue,
 	parseWorkspaceSearchString,
 	searchFromAddress,
 	searchOfRepository,

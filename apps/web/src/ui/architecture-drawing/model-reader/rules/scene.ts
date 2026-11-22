@@ -245,11 +245,7 @@ function hidesAny(filters: ReadingFilters): boolean {
  * @returns True with a focus or a filter.
  */
 function isNarrowed(reading: SceneReading): boolean {
-	return (
-		reading.focus !== null ||
-		hidesAny(reading.filters) ||
-		reading.filters.lens !== undefined
-	);
+	return reading.focus !== null || hidesAny(reading.filters) || reading.filters.lens !== undefined;
 }
 
 /**

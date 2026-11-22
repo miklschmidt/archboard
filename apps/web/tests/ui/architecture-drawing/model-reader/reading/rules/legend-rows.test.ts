@@ -16,18 +16,26 @@ type Relationship = Model["relationships"][number];
  * @param edges Each relationship's id, ends, kind and effect.
  * @returns The model.
  */
-function shopWith(edges: readonly Pick<Relationship, "id" | "from" | "to" | "kind" | "effect">[]): Model {
+function shopWith(
+	edges: readonly Pick<Relationship, "id" | "from" | "to" | "kind" | "effect">[],
+): Model {
 	return {
 		...SHOP,
 		relationships: edges.map((edge, order) => ({ order, emphasis: "normal", ...edge })),
-	} as Model;
+	};
 }
 
 const SHOP_LINES = shopWith([
 	{ id: "Shop#Write", from: "Shop#Handler", to: "Shop#Queue", kind: "sync", effect: "mutation" },
 	{ id: "Shop#Look", from: "Shop#Handler", to: "Shop#Queue", kind: "sync", effect: "query" },
 	{ id: "Shop#Fetch", from: "Shop#Gateway", to: "Shop#Worker", kind: "http", effect: "query" },
-	{ id: "Shop#Needs", from: "Shop#Decode", to: "Shop#Queue", kind: "dependency", effect: undefined },
+	{
+		id: "Shop#Needs",
+		from: "Shop#Decode",
+		to: "Shop#Queue",
+		kind: "dependency",
+		effect: undefined,
+	},
 ]);
 
 test("the legend lists every kind and effect of the scope, and sets apart what the lens leaves out", () => {
@@ -37,11 +45,13 @@ test("the legend lists every kind and effect of the scope, and sets apart what t
 		projection,
 		hideKinds: ["http"],
 	});
-	expect(kinds.map(({ id, hidden, dimmed, leftOut }) => ({ id, hidden, dimmed, leftOut }))).toEqual([
-		{ id: "sync", hidden: false, dimmed: false, leftOut: false },
-		{ id: "http", hidden: true, dimmed: true, leftOut: false },
-		{ id: "dependency", hidden: false, dimmed: true, leftOut: true },
-	]);
+	expect(kinds.map(({ id, hidden, dimmed, leftOut }) => ({ id, hidden, dimmed, leftOut }))).toEqual(
+		[
+			{ id: "sync", hidden: false, dimmed: false, leftOut: false },
+			{ id: "http", hidden: true, dimmed: true, leftOut: false },
+			{ id: "dependency", hidden: false, dimmed: true, leftOut: true },
+		],
+	);
 	// Main lines draws a query only over HTTP, which the reader hid, so the picture draws no query.
 	expect(effects.map(({ id, dimmed, leftOut }) => ({ id, dimmed, leftOut }))).toEqual([
 		{ id: "mutation", dimmed: false, leftOut: false },
@@ -64,7 +74,13 @@ test("a row's name shows it alone, again shows every row, and its eye toggles on
 
 test("the line above the picture says when the default lens drew nothing and every relationship shows", () => {
 	const declared = shopWith([
-		{ id: "Shop#Needs", from: "Shop#Decode", to: "Shop#Queue", kind: "dependency", effect: undefined },
+		{
+			id: "Shop#Needs",
+			from: "Shop#Decode",
+			to: "Shop#Queue",
+			kind: "dependency",
+			effect: undefined,
+		},
 	]);
 	expect(lensStatus(projectModel(declared))).toBe(
 		"Main lines has no lines here · Showing all relationships",
