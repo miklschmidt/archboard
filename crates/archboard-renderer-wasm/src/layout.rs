@@ -1,4 +1,4 @@
-//! The layout's binding: one Blocks solve of a picture, its measured
+//! The layout's binding: one Blocks or Lanes solve of a picture, its measured
 //! graph in and its answer out, each as JSON. A host's layout engine runs it
 //! for each solve a render asks for (`crate::render`). Graphviz runs in the
 //! core (`archboard_graphviz`, ADR 0060), so a solve asks its host for nothing.
