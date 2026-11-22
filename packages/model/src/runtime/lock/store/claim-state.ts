@@ -1,4 +1,4 @@
-import { claimMs, modelLockMs } from "@archboard/timing";
+import { every, ms } from "@archboard/timing";
 import { modelMemoryKey } from "#runtime/store/legacy-address.ts";
 import type {
 	Claim,
@@ -37,7 +37,7 @@ function claimOf(model: string, entry: ClaimEntry): Claim {
  */
 function stopRenewing(entry: ClaimEntry): void {
 	if (entry.timer) {
-		clearInterval(entry.timer);
+		entry.timer();
 	}
 	entry.timer = null;
 }
@@ -122,7 +122,7 @@ function renewClaim(vault: string, model: string): void {
 	if (!entry) {
 		return;
 	}
-	const renewed = renewRecord(vault, model, entry.holder.id, claimMs("lease"));
+	const renewed = renewRecord(vault, model, entry.holder.id, ms("claim.lease"));
 	if (renewed) {
 		entry.holder = renewed;
 		return;
@@ -154,15 +154,12 @@ function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
  * claim long. This timer never moves the separate claim expiry.
  * @param vault The vault root the legacy board lives in.
  * @param model The legacy board key.
- * @returns The timer, so the claim can stop it.
+ * @returns Stops the renewal, so the claim can stop it.
  */
-function startRenewing(vault: string, model: string): ReturnType<typeof setInterval> {
-	const timer = setInterval(() => {
+function startRenewing(vault: string, model: string): () => void {
+	return every("modelLock.renew", () => {
 		renewClaim(vault, model);
-	}, modelLockMs("renew"));
-	// Renewal must not be the reason a process stays alive.
-	timer.unref();
-	return timer;
+	});
 }
 
 /**

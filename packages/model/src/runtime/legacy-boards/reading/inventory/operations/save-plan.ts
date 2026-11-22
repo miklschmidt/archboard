@@ -40,7 +40,7 @@ async function saveLegacyMappingPlan(
 				vault,
 				model: "@migration-plan",
 				holder: { id: mintId(), kind: "agent", reason: description.doing },
-				waitMs: 0,
+				waits: false,
 			},
 			() => {
 				const authority = legacyAuthorityProblem(vault);

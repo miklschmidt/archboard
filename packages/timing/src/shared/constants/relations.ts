@@ -46,6 +46,28 @@ const RELATIONS: readonly Relation[] = [
 	// A job's document loads inside the job's bound, and a DevTools call fits inside a job.
 	["raster.documentLoad", "=", "raster.job"],
 	["chromium.call", "<=", "raster.job"],
+	// An agent waiting on a crashed holder outlasts its lease and gets the model.
+	["modelLock.lease", "<", "modelLock.wait"],
+	// A reader waits out a write as long as an agent does.
+	["modelLock.readerWait", "=", "modelLock.wait"],
+	// Two renewals can go missing before a live holder loses the model.
+	[["modelLock.renew", "modelLock.renew"], "<", "modelLock.lease"],
+	// A pane learns of a claim about as fast as the claim's lease moves.
+	["modelLock.watch", "=", "modelLock.renew"],
+	// One lease length serves the lock, the claim beneath a campaign and the registry's lock.
+	["claim.lease", "=", "modelLock.lease"],
+	["registry.lockLease", "=", "modelLock.lease"],
+	// A campaign outlasts its lease, a claim of subjects runs one default campaign, and the cap is longest.
+	["claim.lease", "<", "claim.campaign"],
+	["claim.subjects", "=", "claim.campaign"],
+	["claim.campaign", "<", "claim.campaignMax"],
+	// A steal's read-back waits far less than a lease.
+	["modelLock.stealGuard", "<", "modelLock.lease"],
+	// A sender's claim goes stale long before its record is old enough to drop, and many rounds fit in both.
+	["telemetry.round", "<", "telemetry.staleClaim"],
+	["telemetry.staleClaim", "<", "telemetry.keep"],
+	// A post ends long before the next round.
+	["telemetry.send", "<", "telemetry.round"],
 ];
 
 export { RELATIONS };

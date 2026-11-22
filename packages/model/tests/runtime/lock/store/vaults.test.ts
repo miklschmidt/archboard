@@ -3,7 +3,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
-import { modelLockMs } from "@archboard/timing";
+
+/** The reviewed interval at which a server looks at the lock files on its screen. A test number beside the product's. */
+const WATCH_MS = 1000;
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
 
@@ -32,7 +34,7 @@ test("a model of one name in two vaults keeps its claim, lease and announcements
 
 		// A writer in vault B is not blocked by the claim in vault A.
 		const wrote = await lock.withLease(
-			{ vault: vaultB, model: "payments", holder: { id: "writer-b", kind: "agent" }, waitMs: 0 },
+			{ vault: vaultB, model: "payments", holder: { id: "writer-b", kind: "agent" }, waits: false },
 			() => "written",
 		);
 		expect(wrote).toBe("written");
@@ -53,7 +55,7 @@ test("the lock sweep reads each model on screen in its own vault", async () => {
 		vault: vaultB,
 		model: "payments",
 		holder: { id: "another-server", kind: "agent" },
-		waitMs: 0,
+		waits: false,
 	});
 	lock.forgetLockAnnouncements();
 	const told: Array<{ vault: string; held: boolean }> = [];
@@ -68,7 +70,7 @@ test("the lock sweep reads each model on screen in its own vault", async () => {
 				{ vault: vaultB, model: "Payments" },
 			],
 		});
-		jest.advanceTimersByTime(modelLockMs("watch"));
+		jest.advanceTimersByTime(WATCH_MS);
 		expect(told).toEqual([
 			{ vault: vaultA, held: false },
 			{ vault: vaultB, held: true },

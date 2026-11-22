@@ -11,7 +11,7 @@ import {
 	type ArchitectureModelRead,
 } from "@archboard/model/contract";
 import { inVault, strictReply, type ReplySchema } from "@archboard/server-requests";
-import { modelCacheMs, modelLockMs } from "@archboard/timing";
+import { modelCacheMs, ms } from "@archboard/timing";
 
 type StateSelection = {
 	readonly [Field in "ref" | "state" | "against" | "preview" | "bookmark" | "legacyAddress"]?:
@@ -74,7 +74,7 @@ function isBusy(failure: { readonly code: string }): boolean {
 }
 
 /** How often a busy read reads again: for as long as an agent waits for a model. */
-const BUSY_RETRIES = Math.ceil(modelLockMs("waitCap") / modelCacheMs("busyRetry"));
+const BUSY_RETRIES = Math.ceil(ms("modelLock.readerWait") / modelCacheMs("busyRetry"));
 
 /**
  * A read that meets a write reads again until the write lands, so the reader keeps its picture

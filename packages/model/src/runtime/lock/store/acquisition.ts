@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { modelLockMs } from "@archboard/timing";
+import { after, ms, pollUntil, TimedOut } from "@archboard/timing";
 import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { noteClaimRevoked, processClaims } from "#runtime/lock/store/claim-state.ts";
 import {
@@ -193,68 +193,6 @@ type Attempt =
 	| { ok: false; record: LockRecord | null };
 
 /**
- * Wait, without a signal to wait on.
- * @param ms How long.
- * @returns When the time is up.
- */
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => {
-		setTimeout(resolve, ms);
-	});
-}
-
-/**
- * Wait one poll interval before looking at the lease again.
- *
- * Waiting is filesystem polling because another process has no signal it can
- * send here. Abort removes both the timer and the listener, so a disconnected
- * request does not consume application shutdown time.
- * @param model The legacy board key, for the message a cancelled wait carries.
- * @param ms How long to wait.
- * @param signal Cancels the wait when the request goes away.
- * @returns When the interval is up.
- * @throws {ModelLockCancelledError} When the request goes away first.
- */
-function waitForLockPoll(model: string, ms: number, signal?: AbortSignal): Promise<void> {
-	if (signal?.aborted) {
-		return Promise.reject(new ModelLockCancelledError(model));
-	}
-	return new Promise((resolve, reject) => {
-		let timer: ReturnType<typeof setTimeout> | null = null;
-		/**
-		 * End the wait once, either way, dropping the timer and the listener.
-		 * @param cancelled Whether the request went away rather than the time being up.
-		 */
-		const settle = (cancelled: boolean): void => {
-			if (timer === null) {
-				return;
-			}
-			clearTimeout(timer);
-			timer = null;
-			signal?.removeEventListener("abort", onAbort);
-			if (cancelled) {
-				reject(new ModelLockCancelledError(model));
-			} else {
-				resolve();
-			}
-		};
-		/**
-		 * End the wait because the request went away.
-		 */
-		const onAbort = (): void => {
-			settle(true);
-		};
-		timer = setTimeout(() => {
-			settle(false);
-		}, ms);
-		signal?.addEventListener("abort", onAbort, { once: true });
-		if (signal?.aborted) {
-			settle(true);
-		}
-	});
-}
-
-/**
  * One try at taking the legacy board.
  *
  * Three ordinary states: the same holder renews; a live rival refuses; absent
@@ -370,7 +308,7 @@ async function stealContested(
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
 	writeRecord(file, record);
-	await sleep(modelLockMs("stealGuard"));
+	await new Promise((resolve) => after("modelLock.stealGuard", () => resolve(undefined)));
 	const settled = readRecord(file);
 	if (settled?.token !== record.token) {
 		return { ok: false, record: liveRecord(settled) };
@@ -394,39 +332,87 @@ async function stealContested(
  * @throws {ModelLockCancelledError} When the request goes away while waiting.
  */
 async function holdModel(request: LockRequest): Promise<LockHold> {
-	const model = normalizePaneKey(request.model);
-	const plan = waitPlan(request);
+	const startedAt = Date.now();
 	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0 };
-	for (;;) {
-		// One try at a time, against one lease file: the whole point of this loop
-		// is that the model admits a single writer, so the attempts cannot overlap.
-		// oxlint-disable-next-line no-await-in-loop -- one attempt at a time is the mutex
-		const result = await attemptOnce(model, request, plan.leaseMs);
-		if (result.ok) {
-			return { holder: holderOf(result.record), created: result.created };
-		}
-		const verdict = nextStep(result, request, wait, plan.deadline);
-		if (verdict === "stop") {
-			break;
-		}
-		if (verdict === "wait") {
-			// The poll interval between attempts, which is what waiting is here.
-			// oxlint-disable-next-line no-await-in-loop -- the interval between attempts
-			await waitForLockPoll(request.model, pollFor(plan.deadline), request.signal);
-		}
+	const look = lockAttempt(request, wait);
+	const first =
+		request.waits === false ? await look() : await waitedFor(request.model, look, request);
+	const outcome = await lastAttempts(first, look, wait);
+	if (outcome === undefined || outcome === "refused") {
+		throw new ModelHeldError(
+			request.model,
+			wait.blocker ? holderOf(wait.blocker) : null,
+			Date.now() - startedAt,
+		);
 	}
-	throw new ModelHeldError(
-		request.model,
-		wait.blocker ? holderOf(wait.blocker) : null,
-		Date.now() - plan.startedAt,
-	);
+	return outcome;
 }
 
-/** How long this call waits, and from when. */
-interface WaitPlan {
-	leaseMs: number;
-	startedAt: number;
-	deadline: number;
+/**
+ * One attempt of a request. A hold ends the wait, and so does a blocker that waiting would not
+ * move; every refusal teaches the wait its blocker.
+ * @param request Who is asking.
+ * @param wait What the wait has learnt, extended in place.
+ * @returns The attempt: the hold, "refused", or undefined to try again.
+ */
+function lockAttempt(
+	request: LockRequest,
+	wait: WaitState,
+): () => Promise<LockHold | "refused" | undefined> {
+	const model = normalizePaneKey(request.model);
+	const leaseMs = request.leaseMs ?? ms("modelLock.lease");
+	return async () => {
+		// One try at a time, against one lease file: the model admits a single writer.
+		const result = await attemptOnce(model, request, leaseMs);
+		if (result.ok) return { holder: holderOf(result.record), created: result.created };
+		// Null means movement or a race, not a known holder, so the last concrete blocker is kept.
+		wait.blocker = result.record ?? wait.blocker;
+		return result.record && refusedOutright(result.record, request) ? "refused" : undefined;
+	};
+}
+
+/**
+ * Past the wait, try again only while no blocker was readable, and at most twice.
+ * @param outcome What the wait ended with.
+ * @param look One attempt.
+ * @param wait What the wait has learnt.
+ * @returns What the last attempt found.
+ */
+async function lastAttempts<T>(
+	outcome: T | undefined,
+	look: () => Promise<T | undefined>,
+	wait: WaitState,
+): Promise<T | undefined> {
+	let last = outcome;
+	while (last === undefined && !givesUp(wait)) {
+		// oxlint-disable-next-line no-await-in-loop -- one attempt at a time is the mutex
+		last = await look();
+	}
+	return last;
+}
+
+/**
+ * Attempt again until the model is held or refused, or the wait runs out. The lock is a file,
+ * so waiting is polling: another process has no signal it can send here. A request that goes
+ * away ends the wait at once, so it does not consume application shutdown time.
+ * @param model The legacy board key, for the refusal a cancelled wait carries.
+ * @param look One attempt.
+ * @param request Who is asking, and its cancellation.
+ * @returns What the last attempt found, or undefined when the wait ran out.
+ * @throws {ModelLockCancelledError} When the request goes away.
+ */
+async function waitedFor<T>(
+	model: string,
+	look: () => Promise<T | undefined>,
+	request: LockRequest,
+): Promise<T | undefined> {
+	try {
+		return await pollUntil("modelLock.wait", look, { signal: request.signal });
+	} catch (error) {
+		if (error instanceof TimedOut) return undefined;
+		if (request.signal?.aborted) throw new ModelLockCancelledError(model);
+		throw error;
+	}
 }
 
 /** What the wait has learnt so far. */
@@ -434,59 +420,6 @@ interface WaitState {
 	/** The last concrete blocker, for the refusal text. */
 	blocker: LockRecord | null;
 	attemptsPastDeadline: number;
-}
-
-/** What the wait does after one refused attempt. */
-type WaitVerdict = "stop" | "retry" | "wait";
-
-/**
- * How long this call holds the model for and how long it waits to get it.
- * @param request Who is asking.
- * @returns The plan.
- */
-function waitPlan(request: LockRequest): WaitPlan {
-	const startedAt = Date.now();
-	return {
-		leaseMs: request.leaseMs ?? modelLockMs("lease"),
-		startedAt,
-		deadline: startedAt + (request.waitMs ?? modelLockMs("waitCap")),
-	};
-}
-
-/**
- * How long to sleep before looking again, never past the deadline and never
- * nothing at all.
- * @param deadline When the wait gives up.
- * @returns The interval in milliseconds.
- */
-function pollFor(deadline: number): number {
-	return Math.min(modelLockMs("poll"), Math.max(1, deadline - Date.now()));
-}
-
-/**
- * What the wait does after one refused attempt, recording what it learnt.
- * @param result The refused attempt.
- * @param request Who is asking.
- * @param wait What the wait has learnt, extended in place.
- * @param deadline When the wait gives up.
- * @returns Whether to refuse now, try again at once, or wait a poll interval.
- */
-function nextStep(
-	result: Extract<Attempt, { ok: false }>,
-	request: LockRequest,
-	wait: WaitState,
-	deadline: number,
-): WaitVerdict {
-	// Null means movement or a race, not a known holder, so the last concrete
-	// blocker is kept.
-	wait.blocker = result.record ?? wait.blocker;
-	if (result.record && refusedOutright(result.record, request)) {
-		return "stop";
-	}
-	if (Date.now() < deadline) {
-		return "wait";
-	}
-	return givesUp(wait) ? "stop" : "retry";
 }
 
 /**

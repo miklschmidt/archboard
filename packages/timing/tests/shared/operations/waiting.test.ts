@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 
-import { pollUntil, TimedOut, within } from "#shared/constants/timing.ts";
+import { after, every, pollUntil, TimedOut, within } from "#shared/constants/timing.ts";
 
 /**
  * Let the promise chains the fake timers just released run to their next timer.
@@ -190,4 +190,19 @@ test("every bound carries its wait's name to the timer, so a preload can shorten
 		globalThis.setTimeout = schedule;
 	}
 	expect(names).toEqual(["server.httpStopGrace", "server.stopConfirm"]);
+});
+
+describe("after and every", () => {
+	test("run their work without arguments, and stop when cancelled", () => {
+		const heard: unknown[][] = [];
+		const cancel = after("modelLock.stealGuard", (...args: unknown[]) => heard.push(args));
+		const stop = every("modelLock.watch", (...args: unknown[]) => heard.push(args));
+		jest.advanceTimersToNextTimer();
+		jest.advanceTimersToNextTimer();
+		jest.advanceTimersToNextTimer();
+		expect(heard).toEqual([[], [], []]);
+		stop();
+		cancel();
+		expect(jest.getTimerCount()).toBe(0);
+	});
 });

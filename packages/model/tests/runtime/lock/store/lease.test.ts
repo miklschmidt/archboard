@@ -4,7 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/lock/store/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { modelLockMs } from "@archboard/timing";
+import { ms } from "@archboard/timing";
+
+/** How far the fake clock moves per step: the first pause between two looks of a wait. A test number beside the product's. */
+const LOCK_POLL_MS = 10;
+/** The reviewed time an agent waits for a held model. A test number beside the product's. */
+const LOCK_WAIT_MS = 5000;
+/** The reviewed pause after taking over a lapsed lease. A test number beside the product's. */
+const STEAL_GUARD_MS = 25;
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
 const originalWarn = logger().warn;
@@ -12,13 +19,13 @@ const agent = (id: string) => ({ id, kind: "agent" as const });
 const human = (id: string) => ({ id, kind: "human" as const });
 const models = new Set<string>();
 
-async function advanceLockTime(ms: number): Promise<void> {
+async function advanceLockTime(duration: number): Promise<void> {
 	let elapsed = 0;
-	while (elapsed < ms) {
-		const step = Math.min(modelLockMs("poll"), ms - elapsed);
+	while (elapsed < duration) {
+		const step = Math.min(LOCK_POLL_MS, duration - elapsed);
 		jest.advanceTimersByTime(step);
-		await Promise.resolve();
-		await Promise.resolve();
+		// A turn of the loop lets every promise the step released settle.
+		await new Promise((resolve) => setImmediate(resolve));
 		elapsed += step;
 	}
 }
@@ -46,7 +53,7 @@ test("post-attempt cancellation preserves a reentrant claim for explicit release
 		vault,
 		model,
 		reason: "Keep the original claim",
-		waitMs: 0,
+		waits: false,
 	});
 	try {
 		const controller = new AbortController();
@@ -54,7 +61,7 @@ test("post-attempt cancellation preserves a reentrant claim for explicit release
 			vault,
 			model,
 			reason: "This renewal is canceled after its reentrant attempt",
-			waitMs: 0,
+			waits: false,
 			signal: controller.signal,
 		});
 		controller.abort();
@@ -81,14 +88,14 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			vault,
 			model,
 			holder: human("user"),
-			leaseMs: modelLockMs("waitCap") + modelLockMs("lease"),
-			waitMs: 0,
+			leaseMs: LOCK_WAIT_MS + ms("modelLock.lease"),
+			waits: false,
 		});
 		expect(held.created).toBeTrue();
 		const refusal = lock
 			.holdModel({ vault, model, holder: agent("later") })
 			.catch((error: unknown) => error);
-		await advanceLockTime(modelLockMs("waitCap"));
+		await advanceLockTime(LOCK_WAIT_MS);
 		const refused = await refusal;
 		expect(refused).toBeInstanceOf(lock.ModelHeldError);
 		if (!(refused instanceof lock.ModelHeldError)) {
@@ -98,9 +105,9 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		expect(refused.model).toBe(model);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });
 		expect(refused.message).toMatch(/held by the user at the canvas, since/);
-		expect(refused.waitedMs).toBe(modelLockMs("waitCap"));
+		expect(refused.waitedMs).toBe(LOCK_WAIT_MS);
 		jest.advanceTimersByTime(1);
-		const renewed = await lock.holdModel({ vault, model, holder: human("user"), waitMs: 0 });
+		const renewed = await lock.holdModel({ vault, model, holder: human("user"), waits: false });
 		expect(renewed.created).toBeFalse();
 		expect(renewed.holder.since).toBe(held.holder.since);
 		expect(Date.parse(renewed.holder.until)).toBeGreaterThan(Date.parse(held.holder.until));
@@ -127,17 +134,17 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			model: expired,
 			holder: agent("departed"),
 			leaseMs: 100,
-			waitMs: 0,
+			waits: false,
 		});
 		const expiredTakeover = lock.holdModel({
 			vault,
 			model: expired,
 			holder: agent("later"),
-			waitMs: 1_000,
 		});
-		await advanceLockTime(100 + modelLockMs("stealGuard"));
+		// The lease lapses at 100 ms; the waiter sees it at its next look and pays the steal guard.
+		await advanceLockTime(500);
 		expect(await expiredTakeover).toMatchObject({ created: true, holder: { id: "later" } });
-		expect(modelLockMs("waitCap")).toBeGreaterThan(modelLockMs("lease"));
+		expect(LOCK_WAIT_MS).toBeGreaterThan(ms("modelLock.lease"));
 
 		const waiting = "waiting";
 		models.add(waiting);
@@ -146,16 +153,16 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			model: waiting,
 			holder: human("user"),
 			leaseMs: 2_000,
-			waitMs: 0,
+			waits: false,
 		});
 		setTimeout(() => lock.releaseHold(vault, waiting, "user"), 250);
 		const waitingTakeover = lock.holdModel({
 			vault,
 			model: waiting,
 			holder: agent("patient"),
-			waitMs: 2_000,
 		});
-		await advanceLockTime(250);
+		// The holder lets go at 250 ms; the waiter sees it at its next look.
+		await advanceLockTime(500);
 		expect(await waitingTakeover).toMatchObject({ created: true, holder: { id: "patient" } });
 
 		const cancelled = "cancelled";
@@ -165,7 +172,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			model: cancelled,
 			holder: human("user"),
 			leaseMs: 2_000,
-			waitMs: 0,
+			waits: false,
 		});
 		const controller = new AbortController();
 		setTimeout(() => controller.abort(), 25);
@@ -175,7 +182,6 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 				vault,
 				model: cancelled,
 				holder: agent("later"),
-				waitMs: 2_000,
 				signal: controller.signal,
 			})
 			.catch((error: unknown) => error);
@@ -187,19 +193,24 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		expect(lock.releaseHold(vault, cancelled, "user")).toBeTrue();
 
 		models.add("Payments");
-		await lock.holdModel({ vault, model: "Payments", holder: agent("upper"), waitMs: 0 });
+		await lock.holdModel({ vault, model: "Payments", holder: agent("upper"), waits: false });
 		const canonicalRefusal = await lock
-			.holdModel({ vault, model: "payments", holder: agent("later"), waitMs: 0 })
+			.holdModel({ vault, model: "payments", holder: agent("later"), waits: false })
 			.catch((error: unknown) => error);
 		expect(canonicalRefusal).toBeInstanceOf(lock.ModelHeldError);
 		lock.releaseHold(vault, "payments", "upper");
 		models.add("systems/payments");
-		await lock.holdModel({ vault, model: "systems/payments", holder: agent("nested"), waitMs: 0 });
+		await lock.holdModel({
+			vault,
+			model: "systems/payments",
+			holder: agent("nested"),
+			waits: false,
+		});
 		expect(existsSync(join(vault, ".archboard/locks/systems%2Fpayments.lock"))).toBeTrue();
 
 		const unreadable = "unreadable";
 		models.add(unreadable);
-		await lock.holdModel({ vault, model: unreadable, holder: agent("first"), waitMs: 0 });
+		await lock.holdModel({ vault, model: unreadable, holder: agent("first"), waits: false });
 		const file = join(vault, ".archboard/locks/unreadable.lock");
 		mkdirSync(join(vault, ".archboard/locks"), { recursive: true });
 		writeFileSync(file, "{ half a record");
@@ -207,9 +218,9 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			vault,
 			model: unreadable,
 			holder: agent("later"),
-			waitMs: 0,
+			waits: false,
 		});
-		await advanceLockTime(modelLockMs("stealGuard"));
+		await advanceLockTime(STEAL_GUARD_MS);
 		expect(await unreadableTakeover).toMatchObject({ created: true });
 	} finally {
 		await cleanup();

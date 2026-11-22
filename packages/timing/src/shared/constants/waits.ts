@@ -6,8 +6,10 @@ import type { Use } from "#shared/constants/uses.ts";
 import { CHECKS } from "#shared/constants/checks.ts";
 import { CODEX } from "#shared/constants/codex.ts";
 import { GIT } from "#shared/constants/git.ts";
+import { CLAIMS, MODEL_LOCKS } from "#shared/constants/model-locks.ts";
 import { RASTER } from "#shared/constants/raster.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
+import { TELEMETRY } from "#shared/constants/telemetry.ts";
 
 /** Every declared duration, by its name. */
 const WAITS = Object.freeze({
@@ -16,6 +18,9 @@ const WAITS = Object.freeze({
 	...CHECKS,
 	...CODEX,
 	...RASTER,
+	...MODEL_LOCKS,
+	...CLAIMS,
+	...TELEMETRY,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;

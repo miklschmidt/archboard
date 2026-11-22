@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
-import { modelLockMs } from "@archboard/timing";
+import { every, ms } from "@archboard/timing";
 import { git, GitCommandError } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";
@@ -291,7 +291,7 @@ async function withModelLock<T>(
 		await holdModel({
 			...lease,
 			holder: { id, kind: "agent" },
-			waitMs: 0,
+			waits: false,
 		});
 	} catch (error) {
 		if (error instanceof ModelHeldError)
@@ -301,11 +301,9 @@ async function withModelLock<T>(
 			);
 		throw error;
 	}
-	const timer = setInterval(
-		() => renewRecord(lease.vault, lease.model, id, modelLockMs("lease")),
-		modelLockMs("renew"),
+	const stopRenewing = every("modelLock.renew", () =>
+		renewRecord(lease.vault, lease.model, id, ms("modelLock.lease")),
 	);
-	timer.unref();
 	try {
 		return await work(() => {
 			if (modelLockState(lease.vault, lease.model)?.id !== id)
@@ -315,7 +313,7 @@ async function withModelLock<T>(
 				);
 		});
 	} finally {
-		clearInterval(timer);
+		stopRenewing();
 		releaseHold(lease.vault, lease.model, id);
 	}
 }

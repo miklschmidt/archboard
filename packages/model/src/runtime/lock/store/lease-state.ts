@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { modelLockMs } from "@archboard/timing";
+import { every } from "@archboard/timing";
 import {
 	VAULT_STATE_DIR,
 	modelMemoryKey,
@@ -19,8 +19,8 @@ const processSink = { notify: null as LockSink | null };
 const processSweep = { also: null as ((vault: string, model: string) => void) | null };
 const processWatcher: {
 	watched: WatchedModels | null;
-	timer: ReturnType<typeof setInterval> | null;
-} = { watched: null, timer: null };
+	stop: (() => void) | null;
+} = { watched: null, stop: null };
 
 /** One model of one vault. */
 interface WatchedModel {
@@ -318,21 +318,16 @@ function sweepModelLocks(): void {
 function watchModelLocks(watched: WatchedModels | null): void {
 	processWatcher.watched = watched;
 	if (!watched) {
-		if (processWatcher.timer) {
-			clearInterval(processWatcher.timer);
-		}
-		processWatcher.timer = null;
+		processWatcher.stop?.();
+		processWatcher.stop = null;
 		return;
 	}
-	if (processWatcher.timer) {
+	if (processWatcher.stop) {
 		return;
 	}
-	const timer = setInterval(() => {
+	processWatcher.stop = every("modelLock.watch", () => {
 		sweepModelLocks();
-	}, modelLockMs("watch"));
-	// The poll must not be the reason a process stays alive.
-	timer.unref();
-	processWatcher.timer = timer;
+	});
 }
 
 /**
