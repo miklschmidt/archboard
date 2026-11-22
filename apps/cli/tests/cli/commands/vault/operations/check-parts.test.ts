@@ -522,10 +522,7 @@ function shallowAnswer(gate: boolean, unread: string[] = []): CodeCheckResult {
 			width: 2,
 			switchboards: [],
 		})),
-		findings: [
-			shallow("Orders#Timing"),
-			shallow("Orders#Clock"),
-		],
+		findings: [shallow("Orders#Timing"), shallow("Orders#Clock")],
 		touched: [
 			{ model: "Orders", state: "Built", base: "main", modules: ["Orders#Timing"], unread },
 		],

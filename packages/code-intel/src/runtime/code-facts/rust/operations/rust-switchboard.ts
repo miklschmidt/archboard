@@ -32,8 +32,8 @@ const LOGIC = new Set([
 	"try_expression",
 ]);
 
-/** Code of its own, which runs when it is called and not when the arm runs. */
-const NESTED = new Set(["closure_expression", "function_item"]);
+/** Code of its own, which runs when it is called and not when the arm runs, and macros, which build data. */
+const SKIPPED = new Set(["closure_expression", "function_item", "macro_invocation"]);
 
 /** Syntax that is no code. */
 const COMMENTS = new Set(["line_comment", "block_comment"]);
@@ -47,6 +47,25 @@ const BARE = new Set([
 	"string_literal",
 	"boolean_literal",
 ]);
+
+/** Expressions that hand on the value inside, and the field that holds it ("" for the first child). */
+const WRAPPERS: Readonly<Record<string, string>> = {
+	reference_expression: "value",
+	parenthesized_expression: "",
+	unary_expression: "",
+};
+
+/** The field that names the last name of each callee or target that has one. */
+const LAST_NAME: Readonly<Record<string, string>> = {
+	field_expression: "field",
+	scoped_identifier: "name",
+};
+
+/** Assignments, whose target a write names. */
+const ASSIGNMENTS = new Set(["assignment_expression", "compound_assignment_expr"]);
+
+/** Targets of an assignment that are state outside the arm. */
+const STATE = new Set(["field_expression", "index_expression"]);
 
 /** An arm before its calls are read: the keys that pick it and its code. */
 interface ArmCode {
@@ -64,6 +83,12 @@ interface Dispatch {
 	readonly boolean: boolean;
 }
 
+/** The calls and writes an arm's code makes. */
+interface Effects {
+	readonly calls: Set<string>;
+	readonly writes: Set<string>;
+}
+
 /**
  * The named children of a node that are no comment.
  * @param node The node.
@@ -74,20 +99,56 @@ function codeOf(node: Node): Node[] {
 }
 
 /**
+ * A field of a node, or its first child of code for `""`.
+ * @param node The node.
+ * @param name The field.
+ * @returns The child, or undefined.
+ */
+function part(node: Node | undefined, name: string): Node | undefined {
+	if (node === undefined) return undefined;
+	return name === "" ? codeOf(node)[0] : (node.childForFieldName(name) ?? undefined);
+}
+
+/**
+ * A type without its borrows.
+ * @param type The type.
+ * @returns The type that is borrowed.
+ */
+function unborrowed(type: Node | undefined): Node | undefined {
+	return type?.type === "reference_type" ? unborrowed(part(type, "type")) : type;
+}
+
+/**
  * The function's parameters that are plain names, with their types.
  * @param fn The function.
  * @returns Each name and its type's text, without a borrow.
  */
 function parametersOf(fn: Node): Map<string, string> {
-	const list = fn.childForFieldName("parameters");
-	const named = new Map<string, string>();
-	for (const parameter of list === null ? [] : codeOf(list)) {
-		const pattern = parameter.childForFieldName("pattern");
-		let type = parameter.childForFieldName("type");
-		while (type?.type === "reference_type") type = type.childForFieldName("type");
-		if (pattern?.type === "identifier") named.set(pattern.text, type?.text ?? "");
-	}
-	return named;
+	const list = part(fn, "parameters");
+	return new Map((list === undefined ? [] : codeOf(list)).flatMap(parameterOf));
+}
+
+/**
+ * A parameter that is a plain name, with its type.
+ * @param parameter The parameter.
+ * @returns Its name and its type's text, without a borrow, or nothing.
+ */
+function parameterOf(parameter: Node): [string, string][] {
+	const pattern = part(parameter, "pattern");
+	const type = unborrowed(part(parameter, "type"));
+	return pattern?.type === "identifier" ? [[pattern.text, type?.text ?? ""]] : [];
+}
+
+/**
+ * The expression inside borrows, dereferences and parentheses.
+ * @param node The expression.
+ * @returns The expression inside.
+ */
+function unwrapped(node: Node | undefined): Node | undefined {
+	const field = node === undefined ? undefined : WRAPPERS[node.type];
+	if (field === undefined || node === undefined) return node;
+	if (node.type === "unary_expression" && !node.text.startsWith("*")) return node;
+	return unwrapped(part(node, field));
 }
 
 /**
@@ -96,14 +157,79 @@ function parametersOf(fn: Node): Map<string, string> {
  * @param parameters The function's parameters.
  * @returns Its name, or undefined.
  */
-function keyOf(node: Node | null, parameters: ReadonlyMap<string, string>): string | undefined {
-	let at = node;
-	while (at?.type === "reference_expression" || at?.type === "parenthesized_expression") {
-		at = at.type === "reference_expression" ? at.childForFieldName("value") : codeOf(at)[0] ?? null;
-	}
-	if (at?.type === "unary_expression" && at.text.startsWith("*")) return keyOf(codeOf(at)[0] ?? null, parameters);
+function keyOf(
+	node: Node | undefined,
+	parameters: ReadonlyMap<string, string>,
+): string | undefined {
+	const at = unwrapped(node);
 	return at?.type === "identifier" && parameters.has(at.text) ? at.text : undefined;
 }
+
+/**
+ * The keys of each alternative of an or-pattern.
+ * @param pattern The or-pattern.
+ * @returns The keys, or undefined where one alternative is open.
+ */
+function alternativeKeys(pattern: Node): string[] | undefined {
+	const keys = codeOf(pattern).map(patternKeys);
+	return keys.every((each) => each !== undefined) ? keys.flat() : undefined;
+}
+
+/**
+ * The variant a struct or tuple-struct pattern names.
+ * @param pattern The pattern.
+ * @returns Its name.
+ */
+function variantOf(pattern: Node): string {
+	const type = part(pattern, "type");
+	return part(type, "name")?.text ?? type?.text ?? "";
+}
+
+/**
+ * The variant a path names: `Cut` for `Arrival::Cut`.
+ * @param pattern The path.
+ * @returns The variant.
+ */
+function pathKeys(pattern: Node): string[] {
+	return [part(pattern, "name")?.text ?? pattern.text];
+}
+
+/**
+ * The variant a struct or tuple-struct pattern names.
+ * @param pattern The pattern.
+ * @returns The variant.
+ */
+function variantKeys(pattern: Node): string[] {
+	return [variantOf(pattern)];
+}
+
+/**
+ * A capitalized name is a variant brought in by `use`; any other name binds every other key.
+ * @param pattern The name.
+ * @returns The variant, or `*`.
+ */
+function nameKeys(pattern: Node): string[] {
+	return /^[A-Z]/u.test(pattern.text) ? [pattern.text] : ["*"];
+}
+
+/**
+ * A boolean literal is its own key.
+ * @param pattern The literal.
+ * @returns The key.
+ */
+function literalKeys(pattern: Node): string[] {
+	return [pattern.text];
+}
+
+/** How each kind of pattern names its keys. */
+const PATTERNS: Readonly<Record<string, (pattern: Node) => string[] | undefined>> = {
+	or_pattern: alternativeKeys,
+	scoped_identifier: pathKeys,
+	struct_pattern: variantKeys,
+	tuple_struct_pattern: variantKeys,
+	identifier: nameKeys,
+	boolean_literal: literalKeys,
+};
 
 /**
  * The keys a pattern picks: the variants it names, `true` or `false`, or `*`
@@ -112,26 +238,7 @@ function keyOf(node: Node | null, parameters: ReadonlyMap<string, string>): stri
  * @returns The keys, or undefined for a pattern of an open key, such as a string.
  */
 function patternKeys(pattern: Node): string[] | undefined {
-	switch (pattern.type) {
-		case "or_pattern":
-			return codeOf(pattern).reduce<string[] | undefined>((keys, each) => {
-				const more = patternKeys(each);
-				return keys === undefined || more === undefined ? undefined : [...keys, ...more];
-			}, []);
-		case "scoped_identifier":
-			return [pattern.childForFieldName("name")?.text ?? pattern.text];
-		case "struct_pattern":
-		case "tuple_struct_pattern": {
-			const type = pattern.childForFieldName("type");
-			return [type?.childForFieldName("name")?.text ?? type?.text ?? ""];
-		}
-		case "identifier":
-			return /^[A-Z]/u.test(pattern.text) ? [pattern.text] : ["*"];
-		case "boolean_literal":
-			return [pattern.text];
-		default:
-			return undefined;
-	}
+	return PATTERNS[pattern.type]?.(pattern);
 }
 
 /**
@@ -140,8 +247,24 @@ function patternKeys(pattern: Node): string[] | undefined {
  * @returns How many there are.
  */
 function logicIn(node: Node): number {
-	if (NESTED.has(node.type)) return 0;
-	return (LOGIC.has(node.type) ? 1 : 0) + codeOf(node).reduce((sum, child) => sum + logicIn(child), 0);
+	if (node.type === "closure_expression" || node.type === "function_item") return 0;
+	return (
+		(LOGIC.has(node.type) ? 1 : 0) + codeOf(node).reduce((sum, child) => sum + logicIn(child), 0)
+	);
+}
+
+/**
+ * One arm of a `match`: the keys its pattern picks and its code.
+ * @param arm The arm.
+ * @returns The arm, or undefined for an open pattern.
+ */
+function matchArm(arm: Node): ArmCode | undefined {
+	const pattern = part(arm, "pattern");
+	const guard = part(pattern, "condition")?.id;
+	const first = (pattern === undefined ? [] : codeOf(pattern)).find((each) => each.id !== guard);
+	const keys = first === undefined ? ["*"] : patternKeys(first);
+	const value = part(arm, "value");
+	return keys === undefined || value === undefined ? undefined : { keys, code: value };
 }
 
 /**
@@ -151,21 +274,15 @@ function logicIn(node: Node): number {
  * @returns The pick, or undefined.
  */
 function matchOn(expression: Node, parameters: ReadonlyMap<string, string>): Dispatch | undefined {
-	const key = keyOf(expression.childForFieldName("value"), parameters);
-	const block = expression.childForFieldName("body");
-	if (key === undefined || block === null) return undefined;
-	const arms: ArmCode[] = [];
-	for (const arm of codeOf(block).filter((each) => each.type === "match_arm")) {
-		const pattern = arm.childForFieldName("pattern");
-		const value = arm.childForFieldName("value");
-		const named = pattern === null ? [] : codeOf(pattern).filter((each) => pattern.childForFieldName("condition")?.id !== each.id);
-		const first = named[0];
-		const keys = first === undefined ? ["*"] : patternKeys(first);
-		if (keys === undefined || value === null) return undefined;
-		arms.push({ keys, code: value });
-	}
-	const keys = arms.flatMap((arm) => arm.keys).filter((each) => each !== "*");
-	const boolean = keys.every((each) => each === "true" || each === "false");
+	const key = keyOf(part(expression, "value"), parameters);
+	const block = part(expression, "body");
+	if (key === undefined || block === undefined) return undefined;
+	const arms = codeOf(block)
+		.filter((each) => each.type === "match_arm")
+		.map(matchArm);
+	if (!arms.every((arm) => arm !== undefined)) return undefined;
+	const named = arms.flatMap((arm) => arm.keys).filter((each) => each !== "*");
+	const boolean = named.every((each) => each === "true" || each === "false");
 	if (boolean && parameters.get(key) !== "bool") return undefined;
 	return { key, arms, logic: arms.length, boolean };
 }
@@ -177,25 +294,42 @@ function matchOn(expression: Node, parameters: ReadonlyMap<string, string>): Dis
  * @returns The pick, or undefined.
  */
 function ifOn(expression: Node, parameters: ReadonlyMap<string, string>): Dispatch | undefined {
-	const condition = expression.childForFieldName("condition");
-	const consequence = expression.childForFieldName("consequence");
-	const alternative = expression.childForFieldName("alternative");
-	const otherwise = alternative === null ? undefined : codeOf(alternative)[0];
-	if (condition === null || consequence === null || otherwise === undefined) return undefined;
-	const negated = condition.type === "unary_expression" && condition.text.startsWith("!");
-	const key = keyOf(negated ? (codeOf(condition)[0] ?? null) : condition, parameters);
-	if (key === undefined || parameters.get(key) !== "bool") return undefined;
-	const [picked, other] = negated ? ["false", "true"] : ["true", "false"];
-	return {
-		key,
-		arms: [
-			{ keys: [picked], code: consequence },
-			{ keys: [other], code: otherwise },
-		],
-		logic: 1 + logicIn(condition),
-		boolean: true,
-	};
+	const condition = part(expression, "condition");
+	const tested = condition === undefined ? undefined : flagOf(condition, parameters);
+	const consequence = part(expression, "consequence");
+	const otherwise = part(part(expression, "alternative"), "");
+	if (tested === undefined || consequence === undefined || otherwise === undefined)
+		return undefined;
+	const arms = [
+		{ keys: [String(tested.picks)], code: consequence },
+		{ keys: [String(!tested.picks)], code: otherwise },
+	];
+	return { key: tested.key, arms, logic: tested.logic, boolean: true };
 }
+
+/**
+ * The `bool` parameter a condition tests, and the value that takes its first branch.
+ * @param condition The condition.
+ * @param parameters The function's parameters.
+ * @returns The parameter, the value, and the logic of the test, or undefined.
+ */
+function flagOf(
+	condition: Node,
+	parameters: ReadonlyMap<string, string>,
+): { readonly key: string; readonly picks: boolean; readonly logic: number } | undefined {
+	const negated = condition.type === "unary_expression" && condition.text.startsWith("!");
+	const key = keyOf(negated ? part(condition, "") : condition, parameters);
+	if (key === undefined || parameters.get(key) !== "bool") return undefined;
+	return { key, picks: !negated, logic: 1 + logicIn(condition) };
+}
+
+/** How each expression that can pick reads its pick. */
+const PICKS: Readonly<
+	Record<
+		string,
+		(expression: Node, parameters: ReadonlyMap<string, string>) => Dispatch | undefined
+	>
+> = { match_expression: matchOn, if_expression: ifOn };
 
 /**
  * The pick a body makes, after any preparation: the first statement that picks by a parameter.
@@ -205,15 +339,10 @@ function ifOn(expression: Node, parameters: ReadonlyMap<string, string>): Dispat
  */
 function dispatchOf(body: Node, parameters: ReadonlyMap<string, string>): Dispatch | undefined {
 	for (const statement of codeOf(body)) {
-		const expression = statement.type === "expression_statement" ? codeOf(statement)[0] : statement;
-		if (expression?.type === "match_expression") {
-			const found = matchOn(expression, parameters);
-			if (found !== undefined) return found;
-		}
-		if (expression?.type === "if_expression") {
-			const found = ifOn(expression, parameters);
-			if (found !== undefined) return found;
-		}
+		const expression = statement.type === "expression_statement" ? part(statement, "") : statement;
+		const found =
+			expression === undefined ? undefined : PICKS[expression.type]?.(expression, parameters);
+		if (found !== undefined) return found;
 	}
 	return undefined;
 }
@@ -223,41 +352,72 @@ function dispatchOf(body: Node, parameters: ReadonlyMap<string, string>): Dispat
  * @param node The callee or target.
  * @returns The name.
  */
-function lastName(node: Node | null): string {
-	if (node === null) return "";
-	if (node.type === "field_expression") return node.childForFieldName("field")?.text ?? "";
-	if (node.type === "scoped_identifier") return node.childForFieldName("name")?.text ?? "";
-	if (node.type === "generic_function") return lastName(node.childForFieldName("function"));
-	return node.text;
+function lastName(node: Node | undefined): string {
+	if (node === undefined) return "";
+	if (node.type === "generic_function") return lastName(part(node, "function"));
+	const field = LAST_NAME[node.type];
+	return field === undefined ? node.text : (part(node, field)?.text ?? "");
 }
 
 /**
- * The calls an arm's code makes, outermost only, and the state it writes. A
- * call of a capitalized name, such as `Some(…)` or a variant, builds data.
- * @param node The code.
- * @param found The calls and writes found so far, which this adds to.
- * @param found.calls The calls, as `callee/arguments`.
- * @param found.writes The state written, as the code spells each target.
+ * The call a call expression makes, or, for a call of a capitalized name such
+ * as `Some(…)` or a variant, which builds data, the calls of its arguments.
+ * @param call The call.
+ * @param found The effects found so far, which this adds to.
  */
-function effectsIn(node: Node, found: { calls: Set<string>; writes: Set<string> }): void {
-	if (NESTED.has(node.type) || node.type === "macro_invocation") return;
-	if (node.type === "call_expression") {
-		const name = lastName(node.childForFieldName("function"));
-		const list = node.childForFieldName("arguments");
-		if (!/^[A-Z]/u.test(name)) {
-			found.calls.add(`${name}/${String(list === null ? 0 : codeOf(list).length)}`);
-			return;
-		}
-		if (list !== null) effectsIn(list, found);
+function callEffects(call: Node, found: Effects): void {
+	const name = lastName(part(call, "function"));
+	const list = part(call, "arguments");
+	if (/^[A-Z]/u.test(name)) {
+		if (list !== undefined) effectsIn(list, found);
 		return;
 	}
-	if (node.type === "assignment_expression" || node.type === "compound_assignment_expr") {
-		const target = node.childForFieldName("left");
-		if (target?.type === "field_expression" || target?.type === "index_expression") {
-			found.writes.add(target.text);
-		}
+	found.calls.add(`${name}/${String(list === undefined ? 0 : codeOf(list).length)}`);
+}
+
+/**
+ * The calls an arm's code makes, outermost only, and the state it writes.
+ * @param node The code.
+ * @param found The effects found so far, which this adds to.
+ */
+function effectsIn(node: Node, found: Effects): void {
+	if (SKIPPED.has(node.type)) return;
+	if (node.type === "call_expression") {
+		callEffects(node, found);
+		return;
 	}
+	writeOf(node, found);
 	for (const child of codeOf(node)) effectsIn(child, found);
+}
+
+/**
+ * The state an assignment writes outside the arm: a field or an element.
+ * @param node The code.
+ * @param found The effects found so far, which this adds to.
+ */
+function writeOf(node: Node, found: Effects): void {
+	const target = ASSIGNMENTS.has(node.type) ? part(node, "left") : undefined;
+	if (target !== undefined && STATE.has(target.type)) found.writes.add(target.text);
+}
+
+/**
+ * The calls in code, nested ones included.
+ * @param node The code.
+ * @returns The calls.
+ */
+function callsIn(node: Node): Node[] {
+	const nested = codeOf(node).flatMap(callsIn);
+	return node.type === "call_expression" ? [node, ...nested] : nested;
+}
+
+/**
+ * Whether an argument hands a name or a fixed value on, borrowed or not.
+ * @param argument The argument.
+ * @returns True when it does.
+ */
+function bare(argument: Node): boolean {
+	const name = argument.type === "reference_expression" ? part(argument, "value") : argument;
+	return name !== undefined && BARE.has(name.type);
 }
 
 /**
@@ -266,22 +426,8 @@ function effectsIn(node: Node, found: { calls: Set<string>; writes: Set<string> 
  * @returns True when it does.
  */
 function forwards(code: Node): boolean {
-	if (logicIn(code) !== 1) return false;
-	const calls: Node[] = [];
-	const collect = (node: Node): void => {
-		if (node.type === "call_expression") calls.push(node);
-		for (const child of codeOf(node)) collect(child);
-	};
-	collect(code);
-	const list = calls[0]?.childForFieldName("arguments");
-	return (
-		list !== null &&
-		list !== undefined &&
-		codeOf(list).every((argument) => {
-			const name = argument.type === "reference_expression" ? argument.childForFieldName("value") : argument;
-			return name !== null && BARE.has(name.type);
-		})
-	);
+	const list = part(callsIn(code)[0], "arguments");
+	return logicIn(code) === 1 && list !== undefined && codeOf(list).every(bare);
 }
 
 /**
@@ -301,9 +447,8 @@ function armOf(arm: ArmCode): Arm {
  * @returns The switchboard, or undefined.
  */
 function switchboardOf(fn: Node): Switchboard | undefined {
-	const body = fn.type === "function_item" ? fn.childForFieldName("body") : null;
-	if (body === null) return undefined;
-	const dispatch = dispatchOf(body, parametersOf(fn));
+	const body = fn.type === "function_item" ? part(fn, "body") : undefined;
+	const dispatch = body === undefined ? undefined : dispatchOf(body, parametersOf(fn));
 	if (dispatch === undefined) return undefined;
 	const picked = operationsOf(dispatch.arms.map(armOf));
 	const operations = dispatch.boolean ? restSpelled(picked, ["true", "false"]) : picked;

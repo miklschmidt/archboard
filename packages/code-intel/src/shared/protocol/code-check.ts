@@ -201,11 +201,7 @@ const ModuleSwitchboardSchema = z
 		name: z.string(),
 		path: z.string(),
 		key: z.string(),
-		operations: z.array(
-			z
-				.object({ keys: z.array(z.string()), line: z.int().positive() })
-				.strict(),
-		),
+		operations: z.array(z.object({ keys: z.array(z.string()), line: z.int().positive() }).strict()),
 		open: z.string().optional(),
 	})
 	.strict();

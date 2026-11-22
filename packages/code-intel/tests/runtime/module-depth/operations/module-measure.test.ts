@@ -38,7 +38,9 @@ test("fewer than 4 pieces of logic behind each name make a module shallow at any
 	expect(verdicts({ width: 1, logic: 3 })).toEqual(["MODULE_SHALLOW warning"]);
 	expect(verdicts({ width: 0, logic: 0 })).toEqual([]);
 	const [finding] = moduleFindings({ ...measure, width: 4, logic: 15 }).findings;
-	expect(finding?.message).toContain("its 4 names have 15 pieces of logic behind them, 3.75 each, below 4");
+	expect(finding?.message).toContain(
+		"its 4 names have 15 pieces of logic behind them, 3.75 each, below 4",
+	);
 });
 
 test("a wide module deep enough passes", () => {
@@ -52,7 +54,9 @@ test("the shallow finding names each switchboard and the keys of each operation 
 		logic: 10,
 		widened: [{ name: "change", operations: [["claim"], ["release", "drop"], ["takeBack"]] }],
 	}).findings;
-	expect(finding?.message).toContain("change picks 3 by its key (claim, release or drop, takeBack)");
+	expect(finding?.message).toContain(
+		"change picks 3 by its key (claim, release or drop, takeBack)",
+	);
 });
 
 test("the roll-up and the measure make one shallow finding with the evidence of both", () => {

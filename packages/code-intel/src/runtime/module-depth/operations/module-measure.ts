@@ -75,7 +75,8 @@ function thin(width: number, logic: number): boolean {
  * @param measure The module.
  * @returns The sentence.
  */
-function measured({ width, logic, widened }: ModuleMeasure): string {
+function measured(measure: ModuleMeasure): string {
+	const { width, logic, widened } = measure;
 	const each = Number((logic / width).toFixed(2));
 	const picked = widened.map(
 		({ name, operations }) =>
@@ -103,39 +104,52 @@ interface ModuleVerdicts {
 }
 
 /**
+ * The evidence of each ground that holds.
+ * @param measure The module.
+ * @param shallow Whether the counts make it shallow.
+ * @returns The sentences.
+ */
+function groundsOf(measure: ModuleMeasure, shallow: boolean): string[] {
+	const { rolledUp } = measure;
+	const rolled =
+		rolledUp === undefined
+			? []
+			: [
+					`each of its ${rolledUp.length} exports that is not a type has a finding of its own ` +
+						`(${rolledUp.join(", ")}), so it hands its insides to its callers`,
+				];
+	const judged = measure.supported && measure.complete && shallow;
+	return judged ? [...rolled, measured(measure)] : rolled;
+}
+
+/**
+ * The keys no type closes yet that withhold the measured verdict: counting them would make it shallow.
+ * @param measure The module.
+ * @param shallow Whether the counts make it shallow without them.
+ * @returns What each key waits on, or none.
+ */
+function gapsOf(measure: ModuleMeasure, shallow: boolean): readonly string[] {
+	const { unresolved } = measure;
+	if (unresolved === undefined || shallow || !(measure.supported && measure.complete)) return [];
+	return thin(unresolved.width, unresolved.logic) ? unresolved.gaps : [];
+}
+
+/**
  * The verdict on a module as a whole.
  * @param measure The module.
  * @returns The findings, and what withholds a measured verdict.
  */
 function moduleFindings(measure: ModuleMeasure): ModuleVerdicts {
-	const judged = measure.supported && measure.complete;
 	const shallow = thin(measure.width, measure.logic);
-	const { unresolved } = measure;
-	const flips = unresolved !== undefined && !shallow && thin(unresolved.width, unresolved.logic);
-	const grounds: string[] = [];
-	if (measure.rolledUp !== undefined) {
-		grounds.push(
-			`each of its ${measure.rolledUp.length} exports that is not a type has a finding of its own ` +
-				`(${measure.rolledUp.join(", ")}), so it hands its insides to its callers`,
-		);
-	}
-	if (judged && shallow) grounds.push(measured(measure));
-	const findings: DepthFinding[] =
-		grounds.length === 0
-			? []
-			: [
-					{
-						severity: "warning",
-						code: "MODULE_SHALLOW",
-						message:
-							`${measure.label} is shallow: ${grounds.join("; and ")}. A deep module hides much logic ` +
-							"behind few names. A name moved to another module, or behind a key, is still a name its callers learn.",
-					},
-				];
+	const grounds = groundsOf(measure, shallow);
+	const message =
+		`${measure.label} is shallow: ${grounds.join("; and ")}. A deep module hides much logic ` +
+		"behind few names. A name moved to another module, or behind a key, is still a name its callers learn.";
 	return {
-		findings,
+		findings:
+			grounds.length === 0 ? [] : [{ severity: "warning", code: "MODULE_SHALLOW", message }],
 		withheld: measure.supported && !measure.complete && shallow,
-		gaps: judged && flips ? unresolved.gaps : [],
+		gaps: gapsOf(measure, shallow),
 	};
 }
 

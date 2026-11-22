@@ -189,9 +189,9 @@ test("a key no type closes counts one name, and withholds the shallow verdict co
 test("a Rust function that matches an enum parameter counts each variant's operation", () => {
 	const picker = depthByModule(answer).get("Picker");
 	expect(picker?.width).toBe(2);
-	expect(picker?.switchboards.map((each) => each.operations.map((operation) => operation.keys))).toEqual([
-		[["Card"], ["Frame"]],
-	]);
+	expect(
+		picker?.switchboards.map((each) => each.operations.map((operation) => operation.keys)),
+	).toEqual([[["Card"], ["Frame"]]]);
 	expect(shallow("Picker")).toBe(false);
 });
 

@@ -99,7 +99,7 @@ import {
 	moduleFindings,
 	type ModuleMeasure,
 } from "#runtime/module-depth/operations/module-measure.ts";
-import { restSpelled } from "#runtime/code-facts/operations/switchboard-arms.ts";
+import { widthsOf } from "#runtime/module-depth/operations/module-width.ts";
 import type { ModuleDepth, ModuleExport, ModuleSwitchboard } from "#shared/protocol/code-check.ts";
 
 /** A module's exports, by kind. */
@@ -492,100 +492,6 @@ function unreadFor(reading: DepthReading, name: ExposedName): string[] {
 	const parts = reading.exposure.exposed.filter((each) => each.name === name.name);
 	const files = JUDGED_FILES.filter((file) => parts.some((part) => file.test(part.path)));
 	return reading.unread.filter((file) => files.some((each) => each.test(file)));
-}
-
-/** The kinds of name a caller calls, which a switchboard can be. */
-const CALLED: ReadonlySet<NameKind> = new Set(["function", "method"]);
-
-/**
- * The switchboard a name is, with its key closed where a type another file
- * declares closes it: overloads share the name, so any of its definitions
- * in its file may hold the pick.
- * @param reading The module.
- * @param name The name.
- * @returns The switchboard as the answer lists it, and the logic that only picks.
- */
-async function switchboardOf(
-	reading: DepthReading,
-	name: ExposedName,
-): Promise<{ readonly listed: ModuleSwitchboard; readonly logic: number } | undefined> {
-	const read = await reading.facts.read(reading.checkout, name.path);
-	if (read === undefined || read.adapter === "text") return undefined;
-	const { symbol } = name.definition;
-	const picks = read.definitions.find((each) => each.symbol === symbol && each.picks !== undefined)?.picks;
-	if (picks === undefined) return undefined;
-	const site = picks.type === undefined ? undefined : await definitionSite(reading.facts, reading.checkout, name.path, picks.type);
-	const property = picks.key.includes(".") ? picks.key.slice(picks.key.indexOf(".") + 1) : "";
-	const keys = site?.definition.closes?.[property];
-	const operations = keys === undefined ? picks.operations : restSpelled(picks.operations, keys);
-	const open = picks.type !== undefined && keys === undefined ? { open: picks.type } : {};
-	return {
-		listed: {
-			name: name.name,
-			path: name.path,
-			key: picks.key,
-			operations: operations.map((each) => ({ keys: [...each.keys], line: each.line })),
-			...open,
-		},
-		logic: picks.logic,
-	};
-}
-
-/** The width of a module and its logic once its switchboards are counted. */
-type Widths = Pick<ModuleMeasure, "width" | "logic" | "widened" | "unresolved"> & {
-	readonly switchboards: readonly ModuleSwitchboard[];
-};
-
-/**
- * The width of a module, each switchboard as one name for each operation it
- * picks, and its logic less what only picks; and the same with every key no
- * type closes yet counted, where one waits.
- * @param reading The module.
- * @param judged Each judged export with its kind.
- * @param counts The exports by kind.
- * @param logic The logic counted.
- * @returns The widths.
- */
-async function widthsOf(
-	reading: DepthReading,
-	judged: readonly (readonly [ExposedName, NameKind])[],
-	counts: ExportCounts,
-	logic: number,
-): Promise<Widths> {
-	let width = counts.functions + counts.classes + counts.methods + counts.values;
-	let picking = 0;
-	let open = { width: 0, logic: 0 };
-	const switchboards: ModuleSwitchboard[] = [];
-	const gaps: string[] = [];
-	for (const [name, kind] of judged) {
-		if (!CALLED.has(kind)) continue;
-		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
-		const found = await switchboardOf(reading, name);
-		if (found === undefined) continue;
-		switchboards.push(found.listed);
-		const more = found.listed.operations.length - 1;
-		if (found.listed.open === undefined) {
-			width += more;
-			picking += found.logic;
-		} else {
-			open = { width: open.width + more, logic: open.logic + found.logic };
-			gaps.push(`${name.name}: ${found.listed.open}`);
-		}
-	}
-	const counted = logic - picking;
-	return {
-		width,
-		logic: counted,
-		switchboards,
-		widened: switchboards.flatMap((each) =>
-			each.open === undefined
-				? [{ name: each.name, operations: each.operations.map((operation) => operation.keys) }]
-				: [],
-		),
-		...(gaps.length === 0
-			? {}
-			: { unresolved: { width: width + open.width, logic: counted - open.logic, gaps } }),
-	};
 }
 
 /** What the verdicts on a module as a whole read, beside its names. */

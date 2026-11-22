@@ -48,7 +48,8 @@ function operationOf(arm: Arm, arms: readonly Arm[]): string | undefined {
 	}
 	const under = arms
 		.filter(
-			(other) => other.calls.size > 0 && other.calls.size < arm.calls.size && holds(arm.calls, other.calls),
+			(other) =>
+				other.calls.size > 0 && other.calls.size < arm.calls.size && holds(arm.calls, other.calls),
 		)
 		.toSorted((left, right) => left.calls.size - right.calls.size)[0];
 	return [...(under ?? arm).calls].toSorted().join(",");

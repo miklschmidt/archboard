@@ -353,11 +353,15 @@ function codeMeasure(row: MeasureRow, key: CodeKey): number | undefined {
 	const { code } = row;
 	if (code?.kind !== "read") return undefined;
 	const { exports } = code;
-	if (key === "codeValues") return exports.values;
-	if (key === "codeWidth") return code.width;
-	if (key === "codeLogic") return code.logic;
-	if (key === "codeFindings") return code.findings;
-	return exports.functions + exports.classes + exports.methods + exports.values + exports.types;
+	if (key === "codeExports")
+		return exports.functions + exports.classes + exports.methods + exports.values + exports.types;
+	const counts: Readonly<Record<Exclude<CodeKey, "codeExports">, number>> = {
+		codeWidth: code.width,
+		codeValues: exports.values,
+		codeLogic: code.logic,
+		codeFindings: code.findings,
+	};
+	return counts[key];
 }
 
 /**
