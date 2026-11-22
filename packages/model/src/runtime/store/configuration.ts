@@ -106,8 +106,11 @@ export { VaultConfigurationSchema, readVaultConfiguration };
  * @returns The path.
  */
 function refusedKey(issue: z.core.$ZodIssue | undefined): PropertyKey[] {
-	const unknown = issue?.code === "unrecognized_keys" ? issue.keys.slice(0, 1) : [];
-	return [...(issue?.path ?? []), ...unknown];
+	if (issue === undefined) return [];
+	if (issue.code !== "unrecognized_keys") return issue.path;
+	const retired =
+		issue.path.join(".") === "codeCheck.rules" && issue.keys.includes("INTERFACE_WIDE");
+	return [...issue.path, ...(retired ? ["INTERFACE_WIDE"] : issue.keys.slice(0, 1))];
 }
 
 /**

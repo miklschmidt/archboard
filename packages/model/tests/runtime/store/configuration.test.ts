@@ -59,8 +59,10 @@ test("a rule on another code, a warning level, or off beside the gate is an inva
 });
 
 test("a rule on the retired INTERFACE_WIDE says it is retired and asks for the entry's removal", () => {
-	const [diagnostic] = read({ rules: { INTERFACE_WIDE: "off" } }).diagnostics;
-	expect(diagnostic?.path).toBe("codeCheck.rules.INTERFACE_WIDE");
-	expect(diagnostic?.message).toContain("INTERFACE_WIDE is retired");
-	expect(diagnostic?.message).toContain("Remove this entry");
+	for (const rules of [{ INTERFACE_WIDE: "off" }, { TYPO: "off", INTERFACE_WIDE: "off" }]) {
+		const [diagnostic] = read({ rules }).diagnostics;
+		expect(diagnostic?.path).toBe("codeCheck.rules.INTERFACE_WIDE");
+		expect(diagnostic?.message).toContain("INTERFACE_WIDE is retired");
+		expect(diagnostic?.message).toContain("Remove this entry");
+	}
 });
