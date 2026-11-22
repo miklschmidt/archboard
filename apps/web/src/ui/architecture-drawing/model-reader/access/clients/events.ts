@@ -103,25 +103,27 @@ function createFeed(
 		return stopFollowing !== null && accepted === generation;
 	}
 	/**
-	 * Whether a snapshot names another revision than this tab holds or is reading now.
+	 * Whether a snapshot reports newer or newly readable architecture.
 	 * @param digest The snapshot's revision.
-	 * @returns True when a cached reading is older than the snapshot.
+	 * @param error The error from the settled current read.
+	 * @returns True when the current reading should be refreshed.
 	 */
-	async function movedPast(digest: string): Promise<boolean> {
-		const reading = client.getQueryCache().find({ queryKey: currentKey, exact: true });
-		await reading?.promise?.catch(() => undefined);
+	function movedPast(digest: string, error: Error | null | undefined): boolean {
+		if (error instanceof ArchitectureReadError && isBusy(error.failure)) return true;
 		const held = client.getQueryData<CurrentReading>(currentKey)?.revision.digest;
 		const known = heard ?? held;
 		return known !== undefined && known !== digest;
 	}
 	/**
-	 * Whether an event can change what this tab holds. A snapshot only reports a revision.
+	 * Whether an event can change what this tab holds.
 	 * @param event The ordered model event.
 	 * @returns True when readings need a fresh read.
 	 */
 	async function changesReadings(event: ModelEvent): Promise<boolean> {
 		if (event.type !== "architecture_snapshot" || !event.reading.success) return true;
-		return movedPast(event.reading.digest);
+		const reading = client.getQueryCache().find({ queryKey: currentKey, exact: true });
+		await reading?.promise?.catch(() => undefined);
+		return movedPast(event.reading.digest, reading?.state.error);
 	}
 	/**
 	 * Request a coherent read of everything this change can reach.

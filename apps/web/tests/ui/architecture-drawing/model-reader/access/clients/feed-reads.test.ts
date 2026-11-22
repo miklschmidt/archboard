@@ -327,3 +327,49 @@ test("a refusal that lasts fails the read at once and stays on the feed", async 
 		close();
 	}
 });
+
+test("a healthy snapshot resumes a first read that stayed busy", async () => {
+	const client = new QueryClient();
+	const query = architectureModelQuery(VAULT);
+	refusing = { code: "MODEL_BUSY", reads: Number.POSITIVE_INFINITY };
+	const stopReading = new QueryObserver(client, query).subscribe(() => {});
+	try {
+		const outcome = await client.fetchQuery(query).catch((error: unknown) => error);
+		expect(outcome).toMatchObject({
+			failure: { code: "MODEL_BUSY" },
+		});
+		expect(reads).toHaveLength(21);
+		refusing = null;
+		served = NEW;
+		const stopFeed = architectureFeed(client, VAULT).subscribe(() => {});
+		try {
+			snapshot(NEW);
+			await waitFor(() => expect(client.getQueryData(query.queryKey)?.revision.digest).toBe(NEW));
+		} finally {
+			stopFeed();
+		}
+	} finally {
+		stopReading();
+		client.clear();
+	}
+}, 10_000);
+
+test("a completion replaces a pending busy retry", async () => {
+	const { client, close } = await openReader();
+	const query = architectureModelQuery(VAULT);
+	const reading = client.getQueryCache().find({ queryKey: query.queryKey })!;
+	refusing = { code: "MODEL_BUSY", reads: Number.POSITIVE_INFINITY };
+	try {
+		const retried = client.fetchQuery({ ...query, staleTime: 0 });
+		await waitFor(() => expect(reading.state.fetchFailureCount).toBe(1));
+		expect(reading.state.error).toBeNull();
+		refusing = null;
+		served = NEW;
+		changed(NEW);
+		expect((await retried).revision.digest).toBe(OLD);
+		await waitFor(() => expect(client.getQueryData(query.queryKey)?.revision.digest).toBe(NEW));
+	} finally {
+		close();
+		client.clear();
+	}
+});
