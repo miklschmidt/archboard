@@ -145,7 +145,7 @@ beforeAll(async () => {
 					// The lock pins nixpkgs: a dependency it supports.
 					edge("e1", ["pP", "pN"], "dependency", "inputs.nixpkgs"),
 					// A build dependency is no call, and the lock is sure of it.
-					edge("e2", ["pP", "pN"], "call", "nixpkgs"),
+					edge("e2", ["pP", "pN"], "sync", "nixpkgs"),
 					// The lock pins no such input.
 					edge("e3", ["pP", "pN"], "dependency", "inputs.gone"),
 					// The flake is built from the tools flake, and the document says so.

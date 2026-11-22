@@ -244,7 +244,7 @@ beforeAll(async () => {
 		// The function's use of its role only sets it up, which a dependency does not accept.
 		edge("e3", ["F", "R"], "dependency", ["aws/main.tf", "aws_iam_role.worker"]),
 		// A joining declaration proves its join's kind: a grant is no call.
-		edge("e4", ["Q", "F"], "call", ["aws/main.tf", "aws_lambda_permission.jobs"]),
+		edge("e4", ["Q", "F"], "sync", ["aws/main.tf", "aws_lambda_permission.jobs"]),
 	]);
 	current(
 		"AWS module",

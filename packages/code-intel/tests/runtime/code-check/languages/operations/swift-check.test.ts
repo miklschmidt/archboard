@@ -146,13 +146,13 @@ beforeAll(async () => {
 				],
 				edges: [
 					// The anchor holds and supports: App's code constructs Core's Ledger.
-					edge("e1", ["pA", "pC"], "call", ["Sources/App/main.swift", "Ledger"]),
+					edge("e1", ["pA", "pC"], "sync", ["Sources/App/main.swift", "Ledger"]),
 					// The name is nowhere in the file.
-					edge("e2", ["pM", "pU"], "call", ["Sources/Core/Money.swift", "Nope"]),
+					edge("e2", ["pM", "pU"], "sync", ["Sources/Core/Money.swift", "Nope"]),
 					// Drawn from Money, while the extension's refund builds a Money.
-					edge("e3", ["pM", "pR"], "call"),
+					edge("e3", ["pM", "pR"], "sync"),
 					// A call through a value, which the pass asks sourcekit-lsp about.
-					edge("e4", ["pA", "pC"], "call", ["Sources/App/main.swift", "ledger.balance"]),
+					edge("e4", ["pA", "pC"], "sync", ["Sources/App/main.swift", "ledger.balance"]),
 				],
 			},
 		},
