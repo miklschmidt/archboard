@@ -131,3 +131,19 @@ fn a_window_keeps_its_perimeter_available_beyond_the_interior_inset() {
     let routes = route_bounded(&scene, &[], WINDOW, LIMITS);
     assert!(matches!(routes.as_slice(), [Route::Routed(_)]));
 }
+
+#[test]
+fn ends_exactly_one_tolerance_apart_keep_their_own_vertices() {
+    use crate::grid::SAME;
+
+    let mut scene = scene();
+    scene.obstacles.clear();
+    let from = Point { x: 0.0, y: 0.0 };
+    for at in [Point { x: SAME, y: 0.0 }, Point { x: 0.0, y: SAME }] {
+        scene.connectors[0].ends = (End::Free { at: from }, End::Free { at });
+        assert_eq!(
+            route_bounded(&scene, &[], WINDOW, LIMITS),
+            vec![Route::Routed(vec![from, at])]
+        );
+    }
+}
