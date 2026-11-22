@@ -2,27 +2,20 @@
 // and the chevron at the end. The left column's sections and the right panel's sections fold
 // alike, so the two columns read as one system.
 
-import { RiArrowRightSLine, type RemixiconComponentType } from "@remixicon/react";
+import { RiArrowRightSLine } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
 import { cn } from "@archboard/ui-kit/components";
-import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
+import type { SectionFold } from "#ui/shell/hooks/use-section-fold.ts";
 
-/** Inputs for the head of a section. */
-interface SectionHeadProps {
+/** Inputs for the head of a section: its fold, and what it says. */
+interface SectionHeadProps extends SectionFold {
 	/** Where the head stands in the outline of the page. */
 	readonly level: 2 | 3 | 4;
-	readonly icon?: RemixiconComponentType | undefined;
-	readonly title: string;
-	readonly count?: number | undefined;
-	/** What the head says after the count, which belongs to the button's name. */
-	readonly summary?: ReactNode;
+	/** What the button says: the section's label, and what follows it, such as a summary. */
+	readonly children: ReactNode;
 	/** Keys of the head, such as `Open in About`, which stand before the chevron and fold nothing. */
 	readonly action?: ReactNode;
-	readonly folded: boolean;
-	readonly onFold: () => void;
-	/** The id of the body that the head folds. */
-	readonly controls: string;
 	/** The head's height and inset, which each column sets. */
 	readonly className: string;
 }
@@ -31,7 +24,7 @@ interface SectionHeadProps {
  * The head of a section: one button that folds the section, with the section's label at its start
  * and the chevron that turns at its end. The button reaches over the whole head, so a click
  * anywhere on it folds the section, and a key of the head stands above it and keeps its own click.
- * @param props The section's label, its keys and its fold.
+ * @param props What the head says, its keys and its fold.
  * @returns The head.
  */
 function SectionHead(props: SectionHeadProps): JSX.Element {
@@ -46,8 +39,7 @@ function SectionHead(props: SectionHeadProps): JSX.Element {
 					onClick={props.onFold}
 					className="focus-visible:after:ring-ring flex min-w-0 items-center gap-2 outline-none after:absolute after:inset-0 focus-visible:after:ring-1 focus-visible:after:ring-inset"
 				>
-					<SectionLabel icon={props.icon} title={props.title} count={props.count} />
-					{props.summary}
+					{props.children}
 				</button>
 			</Heading>
 			{props.action !== undefined && (

@@ -23,6 +23,7 @@ import { SIDEBAR_MS } from "@archboard/timing";
 import { cn, IconButton } from "@archboard/ui-kit/components";
 import { ClaimBadge } from "#ui/shell/components/ActivityLamp.tsx";
 import { SectionHead } from "#ui/shell/components/SectionHead.tsx";
+import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import { useSectionFold } from "#ui/shell/hooks/use-section-fold.ts";
 import { GROUP_LINE, rowTone, type RowState } from "#ui/shell/rules/row-tone.ts";
 import { SECTION_ICONS } from "#ui/architecture-drawing/model-reader/reading/constants/section-icons.ts";
@@ -346,15 +347,9 @@ function Section(props: {
 	const fold = useSectionFold(props.folded === true);
 	return (
 		<section data-slot={props.slot} aria-label={props.title} className={SECTION}>
-			<SectionHead
-				level={4}
-				icon={props.icon}
-				title={props.title}
-				count={props.count}
-				action={props.action}
-				{...fold}
-				className="-mx-2 min-h-6 px-2"
-			/>
+			<SectionHead level={4} action={props.action} {...fold} className="-mx-2 min-h-6 px-2">
+				<SectionLabel icon={props.icon} title={props.title} count={props.count} />
+			</SectionHead>
 			{!fold.folded &&
 				(props.list === false ? (
 					<div id={fold.controls} className="pt-1">

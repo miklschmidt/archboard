@@ -334,14 +334,9 @@ function AgainstSection(props: {
 	}
 	return (
 		<section data-slot="semantic-inspector-against" aria-label={title} className={AGAINST}>
-			<SectionHead
-				level={3}
-				icon={props.icon}
-				title={title}
-				action={chip}
-				{...fold}
-				className="-mx-2 min-h-6 px-2"
-			/>
+			<SectionHead level={3} action={chip} {...fold} className="-mx-2 min-h-6 px-2">
+				<SectionLabel icon={props.icon} title={title} />
+			</SectionHead>
 			{!fold.folded && (
 				<dl
 					id={fold.controls}

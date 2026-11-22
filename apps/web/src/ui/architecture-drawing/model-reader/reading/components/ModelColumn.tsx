@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/architecture-drawing/canvas/picture/reads/hooks/use-pane-chrome.ts";
 import { SectionHead } from "#ui/shell/components/SectionHead.tsx";
+import { SectionLabel } from "#ui/shell/components/SectionLabel.tsx";
 import { ROW_HEIGHT } from "#ui/shell/rules/tree-grid.ts";
 
 /** A section of the column's one list. */
@@ -179,15 +180,14 @@ function ColumnSectionList(props: ColumnSectionProps): JSX.Element {
 			<div className="bg-sidebar sticky top-0 z-[11]">
 				<SectionHead
 					level={2}
-					icon={props.icon}
-					title={label}
-					count={count}
-					summary={props.summary}
 					folded={folded}
 					onFold={fold}
 					controls={body}
 					className="h-7 pr-3 pl-2"
-				/>
+				>
+					<SectionLabel icon={props.icon} title={label} count={count} />
+					{props.summary}
+				</SectionHead>
 				{strip !== undefined && (
 					<div style={STRIP_STYLE} className="flex items-center px-2 pb-1">
 						{strip}
