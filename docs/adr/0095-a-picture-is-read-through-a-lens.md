@@ -37,14 +37,14 @@ such as `lenses.<id>.show.<n>.kind`, and a default lens that does not exist at `
 The built-in lenses sit under a vault's own, and a vault's lens with a built-in id replaces it
 whole:
 
-| Id             | Name                  | Question                                   | List                                                     |
-| -------------- | --------------------- | ------------------------------------------ | -------------------------------------------------------- |
-| `main`         | Main lines            |                                            | hide `dependency`, `call` with `query`, `call` with `compute` |
-| `effects`      | Effects               | Where does state change?                   | show `mutation`                                          |
-| `reads`        | Reads                 | Where is held or fetched state read?       | show `query`                                             |
-| `network`      | Network               | How does traffic flow between processes?   | show `http`, `rpc`, `queue`, `event`, `stream`           |
-| `dependencies` | Declared dependencies |                                            | show `dependency`                                        |
-| `all`          | All relationships     |                                            | hide nothing                                             |
+| Id             | Name                  | Question                                 | List                                                          |
+| -------------- | --------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| `main`         | Main lines            |                                          | hide `dependency`, `call` with `query`, `call` with `compute` |
+| `effects`      | Effects               | Where does state change?                 | show `mutation`                                               |
+| `reads`        | Reads                 | Where is held or fetched state read?     | show `query`                                                  |
+| `network`      | Network               | How does traffic flow between processes? | show `http`, `rpc`, `queue`, `event`, `stream`                |
+| `dependencies` | Declared dependencies |                                          | show `dependency`                                             |
+| `all`          | All relationships     |                                          | hide nothing                                                  |
 
 `main` is the default lens of a vault that names none. It shows every mutation, however it
 travels, and all traffic between processes. It leaves out declared dependencies and the queries

@@ -34,7 +34,7 @@ The kind names the mechanism between the two named ends. Archboard has eleven bu
 | ------------ | ---------------------------------------------------------------------------------- |
 | `call`       | In process: a function, a method or a value used at run time.                      |
 | `http`       | An HTTP request.                                                                   |
-| `rpc`        | A remote procedure call with its own contract, such as gRPC or JSON-RPC.          |
+| `rpc`        | A remote procedure call with its own contract, such as gRPC or JSON-RPC.           |
 | `event`      | A named message that the source publishes and that listeners receive.              |
 | `queue`      | Work that the source puts on a queue for a worker.                                 |
 | `stream`     | Successive bytes or records with no message name: a pipe, a stream, a media track. |
