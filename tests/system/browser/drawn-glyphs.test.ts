@@ -48,7 +48,7 @@ const ARCHITECTURE = {
 	],
 	edges: [
 		{ from: "Gateway", to: "Ledger", kind: "sync", label: "transfer with an audit id" },
-		{ from: "Auditor", to: "Ledger", kind: "sync", effect: "query", label: "reconcile" },
+		{ from: "Auditor", to: "Ledger", kind: "sync", effect: "query" as const, label: "reconcile" },
 	],
 };
 

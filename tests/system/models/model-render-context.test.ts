@@ -385,28 +385,28 @@ test("a picture through a lens counts the lines it left out, with or without a l
 		const recipe = readRenderRecipe(Buffer.from(svg));
 		if (recipe.kind !== "recipe" || recipe.recipe.recipe !== 2)
 			throw new Error(JSON.stringify(recipe));
-		const note = /<g data-slot="export-note">[^]*?<text [^>]*>([^<]*)<\/text><\/g>/u.exec(svg)?.[1];
+		const note = /<g data-slot="export-status">[^]*?<text [^>]*>([^<]*)<\/text>/u.exec(svg)?.[1];
 		const { lens, hideEffects } = recipe.recipe.reading;
 		return { svg, note, lens, hideEffects };
 	};
 	// The default lens leaves out the declared dependency, and says so with and without a legend.
 	const main = drawn([]);
-	expect(main).toMatchObject({ note: "Main lines: 1 line left out", lens: "main" });
+	expect(main).toMatchObject({ note: "Main lines · 1 line left out", lens: "main" });
 	expect(main.svg).toContain('data-slot="export-legend"');
 	const bare = drawn(["--legend", "none"]);
-	expect(bare.note).toBe("Main lines: 1 line left out");
+	expect(bare.note).toBe("Main lines · 1 line left out");
 	expect(bare.svg).not.toContain('data-slot="export-legend"');
 	// A part whose every line the lens leaves out leaves the picture: Library drew only its dependency.
 	expect(main.svg).not.toContain('data-semantic-id="Shop#Library"');
 	expect(drawn(["--lens", "dependencies"])).toMatchObject({
-		note: "Declared dependencies: 1 line left out",
+		note: "Declared dependencies · 1 line left out",
 		lens: "dependencies",
 	});
 	const all = drawn(["--lens", "all"]);
 	expect(all).toMatchObject({ note: undefined, lens: "all" });
 	// A hidden effect filters after the lens, and the recipe keeps it.
 	expect(drawn(["--lens", "all", "--hide-effect", "declared"])).toMatchObject({
-		note: "All relationships: 1 line left out",
+		note: "All relationships · 1 line left out",
 		lens: "all",
 		hideEffects: ["declared"],
 	});
