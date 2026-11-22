@@ -97,7 +97,7 @@ For each target, read:
 Ask where understanding one concept means bouncing between many small modules, where logic leaks across a seam, where tests reach past an interface or are missing.
 Apply the deletion test to each module that you suspect is shallow, and classify each dependency.
 
-Then [renegotiate](#vocabulary) each job of the target's interface. Find why the job exists: the ticket, ADR or commit that added it (`git log -S <name>`), and whether that reason still holds. Find who needs it now. Signs that a job has outlived its terms:
+Then [renegotiate](#vocabulary) each job of the target's interface. Find why the job exists: the ticket, ADR or commit that added it (`git log -S <name>`), and whether that reason still holds. Find who needs it now. Examples of jobs that outlived their terms:
 
 - It guards against a situation the product no longer has, such as a lock against human edits after humans stopped editing.
 - Several jobs patch the same gap one case at a time, where one mechanism, such as a revision check on every write, would close it.
