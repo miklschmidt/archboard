@@ -16,7 +16,7 @@ const TABS = [
 		value: "picture",
 		Icon: RiShapesLine,
 		label: "Picture",
-		gloss: "How this browser lays out and lights pictures",
+		gloss: "How this browser lights pictures",
 	},
 	{
 		value: "opener",
@@ -116,7 +116,7 @@ function OpenSettings(props: SettingsDialogProps & { surface: SettingsSurface })
 				<Dialog.Header>
 					<Dialog.Title>Settings</Dialog.Title>
 					<Dialog.Description className="sr-only">
-						How this browser lays out and lights pictures, and which editor opens a module's code on
+						How this browser lights pictures, and which editor opens a module's code on
 						this machine.
 					</Dialog.Description>
 				</Dialog.Header>
