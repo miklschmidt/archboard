@@ -128,15 +128,13 @@ describe("a line's dash says its effect", () => {
 		});
 	}
 
-	test("a coloured line names its kind on its label, and a call or a dependency does not", async () => {
+	test("a coloured line names its kind on its label, and a call does not", async () => {
 		const texts = wordsIn((await drawn(LINES)).svg);
 		expect(texts).toContain("HTTP · save");
 		expect(texts).toContain("Storage · rows");
+		expect(texts).toContain("Dependency · types");
 		expect(texts).toContain("format");
-		expect(texts).toContain("types");
-		expect(texts.some((text) => text.startsWith("Call") || text.startsWith("Dependency"))).toBe(
-			false,
-		);
+		expect(texts.some((text) => text.startsWith("Call"))).toBe(false);
 	});
 
 	test("a compared line wears its standing's ink, and its dash still says its effect", async () => {

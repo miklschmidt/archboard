@@ -160,9 +160,10 @@ const GroupPolicySchema = z
  */
 const NETWORK: EvidenceKind[] = ["call", "configured-path"];
 /**
- * The relationship kinds every vault has, by how a relationship travels. A
- * vault's own entry replaces the built-in of its id whole, and a vault adds a
- * kind with an id of its own. `other` is a labelled relationship that fits no
+ * The relationship kinds every vault has, by how a relationship travels. Every
+ * kind but an in-process call draws in an ink of its own, so the kind is the
+ * colour of its lines (TASK-663). A vault's own entry replaces the built-in of
+ * its id whole, and a vault adds a kind with an id of its own. `other` is a labelled relationship that fits no
  * kind. Every kind but `other` names the evidence kinds that prove it to the
  * code check (ADR 0046); `other` has no key, so it accepts every kind.
  */
@@ -170,18 +171,19 @@ const BUILT_IN_RELATIONSHIP_KINDS: Record<string, RelationshipPolicy> = {
 	call: { name: "Call", arrowhead: "filled", evidence: ["call"] },
 	http: { name: "HTTP", color: "sky", arrowhead: "filled", evidence: NETWORK },
 	rpc: { name: "RPC", color: "blue", arrowhead: "filled", evidence: NETWORK },
-	event: { name: "Event", color: "amber", arrowhead: "open", evidence: NETWORK },
-	queue: { name: "Queue", color: "orange", arrowhead: "open", evidence: NETWORK },
+	event: { name: "Event", color: "violet", arrowhead: "open", evidence: NETWORK },
+	queue: { name: "Queue", color: "amber", arrowhead: "open", evidence: NETWORK },
 	stream: { name: "Stream", color: "teal", arrowhead: "filled", evidence: NETWORK },
 	spawn: { name: "Spawn", color: "fuchsia", arrowhead: "filled", evidence: NETWORK },
 	render: { name: "Render", color: "pink", arrowhead: "filled", evidence: ["call"] },
 	storage: { name: "Storage", color: "emerald", arrowhead: "filled", evidence: NETWORK },
 	dependency: {
 		name: "Dependency",
+		color: "indigo",
 		arrowhead: "open",
 		evidence: ["call", "configured-path", "import", "build-dependency"],
 	},
-	other: { name: "Other", arrowhead: "filled" },
+	other: { name: "Other", color: "lime", arrowhead: "filled" },
 };
 /**
  * The lens of every relationship. A vault may rename it but not narrow it, so
