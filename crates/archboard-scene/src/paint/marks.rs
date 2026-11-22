@@ -16,7 +16,7 @@ use crate::scene::traffic::pulse_breadth;
 use crate::scene::{Colour, Item};
 
 /// Every colour a relationship kind can be drawn in: none, for the neutral line, then the palette's.
-const COLOURS: [Option<PaletteColor>; 18] = [
+const COLOURS: [Option<PaletteColor>; 19] = [
     None,
     Some(PaletteColor::Red),
     Some(PaletteColor::Orange),
@@ -26,6 +26,7 @@ const COLOURS: [Option<PaletteColor>; 18] = [
     Some(PaletteColor::Green),
     Some(PaletteColor::Emerald),
     Some(PaletteColor::Teal),
+    Some(PaletteColor::Slate),
     Some(PaletteColor::Cyan),
     Some(PaletteColor::Sky),
     Some(PaletteColor::Blue),

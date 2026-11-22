@@ -47,6 +47,8 @@ pub enum PaletteColor {
     Green,
     Emerald,
     Teal,
+    /// A quiet, low-chroma slate-teal, for lines that should recede.
+    Slate,
     Cyan,
     Sky,
     Blue,
