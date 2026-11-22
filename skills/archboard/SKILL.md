@@ -21,6 +21,7 @@ A reading selects what you see without copying architecture.
 
 Before the first architecture operation, read [canonical models](references/canonical-models.md) for discovery, reads, writes, and history.
 For `LEGACY_AUTHORITY` or requested migration, follow [legacy migration](references/legacy-migration.md).
+For `UPGRADE_REQUIRED`, follow [the upgrade](references/upgrade.md).
 Before describing implemented architecture or authoring changes, read [authoring](references/authoring.md) for evidence and modeling rules.
 Before preparing a request, read [schemas](references/schemas.md).
 

@@ -28,7 +28,7 @@ const UPGRADE_REQUIRED: ModelDiagnostic = {
 	message:
 		"This vault is in the old format: its relationships state no effect, so it opens read-only.",
 	recovery:
-		"Upgrade the vault to the current format, which states each relationship's kind and effect. Every write is refused until then.",
+		"Upgrade the vault to the current format, which states each relationship's kind and effect: write its inventory with `archboard upgrade inventory`, fill it, and install it with `archboard upgrade install`. Every write is refused until then.",
 };
 
 /**
