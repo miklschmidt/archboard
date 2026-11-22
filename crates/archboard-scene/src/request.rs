@@ -235,6 +235,7 @@ pub struct LineAppearance {
 impl LineAppearance {
     /// How its kind's legend row samples it: solid with a filled head in the
     /// kind's ink where the dash says an effect, else as the kind draws it.
+    #[must_use]
     pub fn kind_sample(&self) -> LineAppearance {
         match self.effect {
             None => self.clone(),

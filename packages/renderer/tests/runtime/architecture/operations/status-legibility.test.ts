@@ -368,7 +368,11 @@ describe("the words a relationship carries are on top of every dot", () => {
 
 describe("what nobody has decided is said in its own corner", () => {
 	test("an unlabelled return carries its warning on the route", async () => {
-		const content = { ...CONTENT, edges: CONTENT.edges.map(({ label: _label, ...edge }) => edge) };
+		// A coloured line names its kind on a plate, so only a plain call carries no words.
+		const content = {
+			...CONTENT,
+			edges: CONTENT.edges.map(({ label: _label, ...edge }) => ({ ...edge, kind: "call" })),
+		};
 		const drawn = await renderArchitecture({
 			policy: defaultSemanticPolicy(),
 			content,

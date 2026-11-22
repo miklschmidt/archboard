@@ -225,6 +225,11 @@ function markRows(projection: Projection): readonly LegendMark[] {
  * @returns One row for each.
  */
 function effectRows(model: Model, projection: Projection): readonly LegendEffect[] {
+	/**
+	 * The effects that some lines' dashes say.
+	 * @param connections The lines.
+	 * @returns The effects, with undefined for a line whose dash says none.
+	 */
 	const said = (connections: readonly Connection[]): ReadonlySet<string | undefined> =>
 		new Set(connections.map(({ line }) => drawnEffect(line, model.policy)));
 	const held = said(projection.allConnections);
