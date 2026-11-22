@@ -10,8 +10,8 @@ import {
 	createVaultConfigurationSchema,
 	configurationOf,
 	type SemanticPolicy,
-	type VaultDiagnostic,
 } from "#shared/schemas/semantic-policy.ts";
+import { type VaultDiagnostic } from "#shared/schemas/vault-diagnostic.ts";
 
 const VAULT_CONFIGURATION_PATH = path.join(".archboard", "config.yaml");
 const InstalledIconSchema = z.enum(

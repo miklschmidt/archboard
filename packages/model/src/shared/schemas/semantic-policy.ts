@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
+import { CodeCheckPolicySchema } from "#shared/schemas/code-check-policy.ts";
 
 /** Stable vocabulary names; their light and dark colors live in packages/renderer/assets/theme.css. */
 const PaletteColorSchema = z.enum([
@@ -153,65 +154,6 @@ const GroupPolicySchema = z
 		}),
 	})
 	.strict();
-/**
- * The refusal of a rule on `INTERFACE_WIDE`, the flat cap that TASK-659
- * retired, so a vault that still sets it is told so by name. The record
- * reports an unknown key as `unrecognized_keys`, whose `keys` name them.
- * @param issue The record's issue.
- * @returns The message, or undefined to keep zod's own.
- */
-function retiredRule(issue: object): string | undefined {
-	const keys = "keys" in issue ? issue.keys : undefined;
-	return Array.isArray(keys) && keys.includes("INTERFACE_WIDE")
-		? "INTERFACE_WIDE is retired: MODULE_SHALLOW judges the logic behind each name at any width (ADR 0082). Remove this entry"
-		: undefined;
-}
-/**
- * The module-depth findings of the code check (ADR 0082) whose level a vault
- * sets, and the levels it may set. A rule only lowers: an incomplete read
- * lowers a finding to information, and no rule may make it a warning again.
- */
-const DepthRuleSchema = z.partialRecord(
-	z.enum([
-		"EXPOSED_VALUE",
-		"EXPOSED_VALUE_COMPUTED",
-		"CODE_PASS_THROUGH",
-		"REEXPORT_PASS_THROUGH",
-		"EXPOSED_UNUSED",
-		"INTERFACE_UNDECLARED",
-		"MODULE_SHALLOW",
-	]),
-	z.enum(["information", "off"]),
-	{ error: retiredRule },
-);
-/**
- * The vault's code-check policy (TASK-646.04, TASK-650, TASK-651, TASK-659).
- * `failShallowModules` is the only promotion: it fails the check on an
- * information `MODULE_SHALLOW` of a touched module, so a rule that turns it
- * off beside it contradicts it, and the refusal names the rule. A rule on
- * `INTERFACE_WIDE`, the flat cap that TASK-659 retired, is refused by name.
- */
-const CodeCheckPolicySchema = z
-	.object({
-		failShallowModules: z.boolean().optional().meta({
-			description:
-				"Plain `archboard check` fails on MODULE_SHALLOW in a module that the branch touched, working tree included, where a rule set it to information, as `--fail-shallow-modules` does (TASK-646.04, TASK-651). It is a warning on every module without a rule.",
-		}),
-		rules: DepthRuleSchema.optional().meta({
-			description:
-				"The level of each module-depth finding, by code: `information` keeps it and never fails the check, `off` removes it from the answer. A code without a rule keeps its built-in level, so MODULE_SHALLOW is a warning on every module. Keys: EXPOSED_VALUE, EXPOSED_VALUE_COMPUTED, CODE_PASS_THROUGH, REEXPORT_PASS_THROUGH, EXPOSED_UNUSED, INTERFACE_UNDECLARED and MODULE_SHALLOW. With `failShallowModules: true`, an information MODULE_SHALLOW fails the check on a module that the branch touched (debt mode), and `off` on it is invalid.",
-		}),
-	})
-	.strict()
-	.superRefine((policy, context) => {
-		if (policy.failShallowModules !== true || policy.rules?.MODULE_SHALLOW !== "off") return;
-		context.addIssue({
-			code: "custom",
-			path: ["rules", "MODULE_SHALLOW"],
-			message:
-				"failShallowModules fails the check on MODULE_SHALLOW in a touched module, and this rule turns it off: set it to information, or remove one of them",
-		});
-	});
 /**
  * What proves a relationship across a network, an event bus, a queue, a
  * process boundary or a store: a use in code, a trigger or a route in
@@ -369,47 +311,96 @@ function authoredPolicySchema(icon: z.ZodType<string>) {
 		})
 		.strict();
 }
+/** One refusal of an authored policy, where its repair starts. */
+interface PolicyIssue {
+	readonly path: PropertyKey[];
+	readonly message: string;
+}
 /**
- * Report each place where an authored policy names what is not in effect.
+ * The kinds a vault adds without a color: the kind is the color of its lines.
  * @param authored The authored policy.
- * @param context Where the issues go.
+ * @returns A refusal for each, at its color.
  */
-function refuseUnknownReferences(authored: AuthoredPolicy, context: z.RefinementCtx): void {
+function colorlessKinds(authored: AuthoredPolicy): PolicyIssue[] {
+	return Object.entries(authored.relationshipKinds)
+		.filter(
+			([id, kind]) => !Object.hasOwn(BUILT_IN_RELATIONSHIP_KINDS, id) && kind.color === undefined,
+		)
+		.map(([id]) => ({
+			path: ["relationshipKinds", id, "color"],
+			message: `A kind the vault adds names its color, because the kind is the color of its lines: add color: with one of ${PaletteColorSchema.options.join(", ")}`,
+		}));
+}
+/**
+ * A vault's `all` lens that no longer shows every relationship.
+ * @param authored The authored policy.
+ * @returns Its refusal, or none.
+ */
+function narrowedAll(authored: AuthoredPolicy): PolicyIssue[] {
+	const all = authored.lenses[ALL_LENS_ID];
+	if (all === undefined || (all.show === undefined && (all.hide ?? []).length === 0)) return [];
+	return [
+		{
+			path: ["lenses", ALL_LENS_ID],
+			message:
+				"The lens all shows every relationship in every vault: a vault may rename it, and its list stays hide: []. Give this lens another id",
+		},
+	];
+}
+/**
+ * The lens selectors that name a kind the policy does not have.
+ * @param authored The authored policy.
+ * @returns A refusal for each, at the selector's kind.
+ */
+function unknownLensKinds(authored: AuthoredPolicy): PolicyIssue[] {
 	const kinds = new Set([
 		...Object.keys(BUILT_IN_RELATIONSHIP_KINDS),
 		...Object.keys(authored.relationshipKinds),
 	]);
-	for (const [id, kind] of Object.entries(authored.relationshipKinds))
-		if (!Object.hasOwn(BUILT_IN_RELATIONSHIP_KINDS, id) && kind.color === undefined)
-			context.addIssue({
-				code: "custom",
-				path: ["relationshipKinds", id, "color"],
-				message: `A kind the vault adds names its color, because the kind is the color of its lines: add color: with one of ${PaletteColorSchema.options.join(", ")}`,
-			});
-	for (const [id, lens] of Object.entries(authored.lenses)) {
-		if (id === ALL_LENS_ID && (lens.show !== undefined || (lens.hide ?? []).length > 0))
-			context.addIssue({
-				code: "custom",
-				path: ["lenses", id],
-				message:
-					"The lens all shows every relationship in every vault: a vault may rename it, and its list stays hide: []. Give this lens another id",
-			});
-		for (const list of ["show", "hide"] as const)
-			for (const [index, selector] of (lens[list] ?? []).entries())
-				if (selector.kind !== undefined && !kinds.has(selector.kind))
-					context.addIssue({
-						code: "custom",
-						path: ["lenses", id, list, index, "kind"],
-						message: `Unknown relationship kind "${selector.kind}": use one of ${[...kinds].join(", ")}`,
-					});
-	}
+	return Object.entries(authored.lenses).flatMap(([id, lens]) =>
+		(["show", "hide"] as const).flatMap((list) =>
+			(lens[list] ?? []).flatMap((selector, index) =>
+				selector.kind === undefined || kinds.has(selector.kind)
+					? []
+					: [
+							{
+								path: ["lenses", id, list, index, "kind"],
+								message: `Unknown relationship kind "${selector.kind}": use one of ${[...kinds].join(", ")}`,
+							},
+						],
+			),
+		),
+	);
+}
+/**
+ * A default lens the policy does not have.
+ * @param authored The authored policy.
+ * @returns Its refusal, or none.
+ */
+function unknownDefaultLens(authored: AuthoredPolicy): PolicyIssue[] {
 	const lenses = new Set([...Object.keys(BUILT_IN_LENSES), ...Object.keys(authored.lenses)]);
-	if (authored.defaultLens !== undefined && !lenses.has(authored.defaultLens))
-		context.addIssue({
-			code: "custom",
+	if (authored.defaultLens === undefined || lenses.has(authored.defaultLens)) return [];
+	return [
+		{
 			path: ["defaultLens"],
 			message: `Unknown lens "${authored.defaultLens}": use one of ${[...lenses].join(", ")}`,
-		});
+		},
+	];
+}
+/**
+ * Refuse an authored policy at each place where it names what is not in
+ * effect, or adds a kind without its color.
+ * @param authored The authored policy.
+ * @param context Where the issues go.
+ */
+function refusePolicyIssues(authored: AuthoredPolicy, context: z.RefinementCtx): void {
+	for (const issue of [
+		...colorlessKinds(authored),
+		...narrowedAll(authored),
+		...unknownLensKinds(authored),
+		...unknownDefaultLens(authored),
+	])
+		context.addIssue({ code: "custom", ...issue });
 }
 /**
  * The policy in effect for an authored one: the built-ins under the vault's own.
@@ -425,6 +416,17 @@ function resolvePolicy(authored: AuthoredPolicy): SemanticPolicy {
 	};
 }
 /**
+ * The entries a vault states itself: those that differ from the built-in of their id.
+ * @param values The entries in effect.
+ * @param builtIn The built-ins they sit over.
+ * @returns The vault's own entries.
+ */
+function ownEntries<T>(values: Record<string, T>, builtIn: Record<string, T>): Record<string, T> {
+	return Object.fromEntries(
+		Object.entries(values).filter(([id, value]) => !sameSemanticValue(value, builtIn[id])),
+	);
+}
+/**
  * The configuration that reads back as a policy in effect, so a reading can
  * be written again as inputs, and what a digest of a reading's policy reads. A policy of the old format, which records a dash
  * on each kind, is written in the old format and without lenses; any other
@@ -436,14 +438,10 @@ function configurationOf(policy: SemanticPolicy): Record<string, unknown> {
 	const { lenses, defaultLens, ...vocabulary } = policy;
 	if (Object.values(vocabulary.relationshipKinds).some((kind) => kind.dash !== undefined))
 		return vocabulary;
-	const own = <T>(values: Record<string, T>, builtIn: Record<string, T>) =>
-		Object.fromEntries(
-			Object.entries(values).filter(([id, value]) => !sameSemanticValue(value, builtIn[id])),
-		);
 	return {
 		...vocabulary,
-		relationshipKinds: own(vocabulary.relationshipKinds, BUILT_IN_RELATIONSHIP_KINDS),
-		lenses: own(lenses, BUILT_IN_LENSES),
+		relationshipKinds: ownEntries(vocabulary.relationshipKinds, BUILT_IN_RELATIONSHIP_KINDS),
+		lenses: ownEntries(lenses, BUILT_IN_LENSES),
 		...(defaultLens === DEFAULT_LENS_ID ? {} : { defaultLens }),
 	};
 }
@@ -453,7 +451,7 @@ function configurationOf(policy: SemanticPolicy): Record<string, unknown> {
  * @returns The configuration schema.
  */
 function createVaultConfigurationSchema(icon: z.ZodType<string> = NodePolicySchema.shape.icon) {
-	return authoredPolicySchema(icon).superRefine(refuseUnknownReferences).transform(resolvePolicy);
+	return authoredPolicySchema(icon).superRefine(refusePolicyIssues).transform(resolvePolicy);
 }
 /**
  * Build the contract of a vault configuration in the old format, read exactly
@@ -522,90 +520,6 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = createVaultConfigurationSchema()
 	...DEFAULT_VAULT_CONFIGURATION,
 	levels: ["system", "service", "module"],
 });
-/**
- * The one node, relationship or flow step a diagnostic is about. The model and
- * variant it sits on are the diagnostic's own, so `id` alone finds it there.
- * The kinds are the model's own subject kinds (`edge` is a relationship). A
- * step carries an anchor, so the code check names one (ADR 0046); the plain
- * check never does, and every reader accepts one. `name` is what a reader
- * would call it, carried so a line of text can say it without reading the
- * model again: a step, which has no name of its own, is named by its flow, its
- * ends and its label.
- */
-const DiagnosticSubjectSchema = z.object({
-	kind: z.enum(["node", "edge", "flow", "step"]),
-	id: z.string(),
-	name: z.string(),
-});
-type DiagnosticSubject = z.infer<typeof DiagnosticSubjectSchema>;
-/**
- * One of the two parts a `SHARED_SYMBOL` warning names: its model, its id and
- * name, and the ids of the live variants of that model that carry it.
- */
-const SharedSymbolPartSchema = z.object({
-	board: z.string(),
-	id: z.string(),
-	name: z.string(),
-	variants: z.array(z.string()),
-});
-/**
- * What a `SHARED_SYMBOL` warning is about: the repository, path and symbol
- * that two distinct parts both bind, and those two parts.
- */
-const SharedSymbolSchema = z.object({
-	binding: z.object({ repo: z.string(), path: z.string(), symbol: z.string() }),
-	parts: z.tuple([SharedSymbolPartSchema, SharedSymbolPartSchema]),
-});
-const VaultDiagnosticSchema = z.object({
-	severity: z.enum(["warning", "error"]),
-	code: z.string(),
-	file: z.string(),
-	path: z.string().optional(),
-	board: z.string().optional(),
-	variant: z.string().optional(),
-	subject: DiagnosticSubjectSchema.optional(),
-	sharedSymbol: SharedSymbolSchema.optional(),
-	/** The binding that a containment warning asks its container to take: one directory that holds every part. */
-	suggestedBinding: z.object({ repo: z.string(), path: z.string() }).optional(),
-	message: z.string(),
-});
-type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
-/**
- * A diagnostic as a line of text reads it. A finding of the code check has
- * the same shape with the severity `information` beside `warning` (ADR 0046).
- */
-type DiagnosticOfAnySeverity = Omit<VaultDiagnostic, "severity"> & {
-	severity: VaultDiagnostic["severity"] | "information";
-};
-/** Each subject kind in the words of a person. */
-const SUBJECT_WORD = { node: "module", edge: "relationship", flow: "flow", step: "step" } as const;
-/**
- * A subject as a line of text names it.
- * @param subject The diagnostic's subject.
- * @returns Its kind in the words of a person, then its quoted name.
- */
-function describeSubject(subject: DiagnosticSubject): string {
-	return `${SUBJECT_WORD[subject.kind]} ${JSON.stringify(subject.name)}`;
-}
-/**
- * One diagnostic as a line of text: severity, where, the node, relationship or
- * step it is about when it names one, and what is wrong.
- * @param issue The diagnostic, or a finding of the code check.
- * @returns The line.
- */
-function diagnosticLine(issue: DiagnosticOfAnySeverity): string {
-	const where = `${issue.file}${issue.path === undefined ? "" : `:${issue.path}`}`;
-	const about = issue.subject === undefined ? "" : `${describeSubject(issue.subject)}: `;
-	return `${issue.severity}: ${where}: ${about}${issue.message}`;
-}
-const VaultCheckSchema = z.object({
-	policy: SemanticPolicySchema,
-	configurationValid: z.boolean(),
-	configurationFile: z.string(),
-	fingerprint: z.string(),
-	diagnostics: z.array(VaultDiagnosticSchema),
-});
-
 export {
 	VocabularyNameSchema,
 	createSemanticPolicySchema,
@@ -621,13 +535,7 @@ export {
 	SemanticPolicySchema,
 	type SemanticPolicy,
 	DEFAULT_SEMANTIC_POLICY,
-	type DiagnosticSubject,
-	describeSubject,
-	diagnosticLine,
 	EvidenceKindSchema,
-	VaultDiagnosticSchema,
-	type VaultDiagnostic,
-	VaultCheckSchema,
 };
 
 /**
@@ -660,20 +568,4 @@ export function paletteColorSchema(): typeof PaletteColorSchema {
  */
 export function semanticPolicySchema(): typeof SemanticPolicySchema {
 	return SemanticPolicySchema;
-}
-
-/**
- * The schema `VaultCheckSchema`, for callers that parse it or build on it.
- * @returns The schema.
- */
-export function vaultCheckSchema(): typeof VaultCheckSchema {
-	return VaultCheckSchema;
-}
-
-/**
- * The schema `VaultDiagnosticSchema`, for callers that parse it or build on it.
- * @returns The schema.
- */
-export function vaultDiagnosticSchema(): typeof VaultDiagnosticSchema {
-	return VaultDiagnosticSchema;
 }

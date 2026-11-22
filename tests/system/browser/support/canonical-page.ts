@@ -77,7 +77,7 @@ async function seedCanonicalModel(vault: string, name: string, scene: Scene = SM
 			// A scene that states no effect writes a mutation: only a dependency may omit one.
 			.map(({ to, kind, label, effect }, order) => ({
 				kind,
-				...(kind === "dependency" ? {} : { effect: effect ?? "mutation" }),
+				effect: kind === "dependency" ? effect : (effect ?? "mutation"),
 				label,
 				id: `${id}#${mintId()}`,
 				to: subject(to),

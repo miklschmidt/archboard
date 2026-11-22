@@ -190,6 +190,20 @@ function validationManifest(
 	return state == null ? manifest : { ...manifest, current: state };
 }
 /**
+ * Whether inputs are in the old format: an old configuration or any old module file.
+ * @param format The configuration's format.
+ * @param modules The decoded module files.
+ * @returns The one diagnostic of an old vault, or nothing.
+ */
+function readOnly(
+	format: "current" | "old",
+	modules: readonly ArchitectureModel["modules"][number][],
+): Pick<ArchitectureModel, "readOnly"> {
+	const old =
+		format === "old" || modules.some(({ schemaVersion }) => schemaVersion === OLD_MODULE_FORMAT);
+	return old ? { readOnly: UPGRADE_REQUIRED } : {};
+}
+/**
  * Interpret the captured file set as one complete model.
  * @param captured The exact bytes and their revision.
  * @param selectedState The explicit materialized state, when present.
@@ -252,15 +266,12 @@ function decodeModel(
 	const modules = discovered
 		.toSorted(compareModelSubjects)
 		.map((module) => ({ ...module, outgoing: module.outgoing.toSorted(compareModelSubjects) }));
-	const old =
-		configuration.format === "old" ||
-		modules.some((module) => module.schemaVersion === OLD_MODULE_FORMAT);
 	return {
 		success: true,
 		migration,
 		manifest,
 		policy,
-		...(old ? { readOnly: UPGRADE_REQUIRED } : {}),
+		...readOnly(configuration.format, modules),
 		revision,
 		modules,
 		collections: collections.toSorted((one, other) => one.file.localeCompare(other.file, "en")),

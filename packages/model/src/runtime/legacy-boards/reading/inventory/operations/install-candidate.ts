@@ -16,9 +16,9 @@ import {
 import {
 	decodeSubjects,
 	materializedInputs,
-	predecessorRevision,
 	requireModel,
 } from "#runtime/canonical/proposals/operations/read.ts";
+import { predecessorRevision } from "#runtime/canonical/proposals/operations/predecessor-revision.ts";
 import {
 	archiveCommit,
 	tree,

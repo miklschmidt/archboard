@@ -18,9 +18,9 @@ import { decodeModel } from "#runtime/canonical/read/operations/model-read.ts";
 import { exactReading } from "#runtime/canonical/history/retained-reading/operations/read.ts";
 import {
 	materializedInputs,
-	predecessorRevision,
 	decodeProposal,
 } from "#runtime/canonical/proposals/operations/read.ts";
+import { predecessorRevision } from "#runtime/canonical/proposals/operations/predecessor-revision.ts";
 import { compactChanges } from "#runtime/canonical/proposals/operations/subjects.ts";
 import { ProposalSchema } from "#shared/schemas/model-proposals.ts";
 import type { ArchitectureModel } from "#shared/canonical-contracts/schemas/model.ts";
