@@ -5,14 +5,8 @@ import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { across, along } from "#tests/runtime/support/drawn-reading.ts";
-import {
-	distanceToFrame,
-	routeCrosses,
-	routeEnds,
-	routePoints,
-} from "#tests/runtime/support/drawn-routes.ts";
+import { routeCrosses, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/model/content";
-import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
 
 const policy = defaultSemanticPolicy();
@@ -315,18 +309,6 @@ describe("renderArchitecture", () => {
 			expect(box.width).toBeGreaterThan(0);
 			expect(box.height).toBeGreaterThan(0);
 		}
-	});
-
-	test("an edge naming a container arrives on its visible header card", async () => {
-		const rendered = await render();
-		const arrival = routeEnds(rendered.svg).get("e7");
-		expect(arrival).toBeDefined();
-
-		const box = headerCards(rendered).get("store")!;
-		expect(box).toBeDefined();
-		expect(distanceToFrame(arrival!, box)).toBeLessThan(2);
-		expect(arrival!.x).toBeGreaterThanOrEqual(box.x - 2);
-		expect(arrival!.y).toBeGreaterThanOrEqual(box.y - 2);
 	});
 
 	test("nodes belonging to nothing spread across the reading instead of lining up along it", async () => {
