@@ -15,7 +15,7 @@
 // reports owns; nothing about it is restated here.
 
 import { semanticPaneContextRoute } from "@archboard/model/pane-context";
-import { paneMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 import { createUserMarks } from "#ui/panes/pane-session/state/user-marks.ts";
 import { inVault, requestJson } from "@archboard/server-requests";
 import type { semanticPaneContextSchema } from "@archboard/model/pane-context";
@@ -126,7 +126,7 @@ function sendReading(vault: string, body: SemanticPaneContext): Promise<ReadingR
 function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher {
 	const send = parts.send ?? ((body: SemanticPaneContext) => sendReading(parts.vault(), body));
 	const warn = parts.warn ?? ((message: string): void => console.warn(message));
-	let timer: ReturnType<typeof setTimeout> | null = null;
+	let timer: (() => void) | null = null;
 	let published = "";
 	let pending: PaneReading | null = null;
 	// The last reading this pane had, kept so it can be said again. A pane whose
@@ -187,7 +187,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	 */
 	async function flushLatest(): Promise<boolean> {
 		const observed = latest;
-		if (timer !== null) clearTimeout(timer);
+		timer?.();
 		if (pending !== null) flush();
 		return (await delivery) && observed !== null && observed === latest;
 	}
@@ -199,10 +199,8 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	function publish(reading: PaneReading): void {
 		latest = reading;
 		pending = reading;
-		if (timer !== null) {
-			clearTimeout(timer);
-		}
-		timer = setTimeout(flush, paneMs("selectionDebounce"));
+		timer?.();
+		timer = after("pane.selectionDebounce", flush);
 	}
 
 	/**
@@ -213,7 +211,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	 */
 	function userChanged(part: SemanticPanePart): void {
 		if (pending !== null) {
-			if (timer !== null) clearTimeout(timer);
+			timer?.();
 			flush();
 		}
 		marks.mark(part);
@@ -269,7 +267,7 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 		latest = null;
 		pending = null;
 		if (timer !== null) {
-			clearTimeout(timer);
+			timer();
 			timer = null;
 		}
 	}

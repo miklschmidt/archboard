@@ -144,7 +144,7 @@ const TEST_PANE_MESSAGE_POLL_MS = 20;
  * These panes acknowledge callbacks directly and never render, so a frame
  * that has not arrived in two seconds is missing. It is long enough for a
  * server that waits on a pane's geometry to give up first: it pulls against
- * `paneMs("settleCap")` (1.5 s), which this value must stay above.
+ * `pane.settleCap` (1.5 s), which this value must stay above.
  */
 const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
 

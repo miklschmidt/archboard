@@ -4,7 +4,7 @@ import {
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
-import { paneMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 
 /** The listing of the repositories of this machine, as one frame carries it. */
 type RepositoriesFrame = Extract<ArchitectureFeedFrame, { type: "repositories" }>;
@@ -93,7 +93,7 @@ function createFeedSocket() {
 		opening.addEventListener("close", () => {
 			socket = null;
 			for (const follower of everyone()) follower.lost();
-			setTimeout(connect, paneMs("socketReconnect"));
+			after("pane.socketReconnect", connect);
 		});
 	}
 	/** Close the socket once nothing follows. */

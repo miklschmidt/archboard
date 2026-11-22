@@ -1,6 +1,5 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, jest, mock, test } from "bun:test";
-import { paneMs } from "@archboard/timing";
 import { installFeedServer } from "#tests/ui/support/model-catalog/feed-server.ts";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
@@ -47,7 +46,7 @@ test("the chooser names a server that does not answer, and lists the repositorie
 		expect(within(notices[0]!).getByText(/does not answer/)).toBeDefined();
 		expect(within(notices[0]!).queryByRole("button", { name: "Retry" })).toBeNull();
 		feed.refuse(false);
-		await act(async () => jest.advanceTimersByTime(paneMs("socketReconnect")));
+		await act(async () => jest.advanceTimersToNextTimer());
 		await settle();
 		await act(async () =>
 			feed.latest()!.receive({ type: "repositories", revision: 0, repositories: [] }),

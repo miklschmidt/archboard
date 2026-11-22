@@ -6,7 +6,6 @@ import { afterAll, afterEach, expect, jest, test } from "bun:test";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import type { ArchitectureFeedFrame } from "@archboard/model/contract";
-import { paneMs } from "@archboard/timing";
 import { checkoutChoiceSchema } from "@archboard/workspace/repositories";
 import { installFeedServer, type FeedSocket } from "#tests/ui/support/model-catalog/feed-server.ts";
 
@@ -92,7 +91,7 @@ async function onTestClock(run: () => Promise<void>): Promise<void> {
 
 /** Let the tab dial its feed again, as it does once the reconnect wait has passed. */
 async function redial(): Promise<void> {
-	await act(async () => jest.advanceTimersByTime(paneMs("socketReconnect")));
+	await act(async () => jest.advanceTimersToNextTimer());
 	await act(async () => {});
 }
 

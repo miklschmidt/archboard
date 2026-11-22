@@ -49,7 +49,7 @@ import {
 	type RepositoryEntry,
 	type repositoryListingSchema,
 } from "@archboard/workspace/repositories";
-import { paneMs } from "@archboard/timing";
+import { every } from "@archboard/timing";
 
 /**
  * The repositories, as the navigator lists them.
@@ -150,7 +150,7 @@ let published: { readonly listing: Listing; readonly text: string } | null = nul
 const followers = new Set<(listing: Listing) => void>();
 
 /** The slow look at the disk, while a tab follows the repositories. */
-let recheck: ReturnType<typeof setInterval> | null = null;
+let recheck: (() => void) | null = null;
 
 /** The watch of the registry file's directory, while there is one. */
 let registryWatcher: fs.FSWatcher | null = null;
@@ -231,13 +231,12 @@ function followRepositories(send: (listing: Listing) => void): () => void {
 	followers.add(send);
 	if (published !== null) send(published.listing);
 	if (recheck === null) {
-		recheck = setInterval(() => lookAgainFor("a recheck"), paneMs("repositoryRecheck"));
-		recheck.unref();
+		recheck = every("pane.repositoryRecheck", () => lookAgainFor("a recheck"));
 	}
 	return () => {
 		followers.delete(send);
 		if (followers.size > 0 || recheck === null) return;
-		clearInterval(recheck);
+		recheck();
 		recheck = null;
 	};
 }

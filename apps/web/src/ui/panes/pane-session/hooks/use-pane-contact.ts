@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useReducer } from "react";
 
-import { paneMs } from "@archboard/timing";
+import { after } from "@archboard/timing";
 
 /** A pane's contact with the server. */
 interface PaneContact {
@@ -77,8 +77,7 @@ function usePaneContact(): PaneContactCell {
 		if (contact.connected) {
 			return undefined;
 		}
-		const window = setTimeout(() => dispatch("reconnect_window_passed"), paneMs("contactLost"));
-		return () => clearTimeout(window);
+		return after("pane.contactLost", () => dispatch("reconnect_window_passed"));
 	}, [contact.connected]);
 	const setConnected = useCallback((connected: boolean): void => {
 		dispatch(connected ? "connected" : "disconnected");

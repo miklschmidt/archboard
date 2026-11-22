@@ -6,7 +6,9 @@ import type { Use } from "#shared/constants/uses.ts";
 import { CHECKS } from "#shared/constants/checks.ts";
 import { CODEX } from "#shared/constants/codex.ts";
 import { GIT } from "#shared/constants/git.ts";
+import { HISTORY_LENS } from "#shared/constants/history-lens.ts";
 import { CLAIMS, MODEL_LOCKS } from "#shared/constants/model-locks.ts";
+import { PANE } from "#shared/constants/pane.ts";
 import { RASTER } from "#shared/constants/raster.ts";
 import { SKILL_EVAL } from "#shared/constants/skill-eval.ts";
 import { SERVER_LIFECYCLE } from "#shared/constants/server-lifecycle.ts";
@@ -28,6 +30,8 @@ const WAITS = Object.freeze({
 	...RECORDER,
 	...REPLAY,
 	...SKILL_EVAL,
+	...PANE,
+	...HISTORY_LENS,
 }) satisfies Readonly<Record<string, Use>>;
 
 type Waits = typeof WAITS;

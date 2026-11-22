@@ -186,7 +186,7 @@ function postPaneRoute(req: Request, res: Response): void {
 //
 // These two routes ask the browser to change its layout and then wait for the
 // registry to agree. How long they wait is in timing.ts, because the settle
-// cap is waiting out paneMs("report"), which is a number on the other side of
+// cap is waiting out `pane.report`, which is a number on the other side of
 // the browser boundary.
 
 /**

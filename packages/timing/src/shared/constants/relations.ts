@@ -79,6 +79,12 @@ const RELATIONS: readonly Relation[] = [
 	// An evaluation server's stop outlasts its own composed Codex shutdown, with one more of margin.
 	[["codex.composedShutdown", "codex.composedShutdown"], "<=", "skillEval.serverGroupStop"],
 	["skillEval.reap", "=", "skillEval.groupStop"],
+	// The settle cap waits out a moved pane's report, with room for the round trip and a slow frame.
+	["pane.report", "<", "pane.settleCap"],
+	// One failed redial is a blip and a second is loss.
+	[["pane.socketReconnect", "pane.socketReconnect"], "<=", "pane.contactLost"],
+	// A reload plus a redial of the pane and of the voice fit inside a tab's grace.
+	[["pane.socketReconnect", "codex.clientReconnect"], "<", "codex.tabSessionGrace"],
 ];
 
 export { RELATIONS };
