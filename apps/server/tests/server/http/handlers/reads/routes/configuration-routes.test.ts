@@ -23,7 +23,7 @@ function writeModule(name: string, fields: Record<string, unknown>): void {
 	writeFileSync(
 		join(vault, `${name}.module.json`),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${name}`,
 			name,
 			kind: "module",
@@ -61,16 +61,27 @@ test("the semantic check warns on a pass-through and unbound container and an un
 	listening.push(http);
 	const address = http.address();
 	if (address === null || typeof address === "string") throw new Error("no port");
-	const answer = await fetch(
-		`http://127.0.0.1:${address.port}/api/vault/check?${new URLSearchParams({ vault })}`,
-	);
-	const { diagnostics } = vaultCheckSchema().parse(await answer.json());
-	expect(diagnostics.map(({ severity, code, subject }) => [severity, code, subject?.id])).toEqual([
+	const check = async () => {
+		const answer = await fetch(
+			`http://127.0.0.1:${address.port}/api/vault/check?${new URLSearchParams({ vault })}`,
+		);
+		return vaultCheckSchema().parse(await answer.json()).diagnostics;
+	};
+	const diagnostics = await check();
+	const warnings = [
 		["warning", "CONTAINER_PASS_THROUGH", "Shop#Box"],
 		["warning", "CONTAINER_UNBOUND", "Shop#Box"],
 		["warning", "ROOT_UNCONNECTED", "Shop#Box"],
 		["warning", "ROOT_UNCONNECTED", "Shop#Alone"],
-	]);
+	];
+	expect(diagnostics.map(({ severity, code, subject }) => [severity, code, subject?.id])).toEqual(
+		warnings,
+	);
 	const unbound = diagnostics.find(({ code }) => code === "CONTAINER_UNBOUND");
 	expect(unbound?.suggestedBinding).toEqual({ repo: "github.com/test/shop", path: "src" });
+	// A vault in the old format reads, read-only, and says so once.
+	writeModule("Alone", { order: 1, schemaVersion: 1 });
+	expect(
+		(await check()).map(({ severity, code, subject }) => [severity, code, subject?.id]),
+	).toEqual([["warning", "UPGRADE_REQUIRED", undefined], ...warnings]);
 });
