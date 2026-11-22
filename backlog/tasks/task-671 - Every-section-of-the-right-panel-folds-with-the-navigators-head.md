@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T16:27:00Z'
-updated_date: '2026-11-22T16:40:00Z'
+updated_date: '2026-11-22T16:48:00Z'
 labels:
   - frontend
   - ui
@@ -46,6 +46,8 @@ Evidence: agent-browser on examples/web-shop with Checkout API selected, both th
 Checks: bunx vp run types, lint:all, format:check pass. Browser owners pass through run-browser-lane --focus: reader-context, reader-column, canonical-model-comparison, canonical-model-selection, canonical-model-planning, reader-expand, canonical-model-modes.
 Not folded: an Against section with no moved field has nothing under its head, so it keeps a plain label; the legacy 'Nobody has decided this yet' block (SidebarSection) keeps its own style.
 Site audit: the hero mock's panel heads (Interface, Legend, Relationships, Groups) gained the chevron on the rows' edge; the mock navigator head now pads like its rows. site/scripts/paint.ts failed in this worktree because the shared refs/heads/archboard-history was written by a newer branch in a format main cannot read; the paintings were made from a clean clone instead.
+
+Follow-up from the owner's review of the site: the mock navigator's list started 4px right of the switcher, the keys and the agent dock, and the legend's eyes ended about 5px short of the panel's right edge, in the mock and in the app alike. Both now stand on the column edges; measured in the app (eye ink 1584px, equal to the numbers, open and struck) and on the site (list, rows and dock all at the 8px inset).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
