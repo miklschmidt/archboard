@@ -9,8 +9,10 @@
 // declaration that joins two parts, such as an event source mapping, is the
 // exception: an anchor may name it (ADR 0046), and it proves its join's kind,
 // so a grant does not prove a call. A
-// flow step has a message kind and no relationship kind, and a relationship
-// kind without the `evidence` key accepts every kind, so neither is judged.
+// flow step has a message kind and no relationship kind, so it is not judged,
+// and a relationship kind without the `evidence` key accepts every kind. A
+// dependency is judged whatever it accepts: a use at run time makes it a call
+// (dependency-call.ts).
 //
 // A use that reaches its name through an import is resolved, because the
 // import path names the file, and so is a Terraform reference, which names its
@@ -31,7 +33,8 @@ import {
 } from "#runtime/code-facts/operations/facts.ts";
 import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import type { CodeAnchor } from "@archboard/code-binding/bindings";
-import { describeSubject } from "@archboard/model/policy";
+import { describeSubject, isEffectlessKind } from "@archboard/model/policy";
+import { dependencyCalled } from "#runtime/code-check/operations/dependency-call.ts";
 
 /** The adapters whose every use names the address it reaches: a Terraform reference, a flake input. */
 const ADDRESSED: ReadonlySet<string> = new Set(["terraform", "nix"]);
@@ -120,15 +123,18 @@ function joinUses(
  * @param facts The anchored file's facts.
  * @param resolution How a use that no import resolves is resolved.
  * @returns The uses, or none when the kind is not judged: on a step, on a
- * relationship kind that accepts every evidence kind, in a file read as text,
- * or for a name the file defines itself, unless it is a joining declaration.
+ * relationship kind other than a dependency that accepts every evidence kind,
+ * in a file read as text, or for a name the file defines itself, unless it is
+ * a joining declaration.
  */
 async function judgedUses(
 	claim: AnchorClaim,
 	facts: FileFacts | undefined,
 	resolution: KindResolution,
 ): Promise<readonly CodeEvidence[]> {
-	if (claim.relationship?.accepts === undefined || facts === undefined) return [];
+	const { relationship } = claim;
+	if (relationship === undefined || facts === undefined) return [];
+	if (relationship.accepts === undefined && !isEffectlessKind(relationship.kind)) return [];
 	if (facts.adapter === "text") return [];
 	const defined = findSymbol(facts, claim.anchor.symbol, "definition");
 	if (defined.status !== "found") return usesOf(facts, claim.anchor, resolution);
@@ -168,8 +174,9 @@ function kindMismatch(
 }
 
 /**
- * The finding about an anchor whose uses in its file are all of evidence
- * kinds its relationship's kind does not accept, if any.
+ * The finding about an anchor's evidence kind, if any: a dependency whose
+ * anchored use is a call, else an anchor whose uses in its file are all of
+ * evidence kinds its relationship's kind does not accept.
  * @param claim The anchor, with its relationship's kind and what that kind accepts.
  * @param facts The anchored file's facts.
  * @param resolution How a use that no import resolves is resolved.
@@ -181,7 +188,9 @@ async function judgeAnchorKind(
 	resolution: KindResolution,
 ): Promise<CodeFinding | undefined> {
 	const uses = await judgedUses(claim, facts, resolution);
-	const accepted = claim.relationship?.accepts ?? [];
+	const called = dependencyCalled(claim.site, claim.relationship?.kind ?? "", uses);
+	const accepted = claim.relationship?.accepts;
+	if (called !== undefined || accepted === undefined) return called;
 	const supported = uses.some((use) => accepted.includes(use.kind));
 	return uses.length === 0 || supported ? undefined : kindMismatch(claim, accepted, uses);
 }

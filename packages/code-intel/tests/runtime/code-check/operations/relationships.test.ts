@@ -198,6 +198,12 @@ beforeAll(async () => {
 					edge("e10", ["pT", "pL"], "call"),
 					// Anchored on a name the checker passes on as a value, which is call evidence.
 					edge("e11", ["pC", "pN"], "call", ["src/notify/checker.ts", "send"]),
+					// Dependencies whose code runs the target: anchored on the mailer's call, and with
+					// no anchor where the listener calls the sender.
+					edge("e12", ["pM", "pN"], "dependency", ["src/notify/mailer.ts", "send"]),
+					edge("e13", ["pI", "pN"], "dependency"),
+					// A dependency anchored on a name the list uses only as a type.
+					edge("e14", ["pL", "pB"], "dependency", ["src/store/list.ts", "Shelf"]),
 				],
 				flows: [
 					{
@@ -265,6 +271,8 @@ test("every finding of the relationship judgement, and nothing about a relations
 			"RELATIONSHIP_UNSUPPORTED e4 information",
 			"RELATIONSHIP_UNSUPPORTED e7 information",
 			"ANCHOR_MISMATCH e9 warning",
+			"DEPENDENCY_CALLED e12 information",
+			"DEPENDENCY_CALLED e13 information",
 		].toSorted(),
 	);
 });
@@ -356,6 +364,24 @@ test("an anchor whose uses are of an evidence kind its relationship kind does no
 		},
 	]);
 	expect(finding("ANCHOR_MISMATCH", "s1")).toBeUndefined();
+});
+
+test("a dependency whose anchor or evidence runs its target is information naming both ends and the call, and a type-only one is not", () => {
+	const anchored = finding("DEPENDENCY_CALLED", "e12");
+	expect(anchored?.message).toStartWith(
+		'The relationship "Mailer -> Sender" is a dependency, and its start runs "send" of its end',
+	);
+	expect(anchored?.evidence?.map((piece) => [piece.kind, piece.path, piece.symbol])).toEqual([
+		["call", "src/notify/mailer.ts", "send"],
+	]);
+	const unanchored = finding("DEPENDENCY_CALLED", "e13");
+	expect(unanchored?.message).toContain('"Listener -> Sender"');
+	expect(unanchored?.evidence?.map((piece) => [piece.from, piece.to, piece.kind])).toEqual([
+		["pI", "pN", "call"],
+	]);
+	expect(outcome.findings.filter((each) => ["e5", "e14"].includes(each.subject?.id ?? ""))).toEqual(
+		[],
+	);
 });
 
 test("a relationship whose ends hold one another is listed as not judged", () => {

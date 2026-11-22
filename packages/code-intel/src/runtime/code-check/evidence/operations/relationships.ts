@@ -26,7 +26,10 @@
 // `RELATIONSHIP_UNSUPPORTED` that none joins the ends. Both are information:
 // the direction of a kind is the vault's convention, and code does not prove
 // a call across a network, through an event bus or through a value a part
-// receives. A relationship with an anchor is judged only by its anchor.
+// receives. A dependency whose evidence from its start to its end holds a
+// call gets `DEPENDENCY_CALLED` and no other finding, whatever its kind
+// accepts (dependency-call.ts). A relationship with an anchor is judged only by its
+// anchor.
 //
 // Where no accepted evidence supports a relationship whose kind accepts a
 // build dependency, the code of its start holds a Nix expression the static
@@ -53,6 +56,7 @@ import type { EnvironmentJoin } from "#runtime/code-check/evidence/operations/en
 import type { StateEvidence, Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import { sideOf, sidesJoined } from "#runtime/code-check/evidence/operations/sides.ts";
 import { differingCode } from "#runtime/code-check/operations/part-code.ts";
+import { dependencyCalled } from "#runtime/code-check/operations/dependency-call.ts";
 import type { PartCode, ReadPart, SkippedPart } from "#runtime/code-check/operations/part-code.ts";
 import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
@@ -386,7 +390,7 @@ function pairOf(piece: Piece): string {
 
 /**
  * The finding about a relationship with no anchor that the accepted evidence
- * does not support, if any.
+ * does not support, or a dependency that the code calls, if any.
  * @param reading The document.
  * @param edge The relationship.
  * @returns The finding, or undefined when accepted evidence supports it.
@@ -401,10 +405,16 @@ function judgeEdge(
 		(piece) =>
 			(start.has(piece.from) && end.has(piece.to)) || (end.has(piece.from) && start.has(piece.to)),
 	);
-	const accepted = between.filter((piece) => accepts(reading, edge.kind, piece.kind));
-	if (accepted.some((piece) => start.has(piece.from))) return undefined;
 	const subject = edgeSubjects(reading.read.variant.content)(edge);
 	const site = siteOf(reading.read, `edges.${edge.id}`, subject);
+	const forward = onePer(
+		between.filter((piece) => start.has(piece.from)),
+		pairOf,
+	);
+	const called = dependencyCalled(site, edge.kind, forward);
+	if (called !== undefined) return called;
+	const accepted = between.filter((piece) => accepts(reading, edge.kind, piece.kind));
+	if (accepted.some((piece) => start.has(piece.from))) return undefined;
 	const about = `${describeSubject(subject)} has no anchor, and`;
 	const kind = JSON.stringify(edge.kind);
 	if (accepted.length > 0) {

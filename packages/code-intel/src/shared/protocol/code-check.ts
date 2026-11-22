@@ -81,7 +81,10 @@
 // retires the flat cap TASK-651 added (`INTERFACE_WIDE`) and the 8-name floor,
 // counts a switchboard as one name for each operation it picks, and gives each
 // module's `width` and `switchboards` in `depth`. The CLI's gate fails on an
-// information `MODULE_SHALLOW` only on a touched module.
+// information `MODULE_SHALLOW` only on a touched module. TASK-663.05 adds
+// `DEPENDENCY_CALLED`, information on a dependency whose anchor or evidence
+// is a call into its end, since nothing of a dependency's target runs at run
+// time.
 
 import { architectureModelReadSchema } from "@archboard/model/contract";
 import {
