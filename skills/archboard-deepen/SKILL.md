@@ -1,15 +1,16 @@
 ---
 name: archboard-deepen
 description: >-
-  Deepen shallow modules and narrow wide interfaces from exploration to merged
-  code, with two advisor sub-agents deciding in place of the human. Use when
-  the code check reports INTERFACE_WIDE or MODULE_SHALLOW, or when you are asked
-  to deepen modules or improve the architecture without a human gate.
+  Deepen shallow modules from exploration to merged code by renegotiating
+  what their callers need, with two advisor sub-agents deciding in place of
+  the human. Use when the code check reports MODULE_SHALLOW, or when you are
+  asked to deepen modules or improve the architecture without a human gate.
 ---
 
 # Archboard Deepen
 
 Turn shallow modules into deep ones: much behavior behind a small interface, tested at its seam.
+Depth comes from **renegotiating** the terms of an interface: a job that no caller has to know about any more, because the product no longer needs it or one mechanism now serves it. Moving a job to another name, module or key leaves every caller knowing it.
 The run is autonomous. Where a design process would ask the owner, two **advisors** decide, and every decision lands in the **decision log** with its reason.
 Before the first architecture operation, load the `archboard` skill. It owns every command, request schema and recovery recipe that this skill names.
 
@@ -17,8 +18,10 @@ A finding names a smell and its principle, never its fix. The design is yours an
 
 ## The owner
 
-Interrupt the owner only for a decision that reverses one the owner already made: an ADR, the vault's `codeCheck.rules`, an adopted or confirmed proposal, a rule in `AGENTS.md` or `CLAUDE.md`, or an instruction in this conversation.
+Interrupt the owner only for a decision that reverses one the owner already made: an ADR, the vault's `codeCheck.rules`, an adopted or confirmed proposal, a rule in `AGENTS.md` or `CLAUDE.md`, an instruction in this conversation, or what the product does for its users. A renegotiation that drops or changes a feature is that last kind.
 Then put the question and the advisors' answers to the owner, park the ticket that depends on it, and continue with the rest.
+
+The docs those files point to, such as `docs/agents/`, are context for agents, not rules: agents wrote them under other circumstances. Where one describes or prescribes the code's structure, judge the design on depth alone, and rewrite the doc in the ticket that changes the code.
 
 The request to run this skill authorizes the run's own branch, proposals, tickets and merges, and adoption of its proposal on the integration branch.
 Push, or merge into the default branch, only when the owner asked for it.
@@ -35,6 +38,8 @@ Use these words exactly, in the report, the briefs, the tickets and the log.
 - **Adapter**: a concrete thing that fills a seam, such as a production client or an in-memory stand-in.
 - **Leverage**: what callers get from depth: one implementation pays back across every call site and test.
 - **Locality**: what maintainers get from depth: a change, a bug or a fact lives in one module. `model locality` shows its absence, as modules that change together.
+- **Job**: one thing a caller must know to get something done: a name it calls, a key it passes, a step it takes in order, a setting it configures.
+- **Renegotiate**: question the terms a job rests on before designing any shape. Does the product still need the job? Can one mechanism serve a whole class of jobs? Can the caller's part of it disappear?
 
 Judge each design with these tests:
 
@@ -42,6 +47,7 @@ Judge each design with these tests:
 - **The interface is the test surface**: callers and tests cross the same seam. A test that has to reach past the interface means the module has the wrong shape.
 - **Two adapters make a seam real**: one adapter is a hypothetical seam and only adds indirection. Production plus a test stand-in is two.
 - **Replace, don't layer**: tests at the deepened interface replace the tests of the shallow modules it absorbs. Delete the old ones.
+- **Relocation test**: count the jobs each caller must know, before and after. When the count holds, the change relocated the jobs and deepened nothing. Splitting a module so each part passes, folding operations behind a key (a switchboard), carrying them as request types and returning them from a factory each fail this test.
 
 Classify each dependency of a candidate, because the class decides how its tests cross the seam:
 
@@ -70,9 +76,9 @@ Finding facts is your job: the code, the model, Git, the tests. The advisors dec
 ### 1. Scope
 
 Make the integration branch from the current `HEAD`, named after the scope, such as `deepen/<scope>`. Every vault write and every ticket merge of the run lands there.
-Choose the target modules:
+Choose the target modules. The code check is a floor: a module that passes it can still carry jobs the product no longer needs, so a direction or a hotspot may name one.
 
-- If the code check reported `INTERFACE_WIDE` or `MODULE_SHALLOW`, take the modules that the findings name.
+- If the code check reported `MODULE_SHALLOW`, take the modules that the findings name.
 - If the owner gave a direction, such as a module or a pain point, take it.
 - Otherwise, read `model locality` and take the hotspots and the coupled pairs. A module that changes often repays its deepening soonest.
 
@@ -90,9 +96,18 @@ For each target, read:
 
 Ask where understanding one concept means bouncing between many small modules, where logic leaks across a seam, where tests reach past an interface or are missing.
 Apply the deletion test to each module that you suspect is shallow, and classify each dependency.
+
+Then [renegotiate](#vocabulary) each job of the target's interface. Find why the job exists: the ticket, ADR or commit that added it (`git log -S <name>`), and whether that reason still holds. Find who needs it now. Signs that a job has outlived its terms:
+
+- It guards against a situation the product no longer has, such as a lock against human edits after humans stopped editing.
+- Several jobs patch the same gap one case at a time, where one mechanism, such as a revision check on every write, would close it.
+- Every caller repeats a step the module could take, such as a setting each clone configures by hand that could live in tracked configuration.
+- It serves a path outside the product's work, such as a one-time migration that belongs in an upgrade tool.
+- It keeps machinery alive for another job, such as a polling loop that outlived the lock it watched.
+
 Group the targets into **candidates**: one deepening each, which may absorb several modules.
 
-Done: each candidate names its modules and files, its friction, its deletion-test verdict, its dependency classes, and each ADR that it contradicts.
+Done: each candidate names its modules and files, its friction, its deletion-test verdict, its dependency classes, each ADR that it contradicts, and each job of its interface with a verdict: kept, with the need it serves; served by a named mechanism; dropped, as a question for [the owner](#the-owner); or moved out, with where it goes.
 
 ### 3. Report
 
@@ -106,14 +121,16 @@ Done: the report opens in a browser, every candidate has every part of its card 
 ### 4. Choose
 
 Ask [the advisors](#advisors) which candidates to build, ranked, and why each other candidate waits.
-Give them the report, and ask them to weigh strength, leverage, locality, the number of callers, risk and ADR conflicts.
+Give them the report, and ask them to weigh strength, leverage, locality, the number of callers, the jobs that disappear, risk and ADR conflicts.
 
 Done: the log holds a settled decision for every candidate, built or rejected, and the built ones are in order.
 
 ### 5. Grill
 
 For each chosen candidate, map the design as a **tree**: each decision branches into the decisions that depend on it.
+Its root is the renegotiation: which jobs the product keeps and which mechanism serves each class of them. The shape of the interface depends on those answers.
 Cover at least the constraints, the dependencies and their classes, the shape of the deepened interface, what sits behind the seam, and which tests survive or move to the seam.
+A shape that fails the relocation test is rejected, whatever the code check says of it.
 Work the tree in rounds. The **frontier** is every open decision whose prerequisites are settled. Put the whole frontier to the advisors in one round, each question with the facts it needs and your recommended answer.
 For the shape of the interface, ask each advisor to design it independently; two designs from different starting points expose more of the space than one.
 Each settled decision moves the frontier. Recompute it and run the next round.
@@ -143,7 +160,7 @@ Done: every chosen ticket merged with a passing gate or a recorded exception, th
 ### 7. Review
 
 Run review rounds on the integration branch's diff from its base.
-Give fresh reviewer sub-agents the diff, the proposal's comparison, the decision log and the [vocabulary](#vocabulary), each a disjoint part of the diff.
+Give fresh reviewer sub-agents the diff, the proposal's comparison, the decision log and the [vocabulary](#vocabulary), each a disjoint part of the diff. Ask each to apply the relocation test to every interface the diff changes.
 Fix each finding that you verify, and commit the fix. A finding that contradicts a settled decision goes to the advisors before you act on it.
 After each round's fixes, run the tests and the code check again, then start the next round on the new diff.
 
@@ -157,6 +174,7 @@ Put the run's evidence in the pull request that carries its code, in the body or
 - The before and after pictures of each chosen candidate, uploaded as attachments.
 - Each advisor's independent ranking from step 4, and what they agreed on.
 - Each decision of step 5, with its reason and who settled it.
+- Each job the run dropped, merged into a mechanism or moved out, with the owner's answer where one was needed.
 
 The report directory stays in the ignored artifacts directory. Attach `report.html` only where the host accepts the file.
 
