@@ -4,6 +4,7 @@ import { ReadingSelectionSchema } from "#shared/schemas/model-explanation.ts";
 const ArchitecturePaneReadingSchema = ArchitectureRenderRequestSchema.omit({
 	theme: true,
 	legend: true,
+	layout: true,
 }).extend({
 	...ReadingSelectionSchema.shape,
 	model: z.string().min(1).optional(),

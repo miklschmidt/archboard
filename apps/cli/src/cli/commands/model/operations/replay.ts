@@ -4,7 +4,7 @@
 
 import { z } from "zod";
 
-import { diagramThemeSchema } from "@archboard/model/render-reply";
+import { diagramThemeSchema, layoutEngineSchema } from "@archboard/model/render-reply";
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
 import { TalkFileError, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
@@ -24,6 +24,7 @@ const ReplayInputSchema = z.object({
 	talk: z.string(),
 	out: z.string(),
 	theme: diagramThemeSchema().optional(),
+	layout: layoutEngineSchema().optional(),
 });
 
 const ReplayReceiptSchema = z.object({
@@ -41,6 +42,7 @@ const ReplayReceiptSchema = z.object({
 	durationMs: z.int(),
 	frames: z.int(),
 	theme: diagramThemeSchema(),
+	layout: layoutEngineSchema(),
 });
 
 /**
@@ -87,6 +89,7 @@ const modelReplayContract = defineCommand({
 		"",
 		"So a talk can be rendered again:",
 		"- In the other theme with `--theme`.",
+		"- With the other layout engine with `--layout`.",
 		"- After a renderer fix.",
 		"",
 		"Needs:",
@@ -123,6 +126,16 @@ const modelReplayContract = defineCommand({
 			choices: THEMES,
 			description:
 				"Which palette the pane draws in; the palette the talk was recorded in when absent",
+		},
+		{
+			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: layoutEngineSchema().options,
+			description:
+				"Which layout engine lays the model out; the engine the talk was recorded with when absent",
 		},
 	],
 	input: { ingress: ReplayInputSchema },
@@ -167,12 +180,14 @@ const modelReplayContract = defineCommand({
 		const talk = readTalkOrRefuse(directory);
 		await context.require("server", "model replay");
 		const theme = input.theme ?? talk.theme;
+		const layout = input.layout ?? talk.layout;
 		const made = await renderTalk({
 			serverUrl: archboardUrl(),
 			talk,
 			directory,
 			container,
 			theme,
+			layout,
 			out: file,
 			signal: context.signal,
 			say: context.diagnostic,
@@ -197,6 +212,7 @@ const modelReplayContract = defineCommand({
 				durationMs: made.durationMs,
 				frames: made.frames,
 				theme,
+				layout,
 			},
 		};
 	},

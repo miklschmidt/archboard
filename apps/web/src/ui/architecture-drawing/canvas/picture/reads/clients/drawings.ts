@@ -9,6 +9,7 @@ import {
 	type DiagramAtlas,
 	type DiagramBox,
 	type DrawnPicture,
+	type LayoutEngineName,
 	type NothingDrawn,
 	type OfferedView,
 } from "@archboard/model/render-reply";
@@ -86,6 +87,8 @@ interface SemanticRenderRequest {
 	readonly against?: string | undefined;
 	/** Whether to show proposal comparison treatment; defaults to true. */
 	readonly comparison?: boolean | undefined;
+	/** Which engine lays it out; the default one when absent (TASK-348). */
+	readonly layout?: LayoutEngineName | undefined;
 }
 
 /**

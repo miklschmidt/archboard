@@ -1,10 +1,13 @@
 // What a render answers and the theme it draws with.
 export {
+	defaultLayoutEngine,
 	diagramThemeSchema,
+	layoutEngineSchema,
 	legendLayoutSchema,
 	offeredViewSchema,
 	pictureReceiptShape,
 	renderedVariantSchema,
+	savedLayoutEngineSchema,
 	semanticRenderReplySchema,
 	standaloneThemeSchema,
 	subjectStandingSchema,
@@ -15,6 +18,7 @@ export type {
 	DiagramBox,
 	DiagramTheme,
 	DrawnPicture,
+	LayoutEngineName,
 	LegendLayout,
 	NothingDrawn,
 	NothingDrawnReason,

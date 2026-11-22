@@ -88,15 +88,6 @@ describe("declared parameter facts", () => {
 		expect(JSON.parse((await executePublic(contract, [])).stdout)).toEqual({});
 	});
 
-	test("a flag the CLI dropped is refused by what replaced it, and any other stranger by name", async () => {
-		const contract = echoing([], {});
-		const dropped = await executePublic(contract, ["--layout", "track"]);
-		expect((dropped.error as Error).message).toContain("Blocks");
-		expect(((await executePublic(contract, ["--nonesuch"])).error as Error).message).toBe(
-			"Unknown flag --nonesuch",
-		);
-	});
-
 	test("an appending option collects every occurrence, in the order given", async () => {
 		const contract = echoing(
 			[

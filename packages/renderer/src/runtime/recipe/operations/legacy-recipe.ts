@@ -48,17 +48,18 @@ function comparison(choices: LegacyRenderChoices, reply: DrawnPicture): RenderRe
 /**
  * The drawing choices of a render that stands alone.
  * @param choices What the render asked for.
- * @returns The theme, the title and the legend.
+ * @returns The theme, the layout, the title and the legend.
  * @throws {Error} When the render does not stand alone, which no recipe can draw again.
  */
 function drawingChoices(
 	choices: LegacyRenderChoices,
-): Pick<RenderRecipe, "theme" | "title" | "legend"> {
+): Pick<RenderRecipe, "theme" | "layout" | "title" | "legend"> {
 	if (choices.theme === undefined) {
 		throw new Error("Only a render that stands alone, in a theme of its own, carries a recipe.");
 	}
 	return {
 		theme: choices.theme,
+		layout: choices.layout ?? null,
 		title: choices.title ?? null,
 		legend: legendOf(choices),
 	};

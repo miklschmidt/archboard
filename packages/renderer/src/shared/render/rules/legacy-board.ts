@@ -24,6 +24,7 @@ import {
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 import type {
+	LayoutEngineName,
 	LegendLayout,
 	NothingDrawnReason,
 	OfferedView,
@@ -53,6 +54,8 @@ interface LegacyRenderChoices {
 	readonly against?: string | undefined;
 	/** The theme a document that stands alone is drawn in; absent, it is for a page. */
 	readonly theme?: StandaloneTheme | undefined;
+	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
+	readonly layout?: LayoutEngineName | undefined;
 	/**
 	 * A title drawn above the picture (TASK-467): these words, or `true` for the
 	 * names of what is drawn. None when absent.
@@ -217,6 +220,7 @@ function emptyReason(
  * @param how.theme The theme a document that stands alone is drawn in, when it is one.
  * @param how.policy The vault's presentation policy.
  * @param how.comparison Whether to draw comparison treatment.
+ * @param how.layout Which engine lays the architecture out.
  * @param how.title The title drawn above the picture: words, or true for the names of what is drawn.
  * @param how.legend How the legend is laid out beside the picture, if it has one.
  * @param how.legendOnly Whether the legend is drawn without the picture.
@@ -231,6 +235,7 @@ async function drawnReply(
 		theme: StandaloneTheme | undefined;
 		policy: SemanticPolicy;
 		comparison: boolean;
+		layout: LayoutEngineName | undefined;
 		title: string | true | undefined;
 		legend: LegendLayout | undefined;
 		legendOnly: boolean | undefined;
@@ -239,7 +244,7 @@ async function drawnReply(
 	const reading = readingOf(view);
 	// The comparison restores what the variant lacks of the one it is read against.
 	// The core draws only the variant's own reading when comparison is off.
-	// Blocks lays out that visible content.
+	// Blocks lays out that visible content; Track keeps comparison positions.
 	const proposal = drawingOf(board, variant, reading.scope, against);
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// looking at the picture rather than the panel still knows not to trust it.
@@ -274,6 +279,7 @@ async function drawnReply(
 			held: scopedContent(variant.content, reading.scope),
 			grammar: reading.grammar,
 			theme: how.theme,
+			layout: how.layout,
 			frame: { title, legend: how.legend, legendOnly: how.legendOnly },
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 			unbuilt,
@@ -525,6 +531,7 @@ async function drawLegacyBoard(
 		theme: choices.theme,
 		policy,
 		comparison: choices.comparison !== false,
+		layout: choices.layout,
 		title: choices.title,
 		legend: choices.legend,
 		legendOnly: choices.legendOnly,

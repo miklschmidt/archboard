@@ -14,6 +14,7 @@ import { architectureRenderRequestSchema } from "@archboard/model/contract";
 
 import { z } from "zod";
 import {
+	savedLayoutEngineSchema,
 	legendLayoutSchema,
 	offeredViewSchema,
 	renderedVariantSchema,
@@ -60,15 +61,8 @@ const RenderRecipeSchema = z
 			z.object({ against: IdSchema }).strict(),
 		]),
 		theme: standaloneThemeSchema(),
-		/**
-		 * Recipes drawn while Track was an engine name one, or null for the default. Blocks draws
-		 * every picture now, so the name is read to keep old embeds parsing and then dropped.
-		 */
-		layout: z
-			.enum(["track", "blocks"])
-			.nullable()
-			.transform(() => undefined)
-			.optional(),
+		/** The layout engine named, or null for the default one. A saved `track` reads as `lanes`. */
+		layout: savedLayoutEngineSchema().nullable(),
 		/** The words of the title, true for the names of what is drawn, or null for none. */
 		title: z.union([z.string().regex(/\S/u), z.literal(true)]).nullable(),
 		/** How the legend is laid out and whether it stands alone, or null for none. */

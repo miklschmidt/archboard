@@ -10,6 +10,7 @@
 //    read; then the views, the reader's own; then the groups, the concerns the
 //    reader can pick out.
 // 3. What do the marks mean? The legend of what the picture draws.
+// 4. The layout engine, a preference of this browser, at the foot.
 //
 // Each part decides for itself whether it has anything to offer, and a region
 // with nothing in it is not drawn.
@@ -26,6 +27,7 @@ import type {
 	SemanticRender,
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { SemanticChanges } from "#ui/architecture-drawing/canvas/presentation/components/SemanticChanges.tsx";
+import { SemanticEngineBar } from "#ui/architecture-drawing/canvas/presentation/components/SemanticEngineBar.tsx";
 import { SemanticGroupList } from "#ui/architecture-drawing/canvas/presentation/components/SemanticGroupList.tsx";
 import { SemanticLegend } from "#ui/architecture-drawing/canvas/presentation/components/SemanticLegend.tsx";
 import {
@@ -216,6 +218,9 @@ function CanvasPanel(props: CanvasPanelProps): JSX.Element {
 				{groupSection(props)}
 			</SidebarRegion>
 			<SidebarRegion slot="canvas-panel-key">{legend(props)}</SidebarRegion>
+			<SidebarRegion slot="canvas-panel-engine">
+				<SemanticEngineBar />
+			</SidebarRegion>
 		</div>
 	);
 }

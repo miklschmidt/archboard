@@ -16,6 +16,7 @@
 // to the same bytes in any order.
 
 import { defaultTrafficSpeed } from "@archboard/model/content";
+import { defaultLayoutEngine } from "@archboard/model/render-reply";
 import { pictureMs } from "@archboard/timing";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {
@@ -78,6 +79,7 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 	const rendered = await host.core().render(
 		JSON.stringify({
 			...request,
+			layout: request.layout ?? defaultLayoutEngine(),
 			clock: CLOCK,
 			themeColors: host.themeColors,
 		}),

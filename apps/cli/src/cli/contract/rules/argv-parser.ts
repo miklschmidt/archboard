@@ -11,11 +11,6 @@ import { declareCommand } from "#cli/contract/rules/commander.ts";
 /** The value shapes a parsed token may take, mirroring one TokenRecord entry. */
 const tokenValueSchema = z.union([z.string(), z.boolean(), z.array(z.string()), z.undefined()]);
 
-/** Flags the CLI once had, with what to say to a caller who still passes one. */
-const REMOVED_FLAGS: Readonly<Record<string, string>> = {
-	"--layout": "Archboard draws every picture with Blocks; --layout is gone.",
-};
-
 /**
  * Rewrites Commander's unknown-option complaint in this CLI's words.
  * @param message - Commander's message, without its "error:" prefix.
@@ -23,11 +18,7 @@ const REMOVED_FLAGS: Readonly<Record<string, string>> = {
  */
 function unknownFlagRefusal(message: string): CliUsageError | undefined {
 	const unknown = message.match(/^unknown option '([^']+)'/iu);
-	if (!unknown) {
-		return undefined;
-	}
-	const flag = unknown[1]?.split("=", 1)[0] ?? "";
-	return new CliUsageError(REMOVED_FLAGS[flag] ?? `Unknown flag ${flag}`);
+	return unknown ? new CliUsageError(`Unknown flag ${unknown[1]?.split("=", 1)[0]}`) : undefined;
 }
 
 /**

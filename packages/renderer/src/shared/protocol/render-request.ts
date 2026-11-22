@@ -3,7 +3,7 @@
 
 import type { ChangeKind } from "@archboard/model/comparison";
 import type { SemanticPolicy } from "@archboard/model/policy";
-import type { StandaloneTheme } from "@archboard/model/render-reply";
+import type { LayoutEngineName, StandaloneTheme } from "@archboard/model/render-reply";
 import type { DiagramGrammar } from "@archboard/model/views";
 import type { VariantContent } from "@archboard/model/content";
 import type {
@@ -120,6 +120,8 @@ interface DiagramRenderRequest {
 	 * level (ADR 0029); absent, the mark says only that it opens another document.
 	 */
 	readonly level?: string | undefined;
+	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
+	readonly layout?: LayoutEngineName | undefined;
 	/** What a picture exported to stand alone carries beside its drawing: a title, a legend. */
 	readonly frame?: ExportFrame | undefined;
 }

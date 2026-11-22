@@ -8,6 +8,7 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
+import { defaultLayoutEngine } from "@archboard/model/render-reply";
 import {
 	comparisonKey,
 	type CodeCheckReading,
@@ -98,6 +99,7 @@ const readKeys = {
 			request.variant ?? "",
 			request.view ?? "",
 			comparisonKey(request),
+			request.layout ?? defaultLayoutEngine(),
 		] as const,
 };
 

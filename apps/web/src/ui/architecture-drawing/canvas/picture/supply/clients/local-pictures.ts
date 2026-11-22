@@ -48,6 +48,7 @@ import {
 } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
 import { sameModelName } from "#ui/architecture-drawing/canvas/picture/rules/address.ts";
 import { onModelChange } from "#ui/architecture-drawing/canvas/picture/reads/state/model-changes.ts";
+import { layoutEngineNow } from "#ui/architecture-drawing/canvas/picture/clients/layout-engine.ts";
 import {
 	forgetStalePictures,
 	readCachedPicture,
@@ -128,6 +129,7 @@ async function drawHere(
 		request.variant,
 		request.view,
 		comparisonKey(request),
+		request.layout,
 		stamp,
 	]);
 	const reply =
@@ -194,6 +196,7 @@ async function drawn(
 			view: request.view,
 			against: request.against,
 			comparison: request.comparison,
+			layout: request.layout,
 		},
 		policy,
 	);
@@ -254,6 +257,7 @@ async function picturesToDrawAhead(
 			model: reading.name,
 			...(variant === "" ? {} : { variant }),
 			...(view === "" ? {} : { view }),
+			layout: layoutEngineNow(),
 		})),
 	);
 }
@@ -292,7 +296,9 @@ async function drawListedAhead(
 		// lands where the pane that opens the model looks for it.
 		const { name } = readingsOf(client, vault, entry.key);
 		// oxlint-disable-next-line no-await-in-loop -- one model at a time, so drawing ahead never takes more than one of the renderer's workers
-		await client.prefetchQuery(semanticRenderQuery({ vault, model: name }));
+		await client.prefetchQuery(
+			semanticRenderQuery({ vault, model: name, layout: layoutEngineNow() }),
+		);
 	}
 }
 

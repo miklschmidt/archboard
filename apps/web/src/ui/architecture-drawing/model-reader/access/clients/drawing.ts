@@ -1,3 +1,4 @@
+import type { LayoutEngineName } from "@archboard/model/render-reply";
 import type { DiagramGrammar } from "@archboard/model/views";
 import { drawingKey } from "@archboard/renderer/picture";
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
@@ -20,15 +21,18 @@ const DRAWINGS = "model-drawing";
  * @param model The coherent architecture revision.
  * @param projection The content this reading shows.
  * @param grammar The explicitly requested diagram mode.
+ * @param layout The engine, which the digest names, so one engine never answers for the other.
  * @returns A local rendering query, independent of selection and camera state.
  */
 function modelDrawingQuery(
 	model: Model,
 	projection: ReturnType<typeof projectModel>,
 	grammar: DiagramGrammar,
+	layout: LayoutEngineName | undefined,
 ) {
 	const request = {
 		grammar,
+		layout,
 		content: projection.content,
 		held: projection.held,
 		standing: projection.standing,

@@ -4,6 +4,17 @@ import type { PictureCamera } from "#ui/architecture-drawing/canvas/picture/came
 import type { AcceptedScene } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
 
 /**
+ * Where a camera is remembered: under the history entry, because Up, Back and a new visit to one
+ * module are different moves and only a move through history finds a camera here, and under the
+ * engine, because each engine draws its own picture of that entry.
+ * @param scene The accepted scene.
+ * @returns The key, or nothing for a scene in no entry.
+ */
+function placeOf(scene: AcceptedScene): string | undefined {
+	return scene.entry === undefined ? undefined : `${scene.entry} ${scene.layout}`;
+}
+
+/**
  * Remember where the camera stood on each history entry, so Back and Forward return it.
  * @param camera The pane's camera.
  * @param scene The accepted scene.
@@ -11,9 +22,7 @@ import type { AcceptedScene } from "#ui/architecture-drawing/model-reader/rules/
  */
 function useCameraMemory(camera: PictureCamera, scene: AcceptedScene): () => HeldCamera | null {
 	const memory = useRef(new Map<string, HeldCamera>());
-	// Under the history entry, because Up, Back and a new visit to one module are different moves
-	// and only a move through history finds a camera here.
-	const place = scene.entry;
+	const place = placeOf(scene);
 	const entry = useRef(place);
 	useLayoutEffect(() => {
 		const left = entry.current;

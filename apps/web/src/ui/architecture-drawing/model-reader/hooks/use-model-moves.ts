@@ -7,6 +7,7 @@ import {
 	useDive,
 	type Destination,
 } from "#ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts";
+import { useLayoutEngine } from "#ui/architecture-drawing/canvas/picture/hooks/use-layout-engine.ts";
 import { toggled } from "#ui/architecture-drawing/model-reader/rules/expansion.ts";
 import {
 	moveTo,
@@ -51,6 +52,7 @@ interface MoveInputs {
 function useModelMoves(inputs: MoveInputs) {
 	const { scene, reading, projection, model, reference, open } = inputs;
 	const client = useQueryClient();
+	const layout = useLayoutEngine();
 	const draw = useCallback(
 		async (to: Destination): Promise<ScenePicture | null> => {
 			const scope = to.model === ROOTS ? null : to.model;
@@ -59,12 +61,12 @@ function useModelMoves(inputs: MoveInputs) {
 			if (opened.content.nodes.length === 0) return null;
 			const destination = { ...reading, scope, focus: null, expand: [], grammar: "architecture" };
 			return {
-				...(await client.fetchQuery(modelDrawingQuery(model, opened, "architecture"))),
+				...(await client.fetchQuery(modelDrawingQuery(model, opened, "architecture", layout))),
 				model: sceneModel(destination),
 				view: sceneView(destination),
 			};
 		},
-		[client, model, reference, reading],
+		[client, model, reference, reading, layout],
 	);
 	const drawToggled = useCallback(
 		async (id: string): Promise<void> => {
@@ -72,9 +74,9 @@ function useModelMoves(inputs: MoveInputs) {
 			if (expand === null) return;
 			const filters = { ...reading.filters, expand: [...expand], controls: true };
 			const next = projectModel(model, reading.scope, reading.focus, filters, reference);
-			await client.fetchQuery(modelDrawingQuery(model, next, "architecture"));
+			await client.fetchQuery(modelDrawingQuery(model, next, "architecture", layout));
 		},
-		[client, model, reference, reading, projection],
+		[client, model, reference, reading, projection, layout],
 	);
 	const dive = useDive({
 		camera: inputs.camera,

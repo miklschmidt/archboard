@@ -3,7 +3,7 @@ import {
 	architectureRenderRequestSchema,
 	architectureRenderResultSchema,
 } from "@archboard/model/contract";
-import { standaloneThemeSchema } from "@archboard/model/render-reply";
+import { layoutEngineSchema, standaloneThemeSchema } from "@archboard/model/render-reply";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
 import { CliUsageError, defineCommand } from "#cli/contract/protocol/contract.ts";
 import { refusal } from "#cli/contract/protocol/refusals.ts";
@@ -96,6 +96,16 @@ const modelRenderContract = defineCommand({
 			choices: ["auto", "light", "dark"],
 			default: "auto",
 			description: "The standalone SVG theme",
+		},
+		{
+			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: layoutEngineSchema().options,
+			default: "blocks",
+			description: "Which layout engine lays the picture out",
 		},
 		{
 			kind: "option",

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { architectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
-import { diagramThemeSchema } from "@archboard/model/render-reply";
+import {
+	diagramThemeSchema,
+	layoutEngineSchema,
+	defaultLayoutEngine,
+} from "@archboard/model/render-reply";
 import { recordingLanguageInputSchema } from "@archboard/walkthrough/recording";
 import { recordWalkthrough } from "@archboard/walkthrough/recorder";
 import { archboardUrl } from "@archboard/server-lifecycle/config";
@@ -20,6 +24,7 @@ const InputSchema = z.object({
 	out: z.string(),
 	talk: z.string().optional(),
 	theme: diagramThemeSchema().default("dark"),
+	layout: layoutEngineSchema().default(defaultLayoutEngine()),
 	language: recordingLanguageInputSchema(),
 });
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -70,6 +75,7 @@ function recordingRequest(
 		language: input.language,
 		container: containerOf(input.out),
 		theme: input.theme,
+		layout: input.layout,
 		out: context.resolvePath(input.out),
 		talk: talkPlaceOf(
 			input.talk === undefined ? undefined : context.resolvePath(input.talk),
@@ -134,6 +140,16 @@ const modelRecordContract = defineCommand({
 		},
 		{
 			kind: "option",
+			key: "layout",
+			spellings: ["--layout"],
+			value: "required",
+			placeholder: "engine",
+			choices: layoutEngineSchema().options,
+			default: defaultLayoutEngine(),
+			description: "Which layout engine lays the model out",
+		},
+		{
+			kind: "option",
 			key: "language",
 			spellings: ["--language"],
 			value: "required",
@@ -187,6 +203,7 @@ const modelRecordContract = defineCommand({
 			durationMs: z.int(),
 			frames: z.int(),
 			theme: diagramThemeSchema(),
+			layout: layoutEngineSchema(),
 			talk: z.string(),
 		}),
 		architectureModelReadSchema().options[1],
@@ -251,6 +268,7 @@ const modelRecordContract = defineCommand({
 				durationMs: made.durationMs,
 				frames: made.frames,
 				theme: input.theme,
+				layout: input.layout,
 				talk: made.talk,
 			},
 		};

@@ -130,6 +130,9 @@ test("a state, comparison or filter is carried on one model, and a focus starts 
 	expect(sceneFit({ reading: { ...scope, against: "Current" } })).not.toBe(
 		sceneFit({ reading: scope }),
 	);
+	expect(sceneFit({ reading: scope, layout: "lanes" })).not.toBe(
+		sceneFit({ reading: scope, layout: "blocks" }),
+	);
 });
 
 test("a flight goes by way of a card on the reader's way through the tree", () => {
