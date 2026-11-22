@@ -79,16 +79,15 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 			<Lines
 				lines={lineRows(reading)}
 				marks={markRows(projection)}
-				lens={
-					// A reading with one lens, as one from before lenses, has nothing to choose.
-					props.onLens === undefined || Object.keys(model.policy.lenses).length < 2 ? undefined : (
-						<ModelLens model={model} projection={projection} onSelect={props.onLens} />
-					)
-				}
 				leftOut={props.onLens === undefined ? 0 : projection.leftOut}
 				onToggle={props.onToggle}
 				onShowAll={props.onShowAll}
-			/>
+			>
+				{/* A reading with one lens, as one from before lenses, has nothing to choose. */}
+				{props.onLens !== undefined && Object.keys(model.policy.lenses).length > 1 && (
+					<ModelLens model={model} projection={projection} onSelect={props.onLens} />
+				)}
+			</Lines>
 			<Groups groups={groupRows(model, projection)} selection={selection} />
 		</div>
 	);
@@ -190,8 +189,8 @@ function LegendChip(props: {
 interface LinesProps {
 	readonly lines: readonly LegendLine[];
 	readonly marks: readonly LegendMark[];
-	/** The lens control of a structural picture. */
-	readonly lens: ReactNode;
+	/** The lens control of a structural picture, which opens the list. */
+	readonly children: ReactNode;
 	/** How many lines a structural reading leaves out; none for a flow. */
 	readonly leftOut: number;
 	readonly onToggle: ModelLegendProps["onToggle"];
@@ -207,7 +206,7 @@ interface LinesProps {
  * @returns Their list, or nothing when the reading has no line.
  */
 function Lines(props: LinesProps): JSX.Element | null {
-	const { lines, marks, lens, onToggle, onShowAll } = props;
+	const { lines, marks, onToggle, onShowAll } = props;
 	const hidden = props.leftOut > 0 || lines.some((line) => line.hidden);
 	const action = useMemo(
 		() =>
@@ -233,7 +232,7 @@ function Lines(props: LinesProps): JSX.Element | null {
 			slot="model-legend-lines-section"
 			action={action}
 		>
-			{lens}
+			{props.children}
 			{types.length > 0 && (
 				<li>
 					<ul data-slot="model-legend-lines" className="flex flex-col">

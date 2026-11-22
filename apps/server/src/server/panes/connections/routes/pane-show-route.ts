@@ -35,17 +35,25 @@ type Reading = z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
 type Model = Extract<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>;
 type NavigationError = { code: string; error: string };
 /**
- * Refuse a missing lens, scope or focus before pane navigation changes state.
+ * Refuse a lens the reading does not have before pane navigation changes state.
+ * @param model The complete canonical reading.
+ * @param lens The requested lens, if any.
+ * @returns Its refusal, when unavailable.
+ */
+function lensRefusal(model: Model, lens: string | undefined): NavigationError | undefined {
+	if (lens === undefined || Object.hasOwn(model.policy.lenses, lens)) return undefined;
+	return {
+		code: "LENS_NOT_FOUND",
+		error: `This reading has no lens "${lens}". Its lenses: ${Object.keys(model.policy.lenses).join(", ")}.`,
+	};
+}
+/**
+ * Refuse a missing scope or focus before pane navigation changes state.
  * @param model The complete canonical reading.
  * @param request The requested presentation.
  * @returns Its refusal, when unavailable.
  */
 function structuralRefusal(model: Model, request: Reading): NavigationError | undefined {
-	if (request.lens !== undefined && !Object.hasOwn(model.policy.lenses, request.lens))
-		return {
-			code: "LENS_NOT_FOUND",
-			error: `This reading has no lens "${request.lens}". Its lenses: ${Object.keys(model.policy.lenses).join(", ")}.`,
-		};
 	const projection = projectModel(
 		model,
 		request.scope ?? model.selectedModule ?? null,
@@ -77,7 +85,7 @@ function narrativeRefusal(model: Model, request: Reading): NavigationError | und
 	return undefined;
 }
 /**
- * An agent hears at once that a scope is missing. A reader's own address goes through, because
+ * An agent hears at once that a lens or a scope is missing. A reader's own address goes through, because
  * the pane says what the reading lacks and offers the way on.
  * @param model The complete canonical reading.
  * @param request The requested presentation.
@@ -85,7 +93,9 @@ function narrativeRefusal(model: Model, request: Reading): NavigationError | und
  * @returns Its refusal, when an agent asked for what is unavailable.
  */
 function agentRefusal(model: Model, request: Reading, agent: boolean): NavigationError | undefined {
-	return agent ? structuralRefusal(model, request) : undefined;
+	return agent
+		? (lensRefusal(model, request.lens) ?? structuralRefusal(model, request))
+		: undefined;
 }
 /**
  * Require the addressed model and authored flow before presentation resolution.

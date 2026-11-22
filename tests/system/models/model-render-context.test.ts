@@ -362,17 +362,24 @@ test("a file the CLI renders stands alone, in a directory it creates, and refuse
 	expect(readFileSync(bare, "utf8")).toContain('data-slot="export-legend"');
 }, 30000);
 
+/**
+ * Run `model render` against the test's server.
+ * @param args Its arguments.
+ * @returns The finished command.
+ */
+function renderCli(...args: string[]) {
+	return runServerCli({
+		repoRoot,
+		server: server!,
+		input: undefined,
+		args: ["model", "render", ...args],
+	});
+}
+
 test("a picture through a lens counts the lines it left out, with or without a legend, and its recipe names the lens", () => {
-	const run = (...args: string[]) =>
-		runServerCli({
-			repoRoot,
-			server: server!,
-			input: undefined,
-			args: ["model", "render", ...args],
-		});
 	const drawn = (args: string[]) => {
 		const out = join(home, "lenses", `${crypto.randomUUID()}.svg`);
-		const result = run(...args, "--out", out);
+		const result = renderCli(...args, "--out", out);
 		expect(result.status, result.stderr).toBe(0);
 		const svg = readFileSync(out, "utf8");
 		const recipe = readRenderRecipe(Buffer.from(svg));
@@ -396,13 +403,19 @@ test("a picture through a lens counts the lines it left out, with or without a l
 	});
 	const all = drawn(["--lens", "all"]);
 	expect(all).toMatchObject({ note: undefined, lens: "all" });
-	const refused = run(
-		...["--lens", "main", "--grammar", "sequence", "--flow", "Shop#Request"],
-		...["--out", join(home, "lenses", "refused.svg")],
+	const refused = renderCli(
+		"--lens",
+		"main",
+		"--grammar",
+		"sequence",
+		"--flow",
+		"Shop#Request",
+		"--out",
+		join(home, "lenses", "refused.svg"),
 	);
 	expect(refused.status).toBe(2);
 	expect(refused.stderr).toContain("--lens");
-	const unknown = run("--lens", "nowhere", "--out", join(home, "lenses", "nowhere.svg"));
+	const unknown = renderCli("--lens", "nowhere", "--out", join(home, "lenses", "nowhere.svg"));
 	expect(unknown.status).toBe(2);
 	expect(unknown.stdout).toContain("LENS_NOT_FOUND");
 	expect(unknown.stderr).toContain("main, effects, reads, network, dependencies, all");

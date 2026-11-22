@@ -48,11 +48,9 @@ function flowReading(vault: string, input: Reading) {
  * @returns The SVG and exact reading receipt.
  */
 async function flowPicture(model: Model, input: Reading, vault: string) {
-	const unknown = unknownLens(model, input.lens);
-	if (unknown !== undefined) return unknown;
 	const reference = await comparisonModel(vault, model);
 	if (reference !== undefined && !reference.success) return reference;
-	const { projection, flow } = renderProjection(model, input, reference);
+	const { projection, flow, reading } = renderProjection(model, input, reference);
 	if (projection.missing || projection.missingFocus.length !== 0)
 		return {
 			success: false as const,
@@ -78,7 +76,6 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		theme: input.theme,
 		frame: exportFrame(input, projection),
 	});
-	const reading = input.grammar === "architecture" ? { ...input, lens: projection.lens.id } : input;
 	return renderReceipt(model, reading, vault, drawn, flow);
 }
 /**
@@ -92,15 +89,12 @@ function exportFrame(
 	input: Reading,
 	projection: ReturnType<typeof renderProjection>["projection"],
 ): ExportFrame | undefined {
+	const legend = input.legend === "none" ? undefined : input.legend;
 	const leftOut =
 		input.grammar === "architecture" && projection.leftOut > 0
 			? { count: projection.leftOut, lens: projection.lens.name }
 			: undefined;
-	if (input.legend === "none" && leftOut === undefined) return undefined;
-	return {
-		...(input.legend === "none" ? {} : { legend: input.legend }),
-		...(leftOut === undefined ? {} : { leftOut }),
-	};
+	return legend === undefined && leftOut === undefined ? undefined : { legend, leftOut };
 }
 /**
  * Refuse a lens the reading's policy does not have, naming those it has.
@@ -192,7 +186,8 @@ function sameCheckpoint(reference: Model, comparison: NonNullable<Model["compari
  * @param model The coherent reading.
  * @param input The requested presentation.
  * @param reference The exact comparison base, when available.
- * @returns The complete projection and selected flow.
+ * @returns The complete projection, the selected flow, and the reading its recipe records: a
+ * structural one names the lens in effect, so it redraws alike when the vault's default moves.
  */
 function renderProjection(model: Model, input: Reading, reference?: Model) {
 	const architecture = projectModel(
@@ -205,9 +200,11 @@ function renderProjection(model: Model, input: Reading, reference?: Model) {
 	const flow = model.collections
 		.flatMap((collection) => collection.flows)
 		.find((value) => value.id === model.selectedFlow);
+	const structural = input.grammar === "architecture";
 	return {
 		flow,
-		projection: input.grammar === "architecture" ? architecture : projectFlow(architecture, flow!),
+		projection: structural ? architecture : projectFlow(architecture, flow!),
+		reading: structural ? { ...input, lens: architecture.lens.id } : input,
 	};
 }
 /**
@@ -269,7 +266,10 @@ function mountArchitectureFlowRoutes(app: Express): void {
 			respond(res, model);
 			return;
 		}
-		respond(res, await flowPicture(model, reading, vaultOfRequest(req)));
+		respond(
+			res,
+			unknownLens(model, reading.lens) ?? (await flowPicture(model, reading, vaultOfRequest(req))),
+		);
 	});
 }
 export { mountArchitectureFlowRoutes };
