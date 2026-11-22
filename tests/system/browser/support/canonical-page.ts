@@ -18,7 +18,7 @@ type Node = Pick<
 	Model["modules"][number],
 	"name" | "kind" | "responsibility" | "parent" | "binding"
 >;
-type Edge = Pick<Model["relationships"][number], "from" | "to" | "kind" | "label">;
+type Edge = Pick<Model["relationships"][number], "from" | "to" | "kind" | "label" | "effect">;
 type Narrative = VariantContent["walkthroughs"][number];
 interface Scene {
 	readonly nodes: readonly Node[];
@@ -33,7 +33,7 @@ const SMALL_PIPELINE: Scene = {
 		{ name: "Ingest", kind: "service", responsibility: "Takes the feed" },
 		{ name: "Warehouse", kind: "datastore", responsibility: "Keeps the rows" },
 	],
-	edges: [{ from: "Ingest", to: "Warehouse", kind: "data", label: "rows" }],
+	edges: [{ from: "Ingest", to: "Warehouse", kind: "storage", label: "rows" }],
 };
 
 /** The authored reading used by the generic local voice workflow. */
@@ -42,7 +42,7 @@ const VOICE_PIPELINE: Scene = {
 		{ name: "Ingest", kind: "service" },
 		{ name: "Warehouse", kind: "datastore" },
 	],
-	edges: [{ from: "Ingest", to: "Warehouse", kind: "data" }],
+	edges: [{ from: "Ingest", to: "Warehouse", kind: "storage" }],
 	walkthroughs: [
 		{
 			name: "Where rows go",
@@ -74,8 +74,10 @@ async function seedCanonicalModel(vault: string, name: string, scene: Scene = SM
 	scene.nodes.forEach(({ parent, ...node }, index) => {
 		const outgoing = (scene.edges ?? [])
 			.filter((edge) => edge.from === node.name)
-			.map(({ to, kind, label }, order) => ({
+			// A scene that states no effect writes a mutation: only a dependency may omit one.
+			.map(({ to, kind, label, effect }, order) => ({
 				kind,
+				...(kind === "dependency" ? {} : { effect: effect ?? "mutation" }),
 				label,
 				id: `${id}#${mintId()}`,
 				to: subject(to),
@@ -86,7 +88,7 @@ async function seedCanonicalModel(vault: string, name: string, scene: Scene = SM
 			join(vault, `module-${index}.module.json`),
 			JSON.stringify({
 				...node,
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: subject(node.name),
 				order: index,
 				...(parent === undefined ? {} : { parent: subject(parent) }),

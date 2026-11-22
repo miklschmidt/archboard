@@ -37,7 +37,7 @@ let answer: CodeCheckAnswer;
 function module(id: string, order: number): void {
 	write(vault, {
 		[`${id}.module.json`]: JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${id}`,
 			name: id,
 			kind: "module",

@@ -89,13 +89,23 @@ const RelationshipPolicySchema = z
 	})
 	.strict();
 type RelationshipPolicy = z.infer<typeof RelationshipPolicySchema>;
+/**
+ * One relationship kind with a dash, its fields in the order the old format
+ * wrote them, which the digests of old readings read.
+ * @param dash The dash, required or optional.
+ * @returns The kind's schema.
+ */
+function dashedKindSchema<Dash extends z.ZodType>(dash: Dash) {
+	const { name, color, arrowhead, evidence } = RelationshipPolicySchema.shape;
+	return z.object({ name, color, dash, arrowhead, evidence }).strict();
+}
 /** One relationship kind of a vault in the old format, which dashed every line of a kind alike. */
-const LegacyRelationshipPolicySchema = RelationshipPolicySchema.extend({ dash: DashSchema });
+const LegacyRelationshipPolicySchema = dashedKindSchema(DashSchema);
 /**
  * One relationship kind as a reading carries it. Only a reading of the old
  * format has a dash: it keeps its recorded look (ADR 0065).
  */
-const RelationshipLookSchema = RelationshipPolicySchema.extend({ dash: DashSchema.optional() });
+const RelationshipLookSchema = dashedKindSchema(DashSchema.optional());
 /**
  * Which relationships one entry of a lens names: those of a kind, those with
  * an effect, or those of a kind with an effect. A relationship that states no
@@ -273,11 +283,16 @@ const BUILT_IN_LENSES: Record<string, Lens> = {
 };
 const DEFAULT_LENS_ID = "main";
 /**
- * The vocabulary and lens fields a vault writes and a reading carries alike.
+ * The vocabulary fields a vault writes and a reading carries alike, in the
+ * order every policy has kept them, which digests and fingerprints read.
  * @param icon Valid icon names.
+ * @param relationshipKinds The relationship kinds of this form of the policy.
  * @returns The shape of those fields.
  */
-function sharedPolicyShape(icon: z.ZodType<string>) {
+function vocabularyShape<Kinds extends z.ZodType>(
+	icon: z.ZodType<string>,
+	relationshipKinds: Kinds,
+) {
 	return {
 		levels: z
 			.array(VocabularyNameSchema)
@@ -292,6 +307,7 @@ function sharedPolicyShape(icon: z.ZodType<string>) {
 			.record(VocabularyNameSchema, NodePolicySchema.extend({ icon }))
 			.refine((values) => Object.keys(values).length > 0, "Define at least one node kind")
 			.meta({ minProperties: 1 }),
+		relationshipKinds,
 		/** Groups nodes may belong to, by stable id. None by default. */
 		groups: z.record(VocabularyNameSchema, GroupPolicySchema).default({}),
 		codeCheck: CodeCheckPolicySchema.optional().meta({
@@ -309,11 +325,16 @@ function sharedPolicyShape(icon: z.ZodType<string>) {
 function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.shape.icon) {
 	return z
 		.object({
-			...sharedPolicyShape(icon),
-			relationshipKinds: z
-				.record(VocabularyNameSchema, RelationshipLookSchema)
-				.refine((values) => Object.keys(values).length > 0, "Define at least one relationship kind")
-				.meta({ minProperties: 1 }),
+			...vocabularyShape(
+				icon,
+				z
+					.record(VocabularyNameSchema, RelationshipLookSchema)
+					.refine(
+						(values) => Object.keys(values).length > 0,
+						"Define at least one relationship kind",
+					)
+					.meta({ minProperties: 1 }),
+			),
 			lenses: z.record(VocabularyNameSchema, LensSchema).default({ [ALL_LENS_ID]: ALL_LENS }),
 			defaultLens: VocabularyNameSchema.default(ALL_LENS_ID),
 		})
@@ -331,11 +352,13 @@ type AuthoredPolicy = z.infer<ReturnType<typeof authoredPolicySchema>>;
 function authoredPolicySchema(icon: z.ZodType<string>) {
 	return z
 		.object({
-			...sharedPolicyShape(icon),
-			relationshipKinds: z.record(VocabularyNameSchema, RelationshipPolicySchema).default({}).meta({
-				description:
-					"The relationship kinds this vault adds, or replaces by id. The built-in kinds sit under them: call, http, rpc, event, queue, stream, spawn, render, storage, dependency and other. A kind the vault adds names its color.",
-			}),
+			...vocabularyShape(
+				icon,
+				z.record(VocabularyNameSchema, RelationshipPolicySchema).default({}).meta({
+					description:
+						"The relationship kinds this vault adds, or replaces by id. The built-in kinds sit under them: call, http, rpc, event, queue, stream, spawn, render, storage, dependency and other. A kind the vault adds names its color.",
+				}),
+			),
 			lenses: z.record(VocabularyNameSchema, LensSchema).default({}).meta({
 				description:
 					"The lenses this vault adds, or replaces by id. The built-in lenses sit under them: main, effects, reads, network, dependencies and all. `all` shows every relationship: a vault may rename it, and its list stays `hide: []`.",
@@ -403,23 +426,23 @@ function resolvePolicy(authored: AuthoredPolicy): SemanticPolicy {
 }
 /**
  * The configuration that reads back as a policy in effect, so a reading can
- * be written again as inputs. A policy of the old format, which records a dash
+ * be written again as inputs, and what a digest of a reading's policy reads. A policy of the old format, which records a dash
  * on each kind, is written in the old format and without lenses; any other
  * keeps only what differs from the built-ins.
  * @param policy The policy in effect.
  * @returns The configuration to write.
  */
 function configurationOf(policy: SemanticPolicy): Record<string, unknown> {
-	const { lenses, defaultLens, relationshipKinds, ...vocabulary } = policy;
-	if (Object.values(relationshipKinds).some((kind) => kind.dash !== undefined))
-		return { ...vocabulary, relationshipKinds };
+	const { lenses, defaultLens, ...vocabulary } = policy;
+	if (Object.values(vocabulary.relationshipKinds).some((kind) => kind.dash !== undefined))
+		return vocabulary;
 	const own = <T>(values: Record<string, T>, builtIn: Record<string, T>) =>
 		Object.fromEntries(
 			Object.entries(values).filter(([id, value]) => !sameSemanticValue(value, builtIn[id])),
 		);
 	return {
 		...vocabulary,
-		relationshipKinds: own(relationshipKinds, BUILT_IN_RELATIONSHIP_KINDS),
+		relationshipKinds: own(vocabulary.relationshipKinds, BUILT_IN_RELATIONSHIP_KINDS),
 		lenses: own(lenses, BUILT_IN_LENSES),
 		...(defaultLens === DEFAULT_LENS_ID ? {} : { defaultLens }),
 	};
@@ -444,11 +467,16 @@ function createLegacyVaultConfigurationSchema(
 ) {
 	return z
 		.object({
-			...sharedPolicyShape(icon),
-			relationshipKinds: z
-				.record(VocabularyNameSchema, LegacyRelationshipPolicySchema)
-				.refine((values) => Object.keys(values).length > 0, "Define at least one relationship kind")
-				.meta({ minProperties: 1 }),
+			...vocabularyShape(
+				icon,
+				z
+					.record(VocabularyNameSchema, LegacyRelationshipPolicySchema)
+					.refine(
+						(values) => Object.keys(values).length > 0,
+						"Define at least one relationship kind",
+					)
+					.meta({ minProperties: 1 }),
+			),
 		})
 		.strict()
 		.transform((legacy): SemanticPolicy => ({

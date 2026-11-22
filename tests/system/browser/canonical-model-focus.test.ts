@@ -44,6 +44,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		id: "Shop#Handle",
 		to: "Shop#Handler",
 		kind: "call",
+		effect: "mutation",
 		order: 20,
 		label: "Handle",
 	});
@@ -51,7 +52,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	writeFileSync(
 		join(vault, "decode.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Decode",
 			name: "Decode",
 			kind: "module",
@@ -63,14 +64,21 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	writeFileSync(
 		join(vault, "hidden.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Hidden",
 			name: "Hidden",
 			kind: "module",
 			parent: "Shop#Gateway",
 			order: 50,
 			outgoing: [
-				{ id: "Shop#Private", to: "Shop#Hidden", kind: "call", order: 60, label: "Internal only" },
+				{
+					id: "Shop#Private",
+					to: "Shop#Hidden",
+					kind: "call",
+					effect: "mutation",
+					order: 60,
+					label: "Internal only",
+				},
 			],
 		}),
 	);

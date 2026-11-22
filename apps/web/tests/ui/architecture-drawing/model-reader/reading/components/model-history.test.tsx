@@ -26,7 +26,7 @@ const MODULES: Reading["modules"] = [
 	["w", "Worker", "job"],
 	["orders", "Orders", "service"],
 ].map(([id, name, kind], order) => ({
-	schemaVersion: 1,
+	schemaVersion: 2,
 	id: `Pipeline#${id}`,
 	name: name!,
 	kind: kind!,

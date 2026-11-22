@@ -88,7 +88,7 @@ test("a reader sees what is unsettled and what belongs together, painted on both
 		],
 		edges: [
 			{ from: "Gateway", to: "Writer", kind: "call", label: "hands it over" },
-			{ from: "Writer", to: "Ledger", kind: "data", label: "writes" },
+			{ from: "Writer", to: "Ledger", kind: "storage", label: "writes" },
 		],
 	});
 	const id = (name: string): string => model.modules.find((module) => module.name === name)!.id;
@@ -163,7 +163,14 @@ test("a reader sees what is unsettled and what belongs together, painted on both
 			{
 				type: "add-relationship",
 				source: id("Gateway"),
-				relationship: { to: "Queue", kind: "queue", label: "enqueues", traffic: {}, order: 1 },
+				relationship: {
+					to: "Queue",
+					kind: "queue",
+					effect: "mutation",
+					label: "enqueues",
+					traffic: {},
+					order: 1,
+				},
 			},
 			{
 				type: "remove-relationship",

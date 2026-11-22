@@ -349,7 +349,10 @@ describe.serial("the repositories of the navigator", () => {
 					reading: {
 						...capture.reading,
 						scope: reading.scope,
-						relationshipKinds: [],
+						// The kinds the reading shows: every kind but the one it hides.
+						relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
+							(kind) => !reading.hideKinds.includes(kind),
+						),
 					},
 				},
 			},

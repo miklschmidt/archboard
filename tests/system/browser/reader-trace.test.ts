@@ -24,7 +24,7 @@ function writeModule(
 	writeFileSync(
 		join(vault, `${name.toLowerCase()}.module.json`),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: `Shop#${name}`,
 			name,
 			kind: "module",

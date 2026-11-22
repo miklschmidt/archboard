@@ -33,7 +33,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 	writeFileSync(
 		join(vault, "decode.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Decode",
 			name: "Decode",
 			kind: "module",
@@ -45,7 +45,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 	writeFileSync(
 		join(vault, "sibling.module.json"),
 		JSON.stringify({
-			schemaVersion: 1,
+			schemaVersion: 2,
 			id: "Shop#Sibling",
 			name: "Sibling",
 			kind: "module",

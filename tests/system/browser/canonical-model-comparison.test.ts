@@ -172,7 +172,13 @@ test("proposal comparison draws removed definitions from its coherent base and e
 				{
 					type: "add-relationship",
 					source: "Shop#Gateway",
-					relationship: { to: "Queue", kind: "call", order: 20, label: "Enqueue" },
+					relationship: {
+						to: "Queue",
+						kind: "call",
+						effect: "mutation",
+						order: 20,
+						label: "Enqueue",
+					},
 				},
 			],
 		},

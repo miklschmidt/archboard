@@ -1,3 +1,4 @@
+import { configurationOf } from "#shared/schemas/semantic-policy.ts";
 import { configurationFile } from "#runtime/store/configuration.ts";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
@@ -56,7 +57,8 @@ function predecessorRevision(model: ArchitectureModel): string {
 			JSON.stringify({
 				manifest: { ...model.manifest, retiredIds: model.manifest.retiredIds ?? [] },
 				state,
-				policy: model.policy,
+				// The configuration form: a digest of an old reading stays what it was before lenses.
+				policy: configurationOf(model.policy),
 				modules: model.modules,
 				collections: model.collections,
 				...(model.walkthroughs.length === 0 ? {} : { walkthroughs: model.walkthroughs }),

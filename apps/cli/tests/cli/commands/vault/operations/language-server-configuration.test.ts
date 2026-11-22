@@ -83,7 +83,7 @@ beforeAll(async () => {
 		writeFileSync(
 			join(vault, `${id}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${id}`,
 				name: id,
 				kind: "module",
@@ -97,6 +97,7 @@ beforeAll(async () => {
 									order: 10,
 									to: "Shop#pR",
 									kind: "call",
+									effect: "query",
 									anchor: { repo: IDENTITY, path: "src/ledger.c", symbol: "audit_check" },
 								},
 							]

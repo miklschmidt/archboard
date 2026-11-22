@@ -111,7 +111,13 @@ test("structural writes refresh current modules while exact history and selected
 		{
 			type: "add-relationship",
 			source: "Cache",
-			relationship: { to: "Shop#Worker", kind: "call", label: "Read cached result", order: 20 },
+			relationship: {
+				to: "Shop#Worker",
+				kind: "call",
+				effect: "mutation",
+				label: "Read cached result",
+				order: 20,
+			},
 		},
 	]);
 	await browser.run(["click", '[data-slot="model-reading-selector"]']);

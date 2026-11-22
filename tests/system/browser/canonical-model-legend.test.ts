@@ -26,7 +26,7 @@ const BILLING = '[data-group-id="billing"]';
 
 /** One outgoing relationship of a fixture module. */
 function line(id: string, to: string, kind: string): Record<string, unknown> {
-	return { id: `Shop#${id}`, to: `Shop#${to}`, kind, order: 10 };
+	return { id: `Shop#${id}`, to: `Shop#${to}`, kind, effect: "mutation", order: 10 };
 }
 
 /**
@@ -49,14 +49,14 @@ function seedReading(vault: string): void {
 			)
 			.replace(
 				"groups:\n",
-				"  data: { name: Data, dash: solid, arrowhead: filled, color: teal }\n  event: { name: Event, dash: dashed, arrowhead: open, color: rose }\ngroups:\n",
+				"  data: { name: Data, arrowhead: filled, color: teal }\n  event: { name: Event, arrowhead: open, color: rose }\ngroups:\n",
 			)}  billing: { name: Billing, color: amber }\n`,
 	);
 	const module = (name: string, fields: Record<string, unknown>): void =>
 		writeFileSync(
 			join(vault, `${name.toLowerCase()}.module.json`),
 			JSON.stringify({
-				schemaVersion: 1,
+				schemaVersion: 2,
 				id: `Shop#${name}`,
 				name,
 				order: 40,
