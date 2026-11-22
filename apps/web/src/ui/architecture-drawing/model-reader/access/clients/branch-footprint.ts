@@ -6,6 +6,7 @@ import { inVault } from "@archboard/server-requests";
 import {
 	architectureModelKeys,
 	ArchitectureReadError,
+	busyRetry,
 	readReply,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 
@@ -71,7 +72,7 @@ function branchFootprintQuery(
 			return result;
 		},
 		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		...busyRetry,
 		retryOnMount: false,
 		refetchOnReconnect: false,
 		refetchOnWindowFocus: false,
@@ -132,7 +133,7 @@ function sourceRefsQuery(
 			return { ...result, refs: result.refs.filter((one) => one.name !== HISTORY_ARCHIVE_BRANCH) };
 		},
 		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		...busyRetry,
 		retryOnMount: false,
 		refetchOnReconnect: false,
 		refetchOnWindowFocus: false,
@@ -183,7 +184,7 @@ function mergeBaseQuery(
 			return result.range ?? null;
 		},
 		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
+		...busyRetry,
 		retryOnMount: false,
 		refetchOnReconnect: false,
 		refetchOnWindowFocus: false,

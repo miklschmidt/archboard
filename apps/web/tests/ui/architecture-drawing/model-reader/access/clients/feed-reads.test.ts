@@ -24,6 +24,8 @@ const claims = { success: true as const, claims: [] };
 const sockets: FeedSocket[] = [];
 const reads: string[] = [];
 let served = OLD;
+/** How many reads the server refuses next, and with which code. */
+let refusing: { code: "MODEL_BUSY" | "MODEL_INVALID"; reads: number } | null = null;
 
 /** The tab's one controlled socket. */
 class FeedSocket extends EventTarget {
@@ -56,6 +58,10 @@ async function answer(input: Parameters<typeof fetch>[0]): Promise<Response> {
 	reads.push(url.pathname);
 	if (url.pathname.endsWith("/checkpoints/rows"))
 		return Response.json({ success: true, checkpoints: [] });
+	if (refusing !== null && refusing.reads > 0) {
+		refusing.reads--;
+		return Response.json(refusal(refusing.code), { status: 409 });
+	}
 	return Response.json({
 		success: true,
 		manifest: { schemaVersion: 1, id: "Shop", name: "Shop", current: null },
@@ -79,6 +85,20 @@ async function answer(input: Parameters<typeof fetch>[0]): Promise<Response> {
 	});
 }
 globalThis.fetch = Object.assign(answer, { preconnect: realFetch.preconnect });
+
+/**
+ * A refusal of the current reading, as the server words it.
+ * @param code Why the server refuses.
+ * @returns The refusal.
+ */
+function refusal(code: "MODEL_BUSY" | "MODEL_INVALID") {
+	return {
+		success: false as const,
+		code,
+		error: code === "MODEL_BUSY" ? "An architecture operation is in progress." : "Invalid model.",
+		diagnostics: [{ code, file: ".", message: "Refused.", recovery: "Retry." }],
+	};
+}
 
 readRetainedFrom({
 	/**
@@ -132,6 +152,7 @@ afterEach(() => {
 	reads.length = 0;
 	sockets.length = 0;
 	served = OLD;
+	refusing = null;
 	focusManager.setFocused(undefined);
 });
 afterAll(async () => {
@@ -238,5 +259,71 @@ test("a branch reading does not follow changes to the checkout", async () => {
 	} finally {
 		close();
 		client.clear();
+	}
+});
+
+/**
+ * Report a change to a revision, as a write that landed does.
+ * @param digest The revision.
+ */
+function changed(digest: string): void {
+	hear({
+		type: "architecture_changed",
+		vault: VAULT,
+		model: "Shop",
+		name: "Shop",
+		state: null,
+		revision: { digest, files: [] },
+		subjects: [],
+		reason: "external",
+	});
+}
+
+// What a reader shows as a failure is the failed read or the feed's refusal (`readingProblem`).
+test("a read during a write fails nothing and shows the written model once it lands", async () => {
+	const { client, close } = await openReader();
+	const feed = architectureFeed(client, VAULT);
+	const reading = client
+		.getQueryCache()
+		.find({ queryKey: architectureModelQuery(VAULT).queryKey })!;
+	let failed = false;
+	const stopWatch = client.getQueryCache().subscribe(() => {
+		failed ||= reading.state.error !== null || feed.getSnapshot().failure !== null;
+	});
+	try {
+		hear({ type: "architecture_status", vault: VAULT, reading: refusal("MODEL_BUSY") });
+		await settled();
+		expect(feed.getSnapshot().failure).toBeNull();
+		expect(reads).toEqual(["/api/architecture/model"]);
+		refusing = { code: "MODEL_BUSY", reads: 1 };
+		served = NEW;
+		changed(NEW);
+		await waitFor(() =>
+			expect(
+				client.getQueryData<{ revision: { digest: string } }>(reading.queryKey)?.revision.digest,
+			).toBe(NEW),
+		);
+		expect(reads).toHaveLength(3);
+		expect(failed).toBe(false);
+	} finally {
+		stopWatch();
+		close();
+	}
+});
+
+test("a refusal that lasts fails the read at once and stays on the feed", async () => {
+	const { client, close } = await openReader();
+	const feed = architectureFeed(client, VAULT);
+	const reading = client
+		.getQueryCache()
+		.find({ queryKey: architectureModelQuery(VAULT).queryKey })!;
+	try {
+		refusing = { code: "MODEL_INVALID", reads: Number.POSITIVE_INFINITY };
+		hear({ type: "architecture_status", vault: VAULT, reading: refusal("MODEL_INVALID") });
+		expect(feed.getSnapshot().failure?.code).toBe("MODEL_INVALID");
+		await waitFor(() => expect(reading.state.error).not.toBeNull());
+		expect(reads).toHaveLength(2);
+	} finally {
+		close();
 	}
 });

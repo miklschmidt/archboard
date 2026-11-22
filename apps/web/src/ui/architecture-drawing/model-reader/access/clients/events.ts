@@ -4,6 +4,7 @@ import { createFeedSocket } from "#ui/architecture-drawing/model-reader/access/c
 import {
 	ArchitectureReadError,
 	architectureModelKeys,
+	isBusy,
 	type ModelSummary,
 } from "#ui/architecture-drawing/model-reader/access/clients/queries.ts";
 import { readKeys } from "#ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts";
@@ -173,6 +174,12 @@ function createFeed(
 			return;
 		}
 		if (event.type === "architecture_snapshot") void receiveClaims(event.claims).catch(unavailable);
+		// A busy model is a write that is landing, and its completion is news of its own. What
+		// this tab holds stays as it is until then, and a read that meets the write waits for it.
+		if (landing(event)) {
+			publish({ ...state, connection: "live" });
+			return;
+		}
 		publish({ connection: "live", failure: failureOf(event) });
 		void receiveModel(event).catch(unavailable);
 		if (event.type === "architecture_changed" && event.reason === "completed") {
@@ -296,6 +303,16 @@ async function resumeInterruptedHistory(
 	};
 	await client.cancelQueries(filter);
 	await client.invalidateQueries(filter);
+}
+
+/**
+ * Whether an event says only that a write holds the model while it lands.
+ * @param event The shared current-reading event.
+ * @returns Whether the model is busy with a write.
+ */
+function landing(event: ModelEvent): boolean {
+	const failure = failureOf(event);
+	return failure !== null && isBusy(failure);
 }
 
 /**
