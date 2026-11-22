@@ -94,11 +94,6 @@ fn sorted(mut values: Vec<f64>) -> Vec<f64> {
 }
 
 impl Grid {
-    /// The grid of a scene, the buffers named in `exempt` not blocking.
-    pub(crate) fn new(scene: &Scene, exempt: &[usize], routes: &[Option<Vec<Point>>]) -> Grid {
-        Self::bounded(scene, exempt, routes, None, usize::MAX).expect("an unbounded grid")
-    }
-
     /// Refuse an oversized grid before allocating its vertices. A window never drops an obstacle.
     pub(crate) fn bounded(
         scene: &Scene,

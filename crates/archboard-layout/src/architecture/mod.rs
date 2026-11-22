@@ -10,19 +10,14 @@ mod measured;
 mod page;
 mod solving;
 
-use std::collections::{BTreeMap, HashSet};
-use std::hash::BuildHasher;
-
-use archboard_scene::drawing::{
-    ArchitectureDrawing, EdgeFacts, NodeFacts, Painted, PaintedDrawing,
-};
+use archboard_scene::drawing::{Painted, PaintedDrawing};
 pub use content::{Content, Edge, Node};
 pub use graph::Standings;
 pub use measured::Measured;
 use serde::{Deserialize, Serialize};
 pub use solving::{Solver, Unsolved, lay_out_across};
 
-use crate::routes::{LineLook, bridge_crossings, bridge_unfolded, unfold_crossings};
+use crate::routes::{bridge_crossings, bridge_unfolded};
 
 /// Which engine lays an architecture out (ADR 0096). The host names it on every render.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -66,65 +61,4 @@ pub async fn draw<S: Solver>(
         bridged,
         frozen,
     })
-}
-
-/// A drawing without the subjects left out. Every box and route it keeps is
-/// the drawing's own, and only the hops and cuts where its lines cross are
-/// settled again on what is left, from the routes as the crossing pass
-/// settled them, so what is left runs where it ran beside what is not drawn.
-pub fn shown_drawing<S: BuildHasher>(
-    drawing: &Painted,
-    unshown: &HashSet<String, S>,
-    lines: &BTreeMap<String, LineLook>,
-) -> Painted {
-    if unshown.is_empty() {
-        return drawing.clone();
-    }
-    let whole = &drawing.drawing;
-    let shown = |id: &str| !unshown.contains(id);
-    let cards: Vec<_> = whole
-        .cards
-        .iter()
-        .filter(|card| shown(&card.measured.node.id))
-        .cloned()
-        .collect();
-    let containers: Vec<_> = whole
-        .containers
-        .iter()
-        .filter(|node| shown(&node.measured.node.id))
-        .cloned()
-        .collect();
-    let kept: ArchitectureDrawing<NodeFacts, EdgeFacts> = ArchitectureDrawing {
-        cards,
-        containers,
-        edges: whole
-            .edges
-            .iter()
-            .filter(|edge| shown(&edge.edge.id))
-            .cloned()
-            .collect(),
-        ..whole.clone()
-    };
-    let settled = if drawing.frozen {
-        whole.clone()
-    } else {
-        unfold_crossings(whole)
-    };
-    let routes = settled
-        .edges
-        .into_iter()
-        .filter(|edge| shown(&edge.edge.id))
-        .collect();
-    let bridged = bridge_unfolded(
-        &ArchitectureDrawing {
-            edges: routes,
-            ..kept.clone()
-        },
-        lines,
-    );
-    PaintedDrawing {
-        drawing: kept,
-        bridged,
-        frozen: drawing.frozen,
-    }
 }
