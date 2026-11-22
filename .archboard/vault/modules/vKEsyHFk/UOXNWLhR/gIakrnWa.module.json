@@ -6,6 +6,7 @@
       "kind": "async",
       "effect": "mutation",
       "label": "the plain move, to end the flight with",
+      "description": "Async: into starts the camera's flight and returns at once, and calls the plain move back when the flight lands.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

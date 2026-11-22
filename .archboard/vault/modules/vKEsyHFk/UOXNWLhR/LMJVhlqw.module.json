@@ -33,7 +33,7 @@
       "order": 82000,
       "kind": "async",
       "effect": "mutation",
-      "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
+      "description": "A page opened to replay a recorded talk starts the replay instead of the application. Async: the page starts loading the replay chunk and leaves it to run, and the replay starts when the import lands.",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -47,6 +47,7 @@
       "order": 102000,
       "kind": "async",
       "effect": "mutation",
+      "description": "Async: the page starts loading the renderer chunk and leaves it to run, and the renderer starts when the import lands, so the shell never waits for it.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
