@@ -17,10 +17,13 @@ import {
 	assertArchiveWritable,
 	archiveCommit,
 	tree,
-	CheckpointRecordSchema,
 	readRecord,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import {
+	CheckpointRecordSchema,
+	RECORD_FORMAT,
+} from "#runtime/canonical/archive/store/model-archive-record.ts";
 import {
 	bundleDigest,
 	portableInputs,
@@ -227,7 +230,7 @@ async function installArchitectureModel(
 				await importPortableObjects(source, context, bundle.history.tips);
 				const tip = await archiveTip(context);
 				const record = CheckpointRecordSchema.parse({
-					schemaVersion: 1,
+					schemaVersion: RECORD_FORMAT,
 					kind: "checkpoint",
 					vault: context.vault,
 					model: bundle.model,

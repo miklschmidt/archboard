@@ -3,8 +3,8 @@ import { SelectedStateSchema } from "#shared/schemas/model-proposals.ts";
 import {
 	archiveRecords,
 	type ArchiveContext,
-	type CheckpointRecordSchema,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { type CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 import { retainedRoots } from "#runtime/canonical/history/store/model-publication.ts";
 
 type Record = ReturnType<typeof CheckpointRecordSchema.parse>;

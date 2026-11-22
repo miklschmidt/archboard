@@ -40,7 +40,6 @@ import {
 } from "#runtime/canonical/history/retained-reading/operations/result.ts";
 import {
 	ArchiveError,
-	CheckpointRecordSchema,
 	archiveCommit,
 	archiveContext,
 	archiveTip,
@@ -50,6 +49,10 @@ import {
 	tree,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import {
+	CheckpointRecordSchema,
+	RECORD_FORMAT,
+} from "#runtime/canonical/archive/store/model-archive-record.ts";
 import {
 	checkoutContext,
 	modelWriteFailure,
@@ -359,7 +362,7 @@ async function signUpgrade(
 		...new Set([...(await walkthroughDependencies(context, model)), ...baselines]),
 	];
 	const record = CheckpointRecordSchema.parse({
-		schemaVersion: 1,
+		schemaVersion: RECORD_FORMAT,
 		kind: "checkpoint",
 		vault: context.vault,
 		model: model.manifest.id,

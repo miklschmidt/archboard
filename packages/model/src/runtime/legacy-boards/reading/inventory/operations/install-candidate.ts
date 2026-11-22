@@ -22,10 +22,10 @@ import { predecessorRevision } from "#runtime/canonical/proposals/operations/pre
 import {
 	archiveCommit,
 	tree,
-	CheckpointRecordSchema,
 	type ArchiveContext,
 	ArchiveError,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 import { modelRevision } from "#runtime/store/model-files.ts";
 import { decodeModel } from "#runtime/canonical/read/operations/model-read.ts";
 import type { ArchitectureMigrationRequestSchema } from "#shared/schemas/migration-installation.ts";

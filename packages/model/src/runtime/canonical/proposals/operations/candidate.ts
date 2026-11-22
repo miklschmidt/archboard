@@ -34,8 +34,8 @@ import {
 	archiveCommit,
 	tree,
 	captureSource,
-	CheckpointRecordSchema,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 
 type Request = Extract<ArchitectureModuleEdit, { proposal: unknown }> & {
 	proposal: Extract<

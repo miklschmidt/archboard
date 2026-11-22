@@ -8,13 +8,13 @@ import {
 } from "#runtime/legacy-boards/store/migration-plan.ts";
 import {
 	ArchiveError,
-	CheckpointRecordSchema,
 	archiveTip,
 	tree,
 	archiveCommit,
 	captureOwnSource,
 	type ArchiveContext,
 } from "#runtime/canonical/archive/store/model-archive.ts";
+import { CheckpointRecordSchema } from "#runtime/canonical/archive/store/model-archive-record.ts";
 
 /**
  * Capture original files and the independently fingerprinted mapping choices.
