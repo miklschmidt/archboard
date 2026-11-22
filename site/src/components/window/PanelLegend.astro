@@ -103,9 +103,10 @@ const lines = [
 		margin: 0;
 		padding: 0;
 	}
-	/* The eye stands at the end of its own row, where a click on the row hides the type. */
+	/* The eye stands at the end of its own row, where a click on the row hides the type. Its ink,
+	   not its box, ends where the panel's words end. */
 	.lines :global(.eye) {
-		margin: 0 4px 0 auto;
+		margin: 0 -0.75px 0 auto;
 		color: var(--ink-muted);
 	}
 	.line {
