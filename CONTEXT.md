@@ -852,7 +852,7 @@ The CLI applies it to the answer, whose severities never depend on the caller.
 _Avoid_: depth gate, shallow check
 
 **Module-depth rule**:
-The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers, and `failShallowModules` stays the only promotion. `off` on `MODULE_SHALLOW` beside the gate is an invalid configuration, and so is any rule on the retired `INTERFACE_WIDE`.
+The level that the vault policy's `codeCheck.rules` sets for one module-depth code: `information` caps it, `off` removes its findings. A code without a rule keeps its built-in level. The run applies the rules to each reading's findings after `MODULE_SHALLOW` is derived, so the CLI, Measures and the check Action agree. A rule only lowers, and `failShallowModules` stays the only promotion. `off` on `MODULE_SHALLOW` beside the gate is an invalid configuration, and a rule for the retired width cap also makes the configuration invalid.
 _Avoid_: lint rule, suppression, allow list (that is the Action's `allow-codes`)
 
 **Touched module**:
