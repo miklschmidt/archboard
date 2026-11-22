@@ -18,7 +18,7 @@ import {
 	upgradedRelationship,
 	classification,
 } from "#shared/upgrade/rules/upgrade.ts";
-import { configurationFile, parseVaultPolicy } from "#runtime/store/configuration.ts";
+import { VaultConfigurationSchema, configurationFile } from "#runtime/store/configuration.ts";
 import { readModelFiles, modelRevision } from "#runtime/store/model-files.ts";
 import { decodeModel, failure } from "#runtime/canonical/read/operations/model-read.ts";
 import {
@@ -99,11 +99,11 @@ function requireSameUpgrade(recorded: ModelJournal["request"] | undefined, diges
  * @returns The policy in effect after the upgrade, or why there is none.
  */
 function upgradedPolicy(current: ArchitectureModel): ArchitectureModel["policy"] | Failure {
-	const parsed = parseVaultPolicy(upgradedConfiguration(current.policy));
-	if (parsed.success && parsed.format === "current") return parsed.policy;
+	const parsed = VaultConfigurationSchema.safeParse(upgradedConfiguration(current.policy));
+	if (parsed.success) return parsed.data;
 	return failure(
 		"MODEL_INVALID",
-		(parsed.success ? [] : parsed.error.issues).map((issue) => ({
+		parsed.error.issues.map((issue) => ({
 			code: "INVALID_POLICY",
 			file: ".archboard/config.yaml",
 			path: issue.path.map(String).join("."),
