@@ -7,7 +7,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T01:58:00Z'
-updated_date: '2026-11-22T02:38:00Z'
+updated_date: '2026-11-22T02:39:00Z'
 labels:
   - code-check
   - module-depth
@@ -41,7 +41,7 @@ The flat cap of TASK-651 (`INTERFACE_WIDE` above 20 names) rewards cutting a mod
 - [x] #11 Analyzer tests cover the same 30 operations as one module, as two modules and behind a selector, with logic just below and at 4 per name
 - [x] #12 ADR 0082 is amended in place with dated reasons, ADR 0058 marks its ceiling ratchet superseded by 0082 and keeps its caller-job principle, and 0085 and 0086 width claims are annotated where present
 - [x] #13 CONTEXT.md, the Module depth model description, CLI help, Measures, the check Action reference and the archboard skill describe the gate as logic per name with switchboards counted
-- [ ] #14 The archboard-deepen skill teaches renegotiation before design
+- [x] #14 The archboard-deepen skill teaches renegotiation before design
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,6 +61,8 @@ The flat cap of TASK-651 (`INTERFACE_WIDE` above 20 names) rewards cutting a mod
 Operation identity is syntactic: an arm runs an operation when it calls (outermost calls, by callee and number of arguments) or only writes state; arms with equal calls are one operation, and an arm whose calls hold another arm's calls is that operation plus checks. Constructions and capitalized Rust calls (Some, variants) build data. This reproduces the settled hits for changeArchitectureClaims 3, readArchitectureHistory 3, Stage::arrive 4, Stage::depart 4, measure_node 3, findVault 2 and durationMs 1 in the facts-level test; parseDocument counts 3, not the settled 2, because legacyBoard parses through a function of its own that syntax cannot equate with the shared schema path (recorded as a known limit in ADR 0082).
 The check on this branch (rules layer, before the redesign): MODULE_SHALLOW on Scene (78 names, 91 logic, 1.17), timing (37, 132, 3.57) and Repository queries (5, 15, 3.0); no key-unclosed skip; no verdict changed by a switchboard. 0085 and 0086 are not on this branch, so nothing to annotate.
 Lanes: types, lint:all, format:check, code-intel tests (481), test:repository (173), test:system (227), test:solo (15), site build with links.
+
+archboard-deepen (merged from docs/deepen-renegotiate): a Job and Renegotiate in its vocabulary, a relocation test, a renegotiation pass in Explore with examples of jobs that outlived their terms, the renegotiation at the root of the design tree, dropped features as owner decisions, the code check described as a floor, and jobs on the report card and in the hand-off.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
