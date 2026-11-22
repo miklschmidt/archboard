@@ -41,6 +41,7 @@ import {
 import type { StatesToCheck, StateToCheck } from "#runtime/code-check/operations/states.ts";
 import type { DepthRecord } from "#runtime/code-check/interfaces/operations/interfaces.ts";
 import { readFileOwners } from "#runtime/code-check/operations/file-owners.ts";
+import { ruleFindings } from "#runtime/code-check/operations/depth-rules.ts";
 
 /** What one run reads: the vault, the draft to read where a document has one, the plans an agent named, and how to cancel. */
 interface CodeCheckRequest {
@@ -111,6 +112,23 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
 }
 
 /**
+ * The model of the reading that an entry of the pass names by its document and variant.
+ * @param readings The readings.
+ * @param entry A finding, skip or measured module of the pass.
+ * @param entry.model Its document's name.
+ * @param entry.variant Its variant.
+ * @returns The model, or undefined when no reading read one there.
+ */
+function modelOf(
+	readings: readonly StateToCheck[],
+	entry: { readonly model?: string | undefined; readonly variant?: string | undefined },
+): StateToCheck["model"] {
+	return readings.find(
+		(reading) => reading.document.name === entry.model && reading.variant.id === entry.variant,
+	)?.model;
+}
+
+/**
  * Address analyzer findings with their real canonical model, state, and source file.
  * @param readings The complete inspected semantic readings.
  * @param finding The analyzer finding.
@@ -120,9 +138,7 @@ function canonicalFinding(
 	readings: readonly StateToCheck[],
 	finding: import("#shared/protocol/code-check.ts").CodeFinding,
 ) {
-	const model = readings.find(
-		(reading) => reading.document.name === finding.model && reading.variant.id === finding.variant,
-	)?.model;
+	const model = modelOf(readings, finding);
 	if (model === undefined) return finding;
 	const { model: _document, variant: _variant, path: _path, ...content } = finding;
 	const owner = findingOwner(model, finding.subject?.id);
@@ -157,9 +173,7 @@ function findingOwner(model: NonNullable<StateToCheck["model"]>, subject: string
  */
 function canonicalSkip(readings: readonly StateToCheck[], skip: CodeCheckSkip): CodeCheckSkip {
 	if (skip.subject === undefined) return skip;
-	const model = readings.find(
-		(reading) => reading.document.name === skip.model && reading.variant.id === skip.variant,
-	)?.model;
+	const model = modelOf(readings, skip);
 	if (model === undefined) return skip;
 	const { model: _document, variant: _variant, ...skipped } = skip;
 	return { ...skipped, ...findingIdentity(model) };
@@ -172,9 +186,7 @@ function canonicalSkip(readings: readonly StateToCheck[], skip: CodeCheckSkip): 
  * @returns The module as the answer names it.
  */
 function canonicalDepth(readings: readonly StateToCheck[], record: DepthRecord) {
-	const model = readings.find(
-		(reading) => reading.document.name === record.model && reading.variant.id === record.variant,
-	)?.model;
+	const model = modelOf(readings, record);
 	if (model === undefined) return record;
 	const { model: _document, variant: _variant, ...measured } = record;
 	return { ...measured, ...findingIdentity(model) };
@@ -194,6 +206,21 @@ function footprintsOf(
 	if (!readsTouched(asked, states)) return Promise.resolve(undefined);
 	const { vault, base, signal } = request;
 	return readFootprints({ vault, base, asked, signal }, states);
+}
+
+/**
+ * The findings of a run, each reading's under its vault's module-depth rules. The pass derived
+ * `MODULE_SHALLOW` from every export's finding already, so a rule never changes which modules are
+ * shallow (TASK-650).
+ * @param read The readings.
+ * @param code What the pass found.
+ * @returns The findings, at the canonical identities of the readings.
+ */
+function findingsOf(read: StatesToCheck, code: CodeCheckOutcome) {
+	return code.findings.flatMap((finding) => {
+		const rules = modelOf(read.states, finding)?.policy.codeCheck?.rules;
+		return ruleFindings([canonicalFinding(read.states, finding)], rules);
+	});
 }
 
 /**
@@ -221,10 +248,11 @@ function answerOf(
 							state: model.selectedState?.id ?? null,
 							revision: model.revision,
 							failShallowModules: failsShallowModules(model),
+							rules: model.policy.codeCheck?.rules,
 						},
 					],
 		),
-		findings: code.findings.map((finding) => canonicalFinding(read.states, finding)),
+		findings: findingsOf(read, code),
 		skipped: [...read.skipped, ...code.skipped].map((skip) => canonicalSkip(read.states, skip)),
 		behind: [],
 		depth: code.depth.map((record) => canonicalDepth(read.states, record)),

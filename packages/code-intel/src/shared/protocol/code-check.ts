@@ -78,7 +78,11 @@
 import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
-import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/policy";
+import {
+	EvidenceKindSchema,
+	SemanticPolicySchema,
+	VaultDiagnosticSchema,
+} from "@archboard/model/policy";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
@@ -487,6 +491,11 @@ const CodeCheckModelSchema = z.strictObject({
 	revision: ArchitectureModelReadSchema.options[0].shape.revision,
 	/** The model's policy fails plain `archboard check` on a shallow module the branch touched. */
 	failShallowModules: z.boolean().optional(),
+	/**
+	 * The level the model's vault policy sets for each module-depth code (TASK-650), applied to the
+	 * findings already: an `off` code has no finding in the answer.
+	 */
+	rules: SemanticPolicySchema.shape.codeCheck.unwrap().shape.rules,
 });
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),
