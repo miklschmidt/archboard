@@ -23,6 +23,12 @@ diagram.
 
 ## Product Purpose
 
+The goal is the best architecture diagrams in the world: pictures from which a person understands
+a system at every level of abstraction, from the whole down to one module's parts. Hold every
+decision about what a picture shows and how it looks to that bar, even where it seems out of
+reach. Judge a picture by what a person sees in it at a glance, what they learn, and what they
+can then act on. What an agent can author from code serves that goal and never sets it.
+
 Archboard is an architecture planning tool. The coding agent states what a
 system is: its parts, what contains what, how the parts talk, and in what
 order. The renderer draws every line.
