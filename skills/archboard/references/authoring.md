@@ -47,23 +47,25 @@ Choose the effect by asking in order:
 1. Can the operation have a side effect? Write `mutation`.
    A conditional write, a publication, an acknowledgement that removes work and installing a subscription are side effects.
    Follow work that the target delegates. A return value does not make a write a read.
+   A side effect is a change that someone else can observe. Bookkeeping that leaves every answer the same is none: a memo or cache of a value that never changes, a lazy start of a server, worker pool or language server that serves the request, a one-time warning or other diagnostic output, and a component's own state and timers.
 2. Otherwise, does it read held or fetched state, such as a store, the clock or a context? Write `query`.
 3. Otherwise, the answer follows from what the source hands over alone. Write `compute`.
 
 Judge every kind by its operation, as these examples do:
 
-| Code                                                             | Kind         | Effect     |
-| ---------------------------------------------------------------- | ------------ | ---------- |
-| A POST that creates an order                                     | `http`       | `mutation` |
-| A getter that fills a cache that other callers read              | `call`       | `mutation` |
-| A function that formats the bytes that it is given               | `call`       | `compute`  |
-| A component that places a child component with no mount behavior | `render`     | `compute`  |
-| An event publication or a queue submission                       | `event`      | `mutation` |
-| A read of retained events that consumes none                     | `event`      | `query`    |
-| A short-lived process that lays out the graph that it is given   | `spawn`      | `compute`  |
-| A Git command that reads a ref                                   | `spawn`      | `query`    |
-| The start of a server that outlives the request                  | `spawn`      | `mutation` |
-| A type-only import                                               | `dependency` | none       |
+| Code                                                              | Kind         | Effect     |
+| ----------------------------------------------------------------- | ------------ | ---------- |
+| A POST that creates an order                                      | `http`       | `mutation` |
+| A read through a cache, or one that fills a memo of a fixed value | `call`       | `query`    |
+| A call that invalidates or rewrites what other callers read       | `call`       | `mutation` |
+| A function that formats the bytes that it is given                | `call`       | `compute`  |
+| A component that places a child component with no mount behavior  | `render`     | `compute`  |
+| An event publication or a queue submission                        | `event`      | `mutation` |
+| A read of retained events that consumes none                      | `event`      | `query`    |
+| A short-lived process that lays out the graph that it is given    | `spawn`      | `compute`  |
+| A Git command that reads a ref                                    | `spawn`      | `query`    |
+| The start of a server that outlives the request                   | `spawn`      | `mutation` |
+| A type-only import                                                | `dependency` | none       |
 
 When the code does not rule a side effect out, write `mutation` and name the gap in your report.
 A relationship that stands for several operations takes the strongest effect: `mutation`, then `query`, then `compute`.
