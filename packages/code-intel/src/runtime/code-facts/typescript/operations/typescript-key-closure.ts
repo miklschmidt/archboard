@@ -176,7 +176,27 @@ function propertyClosure(type: Node, property: string): Closure {
  * @returns The type.
  */
 function typeOf(annotation: Node | undefined): Node | undefined {
-	return annotation?.type === "type_annotation" ? codeOf(annotation)[0] : annotation;
+	const type = annotation?.type === "type_annotation" ? codeOf(annotation)[0] : annotation;
+	return followedType(type);
+}
+
+/**
+ * Follow local aliases that name another type without changing its shape.
+ * @param type The annotated type.
+ * @returns The last type in the chain, or undefined for a cycle.
+ */
+function followedType(type: Node | undefined): Node | undefined {
+	const seen = new Set<string>();
+	let current = type;
+	while (current?.type === "type_identifier") {
+		if (seen.has(current.text)) return undefined;
+		seen.add(current.text);
+		const declaration = typeDeclaration(current.tree.rootNode, current.text);
+		const value = part(declaration, "value");
+		if (value?.type !== "type_identifier") break;
+		current = value;
+	}
+	return current;
 }
 
 /**

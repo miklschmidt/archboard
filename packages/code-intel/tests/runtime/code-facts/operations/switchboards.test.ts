@@ -102,6 +102,13 @@ const checkout = fixtureCheckout({
 		'pub fn named(s: &str) -> u8 { match s { "a" => a(), _ => b() } }',
 		"",
 	].join("\n"),
+	"src/aliases.ts": [
+		'type Kind = "a" | "b";',
+		"type Alias = Kind;",
+		"type AliasAgain = Alias;",
+		'export function aliased(kind: AliasAgain) { if (kind === "a") return one(); return two(); }',
+		"",
+	].join("\n"),
 });
 const facts = createCodeFacts();
 
@@ -168,5 +175,11 @@ test("a Rust function picks one operation for each enum variant or boolean whose
 		tab: { key: "container", keys: [["true"], ["false"]] },
 		// A branch that returns leaves the rest of the body to the other key.
 		early: { key: "container", keys: [["true"], ["false"]] },
+	});
+});
+
+test("a TypeScript switchboard follows local aliases to its closed key type", async () => {
+	expect(await switchboards("src/aliases.ts")).toEqual({
+		aliased: { key: "kind", keys: [["a"], ["b"]] },
 	});
 });
