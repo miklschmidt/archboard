@@ -31,6 +31,9 @@ pub(crate) use folded::unfold_crossings;
 pub struct LineLook {
     /// The line's dash pattern.
     pub dash: Dash,
+    /// Whether it joins several kinds and is drawn as two rails, which never
+    /// rise over a single solid line.
+    pub rails: bool,
     /// The head the line ends in.
     pub arrowhead: Arrowhead,
 }

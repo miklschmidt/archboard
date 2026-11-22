@@ -151,9 +151,16 @@ pub(crate) fn line_appearance(
 /// How a line is drawn, as its appearance says.
 pub(crate) fn line_look(edge: &Edge, policy: &Policy, step: bool) -> LineLook {
     let LineAppearance {
-        dash, arrowhead, ..
+        dash,
+        rails,
+        arrowhead,
+        ..
     } = line_appearance(&edge.kind, edge.effect, policy, step);
-    LineLook { dash, arrowhead }
+    LineLook {
+        dash,
+        rails,
+        arrowhead,
+    }
 }
 
 /// The words a line's label carries: a coloured line names its kind before

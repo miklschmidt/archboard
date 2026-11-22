@@ -227,10 +227,11 @@ impl Settling<'_> {
     }
 
     /// How a line stands when choosing which rises: its emphasis, then whether
-    /// it is drawn solid.
+    /// it is drawn as one solid line.
     fn standing_of(&self, line: &Line) -> [f64; 2] {
         let edge = &self.edges()[self.scene.runs[line.drawer].edge_index].edge;
-        let solid = look_of(self.lines, &edge.id).dash == Dash::Solid;
+        let look = look_of(self.lines, &edge.id);
+        let solid = look.dash == Dash::Solid && !look.rails;
         [weight(edge.emphasis), if solid { 1.0 } else { 0.0 }]
     }
 
