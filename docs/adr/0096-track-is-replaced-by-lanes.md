@@ -52,8 +52,8 @@ comparison and then hiding its subjects at paint time. The render request no lon
 whole variant, which only the entry-point rows read. The line router moves from `src/track` to
 `src/lanes`, and its working state is `Router`. Git keeps Track's code at `e28f5e3881`.
 
-Saved input that says `track` reads as Lanes: the browser's stored choice, a version 1 recipe,
-a recorded talk, and an address.
+Saved input that says `track` reads as Lanes: the browser's stored choice, a version 1 recipe and
+a recorded talk. No address names an engine.
 
 ## Consequences
 
