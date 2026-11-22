@@ -16,6 +16,7 @@
 // stands for it. A name assigned under `if`, `try`, `with`, a loop or `match`
 // at module level is still a module-level name.
 
+import { pythonAsync } from "#runtime/code-facts/python/operations/python-timing.ts";
 import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange, type Spans } from "#runtime/code-facts/operations/spans.ts";
@@ -242,8 +243,8 @@ function typeTraits(declaration: Node): Pick<Definition, "type" | "data"> {
 
 /**
  * What a declaration's syntax says beside its kind (TASK-646.11): that it
- * declares a type alias or holds data, the call it only passes on, and that
- * Python calls it.
+ * declares a type alias or holds data, the call it only passes on, that
+ * Python calls it, and whether a function is async.
  * @param name The declared name.
  * @param declaration The declaration.
  * @param classes The classes that hold it.
@@ -253,14 +254,15 @@ function traitsOf(
 	name: Node,
 	declaration: Node,
 	classes: readonly string[],
-): Pick<Definition, "type" | "data" | "passes" | "calledByLanguage"> {
+): Pick<Definition, "type" | "data" | "passes" | "calledByLanguage" | "async"> {
 	const passes = pythonPassesTo(declaration);
-	const special =
-		classes.length > 0 && SPECIAL.test(name.text) && kindOf(declaration) === "function";
+	const callable = kindOf(declaration) === "function";
+	const special = classes.length > 0 && SPECIAL.test(name.text) && callable;
 	return {
 		...typeTraits(declaration),
 		...(passes === undefined ? {} : { passes }),
 		...(special ? { calledByLanguage: true as const } : {}),
+		...(callable ? pythonAsync(declaration) : {}),
 	};
 }
 

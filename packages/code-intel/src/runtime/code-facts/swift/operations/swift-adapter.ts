@@ -46,7 +46,8 @@ import type {
 	Unparsed,
 } from "#runtime/code-facts/operations/facts.ts";
 import type { Grammar } from "#runtime/code-facts/services/grammars.ts";
-import { ANY, type RunSyntax, valueMark } from "#runtime/code-facts/operations/runs.ts";
+import { ANY, type RunSyntax, markUse } from "#runtime/code-facts/operations/runs.ts";
+import { SWIFT_TIMING } from "#runtime/code-facts/swift/operations/swift-timing.ts";
 import { spansOf, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { computationsThrough } from "#runtime/code-facts/operations/math-grammar.ts";
 import { definitionsOf } from "#runtime/code-facts/swift/operations/swift-definitions.ts";
@@ -202,6 +203,7 @@ const RUN_SYNTAX: RunSyntax = {
 		user_type: [""],
 	},
 	arguments: { value_argument: passedArgument },
+	timing: SWIFT_TIMING,
 };
 
 /**
@@ -223,7 +225,7 @@ function codeReference(node: Node, context: UseContext): Reference | undefined {
 		via: "code",
 		kind: typeOnly ? "import" : "call",
 		typeOnly,
-		...valueMark(node, RUN_SYNTAX, typeOnly),
+		...markUse(node, RUN_SYNTAX, typeOnly),
 	};
 }
 
@@ -293,7 +295,7 @@ function moduleUse(found: Import): Reference {
 function distinct(uses: readonly Reference[]): Reference[] {
 	const seen = new Map<string, Reference>();
 	for (const use of uses) {
-		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${use.kind ?? ""}\0${String(use.asValue)}\0${String(use.passed)}`;
+		const key = `${use.via}\0${use.symbol}\0${String(use.typeOnly)}\0${use.kind ?? ""}\0${String(use.asValue)}\0${String(use.passed)}\0${String(use.timing)}`;
 		if (!seen.has(key)) seen.set(key, use);
 	}
 	return [...seen.values()];

@@ -22,6 +22,8 @@
 // it (runs.ts). A protocol another protocol adopts is used only as
 // a type.
 
+import { C_TIMING } from "#runtime/code-facts/c/operations/c-timing.ts";
+import { callSiteOf, timingMark } from "#runtime/code-facts/operations/call-timing.ts";
 import type { Node } from "web-tree-sitter";
 import type { Reference } from "#runtime/code-facts/operations/facts.ts";
 import type { Spans } from "#runtime/code-facts/operations/spans.ts";
@@ -353,6 +355,7 @@ function sendOf(send: Node): Reference {
 		via: "code",
 		kind: "call",
 		typeOnly: false,
+		...timingMark(callSiteOf(send, true, C_TIMING)),
 	};
 }
 
@@ -371,6 +374,7 @@ function selectorUse(node: Node): Reference | undefined {
 		kind: "call",
 		typeOnly: false,
 		asValue: true,
+		...timingMark(callSiteOf(node, false, C_TIMING)),
 	};
 }
 
