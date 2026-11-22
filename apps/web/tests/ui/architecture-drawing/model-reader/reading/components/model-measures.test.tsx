@@ -36,7 +36,7 @@ const clients: InstanceType<typeof QueryClient>[] = [];
 const REVISION = { digest: "a".repeat(64), files: [] };
 /** The columns of each table, as the dialog gives them. */
 const EXPOSES = ["entryPoints", "hiddenParts", "passThrough", "callers", "wholeModule"] as const;
-const CODE = ["codeExports", "codeValues", "codeLogic", "codeFindings"] as const;
+const CODE = ["codeExports", "codeWidth", "codeValues", "codeLogic", "codeFindings"] as const;
 const TOGETHER = ["together", "unjoined", "commits"] as const;
 /** A table of history, sorted by its commits. */
 const BY_COMMITS: Props["view"] = { measure: "commits", fewest: false, show: "all" };
@@ -581,6 +581,39 @@ test("a C++ module whose checkout has no clangd is read in part, though the pass
 	mount(EXPOSED_CODE);
 	await waitFor(() => expect(cell("api", "codeExports")?.dataset["count"]).toBe("2"));
 	expect(cell("api", "codeFindings")?.dataset["code"]).toBe("partial");
+});
+
+test("a passing module exposes switchboard evidence on its Width cell and row button", async () => {
+	const api = measured(
+		"api",
+		{ judged: ["typescript"], unjudged: [] },
+		{ functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
+	);
+	const depth = [
+		{
+			...api,
+			logic: 8,
+			width: 2,
+			switchboards: [
+				{
+					name: "dispatch",
+					key: "action",
+					path: "src/api/index.ts",
+					operations: [
+						{ keys: ["open"], line: 4 },
+						{ keys: ["close"], line: 8 },
+					],
+				},
+			],
+		},
+	];
+	const models = REMEMBERED.models?.map((one) => ({ ...one, depth, skipped: [] }));
+	remembering({ readings: [], models });
+	mount(EXPOSED_CODE);
+	await waitFor(() => expect(cell("api", "codeWidth")?.dataset["count"]).toBe("2"));
+	expect(cell("api", "codeFindings")?.dataset["code"]).toBe("clean");
+	expect(cell("api", "codeWidth")?.textContent).toContain("open (src/api/index.ts:4)");
+	expect(row("api").querySelector("button")?.title).toContain("close (src/api/index.ts:8)");
 });
 
 test("the code columns read the remembered pass, and opening them never starts a pass", async () => {

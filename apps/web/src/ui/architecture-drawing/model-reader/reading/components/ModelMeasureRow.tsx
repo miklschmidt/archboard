@@ -78,6 +78,10 @@ function ModelMeasureRow(props: ModelMeasureRowProps): JSX.Element {
 		[onChoose, row],
 	);
 	const focus = useCallback((): void => onFocusRow(row.id), [onFocusRow, row.id]);
+	// The button covers the row, so its title is the one pointer users can read.
+	const widthNote = measures.some(({ key }) => key === "codeWidth")
+		? cellNote(row, "codeWidth")
+		: undefined;
 	return (
 		<tr
 			data-measure-row={row.id}
@@ -94,7 +98,7 @@ function ModelMeasureRow(props: ModelMeasureRowProps): JSX.Element {
 						type="button"
 						tabIndex={stop ? 0 : -1}
 						aria-current={lit ? "true" : undefined}
-						title={row.title}
+						title={widthNote === undefined ? row.title : `${row.title} — ${widthNote}`}
 						onClick={choose}
 						onFocus={focus}
 						onKeyDown={onKeyDown}
