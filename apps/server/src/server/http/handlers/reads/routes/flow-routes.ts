@@ -66,7 +66,6 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		};
 	const drawn = await renderArchitecture({
 		content: projection.content,
-		variant: projection.complete,
 		held: projection.held,
 		standing: projection.standing,
 		unsettled: projection.unsettled,

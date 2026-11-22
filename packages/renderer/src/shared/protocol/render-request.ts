@@ -5,7 +5,7 @@ import type { ChangeKind } from "@archboard/model/comparison";
 import type { SemanticPolicy } from "@archboard/model/policy";
 import type { StandaloneTheme } from "@archboard/model/render-reply";
 import type { DiagramGrammar } from "@archboard/model/views";
-import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
+import type { VariantContent } from "@archboard/model/content";
 import type {
 	Drawn,
 	ExportFrame,
@@ -44,16 +44,6 @@ class SemanticRenderError extends Error {
 		this.name = "SemanticRenderError";
 		this.code = code;
 	}
-}
-
-/**
- * What the core reads of the whole variant: containment and the ends of each relationship
- * (`entry_points_of`, ADR 0044). The other fields are present because it parses a part and a
- * relationship whole.
- */
-interface InterfaceContent {
-	readonly nodes: readonly Pick<SemanticNode, "id" | "parent" | "name" | "kind">[];
-	readonly edges: readonly Pick<SemanticEdge, "id" | "order" | "from" | "to" | "kind">[];
 }
 
 /** What to draw, and for where. */
@@ -102,14 +92,6 @@ interface DiagramRenderRequest {
 	 */
 	readonly held?: VariantContent | undefined;
 	/**
-	 * The whole variant the picture reads, before a view narrows it and without
-	 * what a comparison puts back. The layout reads each container's interface
-	 * from it (ADR 0044). An entry point stays one in a view that hides its
-	 * caller, and a child a comparison puts back is never
-	 * one. Absent, the variant's own reading of the view stands in for it.
-	 */
-	readonly variant?: InterfaceContent | undefined;
-	/**
 	 * Which of this variant's subjects the document says nobody has decided yet.
 	 *
 	 * Derived on every render exactly as the standings are, from the same
@@ -153,7 +135,6 @@ type RenderedDiagram = Drawn;
 
 export {
 	type DiagramRenderRequest,
-	type InterfaceContent,
 	type SemanticViewRenderRequest,
 	type RenderedDiagram,
 	type StatedStandings,

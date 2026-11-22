@@ -209,7 +209,6 @@ async function draw(
 	const started = performance.now();
 	const { svg, painting, width, height } = await renderArchitecture({
 		content: reading.content,
-		variant: reading.complete,
 		held: reading.held,
 		standing: reading.standing,
 		unsettled: reading.unsettled,
