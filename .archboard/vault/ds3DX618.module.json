@@ -19,6 +19,19 @@
       "emphasis": "normal",
       "id": "vKEsyHFk#2FWAcHpG",
       "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+    },
+    {
+      "order": 20,
+      "kind": "call",
+      "label": "whether a file lies inside a module",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/module-depth/operations/depth-reading.ts",
+        "symbol": "within"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM",
+      "id": "vKEsyHFk#3lLeTRtE"
     }
   ]
 }
