@@ -47,6 +47,7 @@ import { surfaceMarks } from "#ui/architecture-drawing/canvas/picture/camera/cli
 import { usePresentationArrival } from "#ui/architecture-drawing/canvas/picture/hooks/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/architecture-drawing/model-reader/reading/hooks/use-camera-handover.ts";
 import { useSubjectTip } from "#ui/architecture-drawing/canvas/picture/hooks/use-subject-tip.ts";
+import { usePointedEffects } from "#ui/architecture-drawing/canvas/picture/hooks/use-pointed-effects.ts";
 import {
 	SubjectTipBox,
 	TipPlace,
@@ -195,6 +196,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	});
 	const standing = veil ?? lighting.standing;
 	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
+	usePointedEffects(staged, projection.connections, lighting.resting, reducedMotion);
 	useRelease(gesture === "dragging", lighting.release);
 	useStickyHeads(staged, drawing.atlas);
 	useStageLook(

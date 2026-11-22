@@ -242,6 +242,18 @@ class PictureStage {
 		});
 	}
 
+	/**
+	 * Play the effect of some lines once, as a reader points at them. The painter leaves a line with
+	 * traffic of its own and a declared-only line still.
+	 * @param ids The lines.
+	 */
+	playEffects(ids: readonly string[]): void {
+		if (ids.length === 0) return;
+		this.#tell((painter) => {
+			painter.playEffects([...ids], frameClock().now());
+		});
+	}
+
 	/** Take the sweep away. */
 	clearSweep(): void {
 		this.#tell((painter) => {
