@@ -8,12 +8,13 @@
 // A card drawn near shows its name and responsibility, so its tip is its
 // description; seen from far away it shows its name alone, so its tip is its
 // responsibility and description. A label shows its words, so its tip names the
-// kind of relationship or message it labels. A tip that would say nothing new
+// kind of relationship or message it labels, and a line's effect. A tip that would say nothing new
 // is not shown. Every tip is headed by what it is about, drawn the way the
 // picture draws it, so it reads on its own, away from the part it explains.
 
 import { drillWayWords } from "#ui/architecture-drawing/canvas/picture/rules/drill-way.ts";
 import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
+import { effectKey } from "@archboard/renderer/picture";
 import type { SemanticEdge, SemanticNode } from "@archboard/model/content";
 import type { SemanticVariant } from "@archboard/model/legacy-board";
 import type { AppliedAppearance } from "#ui/architecture-drawing/canvas/picture/reads/clients/drawings.ts";
@@ -240,14 +241,33 @@ function labelTip(
 }
 
 /**
+ * What a line is, as its tip heads it: its kind, and the effect its dash says when it says one,
+ * so the tip names both channels of the line.
+ * @param appearance How the picture draws the line, when it names its kind.
+ * @param kind The line's kind, when the picture does not name it.
+ * @returns The words.
+ */
+function lineKind(appearance: AppliedAppearance | undefined, kind: string): string {
+	const effect = effectKey().find((entry) => entry.effect === appearance?.effect)?.word;
+	const name = appearance?.typeName ?? kind;
+	return effect === undefined ? name : `${name} · ${effect}`;
+}
+
+/**
  * The tip over a relationship's label.
  * @param edge The relationship.
  * @param appearance How the picture draws its line, when it names its kind.
  * @returns The tip.
  */
 function edgeTip(edge: SemanticEdge, appearance: AppliedAppearance | undefined): SubjectTip {
-	const kind = appearance?.typeName ?? edge.kind;
-	return { ...UNSAID, title: edge.label ?? kind, kind, appearance, body: edge.description };
+	const kind = lineKind(appearance, edge.kind);
+	return {
+		...UNSAID,
+		title: edge.label ?? appearance?.typeName ?? edge.kind,
+		kind,
+		appearance,
+		body: edge.description,
+	};
 }
 
 /**
@@ -276,7 +296,7 @@ function joinedTip(
  * @returns The tip.
  */
 function lineTip(line: LineSubject, appearance: AppliedAppearance | undefined): SubjectTip {
-	const kind = appearance?.typeName ?? line.line.kind;
+	const kind = lineKind(appearance, line.line.kind);
 	const joined = line.joins.map(({ edge, from, to }) =>
 		edge.label === undefined ? endsOf(from, to, edge) : `${edge.label}: ${endsOf(from, to, edge)}`,
 	);

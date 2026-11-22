@@ -165,6 +165,12 @@ test("a label's tip names its words and the kind of line the picture draws them 
 	expect(tip.body).toBe("Once per request.");
 });
 
+test("a label's tip names the effect its line's dash says beside the kind", () => {
+	const label = tipTargetAt(at(drawn(), "pill"), 0)!;
+	const querying = { ...LINE, dash: "dashed", effect: "query" };
+	expect(subjectTip(VARIANT, label, querying, false)!.kind).toBe("Calls · Query");
+});
+
 test("a container answers the pointer on its header band, not across its frame", () => {
 	const picture = drawn();
 	const band = picture.querySelector('[data-semantic-part="header"]');
