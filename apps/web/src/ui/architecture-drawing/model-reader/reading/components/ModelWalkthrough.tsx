@@ -13,7 +13,7 @@ import {
 	type SemanticPresentationProps,
 } from "#ui/architecture-drawing/canvas/presentation/components/SemanticPresentation.tsx";
 import { PictureOverlay } from "#ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx";
-import { ALL_LENS, projectModel, type Model } from "@archboard/model/content";
+import { allLens, projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/architecture-drawing/model-reader/hooks/use-accepted-scene.ts";
 import { usePictureCamera } from "#ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/architecture-drawing/model-reader/rules/scene.ts";
@@ -40,7 +40,7 @@ type Reading = Playback["walkthrough"]["beats"][number]["reading"];
  * @returns Its filters.
  */
 function beatFilters(reading: Reading) {
-	return { lens: ALL_LENS, hideKinds: reading.filters.relationships };
+	return { lens: allLens(), hideKinds: reading.filters.relationships };
 }
 type Picture = Parameters<NonNullable<ComponentProps<typeof ModelDiagram>["onPresentation"]>>[0];
 

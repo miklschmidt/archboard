@@ -7,7 +7,7 @@ import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/panes/pane-session/rules/socket-messages.ts";
 import { AFTER } from "#ui/architecture-drawing/model-reader/rules/comparison-intent.ts";
 import type { FlowGrammar } from "#ui/architecture-drawing/model-reader/rules/flow-fit.ts";
-import { ALL_LENS } from "@archboard/model/content";
+import { allLens } from "@archboard/model/content";
 
 type Reading = Model["walkthroughs"][number]["beats"][number]["reading"];
 
@@ -332,7 +332,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, userChanged],
 	);
 	const showAll = useCallback((): void => {
-		selectLens(ALL_LENS);
+		selectLens(allLens());
 	}, [selectLens]);
 	const reveal = useCallback(
 		(ids: readonly string[], kinds: readonly string[], widen: boolean): void => {
@@ -340,7 +340,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			explore({
 				grammar: undefined,
 				focus: [...new Set(ids)].toSorted(),
-				...(widen ? { lens: ALL_LENS } : {}),
+				...(widen ? { lens: allLens() } : {}),
 				hideKinds: hidden.length === 0 ? undefined : hidden,
 			});
 		},
@@ -578,7 +578,7 @@ function bookmarkSearch(reading: Reading | undefined, paneId: string): Record<st
 		grammar: reading.grammar,
 		flow: reading.flow,
 		focus: reading.focus,
-		lens: ALL_LENS,
+		lens: allLens(),
 		hideKinds: reading.filters.relationships,
 	};
 	return Object.fromEntries(

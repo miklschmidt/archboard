@@ -8,6 +8,7 @@ import { readRenderRecipe, replaceRenderRecipe } from "@archboard/renderer/recip
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { errorMessage } from "@archboard/diagnostics/thrown-error";
 import { renderArchitectureFlowOnServer } from "#cli/server-access/clients/architecture-model.ts";
+import { allLens } from "@archboard/model/content";
 import {
 	checkoutEmbeds,
 	type CheckoutEmbed,
@@ -197,7 +198,8 @@ async function inspect(
 	const reading = {
 		...recipe.reading,
 		theme: recipe.reading.theme ?? ("auto" as const),
-		lens: recipe.reading.grammar === "architecture" ? (recipe.reading.lens ?? "all") : undefined,
+		lens:
+			recipe.reading.grammar === "architecture" ? (recipe.reading.lens ?? allLens()) : undefined,
 	};
 	const fresh = await renderArchitectureFlowOnServer(reading, vault);
 	if (!fresh.success)

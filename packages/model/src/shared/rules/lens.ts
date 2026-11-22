@@ -1,15 +1,12 @@
 // The lens a picture is read through: a named question that chooses which of
 // its relationships draw. A lens never removes a part; it only chooses lines.
 
-import type { SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
+import { ALL_LENS_ID, type SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 
 type Lens = SemanticPolicy["lenses"][string];
 type Selector = NonNullable<Lens["show"]>[number];
 type Edge = Pick<VariantContent["edges"][number], "kind" | "effect">;
-
-/** The lens of every relationship, which Show all selects in every vault. */
-const ALL_LENS = "all";
 
 /** A lens in effect: which one it is, and which relationships it draws. */
 interface ReadingLens {
@@ -58,4 +55,13 @@ function readingLens(policy: SemanticPolicy, id: string | undefined): ReadingLen
 	};
 }
 
-export { ALL_LENS, readingLens, type ReadingLens };
+/**
+ * The lens of every relationship, which Show all selects in every vault, and which a reading from
+ * before lenses is read through.
+ * @returns Its id.
+ */
+function allLens(): string {
+	return ALL_LENS_ID;
+}
+
+export { allLens, readingLens, type ReadingLens };
