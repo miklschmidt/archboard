@@ -215,14 +215,14 @@ async function openBound(
 	dependencies: OpeningDependencies,
 ): Promise<void> {
 	const found = await activationTarget(request, vault, signal, dependencies);
-	if (!found.ok) return sendFailure(response, found);
+	if (!found.ok)
+		return sendFailure(response, found, undefined, "binding" in found ? found.binding : undefined);
 	const opening = openable(found.target, found.binding);
 	if (!opening.ok) return sendFailure(response, opening.failure, opening.status, found.binding);
 	const { target } = opening;
-	// The line is read from the working tree. A checkout on another ref than the
-	// binding pins never gets here with a GitHub link, because it was refused above,
-	// so the link names the line only where the checkout is on the pinned ref or the
-	// binding pins none (its link is GitHub's default branch).
+	// The line is read from the working tree. A checkout on another ref than the binding pins
+	// was refused above, so the link names the line only where the checkout is on the pinned
+	// ref or the binding pins none (its link is GitHub's default branch).
 	const line = await symbolLine(found.binding, target, signal);
 	const current = readOpenerSelection();
 	if (!current.ok)
