@@ -210,9 +210,9 @@ const modelRenderContract = defineCommand({
 	 * @returns A file receipt or an explicit refusal.
 	 */
 	async handler(input, context) {
-		await context.require("server", "model render");
 		const { out, ...request } = input;
 		requireGrammarForFlow(request);
+		await context.require("server", "model render");
 		const result = await renderArchitectureFlowOnServer(request);
 		if (!result.success)
 			return {
