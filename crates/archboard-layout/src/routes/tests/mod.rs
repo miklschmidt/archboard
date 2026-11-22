@@ -81,8 +81,7 @@ fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
 }
 
 /// How each route's line is drawn: an event's dashed with an open head, as
-/// an old policy draws it, a line of several kinds as two solid rails, every
-/// other solid with a filled head.
+/// an old policy draws it, every other solid with a filled head.
 fn lines_of(drawing: &Drawing) -> BTreeMap<String, LineLook> {
     drawing
         .edges
@@ -91,13 +90,7 @@ fn lines_of(drawing: &Drawing) -> BTreeMap<String, LineLook> {
             let look = match edge.edge.kind.as_str() {
                 "event" => LineLook {
                     dash: Dash::Dashed,
-                    rails: false,
                     arrowhead: Arrowhead::Open,
-                },
-                "mixed kinds" => LineLook {
-                    dash: Dash::Solid,
-                    rails: true,
-                    arrowhead: Arrowhead::Filled,
                 },
                 _ => return None,
             };

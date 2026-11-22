@@ -2,7 +2,9 @@
 
 use archboard_scene::geometry::{Point, Rect, Segment};
 use archboard_scene::scene::{Cap, Geometry, Join, PathStep, Stroke};
-use kurbo::{Affine, BezPath, ParamCurve as _, Shape as _, Vec2};
+use std::borrow::Cow;
+
+use kurbo::{Affine, BezPath, ParamCurve as _, ParamCurveArclen as _, PathSeg, Shape as _, Vec2};
 
 /// How closely a curve stands in for a circle or a rounded corner.
 const TOLERANCE: f64 = 0.05;
@@ -206,6 +208,51 @@ pub(crate) fn end_of(path: &BezPath, start: bool) -> Option<(kurbo::Point, f64)>
 /// The transform of one group: a move, and a scale inside it.
 pub(crate) fn placed(x: f64, y: f64, scale: Option<f64>) -> Affine {
     Affine::translate((x, y)) * Affine::scale(scale.unwrap_or(1.0))
+}
+
+/// How exactly a trim measures along a path, in the picture's units.
+const TRIM_ACCURACY: f64 = 0.01;
+
+/// A path with a length taken off its start and its end, along its ink. A
+/// path shorter than what it gives is left as it is.
+pub(crate) fn trimmed(path: &BezPath, start: f64, end: f64) -> Cow<'_, BezPath> {
+    if start <= 0.0 && end <= 0.0 {
+        return Cow::Borrowed(path);
+    }
+    let mut segments: Vec<PathSeg> = path.segments().collect();
+    let lengths: Vec<f64> = segments
+        .iter()
+        .map(|seg| seg.arclen(TRIM_ACCURACY))
+        .collect();
+    if lengths.iter().sum::<f64>() <= start + end {
+        return Cow::Borrowed(path);
+    }
+    let mut left = end;
+    while left > 0.0 {
+        let Some(last) = segments.pop() else { break };
+        let length = lengths[segments.len()];
+        if length > left {
+            let t = last.inv_arclen(length - left, TRIM_ACCURACY);
+            segments.push(last.subsegment(0.0..t));
+            break;
+        }
+        left -= length;
+    }
+    let mut left = start;
+    let mut index = 0;
+    while left > 0.0 && index < segments.len() {
+        let length = segments[index].arclen(TRIM_ACCURACY);
+        if length > left {
+            let t = segments[index].inv_arclen(left, TRIM_ACCURACY);
+            segments[index] = segments[index].subsegment(t..1.0);
+            break;
+        }
+        left -= length;
+        index += 1;
+    }
+    Cow::Owned(BezPath::from_path_segments(
+        segments.into_iter().skip(index),
+    ))
 }
 
 #[cfg(test)]

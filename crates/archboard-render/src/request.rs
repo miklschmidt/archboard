@@ -71,8 +71,10 @@ pub(crate) struct RelationshipLook {
     /// absent where each line's effect says its dash.
     #[serde(default)]
     pub(crate) dash: Option<Dash>,
-    /// Which arrowhead its line ends in.
-    pub(crate) arrowhead: Arrowhead,
+    /// Which arrowhead its lines ended in, on a reading from before effects
+    /// (ADR 0065); absent where each line's effect says its head.
+    #[serde(default)]
+    pub(crate) arrowhead: Option<Arrowhead>,
 }
 
 /// The vault's presentation policy, shared by every variant.

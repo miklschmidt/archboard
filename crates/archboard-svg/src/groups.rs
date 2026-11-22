@@ -107,9 +107,6 @@ fn line(group: &Group, facts: Option<&LineFacts>, names: &Names, out: &mut Attri
             .set("data-line-dash", word(&look.dash))
             .set("data-arrowhead", word(&look.arrowhead));
         out.maybe("data-line-effect", look.effect.as_ref().map(word));
-        if look.rails {
-            out.set("data-line-rails", "true");
-        }
     }
 }
 
@@ -182,8 +179,8 @@ fn page(group: &Group, out: &mut Attributes) -> bool {
         Role::Slot(Slot::ExportTitle) => {
             out.set("data-slot", "export-title");
         }
-        Role::Slot(Slot::ExportNote) => {
-            out.set("data-slot", "export-note");
+        Role::Slot(Slot::ExportStatus) => {
+            out.set("data-slot", "export-status");
         }
         Role::Slot(Slot::ExportLegend { layout }) => {
             out.set("data-slot", "export-legend")

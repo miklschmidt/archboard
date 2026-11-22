@@ -37,15 +37,6 @@ fn a_solid_line_rises_over_a_dashed_one_and_where_no_hop_fits_the_two_cross_plai
     assert_eq!(result.bridges, Vec::<DrawingBridge>::new());
 }
 
-// A line of several kinds is two rails: it never rises over one solid line,
-// whatever its rails' dash, so a solid line keeps reading as one stroke.
-#[test]
-fn a_solid_line_rises_over_a_line_of_several_kinds() {
-    let joined = [(1, "mixed kinds", Emphasis::Normal)];
-    let over = bridged(&drawn(&[down(50.0), across(50.0)], &joined));
-    assert_eq!(lone_hop(&over), ("0", vec!["1"]));
-}
-
 // Every engine: between two lines that both have all the room a hop wants,
 // the longer one rose, and hops moved about with every edit far away.
 #[test]

@@ -8,8 +8,8 @@
 // `recommendations.json` is a reading of the old format, which draws each kind
 // as its policy recorded it. `effects.json` is the same request in the current
 // format: the built-in kinds, and every relationship stating an effect, one of
-// them a dependency that states none and one a line of several kinds, so each
-// effect's line type is held to one document on both builds (TASK-663).
+// them a dependency that states none, so each effect's line type and head is
+// held to one document on both builds (TASK-663).
 //
 // Each solve runs here, one at a time, with the core's `layOutPicture`, as a
 // layout worker runs it; a solve's answer depends on its graph alone, so the
@@ -17,9 +17,9 @@
 //
 // Run from the repository root, inside `nix develop`, after `bun run build:core`:
 //   bun packages/renderer/tests/runtime/support/capture-native-fixture.ts
-// The first needs the example's retained history. Without it, redraw only the
-// second from the request the first holds:
-//   bun packages/renderer/tests/runtime/support/capture-native-fixture.ts effects
+// The first needs the example's retained history. Without it, redraw both from
+// the request the first holds, after a change to how the core paints:
+//   bun packages/renderer/tests/runtime/support/capture-native-fixture.ts stored
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { projectModel } from "@archboard/model/content";
@@ -119,8 +119,8 @@ interface StoredEdge {
 
 /**
  * A relationship of the old request as the current format states it: each states an effect in
- * turn, `data` travels as `storage`, the second joins several kinds and the last is a dependency
- * that states none.
+ * turn, `data` travels as `storage`, a `call` as `sync`, and the last is a dependency that states
+ * none.
  * @param ids Every relationship's id, in the content's order.
  * @returns The relationship restated.
  */
@@ -129,7 +129,7 @@ function restated(ids: readonly string[]): (edge: StoredEdge) => StoredEdge {
 		const at = Math.max(ids.indexOf(edge.id), 0);
 		const { effect: _none, ...rest } = edge;
 		if (at === ids.length - 1) return { ...rest, kind: "dependency" };
-		const kind = at === 1 ? "mixed kinds" : edge.kind === "data" ? "storage" : edge.kind;
+		const kind = { data: "storage", call: "sync" }[edge.kind] ?? edge.kind;
 		return { ...rest, kind, effect: EFFECTS[at % EFFECTS.length]! };
 	};
 }
@@ -173,5 +173,20 @@ async function effects(old: Fixture): Promise<Fixture> {
 	};
 }
 
-if (process.argv[2] !== "effects") write(FIXTURE, await recommendations());
+/**
+ * A fixture drawn again by the WebAssembly core from the request it holds.
+ * @param old The fixture.
+ * @returns The fixture with the document the core writes now.
+ */
+async function redrawn(old: Fixture): Promise<Fixture> {
+	const rendered = await core.render(old.request, {
+		solve: (graph) => Promise.resolve(core.layOutPicture(graph)),
+		icons: (names) => Object.fromEntries(names.map((name) => [name, old.icons[name] ?? []])),
+	});
+	if ("empty" in rendered) throw new Error("the stored request drew nothing");
+	return { ...old, svg: rendered.svg };
+}
+
+const stored = JSON.parse(readFileSync(FIXTURE, "utf8")) as Fixture;
+write(FIXTURE, process.argv[2] === "stored" ? await redrawn(stored) : await recommendations());
 write(EFFECTS_FIXTURE, await effects(JSON.parse(readFileSync(FIXTURE, "utf8")) as Fixture));

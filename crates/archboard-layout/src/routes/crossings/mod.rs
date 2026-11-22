@@ -231,7 +231,7 @@ impl Settling<'_> {
     fn standing_of(&self, line: &Line) -> [f64; 2] {
         let edge = &self.edges()[self.scene.runs[line.drawer].edge_index].edge;
         let look = look_of(self.lines, &edge.id);
-        let solid = look.dash == Dash::Solid && !look.rails;
+        let solid = look.dash == Dash::Solid;
         [weight(edge.emphasis), if solid { 1.0 } else { 0.0 }]
     }
 

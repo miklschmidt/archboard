@@ -27,6 +27,7 @@ mod far_card;
 mod far_view;
 mod finish;
 mod flowchart_shapes;
+mod heads;
 mod icons;
 mod junctions;
 mod legend;
@@ -54,6 +55,7 @@ mod tray;
 pub use junctions::junction_boxes;
 pub use legend::{Applied, Drawn, picture_legend};
 pub use marks::viewer_marks;
+pub use styles::effect_look;
 
 /// One card or frame as the painter reads it.
 type Node = DrawingNode<NodeFacts>;

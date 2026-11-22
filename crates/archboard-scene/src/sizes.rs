@@ -160,14 +160,16 @@ pub(crate) const TAG_BESIDE: f64 = 8.0;
 /// How much larger everything a far view sets larger stands: a far card's words
 /// and every line with its arrowhead.
 pub(crate) const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
+/// The least side of a mark's square on screen, in CSS pixels: a viewer that
+/// sees the picture from far grows each mark to it, so a mark's shape and its
+/// openings (an eye's centre, the gap of an "=") still read.
+pub(crate) const HEAD_FLOOR: f64 = 14.0;
 /// How thick a line of normal weight is drawn.
-pub(crate) const LINE_WIDTH: f64 = 1.4;
+pub(crate) const LINE_WIDTH: f64 = 2.0;
+/// How thick a broken line's body is, as a share of its weight's width.
+pub(crate) const THIN_BODY: f64 = 0.7;
 /// How thick a line of hero weight is drawn.
-pub(crate) const HERO_LINE_WIDTH: f64 = 2.2;
-/// How wide a double line's rails stand, side to side.
-pub(crate) const RAILS: f64 = 3.6;
-/// The gap a double line's rails leave down its middle.
-pub(crate) const RAIL_GAP: f64 = 1.2;
+pub(crate) const HERO_LINE_WIDTH: f64 = 3.0;
 /// The room between an architecture card's edge and its chip and words.
 pub(crate) const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.

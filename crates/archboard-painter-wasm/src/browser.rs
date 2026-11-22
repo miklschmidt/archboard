@@ -65,6 +65,18 @@ pub struct Painter {
     times: [f64; 2],
 }
 
+/// Canvas pixels to one CSS pixel on this page.
+fn pixel_ratio() -> f64 {
+    web_sys::window().map_or(1.0, |window| window.device_pixel_ratio())
+}
+
+/// A stage for a canvas of a size, told this page's pixel ratio.
+fn staged(theme: Theme, size: (f64, f64)) -> Stage {
+    let mut stage = Stage::new(theme, size);
+    stage.set_pixel_ratio(pixel_ratio());
+    stage
+}
+
 /// The page's clock, in milliseconds.
 fn clock_now() -> f64 {
     web_sys::window()
@@ -94,7 +106,7 @@ impl Painter {
         let size = (f64::from(canvas.width()), f64::from(canvas.height()));
         let target = GpuTarget::start(canvas)?;
         Ok(Painter {
-            stage: Stage::new(theme_of(dark), size),
+            stage: staged(theme_of(dark), size),
             clock: StageClock::default(),
             target: Target::Gpu(Box::new(target)),
             times: [0.0; 2],
@@ -115,7 +127,7 @@ impl Painter {
             .ok_or_else(|| JsError::new("The canvas gave no 2D context."))?;
         let (width, height) = (canvas.width(), canvas.height());
         Ok(Painter {
-            stage: Stage::new(theme_of(dark), (f64::from(width), f64::from(height))),
+            stage: staged(theme_of(dark), (f64::from(width), f64::from(height))),
             clock: StageClock::default(),
             target: Target::Cpu {
                 canvas: Box::new(Keeper::new(
@@ -140,7 +152,7 @@ impl Painter {
         let size = (f64::from(canvas.width()), f64::from(canvas.height()));
         let target = WebGlTarget::start(canvas)?;
         Ok(Painter {
-            stage: Stage::new(theme_of(dark), size),
+            stage: staged(theme_of(dark), size),
             clock: StageClock::default(),
             target: Target::WebGl(Box::new(target)),
             times: [0.0; 2],
@@ -291,6 +303,19 @@ impl Painter {
         self.stage.set_camera(Camera { x, y, scale }, ms, now);
     }
 
+    /// Play the effect of some relationships' lines once, from a moment in
+    /// milliseconds of the page's clock: what a reader sees when it points at
+    /// a line, or at a card for each of the lines it touches. A mutation runs
+    /// to its target and lights the imprint, a query lights its eye and runs
+    /// back to its caller's ring, a compute's "=" brightens, and a declared
+    /// requirement stays still. A line with traffic of its own keeps its
+    /// traffic. A page that wants reduced motion does not call it.
+    #[wasm_bindgen(js_name = playEffects)]
+    pub fn play_effects(&mut self, ids: Vec<String>, now: f64) {
+        let now = self.clock.at(now);
+        self.stage.play(&ids, now);
+    }
+
     /// Say at which scale of the camera the far view begins, in canvas pixels to
     /// a unit, and how long a swap takes in milliseconds. A picture with no far
     /// view has its line at 0.
@@ -423,9 +448,11 @@ impl Painter {
         self.clock.set_longest(ms);
     }
 
-    /// Change the size of the canvas, in pixels.
+    /// Change the size of the canvas, in pixels. A page resizes its canvas when
+    /// its pixel ratio changes, so the stage reads the ratio again here.
     pub fn resize(&mut self, width: u32, height: u32) {
         self.stage.set_size((f64::from(width), f64::from(height)));
+        self.stage.set_pixel_ratio(pixel_ratio());
         match &mut self.target {
             Target::Gpu(target) => target.resize(width, height),
             Target::WebGl(target) => target.resize(width, height),

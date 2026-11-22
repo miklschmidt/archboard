@@ -72,7 +72,7 @@ function pointsOf(d: string): DrawnPoint[] {
 /**
  * Where each drawn route ends, on the page.
  *
- * The last point of a route's own path is where its arrowhead stands.
+ * The last point of a route is where its head's tip stands.
  * @param svg The rendered document.
  * @param kind Which sort of subject to read: `edge` in the architecture grammar, `step` in the sequence one.
  * @returns Each route's arrival point, by the id of the subject that drew it.
@@ -106,10 +106,14 @@ function routePoints(svg: string, kind: "edge" | "step" = "edge"): Map<string, D
 			"g",
 		),
 	)) {
+		// A relationship's halo runs its whole route, to the tip of its head:
+		// its body stops short of the marks at its ends.
+		const halo = /<path class="ab-halo" d="([^"]*)"/u.exec(group[2] ?? "")?.[1];
 		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)];
 		// Labels repeat the subject's ID. The arrow or the line group's explicit
 		// headless treatment identifies its route, rather than a warning glyph.
 		const path =
+			halo ??
 			drawn.at(-1)?.[1] ??
 			(/^<g[^>]*data-arrowhead="none"/u.test(group[0])
 				? /<path(?![^>]*class=)[^>]*\sd="([^"]*)"/u.exec(group[2] ?? "")?.[1]

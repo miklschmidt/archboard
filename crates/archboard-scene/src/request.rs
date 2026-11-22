@@ -138,6 +138,10 @@ pub enum Dash {
 pub enum Arrowhead {
     Filled,
     Open,
+    Wedge,
+    Eye,
+    Equals,
+    Detached,
     None,
 }
 
@@ -153,19 +157,20 @@ pub enum Effect {
     Compute,
 }
 
-/// What a line's dash says it does, as the legend's effect key names it: one
-/// of the three effects, or a dependency that states none. Listed in the key's
-/// order, strongest first.
+/// What a line's type and head say it does, as the legend's effect key names
+/// it: one of the three effects, or a dependency that states none. Listed in
+/// the key's order, strongest first. `effect_look` in the painter's styles says
+/// how each is drawn.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum LineEffect {
-    /// It changes state or acts outside its caller: solid.
+    /// It changes state or acts outside its caller.
     Mutation,
-    /// It reads held or fetched state: dashed.
+    /// It reads held or fetched state.
     Query,
-    /// Its answer follows from what it hands over alone: dotted.
+    /// Its answer follows from what it hands over alone.
     Compute,
-    /// A declared requirement, of which nothing runs at run time: a dash and a dot.
+    /// A declared requirement, of which nothing runs at run time.
     Declared,
 }
 
@@ -177,16 +182,6 @@ impl LineEffect {
         LineEffect::Compute,
         LineEffect::Declared,
     ];
-
-    /// The dash that says it.
-    pub fn dash(self) -> Dash {
-        match self {
-            LineEffect::Mutation => Dash::Solid,
-            LineEffect::Query => Dash::Dashed,
-            LineEffect::Compute => Dash::Dotted,
-            LineEffect::Declared => Dash::Declared,
-        }
-    }
 
     /// What the effect key calls it.
     pub fn words(self) -> &'static str {
@@ -219,10 +214,6 @@ pub struct LineAppearance {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub color: Option<PaletteColor>,
-    /// Whether it joins relationships of several kinds, and so is drawn as two
-    /// rails in the neutral ink. No policy can choose it.
-    #[serde(default)]
-    pub rails: bool,
     /// How it is dashed.
     pub dash: Dash,
     /// Which arrowhead it ends in.
@@ -235,15 +226,16 @@ pub struct LineAppearance {
 }
 
 impl LineAppearance {
-    /// How its kind's legend row samples it: solid with a filled head in the
-    /// kind's ink where the dash says an effect, else as the kind draws it.
+    /// How its kind's legend row samples it: solid and headless in the kind's
+    /// ink where the line type and head say an effect, so the sample claims
+    /// no effect; else as the kind draws it.
     #[must_use]
     pub fn kind_sample(&self) -> LineAppearance {
         match self.effect {
             None => self.clone(),
             Some(_) => LineAppearance {
                 dash: Dash::Solid,
-                arrowhead: Arrowhead::Filled,
+                arrowhead: Arrowhead::None,
                 effect: None,
                 ..self.clone()
             },
@@ -370,14 +362,15 @@ pub struct ExportFrame {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub legend_only: Option<bool>,
-    /// The lines the picture's lens left out, which a note under the picture
-    /// counts with or without a legend; no note when absent.
+    /// What the picture's lens did, which a status line above the picture says
+    /// with or without a legend; no status line when absent.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub left_out: Option<LeftOut>,
 }
 
-/// How many lines a lens left out of a picture, and the lens's name.
+/// What a lens did to a picture: how many lines it left out, or that it drew
+/// none here, so the picture shows every relationship instead.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct LeftOut {
@@ -385,6 +378,10 @@ pub struct LeftOut {
     pub count: u32,
     /// The name of the lens it is read through.
     pub lens: String,
+    /// Whether the lens drew no line here, so the picture shows every relationship.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub showing_all: Option<bool>,
 }
 
 /// How the blocks of a picture are drawn.

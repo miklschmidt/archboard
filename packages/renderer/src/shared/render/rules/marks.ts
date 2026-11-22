@@ -12,6 +12,7 @@ import type { EdgeEmphasis } from "@archboard/model/content";
 import {
 	CORNER_INSET,
 	EFFECT_KEY,
+	EFFECT_SAMPLE_SIZE,
 	HEAD_LENGTH,
 	LINE_DASH,
 	LINE_INK,
@@ -113,12 +114,22 @@ function lineDash(dash: string): string | undefined {
 type EffectKeyEntry = (typeof EFFECT_KEY)[number];
 
 /**
- * The effect key, in the order a legend lists it: each effect a line's dash
- * says, the words for it and its dash.
+ * The effect key, in the order a legend lists it: each effect, the words for
+ * it, the line type and head that say it, and its sample markup as the
+ * picture's own legend draws it, in a box of `effectSampleSize()`.
  * @returns The rows.
  */
 function effectKey(): typeof EFFECT_KEY {
 	return EFFECT_KEY;
+}
+
+/**
+ * The box each effect's sample is drawn in, with its top left at the origin:
+ * the viewBox a pane draws a sample's markup in.
+ * @returns Its width and height.
+ */
+function effectSampleSize(): typeof EFFECT_SAMPLE_SIZE {
+	return EFFECT_SAMPLE_SIZE;
 }
 
 /**
@@ -166,6 +177,7 @@ export {
 	OPEN_ARM,
 	cornerWarning,
 	effectKey,
+	effectSampleSize,
 	lineDash,
 	lineInk,
 	lineWarning,

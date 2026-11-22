@@ -107,3 +107,90 @@ pub(crate) fn route_length(curve: &Curve) -> f64 {
             length + segment_length(segment_start(curve, index), segment)
         })
 }
+
+/// A route laid flat into short chords: its points, and how far along its ink
+/// each one lies, to find where a route stands some way along it.
+#[derive(Clone, Debug)]
+pub(crate) struct Walk {
+    points: Vec<Point>,
+    at: Vec<f64>,
+}
+
+/// Where a walk stands at some distance along its route: the point, and the
+/// way the route runs there as a vector of length one.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Stand {
+    pub(crate) point: Point,
+    pub(crate) way: Point,
+}
+
+impl Stand {
+    /// A point given across the stand's way: `along` its way and `aside` to its left.
+    pub(crate) fn turned(&self, along: f64, aside: f64) -> Point {
+        Point {
+            x: self.point.x + self.way.x * along - self.way.y * aside,
+            y: self.point.y + self.way.y * along + self.way.x * aside,
+        }
+    }
+}
+
+impl Walk {
+    /// A route laid flat.
+    pub(crate) fn of(curve: &Curve) -> Walk {
+        let mut points = vec![curve.from];
+        for (index, segment) in curve.segments.iter().enumerate() {
+            let from = segment_start(curve, index);
+            match segment {
+                Segment::Line { to } => points.push(*to),
+                Segment::Cubic { .. } => points.extend((1..=CHORDS).map(|step| {
+                    point_on_segment(from, segment, f64::from(step) / f64::from(CHORDS))
+                })),
+            }
+        }
+        points.dedup();
+        let mut at = vec![0.0];
+        for pair in points.windows(2) {
+            let run = js::hypot(pair[1].x - pair[0].x, pair[1].y - pair[0].y);
+            at.push(at.last().copied().unwrap_or(0.0) + run);
+        }
+        Walk { points, at }
+    }
+
+    /// How long the route is along its ink.
+    pub(crate) fn length(&self) -> f64 {
+        self.at.last().copied().unwrap_or(0.0)
+    }
+
+    /// Where the walk stands a distance along the route, held to its ends.
+    pub(crate) fn stand(&self, distance: f64) -> Stand {
+        let last = self.points.len().saturating_sub(1);
+        let chord = self
+            .at
+            .iter()
+            .skip(1)
+            .position(|reach| *reach >= distance)
+            .unwrap_or_else(|| last.saturating_sub(1));
+        let (from, to) = (self.points[chord], self.points[(chord + 1).min(last)]);
+        let run = self.at.get(chord + 1).copied().unwrap_or(0.0) - self.at[chord];
+        let t = if run > 0.0 {
+            ((distance - self.at[chord]) / run).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let way = if run > 0.0 {
+            Point {
+                x: (to.x - from.x) / run,
+                y: (to.y - from.y) / run,
+            }
+        } else {
+            Point { x: 1.0, y: 0.0 }
+        };
+        Stand {
+            point: Point {
+                x: from.x + (to.x - from.x) * t,
+                y: from.y + (to.y - from.y) * t,
+            },
+            way,
+        }
+    }
+}

@@ -266,7 +266,6 @@ pub(super) fn passes_beneath(runs: &[Run], run: &Run, point: Point, bulge: Bulge
 pub(super) fn look_of(lines: &BTreeMap<String, LineLook>, id: &str) -> LineLook {
     lines.get(id).copied().unwrap_or(LineLook {
         dash: Dash::Solid,
-        rails: false,
         arrowhead: Arrowhead::Filled,
     })
 }

@@ -15,7 +15,12 @@ use archboard_svg::{colour, markup};
 
 /// A string as a TypeScript literal.
 fn quoted(text: &str) -> String {
-    format!("\"{}\"", text.replace('\\', "\\\\").replace('"', "\\\""))
+    format!(
+        "\"{}\"",
+        text.replace('\\', "\\\\")
+            .replace('"', "\\\"")
+            .replace('\n', "\\n")
+    )
 }
 
 /// An object literal of some entries, each a key and a literal value.
@@ -25,6 +30,11 @@ fn object(entries: impl IntoIterator<Item = (&'static str, String)>) -> String {
         .map(|(key, value)| format!("\t{key}: {value},"))
         .collect();
     format!("{{\n{}\n}} as const", fields.join("\n"))
+}
+
+/// An array literal of some rows, each already written.
+fn listed(rows: impl Iterator<Item = String>) -> String {
+    format!("[\n{}\n] as const", rows.collect::<Vec<_>>().join("\n"))
 }
 
 /// Inks by the colour of their line, the neutral line's first.
@@ -89,22 +99,26 @@ fn main() {
             })),
         ),
         (
-            "The effect key: what each line effect is called and the dash that says it, in the key's order.",
+            "The effect key, in the key's order: what each line effect is called, the line type and the head that say it, and its sample as the picture's legend draws it, in a box of EFFECT_SAMPLE_SIZE.",
             "EFFECT_KEY",
-            format!(
-                "[\n{}\n] as const",
-                marks
-                    .effects
-                    .iter()
-                    .map(|(effect, words, dash)| format!(
-                        "\t{{ effect: {}, word: {}, dash: {} }},",
-                        quoted(word(effect)),
-                        quoted(words),
-                        quoted(word(dash))
-                    ))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            ),
+            listed(marks.effects.iter().map(|key| {
+                format!(
+                    "\t{{ effect: {}, word: {}, dash: {}, head: {}, sample: {} }},",
+                    quoted(word(&key.effect)),
+                    quoted(key.words),
+                    quoted(word(&key.dash)),
+                    quoted(word(&key.head)),
+                    quoted(&markup(&key.sample))
+                )
+            })),
+        ),
+        (
+            "The width and height of the box each effect's sample is drawn in.",
+            "EFFECT_SAMPLE_SIZE",
+            object([
+                ("width", js::number(marks.sample_size.0)),
+                ("height", js::number(marks.sample_size.1)),
+            ]),
         ),
         (
             "The pin each standing wears, centred on the origin; none for unchanged.",

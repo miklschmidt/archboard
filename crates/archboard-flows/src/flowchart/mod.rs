@@ -221,7 +221,6 @@ fn drawing_of(
     let next = LineAppearance {
         name: "Next".to_owned(),
         color: None,
-        rails: false,
         dash: Dash::Solid,
         arrowhead: Arrowhead::Filled,
         effect: None,

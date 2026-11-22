@@ -93,8 +93,8 @@ pub enum Slot {
     PlannedFrame,
     /// The title an export draws above its picture.
     ExportTitle,
-    /// The note under an export's picture that counts the lines its lens left out.
-    ExportNote,
+    /// The status line above an export's picture that says what its lens did.
+    ExportStatus,
     /// The legend an export draws, and how it is laid out.
     ExportLegend {
         /// How the legend is laid out.

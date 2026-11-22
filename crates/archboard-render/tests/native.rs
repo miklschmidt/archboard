@@ -104,25 +104,6 @@ fn a_native_build_draws_corpus_pictures_to_the_bytes_the_webassembly_build_draws
 }
 
 #[test]
-fn a_line_of_several_kinds_draws_both_rails_in_its_strongest_effects_dash() {
-    let svg = drawn_natively(&fixture("effects.json"));
-    let rails = svg
-        .find("data-line-rails=\"true\"")
-        .expect("the fixture draws a line of several kinds");
-    let start = svg[..rails].rfind("<g ").expect("the line's group opens");
-    let line = &svg[start
-        ..svg[rails..]
-            .find("</g>")
-            .map_or(svg.len(), |end| rails + end)];
-    assert!(line.contains("data-line-dash=\"dashed\""), "{line}");
-    let rail = line
-        .lines()
-        .find(|one| one.contains("class=\"ab-rail\""))
-        .expect("the line draws its rails");
-    assert!(rail.contains("stroke-dasharray=\"6 4\""), "{rail}");
-}
-
-#[test]
 fn a_sequence_with_an_unknown_participant_is_refused_before_painting() {
     let request: RenderRequest = serde_json::from_str(
         r#"{"grammar":"sequence","layout":"blocks","content":{"flows":[

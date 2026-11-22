@@ -26,7 +26,6 @@ fn painted(drawing: Drawing) -> Painted {
 fn solid(drawing: &Drawing) -> BTreeMap<String, LineLook> {
     let look = LineLook {
         dash: Dash::Solid,
-        rails: false,
         arrowhead: Arrowhead::Filled,
     };
     drawing

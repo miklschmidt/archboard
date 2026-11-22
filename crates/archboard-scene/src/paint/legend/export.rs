@@ -1,6 +1,6 @@
 //! What a picture exported to stand alone carries around its drawing: a title
-//! above it (TASK-467) and a legend under it or beside it, or the legend alone
-//! (TASK-468). The drawing is moved down whole and the page grows; asked for
+//! above it (TASK-467), the status line of its lens under the title, and a
+//! legend under it or beside it, or the legend alone (TASK-468). The drawing is moved down whole and the page grows; asked for
 //! nothing, the page is the page that was painted.
 //!
 //! The legend lists what the page's key lists (`archboard_svg::appearances`), read
@@ -244,37 +244,44 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
     }
 }
 
-/// What the note under a picture says of the lines its lens left out.
-fn left_out_words(left_out: &LeftOut) -> String {
+/// What the status line above a picture says of its lens.
+fn status_words(left_out: &LeftOut) -> String {
+    if left_out.showing_all == Some(true) {
+        return format!(
+            "{} has no lines here · Showing all relationships",
+            left_out.lens
+        );
+    }
     let lines = if left_out.count == 1 { "line" } else { "lines" };
-    format!("{}: {} {lines} left out", left_out.lens, left_out.count)
+    format!("{} · {} {lines} left out", left_out.lens, left_out.count)
 }
 
-/// A page with the note under it that counts the lines its lens left out,
-/// made wide enough for the note.
-fn with_note(page: PaintedPage, left_out: &LeftOut, palette: &Palette) -> PaintedPage {
-    let words = left_out_words(left_out);
-    let note = caption(
+/// A page moved down under the status line that says what its lens did,
+/// made wide enough for the line.
+fn under_status(page: PaintedPage, left_out: &LeftOut, palette: &Palette) -> PaintedPage {
+    let words = status_words(left_out);
+    let line = caption(
         Point {
             x: DIAGRAM_MARGIN,
-            y: page.height,
+            y: DIAGRAM_MARGIN + NOTE_LINE / 2.0,
         },
         CARD_NOTE_FONT,
         WORD_SIZE,
         &palette.muted,
         &words,
     );
+    let band = DIAGRAM_MARGIN + NOTE_LINE;
     PaintedPage {
         body: lines(vec![
-            page.body,
-            grouped(Group::new(Role::Slot(Slot::ExportNote), note)),
+            grouped(Group::new(Role::Slot(Slot::ExportStatus), line)),
+            grouped(Group::new(Role::Inset, page.body).moved(Transform::translate(0.0, band))),
         ]),
         width: js::js_max(
             page.width,
             with_diagram_margins(measure::width(&words, CARD_NOTE_FONT, WORD_SIZE).ceil()),
         ),
-        height: round_coord(page.height + NOTE_LINE / 2.0 + DIAGRAM_MARGIN),
-        atlas: page.atlas,
+        height: band + page.height,
+        atlas: moved_atlas(&page.atlas, 0.0, band),
     }
 }
 
@@ -311,8 +318,8 @@ pub(in crate::paint) fn placed_on(atlas: &Atlas) -> Vec<String> {
     placed
 }
 
-/// A page as an export carries it: with the note of what its lens left out
-/// under it, with its legend under it or beside it, or its legend alone, under
+/// A page as an export carries it: with its legend under it or beside it, or
+/// its legend alone, under the status line of its lens when it has one, under
 /// its title when it has one.
 pub(in crate::paint) fn framed_for_export(
     page: PaintedPage,
@@ -332,7 +339,8 @@ pub(in crate::paint) fn framed_for_export(
         };
         legend_of(&page.body, &marks, layout, page.width)
     });
-    let shown = if legend.is_some() && frame.legend_only == Some(true) {
+    let alone = legend.is_some() && frame.legend_only == Some(true);
+    let shown = if alone {
         PaintedPage {
             body: Items::new(),
             width: 0.0,
@@ -340,18 +348,19 @@ pub(in crate::paint) fn framed_for_export(
             atlas: Atlas::default(),
         }
     } else {
-        match &frame.left_out {
-            None => page,
-            Some(left_out) => with_note(page, left_out, palette),
-        }
+        page
     };
     let keyed = match &legend {
         None => shown,
         Some(legend) => with_legend(shown, legend, palette),
     };
+    let stated = match &frame.left_out {
+        Some(left_out) if !alone => under_status(keyed, left_out, palette),
+        _ => keyed,
+    };
     match &frame.title {
-        None => keyed,
-        Some(title) => under_title(keyed, title, palette),
+        None => stated,
+        Some(title) => under_title(stated, title, palette),
     }
 }
 

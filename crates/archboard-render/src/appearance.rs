@@ -6,6 +6,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use archboard_layout::{Edge, LineLook, Node};
 use archboard_scene::paint::design::fallback_icon;
+use archboard_scene::paint::effect_look;
 use archboard_scene::request::{
     Arrowhead, Dash, DrillDirection, Effect, GroupTag, LineAppearance, LineEffect, NodeAppearance,
 };
@@ -77,9 +78,10 @@ pub(crate) fn node_appearances(
         .collect()
 }
 
-/// The kind a joined line wears when its relationships differ
-/// (`MIXED_KIND` in `@archboard/model/views`). No vocabulary name holds a space.
-const MIXED_KIND: &str = "mixed kinds";
+/// The quiet in-process kind, the most common one, whose labels say only what
+/// they carry: an unprefixed label means sync, so its kind never rests on its
+/// colour alone.
+const SYNC: &str = "sync";
 
 /// The one kind whose relationships may state no effect (`EFFECTLESS_KIND` in
 /// `@archboard/model/policy`): a declared requirement.
@@ -96,11 +98,10 @@ fn recorded(policy: &Policy) -> bool {
 
 /// How a line reads. A flow's step is dashed with an open head in the neutral
 /// ink, never mistaken for a relationship of any kind. A relationship wears its
-/// kind's ink, or two rails in the neutral ink when it joins several kinds, and
-/// its effect's dash with a filled head: solid for a mutation, dashed for a
-/// query, dotted for a compute, and a dash and a dot for a dependency that
-/// states none. A reading from before effects draws each kind as its policy
-/// recorded it.
+/// kind's ink, and its effect says its line type and its head
+/// (`effect_look`): a mutation solid with a filled head, a query, a compute
+/// and a dependency that states none each in its own line type with an open
+/// head. A reading from before effects draws each kind as its policy recorded it.
 pub(crate) fn line_appearance(
     kind: &str,
     effect: Option<Effect>,
@@ -111,39 +112,38 @@ pub(crate) fn line_appearance(
         return LineAppearance {
             name: "Step".to_owned(),
             color: None,
-            rails: false,
             dash: Dash::Dashed,
             arrowhead: Arrowhead::Open,
             effect: None,
         };
     }
-    let rails = kind == MIXED_KIND;
     let look = policy.relationship_kinds.get(kind);
-    let name = match look {
-        _ if rails => "Mixed kinds".to_owned(),
-        Some(look) => look.name.clone(),
-        None => kind.to_owned(),
-    };
+    let name = look.map_or_else(|| kind.to_owned(), |look| look.name.clone());
     let color = look.and_then(|look| look.color);
     if recorded(policy) {
         return LineAppearance {
             name,
             color,
-            rails,
             dash: look.and_then(|look| look.dash).unwrap_or(Dash::Solid),
-            arrowhead: look.map_or(Arrowhead::Filled, |look| look.arrowhead),
+            arrowhead: look
+                .and_then(|look| look.arrowhead)
+                .unwrap_or(Arrowhead::Filled),
             effect: None,
         };
     }
     let effect = effect
         .map(LineEffect::from)
         .or_else(|| (kind == DEPENDENCY).then_some(LineEffect::Declared));
+    let (dash, arrowhead) = effect
+        .map(effect_look)
+        .map_or((Dash::Solid, Arrowhead::Filled), |look| {
+            (look.dash, look.head)
+        });
     LineAppearance {
         name,
         color,
-        rails,
-        dash: effect.map_or(Dash::Solid, LineEffect::dash),
-        arrowhead: Arrowhead::Filled,
+        dash,
+        arrowhead,
         effect,
     }
 }
@@ -151,27 +151,21 @@ pub(crate) fn line_appearance(
 /// How a line is drawn, as its appearance says.
 pub(crate) fn line_look(edge: &Edge, policy: &Policy, step: bool) -> LineLook {
     let LineAppearance {
-        dash,
-        rails,
-        arrowhead,
-        ..
+        dash, arrowhead, ..
     } = line_appearance(&edge.kind, edge.effect, policy, step);
-    LineLook {
-        dash,
-        rails,
-        arrowhead,
-    }
+    LineLook { dash, arrowhead }
 }
 
 /// The words a line's label carries: a coloured line names its kind before
 /// what its relationship carries, so its kind never rests on colour alone. A
-/// neutral line, a step and a reading from before effects say only their own.
+/// sync line, a neutral line, a step and a reading from before effects say
+/// only their own.
 pub(crate) fn label_words(edge: &Edge, policy: &Policy, step: bool) -> Option<String> {
     let own = edge.label.as_deref().filter(|words| !words.is_empty());
     let kind = policy
         .relationship_kinds
         .get(&edge.kind)
-        .filter(|look| !step && look.color.is_some() && !recorded(policy))
+        .filter(|look| !step && look.color.is_some() && edge.kind != SYNC && !recorded(policy))
         .map(|look| look.name.as_str());
     match (kind, own) {
         (Some(kind), Some(own)) => Some(format!("{kind} · {own}")),

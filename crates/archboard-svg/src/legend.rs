@@ -38,8 +38,6 @@ pub struct AppliedAppearance {
     pub dash: String,
     /// A line's arrowhead, `filled` for a part.
     pub arrowhead: String,
-    /// Whether a line joins several kinds and is drawn as two rails.
-    pub rails: bool,
     /// What a line's dash says it does, as the effect key names it; empty for
     /// a part and where the dash is its kind's own.
     pub effect: String,
@@ -78,12 +76,9 @@ fn spelt(id: &str, applied: &Applied, icons: &BTreeMap<String, Vec<String>>) -> 
             word(&facts.appearance.arrowhead),
         ),
     };
-    let (rails, effect) = match &applied.drawn {
-        Drawn::Part(_) => (false, ""),
-        Drawn::Line(facts) => (
-            facts.appearance.rails,
-            facts.appearance.effect.as_ref().map_or("", word),
-        ),
+    let effect = match &applied.drawn {
+        Drawn::Part(_) => "",
+        Drawn::Line(facts) => facts.appearance.effect.as_ref().map_or("", word),
     };
     AppliedAppearance {
         id: id.to_owned(),
@@ -95,7 +90,6 @@ fn spelt(id: &str, applied: &Applied, icons: &BTreeMap<String, Vec<String>>) -> 
         line_color: line_color.to_owned(),
         dash: dash.to_owned(),
         arrowhead: arrowhead.to_owned(),
-        rails,
         effect: effect.to_owned(),
     }
 }

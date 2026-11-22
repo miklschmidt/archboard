@@ -2,6 +2,7 @@
 export {
 	cornerWarning,
 	effectKey,
+	effectSampleSize,
 	HEAD_LENGTH,
 	lineDash,
 	lineInk,

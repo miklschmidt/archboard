@@ -12,8 +12,6 @@ use crate::xml::{Attributes, empty};
 
 /// The class of everything a viewer shows only round what is selected.
 pub(crate) const HALO_CLASS: &str = "ab-halo";
-/// The class of a double line's rails.
-pub(crate) const RAIL_CLASS: &str = "ab-rail";
 
 /// One attribute a shape can carry.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -57,9 +55,6 @@ fn template(shape: &Shape) -> &'static [Key] {
         (Geometry::Path { .. }, Purpose::Halo | Purpose::Ring) => {
             &[Class, Place, Width, Opacity, Cap, Join, Fill, Stroke]
         }
-        (Geometry::Path { .. }, Purpose::Rail) => {
-            &[Class, Place, Fill, Stroke, Width, Cap, Join, Dash]
-        }
         (Geometry::Path { .. }, Purpose::LitLine) => {
             &[Class, Place, Marker, Fill, Stroke, Width, Cap, Join, Dash]
         }
@@ -91,7 +86,7 @@ fn spelling_of(purpose: Purpose, arrowhead: Spelling) -> Spelling {
         | Purpose::Halo
         | Purpose::LitLine
         | Purpose::Line
-        | Purpose::Rail
+        | Purpose::Imprint
         | Purpose::Swipe
         | Purpose::Cutout
         | Purpose::Rule => Spelling::Route,
@@ -140,14 +135,7 @@ fn key(shape: &Shape, key: Key, names: &Names, arrowhead: Spelling, out: &mut At
     let stroke = shape.stroke.as_ref();
     match key {
         Class => {
-            out.set(
-                "class",
-                if shape.purpose == Purpose::Rail {
-                    RAIL_CLASS
-                } else {
-                    HALO_CLASS
-                },
-            );
+            out.set("class", HALO_CLASS);
         }
         Place => place(shape, arrowhead, out),
         Marker => {

@@ -17,10 +17,11 @@ function wordsIn(svg: string): string[] {
 import { groupOf, strokesOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
-// A line's colour says how its relationship travels and its dash what it does
-// (TASK-663): solid for a mutation, dashed for a query, dotted for a compute,
-// and a dash and a dot for a dependency that states none. Every head is filled
-// and says only the direction.
+// A line's colour says how its relationship travels, and the marks at its ends
+// what it does (TASK-663.10): a mutation ends in a solid wedge with an imprint
+// on its target, a query in an eye with a ring at its caller, a compute in an
+// "=" and a small point, and a dependency that states none is broken and
+// thinner with a detached chevron. Every body but the declared one is solid.
 
 const policy = defaultSemanticPolicy();
 
@@ -37,7 +38,7 @@ const LINES: VariantContent = orderedFixture({
 	edges: [
 		{ id: "write", from: "api", to: "routes", kind: "http", effect: "mutation", label: "save" },
 		{ id: "read", from: "routes", to: "db", kind: "storage", effect: "query", label: "rows" },
-		{ id: "format", from: "ui", to: "api", kind: "call", effect: "compute", label: "format" },
+		{ id: "format", from: "ui", to: "api", kind: "sync", effect: "compute", label: "format" },
 		{ id: "needs", from: "routes", to: "api", kind: "dependency", label: "types" },
 	],
 });
@@ -74,7 +75,7 @@ function drawn(
  * What a line's group says of how it was drawn.
  * @param svg The document.
  * @param id The relationship.
- * @returns Its dash, head, effect and rails, and the dash its stroke is broken by.
+ * @returns Its dash, head and effect, the dash its stroke is broken by, and its marks.
  */
 function lineOf(svg: string, id: string) {
 	const group = groupOf(svg, "edge", id);
@@ -86,16 +87,28 @@ function lineOf(svg: string, id: string) {
 		dash: fact("data-line-dash"),
 		arrowhead: fact("data-arrowhead"),
 		effect: fact("data-line-effect"),
-		rails: fact("data-line-rails") === "true",
 		color: fact("data-line-color"),
 		stroke: strokesOf(group).at(-1)?.dash,
 		markup: group.markup,
 	};
 }
 
-describe("a line's dash says its effect", () => {
+/**
+ * The marker a line's group defines for one end, by the end's attribute.
+ * @param markup The line's group.
+ * @param end `marker-end` or `marker-start`.
+ * @returns The marker's markup, or undefined when that end has none.
+ */
+function markerAt(markup: string, end: "marker-end" | "marker-start"): string | undefined {
+	const id = new RegExp(`${end}="url\\(#([^)]+)\\)"`, "u").exec(markup)?.[1];
+	return id === undefined
+		? undefined
+		: new RegExp(`<marker id="${id}"[\\s\\S]*?</marker>`, "u").exec(markup)?.[0];
+}
+
+describe("a line's ends say its effect", () => {
 	for (const theme of ["light", "dark"] as const) {
-		test(`each effect draws its own line type with a filled head, on the ${theme} ground`, async () => {
+		test(`each effect draws its own head, and only a declared line is broken, on the ${theme} ground`, async () => {
 			const { svg } = await drawn(LINES, { theme });
 			const read = (id: string) => {
 				const { dash, arrowhead, effect, stroke } = lineOf(svg, id);
@@ -103,49 +116,68 @@ describe("a line's dash says its effect", () => {
 			};
 			expect(read("write")).toEqual({
 				dash: "solid",
-				arrowhead: "filled",
+				arrowhead: "wedge",
 				effect: "mutation",
 				stroke: undefined,
 			});
 			expect(read("read")).toEqual({
-				dash: "dashed",
-				arrowhead: "filled",
+				dash: "solid",
+				arrowhead: "eye",
 				effect: "query",
-				stroke: "6 4",
+				stroke: undefined,
 			});
 			expect(read("format")).toEqual({
-				dash: "dotted",
-				arrowhead: "filled",
+				dash: "solid",
+				arrowhead: "equals",
 				effect: "compute",
-				stroke: "1.5 3.5",
+				stroke: undefined,
 			});
 			expect(read("needs")).toEqual({
 				dash: "declared",
-				arrowhead: "filled",
+				arrowhead: "detached",
 				effect: "declared",
-				stroke: "7 3 1.5 3",
+				stroke: "11 6",
 			});
 		});
 	}
 
-	test("a coloured line names its kind on its label, and a call does not", async () => {
+	test("a query rings its caller, and a mutation leaves an imprint on its target", async () => {
+		const { svg } = await drawn(LINES);
+		const query = lineOf(svg, "read").markup;
+		expect(markerAt(query, "marker-start")).toContain("<circle");
+		expect(markerAt(lineOf(svg, "write").markup, "marker-start")).toBeUndefined();
+		// The imprint is a short bar across the end of the line.
+		expect(lineOf(svg, "write").markup).toMatch(/<line [^>]*stroke-width="2\.4"/u);
+		expect(query).not.toMatch(/<line [^>]*stroke-width="2\.4"/u);
+	});
+
+	test("a line's body stops short of its head, and its halo runs to the tip", async () => {
+		const { svg } = await drawn(LINES);
+		const { markup } = lineOf(svg, "format");
+		const end = (d: string) => d.trim().split(/[ ,LMC]+/u).filter(Boolean).map(Number).slice(-2);
+		const halo = end(/<path class="ab-halo" d="([^"]*)"/u.exec(markup)![1]!);
+		const body = end(/<path d="([^"]*)"[^>]*marker-end=/u.exec(markup)![1]!);
+		expect(Math.hypot(halo[0]! - body[0]!, halo[1]! - body[1]!)).toBeGreaterThan(10);
+	});
+
+	test("a coloured line names its kind on its label, and a sync line does not", async () => {
 		const texts = wordsIn((await drawn(LINES)).svg);
 		expect(texts).toContain("HTTP · save");
 		expect(texts).toContain("Storage · rows");
 		expect(texts).toContain("Dependency · types");
 		expect(texts).toContain("format");
-		expect(texts.some((text) => text.startsWith("Call"))).toBe(false);
+		expect(texts.some((text) => text.startsWith("Sync"))).toBe(false);
 	});
 
-	test("a compared line wears its standing's ink, and its dash still says its effect", async () => {
+	test("a compared line wears its standing's ink, and its head still says its effect", async () => {
 		const plain = lineOf((await drawn(LINES)).svg, "read");
 		const added = lineOf((await drawn(LINES, { standing: { read: "added" } })).svg, "read");
 		const stroked = (markup: string): string =>
-			/<path [^>]*style="fill:none;stroke:([^"]+)"[^>]*stroke-dasharray="6 4"/.exec(markup)![1]!;
+			/<path [^>]*marker-end="[^"]*" style="fill:none;stroke:([^"]+)"/.exec(markup)![1]!;
 		expect(stroked(plain.markup)).toContain("--semantic-emerald");
 		expect(stroked(added.markup)).toContain("--standing-added");
 		expect(stroked(added.markup)).not.toContain("--semantic-emerald");
-		expect(added.dash).toBe("dashed");
+		expect(added.arrowhead).toBe("eye");
 	});
 
 	test("a reading from before effects keeps the dash and the head its policy recorded", async () => {
@@ -183,7 +215,7 @@ test("the legend keys each kind solid and lists the effects the picture draws", 
 	expect(entries).toEqual([
 		"relationship: HTTP",
 		"relationship: Storage",
-		"relationship: Call",
+		"relationship: Sync",
 		"relationship: Dependency",
 		"effect: Mutation",
 		"effect: Query",

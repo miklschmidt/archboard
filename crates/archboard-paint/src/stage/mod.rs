@@ -14,6 +14,7 @@ mod tests;
 
 use std::collections::{HashMap, HashSet};
 
+use archboard_scene::paint::design::mark_growth;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
@@ -21,11 +22,12 @@ use crate::between::{Entrance, Heading, Phases};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
 use crate::draw::Picture;
+use crate::draw::{play_at, playable};
 use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::pick::Targets;
-use crate::presentation::{Camera, Light, Marks, Presentation};
+use crate::presentation::{Camera, Light, Marks, Playing, Presentation};
 use crate::sweep::{Sweep, Timing};
 use crate::timing::{EASE_OUT, Fade, SWAP};
 use crate::warnings::Warnings;
@@ -95,6 +97,11 @@ pub struct Stage {
     settled: bool,
     /// Whether a frame of a picture was drawn yet.
     drawn: bool,
+    /// Canvas pixels to one CSS pixel, once the page says it; until then
+    /// every head is drawn at its own size.
+    pixel_ratio: Option<f64>,
+    /// The lines whose effect plays once, each with the moment it started.
+    plays: Vec<(String, f64)>,
 }
 
 impl Stage {
@@ -128,6 +135,8 @@ impl Stage {
             look: Presentation::default(),
             looks: 0,
             settled: false,
+            pixel_ratio: None,
+            plays: Vec::new(),
             drawn: false,
         }
     }
@@ -260,6 +269,28 @@ impl Stage {
             y: move_to(&self.glide.y, camera.y),
             scale: move_to(&self.glide.scale, camera.scale),
         };
+    }
+
+    /// Play the effect of some lines once, from a moment in milliseconds: what
+    /// a reader sees when it points at a line, or at a card for each of its
+    /// lines. A line already playing starts again. A line with traffic of its
+    /// own, and a declared requirement, stay as they are. A page that wants
+    /// reduced motion does not ask.
+    pub fn play(&mut self, ids: &[String], now: f64) {
+        let Some(shown) = &self.shown else {
+            return;
+        };
+        let now = now.max(self.now);
+        for id in playable(&shown.picture.scene.body, ids) {
+            self.plays.retain(|(playing, _)| *playing != id);
+            self.plays.push((id, now));
+        }
+    }
+
+    /// Say how many canvas pixels one CSS pixel is, so a head keeps its least
+    /// size on screen.
+    pub fn set_pixel_ratio(&mut self, ratio: f64) {
+        self.pixel_ratio = (ratio > 0.0).then_some(ratio);
     }
 
     /// Say at which scale of the camera the far view begins, in canvas pixels
@@ -417,6 +448,21 @@ impl Stage {
         };
         self.swap_views(now);
         self.presentation.far = self.far.at(now);
+        self.presentation.mark_growth = self
+            .pixel_ratio
+            .map(|ratio| mark_growth(ratio, self.presentation.camera.scale));
+        self.plays
+            .retain(|(_, start)| play_at(*start, now).is_some());
+        self.presentation.plays = self
+            .plays
+            .iter()
+            .filter_map(|(id, start)| {
+                Some(Playing {
+                    id: id.clone(),
+                    at: play_at(*start, now)?,
+                })
+            })
+            .collect();
         self.take_off(now);
         if std::mem::take(&mut self.lit_afresh) {
             self.lighting.stand();
@@ -454,9 +500,20 @@ impl Stage {
 
     /// Say whether this frame looks as the last one did.
     fn settle(&mut self) {
+        // A play changes its line every frame, and the line is never kept;
+        // only a play that starts or ends changes the look.
         let look = Presentation {
             camera: Camera::default(),
             traffic: None,
+            plays: self
+                .presentation
+                .plays
+                .iter()
+                .map(|playing| Playing {
+                    at: 0.0,
+                    ..playing.clone()
+                })
+                .collect(),
             ..self.presentation.clone()
         };
         self.settled = look == self.look;
@@ -489,6 +546,7 @@ impl Stage {
     /// Whether anything but traffic moves at a moment.
     fn moving(&self, now: f64) -> bool {
         self.flying(now)
+            || !self.plays.is_empty()
             || self.presentation.sweep.is_some()
             || self.lighting.moving(now)
             || ![

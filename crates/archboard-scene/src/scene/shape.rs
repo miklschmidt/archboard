@@ -33,8 +33,6 @@ pub enum Purpose {
     Ring,
     /// A stroked or filled line or mark: a route, a glyph, a cutout, a bracket.
     Line,
-    /// The two rails of a double line: one wide stroke, with its core masked out.
-    Rail,
     /// A swipe laid under a line that stands for something.
     Swipe,
     /// A shape that is not a box, with straight sides and rounded corners: a
@@ -53,6 +51,9 @@ pub enum Purpose {
     Rule,
     /// A legend's sample of a line, or of a pulse and its glow.
     Sample,
+    /// A mutation's imprint on its target's edge: flat in a document, fading
+    /// at both ends with a soft glow where a viewer draws it.
+    Imprint,
 }
 
 /// Whether a shape or a group takes the pointer.

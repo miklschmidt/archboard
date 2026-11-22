@@ -29,7 +29,7 @@ pub struct Applied {
 
 /// What two subjects share when one sample keys them both: the icon's name,
 /// the kind, its name, the kind's colour, and the line its kind samples, in
-/// its colour, rails, dash and arrowhead. Not the icon's size and ink: a card,
+/// its colour, dash and arrowhead. Not the icon's size and ink: a card,
 /// a container's header and a door draw one kind's icon at different sizes and
 /// inks, and the legend redraws it at its own. Not a line's effect: the effect
 /// key says that.
@@ -39,7 +39,6 @@ type SampleKey<'a> = (
     &'a str,
     Option<PaletteColor>,
     Option<PaletteColor>,
-    bool,
     Dash,
     Arrowhead,
 );
@@ -63,7 +62,6 @@ impl Applied {
                 &appearance.type_name,
                 appearance.type_color,
                 None,
-                false,
                 Dash::Solid,
                 Arrowhead::Filled,
             ),
@@ -75,7 +73,6 @@ impl Applied {
                     &facts.appearance.name,
                     None,
                     sample.color,
-                    sample.rails,
                     sample.dash,
                     sample.arrowhead,
                 )
