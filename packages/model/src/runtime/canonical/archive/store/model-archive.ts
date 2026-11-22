@@ -1,4 +1,5 @@
 import { MigrationInstallationSchema } from "#shared/schemas/migration-installation.ts";
+import { UpgradeInstallationSchema } from "#shared/upgrade/schemas/upgrade.ts";
 import {
 	checkpointBlobs,
 	tree,
@@ -51,6 +52,7 @@ const CheckpointRecordSchema = ArchitectureCheckpointSchema.omit({ id: true, pub
 				PortableInstallationSchema,
 				InitializationInstallationSchema,
 				MigrationInstallationSchema,
+				UpgradeInstallationSchema,
 			])
 			.optional(),
 		reconciliations: FamilyStandingSchema.optional(),

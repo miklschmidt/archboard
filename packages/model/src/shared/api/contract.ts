@@ -51,3 +51,16 @@ export { architectureInitializationRequestSchema } from "#shared/schemas/model-p
 export type { ArchitectureCheckpointRetain } from "#shared/canonical-contracts/schemas/model.ts";
 
 export { HistoricalRevisionSchema } from "#shared/schemas/historical-correction.ts";
+
+export {
+	upgradeInventorySchema,
+	upgradeInventoryReadSchema,
+	architectureUpgradeRequestSchema,
+	architectureUpgradeResultSchema,
+} from "#shared/upgrade/schemas/upgrade.ts";
+export type {
+	ArchitectureUpgradeRequest,
+	ArchitectureUpgradeResult,
+	UpgradeInventory,
+	UpgradeInventoryRead,
+} from "#shared/upgrade/schemas/upgrade.ts";

@@ -140,8 +140,8 @@ const OwnedRelationshipSchema = SemanticEdgeSchema.omit({ id: true, from: true, 
  * relationship's effect; format 1, the old one, states none, and only an old
  * vault and retained history hold it (TASK-663).
  */
-const MODULE_FORMAT = 2;
-const OLD_MODULE_FORMAT = 1;
+const MODULE_FORMAT = 2 as const;
+const OLD_MODULE_FORMAT = 1 as const;
 /** One module as a reading carries it, in either format. */
 const ArchitectureModuleSchema = SemanticNodeSchema.omit({
 	id: true,
