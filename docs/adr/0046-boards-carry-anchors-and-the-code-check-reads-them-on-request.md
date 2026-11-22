@@ -85,6 +85,13 @@ that it accepts, under the key `evidence` (ADR 0024). A kind without the key
 accepts every evidence kind. The default vocabulary carries the key for its
 kinds.
 
+[ADR 0094](0094-a-relationship-states-how-it-travels-and-what-it-does.md) makes
+the default vocabulary eleven built-in kinds, and each but `other` carries the
+key. It also says that a `dependency` means that nothing of the target runs at
+run time. The code check reports, as information, a dependency whose evidence
+is a call into a function or a value of the target. TASK-663.05 builds that
+finding and may adjust it.
+
 ### What the check judges
 
 [ADR 0082](0082-the-code-check-judges-module-depth-from-the-code.md) adds the verdicts of module
