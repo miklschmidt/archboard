@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-22T16:27:00Z'
-updated_date: '2026-11-22T16:48:00Z'
+updated_date: '2026-11-22T17:00:00Z'
 labels:
   - frontend
   - ui
@@ -48,6 +48,8 @@ Not folded: an Against section with no moved field has nothing under its head, s
 Site audit: the hero mock's panel heads (Interface, Legend, Relationships, Groups) gained the chevron on the rows' edge; the mock navigator head now pads like its rows. site/scripts/paint.ts failed in this worktree because the shared refs/heads/archboard-history was written by a newer branch in a format main cannot read; the paintings were made from a clean clone instead.
 
 Follow-up from the owner's review of the site: the mock navigator's list started 4px right of the switcher, the keys and the agent dock, and the legend's eyes ended about 5px short of the panel's right edge, in the mock and in the app alike. Both now stand on the column edges; measured in the app (eye ink 1584px, equal to the numbers, open and struck) and on the site (list, rows and dock all at the 8px inset).
+
+Review pass before the PR. Standards review fixed: Flows now unfolds when the flow on screen comes into it on the same subject (browser test added to reader-context); SectionHead takes its label as children and its fold as SectionFold. Spec review found three sections that did not fold: References became a ModelPanel.Section, and SidebarSection (Against the code, Nobody has decided this yet, the semantic stage sidebar) folds through SectionHead. The site's mock panel is now 320px at the owner's request. Checks: types, lint:all, format:check, build pass; browser owners canonical-model-code, canonical-model-legibility, canonical-model-references, reader-context, canonical-model-comparison, canonical-model-planning pass.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
