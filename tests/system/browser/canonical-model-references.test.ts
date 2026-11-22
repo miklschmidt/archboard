@@ -28,7 +28,7 @@ const WAIT = { timeoutMs: 10_000 } as const;
 
 function modelFixture(root: string, model: string, repository: string): string {
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	for (const file of readdirSync(vault, { recursive: true, encoding: "utf8" }).filter((name) =>

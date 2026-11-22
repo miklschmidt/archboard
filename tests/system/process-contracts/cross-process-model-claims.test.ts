@@ -25,7 +25,7 @@ test("two servers share subject claims, foreign claim news, and human take-back"
 	resources.defer(() => fixture.dispose());
 	const checkout = fixture.repository("shop", "https://github.com/acme/shop.git");
 	const vault = vaultIn(checkout);
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	for (const [key, value] of [
 		["user.name", "Topology Author"],
 		["user.email", "topology@example.test"],

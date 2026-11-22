@@ -6,18 +6,43 @@ import { z } from "zod";
 import { errnoCode, errorMessage } from "@archboard/diagnostics/errno";
 import {
 	DEFAULT_SEMANTIC_POLICY,
-	createSemanticPolicySchema,
+	createLegacyVaultConfigurationSchema,
+	createVaultConfigurationSchema,
+	configurationOf,
 	type SemanticPolicy,
 	type VaultDiagnostic,
 } from "#shared/schemas/semantic-policy.ts";
 
 const VAULT_CONFIGURATION_PATH = path.join(".archboard", "config.yaml");
-const VaultConfigurationSchema = createSemanticPolicySchema(
-	z.enum(
-		Object.keys(RemixIcons).filter((name) => /^Ri[A-Za-z0-9]+(?:Line|Fill)$/u.test(name)),
-		{ error: "Use an installed RemixIcon export name, for example RiServerLine" },
-	),
+const InstalledIconSchema = z.enum(
+	Object.keys(RemixIcons).filter((name) => /^Ri[A-Za-z0-9]+(?:Line|Fill)$/u.test(name)),
+	{ error: "Use an installed RemixIcon export name, for example RiServerLine" },
 );
+const VaultConfigurationSchema = createVaultConfigurationSchema(InstalledIconSchema);
+const LegacyVaultConfigurationSchema = createLegacyVaultConfigurationSchema(InstalledIconSchema);
+/**
+ * A configuration as the store reads it: the policy in effect, and whether
+ * the configuration is in the old format, which only an old vault and its
+ * history hold (TASK-663).
+ */
+type VaultPolicy =
+	| { readonly success: true; readonly format: "current" | "old"; readonly policy: SemanticPolicy }
+	| { readonly success: false; readonly error: z.ZodError };
+
+/**
+ * Read a parsed configuration in the current format, else in the old one. A
+ * configuration that is neither is refused with the current format's issues,
+ * which say how to write it now.
+ * @param value The parsed YAML.
+ * @returns The policy in effect and its format, or the current format's refusal.
+ */
+function parseVaultPolicy(value: unknown): VaultPolicy {
+	const current = VaultConfigurationSchema.safeParse(value);
+	if (current.success) return { success: true, format: "current", policy: current.data };
+	const old = LegacyVaultConfigurationSchema.safeParse(value);
+	if (old.success) return { success: true, format: "old", policy: old.data };
+	return { success: false, error: current.error };
+}
 interface VaultConfigurationRead {
 	readonly ok: boolean;
 	readonly file: string;
@@ -97,7 +122,16 @@ function configurationWarnings(
 			];
 }
 
-export { VaultConfigurationSchema, readVaultConfiguration };
+/**
+ * The configuration file that reads back as a policy in effect, in its own format.
+ * @param policy The policy in effect.
+ * @returns The bytes of `.archboard/config.yaml`.
+ */
+function configurationFile(policy: SemanticPolicy): Buffer {
+	return Buffer.from(Bun.YAML.stringify(configurationOf(policy)));
+}
+
+export { VaultConfigurationSchema, configurationFile, parseVaultPolicy, readVaultConfiguration };
 
 /**
  * The key a schema issue refuses, as a path. An unknown key is refused at the object that holds
@@ -123,7 +157,7 @@ function parsePolicy(source: string): {
 	problem?: string;
 	path?: string;
 } {
-	const parsed = VaultConfigurationSchema.safeParse(Bun.YAML.parse(source));
+	const parsed = parseVaultPolicy(Bun.YAML.parse(source));
 	if (!parsed.success) {
 		const refused = refusedKey(parsed.error.issues[0]);
 		return {
@@ -132,7 +166,7 @@ function parsePolicy(source: string): {
 			...(refused.length === 0 ? {} : { path: refused.map(String).join(".") }),
 		};
 	}
-	return { configuration: parsed.data };
+	return { configuration: parsed.policy };
 }
 
 /**

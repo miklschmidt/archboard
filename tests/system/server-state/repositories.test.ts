@@ -306,7 +306,7 @@ describe.serial("the repositories of the navigator", () => {
 		const mainVault = vaultOf(main);
 		const worktreeVault = vaultOf(worktree);
 		for (const vault of [mainVault, worktreeVault]) {
-			cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, {
+			cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, {
 				recursive: true,
 			});
 		}

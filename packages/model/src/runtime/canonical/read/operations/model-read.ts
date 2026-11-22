@@ -6,14 +6,14 @@ import { ProposalSchema } from "#shared/schemas/model-proposals.ts";
 import { FlowCollectionSchema } from "#shared/canonical-contracts/schemas/model-flows.ts";
 import { z } from "zod";
 import { errorMessage } from "@archboard/diagnostics/errno";
+import { ModuleFileSchema, OLD_MODULE_FORMAT } from "#shared/schemas/model-definitions.ts";
 import {
 	ArchitectureManifestSchema,
-	ArchitectureModuleSchema,
 	type ArchitectureModelRead,
 	type ArchitectureModel,
 	type ModelDiagnostic,
 } from "#shared/canonical-contracts/schemas/model.ts";
-import { VaultConfigurationSchema } from "#runtime/store/configuration.ts";
+import { parseVaultPolicy } from "#runtime/store/configuration.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/coherence/rules/model.ts";
 
@@ -21,7 +21,28 @@ import { modelBoundaryFailure } from "#runtime/canonical/installation/store/mode
 import type { NavigationOptions } from "#runtime/canonical/read/operations/model-navigation.ts";
 
 type CapturedModel = ReturnType<typeof readModelFiles>;
+/** Why a vault in the old format opens read-only, said once for the whole vault. */
+const UPGRADE_REQUIRED: ModelDiagnostic = {
+	code: "UPGRADE_REQUIRED",
+	file: ".",
+	message:
+		"This vault is in the old format: its relationships state no effect, so it opens read-only.",
+	recovery:
+		"Upgrade the vault to the current format, which states each relationship's kind and effect. Every write is refused until then.",
+};
 
+/**
+ * The relationship a refusal of a module file is about, read from where it points.
+ * @param value The module file as parsed.
+ * @param path Where the refusal points.
+ * @returns The relationship's id, when the refusal is inside one.
+ */
+function refusedRelationship(value: unknown, path: readonly PropertyKey[]): string | undefined {
+	if (path[0] !== "outgoing" || typeof path[1] !== "number") return undefined;
+	const outgoing = z.object({ outgoing: z.array(z.object({ id: z.string() }).loose()) }).loose();
+	const parsed = outgoing.safeParse(value);
+	return parsed.success ? parsed.data.outgoing[path[1]]?.id : undefined;
+}
 /**
  * Decode captured JSON through the shared schema authority.
  * @param file The relative input path.
@@ -50,28 +71,33 @@ function decode<T>(
 	}
 	const parsed = schema.safeParse(value);
 	if (parsed.success) return parsed.data;
-	for (const issue of parsed.error.issues)
+	for (const issue of parsed.error.issues) {
+		const relationship = refusedRelationship(value, issue.path);
 		diagnostics.push({
 			code: issue.path[0] === "schemaVersion" ? "UNSUPPORTED_FORMAT" : "INVALID_DOCUMENT",
 			file,
 			path: issue.path.map(String).join("."),
+			...(relationship === undefined ? {} : { subjects: [relationship] }),
 			message: issue.message,
 			recovery: "Use the supported document schema and read the model again.",
 		});
+	}
 	return undefined;
 }
 
 /**
  * Require valid authored policy instead of activating legacy fallback defaults.
  * @param captured Exact inputs and diagnostics.
- * @returns The interpreted policy, or undefined when invalid.
+ * @returns The policy in effect and its format, or undefined when invalid.
  */
-function decodePolicy(captured: CapturedModel): ArchitectureModel["policy"] | undefined {
+function decodePolicy(captured: CapturedModel) {
 	try {
 		const source = new TextDecoder("utf-8", { fatal: true }).decode(
 			captured.inputs.get(".archboard/config.yaml"),
 		);
-		return VaultConfigurationSchema.parse(Bun.YAML.parse(source));
+		const parsed = parseVaultPolicy(Bun.YAML.parse(source));
+		if (!parsed.success) throw parsed.error;
+		return parsed;
 	} catch (error) {
 		captured.diagnostics.push({
 			code: "INVALID_POLICY",
@@ -180,14 +206,16 @@ function decodeModel(
 		ArchitectureManifestSchema,
 		diagnostics,
 	);
-	const policy = decodePolicy(captured);
+	const configuration = decodePolicy(captured);
 	const discovered = [...inputs]
 		.filter(([file]) => file.endsWith(".module.json"))
 		.flatMap(([file, bytes]) => {
-			const definition = decode(file, bytes, ArchitectureModuleSchema, diagnostics);
+			const definition = decode(file, bytes, ModuleFileSchema, diagnostics);
 			return definition === undefined ? [] : [{ ...definition, file }];
 		});
-	if (manifest === undefined || policy === undefined) return failure("MODEL_INVALID", diagnostics);
+	if (manifest === undefined || configuration === undefined)
+		return failure("MODEL_INVALID", diagnostics);
+	const { policy } = configuration;
 	const collections = [...inputs]
 		.filter(([file]) => file.endsWith(".flows.json"))
 		.flatMap(([file, bytes]) => {
@@ -224,11 +252,15 @@ function decodeModel(
 	const modules = discovered
 		.toSorted(compareModelSubjects)
 		.map((module) => ({ ...module, outgoing: module.outgoing.toSorted(compareModelSubjects) }));
+	const old =
+		configuration.format === "old" ||
+		modules.some((module) => module.schemaVersion === OLD_MODULE_FORMAT);
 	return {
 		success: true,
 		migration,
 		manifest,
 		policy,
+		...(old ? { readOnly: UPGRADE_REQUIRED } : {}),
 		revision,
 		modules,
 		collections: collections.toSorted((one, other) => one.file.localeCompare(other.file, "en")),

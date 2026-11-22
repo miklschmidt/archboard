@@ -36,7 +36,7 @@ function line(id: string, to: string, kind: string): Record<string, unknown> {
  * @param vault The vault.
  */
 function seedReading(vault: string): void {
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const policyPath = join(vault, ".archboard/config.yaml");

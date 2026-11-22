@@ -30,7 +30,7 @@ const WAIT = { timeoutMs: 8_000 } as const;
 const TRAFFIC_GLANCE_MS = 120;
 
 /** The authored model draws traffic trains and an independent sequence draws message pulses. */
-const EXAMPLE = join(import.meta.dir, "../../../examples/canonical-model/.archboard/vault");
+const EXAMPLE = join(import.meta.dir, "../../../tests/fixtures/current-format-vault");
 
 /** The model and its independent flow identity. */
 const MODEL = "Shop";

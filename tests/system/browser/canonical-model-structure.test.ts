@@ -44,7 +44,7 @@ test("structural writes refresh current modules while exact history and selected
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "structural-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	initializeSource(root);

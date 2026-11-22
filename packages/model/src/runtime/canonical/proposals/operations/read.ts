@@ -1,3 +1,4 @@
+import { configurationFile } from "#runtime/store/configuration.ts";
 import { createHash } from "node:crypto";
 import type { z } from "zod";
 import { StateMetadataSchema } from "#shared/schemas/model-definitions.ts";
@@ -241,7 +242,7 @@ function decodeSubjects(
 	selection: ArchitectureModel["selectedState"],
 ): ArchitectureModelRead {
 	const definitions = materializedDefinitions(baseline, subjects);
-	const inputs = materializedInputs(baseline, Buffer.from(Bun.YAML.stringify(baseline.policy)));
+	const inputs = materializedInputs(baseline, configurationFile(baseline.policy));
 	for (const file of inputs.keys())
 		if (/\.(module|flows|walkthrough)\.json$/u.test(file)) inputs.delete(file);
 	for (const { file, ...definition } of [

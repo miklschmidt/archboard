@@ -25,7 +25,7 @@ test("reading filters keep a hidden selection, with an explicit reveal action", 
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "filtered-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const workerPath = join(vault, "worker.module.json");

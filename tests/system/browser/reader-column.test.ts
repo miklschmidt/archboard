@@ -98,7 +98,7 @@ test("every move of the left column has a keyboard route, also in a presented pa
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "reader-column");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	addModule(vault, "Decode", "Shop#Handler");

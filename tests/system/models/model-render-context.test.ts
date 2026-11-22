@@ -28,7 +28,7 @@ let server: OwnedServer | undefined;
 const dom = new Window();
 
 beforeAll(async () => {
-	cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), vault, { recursive: true });
 	const gateway = JSON.parse(readFileSync(join(vault, "gateway.module.json"), "utf8"));
 	gateway.outgoing.push({
 		id: "Shop#Second",

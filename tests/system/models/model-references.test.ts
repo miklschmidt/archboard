@@ -34,7 +34,7 @@ beforeAll(async () => {
 		[foreign, "Ledger", "ledger"],
 	]) {
 		const target = join(root!, ".archboard/vault");
-		cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), target, {
+		cpSync(join(repoRoot, "tests/fixtures/current-format-vault"), target, {
 			recursive: true,
 		});
 		const current = readArchitectureModel(target);

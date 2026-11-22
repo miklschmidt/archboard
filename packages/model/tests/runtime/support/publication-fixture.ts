@@ -40,7 +40,7 @@ export function publicationFixture() {
 	homes.push(home);
 	const root = join(home, "writer");
 	const vault = join(root, ".archboard/vault");
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), vault, { recursive: true });
 	git(root, "init", "--quiet", "--initial-branch=main");
 	const key = join(home, "signing-key");
 	createSigningKey(root, key);

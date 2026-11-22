@@ -396,6 +396,7 @@ function drawnBase(
 /**
  * The vault's vocabulary as a picture draws it. The evidence that a
  * relationship kind accepts belongs to the code check, and no picture draws it.
+ * Only the old format records a kind's dash; a kind without one draws solid.
  * @param policy The vault's presentation policy.
  * @returns The policy without relationship evidence.
  */
@@ -403,7 +404,7 @@ function drawnPolicy(policy: SemanticPolicy): unknown {
 	const relationshipKinds = Object.fromEntries(
 		Object.entries(policy.relationshipKinds).map(([kind, { evidence: _checked, ...drawn }]) => [
 			kind,
-			drawn,
+			{ ...drawn, dash: drawn.dash ?? "solid" },
 		]),
 	);
 	return { ...policy, relationshipKinds };

@@ -33,7 +33,7 @@ test("module decomposition follows breadcrumbs and browser history", async () =>
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "recursive-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	writeFileSync(
@@ -181,7 +181,7 @@ test("canonical addresses restore separate scopes and keep missing readings expl
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "addressed-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
@@ -285,7 +285,7 @@ test("a projected connection lists every relationship it joins, and a hidden edi
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "connected-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const policy = join(vault, ".archboard/config.yaml");

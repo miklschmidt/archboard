@@ -69,7 +69,7 @@ const REQUESTS = {
 async function servedShop(resources: AsyncDisposableStack, name: string, flows?: object) {
 	const root = join(browserTestRoots().ownerRoot, name);
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	if (flows !== undefined) writeFileSync(join(vault, "requests.flows.json"), JSON.stringify(flows));

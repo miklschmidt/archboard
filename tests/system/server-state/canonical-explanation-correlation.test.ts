@@ -18,7 +18,7 @@ test("automatically consumed explanations correlate unloaded turns by client mes
 		resources,
 		join(import.meta.dir, "fixtures/fake-codex-production.ts"),
 	);
-	cpSync("examples/canonical-model/.archboard/vault", fixture.vault, { recursive: true });
+	cpSync("tests/fixtures/current-format-vault", fixture.vault, { recursive: true });
 	seedGit(fixture.root);
 	const notifications: ExplanationNotification[] = [];
 	let autoConsumeExplanationQueue = false;

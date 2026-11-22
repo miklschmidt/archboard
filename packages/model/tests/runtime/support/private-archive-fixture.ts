@@ -17,7 +17,7 @@ export function untrackedFixture() {
 	process.env["XDG_STATE_HOME"] = join(home, "state");
 	const root = join(home, "notes");
 	const vault = join(root, ".archboard/vault");
-	cpSync(resolve("examples/canonical-model/.archboard/vault"), vault, { recursive: true });
+	cpSync(resolve("tests/fixtures/current-format-vault"), vault, { recursive: true });
 	return { home, root, vault };
 }
 

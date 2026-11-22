@@ -29,7 +29,7 @@ test("canonical modules open their authored details, and a lost or emptied vault
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = vaultIn(join(ownerRoot, "canonical-vault"));
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
@@ -162,7 +162,7 @@ test("current model readings refresh after external edits and reconnect with exp
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "live-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	initializeSource(root);
@@ -306,7 +306,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await using resources = new AsyncDisposableStack();
 	const root = join(browserTestRoots().ownerRoot, "retained-model");
 	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+	cpSync(resolve(import.meta.dir, "../../../tests/fixtures/current-format-vault"), vault, {
 		recursive: true,
 	});
 	// An unborn source repository has architecture to retain but no committed source evidence.

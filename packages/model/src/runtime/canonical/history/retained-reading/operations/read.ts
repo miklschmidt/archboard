@@ -328,7 +328,9 @@ async function decodeCheckpoint(
 	if (refused !== undefined) return refused;
 	const decoded = decodeModel(captured, record.selection);
 	if (!decoded.success) return decoded;
-	return recordedSelection(context, decoded, record, checkpoint);
+	// History reads exactly as it was written, with its own policy, and is read-only in any format.
+	const { readOnly: _old, ...retained } = decoded;
+	return recordedSelection(context, retained, record, checkpoint);
 }
 /**
  * Require a continuing identity before materializing retained correction changes.

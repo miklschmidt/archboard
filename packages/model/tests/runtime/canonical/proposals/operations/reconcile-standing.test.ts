@@ -134,6 +134,7 @@ test("projected connections retain unresolved joined identities and behavioral p
 				relationship: {
 					to: "Shop#Worker",
 					kind: "call",
+					effect: "mutation",
 					order: 20,
 					label: "Second route",
 				},

@@ -66,3 +66,94 @@ test("a rule on the retired INTERFACE_WIDE says it is retired and asks for the e
 		expect(diagnostic?.message).toContain("Remove this entry");
 	}
 });
+
+/**
+ * Read a vault whose policy is the default node vocabulary with these fields.
+ * @param fields The relationship kinds, lenses and default lens it writes.
+ * @returns What the vault's configuration reads as.
+ */
+function readPolicy(fields: Record<string, unknown>) {
+	const { nodeKinds } = defaultSemanticPolicy();
+	writeFileSync(
+		join(vault, ".archboard", "config.yaml"),
+		Bun.YAML.stringify({ nodeKinds, ...fields }),
+	);
+	return readVaultConfiguration(vault);
+}
+
+test("the built-in kinds sit under a vault's own, and a kind the vault adds names its color", () => {
+	const own = readPolicy({
+		relationshipKinds: {
+			call: { name: "Calls", arrowhead: "filled" },
+			ledger: { name: "Ledger", color: "rose", arrowhead: "filled" },
+		},
+	});
+	expect(own.diagnostics).toEqual([]);
+	expect(Object.keys(own.configuration.relationshipKinds).toSorted()).toEqual(
+		[
+			"call",
+			"http",
+			"rpc",
+			"event",
+			"queue",
+			"stream",
+			"spawn",
+			"render",
+			"storage",
+			"dependency",
+			"other",
+			"ledger",
+		].toSorted(),
+	);
+	expect(own.configuration.relationshipKinds["call"]?.name).toBe("Calls");
+	for (const [relationshipKinds, path] of [
+		[{ ledger: { name: "Ledger", arrowhead: "filled" } }, "relationshipKinds.ledger.color"],
+		// A kind's dash follows its effect now; only a whole configuration of the old format records one.
+		[
+			{
+				call: { name: "Call", arrowhead: "filled", dash: "dashed" },
+				ledger: { name: "Ledger", color: "rose", arrowhead: "filled" },
+			},
+			"relationshipKinds.call.dash",
+		],
+	] as const) {
+		const refused = readPolicy({ relationshipKinds });
+		expect(refused.diagnostics.map((each) => [each.code, each.path])).toEqual([
+			["INVALID_CONFIG", path],
+		]);
+	}
+});
+
+test("lenses validate against the kinds and effects in effect, each refusal at its path", () => {
+	const lenses = readPolicy({
+		relationshipKinds: { ledger: { name: "Ledger", color: "rose", arrowhead: "filled" } },
+		defaultLens: "writes",
+		lenses: {
+			writes: {
+				name: "Model writes",
+				show: [{ kind: "ledger" }, { kind: "rpc", effect: "mutation" }],
+			},
+			all: { name: "Everything", hide: [] },
+		},
+	});
+	expect(lenses.diagnostics).toEqual([]);
+	expect(lenses.configuration.defaultLens).toBe("writes");
+	expect(Object.keys(lenses.configuration.lenses).toSorted()).toEqual(
+		["main", "effects", "reads", "network", "dependencies", "all", "writes"].toSorted(),
+	);
+	expect(lenses.configuration.lenses["all"]?.name).toBe("Everything");
+	expect(readPolicy({}).configuration.defaultLens).toBe("main");
+	for (const [fields, path] of [
+		[{ lenses: { x: { name: "X", show: [{ kind: "data" }] } } }, "lenses.x.show.0.kind"],
+		[{ lenses: { x: { name: "X", hide: [{ effect: "write" }] } } }, "lenses.x.hide.0.effect"],
+		[{ lenses: { x: { name: "X", show: [], hide: [] } } }, "lenses.x"],
+		[{ lenses: { x: { name: "X", show: [{}] } } }, "lenses.x.show.0"],
+		[{ lenses: { all: { name: "All", hide: [{ kind: "call" }] } } }, "lenses.all"],
+		[{ defaultLens: "traffic" }, "defaultLens"],
+	] as const) {
+		const refused = readPolicy(fields);
+		expect(refused.diagnostics.map((each) => [each.code, each.path])).toEqual([
+			["INVALID_CONFIG", path],
+		]);
+	}
+});
