@@ -201,6 +201,21 @@ function typeName(type: Node | null): string | undefined {
 }
 
 /**
+ * The variant keys an enum declares, including variants that carry data.
+ * @param node The declaration.
+ * @returns The closure facts.
+ */
+function enumClosure(node: Node): Pick<Definition, "closes"> {
+	if (node.type !== "enum_item") return {};
+	const variants = node.childForFieldName("body")?.namedChildren ?? [];
+	const names = variants.flatMap((variant) => {
+		const name = variant.childForFieldName("name")?.text;
+		return name === undefined ? [] : [name];
+	});
+	return { closes: { "": names } };
+}
+
+/**
  * One definition.
  * @param node Its declaration.
  * @param symbol Its spelled name.
@@ -222,6 +237,7 @@ function definition(
 		...(passes === undefined ? {} : { passes }),
 		...(picks === undefined ? {} : { picks }),
 		...hostCalled(node),
+		...enumClosure(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,
 		source: sourceRange(node),

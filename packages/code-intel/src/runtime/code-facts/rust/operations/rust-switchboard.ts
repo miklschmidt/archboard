@@ -6,8 +6,9 @@
 // preparation, through a `match` whose arms name the variants of an enum,
 // with or without payloads, or `true` and `false`, or through an `if` on a
 // `bool` parameter, with an `else` or with a branch that returns before the
-// rest of the body. The language closes both, so no type is resolved and no
-// call site is read. A `match` on a string or a number is open, and a
+// rest of the body. Explicit exhaustive patterns close the key. An enum
+// catch-all needs the enum definition to name its remaining variants. A
+// `match` on a string or a number is open, and a
 // `match` on a field of `self` is no choice of the caller's.
 
 import type { Node } from "web-tree-sitter";
@@ -501,6 +502,22 @@ function armOf(arm: ArmCode): Arm {
 }
 
 /**
+ * Closure facts for a match whose catch-all depends on the enum's variants.
+ * @param dispatch The match.
+ * @param type The parameter's type.
+ * @param namedKeys The keys the arms name.
+ * @returns The deferred closure, when needed.
+ */
+function enumPick(
+	dispatch: Dispatch,
+	type: string | undefined,
+	namedKeys: readonly string[],
+): Pick<Switchboard, "type" | "namedKeys"> {
+	if (dispatch.boolean || type === undefined || !namedKeys.includes("*")) return {};
+	return { type: type.replaceAll("::", "."), namedKeys };
+}
+
+/**
  * The switchboard a function is, if it is one.
  * @param fn The function item.
  * @returns The switchboard, or undefined.
@@ -512,7 +529,7 @@ function switchboardOf(fn: Node): Switchboard | undefined {
 	const statements = codeOf(body);
 	for (const [index, statement] of statements.entries()) {
 		const dispatch = dispatchAt(statement, parameters, statements.slice(index + 1));
-		const found = switchboardFrom(dispatch);
+		const found = switchboardFrom(dispatch, parameters);
 		if (found !== undefined) return found;
 	}
 	return undefined;
@@ -521,21 +538,25 @@ function switchboardOf(fn: Node): Switchboard | undefined {
 /**
  * The operations and logic discount of a dispatch with multiple operations.
  * @param dispatch The dispatch to measure.
+ * @param parameters The function's parameters, by name.
  * @returns Its switchboard, if it runs different operations.
  */
-function switchboardFrom(dispatch: Dispatch | undefined): Switchboard | undefined {
+function switchboardFrom(
+	dispatch: Dispatch | undefined,
+	parameters: Map<string, string>,
+): Switchboard | undefined {
 	if (dispatch === undefined) return undefined;
 	const picked = operationsOf(dispatch.arms.map(armOf));
-	const operations = dispatch.boolean
-		? restSpelled(
-				picked,
-				["true", "false"],
-				dispatch.arms.flatMap((arm) => arm.keys),
-			)
-		: picked;
+	const namedKeys = dispatch.arms.flatMap((arm) => arm.keys);
+	const operations = dispatch.boolean ? restSpelled(picked, ["true", "false"], namedKeys) : picked;
 	if (operations.length < 2) return undefined;
 	const forwarding = dispatch.arms.filter((arm) => forwards(arm.code)).length;
-	return { key: dispatch.key, operations, logic: dispatch.logic + forwarding };
+	return {
+		key: dispatch.key,
+		...enumPick(dispatch, parameters.get(dispatch.key), namedKeys),
+		operations,
+		logic: dispatch.logic + forwarding,
+	};
 }
 
 export { switchboardOf };
