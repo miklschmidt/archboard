@@ -96,7 +96,7 @@ beforeAll(async () => {
 									id: "Shop#e1",
 									order: 10,
 									to: "Shop#pR",
-									kind: "call",
+									kind: "sync",
 									effect: "query",
 									anchor: { repo: IDENTITY, path: "src/ledger.c", symbol: "audit_check" },
 								},

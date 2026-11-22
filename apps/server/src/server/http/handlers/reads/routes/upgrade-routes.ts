@@ -6,14 +6,24 @@ import { upgradeArchitectureModel } from "@archboard/model/store-write";
 import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 import { asyncEndpoint } from "#server/http/middleware/mutation-work.ts";
+import { anchorTimings } from "#server/http/handlers/reads/operations/anchor-timings.ts";
+import { checkoutWork } from "#server/wiring/server-owners.ts";
 
 /**
- * Expose the upgrade of an old vault: its inventory, and installing it filled.
+ * Expose the upgrade of an old vault: its inventory, whose former calls the code seeds as sync or
+ * async, and installing it filled.
  * @param app The server application.
  */
 function mountUpgradeRoutes(app: Express): void {
 	app.get("/api/architecture/upgrade/inventory", requireVault, async (req, res) => {
-		respond(res, await readUpgradeInventory(vaultOfRequest(req)));
+		const vault = vaultOfRequest(req);
+		const read = await checkoutWork.trackRequest(
+			req,
+			res,
+			"GET /api/architecture/upgrade/inventory",
+			async (signal) => readUpgradeInventory(vault, await anchorTimings(vault, signal)),
+		);
+		respond(res, read);
 	});
 	app.post(
 		"/api/architecture/upgrade",

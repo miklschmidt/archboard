@@ -33,7 +33,7 @@ beforeAll(async () => {
 	gateway.outgoing.push({
 		id: "Shop#Second",
 		to: "Shop#Worker",
-		kind: "call",
+		kind: "sync",
 		effect: "mutation",
 		order: 20,
 		label: "Second route",
@@ -41,7 +41,7 @@ beforeAll(async () => {
 	writeFileSync(join(vault, "gateway.module.json"), JSON.stringify(gateway));
 	const worker = JSON.parse(readFileSync(join(vault, "worker.module.json"), "utf8"));
 	worker.outgoing = [
-		{ id: "Shop#Enter", to: "Shop#Handler", kind: "call", effect: "mutation", order: 10 },
+		{ id: "Shop#Enter", to: "Shop#Handler", kind: "sync", effect: "mutation", order: 10 },
 		{ id: "Shop#Uses", to: "Shop#Library", kind: "dependency", order: 20 },
 	];
 	writeFileSync(join(vault, "worker.module.json"), JSON.stringify(worker));
@@ -62,7 +62,7 @@ beforeAll(async () => {
 				parent,
 				outgoing:
 					id === "Job"
-						? [{ id: "Shop#Tick", to: "Shop#Core", kind: "call", effect: "mutation", order: 10 }]
+						? [{ id: "Shop#Tick", to: "Shop#Core", kind: "sync", effect: "mutation", order: 10 }]
 						: [],
 			}),
 		);
@@ -270,7 +270,7 @@ test("canonical exports retain default comparison and unresolved subject marks t
 			grammar,
 			flow: "Shop#Request",
 			focus: ["Shop#Obsolete"],
-			hideKinds: ["call"],
+			hideKinds: ["sync"],
 		});
 		expect(picture.placed).toEqual(expect.arrayContaining(["Shop#Send", "Shop#Retired"]));
 		expect(group(picture.svg, "Shop#Retired")).toContain('data-semantic-standing="removed"');

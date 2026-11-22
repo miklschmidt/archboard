@@ -164,7 +164,7 @@ beforeAll(async () => {
 	const anchored = (id: string, symbol: string) => ({
 		id: `Shop/Orders#${id}`,
 		order: 1,
-		kind: "call",
+		kind: "sync",
 		effect: "mutation",
 		emphasis: "normal",
 		to: "Shop#Mail",
