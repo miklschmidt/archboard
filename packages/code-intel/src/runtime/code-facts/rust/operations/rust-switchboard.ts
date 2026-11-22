@@ -5,7 +5,8 @@
 // The key is a parameter, borrowed or not. The body picks by it after any
 // preparation, through a `match` whose arms name the variants of an enum,
 // with or without payloads, or `true` and `false`, or through an `if` on a
-// `bool` parameter. The language closes both, so no type is resolved and no
+// `bool` parameter, with an `else` or with a branch that returns before the
+// rest of the body. The language closes both, so no type is resolved and no
 // call site is read. A `match` on a string or a number is open, and a
 // `match` on a field of `self` is no choice of the caller's.
 
@@ -70,7 +71,7 @@ const STATE = new Set(["field_expression", "index_expression"]);
 /** An arm before its calls are read: the keys that pick it and its code. */
 interface ArmCode {
 	readonly keys: readonly string[];
-	readonly code: Node;
+	readonly code: readonly Node[];
 }
 
 /** A pick the body makes. */
@@ -264,7 +265,7 @@ function matchArm(arm: Node): ArmCode | undefined {
 	const first = (pattern === undefined ? [] : codeOf(pattern)).find((each) => each.id !== guard);
 	const keys = first === undefined ? ["*"] : patternKeys(first);
 	const value = part(arm, "value");
-	return keys === undefined || value === undefined ? undefined : { keys, code: value };
+	return keys === undefined || value === undefined ? undefined : { keys, code: [value] };
 }
 
 /**
@@ -291,20 +292,54 @@ function matchOn(expression: Node, parameters: ReadonlyMap<string, string>): Dis
  * The pick an `if` on a `bool` parameter makes.
  * @param expression The `if`.
  * @param parameters The function's parameters.
+ * @param rest The statements after it, which run for the other key where its branch returns.
  * @returns The pick, or undefined.
  */
-function ifOn(expression: Node, parameters: ReadonlyMap<string, string>): Dispatch | undefined {
+function ifOn(
+	expression: Node,
+	parameters: ReadonlyMap<string, string>,
+	rest: readonly Node[],
+): Dispatch | undefined {
 	const condition = part(expression, "condition");
 	const tested = condition === undefined ? undefined : flagOf(condition, parameters);
 	const consequence = part(expression, "consequence");
-	const otherwise = part(part(expression, "alternative"), "");
+	const otherwise = otherwiseOf(expression, consequence, rest);
 	if (tested === undefined || consequence === undefined || otherwise === undefined)
 		return undefined;
 	const arms = [
-		{ keys: [String(tested.picks)], code: consequence },
+		{ keys: [String(tested.picks)], code: [consequence] },
 		{ keys: [String(!tested.picks)], code: otherwise },
 	];
 	return { key: tested.key, arms, logic: tested.logic, boolean: true };
+}
+
+/**
+ * What runs where an `if` does not: its `else`, or, after a branch that
+ * returns, the statements that follow it.
+ * @param expression The `if`.
+ * @param consequence Its branch.
+ * @param rest The statements after it.
+ * @returns The code, or undefined where neither runs.
+ */
+function otherwiseOf(
+	expression: Node,
+	consequence: Node | undefined,
+	rest: readonly Node[],
+): readonly Node[] | undefined {
+	const otherwise = part(part(expression, "alternative"), "");
+	if (otherwise !== undefined) return [otherwise];
+	return rest.length > 0 && returns(consequence) ? rest : undefined;
+}
+
+/**
+ * Whether a block always returns: its last statement is a `return`.
+ * @param block The block.
+ * @returns True when it does.
+ */
+function returns(block: Node | undefined): boolean {
+	const last = block === undefined ? undefined : codeOf(block).at(-1);
+	const value = last?.type === "expression_statement" ? part(last, "") : last;
+	return value?.type === "return_expression";
 }
 
 /**
@@ -327,7 +362,11 @@ function flagOf(
 const PICKS: Readonly<
 	Record<
 		string,
-		(expression: Node, parameters: ReadonlyMap<string, string>) => Dispatch | undefined
+		(
+			expression: Node,
+			parameters: ReadonlyMap<string, string>,
+			rest: readonly Node[],
+		) => Dispatch | undefined
 	>
 > = { match_expression: matchOn, if_expression: ifOn };
 
@@ -338,10 +377,12 @@ const PICKS: Readonly<
  * @returns The pick, or undefined.
  */
 function dispatchOf(body: Node, parameters: ReadonlyMap<string, string>): Dispatch | undefined {
-	for (const statement of codeOf(body)) {
+	const statements = codeOf(body);
+	for (const [index, statement] of statements.entries()) {
 		const expression = statement.type === "expression_statement" ? part(statement, "") : statement;
+		const rest = statements.slice(index + 1);
 		const found =
-			expression === undefined ? undefined : PICKS[expression.type]?.(expression, parameters);
+			expression === undefined ? undefined : PICKS[expression.type]?.(expression, parameters, rest);
 		if (found !== undefined) return found;
 	}
 	return undefined;
@@ -425,9 +466,10 @@ function bare(argument: Node): boolean {
  * @param code The arm's code.
  * @returns True when it does.
  */
-function forwards(code: Node): boolean {
-	const list = part(callsIn(code)[0], "arguments");
-	return logicIn(code) === 1 && list !== undefined && codeOf(list).every(bare);
+function forwards(code: readonly Node[]): boolean {
+	const list = part(code.flatMap(callsIn)[0], "arguments");
+	const logic = code.reduce((sum, node) => sum + logicIn(node), 0);
+	return logic === 1 && list !== undefined && codeOf(list).every(bare);
 }
 
 /**
@@ -437,8 +479,8 @@ function forwards(code: Node): boolean {
  */
 function armOf(arm: ArmCode): Arm {
 	const found = { calls: new Set<string>(), writes: new Set<string>() };
-	effectsIn(arm.code, found);
-	return { keys: arm.keys, line: arm.code.startPosition.row + 1, ...found };
+	for (const node of arm.code) effectsIn(node, found);
+	return { keys: arm.keys, line: (arm.code[0]?.startPosition.row ?? 0) + 1, ...found };
 }
 
 /**

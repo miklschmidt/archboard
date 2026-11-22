@@ -91,6 +91,12 @@ const checkout = fixtureCheckout({
 		"    match part { Part::Card => card(node), Part::Container => one_line(node, 2), Part::FlowFrame => flow_frame(node) }",
 		"}",
 		"pub fn tab(node: N, container: bool) -> M { if container { one_line(node, 2) } else { card(node) } }",
+		"pub fn early(node: N, container: bool) -> M {",
+		"    if container {",
+		"        return one_line(node, 2);",
+		"    }",
+		"    card(node)",
+		"}",
 		'pub fn named(s: &str) -> u8 { match s { "a" => a(), _ => b() } }',
 		"",
 	].join("\n"),
@@ -156,5 +162,7 @@ test("a Rust function picks one operation for each enum variant or boolean whose
 		},
 		measure: { key: "part", keys: [["Card"], ["Container"], ["FlowFrame"]] },
 		tab: { key: "container", keys: [["true"], ["false"]] },
+		// A branch that returns leaves the rest of the body to the other key.
+		early: { key: "container", keys: [["true"], ["false"]] },
 	});
 });
