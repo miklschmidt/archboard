@@ -175,8 +175,8 @@ test("each line type is its own switch, the legend's words stay put while a read
 			const marks = document.querySelector('[data-slot="model-legend-marks"]');
 			return { marks: marks.querySelectorAll('li [title]').length, switches: marks.querySelectorAll('[role="switch"]').length };
 		})()`),
-		"the effect its lines' dashes say, the mixed line and the marks of lines, which no reader hides, stand apart",
-	).toEqual({ marks: 4, switches: 0 });
+		"the effects its lines' dashes say (the declared-only dependency the lens leaves out dimmed among them), the mixed line and the marks of lines, which no reader hides, stand apart",
+	).toEqual({ marks: 5, switches: 0 });
 
 	await browser.run(["click", '[data-filter-kind="event"]']);
 	await pollUntil(
