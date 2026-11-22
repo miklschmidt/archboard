@@ -115,7 +115,11 @@ async function appears(page: Page, selector: string, label: string): Promise<voi
 async function checkCode(server: TakeServer, terminal: Terminal, fixture: Fixture) {
 	await terminal.command("archboard check code");
 	const checked = await server.attempt(["check", "code"]);
-	const answer = z.object({ code: codeCheckAnswerSchema() }).parse(JSON.parse(checked.stdout)).code;
+	// The CLI leaves the names of each measured module's exports out of its answer, and only the
+	// findings are needed here.
+	const answer = z
+		.object({ code: codeCheckAnswerSchema().pick({ findings: true }) })
+		.parse(JSON.parse(checked.stdout)).code;
 	const finding = answer.findings.find((one) => one.code === "RELATIONSHIP_UNDRAWN");
 	const evidence = finding?.evidence?.find(
 		(one) =>
