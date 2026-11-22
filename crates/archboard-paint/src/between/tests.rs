@@ -515,9 +515,9 @@ fn a_flight_knows_what_the_next_scene_defines_inside_its_body() {
 #[test]
 fn an_in_between_draws_with_balanced_layers() {
     use crate::canvas::Count;
-    use crate::draw::tests::painting;
     use crate::palette::Theme;
     use crate::stage::Stage;
+    use crate::testing::painting;
 
     let (body, nodes) = two_cards(rect(10.0, 10.0, 100.0, 50.0), "Old");
     let from = scene(body, &nodes);
