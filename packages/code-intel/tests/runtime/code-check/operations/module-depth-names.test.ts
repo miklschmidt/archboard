@@ -32,6 +32,7 @@ import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type * as CodeCheckRun from "#runtime/api/code-check-run.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import { git as fixtureGit, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { rolledUpModules } from "#tests/runtime/support/code-check/depth-checkout.ts";
 
 const caller = { ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"] };
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "archboard-module-depth-names-")));
@@ -298,7 +299,7 @@ test("a function or public method that only passes its call on is information, a
 	const relay = answer.depth?.find((each) => each.subject.name === "Relay");
 	expect(relay?.names.map((each) => each.name)).toEqual(["put", "Relay", "Relay.send"]);
 	// Every export that is not a type, each public method among them, passes its call on.
-	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Relay", undefined, "warning"]]);
+	expect(rolledUpModules(answer)).toEqual(["Relay"]);
 });
 
 test("a re-export is information through one door, and a warning when outside callers also import the defining module", async () => {

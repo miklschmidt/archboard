@@ -46,6 +46,12 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  *   measure, so it withholds that `MODULE_SHALLOW`: the code that did not
  *   parse could make it deep (TASK-651). Its subject is the part bound to the
  *   module, and its `detail` names each file and the lines that did not parse.
+ * - `key-unclosed`: a module with a switchboard whose key is typed by a name
+ *   in which the check found no closed set of keys, where counting one name
+ *   for each operation it picks would make the module shallow, so it
+ *   withholds that `MODULE_SHALLOW` (TASK-659). Its subject is the part bound
+ *   to the module, and its `detail` names each switchboard and the type, as
+ *   `name: Type`.
  * - `expression-not-followed`: a bound or anchored symbol that may lie below a
  *   Nix expression the static reading of a flake cannot follow, such as an
  *   `import` or a list of systems that an input gives (TASK-367.21), or in a
@@ -130,6 +136,7 @@ const CodeCheckSkipSchema = z
 			"checkout-unavailable",
 			"symbol-unparsed",
 			"logic-unparsed",
+			"key-unclosed",
 			"expression-not-followed",
 			"text-only",
 			"ends-overlap",

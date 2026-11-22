@@ -167,6 +167,8 @@ test("a TypeScript file holds a bound symbol it defines and an anchored one it d
 			"ANCHOR_SYMBOL_MISSING e5",
 			"ANCHOR_MISMATCH e3",
 			"ANCHOR_MISMATCH e6",
+			// Its names hide fewer than four pieces of logic each (TASK-659).
+			"MODULE_SHALLOW pO",
 		].toSorted(),
 	);
 	const claims = outcome.findings.filter((finding) => finding.code !== "EXPOSED_UNUSED");
@@ -209,6 +211,8 @@ test("a symbol found only in code that did not parse is skipped, and text-only n
 			["binding-not-a-module", "pL", "src/shared/log.ts"],
 			["symbol-unparsed", "pK", "src/web/broken.ts:2"],
 			["symbol-unparsed", "e9", "src/web/broken.ts:2"],
+			// src/web's counted logic would make it shallow, and its file that did not parse could make it deep.
+			["logic-unparsed", "pW", "src/web/broken.ts:2"],
 			["text-only", MART, expect.stringContaining(".md")],
 			["unbound", "pX", undefined],
 		].toSorted(),

@@ -38,8 +38,14 @@
 // follow, so no method is judged unused, and an implementation used through
 // its interface counts as used.
 //
-// The module as a whole gets `INTERFACE_WIDE` and `MODULE_SHALLOW`, warnings
-// (module-measure.ts, TASK-651). The roll-up is one ground of `MODULE_SHALLOW`:
+// The module as a whole gets `MODULE_SHALLOW`, a warning (module-measure.ts,
+// TASK-651, TASK-659). Its width counts a switchboard, an exported function or
+// public method that picks its operation by a closed key its caller passes
+// (`Definition.picks`), as one name for each operation it picks, and its logic
+// leaves out what only picks. A key typed by a name another file declares is
+// closed once that name is found and closes it; until then it counts as one
+// name, and where counting it would make the module shallow it withholds the
+// measured verdict (`gaps`). The roll-up is one ground of `MODULE_SHALLOW`:
 // every export that is not a type carries `EXPOSED_VALUE`,
 // `EXPOSED_VALUE_COMPUTED` or a pass-through. A class stands for its public
 // methods. Types are no verdict's concern, so an exported union or enum keeps
@@ -90,10 +96,14 @@ import {
 	staticMember,
 } from "#runtime/module-depth/operations/class-members.ts";
 import {
-	type ExportCounts,
 	moduleFindings,
+	type ModuleMeasure,
 } from "#runtime/module-depth/operations/module-measure.ts";
-import type { ModuleExport } from "#shared/protocol/code-check.ts";
+import { restSpelled } from "#runtime/code-facts/operations/switchboard-arms.ts";
+import type { ModuleDepth, ModuleExport, ModuleSwitchboard } from "#shared/protocol/code-check.ts";
+
+/** A module's exports, by kind. */
+type ExportCounts = ModuleDepth["exports"];
 
 /**
  * What this part does with the names each adapter exposes: those of an adapter
@@ -145,6 +155,10 @@ interface Depth {
 	readonly listed: readonly ModuleExport[];
 	readonly exports: ExportCounts;
 	readonly logic: number;
+	/** The names its callers learn, each switchboard as one for each operation it picks. */
+	readonly width: number;
+	/** The switchboards among its names, closed or not. */
+	readonly switchboards: readonly ModuleSwitchboard[];
 	readonly findings: readonly DepthFinding[];
 	/**
 	 * The parts of the module's code that did not parse, where they withhold
@@ -152,6 +166,11 @@ interface Depth {
 	 * shallow, and the code that did not parse could make it deep.
 	 */
 	readonly withheldBy: readonly string[];
+	/**
+	 * The switchboard keys no type closes yet, where counting them would make
+	 * the module shallow: each as `name: Type`.
+	 */
+	readonly gaps: readonly string[];
 }
 
 /** The kind of one top-level export. */
@@ -475,8 +494,102 @@ function unreadFor(reading: DepthReading, name: ExposedName): string[] {
 	return reading.unread.filter((file) => files.some((each) => each.test(file)));
 }
 
+/** The kinds of name a caller calls, which a switchboard can be. */
+const CALLED: ReadonlySet<NameKind> = new Set(["function", "method"]);
+
+/**
+ * The switchboard a name is, with its key closed where a type another file
+ * declares closes it: overloads share the name, so any of its definitions
+ * in its file may hold the pick.
+ * @param reading The module.
+ * @param name The name.
+ * @returns The switchboard as the answer lists it, and the logic that only picks.
+ */
+async function switchboardOf(
+	reading: DepthReading,
+	name: ExposedName,
+): Promise<{ readonly listed: ModuleSwitchboard; readonly logic: number } | undefined> {
+	const read = await reading.facts.read(reading.checkout, name.path);
+	if (read === undefined || read.adapter === "text") return undefined;
+	const { symbol } = name.definition;
+	const picks = read.definitions.find((each) => each.symbol === symbol && each.picks !== undefined)?.picks;
+	if (picks === undefined) return undefined;
+	const site = picks.type === undefined ? undefined : await definitionSite(reading.facts, reading.checkout, name.path, picks.type);
+	const property = picks.key.includes(".") ? picks.key.slice(picks.key.indexOf(".") + 1) : "";
+	const keys = site?.definition.closes?.[property];
+	const operations = keys === undefined ? picks.operations : restSpelled(picks.operations, keys);
+	const open = picks.type !== undefined && keys === undefined ? { open: picks.type } : {};
+	return {
+		listed: {
+			name: name.name,
+			path: name.path,
+			key: picks.key,
+			operations: operations.map((each) => ({ keys: [...each.keys], line: each.line })),
+			...open,
+		},
+		logic: picks.logic,
+	};
+}
+
+/** The width of a module and its logic once its switchboards are counted. */
+type Widths = Pick<ModuleMeasure, "width" | "logic" | "widened" | "unresolved"> & {
+	readonly switchboards: readonly ModuleSwitchboard[];
+};
+
+/**
+ * The width of a module, each switchboard as one name for each operation it
+ * picks, and its logic less what only picks; and the same with every key no
+ * type closes yet counted, where one waits.
+ * @param reading The module.
+ * @param judged Each judged export with its kind.
+ * @param counts The exports by kind.
+ * @param logic The logic counted.
+ * @returns The widths.
+ */
+async function widthsOf(
+	reading: DepthReading,
+	judged: readonly (readonly [ExposedName, NameKind])[],
+	counts: ExportCounts,
+	logic: number,
+): Promise<Widths> {
+	let width = counts.functions + counts.classes + counts.methods + counts.values;
+	let picking = 0;
+	let open = { width: 0, logic: 0 };
+	const switchboards: ModuleSwitchboard[] = [];
+	const gaps: string[] = [];
+	for (const [name, kind] of judged) {
+		if (!CALLED.has(kind)) continue;
+		// oxlint-disable-next-line no-await-in-loop -- one name at a time; the pass caches each file it reads
+		const found = await switchboardOf(reading, name);
+		if (found === undefined) continue;
+		switchboards.push(found.listed);
+		const more = found.listed.operations.length - 1;
+		if (found.listed.open === undefined) {
+			width += more;
+			picking += found.logic;
+		} else {
+			open = { width: open.width + more, logic: open.logic + found.logic };
+			gaps.push(`${name.name}: ${found.listed.open}`);
+		}
+	}
+	const counted = logic - picking;
+	return {
+		width,
+		logic: counted,
+		switchboards,
+		widened: switchboards.flatMap((each) =>
+			each.open === undefined
+				? [{ name: each.name, operations: each.operations.map((operation) => operation.keys) }]
+				: [],
+		),
+		...(gaps.length === 0
+			? {}
+			: { unresolved: { width: width + open.width, logic: counted - open.logic, gaps } }),
+	};
+}
+
 /** What the verdicts on a module as a whole read, beside its names. */
-type Whole = Omit<Parameters<typeof moduleFindings>[0], "label" | "rolledUp">;
+type Whole = Omit<ModuleMeasure, "label" | "rolledUp">;
 
 /** The findings on a module, and whether a file that did not parse withholds its shallow verdict. */
 type Judgement = ReturnType<typeof moduleFindings>;
@@ -511,6 +624,7 @@ async function depthFindings(
 	return {
 		findings: [...findings, ...module.findings, ...(undeclared === undefined ? [] : [undeclared])],
 		withheld: module.withheld,
+		gaps: module.gaps,
 	};
 }
 
@@ -525,9 +639,10 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 	const { counts, judged, listed } = await countExports(reading, names);
 	const { logic, unparsed } = await logicOf(reading);
 	const supported = names.unjudged.length === 0 && names.infrastructure.length === 0;
-	const whole = { exports: counts, logic, supported, complete: unparsed.length === 0 };
+	const { switchboards, ...widths } = await widthsOf(reading, judged, counts, logic);
+	const whole = { ...widths, supported, complete: unparsed.length === 0 };
 	const judgement = reading.external
-		? { findings: [], withheld: false }
+		? { findings: [], withheld: false, gaps: [] }
 		: await depthFindings(reading, judged, whole);
 	return {
 		languages: names.languages,
@@ -535,9 +650,12 @@ async function moduleDepth(reading: DepthReading): Promise<Depth> {
 		names: judged.map(([name]) => name.name),
 		listed,
 		exports: counts,
-		logic,
+		logic: widths.logic,
+		width: widths.width,
+		switchboards,
 		findings: judgement.findings,
 		withheldBy: judgement.withheld ? unparsed : [],
+		gaps: judgement.gaps,
 	};
 }
 

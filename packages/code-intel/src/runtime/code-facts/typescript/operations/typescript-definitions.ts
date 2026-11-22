@@ -9,6 +9,10 @@ import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange, type Spans } from "#runtime/code-facts/operations/spans.ts";
 import { passesTo } from "#runtime/code-facts/typescript/operations/typescript-pass-through.ts";
+import {
+	closesOf,
+	switchboardOf,
+} from "#runtime/code-facts/typescript/operations/typescript-switchboard.ts";
 
 /** The syntax that can hold a declaration and keep it at module level. */
 const HOLDERS = new Set([
@@ -367,9 +371,10 @@ const CALLED_BY_LANGUAGE = new Set([
 ]);
 
 /**
- * What a declaration's syntax says beside its kind: that it declares a type,
- * the call it only passes on, the name whose value it holds, that a call
- * made it, and that the language calls it.
+ * What a declaration's syntax says beside its kind: that it declares a type
+ * and the keys it closes, the call it only passes on, the key it picks its
+ * operation by, the name whose value it holds, that a call made it, and that
+ * the language calls it.
  * @param name The declared name.
  * @param declaration The declaration.
  * @returns Those that hold.
@@ -377,13 +382,20 @@ const CALLED_BY_LANGUAGE = new Set([
 function traitsOf(
 	name: Node,
 	declaration: Node,
-): Pick<Definition, "type" | "passes" | "aliases" | "madeByCall" | "calledByLanguage"> {
+): Pick<
+	Definition,
+	"type" | "closes" | "passes" | "picks" | "aliases" | "madeByCall" | "calledByLanguage"
+> {
 	const passes = passesTo(declaration);
+	const picks = switchboardOf(declaration);
+	const closes = closesOf(declaration);
 	const aliases = aliasOf(declaration);
 	const called = declaration.type === "method_definition" && CALLED_BY_LANGUAGE.has(name.text);
 	return {
 		...(TYPES.has(declaration.type) ? { type: true as const } : {}),
+		...(closes === undefined ? {} : { closes }),
 		...(passes === undefined ? {} : { passes }),
+		...(picks === undefined ? {} : { picks }),
 		...(aliases === undefined ? {} : { aliases }),
 		...madeByCall(declaration),
 		...(called ? { calledByLanguage: true as const } : {}),

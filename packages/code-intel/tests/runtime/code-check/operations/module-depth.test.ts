@@ -23,6 +23,7 @@ import { defaultSemanticPolicy } from "@archboard/model/policy";
 import type * as CodeCheckRun from "#runtime/api/code-check-run.ts";
 import type { CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import { git as fixtureGit, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { rolledUpModules } from "#tests/runtime/support/code-check/depth-checkout.ts";
 
 const caller = { ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"] };
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "archboard-module-depth-")));
@@ -298,7 +299,7 @@ test("the remedies of an exposed value follow its readers: one reader takes it, 
 
 test("a module whose every export that is not a type carries a per-name finding is shallow, a warning", async () => {
 	const answer = await check();
-	expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "warning"]]);
+	expect(rolledUpModules(answer)).toEqual(["Timing"]);
 });
 
 /**
@@ -381,7 +382,7 @@ test("the model's policy turns the gate on, so the answer marks the touched modu
 		const answer = await check();
 		expect(answer.models?.[0]?.failShallowModules).toBe(true);
 		expect(answer.touched?.[0]?.modules).toContain("Shop#Timing");
-		expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "warning"]]);
+		expect(rolledUpModules(answer)).toEqual(["Timing"]);
 	} finally {
 		policy();
 	}
@@ -396,7 +397,7 @@ test("the vault's rules lower or remove a module-depth code after the roll-up, s
 			EXPOSED_UNUSED: "information",
 		});
 		expect(judged(answer, "EXPOSED_VALUE")).toEqual([]);
-		expect(judged(answer, "MODULE_SHALLOW")).toEqual([["Timing", undefined, "warning"]]);
+		expect(rolledUpModules(answer)).toEqual(["Timing"]);
 		// FIXTURE, which only a test reads, is unused after a complete read: a warning without the rule.
 		expect(judged(answer, "EXPOSED_UNUSED")).toContainEqual(["Config", "FIXTURE", "information"]);
 		expect(judged(answer, "EXPOSED_UNUSED").some(([, , level]) => level === "warning")).toBe(false);

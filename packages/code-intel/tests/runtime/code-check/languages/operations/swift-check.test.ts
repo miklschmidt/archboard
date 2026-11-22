@@ -175,6 +175,9 @@ test("anchors, binding symbols and the relationships between parts bound to Swif
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
+			// Each small bound module hides fewer than four pieces of logic behind each name (TASK-659).
+			"MODULE_SHALLOW pC warning",
+			"MODULE_SHALLOW pU warning",
 			"ANCHOR_SYMBOL_MISSING e2 warning",
 			"BINDING_SYMBOL_MISSING pB warning",
 			// Each bound target exposes a name that no file outside it uses, and the read is complete.

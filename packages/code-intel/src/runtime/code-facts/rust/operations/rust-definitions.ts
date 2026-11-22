@@ -45,6 +45,7 @@ import type { Node } from "web-tree-sitter";
 import type { Definition } from "#runtime/code-facts/operations/facts.ts";
 import { sourceRange } from "#runtime/code-facts/operations/spans.ts";
 import { passesTo } from "#runtime/code-facts/rust/operations/rust-depth.ts";
+import { switchboardOf } from "#runtime/code-facts/rust/operations/rust-switchboard.ts";
 
 /** Where the walk is: the names that qualify an item, and whether everything around it is open. */
 interface Scope {
@@ -212,12 +213,14 @@ function definition(
 	shape: Pick<Definition, "kind" | "visibility" | "exposed">,
 ): Definition {
 	const passes = passesTo(node);
+	const picks = switchboardOf(node);
 	return {
 		symbol,
 		...shape,
 		...(TYPE_ITEMS.has(node.type) ? { type: true as const } : {}),
 		...(DATA_ITEMS.has(node.type) ? { data: true as const } : {}),
 		...(passes === undefined ? {} : { passes }),
+		...(picks === undefined ? {} : { picks }),
 		...hostCalled(node),
 		start: node.startPosition.row + 1,
 		end: node.endPosition.row + 1,

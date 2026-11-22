@@ -82,6 +82,19 @@ interface Definition {
 	 */
 	readonly passes?: string;
 	/**
+	 * It picks the operation it runs by a closed key its caller passes: a
+	 * switchboard (ADR 0082). TypeScript and Rust name it; module depth counts
+	 * one name for each operation it picks.
+	 */
+	readonly picks?: Switchboard;
+	/**
+	 * It is a type whose values are a closed set of keys: a TypeScript union of
+	 * literals or an enum, under `""`, and, for a union of object types, the
+	 * literals of each property every member fixes, under its name. A
+	 * switchboard whose key the file types by this name is closed by it.
+	 */
+	readonly closes?: Readonly<Record<string, readonly string[]>>;
+	/**
 	 * It holds the value of another name, as the file spells it: `DialogRoot`
 	 * for `const Dialog = Object.assign(DialogRoot, { Title })`, which is
 	 * `DialogRoot` with more members on it, or `Store` for `const Made =
@@ -120,6 +133,34 @@ interface Definition {
 	 * code there reads with what the declaration sets (TASK-367.23).
 	 */
 	readonly runs?: string;
+}
+
+/** One operation a switchboard picks: the keys that pick it, and the line its first arm starts. */
+interface PickedOperation {
+	readonly keys: readonly string[];
+	readonly line: number;
+}
+
+/**
+ * A callable that picks the operation it runs by a key its caller passes
+ * (ADR 0082): each operation is one name its callers learn.
+ */
+interface Switchboard {
+	/** The key as the code spells it from a parameter: `intent`, `input.analysis`, `options.register`. */
+	readonly key: string;
+	/**
+	 * The type that closes the key, as the file names it, where the file does
+	 * not close it itself: the key is closed only once module depth finds that
+	 * type and it `closes` the key.
+	 */
+	readonly type?: string;
+	/** Each operation, in the order the body first picks it: two or more. */
+	readonly operations: readonly PickedOperation[];
+	/**
+	 * The pieces of logic that exist only to pick: each test of the key, and
+	 * each call of an arm that only hands its arguments on.
+	 */
+	readonly logic: number;
 }
 
 /**
@@ -410,12 +451,14 @@ export type {
 	ModuleReading,
 	ParsedFacts,
 	ParseFacts,
+	PickedOperation,
 	ReadParsed,
 	ReadText,
 	Reference,
 	ReferenceThroughImport,
 	ReferenceVia,
 	ResolvedImport,
+	Switchboard,
 	SyntaxFacts,
 	Target,
 	Unparsed,

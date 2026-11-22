@@ -191,19 +191,22 @@ async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<
 		external: judged.external,
 	});
 	outcome.findings.push(...depth.findings.map((finding) => ({ ...site, ...finding })));
-	if (depth.withheldBy.length > 0) {
+	for (const [reason, parts] of [
+		["logic-unparsed", depth.withheldBy],
+		["key-unclosed", depth.gaps],
+	] as const) {
+		if (parts.length === 0) continue;
 		const { model, variant } = siteOf(reading.read, "", subject);
-		const detail = depth.withheldBy.join(", ");
 		outcome.skipped.push({
-			reason: "logic-unparsed",
+			reason,
 			model,
 			variant,
 			subject,
 			repo: checkout.repo,
-			detail,
+			detail: parts.join(", "),
 		});
 	}
-	const { exports, logic } = depth;
+	const { exports, logic, width, switchboards } = depth;
 	outcome.depth.push({
 		model: reading.read.document.name,
 		variant: reading.read.variant.id,
@@ -215,6 +218,8 @@ async function measureDepth(judged: Judged, outcome: InterfaceOutcome): Promise<
 		names: [...depth.listed],
 		exports,
 		logic,
+		width,
+		switchboards: [...switchboards],
 	});
 	return new Set(depth.names);
 }

@@ -76,11 +76,12 @@
 // its exports. TASK-650 applies the vault's module-depth rules to each
 // reading's findings once `MODULE_SHALLOW` is derived, and `models[].rules`
 // carries them: `information` caps a finding, `off` removes it.
-// TASK-651 adds `INTERFACE_WIDE`, a warning on a module with more than 20
-// exports that are not types, and makes `MODULE_SHALLOW` a warning that also
-// names a module with at least 8 such exports and fewer than 4 pieces of
-// logic behind each. The CLI's gate fails on either at information only on a
-// touched module.
+// TASK-651 makes `MODULE_SHALLOW` a warning that also names a module with
+// fewer than 4 pieces of logic behind each name its callers learn. TASK-659
+// retires the flat cap TASK-651 added (`INTERFACE_WIDE`) and the 8-name floor,
+// counts a switchboard as one name for each operation it picks, and gives each
+// module's `width` and `switchboards` in `depth`. The CLI's gate fails on an
+// information `MODULE_SHALLOW` only on a touched module.
 
 import { architectureModelReadSchema } from "@archboard/model/contract";
 import {
@@ -188,13 +189,37 @@ const ModuleExportSchema = z
 	.strict();
 
 /**
+ * A callable that picks the operation it runs by a closed key its caller
+ * passes (TASK-659): its name, its file, its key, and each operation it
+ * picks, with the keys that pick it and the line its first arm starts. Each
+ * operation is one name of the module's width. `open` names the type that
+ * should close the key where the check found no closed set of keys in it; the
+ * callable then counts as one name.
+ */
+const ModuleSwitchboardSchema = z
+	.object({
+		name: z.string(),
+		path: z.string(),
+		key: z.string(),
+		operations: z.array(
+			z
+				.object({ keys: z.array(z.string()), line: z.int().positive() })
+				.strict(),
+		),
+		open: z.string().optional(),
+	})
+	.strict();
+
+/**
  * One bound module measured from its code (TASK-646.04, ADR 0082): the part
  * that binds it, its directory, the languages whose exports were counted, its
  * exports by kind, each public method of an exported class counted as its own
  * export, and the pieces of logic behind them, as evidence and never a score.
  * `unjudged` names the languages the module holds whose exports no rule reads
  * yet, so a module read in part never looks clean, and `names` lists each
- * export it counted (TASK-646.07).
+ * export it counted (TASK-646.07). `width` is the names its callers learn, a
+ * switchboard counted once for each operation it picks, and `logic` leaves
+ * out what only picks; `MODULE_SHALLOW` judges these two (TASK-659).
  */
 const ModuleDepthSchema = z
 	.object({
@@ -217,6 +242,8 @@ const ModuleDepthSchema = z
 			})
 			.strict(),
 		logic: z.int().nonnegative(),
+		width: z.int().nonnegative(),
+		switchboards: z.array(ModuleSwitchboardSchema),
 	})
 	.strict();
 
@@ -423,6 +450,7 @@ type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
 type ModuleDepth = z.infer<typeof ModuleDepthSchema>;
 type ModuleExport = z.infer<typeof ModuleExportSchema>;
+type ModuleSwitchboard = z.infer<typeof ModuleSwitchboardSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
@@ -439,6 +467,7 @@ export {
 	type CodeEvidence,
 	type CodeFinding,
 	type ModuleDepth,
+	type ModuleSwitchboard,
 	type ModuleExport,
 	RememberedFindingsSchema,
 	type RememberedFindings,

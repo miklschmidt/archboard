@@ -107,11 +107,25 @@ function depthFindings(answer: CodeCheckAnswer, name: string): string[] {
 		"REEXPORT_PASS_THROUGH",
 		"EXPOSED_UNUSED",
 		"MODULE_SHALLOW",
-		"INTERFACE_WIDE",
 	]);
 	return answer.findings
 		.filter((each) => each.subject?.name === name && codes.has(each.code))
 		.map((each) => `${each.export ?? "(module)"} ${each.code} ${each.severity}`);
 }
 
-export { depthByModule, depthCheckout, depthFindings };
+/**
+ * The modules `MODULE_SHALLOW` names on its roll-up ground, whatever their measure:
+ * every export that is not a type hands their insides to their callers.
+ * @param answer The answer.
+ * @returns Each such module's name.
+ */
+function rolledUpModules(answer: CodeCheckAnswer): (string | undefined)[] {
+	return answer.findings
+		.filter(
+			(each) =>
+				each.code === "MODULE_SHALLOW" && each.message.includes("hands its insides to its callers"),
+		)
+		.map((each) => each.subject?.name);
+}
+
+export { depthByModule, depthCheckout, depthFindings, rolledUpModules };

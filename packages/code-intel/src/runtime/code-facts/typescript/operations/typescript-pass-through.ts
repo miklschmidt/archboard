@@ -166,4 +166,4 @@ function passesTo(declaration: Node): string | undefined {
 	return calleeRoot(call.childForFieldName("function"));
 }
 
-export { passesTo };
+export { callableOf, passesTo };
