@@ -65,7 +65,9 @@ test("a title stands above the status line", async () => {
 	const { svg } = await drawn({ title: "Shop", leftOut: { lens: "Main lines", count: 2 } });
 	const title = slotted(svg, "export-title")!;
 	// The status line stands in the page the title moved down.
-	const band = Number(/<g transform="translate\(0 ([\d.]+)\)"><g data-slot="export-status">/u.exec(svg)![1]);
+	const band = Number(
+		/<g transform="translate\(0 ([\d.]+)\)"><g data-slot="export-status">/u.exec(svg)![1],
+	);
 	const status = slotted(svg, "export-status")!;
 	expect(title.y).toBeLessThan(band + status.y);
 	expect(band).toBeGreaterThan(title.y);

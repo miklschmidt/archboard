@@ -313,7 +313,7 @@ impl Painter {
     #[wasm_bindgen(js_name = playEffects)]
     pub fn play_effects(&mut self, ids: Vec<String>, now: f64) {
         let now = self.clock.at(now);
-        self.stage.play(&ids, now);
+        self.stage.play(ids, now);
     }
 
     /// Say at which scale of the camera the far view begins, in canvas pixels to

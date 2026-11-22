@@ -8,7 +8,7 @@ use crate::geometry::{Curve, Point, Rect, Segment, round_coord};
 use crate::paint::appearance::semantic_ink;
 use crate::paint::build::{Items, grouped, lines, point, shape};
 use crate::paint::edge_line::body;
-use crate::paint::heads::{body_short_of, mark_shapes, place_of};
+use crate::paint::heads::{body_short_of, mark_length, mark_shapes, place_of};
 use crate::paint::legend::entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
@@ -38,8 +38,8 @@ const PULSE_SPAN: f64 = 40.0;
 /// The room a sample keeps at its start for a ring: half the ring's square.
 const RING_ROOM: f64 = 4.0;
 /// How far a sample's imprint reaches to either side of its tip, and how thick it is.
-const IMPRINT_SAMPLE: f64 = 7.0;
-const IMPRINT_SAMPLE_WIDTH: f64 = 2.4;
+const IMPRINT_SAMPLE: f64 = 6.0;
+const IMPRINT_SAMPLE_WIDTH: f64 = 2.0;
 /// A kind's chip in the legend, as the reading panel draws it (`KindChip` in
 /// `apps/web`): how round, how thick its edge, how much of the kind's ink its
 /// face and its edge carry, and how large its icon.
@@ -84,11 +84,7 @@ struct Sample {
 /// row. The one mark a start wears, a ring, reads the same either way.
 fn mark_at(mark: Head, ink: &Colour, hold: Point) -> Items {
     let place = place_of(mark);
-    let length = if matches!(mark, Head::Filled | Head::Open) {
-        HEAD_LENGTH
-    } else {
-        place.view
-    };
+    let length = mark_length(mark);
     let unit = length / place.view;
     vec![Item::Viewport(Viewport {
         frame: Rect {

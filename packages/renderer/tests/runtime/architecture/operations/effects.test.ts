@@ -147,14 +147,20 @@ describe("a line's ends say its effect", () => {
 		expect(markerAt(query, "marker-start")).toContain("<circle");
 		expect(markerAt(lineOf(svg, "write").markup, "marker-start")).toBeUndefined();
 		// The imprint is a short bar across the end of the line.
-		expect(lineOf(svg, "write").markup).toMatch(/<line [^>]*stroke-width="2\.4"/u);
-		expect(query).not.toMatch(/<line [^>]*stroke-width="2\.4"/u);
+		expect(lineOf(svg, "write").markup).toMatch(/<line [^>]*stroke-width="2"/u);
+		expect(query).not.toMatch(/<line [^>]*stroke-width="2"/u);
 	});
 
 	test("a line's body stops short of its head, and its halo runs to the tip", async () => {
 		const { svg } = await drawn(LINES);
 		const { markup } = lineOf(svg, "format");
-		const end = (d: string) => d.trim().split(/[ ,LMC]+/u).filter(Boolean).map(Number).slice(-2);
+		const end = (d: string) =>
+			d
+				.trim()
+				.split(/[ ,LMC]+/u)
+				.filter(Boolean)
+				.map(Number)
+				.slice(-2);
 		const halo = end(/<path class="ab-halo" d="([^"]*)"/u.exec(markup)![1]!);
 		const body = end(/<path d="([^"]*)"[^>]*marker-end=/u.exec(markup)![1]!);
 		expect(Math.hypot(halo[0]! - body[0]!, halo[1]! - body[1]!)).toBeGreaterThan(10);

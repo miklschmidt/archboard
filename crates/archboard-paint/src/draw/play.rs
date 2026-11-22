@@ -100,10 +100,9 @@ fn carries_traffic(items: &[Item], id: &str) -> bool {
 
 /// The lines among some that may play: those whose relationship does something
 /// a play shows, with no traffic of their own.
-pub(crate) fn playable(items: &[Item], ids: &[String]) -> Vec<String> {
-    ids.iter()
+pub(crate) fn playable(items: &[Item], ids: Vec<String>) -> Vec<String> {
+    ids.into_iter()
         .filter(|id| !carries_traffic(items, id))
-        .cloned()
         .collect()
 }
 

@@ -37,8 +37,9 @@ pub(crate) const CONTAINER_INSET: f64 = 20.0;
 pub(crate) const LABEL_CARD_CLEARANCE: f64 = 16.0;
 /// Whitespace between separate label boxes.
 pub(crate) const LABEL_LABEL_CLEARANCE: f64 = 24.0;
-/// Required straight run after the final bend, for every arrow.
-pub(crate) const APPROACH_STRAIGHT: f64 = 12.0;
+/// Required straight run after the final bend, for every arrow: as long as the
+/// painter's longest mark needs.
+pub(crate) const APPROACH_STRAIGHT: f64 = archboard_scene::paint::design::approach_straight();
 
 /// The page shape the renderer lays a picture out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;

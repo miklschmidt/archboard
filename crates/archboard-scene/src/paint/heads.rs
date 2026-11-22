@@ -15,8 +15,20 @@ use crate::geometry::Point;
 use crate::paint::styles::{HEAD_LENGTH, stroke_width};
 use crate::scene::{Colour, Geometry, Head, Marker, MarkerId, PathStep, Purpose, Shape, Stroke};
 
-/// The side of the square a new mark is drawn in, in picture units.
-pub(super) const MARK_BOX: f64 = 16.0;
+/// The side of the square a new mark is drawn in, in its own units.
+const MARK_BOX: f64 = 16.0;
+/// How far back from its tip the longest mark, an "=" and its point, lets the
+/// body end, in its square's units.
+const EQUALS_BACK: f64 = 11.6;
+/// The straight run a line needs after its last bend: the longest mark, and a
+/// little of the body straight before it, so a head reads along its line and
+/// never sits on a bend.
+pub(super) const APPROACH: f64 = 16.0;
+
+/// How many picture units one unit of a new mark's square is: a wedge a
+/// little longer than a classic head, about five times as long as its line is
+/// thick, so it reads as the end of its line and never competes with a card.
+const MARK_UNIT: f64 = 1.15;
 /// The side of the square a classic head is drawn in, in its own units.
 const CLASSIC_BOX: f64 = 10.0;
 /// Where a new head's tip lies in its square.
@@ -29,7 +41,7 @@ const OUTLINE: f64 = 1.5;
 /// How thick a detached chevron is drawn: it ends a thinner line.
 const DETACHED_OUTLINE: f64 = 1.35;
 /// How big a ring at the caller is round, to the middle of its outline.
-const RING_RADIUS: f64 = 3.2;
+const RING_RADIUS: f64 = 2.8;
 /// How thick the arms of a classic open head are, in its own units.
 pub(super) const OPEN_ARM: f64 = 1.7;
 
@@ -68,8 +80,8 @@ pub(super) fn place_of(head: Head) -> Place {
         Head::Filled => classic(8.0),
         Head::Open => classic(CLASSIC_BOX),
         Head::Wedge => new(back(10.0, 0.0), TIP),
-        Head::Eye | Head::Detached => new(back(12.0, 0.0), TIP),
-        Head::Equals => new(back(13.4, 0.0), TIP),
+        Head::Eye | Head::Detached => new(back(10.5, 0.0), TIP),
+        Head::Equals => new(back(EQUALS_BACK, 0.0), TIP),
         // A ring at the start is laid facing back along the line: its centre
         // stands on the caller's edge, and the body starts past its outline.
         Head::Ring => new(
@@ -79,6 +91,21 @@ pub(super) fn place_of(head: Head) -> Place {
     }
 }
 
+/// How long a mark's square is drawn, in picture units: a classic head 11
+/// units long at every weight, a new mark at its own scale.
+pub(super) fn mark_length(head: Head) -> f64 {
+    match head {
+        Head::Filled | Head::Open => HEAD_LENGTH,
+        _ => MARK_BOX * MARK_UNIT,
+    }
+}
+
+/// The side of a relationship mark's square in picture units: what a viewer
+/// keeps at its least size on screen.
+pub(super) fn mark_side() -> f64 {
+    MARK_BOX * MARK_UNIT
+}
+
 /// How far the body of a line stops short of its end for a mark: none for a
 /// classic head, which lies over the body's end.
 pub(super) fn body_short_of(head: Head) -> f64 {
@@ -86,7 +113,7 @@ pub(super) fn body_short_of(head: Head) -> f64 {
         Head::Filled | Head::Open => 0.0,
         _ => {
             let place = place_of(head);
-            place.hold.x - place.reference.x
+            (place.hold.x - place.reference.x) * MARK_UNIT
         }
     }
 }
@@ -97,7 +124,7 @@ pub(super) fn ink_reach(head: Head) -> f64 {
     match head {
         Head::Filled => HEAD_LENGTH * place.reference.x / CLASSIC_BOX,
         Head::Open => HEAD_LENGTH * (CLASSIC_BOX - 2.0 + OPEN_ARM / 2.0) / CLASSIC_BOX,
-        _ => place.hold.x - place.reference.x,
+        _ => body_short_of(head),
     }
 }
 
@@ -159,19 +186,17 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
         Head::Eye => {
             let mut steps = vec![
                 PathStep::Move {
-                    to: back(12.0, 0.0),
+                    to: back(10.5, 0.0),
                 },
                 PathStep::Quad {
-                    control: back(9.75, -4.5),
-                    to: back(6.75, -4.1),
+                    control: back(8.4, -4.2),
+                    to: back(5.8, -3.8),
                 },
                 PathStep::Line { to: TIP },
-                PathStep::Line {
-                    to: back(6.75, 4.1),
-                },
+                PathStep::Line { to: back(5.8, 3.8) },
                 PathStep::Quad {
-                    control: back(9.75, 4.5),
-                    to: back(12.0, 0.0),
+                    control: back(8.4, 4.2),
+                    to: back(10.5, 0.0),
                 },
             ];
             steps.push(PathStep::Close);
@@ -182,17 +207,17 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
                 Shape::new(
                     Purpose::Arrowhead,
                     Geometry::Circle {
-                        centre: Some(back(7.0, 0.0)),
-                        radius: 1.0,
+                        centre: Some(back(6.2, 0.0)),
+                        radius: 0.95,
                     },
                 )
                 .filled(ink),
             ]
         }
         Head::Equals => vec![
-            point(4.0, 3.2, ink, OUTLINE),
-            stroked(&[back(7.2, -3.4), back(7.2, 3.4)], ink, OUTLINE),
-            stroked(&[back(11.0, -3.4), back(11.0, 3.4)], ink, OUTLINE),
+            point(3.6, 3.0, ink, OUTLINE),
+            stroked(&[back(6.4, -3.2), back(6.4, 3.2)], ink, OUTLINE),
+            stroked(&[back(9.4, -3.2), back(9.4, 3.2)], ink, OUTLINE),
         ],
         Head::Detached => vec![point(5.25, 3.75, ink, DETACHED_OUTLINE)],
         Head::Ring => vec![
@@ -214,10 +239,7 @@ pub(super) fn mark_shapes(head: Head, ink: &Colour) -> Vec<Shape> {
 /// every weight; a new mark is drawn in the picture's units.
 pub(super) fn mark_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colour) -> Marker {
     let place = place_of(head);
-    let length = match head {
-        Head::Filled | Head::Open => HEAD_LENGTH,
-        _ => place.view,
-    };
+    let length = mark_length(head);
     Marker {
         id,
         view: place.view,
@@ -225,5 +247,18 @@ pub(super) fn mark_marker(id: MarkerId, head: Head, weight: Emphasis, ink: &Colo
         hold: place.hold,
         size: crate::geometry::round_coord(length / stroke_width(weight)),
         shapes: mark_shapes(head, ink),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{APPROACH, body_short_of};
+    use crate::scene::Head;
+
+    #[test]
+    fn every_mark_and_a_little_body_fit_the_straight_approach() {
+        for head in [Head::Wedge, Head::Eye, Head::Equals, Head::Detached] {
+            assert!(body_short_of(head) + 2.0 <= APPROACH, "{head:?}");
+        }
     }
 }

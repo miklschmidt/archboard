@@ -229,6 +229,12 @@ pub fn far_line_widths() -> [(f64, f64); 4] {
     FAR_WIDENED.map(|width| (width, width * FAR_SCALE))
 }
 
+/// The straight run a line needs after its last bend, so the mark at its end
+/// lies along it: the longest mark and a little body before it.
+pub const fn approach_straight() -> f64 {
+    super::heads::APPROACH
+}
+
 /// How many steps an octave of the camera's scale holds for a mark's growth.
 const GROWTH_STEPS: f64 = 8.0;
 
@@ -244,7 +250,7 @@ pub fn mark_growth(pixel_ratio: f64, scale: f64) -> f64 {
         return 1.0;
     }
     let stepped = ((floor.log2() * GROWTH_STEPS).ceil() / GROWTH_STEPS).exp2();
-    (stepped / super::heads::MARK_BOX).max(1.0)
+    (stepped / super::heads::mark_side()).max(1.0)
 }
 
 /// The icon a part without a known icon is drawn with.
@@ -265,20 +271,21 @@ pub const fn own_icons() -> [&'static str; 2] {
 #[cfg(test)]
 mod tests {
     use super::mark_growth;
-    use crate::paint::heads::MARK_BOX;
+    use crate::paint::heads::mark_side;
     use crate::sizes::HEAD_FLOOR;
 
     #[test]
     fn a_mark_keeps_its_least_size_on_screen_and_its_own_size_near() {
-        for (ratio, scale) in [(1.0, 0.25), (2.0, 0.3), (1.5, 0.6)] {
-            let on_screen = MARK_BOX * mark_growth(ratio, scale) * scale / ratio;
+        for (ratio, scale) in [(1.0, 0.1), (2.0, 0.2), (1.5, 0.3)] {
+            let on_screen = mark_side() * mark_growth(ratio, scale) * scale / ratio;
             assert!(
                 on_screen >= HEAD_FLOOR - 1e-9,
                 "{ratio} {scale}: {on_screen}"
             );
             assert!(on_screen < HEAD_FLOOR * 1.1, "{ratio} {scale}: {on_screen}");
         }
-        assert_eq!(mark_growth(1.0, 1.0), 1.0);
-        assert_eq!(mark_growth(2.0, 4.0), 1.0);
+        // At the opening zoom of a large picture and nearer, marks keep their size.
+        assert_eq!(mark_growth(1.0, 0.4), 1.0);
+        assert_eq!(mark_growth(2.0, 0.8), 1.0);
     }
 }

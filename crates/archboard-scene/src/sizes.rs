@@ -161,15 +161,15 @@ pub(crate) const TAG_BESIDE: f64 = 8.0;
 /// and every line with its arrowhead.
 pub(crate) const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
 /// The least side of a mark's square on screen, in CSS pixels: a viewer that
-/// sees the picture from far grows each mark to it, so a mark's shape and its
-/// openings (an eye's centre, the gap of an "=") still read.
-pub(crate) const HEAD_FLOOR: f64 = 14.0;
+/// sees the picture from far out grows each mark to it, so a mark's shape
+/// still reads. It acts only beyond the opening zoom of a large picture.
+pub(crate) const HEAD_FLOOR: f64 = 5.0;
 /// How thick a line of normal weight is drawn.
-pub(crate) const LINE_WIDTH: f64 = 2.0;
+pub(crate) const LINE_WIDTH: f64 = 2.4;
 /// How thick a broken line's body is, as a share of its weight's width.
 pub(crate) const THIN_BODY: f64 = 0.7;
 /// How thick a line of hero weight is drawn.
-pub(crate) const HERO_LINE_WIDTH: f64 = 3.0;
+pub(crate) const HERO_LINE_WIDTH: f64 = 3.6;
 /// The room between an architecture card's edge and its chip and words.
 pub(crate) const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.

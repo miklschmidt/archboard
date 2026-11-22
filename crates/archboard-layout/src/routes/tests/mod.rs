@@ -394,7 +394,7 @@ fn bends_of(curve: &Curve) -> Vec<(f64, f64)> {
 
 /// A route with just the room its two turns and its head need.
 fn fitting() -> Vec<Point> {
-    points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)])
+    points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 32.0)])
 }
 
 #[test]
@@ -411,9 +411,9 @@ fn a_completed_route_needs_room_for_every_fixed_turn_and_its_head() {
     // A route too short for its turns still rounds them at eight; only the
     // finished route is refused, so label settlement tries another first.
     for short in [
-        points(&[(0.0, 1.0), (0.0, 8.0), (16.0, 8.0), (16.0, 28.0)]),
-        points(&[(0.0, 0.0), (0.0, 8.0), (15.0, 8.0), (15.0, 28.0)]),
-        points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 27.0)]),
+        points(&[(0.0, 1.0), (0.0, 8.0), (16.0, 8.0), (16.0, 32.0)]),
+        points(&[(0.0, 0.0), (0.0, 8.0), (15.0, 8.0), (15.0, 32.0)]),
+        points(&[(0.0, 0.0), (0.0, 8.0), (16.0, 8.0), (16.0, 31.0)]),
     ] {
         assert!(lacks_clearance(&curve_through(&short, false), None));
     }

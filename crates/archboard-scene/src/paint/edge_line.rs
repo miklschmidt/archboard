@@ -32,10 +32,10 @@ use crate::sizes::PILL_RADIUS;
 /// label wears the selection ring.
 const EDGE_HALO_EXTRA: f64 = 5.0;
 /// How thick a mutation's imprint on its target's edge is drawn.
-const IMPRINT_WIDTH: f64 = 2.4;
+const IMPRINT_WIDTH: f64 = 2.0;
 /// How far a mutation's imprint reaches along its target's edge to either side
-/// of the tip, where the edge has room.
-pub(super) const IMPRINT_REACH: f64 = 12.0;
+/// of the tip, where the edge has room: a little wider than its wedge.
+pub(super) const IMPRINT_REACH: f64 = 7.0;
 
 /// How far back from a route's end its head's ink reaches.
 pub(super) fn arrowhead_reach(head: Head) -> f64 {

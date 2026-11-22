@@ -276,7 +276,7 @@ impl Stage {
     /// lines. A line already playing starts again. A line with traffic of its
     /// own, and a declared requirement, stay as they are. A page that wants
     /// reduced motion does not ask.
-    pub fn play(&mut self, ids: &[String], now: f64) {
+    pub fn play(&mut self, ids: Vec<String>, now: f64) {
         let Some(shown) = &self.shown else {
             return;
         };
