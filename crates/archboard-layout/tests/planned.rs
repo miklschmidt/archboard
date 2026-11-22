@@ -383,8 +383,10 @@ fn reciprocal_labeled_calls_keep_the_short_gap_between_neighbors() {
                     + (pair[0]["y"].as_f64().unwrap() - pair[1]["y"].as_f64().unwrap()).abs()
             })
             .sum();
+        // A call that leaves its card's side and turns once onto its neighbour runs about
+        // 312 with a 30-unit approach; one that goes round a card runs past 400.
         assert!(
-            length < 300.0,
+            length < 330.0,
             "a neighboring call takes a perimeter detour: {edge}"
         );
         assert!(
