@@ -1,5 +1,4 @@
 import { expect } from "bun:test";
-import type { LayoutEngineName } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
@@ -18,23 +17,16 @@ import {
 import {
 	labelsAcrossWalls,
 	labelsOverOwnLine,
-	nearLanes,
 	runsUnderLabels,
 	slants,
-	wallHugs,
 } from "#tests/runtime/support/drawn-checks.ts";
 
 /**
  * Semantic completeness and readable labels across the measured corpus.
  * @param drawing The rendered document.
  * @param content Its authored architecture.
- * @param layout The engine that drew it.
  */
-export function expectDrawingIntact(
-	drawing: RenderedDiagram,
-	content: VariantContent,
-	layout: LayoutEngineName,
-) {
+export function expectDrawingIntact(drawing: RenderedDiagram, content: VariantContent) {
 	expect([...routePoints(drawing.svg).keys()].toSorted(), "painted relationships").toEqual(
 		content.edges.map(({ id }) => id).toSorted(),
 	);
@@ -49,8 +41,7 @@ export function expectDrawingIntact(
 		"parents with no visible frame or line boundary",
 	).toEqual([]);
 	expect(routesThroughCards(drawing, content), "routes through cards").toEqual([]);
-	if (layout === "blocks")
-		expect(collinearPorts(drawing, content), "opposite card ports on one line").toEqual([]);
+	expect(collinearPorts(drawing, content), "opposite card ports on one line").toEqual([]);
 	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
 	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);
 	expect(labelsOverOwnLine(drawing), "labels over their own line").toEqual([]);
@@ -64,8 +55,4 @@ export function expectDrawingIntact(
 	expect(unbridgedCrossings(drawing), "crossings with no arc").toEqual([]);
 	expect(crowdedArcs(drawing), "arcs crowding each other or a junction").toEqual([]);
 	expect(labelsAcrossWalls(drawing), "labels across a container's edge").toEqual([]);
-	if (layout === "track") {
-		expect(nearLanes(drawing), "lines closer than a lane").toEqual([]);
-		expect(wallHugs(drawing), "lines along a container's wall").toEqual([]);
-	}
 }

@@ -1,27 +1,15 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
-import parentReturn from "#tests/runtime/support/fixtures/parent-return.json";
 import reservedCorner from "#tests/runtime/support/fixtures/reserved-label-corner.json";
 import reservedLane from "#tests/runtime/support/fixtures/reserved-label-lane.json";
-import archboardServer from "#tests/runtime/support/fixtures/archboard-server.json";
 import oneCommandPath from "#tests/runtime/support/fixtures/one-command-path.json";
 import { covering, overlaps } from "#tests/runtime/support/drawn-labels.ts";
 import { labelsOffRuns } from "#tests/runtime/support/drawn-ink.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import {
-	corridorPoints,
-	distanceToRoute,
-	routeCrosses,
-	routeLabels,
-	routePoints,
-} from "#tests/runtime/support/drawn-routes.ts";
+import { routeCrosses, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { defaultSemanticPolicy } from "@archboard/model/policy";
-
-/** The room a line's words keep from a card: archboard_layout::constants::LABEL_CARD_CLEARANCE. */
-const LABEL_CARD_CLEARANCE = 16;
 
 /** The room one line's words keep from another's: archboard_layout::constants::LABEL_LABEL_CLEARANCE. */
 const LABEL_LABEL_CLEARANCE = 24;
@@ -29,18 +17,12 @@ const LABEL_LABEL_CLEARANCE = 24;
 /** The room a line's words keep from a card in a planned drawing: planned/label_space.rs. */
 const PLANNED_LABEL_CARD_CLEARANCE = 12;
 
-/** The room a badge keeps from a card and from the ends of its run. */
-const AIR = { blocks: PLANNED_LABEL_CARD_CLEARANCE, track: LABEL_CARD_CLEARANCE };
 /** The room a badge keeps from another badge. */
 const LABEL_AIR = LABEL_LABEL_CLEARANCE;
 
-test.each(
-	layoutEngineSchema().options.flatMap((layout) =>
-		[false, true].map((nested) => [nested, layout] as const),
-	),
-)(
-	"badges use their own clear runs with room from cards and other routes (nested: %s, %s)",
-	async (nested, layout) => {
+test.each([false, true])(
+	"badges use their own clear runs with room from cards and other routes (nested: %s)",
+	async (nested) => {
 		const content = orderedFixture({
 			nodes: [
 				...(nested ? [{ id: "outer", name: "Worker system", kind: "service" }] : []),
@@ -61,7 +43,6 @@ test.each(
 			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
-			layout,
 		});
 		const labels = routeLabels(drawing.svg);
 		const routes = routePoints(drawing.svg);
@@ -84,7 +65,7 @@ test.each(
 			}
 			const others = [...labels].filter(([id]) => id !== labelId).map(([, box]) => box);
 			for (const [box, air] of [
-				...cards.map((card) => [card, AIR[layout]] as const),
+				...cards.map((card) => [card, PLANNED_LABEL_CARD_CLEARANCE] as const),
 				...others.map((other) => [other, LABEL_AIR] as const),
 			]) {
 				const xGap = Math.max(box.x - label.x - label.width, label.x - box.x - box.width);
@@ -108,7 +89,6 @@ test.each(
 				policy: defaultSemanticPolicy(),
 				content,
 				theme: "light",
-				layout,
 			}),
 		).toEqual(drawing);
 	},
@@ -178,68 +158,33 @@ test("a source-owned label keeps a private run clear of cards and other labels",
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "blocks",
 	});
 	expect(labelsOffRuns(drawn)).toEqual([]);
 	expect(covering(drawn)).toEqual([]);
 	expect(overlaps(drawn, content)).toEqual([]);
 });
 
-// Taken from a document of this repository: moved to the middle of its gap, the
-// row holding 'one socket per page' ran into a channel where another line
-// turns beside the row, and the label sat half a lane from that line.
-test("a row of labels moves toward its gap's middle only as far as the lines turning there leave it a lane", async () => {
-	const content = orderedFixture(archboardServer);
-	const drawn = await renderArchitecture({
-		policy: defaultSemanticPolicy(),
-		content,
-		theme: "light",
-		layout: "track",
-	});
-	const label = routeLabels(drawn.svg).get("ENymHNDK")!;
-	const others = [...corridorPoints(drawn.svg)].filter(([id]) => id !== "ENymHNDK");
-	const nearest = Math.min(...others.map(([, points]) => distanceToRoute(label, points)));
-	expect(nearest).toBeGreaterThanOrEqual(16);
-});
-
-// A request enters a container and its child publishes the response. The
-// container title orders its child, so both relationships form one cycle.
-test("a response from a child keeps its label on the return route", async () => {
-	const content = orderedFixture(parentReturn);
-	const drawing = await renderArchitecture({
-		policy: defaultSemanticPolicy(),
-		content,
-		theme: "light",
-		layout: "track",
-	});
-	expect(labelsOffRuns(drawing)).toEqual([]);
-});
-
 // Reduced from Diagram presentation components: a driver into the child
 // makes Graphviz rank the response label beyond both ends of the return route.
-test.each(layoutEngineSchema().options)(
-	"a driven child's response reserves a label run between its endpoints (%s)",
-	async (layout) => {
-		const content = orderedFixture({
-			nodes: [
-				{ id: "client", name: "Client", kind: "module" },
-				{ id: "frame", name: "Container", kind: "module" },
-				{ id: "child", name: "Child", kind: "module", parent: "frame" },
-				{ id: "driver", name: "Driver", kind: "module" },
-			],
-			edges: [
-				{ id: "response", from: "child", to: "client", kind: "call", label: "response" },
-				{ id: "request", from: "client", to: "frame", kind: "call", label: "request" },
-				{ id: "drive", from: "driver", to: "child", kind: "call", label: "drive" },
-			],
-		});
-		const drawing = await renderArchitecture({
-			content,
-			policy: defaultSemanticPolicy(),
-			theme: "light",
-			layout,
-		});
-		expect(routeLabels(drawing.svg).size).toBe(content.edges.length);
-		expectDrawingIntact(drawing, content, layout);
-	},
-);
+test("a driven child's response reserves a label run between its endpoints", async () => {
+	const content = orderedFixture({
+		nodes: [
+			{ id: "client", name: "Client", kind: "module" },
+			{ id: "frame", name: "Container", kind: "module" },
+			{ id: "child", name: "Child", kind: "module", parent: "frame" },
+			{ id: "driver", name: "Driver", kind: "module" },
+		],
+		edges: [
+			{ id: "response", from: "child", to: "client", kind: "call", label: "response" },
+			{ id: "request", from: "client", to: "frame", kind: "call", label: "request" },
+			{ id: "drive", from: "driver", to: "child", kind: "call", label: "drive" },
+		],
+	});
+	const drawing = await renderArchitecture({
+		content,
+		policy: defaultSemanticPolicy(),
+		theme: "light",
+	});
+	expect(routeLabels(drawing.svg).size).toBe(content.edges.length);
+	expectDrawingIntact(drawing, content);
+});

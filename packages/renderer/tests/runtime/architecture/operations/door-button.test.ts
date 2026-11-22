@@ -71,7 +71,7 @@ test("a door takes its group's colour, or else its kind's, in a picture that sta
 	const { content } = projectModel(model, "open");
 	const standing = { added: "added", removed: "removed" } as const;
 	const drawing = await renderArchitecture({ content, policy, standing });
-	expectDrawingIntact(drawing, content, "blocks");
+	expectDrawingIntact(drawing, content);
 	const face = (id: string) => /url\(#ab-door-([a-z]+)\)/u.exec(door(drawing.svg, id))?.[1];
 	expect(doors.map(face)).toEqual(["pink", "teal", "blue", undefined, "neutral"]);
 });

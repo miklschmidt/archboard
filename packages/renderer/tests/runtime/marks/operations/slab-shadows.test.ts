@@ -120,27 +120,23 @@ function expectShadowsUnderCards(svg: string, cards: readonly string[]): void {
 	for (const shadow of shadows) expect(shadow.at).toBeLessThan(firstCard);
 }
 
-test.each(["track", "blocks"] as const)(
-	"every card's shadow lies under every card on a document (%s)",
-	async (layout) => {
-		const drawing = await renderArchitecture({
-			policy: defaultSemanticPolicy(),
-			content: DOCUMENT,
-			theme: "light",
-			layout,
-		});
-		expectShadowsUnderCards(drawing.svg, ["route", "guard", "db"]);
-		// A container's header slab casts a card's shadow, drawn in its frame: the
-		// frame lies under every card too.
-		const tags = groupTags(drawing.svg);
-		const frame = tags.find(
-			({ attributes }) =>
-				attributes["data-semantic-id"] === "api" && attributes["data-semantic-part"] === undefined,
-		)!;
-		const { cardsAt } = layers(drawing.svg, ["route", "guard", "db"]);
-		expect(frame.at).toBeLessThan(Math.min(...cardsAt));
-	},
-);
+test("every card's shadow lies under every card on a document", async () => {
+	const drawing = await renderArchitecture({
+		policy: defaultSemanticPolicy(),
+		content: DOCUMENT,
+		theme: "light",
+	});
+	expectShadowsUnderCards(drawing.svg, ["route", "guard", "db"]);
+	// A container's header slab casts a card's shadow, drawn in its frame: the
+	// frame lies under every card too.
+	const tags = groupTags(drawing.svg);
+	const frame = tags.find(
+		({ attributes }) =>
+			attributes["data-semantic-id"] === "api" && attributes["data-semantic-part"] === undefined,
+	)!;
+	const { cardsAt } = layers(drawing.svg, ["route", "guard", "db"]);
+	expect(frame.at).toBeLessThan(Math.min(...cardsAt));
+});
 
 test("every participant's shadow lies under every participant of a sequence", async () => {
 	const drawing = await renderSemanticView({

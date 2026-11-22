@@ -51,7 +51,6 @@ test("a pin on a subject at the page's edge keeps the page's margin", async () =
 			],
 			edges: [{ id: "ab", from: "a", to: "b", kind: "call" }],
 		}),
-		layout: "track",
 		standing: { a: "added" },
 	});
 	const sequence = await renderSemanticView({

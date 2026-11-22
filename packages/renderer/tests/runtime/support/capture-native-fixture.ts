@@ -60,13 +60,11 @@ if (!model.success) throw new Error(`${VAULT} does not read: ${JSON.stringify(mo
 const reading = projectModel(model);
 const drawn = await renderArchitecture({
 	content: reading.content,
-	variant: reading.complete,
 	policy: model.policy,
 	theme: "light",
-	layout: "track",
 });
 const fixture = {
-	drawing: `${VAULT} | ${model.manifest.name} | ${STATE} | (whole model) | track | light | plain`,
+	drawing: `${VAULT} | ${model.manifest.name} | ${STATE} | (whole model) | light | plain`,
 	request: kept.request,
 	icons: kept.icons,
 	svg: drawn.svg,

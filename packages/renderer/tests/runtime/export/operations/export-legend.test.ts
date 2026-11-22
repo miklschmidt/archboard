@@ -169,7 +169,7 @@ describe("what the legend lists", () => {
 		const window = new Window();
 		try {
 			for (const view of [undefined, "Exchange"]) {
-				const drawn = await exported({ variant: "Worker pool", view, layout: "blocks" });
+				const drawn = await exported({ variant: "Worker pool", view });
 				const picture = new window.DOMParser().parseFromString(drawn.svg, "image/svg+xml");
 				// A subject drawn by several groups, a container's frame and its
 				// header, keeps its first place and the last group's facts.
@@ -195,48 +195,43 @@ describe("what the legend lists", () => {
 	});
 });
 
-for (const layout of ["track", "blocks"] as const) {
-	describe(`where the legend stands, drawn by ${layout}`, () => {
-		test("horizontal: a row under the picture, wrapped at its width", async () => {
-			// Each name fits the narrow page, but the entries together require several rows.
-			const policy = {
-				...defaultSemanticPolicy(),
-				relationshipKinds: Object.fromEntries(
-					Object.entries(defaultSemanticPolicy().relationshipKinds).map(([kind, style]) => [
-						kind,
-						{
-							...style,
-							name: Array.from({ length: 12 }, () => style.name).join(" "),
-						},
-					]),
-				),
-			};
-			const plain = await exported({ variant: "Worker pool", layout }, policy);
-			const keyed = await exported(
-				{ variant: "Worker pool", layout, legend: "horizontal" },
-				policy,
-			);
-			const entries = listed(keyed.svg);
-			expect(keyed.width).toBe(plain.width);
-			expect(keyed.height).toBeGreaterThan(plain.height);
-			expect(Math.min(...entries.map((one) => one.y))).toBeGreaterThan(reach(plain).bottom);
-			expect(new Set(entries.map((one) => one.y)).size).toBeGreaterThan(1);
-			// The picture is drawn as it is without the legend.
-			expect(keyed.atlas).toEqual(plain.atlas);
-		});
-
-		test("vertical: a column beside the picture", async () => {
-			const plain = await exported({ variant: "Worker pool", layout });
-			const keyed = await exported({ variant: "Worker pool", layout, legend: "vertical" });
-			const entries = listed(keyed.svg);
-			expect(keyed.width).toBeGreaterThan(plain.width);
-			expect(keyed.height).toBeGreaterThanOrEqual(plain.height);
-			expect(Math.min(...entries.map((one) => one.x))).toBeGreaterThan(reach(plain).right);
-			expect(new Set(entries.map((one) => one.x)).size).toBe(1);
-			expect(keyed.atlas).toEqual(plain.atlas);
-		});
+describe("where the legend stands", () => {
+	test("horizontal: a row under the picture, wrapped at its width", async () => {
+		// Each name fits the narrow page, but the entries together require several rows.
+		const policy = {
+			...defaultSemanticPolicy(),
+			relationshipKinds: Object.fromEntries(
+				Object.entries(defaultSemanticPolicy().relationshipKinds).map(([kind, style]) => [
+					kind,
+					{
+						...style,
+						name: Array.from({ length: 12 }, () => style.name).join(" "),
+					},
+				]),
+			),
+		};
+		const plain = await exported({ variant: "Worker pool" }, policy);
+		const keyed = await exported({ variant: "Worker pool", legend: "horizontal" }, policy);
+		const entries = listed(keyed.svg);
+		expect(keyed.width).toBe(plain.width);
+		expect(keyed.height).toBeGreaterThan(plain.height);
+		expect(Math.min(...entries.map((one) => one.y))).toBeGreaterThan(reach(plain).bottom);
+		expect(new Set(entries.map((one) => one.y)).size).toBeGreaterThan(1);
+		// The picture is drawn as it is without the legend.
+		expect(keyed.atlas).toEqual(plain.atlas);
 	});
-}
+
+	test("vertical: a column beside the picture", async () => {
+		const plain = await exported({ variant: "Worker pool" });
+		const keyed = await exported({ variant: "Worker pool", legend: "vertical" });
+		const entries = listed(keyed.svg);
+		expect(keyed.width).toBeGreaterThan(plain.width);
+		expect(keyed.height).toBeGreaterThanOrEqual(plain.height);
+		expect(Math.min(...entries.map((one) => one.x))).toBeGreaterThan(reach(plain).right);
+		expect(new Set(entries.map((one) => one.x)).size).toBe(1);
+		expect(keyed.atlas).toEqual(plain.atlas);
+	});
+});
 
 test("the legend alone draws no subject and lists what the legend beside the picture lists", async () => {
 	for (const legend of ["horizontal", "vertical"] as const) {

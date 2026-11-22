@@ -1,8 +1,7 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-// Track reads downward. Blocks also permits a rightward reading within one scope.
+// Blocks reads downward, and also permits a rightward reading within one scope.
 
 import { describe, expect, test } from "bun:test";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
@@ -124,29 +123,24 @@ function pipeline(length: number, framed = false): VariantContent {
 	});
 }
 
-// Where a chain folds into columns is each engine's choice; a fold only
+// Where a chain folds into columns is the engine's choice; a fold only
 // continues the chain at the top of a column to the right. A frame's grid folds
 // by rows, and a row can run back so that every step stays one cell long.
-test.each(
-	layoutEngineSchema().options.flatMap((layout) =>
-		[false, true].map((framed) => [layout, framed] as const),
-	),
-)(
-	"a long chain preserves reading order and clear routes (%s, framed: %s)",
-	async (layout, framed) => {
+test.each([false, true])(
+	"a long chain preserves reading order and clear routes (framed: %s)",
+	async (framed) => {
 		const content = pipeline(12, framed);
 		const drawing = await renderArchitecture({
 			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
-			layout,
 		});
 		const direction = readingOf(drawing);
 		expect(direction).toBe("down");
 		for (let index = 1; index < 12; index++) {
 			const before = drawing.atlas.nodes[`s${index - 1}`]!;
 			const after = drawing.atlas.nodes[`s${index}`]!;
-			if (layout === "blocks" && after.y === before.y) {
+			if (after.y === before.y) {
 				if (!framed) expect(after.x).toBeGreaterThan(before.x + before.width);
 			} else if (after.y < before.y) {
 				expect(after.x).toBeGreaterThan(before.x + before.width);

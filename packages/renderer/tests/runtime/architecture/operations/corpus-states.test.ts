@@ -21,8 +21,6 @@ test("the corpus draws the states that read, and a comparison only where a state
 				fileURLToPath(new URL("../../../../../../scripts/render-corpus.ts", import.meta.url)),
 				"render",
 				out,
-				"--engines",
-				"track",
 				"--themes",
 				"light",
 				"--comparison",
@@ -37,7 +35,7 @@ test("the corpus draws the states that read, and a comparison only where a state
 		const readings = Object.keys(JSON.parse(readFileSync(join(out, "corpus.json"), "utf8")))
 			.map((key) => key.split(" | "))
 			.filter((fields) => fields[3] === "(whole model)")
-			.map((fields) => [fields[2], fields[6]].join(" "));
+			.map((fields) => [fields[2], fields[5]].join(" "));
 		expect(readings).toEqual(["Synchronous checkout plain"]);
 	} finally {
 		rmSync(root, { recursive: true, force: true });

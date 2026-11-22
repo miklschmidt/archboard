@@ -40,10 +40,8 @@ function route(path: string, id = "edge"): string {
 }
 
 test("drawing integrity rejects an unpainted relationship retained in the atlas", () => {
-	expect(() =>
-		expectDrawingIntact(drawing(route("M40,120 L200,120")), content, "track"),
-	).not.toThrow();
-	expect(() => expectDrawingIntact(drawing("<svg/>"), content, "track")).toThrow();
+	expect(() => expectDrawingIntact(drawing(route("M40,120 L200,120")), content)).not.toThrow();
+	expect(() => expectDrawingIntact(drawing("<svg/>"), content)).toThrow();
 });
 
 test("trunk checks reject shared ink between unrelated same-kind relationships", () => {

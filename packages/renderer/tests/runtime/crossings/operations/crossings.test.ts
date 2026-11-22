@@ -275,22 +275,26 @@ function hides(svg: string, mask: string | undefined, point: { x: number; y: num
 	return lines || boxes;
 }
 
-// Graphviz, Track and Blocks: routes of one kind on one trunk each drew their
+// Routes of one kind on one trunk each drew their
 // own stroke, dash pattern and arrowhead over it, a doubled or solid line.
 test("routes sharing a trunk draw its ink once: one line, one dash pattern, one arrowhead", async () => {
 	const content = orderedFixture({
-		nodes: ["a", "b", "c", "t"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
-		edges: ["a", "b", "c"].map((from) => ({ id: `${from}t`, from, to: "t", kind: "event" })),
+		nodes: ["a", "b", "c", "d", "t"].map((id) => ({
+			id,
+			name: id.toUpperCase(),
+			kind: "service",
+		})),
+		edges: ["a", "b", "c", "d"].map((from) => ({ id: `${from}t`, from, to: "t", kind: "event" })),
 	});
 	const { svg } = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "track",
 	});
-	const drawn = routes(svg);
+	// The fixture's precondition: the lines from c and d arrive down one shared last stretch.
+	const drawn = routes(svg).filter(({ id }) => id === "ct" || id === "dt");
+	expect(drawn).toHaveLength(2);
 	const ends = drawn.map((route) => endsOf(route.paths[0]!).slice(-2));
-	// The fixture's precondition: all three arrive down one shared last stretch.
 	for (const [before, end] of ends) {
 		expect(end).toEqual(ends[0]![1]!);
 		expect(before!.x).toBe(end!.x);
@@ -349,7 +353,7 @@ test("the crossing pass reads each line's dash from the vault's own policy", asy
 				stream: { name: "Stream", dash, arrowhead: "open" as const },
 			},
 		};
-		const { svg } = await renderArchitecture({ content, theme: "light", layout: "track", policy });
+		const { svg } = await renderArchitecture({ content, theme: "light", policy });
 		const pieces = new Map(
 			[...svg.matchAll(/<mask id="([^"]+)"[^>]*>([\s\S]*?)<\/mask>/gu)].map((match) => [
 				match[1]!,
@@ -389,7 +393,6 @@ test("traffic on a joined line runs on past the junction to its card", async () 
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "track",
 	});
 	const layers = [...svg.matchAll(/data-traffic="([^"]+)"/gu)];
 	expect(layers.map((layer) => layer[1])).toEqual(["bt"]);

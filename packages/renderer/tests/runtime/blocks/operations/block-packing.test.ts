@@ -43,13 +43,13 @@ const policy = semanticPolicySchema().parse({
 
 test("a line's words stand clear of its own legs on a document of tight rows", async () => {
 	const content = orderedFixture(modelRasterizer);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const drawing = await renderArchitecture({ content, theme: "light", policy });
 	expect(labelsOverOwnLine(drawing)).toEqual([]);
 });
 
 test("blocks read forward across a row or down the page", async () => {
 	const content = orderedFixture(voiceCoordinator);
-	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	const { atlas } = await renderArchitecture({ content, theme: "light", policy });
 	const [source, target] = [atlas.nodes["LHBPlItu"]!, atlas.nodes["5uPyMgoI"]!];
 	expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
 });
@@ -59,6 +59,6 @@ test("blocks read forward across a row or down the page", async () => {
 // sliding it in line with the line may leave a step in that line.
 test("a chain reaches a wide container through its reserved channels", async () => {
 	const content = orderedFixture(legacyRouting);
-	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expectDrawingIntact(drawing, content, "blocks");
+	const drawing = await renderArchitecture({ content, theme: "light", policy });
+	expectDrawingIntact(drawing, content);
 });

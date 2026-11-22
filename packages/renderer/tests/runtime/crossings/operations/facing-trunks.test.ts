@@ -15,7 +15,6 @@ test.each(["http", "data"])(
 			policy: defaultSemanticPolicy(),
 			content,
 			theme: "light",
-			layout: "blocks",
 		});
 		const routes = routePoints(drawing.svg);
 		for (const id of ["lsOwWQvq", "PRXBb3Zi"]) expect(routes.has(id), id).toBe(true);

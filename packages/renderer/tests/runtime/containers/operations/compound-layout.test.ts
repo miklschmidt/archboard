@@ -1,9 +1,7 @@
 // Blocks offsets contacts 0.02 beyond painted faces; allow one SVG rounding unit.
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import nearMiss from "#tests/runtime/support/fixtures/near-miss-columns.json";
 import { describe, expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/bun-renderer/operations/render.ts";
-import { layoutEngineSchema } from "@archboard/model/render-reply";
 import {
 	distanceToFrame,
 	routeCrosses,
@@ -150,95 +148,62 @@ test("a container's direct dependency leaves its painted header", async () => {
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "blocks",
 	});
 
 	const route = routePoints(drawing.svg).get("write")!;
 	expect(distanceToFrame(route[0]!, headerCards(drawing).get("frame")!)).toBeLessThan(1);
-	expectDrawingIntact(drawing, content, "blocks");
+	expectDrawingIntact(drawing, content);
 });
 
 // A chain inside a container once stepped sideways a few dozen points per
 // card, its lines off both centres and its container that much wider: every
 // member was held under the container's title, and each hold passed beside
 // the cards above it.
-test.each(layoutEngineSchema().options)(
-	"a chain inside a container keeps its reading and measured cards (%s)",
-	async (layout) => {
-		const stages = ["a", "b", "c", "d"];
-		const content = orderedFixture({
-			nodes: [
-				{ id: "box", name: "Service", kind: "service" },
-				...stages.map((id) => ({ id, name: `Stage ${id}`, kind: "module", parent: "box" })),
-			],
-			edges: stages
-				.slice(1)
-				.map((to, index) => ({ id: `e${index}`, from: stages[index]!, to, kind: "call" })),
-		});
-		const drawing = await renderArchitecture({
-			policy: defaultSemanticPolicy(),
-			content,
-			theme: "light",
-			layout,
-		});
-		const cards = stages.map((id) => drawing.atlas.nodes[id]!);
-		if (layout === "track") {
-			expect(new Set(cards.map(({ x }) => x)).size).toBe(1);
-			const frame = drawing.atlas.nodes["box"]!;
-			expect(frame.width - cards[0]!.width).toBeLessThanOrEqual(2 * 24);
-		} else {
-			expectDrawingIntact(drawing, content, layout);
-			for (const [index, card] of cards.slice(1).entries()) {
-				const before = cards[index]!;
-				expect(card.y >= before.y + before.height || card.x >= before.x + before.width).toBe(true);
-			}
-		}
-	},
-);
-
-// Reduced from the dogfood Semantic renderer document: a line through its label
-// let its two stacked ends stand 9 to 10 points out of one column, so their
-// edges almost lined up and the line jogged or sat off both centres. Stacked
-// ends stand in one column or clearly apart, never a near miss.
-test("stacked cards joined through a label share a column or stand clearly apart", async () => {
-	const content = orderedFixture(nearMiss);
+test("a chain inside a container keeps its reading and measured cards", async () => {
+	const stages = ["a", "b", "c", "d"];
+	const content = orderedFixture({
+		nodes: [
+			{ id: "box", name: "Service", kind: "service" },
+			...stages.map((id) => ({ id, name: `Stage ${id}`, kind: "module", parent: "box" })),
+		],
+		edges: stages
+			.slice(1)
+			.map((to, index) => ({ id: `e${index}`, from: stages[index]!, to, kind: "call" })),
+	});
 	const drawing = await renderArchitecture({
 		policy: defaultSemanticPolicy(),
 		content,
 		theme: "light",
-		layout: "track",
 	});
-	const [one, other] = [drawing.atlas.nodes["CtoOMxca"]!, drawing.atlas.nodes["wLF1X11D"]!];
-	expect(one.y + one.height).toBeLessThan(other.y);
-	const offset = Math.abs(one.x + one.width / 2 - (other.x + other.width / 2));
-	expect(offset < 0.05 || offset > 16).toBe(true);
+	const cards = stages.map((id) => drawing.atlas.nodes[id]!);
+	expectDrawingIntact(drawing, content);
+	for (const [index, card] of cards.slice(1).entries()) {
+		const before = cards[index]!;
+		expect(card.y >= before.y + before.height || card.x >= before.x + before.width).toBe(true);
+	}
 });
 
 // A page kept its placement's slack: under Graphviz a frame's trimmed title
 // margin left 52 points above the drawing against 24 below it, and under the
-// block engines a frame at the document's edge stood 32 points in on one side.
-test.each(layoutEngineSchema().options)(
-	"a %s page keeps the same margin on every side of what it draws",
-	async (layout) => {
-		const drawing = await renderArchitecture({
-			policy: defaultSemanticPolicy(),
-			content: NESTED,
-			theme: "light",
-			layout,
-		});
-		const boxes = [
-			...Object.values(drawing.atlas.nodes),
-			...routeLabels(drawing.svg).values(),
-			...[...routePoints(drawing.svg).values()]
-				.flat()
-				.map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
-		];
-		const margins = [
-			Math.min(...boxes.map(({ x }) => x)),
-			Math.min(...boxes.map(({ y }) => y)),
-			drawing.width - Math.max(...boxes.map(({ x, width }) => x + width)),
-			drawing.height - Math.max(...boxes.map(({ y, height }) => y + height)),
-		];
-		for (const margin of margins) expect(Math.abs(margin - margins[0]!)).toBeLessThanOrEqual(2);
-	},
-);
+// the block engine a frame at the document's edge stood 32 points in on one side.
+test("a page keeps the same margin on every side of what it draws", async () => {
+	const drawing = await renderArchitecture({
+		policy: defaultSemanticPolicy(),
+		content: NESTED,
+		theme: "light",
+	});
+	const boxes = [
+		...Object.values(drawing.atlas.nodes),
+		...routeLabels(drawing.svg).values(),
+		...[...routePoints(drawing.svg).values()]
+			.flat()
+			.map(({ x, y }) => ({ x, y, width: 0, height: 0 })),
+	];
+	const margins = [
+		Math.min(...boxes.map(({ x }) => x)),
+		Math.min(...boxes.map(({ y }) => y)),
+		drawing.width - Math.max(...boxes.map(({ x, width }) => x + width)),
+		drawing.height - Math.max(...boxes.map(({ y, height }) => y + height)),
+	];
+	for (const margin of margins) expect(Math.abs(margin - margins[0]!)).toBeLessThanOrEqual(2);
+});
