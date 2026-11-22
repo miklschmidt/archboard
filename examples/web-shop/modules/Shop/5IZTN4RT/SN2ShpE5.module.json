@@ -1,14 +1,7 @@
 {
-  "order": 7000,
-  "name": "Reservation ledger",
-  "kind": "module",
-  "responsibility": "Sets items aside only while enough are left",
-  "description": "Locks each item's row, compares the count with what is already reserved, and writes the reservation in the same transaction. The only part that changes a reservation.",
-  "schemaVersion": 2,
-  "id": "Shop/5IZTN4RT#SN2ShpE5",
-  "parent": "Shop/MKhTEYqf#HYDbL5fE",
   "outgoing": [
     {
+      "id": "Shop/5IZTN4RT#9KbJFIBQ",
       "order": 7000,
       "kind": "storage",
       "effect": "mutation",
@@ -18,8 +11,15 @@
         "speed": 80,
         "volume": 1
       },
-      "id": "Shop/5IZTN4RT#9KbJFIBQ",
       "to": "Shop/5IZTN4RT#mmSzZdKG"
     }
-  ]
+  ],
+  "order": 7000,
+  "name": "Reservation ledger",
+  "kind": "module",
+  "responsibility": "Sets items aside only while enough are left",
+  "description": "Locks each item's row, compares the count with what is already reserved, and writes the reservation in the same transaction. The only part that changes a reservation.",
+  "schemaVersion": 2,
+  "id": "Shop/5IZTN4RT#SN2ShpE5",
+  "parent": "Shop/MKhTEYqf#HYDbL5fE"
 }

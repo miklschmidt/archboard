@@ -1,13 +1,7 @@
 {
-  "order": 6000,
-  "name": "Place order",
-  "kind": "route",
-  "responsibility": "POST /orders: reserves the stock, charges the card, saves the order and emails the receipt, then answers",
-  "schemaVersion": 2,
-  "id": "Shop/MKhTEYqf#kZjjfq1m",
-  "parent": "Shop/MKhTEYqf#lwmpnaVU",
   "outgoing": [
     {
+      "id": "Shop/MKhTEYqf#6EKtMmuD",
       "order": 2000,
       "kind": "storage",
       "effect": "mutation",
@@ -17,10 +11,10 @@
         "speed": 80,
         "volume": 1
       },
-      "id": "Shop/MKhTEYqf#6EKtMmuD",
       "to": "Shop/MKhTEYqf#wlyh3hT6"
     },
     {
+      "id": "Shop/MKhTEYqf#tLHGTzaf",
       "order": 3000,
       "kind": "http",
       "effect": "mutation",
@@ -30,10 +24,10 @@
         "speed": 80,
         "volume": 1
       },
-      "id": "Shop/MKhTEYqf#tLHGTzaf",
       "to": "Shop/MKhTEYqf#ZaOafnWt"
     },
     {
+      "id": "Shop/MKhTEYqf#mOCWkDAa",
       "order": 4000,
       "kind": "http",
       "effect": "mutation",
@@ -44,10 +38,10 @@
         "speed": 80,
         "volume": 1
       },
-      "id": "Shop/MKhTEYqf#mOCWkDAa",
       "to": "Shop/MKhTEYqf#lXgq75bO"
     },
     {
+      "id": "Shop/MKhTEYqf#YeYYgWtm",
       "order": 5000,
       "kind": "http",
       "effect": "mutation",
@@ -57,26 +51,32 @@
         "speed": 80,
         "volume": 1
       },
-      "id": "Shop/MKhTEYqf#YeYYgWtm",
       "to": "Shop/5IZTN4RT#4sZ8ZI9y"
     },
     {
+      "id": "Shop/MKhTEYqf#ywGKHoBq",
       "order": 8000,
       "kind": "storage",
       "effect": "query",
       "label": "read the basket",
       "emphasis": "muted",
-      "id": "Shop/MKhTEYqf#ywGKHoBq",
       "to": "Shop/MKhTEYqf#Q2XClLOC"
     },
     {
+      "id": "Shop/MKhTEYqf#ys6hWCoY",
       "order": 9000,
-      "kind": "call",
+      "kind": "async",
       "effect": "mutation",
       "label": "start the 10 s clock",
       "emphasis": "muted",
-      "id": "Shop/MKhTEYqf#ys6hWCoY",
       "to": "Shop/MKhTEYqf#VONp3yKV"
     }
-  ]
+  ],
+  "order": 6000,
+  "name": "Place order",
+  "kind": "route",
+  "responsibility": "POST /orders: reserves the stock, charges the card, saves the order and emails the receipt, then answers",
+  "schemaVersion": 2,
+  "id": "Shop/MKhTEYqf#kZjjfq1m",
+  "parent": "Shop/MKhTEYqf#lwmpnaVU"
 }

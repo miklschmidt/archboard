@@ -1,13 +1,7 @@
 {
-  "order": 4000,
-  "name": "Availability route",
-  "kind": "route",
-  "responsibility": "GET /stock/{product}: how many can still be sold",
-  "schemaVersion": 2,
-  "id": "Shop/5IZTN4RT#Nmg4K8ge",
-  "parent": "Shop/5IZTN4RT#1tJdSOqs",
   "outgoing": [
     {
+      "id": "Shop/5IZTN4RT#ZbgEBMka",
       "order": 6000,
       "kind": "storage",
       "effect": "query",
@@ -17,8 +11,14 @@
         "speed": 60,
         "volume": 1.5
       },
-      "id": "Shop/5IZTN4RT#ZbgEBMka",
       "to": "Shop/5IZTN4RT#mmSzZdKG"
     }
-  ]
+  ],
+  "order": 4000,
+  "name": "Availability route",
+  "kind": "route",
+  "responsibility": "GET /stock/{product}: how many can still be sold",
+  "schemaVersion": 2,
+  "id": "Shop/5IZTN4RT#Nmg4K8ge",
+  "parent": "Shop/5IZTN4RT#1tJdSOqs"
 }

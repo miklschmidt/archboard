@@ -54,7 +54,7 @@ test("local explanations share captured text, cancellation, and retry through th
 		reading: {
 			scope: "Shop/MKhTEYqf#lwmpnaVU",
 			focus: [],
-			relationshipKinds: ["call"],
+			relationshipKinds: ["sync"],
 			grammar: "architecture" as const,
 		},
 	};

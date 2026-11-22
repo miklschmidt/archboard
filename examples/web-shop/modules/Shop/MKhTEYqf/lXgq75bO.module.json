@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 5000,
   "name": "Email provider",
   "kind": "external",
@@ -7,6 +8,5 @@
     "fulfilment"
   ],
   "schemaVersion": 2,
-  "id": "Shop/MKhTEYqf#lXgq75bO",
-  "outgoing": []
+  "id": "Shop/MKhTEYqf#lXgq75bO"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 2000,
   "name": "Checkout API",
   "kind": "service",
@@ -7,6 +8,5 @@
   "id": "Shop/MKhTEYqf#lwmpnaVU",
   "formerNames": [
     "Shop app"
-  ],
-  "outgoing": []
+  ]
 }

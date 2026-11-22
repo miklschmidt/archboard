@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 3000,
   "name": "Orders DB",
   "kind": "datastore",
@@ -7,6 +8,5 @@
   "id": "Shop/MKhTEYqf#wlyh3hT6",
   "formerNames": [
     "Shop DB"
-  ],
-  "outgoing": []
+  ]
 }

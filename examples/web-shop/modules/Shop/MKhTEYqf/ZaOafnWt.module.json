@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 4000,
   "name": "Payment provider",
   "kind": "external",
@@ -7,6 +8,5 @@
     "payments"
   ],
   "schemaVersion": 2,
-  "id": "Shop/MKhTEYqf#ZaOafnWt",
-  "outgoing": []
+  "id": "Shop/MKhTEYqf#ZaOafnWt"
 }

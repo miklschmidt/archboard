@@ -16,7 +16,7 @@
   "lifecycle": "draft",
   "predecessor": null,
   "predecessorRevision": "cb3662eaf77e31238c99da78fc2a060c237bbed71524c577045a736817a58808",
-  "baseline": "bff733ecd8f4d96426cfc09523bc5fb08a8be82f",
+  "baseline": "940ec87820ff7159dd8d27b3906ef69d1fb02209",
   "changes": [
     {
       "type": "add",
@@ -134,7 +134,7 @@
       "kind": "relationship",
       "value": {
         "order": 3000,
-        "kind": "call",
+        "kind": "sync",
         "effect": "query",
         "label": "drop sold-out products",
         "emphasis": "normal",

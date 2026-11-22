@@ -1,29 +1,29 @@
 {
+  "outgoing": [
+    {
+      "id": "Shop/5IZTN4RT#UNcs0Yyy",
+      "order": 8000,
+      "kind": "http",
+      "effect": "query",
+      "label": "read the counts",
+      "emphasis": "muted",
+      "to": "Shop/5IZTN4RT#Klj9foM9"
+    },
+    {
+      "id": "Shop/5IZTN4RT#VjA5N4Nd",
+      "order": 9000,
+      "kind": "storage",
+      "effect": "mutation",
+      "label": "set the counts",
+      "emphasis": "muted",
+      "to": "Shop/5IZTN4RT#mmSzZdKG"
+    }
+  ],
   "order": 9000,
   "name": "Warehouse sync",
   "kind": "job",
   "responsibility": "Every 5 minutes, sets each count to what the warehouse reports",
   "schemaVersion": 2,
   "id": "Shop/5IZTN4RT#NDahviBw",
-  "parent": "Shop/MKhTEYqf#HYDbL5fE",
-  "outgoing": [
-    {
-      "order": 8000,
-      "kind": "http",
-      "effect": "query",
-      "label": "read the counts",
-      "emphasis": "muted",
-      "id": "Shop/5IZTN4RT#UNcs0Yyy",
-      "to": "Shop/5IZTN4RT#Klj9foM9"
-    },
-    {
-      "order": 9000,
-      "kind": "storage",
-      "effect": "mutation",
-      "label": "set the counts",
-      "emphasis": "muted",
-      "id": "Shop/5IZTN4RT#VjA5N4Nd",
-      "to": "Shop/5IZTN4RT#mmSzZdKG"
-    }
-  ]
+  "parent": "Shop/MKhTEYqf#HYDbL5fE"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 10000,
   "name": "Inventory service",
   "kind": "service",
@@ -7,6 +8,5 @@
     "fulfilment"
   ],
   "schemaVersion": 2,
-  "id": "Shop/MKhTEYqf#HYDbL5fE",
-  "outgoing": []
+  "id": "Shop/MKhTEYqf#HYDbL5fE"
 }
