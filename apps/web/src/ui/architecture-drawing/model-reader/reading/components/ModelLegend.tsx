@@ -80,11 +80,12 @@ function ModelLegend(props: ModelLegendProps): JSX.Element | null {
 				lines={lineRows(reading)}
 				marks={markRows(projection)}
 				lens={
-					props.onLens === undefined ? undefined : (
+					// A reading with one lens, as one from before lenses, has nothing to choose.
+					props.onLens === undefined || Object.keys(model.policy.lenses).length < 2 ? undefined : (
 						<ModelLens model={model} projection={projection} onSelect={props.onLens} />
 					)
 				}
-				leftOut={projection.leftOut}
+				leftOut={props.onLens === undefined ? 0 : projection.leftOut}
 				onToggle={props.onToggle}
 				onShowAll={props.onShowAll}
 			/>
@@ -191,7 +192,7 @@ interface LinesProps {
 	readonly marks: readonly LegendMark[];
 	/** The lens control of a structural picture. */
 	readonly lens: ReactNode;
-	/** How many lines the reading leaves out. */
+	/** How many lines a structural reading leaves out; none for a flow. */
 	readonly leftOut: number;
 	readonly onToggle: ModelLegendProps["onToggle"];
 	readonly onShowAll: () => void;
@@ -207,7 +208,7 @@ interface LinesProps {
  */
 function Lines(props: LinesProps): JSX.Element | null {
 	const { lines, marks, lens, onToggle, onShowAll } = props;
-	const hidden = lens === undefined ? lines.some((line) => line.hidden) : props.leftOut > 0;
+	const hidden = props.leftOut > 0 || lines.some((line) => line.hidden);
 	const action = useMemo(
 		() =>
 			hidden ? (
