@@ -47,8 +47,8 @@ const ARCHITECTURE = {
 		{ name: "Auditor", kind: "service", responsibility: "Reads the ledger nightly, To Vary AWAY" },
 	],
 	edges: [
-		{ from: "Gateway", to: "Ledger", kind: "call", label: "transfer with an audit id" },
-		{ from: "Auditor", to: "Ledger", kind: "call", label: "reconcile" },
+		{ from: "Gateway", to: "Ledger", kind: "sync", label: "transfer with an audit id" },
+		{ from: "Auditor", to: "Ledger", kind: "sync", effect: "query", label: "reconcile" },
 	],
 };
 

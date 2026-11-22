@@ -74,7 +74,7 @@ if (model.proposals.some((proposal) => proposal.name === "Initial pipeline")) {
 					source: "CLI",
 					relationship: {
 						to: "Architecture runtime",
-						kind: "call",
+						kind: "sync",
 						effect: "mutation",
 						order: 0,
 						label: "Submit one intent",

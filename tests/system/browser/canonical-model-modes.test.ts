@@ -130,7 +130,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 	address.searchParams.set("modelA", "Shop");
 	address.searchParams.set("scopeA", "Shop#Gateway");
 	address.searchParams.set("focusA", "Shop#Handler");
-	address.searchParams.set("hideKindsA", "call");
+	address.searchParams.set("hideKindsA", "sync");
 	await browser.run(["open", address.href]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
@@ -196,7 +196,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 		await browser.eval<string[]>(
 			`['scopeA','focusA','hideKindsA'].map(key => new URLSearchParams(location.search).get(key))`,
 		),
-	).toEqual(["Shop#Gateway", "Shop#Handler", "call"]);
+	).toEqual(["Shop#Gateway", "Shop#Handler", "sync"]);
 	await pollUntil(
 		() => drawnSubjects(browser),
 		(subjects) => !subjects.includes("Shop#Finish"),

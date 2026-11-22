@@ -241,7 +241,7 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 		relationship: {
 			order: 0,
 			to,
-			kind: "call",
+			kind: "sync",
 			effect,
 			label: `${symbol}()`,
 			emphasis: "normal",
@@ -309,7 +309,7 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 					relationship: {
 						order: 0,
 						to: "Validate order",
-						kind: "call",
+						kind: "sync",
 						effect: "compute",
 						emphasis: "normal",
 						label: "validateOrder()",
@@ -322,7 +322,7 @@ async function prepareEvidenceFixture(server: TakeServer, name: string) {
 					relationship: {
 						order: 0,
 						to: "Save order",
-						kind: "call",
+						kind: "sync",
 						effect: "mutation",
 						emphasis: "normal",
 						label: "saveOrder()",
