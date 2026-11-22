@@ -115,6 +115,15 @@ function within(inner: DiagramBox, outer: DiagramBox): boolean {
 }
 
 describe("renderArchitecture", () => {
+	test("an omitted engine draws Blocks while an explicit Lanes request changes the drawing", async () => {
+		const implicit = await render();
+		const request = { policy, content: SAMPLE, theme: "light" } as const;
+		const blocks = await renderArchitecture({ ...request, layout: "blocks" });
+		const lanes = await renderArchitecture({ ...request, layout: "lanes" });
+		expect(implicit.svg).toBe(blocks.svg);
+		expect(lanes.svg).not.toBe(blocks.svg);
+	});
+
 	test("the same content and theme produce the same bytes", async () => {
 		expect((await render()).svg).toBe((await render()).svg);
 	});
