@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 960170,
   "name": "Completion notices",
   "kind": "function",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/installation/news/store/model-news.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#P9dwhB8m",
-  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L"
 }

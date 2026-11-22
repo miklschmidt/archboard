@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#ETX9M5TU",
+      "order": 29000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "one command per step and read",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-world/operations/vault.ts",
+        "symbol": "archboardOk"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+      "order": 55000,
+      "kind": "call",
+      "effect": "query",
+      "label": "validate canonical evaluation inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/operations/laying.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    }
+  ],
   "order": 8500,
   "name": "Run vault",
   "kind": "module",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/operations/vault.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
-  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 29000,
-      "kind": "call",
-      "label": "one command per step and read",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/run-world/operations/vault.ts",
-        "symbol": "archboardOk"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#ETX9M5TU",
-      "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
-    },
-    {
-      "order": 55000,
-      "kind": "dependency",
-      "label": "validate canonical evaluation inputs",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/operations/laying.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
-      "to": "vKEsyHFk#ZGONZKxj"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
 }

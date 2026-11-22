@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#OFpAXpvp",
+      "order": 70024,
+      "kind": "call",
+      "effect": "compute",
+      "label": "reuse delivered image evidence",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-retry.ts",
+        "symbol": "combinedDelivery"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    }
+  ],
   "order": 12500,
   "name": "Grader retry",
   "kind": "module",
@@ -11,22 +27,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-retry.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#m7s6sgLI",
-  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
-  "outgoing": [
-    {
-      "order": 70024,
-      "kind": "call",
-      "label": "reuse delivered image evidence",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/grading/operations/grading-retry.ts",
-        "symbol": "combinedDelivery"
-      },
-      "id": "vKEsyHFk#OFpAXpvp",
-      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG"
 }

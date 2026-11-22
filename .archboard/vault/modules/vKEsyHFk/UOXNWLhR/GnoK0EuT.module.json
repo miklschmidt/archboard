@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#l3AXCLw5",
+      "order": 38000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the time, and a callback each frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
+      "order": 96000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the transform of each glide frame",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
+        "symbol": "cameraTransform"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    },
+    {
+      "id": "vKEsyHFk#OJfwSbjr",
+      "order": 990100,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the stage's camera, each frame of a glide",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
+        "symbol": "stageOf"
+      },
+      "to": "vKEsyHFk#9FxduWoO"
+    }
+  ],
   "order": 21000,
   "name": "Camera glide",
   "kind": "function",
@@ -8,48 +52,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#GnoK0EuT",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 38000,
-      "kind": "call",
-      "label": "the time, and a callback each frame",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#l3AXCLw5",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 96000,
-      "kind": "call",
-      "label": "the transform of each glide frame",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
-        "symbol": "cameraTransform"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "the stage's camera, each frame of a glide",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-camera-glide.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#OJfwSbjr",
-      "to": "vKEsyHFk#9FxduWoO"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

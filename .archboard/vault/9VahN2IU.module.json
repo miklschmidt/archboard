@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 960130,
   "name": "Legacy addresses",
   "kind": "function",
@@ -7,11 +8,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/store/legacy-address.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#9VahN2IU",
   "parent": "vKEsyHFk/6E6hL0Zk#wYcdVszt",
   "formerNames": [
     "Board keys"
-  ],
-  "outgoing": []
+  ]
 }

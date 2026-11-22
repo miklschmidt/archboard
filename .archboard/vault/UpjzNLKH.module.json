@@ -11,8 +11,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-painter-wasm"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#UpjzNLKH",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Browser painter"
   ],
@@ -33,6 +34,7 @@
     {
       "order": 1000,
       "kind": "call",
+      "effect": "mutation",
       "label": "one stage for the canvas",
       "emphasis": "normal",
       "anchor": {
@@ -51,6 +53,5 @@
       "id": "vKEsyHFk#2yn8ZgXE",
       "to": "vKEsyHFk#uoYBS8oN"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#iviIcqXR",
+      "order": 1000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the root to compare, and the frontend directory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/services/staleness.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 90000,
   "name": "Staleness",
   "kind": "function",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/services/staleness.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#apyQZjM7",
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "the root to compare, and the frontend directory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/services/staleness.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#iviIcqXR",
-      "to": "vKEsyHFk#4FdKQJqK"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih"
 }

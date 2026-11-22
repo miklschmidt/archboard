@@ -1,20 +1,10 @@
 {
-  "order": 29000,
-  "name": "Recording entry",
-  "kind": "module",
-  "responsibility": "Records a legacy board or an exact retained canonical walkthrough through the existing page driver.",
-  "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
-  "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
   "outgoing": [
     {
+      "id": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
       "order": 20000,
       "kind": "call",
+      "effect": "mutation",
       "label": "evaluate in the page, stream its Blob",
       "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
       "emphasis": "normal",
@@ -23,12 +13,13 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "DevTools.readBlobTo"
       },
-      "id": "vKEsyHFk/SMjRfwN3#2fcZLCiQ",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#m9ReACWz",
       "order": 21000,
       "kind": "call",
+      "effect": "mutation",
       "label": "drive the open page",
       "emphasis": "hero",
       "traffic": {
@@ -40,12 +31,13 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "drive"
       },
-      "id": "vKEsyHFk/SMjRfwN3#m9ReACWz",
       "to": "vKEsyHFk/SMjRfwN3#hlLOugjc"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#fiurAdpc",
       "order": 28000,
       "kind": "call",
+      "effect": "mutation",
       "label": "write the talk before the render",
       "emphasis": "normal",
       "anchor": {
@@ -53,12 +45,13 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "writeTalk"
       },
-      "id": "vKEsyHFk/SMjRfwN3#fiurAdpc",
       "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#jAnbZCzu",
       "order": 29000,
       "kind": "call",
+      "effect": "mutation",
       "label": "render the talk just written",
       "emphasis": "hero",
       "traffic": {
@@ -70,12 +63,13 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "renderTalk"
       },
-      "id": "vKEsyHFk/SMjRfwN3#jAnbZCzu",
       "to": "vKEsyHFk/SMjRfwN3#EWBbxckL"
     },
     {
+      "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "order": 51000,
       "kind": "call",
+      "effect": "mutation",
       "label": "starts the recording browser",
       "emphasis": "normal",
       "anchor": {
@@ -83,12 +77,13 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "startBrowser"
       },
-      "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
     },
     {
+      "id": "vKEsyHFk#109Kq4Cc",
       "order": 980070,
       "kind": "call",
+      "effect": "compute",
       "label": "the talk it records",
       "emphasis": "muted",
       "anchor": {
@@ -96,12 +91,13 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "canonicalRecordingModel"
       },
-      "id": "vKEsyHFk#109Kq4Cc",
       "to": "vKEsyHFk#6RJ25ejV"
     },
     {
+      "id": "vKEsyHFk#Y3nWPghd",
       "order": 981000,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "recording durations",
       "emphasis": "normal",
       "anchor": {
@@ -109,8 +105,19 @@
         "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts",
         "symbol": "recorderMs"
       },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#Y3nWPghd"
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
-  ]
+  ],
+  "order": 29000,
+  "name": "Recording entry",
+  "kind": "module",
+  "responsibility": "Records a legacy board or an exact retained canonical walkthrough through the existing page driver.",
+  "description": "Keeps the talk with the model, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/walkthrough/src/runtime/recorder/operations/record-walkthrough.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
+  "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 960310,
   "name": "Shared components",
   "kind": "ui",
@@ -8,7 +9,6 @@
     "path": "packages/ui-kit/src/ui"
   },
   "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#OeR1aoDr",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#OeR1aoDr"
 }

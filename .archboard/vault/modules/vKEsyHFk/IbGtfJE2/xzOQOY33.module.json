@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 10000,
   "name": "Outcome checks",
   "kind": "function",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-checks/outcomes/rules/outcomes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#xzOQOY33",
-  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
-  "outgoing": []
+  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG"
 }

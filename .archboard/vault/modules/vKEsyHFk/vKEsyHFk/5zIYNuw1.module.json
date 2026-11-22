@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 35000,
   "name": "walkthrough",
   "kind": "package",
@@ -11,7 +12,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
   "documents": [
     {
@@ -19,6 +20,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
   "parent": "vKEsyHFk#EuaJBisP"
 }

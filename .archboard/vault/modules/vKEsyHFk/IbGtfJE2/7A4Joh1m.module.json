@@ -1,20 +1,10 @@
 {
-  "order": 3000,
-  "name": "Batch orchestrator",
-  "kind": "module",
-  "responsibility": "Plans every arm, scenario and repetition, runs them in parallel, and can be resumed only on the same inputs",
-  "description": "It hashes the inputs, the harness and both skill packages into the batch and keeps a copy of the candidate skill, so a resume or a later grading pass cannot quietly change what was measured.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
-  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
   "outgoing": [
     {
+      "id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ",
       "order": 6000,
       "kind": "call",
+      "effect": "mutation",
       "label": "one arm, one scenario, one repetition",
       "emphasis": "hero",
       "traffic": {
@@ -26,12 +16,13 @@
         "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "executeRun"
       },
-      "id": "vKEsyHFk/IbGtfJE2#GYwjzXJJ",
       "to": "vKEsyHFk/IbGtfJE2#w4qCQkDU"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#e1NAqCVh",
       "order": 26000,
       "kind": "call",
+      "effect": "mutation",
       "label": "keep the candidate this batch runs",
       "emphasis": "normal",
       "anchor": {
@@ -39,12 +30,13 @@
         "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "keepBatchSkill"
       },
-      "id": "vKEsyHFk/IbGtfJE2#e1NAqCVh",
       "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#coFF39nO",
       "order": 27000,
       "kind": "call",
+      "effect": "mutation",
       "label": "fill the bare cache",
       "emphasis": "muted",
       "anchor": {
@@ -52,12 +44,13 @@
         "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "ensureFlaskCache"
       },
-      "id": "vKEsyHFk/IbGtfJE2#coFF39nO",
       "to": "vKEsyHFk/IbGtfJE2#8NS6WwkH"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#jjJXKT2q",
       "order": 41000,
       "kind": "call",
+      "effect": "query",
       "label": "digest the kept skill",
       "emphasis": "normal",
       "anchor": {
@@ -65,8 +58,19 @@
         "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts",
         "symbol": "digestOf"
       },
-      "id": "vKEsyHFk/IbGtfJE2#jjJXKT2q",
       "to": "vKEsyHFk/IbGtfJE2#IFhUy8C6"
     }
-  ]
+  ],
+  "order": 3000,
+  "name": "Batch orchestrator",
+  "kind": "module",
+  "responsibility": "Plans every arm, scenario and repetition, runs them in parallel, and can be resumed only on the same inputs",
+  "description": "It hashes the inputs, the harness and both skill packages into the batch and keeps a copy of the candidate skill, so a resume or a later grading pass cannot quietly change what was measured.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/evaluation/batch/operations/batch.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/IbGtfJE2#7A4Joh1m",
+  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW"
 }

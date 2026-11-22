@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
+      "order": 14000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "register its checkout; choose and forget checkouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/repo/operations/repo.ts",
+        "symbol": "declareDirectory"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "id": "vKEsyHFk#KpH0k8PU",
+      "order": 15000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "show and write a repository's or this machine's servers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/repo/operations/language-server.ts",
+        "symbol": "setServer"
+      },
+      "to": "vKEsyHFk#fEJJNr2X"
+    }
+  ],
   "order": 23000,
   "name": "Repositories",
   "kind": "module",
@@ -8,7 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/repo/operations"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#jAKtfzMA",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -30,34 +60,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 14000,
-      "kind": "data",
-      "label": "register its checkout; choose and forget checkouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/repo/operations/repo.ts",
-        "symbol": "declareDirectory"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#J5WjwmUn",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "show and write a repository's or this machine's servers",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/repo/operations/language-server.ts",
-        "symbol": "setServer"
-      },
-      "id": "vKEsyHFk#KpH0k8PU",
-      "to": "vKEsyHFk#fEJJNr2X"
     }
   ]
 }

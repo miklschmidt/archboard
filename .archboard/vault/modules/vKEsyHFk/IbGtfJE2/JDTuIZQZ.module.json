@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
+      "order": 8000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "the CLI under test",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/run-world/processes/archboard.ts",
+        "symbol": "archboard"
+      },
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ],
   "order": 21000,
   "name": "CLI driver",
   "kind": "function",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/processes/archboard.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#JDTuIZQZ",
-  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 8000,
-      "kind": "call",
-      "label": "the CLI under test",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/run-world/processes/archboard.ts",
-        "symbol": "archboard"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ"
 }

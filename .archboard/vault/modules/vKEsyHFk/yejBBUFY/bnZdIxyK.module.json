@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",
+      "order": 30000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "live and loud yet; stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
+        "symbol": "level"
+      },
+      "to": "vKEsyHFk#rG1FeuCg"
+    }
+  ],
   "order": 43000,
   "name": "Recording voice source",
   "kind": "module",
@@ -7,7 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#bnZdIxyK",
   "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
   "documents": [
@@ -22,21 +38,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 30000,
-      "kind": "call",
-      "label": "live and loud yet; stop",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/walkthroughs/recording/rules/voice-sources.ts",
-        "symbol": "level"
-      },
-      "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",
-      "to": "vKEsyHFk#rG1FeuCg"
     }
   ]
 }

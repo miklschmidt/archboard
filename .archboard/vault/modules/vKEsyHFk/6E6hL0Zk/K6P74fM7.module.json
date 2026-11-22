@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 3000,
   "name": "Mutation admission",
   "kind": "module",
@@ -10,7 +11,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/start-stop/lifecycle/mutation-admission.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#K6P74fM7",
   "parent": "vKEsyHFk/6E6hL0Zk#Wcng1nxx",
   "documents": [
@@ -28,6 +29,5 @@
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
-  ],
-  "outgoing": []
+  ]
 }

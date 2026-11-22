@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 62000,
   "name": "Release",
   "kind": "package",
@@ -8,7 +9,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "scripts/release"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#02jxKSM1",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#02jxKSM1"
 }

@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#hy1dunTj",
+      "order": 1000,
+      "kind": "call",
+      "effect": "query",
+      "label": "whether Archboard has a TypeScript of its own",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/language-servers/operations/server-command.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 90000,
   "name": "Language server choice",
   "kind": "function",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/language-servers/operations/server-command.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#FMiMVZ28",
-  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "whether Archboard has a TypeScript of its own",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/language-servers/operations/server-command.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#hy1dunTj",
-      "to": "vKEsyHFk#4FdKQJqK"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
 }

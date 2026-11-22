@@ -8,22 +8,23 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure-parser"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#hBkjiO4k",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "outgoing": [
     {
       "order": 91007,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "build the graph it reads",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure-parser/src/lib.rs",
-        "symbol": "Graph"
+        "path": "crates/vendor/graphviz-pure-parser/src/parser.rs",
+        "symbol": "ensure_node_html"
       },
       "id": "vKEsyHFk#Q6d5hgEY",
       "to": "vKEsyHFk#FLnwES7I"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

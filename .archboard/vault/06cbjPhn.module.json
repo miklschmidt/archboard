@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
+      "order": 64000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "session durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
+        "symbol": "codexSessionMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    },
+    {
+      "id": "vKEsyHFk#bobdaYcV",
+      "order": 65000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the Codex version the protocol is built for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
+        "symbol": "codexProtocolVersion"
+      },
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+    }
+  ],
   "order": 960200,
   "name": "Codex executable",
   "kind": "function",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/services/executable.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#06cbjPhn",
-  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
-  "outgoing": [
-    {
-      "order": 64000,
-      "kind": "dependency",
-      "label": "session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
-        "symbol": "codexSessionMs"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#YzzrtDSd",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "the Codex version the protocol is built for",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/executable.ts",
-        "symbol": "codexProtocolVersion"
-      },
-      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
-      "id": "vKEsyHFk#bobdaYcV"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 30003,
   "name": "Painting",
   "kind": "module",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "parent": "vKEsyHFk#9gGvxWHp",
-  "outgoing": []
+  "parent": "vKEsyHFk#9gGvxWHp"
 }

@@ -1,4 +1,146 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
+      "order": 1000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts the pane routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountPaneRoutes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
+      "order": 3000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mount canonical model routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountArchitectureModelRoutes"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
+      "order": 5000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts opener",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "createCodeOpenerRouter"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#wYcfvDau",
+      "order": 35000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts every route on the one app",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "app"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
+      "order": 42000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "requires a vault on the code opener's route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "requireVault"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
+      "order": 43000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts the repository routes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountRepositoryRoutes"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "id": "vKEsyHFk#FD1BZf8Q",
+      "order": 62000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "admit each request before its route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountMutationAdmission"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
+      "order": 96000,
+      "kind": "call",
+      "effect": "query",
+      "description": "The icon route answers the path data of one icon that a picture drawn in the browser names.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "diagramIconPaths"
+      },
+      "to": "vKEsyHFk#4cb3xu6B"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
+      "order": 97000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "checks browser request origin before routing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
+      "order": 124000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mount the voice agent's start trace route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/application/wiring/application.ts",
+        "symbol": "mountVoiceStartTraceRoute"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    }
+  ],
   "order": 1000,
   "name": "HTTP application",
   "kind": "module",
@@ -7,7 +149,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/application/wiring/application.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#2naazvac",
   "parent": "vKEsyHFk/6E6hL0Zk#nU6dNHBE",
   "documents": [
@@ -24,138 +166,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "mounts the pane routes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountPaneRoutes"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#PoXHqEaa",
-      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
-    },
-    {
-      "order": 3000,
-      "kind": "dependency",
-      "label": "mount canonical model routes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountArchitectureModelRoutes"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
-      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
-    },
-    {
-      "order": 5000,
-      "kind": "dependency",
-      "label": "mounts opener",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "createCodeOpenerRouter"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#ibCZHaRq",
-      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
-    },
-    {
-      "order": 35000,
-      "kind": "dependency",
-      "label": "mounts every route on the one app",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "app"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#wYcfvDau",
-      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
-    },
-    {
-      "order": 42000,
-      "kind": "call",
-      "label": "requires a vault on the code opener's route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "requireVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#wfZNifHF",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 43000,
-      "kind": "dependency",
-      "label": "mounts the repository routes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountRepositoryRoutes"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#5x06MUNV",
-      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
-    },
-    {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "admit each request before its route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountMutationAdmission"
-      },
-      "id": "vKEsyHFk#FD1BZf8Q",
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
-    },
-    {
-      "order": 96000,
-      "kind": "call",
-      "description": "The icon route answers the path data of one icon that a picture drawn in the browser names.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "diagramIconPaths"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
-      "to": "vKEsyHFk#4cb3xu6B"
-    },
-    {
-      "order": 97000,
-      "kind": "call",
-      "label": "checks browser request origin before routing",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "createBrowserOriginGuard"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
-      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
-      "order": 124000,
-      "kind": "dependency",
-      "label": "mount the voice agent's start trace route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/application/wiring/application.ts",
-        "symbol": "mountVoiceStartTraceRoute"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
-      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
     }
   ]
 }

@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SMjRfwN3#De1J26nB",
+      "order": 12000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "spawn, read the port, stop the group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
+        "symbol": "spawnChromium"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#ShT7QadJ"
+    },
+    {
+      "id": "vKEsyHFk/SMjRfwN3#ZP5lfDZ6",
+      "order": 13000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "connect the browser and each page",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
+        "symbol": "DevTools"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
+    }
+  ],
   "order": 5000,
   "name": "Chromium launch",
   "kind": "function",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#6uHnaygd",
-  "parent": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
-  "outgoing": [
-    {
-      "order": 12000,
-      "kind": "call",
-      "label": "spawn, read the port, stop the group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
-        "symbol": "spawnChromium"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#De1J26nB",
-      "to": "vKEsyHFk/SMjRfwN3#ShT7QadJ"
-    },
-    {
-      "order": 13000,
-      "kind": "call",
-      "label": "connect the browser and each page",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/headless-chromium/processes/launch.ts",
-        "symbol": "DevTools"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#ZP5lfDZ6",
-      "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
-    }
-  ]
+  "parent": "vKEsyHFk/SMjRfwN3#IzgAi2R1"
 }

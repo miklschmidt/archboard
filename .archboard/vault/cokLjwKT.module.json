@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 40400,
   "name": "archboard-router",
   "kind": "package",
@@ -8,11 +9,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-router"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#cokLjwKT",
   "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Orthogonal router"
-  ],
-  "outgoing": []
+  ]
 }

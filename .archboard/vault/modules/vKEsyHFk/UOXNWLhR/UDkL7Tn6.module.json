@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 7000,
   "name": "Select semantic subjects",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/subjects.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

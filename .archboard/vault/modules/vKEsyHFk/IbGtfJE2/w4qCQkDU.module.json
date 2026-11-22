@@ -8,13 +8,14 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/run-world/operations/author.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#w4qCQkDU",
   "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
   "outgoing": [
     {
       "order": 7000,
       "kind": "call",
+      "effect": "mutation",
       "label": "a private world for this run",
       "emphasis": "normal",
       "anchor": {
@@ -28,6 +29,7 @@
     {
       "order": 8000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the commit this scenario is about, or an empty repository",
       "emphasis": "normal",
       "anchor": {
@@ -41,6 +43,7 @@
     {
       "order": 9000,
       "kind": "call",
+      "effect": "mutation",
       "label": "a server of its own",
       "emphasis": "normal",
       "anchor": {
@@ -54,6 +57,7 @@
     {
       "order": 10000,
       "kind": "call",
+      "effect": "mutation",
       "label": "install the arm being measured",
       "emphasis": "hero",
       "anchor": {
@@ -66,7 +70,8 @@
     },
     {
       "order": 11000,
-      "kind": "call",
+      "kind": "spawn",
+      "effect": "mutation",
       "label": "one author turn",
       "emphasis": "hero",
       "traffic": {
@@ -84,6 +89,7 @@
     {
       "order": 12000,
       "kind": "call",
+      "effect": "compute",
       "label": "what the run was not allowed to do",
       "emphasis": "normal",
       "anchor": {
@@ -97,6 +103,7 @@
     {
       "order": 13000,
       "kind": "call",
+      "effect": "compute",
       "label": "what the vault now says",
       "emphasis": "normal",
       "anchor": {
@@ -110,6 +117,7 @@
     {
       "order": 14000,
       "kind": "call",
+      "effect": "mutation",
       "label": "photograph everything declared",
       "emphasis": "hero",
       "anchor": {
@@ -122,7 +130,8 @@
     },
     {
       "order": 17000,
-      "kind": "data",
+      "kind": "call",
+      "effect": "query",
       "label": "a fixture's talk, read back to replay",
       "emphasis": "normal",
       "anchor": {
@@ -136,6 +145,7 @@
     {
       "order": 28000,
       "kind": "call",
+      "effect": "mutation",
       "label": "lay the fixture, read back, forget an unregistered checkout",
       "emphasis": "normal",
       "anchor": {
@@ -149,6 +159,7 @@
     {
       "order": 30000,
       "kind": "call",
+      "effect": "compute",
       "label": "class and exposure of each command",
       "emphasis": "normal",
       "anchor": {
@@ -158,19 +169,6 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#ZgOzpUec",
       "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
-    },
-    {
-      "order": 35000,
-      "kind": "dependency",
-      "label": "keep a run's talks",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/operations/replay.ts",
-        "symbol": "keepTalk"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
-      "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
     }
   ]
 }

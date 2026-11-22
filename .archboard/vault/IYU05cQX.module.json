@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#uDNOaatU",
+      "order": 1000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the painter that answers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/picture-pick.ts",
+        "symbol": "stageOf"
+      },
+      "to": "vKEsyHFk#9FxduWoO"
+    }
+  ],
   "order": 44000,
   "name": "Picture pick",
   "kind": "function",
@@ -11,22 +27,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/picture-pick.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#IYU05cQX",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "the painter that answers",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/clients/picture-pick.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#uDNOaatU",
-      "to": "vKEsyHFk#9FxduWoO"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

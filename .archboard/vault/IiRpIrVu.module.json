@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#8HTCy24H",
+      "order": 10000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "choose and step",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx",
+        "symbol": "goTo"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#r1SrbjWJ",
+      "order": 52000,
+      "kind": "render",
+      "effect": "compute",
+      "label": "over the picture and the sidebar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx",
+        "symbol": "PeekProvider"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#bofpU6mt"
+    },
+    {
+      "id": "vKEsyHFk#PAD9JqDy",
+      "order": 980110,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "the picture",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx",
+        "symbol": "SemanticDiagram"
+      },
+      "to": "vKEsyHFk#0bsThTMv"
+    }
+  ],
   "order": 908000,
   "name": "Stage view",
   "kind": "ui",
@@ -7,48 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#IiRpIrVu",
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
-  "outgoing": [
-    {
-      "order": 10000,
-      "kind": "call",
-      "label": "choose and step",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStagePresentation.tsx",
-        "symbol": "goTo"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#8HTCy24H",
-      "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
-    },
-    {
-      "order": 52000,
-      "kind": "call",
-      "label": "over the picture and the sidebar",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx",
-        "symbol": "PeekProvider"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#r1SrbjWJ",
-      "to": "vKEsyHFk/UOXNWLhR#bofpU6mt"
-    },
-    {
-      "order": 980110,
-      "kind": "render",
-      "label": "the picture",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticStageView.tsx",
-        "symbol": "SemanticDiagram"
-      },
-      "id": "vKEsyHFk#PAD9JqDy",
-      "to": "vKEsyHFk#0bsThTMv"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
 }

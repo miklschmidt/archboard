@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#vQQRWMBS",
+      "order": 1000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "compile each target",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "compileRelease"
+      },
+      "to": "vKEsyHFk#5pa5C2WH"
+    },
+    {
+      "id": "vKEsyHFk#wRmQbpT5",
+      "order": 2000,
+      "kind": "storage",
+      "effect": "mutation",
+      "label": "the script it copies as each launcher's bin",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "LAUNCHER"
+      },
+      "to": "vKEsyHFk#xurdJU8F"
+    },
+    {
+      "id": "vKEsyHFk#uOcot5Gw",
+      "order": 3000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the Codex version that a package pins",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/build.ts",
+        "symbol": "codexProtocolVersion"
+      },
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+    }
+  ],
   "order": 1000,
   "name": "Release build",
   "kind": "module",
@@ -8,48 +52,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "scripts/release/build.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#rnYDP0Ma",
-  "parent": "vKEsyHFk#02jxKSM1",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "compile each target",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/release/build.ts",
-        "symbol": "compileRelease"
-      },
-      "id": "vKEsyHFk#vQQRWMBS",
-      "to": "vKEsyHFk#5pa5C2WH"
-    },
-    {
-      "order": 2000,
-      "kind": "dependency",
-      "label": "the script it copies as each launcher's bin",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/release/build.ts",
-        "symbol": "LAUNCHER"
-      },
-      "id": "vKEsyHFk#wRmQbpT5",
-      "to": "vKEsyHFk#xurdJU8F"
-    },
-    {
-      "order": 3000,
-      "kind": "dependency",
-      "label": "the Codex version that a package pins",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/release/build.ts",
-        "symbol": "codexProtocolVersion"
-      },
-      "id": "vKEsyHFk#uOcot5Gw",
-      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
-    }
-  ]
+  "parent": "vKEsyHFk#02jxKSM1"
 }

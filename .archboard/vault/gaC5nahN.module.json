@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#zfz9dQDf",
+      "order": 3000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "restore through the workspace port, repository by pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/reading-routing/hooks/use-workspace-address.ts",
+        "symbol": "open"
+      },
+      "to": "vKEsyHFk#fLxtu2P4"
+    }
+  ],
   "order": 960300,
   "name": "Workspace address",
   "kind": "function",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/reading-routing/hooks/use-workspace-address.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#gaC5nahN",
-  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I",
-  "outgoing": [
-    {
-      "order": 3000,
-      "kind": "call",
-      "label": "restore through the workspace port, repository by pane",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/reading-routing/hooks/use-workspace-address.ts",
-        "symbol": "open"
-      },
-      "id": "vKEsyHFk/yejBBUFY#zfz9dQDf",
-      "to": "vKEsyHFk#fLxtu2P4"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#HCghQa6I"
 }

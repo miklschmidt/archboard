@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",
+      "order": 49000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the grader names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/evaluation/batch/operations/pin-versions.ts",
+        "symbol": "GRADER_NAMES"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
+    }
+  ],
   "order": 28000,
   "name": "Version pins",
   "kind": "module",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/evaluation/batch/operations/pin-versions.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/IbGtfJE2#yohDGrXU",
-  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW",
-  "outgoing": [
-    {
-      "order": 49000,
-      "kind": "dependency",
-      "label": "the grader names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/evaluation/batch/operations/pin-versions.ts",
-        "symbol": "GRADER_NAMES"
-      },
-      "id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",
-      "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
-    }
-  ]
+  "parent": "vKEsyHFk/IbGtfJE2#PCxTuzNW"
 }

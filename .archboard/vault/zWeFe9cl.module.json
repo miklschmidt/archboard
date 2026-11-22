@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#lUJ8v08V",
+      "order": 100,
+      "kind": "call",
+      "effect": "compute",
+      "label": "solve a dense placement in parts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/architecture/solving.rs",
+        "symbol": "lay_out_across"
+      },
+      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE"
+    }
+  ],
   "order": 60,
   "name": "Solver port",
   "kind": "function",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-layout/src/architecture/solving.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#zWeFe9cl",
-  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "solve a dense placement in parts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-layout/src/architecture/solving.rs",
-        "symbol": "lay_out_across"
-      },
-      "to": "vKEsyHFk/OjRLKb74#mHYMkWdE",
-      "id": "vKEsyHFk#lUJ8v08V"
-    }
-  ]
+  "parent": "vKEsyHFk/gbyqW4H3#Y0smyqtZ"
 }

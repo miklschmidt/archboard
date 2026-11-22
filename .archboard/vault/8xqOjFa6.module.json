@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 21500,
   "name": "Language server setup brief",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/shared/api/language-server-setup.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#8xqOjFa6",
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR"
 }

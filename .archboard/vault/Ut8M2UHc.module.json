@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 26500,
   "name": "Pane marks",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/render/rules/marks.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#Ut8M2UHc",
-  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY"
 }

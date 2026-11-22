@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 47000,
   "name": "Repository places",
   "kind": "function",
@@ -8,8 +9,7 @@
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/state/repository-places.ts",
     "symbol": "RepositoryPlacesContext"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#bpT0We3s",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

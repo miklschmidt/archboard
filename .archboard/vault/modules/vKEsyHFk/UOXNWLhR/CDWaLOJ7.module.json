@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#sQKwKrth",
+      "order": 56000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "glide to show the part",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts",
+        "symbol": "glide"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#iIrpYDWg",
+      "order": 57000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "where the part is",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts",
+        "symbol": "subjectBox"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    }
+  ],
   "order": 33000,
   "name": "Reveal a pick",
   "kind": "function",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 56000,
-      "kind": "call",
-      "label": "glide to show the part",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts",
-        "symbol": "glide"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#sQKwKrth",
-      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
-    },
-    {
-      "order": 57000,
-      "kind": "call",
-      "label": "where the part is",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-reveal.ts",
-        "symbol": "subjectBox"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#iIrpYDWg",
-      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

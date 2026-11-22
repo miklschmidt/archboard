@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
+      "order": 15000,
+      "kind": "call",
+      "effect": "query",
+      "label": "-C or the working directory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts",
+        "symbol": "findVault"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
+      "order": 16000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "register it on first use",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/services/vault-address.ts",
+        "symbol": "declareIfUnknown"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    }
+  ],
   "order": 18003,
   "name": "Vault address",
   "kind": "function",
@@ -8,35 +38,7 @@
     "path": "packages/workspace/src/runtime/services/vault-address.ts",
     "symbol": "findAndRegisterVault"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf",
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
-  "outgoing": [
-    {
-      "order": 15000,
-      "kind": "call",
-      "label": "-C or the working directory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/services/vault-address.ts",
-        "symbol": "findVault"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#zOLMDpzy",
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "register it on first use",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/services/vault-address.ts",
-        "symbol": "declareIfUnknown"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#BdoA8zg1",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR"
 }

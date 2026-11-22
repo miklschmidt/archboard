@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#30W5BmLd",
+      "order": 51000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the pointer's rest and its grace",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-resting-part.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#8CcPSJbf",
+      "order": 54000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "how far each subject is",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
+        "symbol": "reachOf"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#t49irDl0"
+    }
+  ],
   "order": 29000,
   "name": "Light connections",
   "kind": "function",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 51000,
-      "kind": "call",
-      "label": "the pointer's rest and its grace",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-resting-part.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#30W5BmLd",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 54000,
-      "kind": "call",
-      "label": "how far each subject is",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-lighting.ts",
-        "symbol": "reachOf"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#8CcPSJbf",
-      "to": "vKEsyHFk/UOXNWLhR#t49irDl0"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

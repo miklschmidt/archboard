@@ -1,4 +1,15 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#lE0UE0im",
+      "order": 80000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "follow explicit foreign subject",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+    }
+  ],
   "order": 72001,
   "name": "Reference activation",
   "kind": "module",
@@ -7,17 +18,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/module-navigation/hooks/use-reference-navigation.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#RILUrr2x",
-  "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF",
-  "outgoing": [
-    {
-      "order": 80000,
-      "kind": "call",
-      "label": "follow explicit foreign subject",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#lE0UE0im",
-      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF"
 }

@@ -1,19 +1,10 @@
 {
-  "order": 1000,
-  "name": "runCliWith",
-  "kind": "function",
-  "responsibility": "Owns one CLI invocation: help first, then the shared flags, dispatch and the run",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/routing/operations/session.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
-  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "outgoing": [
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
       "order": 1000,
       "kind": "call",
+      "effect": "compute",
       "label": "help, and a failure's usage line",
       "emphasis": "normal",
       "anchor": {
@@ -21,12 +12,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "usageLine"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#mVCMJYpN",
       "to": "vKEsyHFk/nAmiQ3Vc#ogSW3Rjt"
     },
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
       "order": 2000,
       "kind": "call",
+      "effect": "mutation",
       "label": "capture flags",
       "emphasis": "normal",
       "traffic": {
@@ -38,12 +30,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "takeDirectoryFlag"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#a4PkS2Do",
       "to": "vKEsyHFk/nAmiQ3Vc#zs4XwBa9"
     },
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
       "order": 3000,
       "kind": "call",
+      "effect": "compute",
       "label": "select",
       "emphasis": "hero",
       "traffic": {
@@ -55,12 +48,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "dispatchedCommand"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#GpvovZkt",
       "to": "vKEsyHFk/nAmiQ3Vc#0R2ysy3p"
     },
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
       "order": 4000,
       "kind": "call",
+      "effect": "mutation",
       "label": "execute",
       "emphasis": "hero",
       "traffic": {
@@ -72,12 +66,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "runInterruptibleCommand"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#Kbtdm1ew",
       "to": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG"
     },
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
       "order": 6000,
       "kind": "call",
+      "effect": "compute",
       "label": "on failure",
       "emphasis": "normal",
       "anchor": {
@@ -85,12 +80,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "reportFailure"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#HZqRR3f0",
       "to": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW"
     },
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
       "order": 10000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the stated model, doing and version",
       "emphasis": "normal",
       "traffic": {
@@ -102,12 +98,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "stateInvocation"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#wMSceuzp",
       "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     },
     {
+      "id": "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
       "order": 14000,
       "kind": "call",
+      "effect": "mutation",
       "label": "find the command's vault",
       "emphasis": "normal",
       "anchor": {
@@ -115,12 +112,13 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "addressVault"
       },
-      "id": "vKEsyHFk/nAmiQ3Vc#0TkUEWO5",
       "to": "vKEsyHFk/nAmiQ3Vc#zUIObqwQ"
     },
     {
+      "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
       "order": 54000,
       "kind": "call",
+      "effect": "compute",
       "label": "is it a help request",
       "emphasis": "normal",
       "anchor": {
@@ -128,16 +126,27 @@
         "path": "apps/cli/src/cli/routing/operations/session.ts",
         "symbol": "isHelpInvocation"
       },
-      "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
       "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
     },
     {
+      "id": "vKEsyHFk#Rd2cwGPl",
       "order": 90000,
       "kind": "call",
+      "effect": "mutation",
       "label": "records each command and unexpected error",
       "emphasis": "normal",
-      "id": "vKEsyHFk#Rd2cwGPl",
       "to": "vKEsyHFk#EbMc8PH2"
     }
-  ]
+  ],
+  "order": 1000,
+  "name": "runCliWith",
+  "kind": "function",
+  "responsibility": "Owns one CLI invocation: help first, then the shared flags, dispatch and the run",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/routing/operations/session.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
 }

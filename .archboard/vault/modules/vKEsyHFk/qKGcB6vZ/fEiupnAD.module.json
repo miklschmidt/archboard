@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#0yGbIQl9",
+      "order": 11000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "answer the one it was armed for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
+        "symbol": "resolve"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#QGVPyMwG"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
+      "order": 35000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "parse the resolve call's input",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
+        "symbol": "parseResolveSpokenApprovalInput"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
+      "order": 36000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the classifier turn, as authored",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/classifier-turn.ts",
+        "symbol": "createWorkbenchTurnStartParams"
+      },
+      "to": "vKEsyHFk#92V2PmcS"
+    }
+  ],
   "order": 7000,
   "name": "Spoken approval",
   "kind": "module",
@@ -7,54 +51,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/qKGcB6vZ#fEiupnAD",
   "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 11000,
-      "kind": "call",
-      "label": "answer the one it was armed for",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
-        "symbol": "resolve"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#0yGbIQl9",
-      "to": "vKEsyHFk/9ncuT5DP#QGVPyMwG"
-    },
-    {
-      "order": 35000,
-      "kind": "call",
-      "label": "parse the resolve call's input",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/resolver-turn.ts",
-        "symbol": "parseResolveSpokenApprovalInput"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#JGOJBUyI",
-      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
-    },
-    {
-      "order": 36000,
-      "kind": "call",
-      "label": "the classifier turn, as authored",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/spoken-approval/services/classifier-turn.ts",
-        "symbol": "createWorkbenchTurnStartParams"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
-      "to": "vKEsyHFk#92V2PmcS"
     }
   ]
 }

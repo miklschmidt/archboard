@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/0T9enjhi#yUvd87du",
+      "order": 185000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "FlowChangeSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/flows.ts",
+        "symbol": "applyFlowChanges"
+      },
+      "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
+    }
+  ],
   "order": 63000,
   "name": "Canonical flow candidate",
   "kind": "module",
@@ -8,7 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/edit/operations/flows.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#yNZEhzyc",
   "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
   "documents": [
@@ -30,21 +46,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 185000,
-      "kind": "call",
-      "label": "FlowChangeSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/edit/operations/flows.ts",
-        "symbol": "applyFlowChanges"
-      },
-      "id": "vKEsyHFk/0T9enjhi#yUvd87du",
-      "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
     }
   ]
 }

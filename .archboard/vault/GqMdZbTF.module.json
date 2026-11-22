@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#6ZMHr90w",
+      "order": 1000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the page's colours",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/marks.rs",
+        "symbol": "viewer_marks"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy"
+    },
+    {
+      "id": "vKEsyHFk#Hb3narYc",
+      "order": 2000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "a standing's pin and the warning glyph",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/standing.rs",
+        "symbol": "standing_pin_at"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    }
+  ],
   "order": 600,
   "name": "Viewer marks",
   "kind": "module",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/marks.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#GqMdZbTF",
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "dependency",
-      "label": "the page's colours",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/marks.rs",
-        "symbol": "viewer_marks"
-      },
-      "id": "vKEsyHFk#6ZMHr90w",
-      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy"
-    },
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "a standing's pin and the warning glyph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/standing.rs",
-        "symbol": "standing_pin_at"
-      },
-      "id": "vKEsyHFk#Hb3narYc",
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
-    }
-  ]
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
 }

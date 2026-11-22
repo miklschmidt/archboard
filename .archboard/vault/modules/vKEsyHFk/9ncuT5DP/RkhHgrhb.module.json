@@ -1,4 +1,76 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/9ncuT5DP#8g1SNngD",
+      "order": 27000,
+      "kind": "rpc",
+      "effect": "mutation",
+      "label": "thread/inject_items into the workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
+        "symbol": "threadInjectItems"
+      },
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#jbxp553Z",
+      "order": 28000,
+      "kind": "call",
+      "effect": "query",
+      "label": "check the link of its checkout's workhorse again",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
+        "symbol": "read"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#zEsrkAfC",
+      "order": 54000,
+      "kind": "call",
+      "effect": "query",
+      "label": "only while its generation is current",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
+        "symbol": "assertCurrent"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "id": "vKEsyHFk#lBMb2LoN",
+      "order": 70021,
+      "kind": "call",
+      "effect": "compute",
+      "label": "share thread context policy",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/refusal-reasons.ts",
+        "symbol": "ADDITIONAL_CONTEXT_POLICY"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
+    },
+    {
+      "id": "vKEsyHFk#C12Ez7nd",
+      "order": 70046,
+      "kind": "call",
+      "effect": "compute",
+      "label": "apply shared thread profiles",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
+        "symbol": "captureExecutionContext"
+      },
+      "to": "vKEsyHFk#92V2PmcS"
+    }
+  ],
   "order": 18000,
   "name": "Context delivery",
   "kind": "module",
@@ -11,7 +83,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/9ncuT5DP#RkhHgrhb",
   "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
   "formerNames": [
@@ -21,73 +93,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 27000,
-      "kind": "rpc",
-      "label": "thread/inject_items into the workhorse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
-        "symbol": "threadInjectItems"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#8g1SNngD",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
-    },
-    {
-      "order": 28000,
-      "kind": "call",
-      "label": "check the link of its checkout's workhorse again",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
-        "symbol": "read"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#jbxp553Z",
-      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
-    },
-    {
-      "order": 54000,
-      "kind": "call",
-      "label": "only while its generation is current",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery-guards.ts",
-        "symbol": "assertCurrent"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#zEsrkAfC",
-      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
-      "order": 70021,
-      "kind": "call",
-      "label": "share thread context policy",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/refusal-reasons.ts",
-        "symbol": "ADDITIONAL_CONTEXT_POLICY"
-      },
-      "id": "vKEsyHFk#lBMb2LoN",
-      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
-    },
-    {
-      "order": 70046,
-      "kind": "call",
-      "label": "apply shared thread profiles",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/workhorses/thread-context/services/delivery.ts",
-        "symbol": "captureExecutionContext"
-      },
-      "id": "vKEsyHFk#C12Ez7nd",
-      "to": "vKEsyHFk#92V2PmcS"
     }
   ]
 }

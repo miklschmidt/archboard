@@ -1,4 +1,76 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#zAQcPUKN",
+      "order": 70035,
+      "kind": "call",
+      "effect": "compute",
+      "label": "compose the host role profile",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
+        "symbol": "createWorkbenchThreadProfile"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
+    },
+    {
+      "id": "vKEsyHFk#cWzsQnxC",
+      "order": 70036,
+      "kind": "call",
+      "effect": "compute",
+      "label": "admit addressed browser sessions",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
+        "symbol": "surfaceIn"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#0TffzzEo",
+      "order": 86000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "one workbench, with the host's role profiles",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
+        "symbol": "createCodexWorkbench"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#k9hxdLjq"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
+      "order": 87000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "each admitted socket's requests and its close",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
+        "symbol": "openBrowserSocket"
+      },
+      "to": "vKEsyHFk#sZUpSKaS"
+    },
+    {
+      "id": "vKEsyHFk#0U4c1hjN",
+      "order": 88000,
+      "kind": "call",
+      "effect": "query",
+      "label": "resolve and verify Codex if no executable path is given",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "to": "vKEsyHFk#06cbjPhn"
+    }
+  ],
   "order": 46000,
   "name": "Voice agent",
   "kind": "module",
@@ -8,80 +80,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/agent/services"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
   "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 70035,
-      "kind": "call",
-      "label": "compose the host role profile",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
-        "symbol": "createWorkbenchThreadProfile"
-      },
-      "id": "vKEsyHFk#zAQcPUKN",
-      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 70036,
-      "kind": "call",
-      "label": "admit addressed browser sessions",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
-        "symbol": "surfaceIn"
-      },
-      "id": "vKEsyHFk#cWzsQnxC",
-      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
-    },
-    {
-      "order": 86000,
-      "kind": "call",
-      "label": "one workbench, with the host's role profiles",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
-        "symbol": "createCodexWorkbench"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#0TffzzEo",
-      "to": "vKEsyHFk/9ncuT5DP#k9hxdLjq"
-    },
-    {
-      "order": 87000,
-      "kind": "call",
-      "label": "each admitted socket's requests and its close",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/agent/services/admission.ts",
-        "symbol": "openBrowserSocket"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
-      "to": "vKEsyHFk#sZUpSKaS"
-    },
-    {
-      "order": 88000,
-      "kind": "call",
-      "label": "resolve and verify Codex if no executable path is given",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/agent/services/voice-agent.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "to": "vKEsyHFk#06cbjPhn",
-      "id": "vKEsyHFk#0U4c1hjN"
     }
   ]
 }

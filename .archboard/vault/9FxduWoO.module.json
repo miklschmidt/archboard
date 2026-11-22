@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#NWxlWRCj",
+      "order": 1000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "start the painter of this canvas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+        "symbol": "startPainter"
+      },
+      "to": "vKEsyHFk#hKrzJUPf"
+    },
+    {
+      "id": "vKEsyHFk#kIIEgwrt",
+      "order": 2000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the picture, how it arrives, how it is seen, and the time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+        "symbol": "Painter"
+      },
+      "to": "vKEsyHFk#UpjzNLKH"
+    },
+    {
+      "id": "vKEsyHFk#uiCl86wq",
+      "order": 3000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "frames, only while something moves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    }
+  ],
   "order": 27000,
   "name": "Picture stage",
   "kind": "function",
@@ -11,48 +55,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#9FxduWoO",
-  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "start the painter of this canvas",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
-        "symbol": "startPainter"
-      },
-      "id": "vKEsyHFk#NWxlWRCj",
-      "to": "vKEsyHFk#hKrzJUPf"
-    },
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "the picture, how it arrives, how it is seen, and the time",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
-        "symbol": "Painter"
-      },
-      "id": "vKEsyHFk#kIIEgwrt",
-      "to": "vKEsyHFk#UpjzNLKH"
-    },
-    {
-      "order": 3000,
-      "kind": "call",
-      "label": "frames, only while something moves",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-stage.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk#uiCl86wq",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND"
 }

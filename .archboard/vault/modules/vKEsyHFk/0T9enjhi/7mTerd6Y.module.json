@@ -8,7 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#7mTerd6Y",
   "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
   "formerNames": [
@@ -39,6 +39,7 @@
     {
       "order": 70028,
       "kind": "call",
+      "effect": "mutation",
       "label": "retain original migration trees",
       "emphasis": "muted",
       "anchor": {
@@ -52,6 +53,7 @@
     {
       "order": 110000,
       "kind": "call",
+      "effect": "compute",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -64,6 +66,7 @@
     {
       "order": 112000,
       "kind": "call",
+      "effect": "mutation",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -75,19 +78,21 @@
     },
     {
       "order": 116000,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/model/src/runtime/legacy-boards/reading/inventory/operations/inputs.ts",
-        "symbol": "VaultConfigurationSchema"
+        "symbol": "parseVaultPolicy"
       },
       "id": "vKEsyHFk/0T9enjhi#m8cmnXnS",
       "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
     },
     {
       "order": 118000,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -100,6 +105,7 @@
     {
       "order": 130020,
       "kind": "call",
+      "effect": "compute",
       "label": "readingDiagnostics",
       "emphasis": "normal",
       "anchor": {
@@ -113,6 +119,7 @@
     {
       "order": 227000,
       "kind": "call",
+      "effect": "compute",
       "label": "Validate the complete candidate",
       "emphasis": "normal",
       "anchor": {
@@ -126,6 +133,7 @@
     {
       "order": 242000,
       "kind": "call",
+      "effect": "compute",
       "label": "validates exact checkpoint identities",
       "emphasis": "normal",
       "anchor": {
@@ -139,6 +147,7 @@
     {
       "order": 243000,
       "kind": "call",
+      "effect": "query",
       "label": "opens retained originals through the checkpoint reader",
       "emphasis": "normal",
       "anchor": {
@@ -152,6 +161,7 @@
     {
       "order": 244000,
       "kind": "call",
+      "effect": "mutation",
       "label": "retains and reopens exact original input objects",
       "emphasis": "normal",
       "anchor": {
@@ -165,6 +175,7 @@
     {
       "order": 246000,
       "kind": "call",
+      "effect": "compute",
       "label": "reports original archive and source failures",
       "emphasis": "normal",
       "anchor": {
@@ -178,6 +189,7 @@
     {
       "order": 247000,
       "kind": "call",
+      "effect": "compute",
       "label": "derives explicit compact draft changes",
       "emphasis": "normal",
       "anchor": {
@@ -191,6 +203,7 @@
     {
       "order": 257000,
       "kind": "call",
+      "effect": "compute",
       "label": "resolve and capture converted playback",
       "emphasis": "normal",
       "anchor": {
@@ -204,6 +217,7 @@
     {
       "order": 258000,
       "kind": "call",
+      "effect": "mutation",
       "label": "Resume the shared installation",
       "emphasis": "normal",
       "anchor": {
@@ -217,6 +231,7 @@
     {
       "order": 259000,
       "kind": "call",
+      "effect": "mutation",
       "label": "write the cutover journal under the held lease",
       "emphasis": "normal",
       "anchor": {
@@ -230,6 +245,7 @@
     {
       "order": 260000,
       "kind": "call",
+      "effect": "mutation",
       "label": "Announce completed canonical cutover",
       "emphasis": "normal",
       "anchor": {
@@ -243,6 +259,7 @@
     {
       "order": 262000,
       "kind": "call",
+      "effect": "compute",
       "label": "Build the existing checked file delta",
       "emphasis": "normal",
       "anchor": {
@@ -256,6 +273,7 @@
     {
       "order": 980100,
       "kind": "call",
+      "effect": "compute",
       "label": "original model addresses",
       "emphasis": "muted",
       "anchor": {
@@ -269,6 +287,7 @@
     {
       "order": 981100,
       "kind": "call",
+      "effect": "compute",
       "label": "open the variant that a legacy address names",
       "emphasis": "normal",
       "anchor": {

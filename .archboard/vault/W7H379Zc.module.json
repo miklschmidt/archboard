@@ -1,20 +1,10 @@
 {
-  "order": 901000,
-  "name": "Session composition",
-  "kind": "function",
-  "responsibility": "Starts one initialized session: wires its gate, its identities and its answers over the transport",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
-    "symbol": "createCodexSession"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#W7H379Zc",
-  "parent": "vKEsyHFk/9ncuT5DP#jylkTBp7",
   "outgoing": [
     {
+      "id": "vKEsyHFk/9ncuT5DP#FZnS78FX",
       "order": 3000,
       "kind": "rpc",
+      "effect": "mutation",
       "label": "one JSON-RPC request per method",
       "emphasis": "hero",
       "traffic": {
@@ -26,12 +16,13 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "request"
       },
-      "id": "vKEsyHFk/9ncuT5DP#FZnS78FX",
       "to": "vKEsyHFk#Q2Jc26oO"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#SI5PTs6X",
       "order": 3000,
       "kind": "call",
+      "effect": "query",
       "label": "serialize issued identities",
       "emphasis": "hero",
       "traffic": {
@@ -43,12 +34,13 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "createRequestParamsSerializer"
       },
-      "id": "vKEsyHFk/wAHh0HTa#SI5PTs6X",
       "to": "vKEsyHFk/wAHh0HTa#X6j6fViI"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#HlhfxXJm",
       "order": 5000,
       "kind": "call",
+      "effect": "mutation",
       "label": "adopt returned identities",
       "emphasis": "normal",
       "traffic": {
@@ -60,12 +52,13 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "adoptSessionResponse"
       },
-      "id": "vKEsyHFk/wAHh0HTa#HlhfxXJm",
       "to": "vKEsyHFk/wAHh0HTa#M3mPynLe"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#mpJAeANo",
       "order": 6000,
       "kind": "call",
+      "effect": "compute",
       "label": "settle mutation failure",
       "emphasis": "normal",
       "anchor": {
@@ -73,12 +66,13 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "mutationFailure"
       },
-      "id": "vKEsyHFk/wAHh0HTa#mpJAeANo",
       "to": "vKEsyHFk/wAHh0HTa#8QpDaiD6"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#d2caVqCr",
       "order": 14000,
       "kind": "call",
+      "effect": "compute",
       "label": "decode parameters and answer",
       "emphasis": "normal",
       "traffic": {
@@ -90,12 +84,13 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "decodeResponse"
       },
-      "id": "vKEsyHFk/wAHh0HTa#d2caVqCr",
       "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#JTrBju8L",
       "order": 16000,
       "kind": "call",
+      "effect": "query",
       "label": "prove storage after config/read",
       "emphasis": "normal",
       "anchor": {
@@ -103,12 +98,13 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "proveCodexStorage"
       },
-      "id": "vKEsyHFk/wAHh0HTa#JTrBju8L",
       "to": "vKEsyHFk/wAHh0HTa#Ly6hUU5o"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#cDYih9Cs",
       "order": 18000,
       "kind": "call",
+      "effect": "mutation",
       "label": "install the answers to the child's requests",
       "emphasis": "muted",
       "anchor": {
@@ -116,8 +112,19 @@
         "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
         "symbol": "createReverseRequestHandlers"
       },
-      "id": "vKEsyHFk/wAHh0HTa#cDYih9Cs",
       "to": "vKEsyHFk/wAHh0HTa#3FR6mev4"
     }
-  ]
+  ],
+  "order": 901000,
+  "name": "Session composition",
+  "kind": "function",
+  "responsibility": "Starts one initialized session: wires its gate, its identities and its answers over the transport",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/session/services/session.ts",
+    "symbol": "createCodexSession"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#W7H379Zc",
+  "parent": "vKEsyHFk/9ncuT5DP#jylkTBp7"
 }

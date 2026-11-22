@@ -1,4 +1,47 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#BLYJHegI",
+      "order": 100000,
+      "kind": "call",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
+        "symbol": "readLegacyInventoryOnServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#AhjN13Ip"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#aENuebFB",
+      "order": 122000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "Submit explicit migration cutover",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
+        "symbol": "modelMigrateContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#LyrDsLte",
+      "order": 123000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "Reuse installation command metadata",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
+        "symbol": "modelMigrateContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#E9qFjmdt"
+    }
+  ],
   "order": 58000,
   "name": "Migration commands",
   "kind": "module",
@@ -7,7 +50,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/migration.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#e7erk6w3",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "formerNames": [
@@ -32,46 +75,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 100000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
-        "symbol": "readLegacyInventoryOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#BLYJHegI",
-      "to": "vKEsyHFk/XppR9owz#AhjN13Ip"
-    },
-    {
-      "order": 122000,
-      "kind": "call",
-      "label": "Submit explicit migration cutover",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
-        "symbol": "modelMigrateContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#aENuebFB",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
-    },
-    {
-      "order": 123000,
-      "kind": "data",
-      "label": "Reuse installation command metadata",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/migration.ts",
-        "symbol": "modelMigrateContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#LyrDsLte",
-      "to": "vKEsyHFk/XppR9owz#E9qFjmdt"
     }
   ]
 }

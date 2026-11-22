@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#qtFUIpvR",
+      "order": 100,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "record what a pane reports",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "panes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "id": "vKEsyHFk#N2puYRTF",
+      "order": 200,
+      "kind": "call",
+      "effect": "compute",
+      "label": "how long a layout request waits",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
+        "symbol": "paneMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ],
   "order": 4200,
   "name": "Pane arrivals",
   "kind": "module",
@@ -11,34 +41,6 @@
     "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts"
   },
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#r2iFMYJk",
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "record what a pane reports",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
-        "symbol": "panes"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#qtFUIpvR"
-    },
-    {
-      "order": 200,
-      "kind": "dependency",
-      "label": "how long a layout request waits",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/panes/services/pane-arrivals.ts",
-        "symbol": "paneMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#N2puYRTF"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#r2iFMYJk"
 }

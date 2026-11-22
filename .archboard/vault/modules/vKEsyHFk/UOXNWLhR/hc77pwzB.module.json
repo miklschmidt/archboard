@@ -1,4 +1,118 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#h0Y3tFJb",
+      "order": 60000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "where the model sits and where the camera goes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
+        "symbol": "legInto"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#IH0j4qQo"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#1PbM9cTg",
+      "order": 61000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the parts of the pane a flight happens on, and what ends it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
+        "symbol": "stageIn"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#UCjVcfWj"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#gR2omDZs",
+      "order": 62000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "hold rest, glide to the card, and back",
+      "description": "use-dive.ts fly calls camera.hold before startDive, camera.glide for the leg, and releases the hold after pane takeover.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
+        "symbol": "glide"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#9T6sHrUv",
+      "order": 63000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the picture of the model, asked for ahead",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "semanticRenderQuery"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#glLEAt7s",
+      "order": 64000,
+      "kind": "dependency",
+      "label": "the picture a flight arrived at",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
+        "symbol": "FitRequest"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#RORIgWix",
+      "order": 65000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the model above, put up to fly out of its card",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
+        "symbol": "PICTURE_MOTION_ATTRIBUTE"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#115rtbFD",
+      "order": 66000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the wait for a picture that is not to hand",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "id": "vKEsyHFk#fDFYdO1w",
+      "order": 990100,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the model inside the card, and the flight's fades",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
+        "symbol": "stageOf"
+      },
+      "to": "vKEsyHFk#9FxduWoO"
+    }
+  ],
   "order": 34000,
   "name": "Fly into a card",
   "kind": "function",
@@ -8,114 +122,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#hc77pwzB",
-  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": [
-    {
-      "order": 60000,
-      "kind": "call",
-      "label": "where the model sits and where the camera goes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
-        "symbol": "legInto"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#h0Y3tFJb",
-      "to": "vKEsyHFk/UOXNWLhR#IH0j4qQo"
-    },
-    {
-      "order": 61000,
-      "kind": "call",
-      "label": "the parts of the pane a flight happens on, and what ends it",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
-        "symbol": "stageIn"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#1PbM9cTg",
-      "to": "vKEsyHFk/UOXNWLhR#UCjVcfWj"
-    },
-    {
-      "order": 62000,
-      "kind": "call",
-      "label": "hold rest, glide to the card, and back",
-      "description": "use-dive.ts fly calls camera.hold before startDive, camera.glide for the leg, and releases the hold after pane takeover.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
-        "symbol": "glide"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#gR2omDZs",
-      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
-    },
-    {
-      "order": 63000,
-      "kind": "data",
-      "label": "the picture of the model, asked for ahead",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "semanticRenderQuery"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#9T6sHrUv",
-      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
-    },
-    {
-      "order": 64000,
-      "kind": "data",
-      "label": "the picture a flight arrived at",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-auto-fit.ts",
-        "symbol": "FitRequest"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#glLEAt7s",
-      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "the model above, put up to fly out of its card",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
-        "symbol": "PICTURE_MOTION_ATTRIBUTE"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#RORIgWix",
-      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
-    },
-    {
-      "order": 66000,
-      "kind": "call",
-      "label": "the wait for a picture that is not to hand",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#115rtbFD",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    },
-    {
-      "order": 990100,
-      "kind": "call",
-      "label": "the model inside the card, and the flight's fades",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-dive.ts",
-        "symbol": "stageOf"
-      },
-      "id": "vKEsyHFk#fDFYdO1w",
-      "to": "vKEsyHFk#9FxduWoO"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND"
 }

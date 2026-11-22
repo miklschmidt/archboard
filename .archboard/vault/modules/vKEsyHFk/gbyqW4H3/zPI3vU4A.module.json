@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/gbyqW4H3#GlD7SMi0",
+      "order": 42000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the selection seat and ghost of a frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/tray.rs",
+        "symbol": "slab_seat"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
+    },
+    {
+      "id": "vKEsyHFk#KYdxUOD0",
+      "order": 990000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the ink and dash of a frame's standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/tray.rs",
+        "symbol": "ink_of"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    }
+  ],
   "order": 20000,
   "name": "Tray surfaces",
   "kind": "function",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/tray.rs"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#zPI3vU4A",
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": [
-    {
-      "order": 42000,
-      "kind": "call",
-      "label": "the selection seat and ghost of a frame",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/tray.rs",
-        "symbol": "slab_seat"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#GlD7SMi0",
-      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
-    },
-    {
-      "order": 990000,
-      "kind": "call",
-      "label": "the ink and dash of a frame's standing",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/tray.rs",
-        "symbol": "ink_of"
-      },
-      "id": "vKEsyHFk#KYdxUOD0",
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
-    }
-  ]
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
 }

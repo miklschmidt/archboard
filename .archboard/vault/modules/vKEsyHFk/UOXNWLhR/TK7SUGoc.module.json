@@ -1,4 +1,104 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#55rosWUN",
+      "order": 3000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the legacy board",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/rules/document.ts",
+        "symbol": "readVariant"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#IJQe6RQy",
+      "order": 4000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the render answer, code findings, a model's locality",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "codeFindingsQuery"
+      },
+      "to": "vKEsyHFk#zrv2H09S"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#HPCTlv5B",
+      "order": 16000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "draw this reading",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "pictureSource"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
+    },
+    {
+      "id": "vKEsyHFk#f43RMTLN",
+      "order": 70044,
+      "kind": "call",
+      "effect": "query",
+      "label": "share captured read queries",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "retainedReads"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#p9gP1ZtC",
+      "order": 123000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the keys its queries subscribe under",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "readKeys"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#GNx2x7VX",
+      "order": 124000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "a listing: read again what moved since",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "modelsListed"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    },
+    {
+      "id": "vKEsyHFk#H1PT503W",
+      "order": 125000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "run one code pass over a reading",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
+        "symbol": "runCodeCheck"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ],
   "order": 15000,
   "name": "Semantic queries",
   "kind": "function",
@@ -11,100 +111,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": [
-    {
-      "order": 3000,
-      "kind": "data",
-      "label": "the legacy board",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/rules/document.ts",
-        "symbol": "readVariant"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#55rosWUN",
-      "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
-    },
-    {
-      "order": 4000,
-      "kind": "data",
-      "label": "the render answer, code findings, a model's locality",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "codeFindingsQuery"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#IJQe6RQy",
-      "to": "vKEsyHFk#zrv2H09S"
-    },
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "draw this reading",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "pictureSource"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#HPCTlv5B",
-      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
-    },
-    {
-      "order": 70044,
-      "kind": "call",
-      "label": "share captured read queries",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "retainedReads"
-      },
-      "id": "vKEsyHFk#f43RMTLN",
-      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
-    },
-    {
-      "order": 123000,
-      "kind": "data",
-      "label": "the keys its queries subscribe under",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "readKeys"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#p9gP1ZtC",
-      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
-    },
-    {
-      "order": 124000,
-      "kind": "call",
-      "label": "a listing: read again what moved since",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "modelsListed"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#GNx2x7VX",
-      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
-    },
-    {
-      "order": 125000,
-      "kind": "call",
-      "label": "run one code pass over a reading",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/queries.ts",
-        "symbol": "runCodeCheck"
-      },
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
-      "id": "vKEsyHFk#H1PT503W"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf"
 }

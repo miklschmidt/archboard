@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#cwSIvbl4",
+      "order": 66000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "voice commands on exact leases and session handles",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/media/clients/realtime.ts",
+        "symbol": "command"
+      },
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ],
   "order": 53000,
   "name": "Browser media owner",
   "kind": "module",
@@ -11,7 +27,7 @@
     "path": "packages/codex-realtime-voice/src/ui/media/clients/media-owner.ts",
     "symbol": "createBrowserWorkbenchMediaOwner"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#HaOwgfOs",
   "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
   "documents": [
@@ -26,21 +42,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 66000,
-      "kind": "call",
-      "label": "voice commands on exact leases and session handles",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/media/clients/realtime.ts",
-        "symbol": "command"
-      },
-      "id": "vKEsyHFk/yejBBUFY#cwSIvbl4",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
     }
   ]
 }

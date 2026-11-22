@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
+      "order": 132000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the comparison part of a drawing's key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts",
+        "symbol": "comparisonKey"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ],
   "order": 58000,
   "name": "Read keys",
   "kind": "function",
@@ -8,25 +24,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#nMKLaMje",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "formerNames": [
     "Board cache keys"
-  ],
-  "outgoing": [
-    {
-      "order": 132000,
-      "kind": "call",
-      "label": "the comparison part of a drawing's key",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/reads/clients/read-keys.ts",
-        "symbol": "comparisonKey"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#N9rPOyGF",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    }
   ]
 }

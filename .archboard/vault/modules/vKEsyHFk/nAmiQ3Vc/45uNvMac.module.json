@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 2000,
   "name": "Registry",
   "kind": "function",
@@ -7,11 +8,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing/rules/registry.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/nAmiQ3Vc#45uNvMac",
   "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "formerNames": [
     "Registry and surface"
-  ],
-  "outgoing": []
+  ]
 }

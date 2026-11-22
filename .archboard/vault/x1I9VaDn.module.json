@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "order": 21000,
+      "kind": "call",
+      "effect": "query",
+      "label": "controllers over the focused pane's",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/application/clients/agent-actions.ts",
+        "symbol": "state"
+      },
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ],
   "order": 915000,
   "name": "Agent actions",
   "kind": "module",
@@ -7,22 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/application/clients/agent-actions.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#x1I9VaDn",
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
-  "outgoing": [
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "controllers over the focused pane's",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/application/clients/agent-actions.ts",
-        "symbol": "state"
-      },
-      "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l"
 }

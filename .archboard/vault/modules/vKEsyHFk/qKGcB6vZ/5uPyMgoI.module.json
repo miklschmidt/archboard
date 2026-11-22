@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#F1500O9D",
+      "order": 16000,
+      "kind": "call",
+      "effect": "query",
+      "label": "is this notification news?",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
+        "symbol": "observe"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#z89BWp39",
+      "order": 17000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "answer a tell_coordinator call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
+        "symbol": "createTellCoordinator"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#LJ71MbJ0",
+      "order": 21000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "one at a time, in order",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
+        "symbol": "deliverOne"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA"
+    },
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#2gd6s71s",
+      "order": 39000,
+      "kind": "call",
+      "effect": "query",
+      "label": "which workhorse is this event about?",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
+        "symbol": "workhorseLinkOf"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#e4OAPDNW"
+    }
+  ],
   "order": 14000,
   "name": "Callback queue",
   "kind": "function",
@@ -7,67 +65,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/qKGcB6vZ#5uPyMgoI",
   "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "is this notification news?",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
-        "symbol": "observe"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#F1500O9D",
-      "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy"
-    },
-    {
-      "order": 17000,
-      "kind": "call",
-      "label": "answer a tell_coordinator call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
-        "symbol": "createTellCoordinator"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#z89BWp39",
-      "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
-    },
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "one at a time, in order",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
-        "symbol": "deliverOne"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#LJ71MbJ0",
-      "to": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA"
-    },
-    {
-      "order": 39000,
-      "kind": "call",
-      "label": "which workhorse is this event about?",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/callbacks.ts",
-        "symbol": "workhorseLinkOf"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#2gd6s71s",
-      "to": "vKEsyHFk/qKGcB6vZ#e4OAPDNW"
     }
   ]
 }

@@ -1,19 +1,10 @@
 {
-  "order": 960020,
-  "name": "Diagram surface",
-  "kind": "ui",
-  "responsibility": "Draws the picture and wires the camera, the gestures, the lighting and the marks to it",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#0bsThTMv",
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "outgoing": [
     {
+      "id": "vKEsyHFk/UOXNWLhR#cdwXdyXo",
       "order": 6000,
       "kind": "call",
+      "effect": "mutation",
       "label": "pan and zoom by hand",
       "description": "SemanticDiagram reads the supplied camera controller through useCameraWith; the viewer entry point creates it once for the pane.",
       "emphasis": "normal",
@@ -22,12 +13,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "useCameraWith"
       },
-      "id": "vKEsyHFk/UOXNWLhR#cdwXdyXo",
       "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
       "order": 7000,
       "kind": "call",
+      "effect": "compute",
       "label": "pick attention",
       "emphasis": "normal",
       "anchor": {
@@ -35,12 +27,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "surfaceMarks"
       },
-      "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
       "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
       "order": 37000,
       "kind": "call",
+      "effect": "mutation",
       "label": "carry the drawn picture in from the last",
       "emphasis": "normal",
       "anchor": {
@@ -48,12 +41,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "usePictureTransition"
       },
-      "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
       "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#bZN2wZZn",
       "order": 42000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the pointer on the picture",
       "emphasis": "normal",
       "anchor": {
@@ -61,12 +55,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "useDiagramGestures"
       },
-      "id": "vKEsyHFk/UOXNWLhR#bZN2wZZn",
       "to": "vKEsyHFk/UOXNWLhR#FyxVdk20"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#dH2wBxla",
       "order": 48000,
       "kind": "call",
+      "effect": "query",
       "label": "the pick, and the part the pointer rests on",
       "emphasis": "normal",
       "anchor": {
@@ -74,12 +69,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "useLighting"
       },
-      "id": "vKEsyHFk/UOXNWLhR#dH2wBxla",
       "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "order": 70000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the host of the canvases the picture is painted on",
       "emphasis": "normal",
       "anchor": {
@@ -87,12 +83,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CameraSurface.tsx",
         "symbol": "attachStage"
       },
-      "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "to": "vKEsyHFk#9FxduWoO"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
       "order": 72000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the code check's warnings on the picture",
       "emphasis": "normal",
       "anchor": {
@@ -100,12 +97,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "useCodeMarks"
       },
-      "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
       "to": "vKEsyHFk/UOXNWLhR#ZUQ9Usdh"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#CB6Uuw6y",
       "order": 103000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the card picked, when it links down",
       "emphasis": "normal",
       "anchor": {
@@ -113,12 +111,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "useDrillOpen"
       },
-      "id": "vKEsyHFk/UOXNWLhR#CB6Uuw6y",
       "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu"
     },
     {
+      "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",
       "order": 113000,
       "kind": "call",
+      "effect": "compute",
       "label": "the camera as a transform",
       "emphasis": "normal",
       "anchor": {
@@ -126,12 +125,13 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CameraSurface.tsx",
         "symbol": "cameraTransform"
       },
-      "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",
       "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     },
     {
+      "id": "vKEsyHFk#LOCiLRdW",
       "order": 990100,
       "kind": "call",
+      "effect": "mutation",
       "label": "the lit subjects, to draw on",
       "emphasis": "normal",
       "anchor": {
@@ -139,8 +139,18 @@
         "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx",
         "symbol": "useSweep"
       },
-      "id": "vKEsyHFk#LOCiLRdW",
       "to": "vKEsyHFk/UOXNWLhR#UqVsXH0L"
     }
-  ]
+  ],
+  "order": 960020,
+  "name": "Diagram surface",
+  "kind": "ui",
+  "responsibility": "Draws the picture and wires the camera, the gestures, the lighting and the marks to it",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/SemanticDiagram.tsx"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#0bsThTMv",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
 }

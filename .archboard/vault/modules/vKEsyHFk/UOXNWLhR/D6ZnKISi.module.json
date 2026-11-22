@@ -1,4 +1,80 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#Iwat3bQG",
+      "order": 36000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "glide there, a frame at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
+        "symbol": "useCameraGlide"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#GnoK0EuT"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#OgfM5Zfx",
+      "order": 46000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "ease wheel and key moves",
+      "description": "usePictureCamera creates useCameraMotion(stage, reducedMotion); wheel and key controls call its zoomAt and ease, while pinches write immediately.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
+        "symbol": "useCameraMotion"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ZTOokYub"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#9gYlic2p",
+      "order": 93000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "pan, pinch and zoom arithmetic",
+      "description": "use-picture-camera.ts panBy calls panCamera, pinch calls pinchCamera and ctrl-wheel calls zoomCameraAbout.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
+        "symbol": "panCamera"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#HTxBOFb9",
+      "order": 94000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "create, write, settle, hold and subscribe",
+      "description": "usePictureCamera creates createCameraStore; its controls call write, comeToRest calls settle and hold, and useCameraView/useCameraWith expose subscriptions.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
+        "symbol": "createCameraStore"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#JYR55KwD"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#4snMrMQ0",
+      "order": 95000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "rest timer, then one frame after zoom",
+      "description": "restLater calls frameClock().after(cameraRest); comeToRest calls requestFrame to release the held rest after the layer drops.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    }
+  ],
   "order": 42000,
   "name": "Camera controller",
   "kind": "function",
@@ -8,78 +84,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
-  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
-  "outgoing": [
-    {
-      "order": 36000,
-      "kind": "call",
-      "label": "glide there, a frame at a time",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
-        "symbol": "useCameraGlide"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#Iwat3bQG",
-      "to": "vKEsyHFk/UOXNWLhR#GnoK0EuT"
-    },
-    {
-      "order": 46000,
-      "kind": "call",
-      "label": "ease wheel and key moves",
-      "description": "usePictureCamera creates useCameraMotion(stage, reducedMotion); wheel and key controls call its zoomAt and ease, while pinches write immediately.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
-        "symbol": "useCameraMotion"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#OgfM5Zfx",
-      "to": "vKEsyHFk/UOXNWLhR#ZTOokYub"
-    },
-    {
-      "order": 93000,
-      "kind": "call",
-      "label": "pan, pinch and zoom arithmetic",
-      "description": "use-picture-camera.ts panBy calls panCamera, pinch calls pinchCamera and ctrl-wheel calls zoomCameraAbout.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
-        "symbol": "panCamera"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#9gYlic2p",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    },
-    {
-      "order": 94000,
-      "kind": "call",
-      "label": "create, write, settle, hold and subscribe",
-      "description": "usePictureCamera creates createCameraStore; its controls call write, comeToRest calls settle and hold, and useCameraView/useCameraWith expose subscriptions.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
-        "symbol": "createCameraStore"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#HTxBOFb9",
-      "to": "vKEsyHFk/UOXNWLhR#JYR55KwD"
-    },
-    {
-      "order": 95000,
-      "kind": "call",
-      "label": "rest timer, then one frame after zoom",
-      "description": "restLater calls frameClock().after(cameraRest); comeToRest calls requestFrame to release the held rest after the layer drops.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/camera/hooks/use-picture-camera.ts",
-        "symbol": "frameClock"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#4snMrMQ0",
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV"
 }

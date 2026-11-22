@@ -1,4 +1,15 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#QOAXIPZe",
+      "order": 90000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "archboard telemetry turns usage on or off",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#EbMc8PH2"
+    }
+  ],
   "order": 69000,
   "name": "Telemetry command",
   "kind": "module",
@@ -7,17 +18,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/telemetry/operations/telemetry.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#1Wh52akC",
-  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
-  "outgoing": [
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "archboard telemetry turns usage on or off",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#QOAXIPZe",
-      "to": "vKEsyHFk#EbMc8PH2"
-    }
-  ]
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU"
 }

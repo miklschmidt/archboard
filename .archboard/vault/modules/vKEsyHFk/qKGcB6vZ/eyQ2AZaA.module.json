@@ -1,25 +1,10 @@
 {
-  "order": 17000,
-  "name": "Callback delivery",
-  "kind": "function",
-  "responsibility": "Gives each callback one path: workhorse news to a coordinator turn, a context change to the coordinator's history or the voice model as the host worded it, the rest recorded only",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
-  "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
-  "documents": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
   "outgoing": [
     {
+      "id": "vKEsyHFk/qKGcB6vZ#1joDYyhX",
       "order": 13000,
       "kind": "call",
+      "effect": "mutation",
       "label": "a context change: realtime append or thread/inject_items",
       "emphasis": "normal",
       "anchor": {
@@ -27,12 +12,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/realtime.ts",
         "symbol": "realtimeAppendText"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#1joDYyhX",
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#kJ4DsUAw",
       "order": 18000,
       "kind": "call",
+      "effect": "query",
       "label": "check the link of the workhorse the news names",
       "emphasis": "muted",
       "anchor": {
@@ -40,12 +26,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
         "symbol": "classify"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#kJ4DsUAw",
       "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#VdOucvLo",
       "order": 22000,
       "kind": "call",
+      "effect": "mutation",
       "label": "report the news",
       "description": "The server composition imports createOutcomeReportPort from its own lib/ implementation and passes the returned report port to callback delivery. The callback module invokes that injected port; it never imports the private server file.",
       "emphasis": "hero",
@@ -54,12 +41,13 @@
         "path": "packages/codex-realtime-voice/src/server/sessions/services/bindings.ts",
         "symbol": "createOutcomeReportPort"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#VdOucvLo",
       "to": "vKEsyHFk/qKGcB6vZ#AjPVQ0BZ"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#XJjA4qay",
       "order": 33000,
       "kind": "call",
+      "effect": "compute",
       "label": "word the news as one sentence",
       "emphasis": "muted",
       "anchor": {
@@ -67,12 +55,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
         "symbol": "workhorseNewsSentence"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#XJjA4qay",
       "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#sQ7mZuI3",
       "order": 52000,
       "kind": "call",
+      "effect": "compute",
       "label": "the callback as canonical JSON, kept on its record",
       "emphasis": "normal",
       "anchor": {
@@ -80,8 +69,24 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts",
         "symbol": "canonicalJson"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#sQ7mZuI3",
       "to": "vKEsyHFk#92V2PmcS"
+    }
+  ],
+  "order": 17000,
+  "name": "Callback delivery",
+  "kind": "function",
+  "responsibility": "Gives each callback one path: workhorse news to a coordinator turn, a context change to the coordinator's history or the voice model as the host worded it, the rest recorded only",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator-callbacks/services/deliver.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/qKGcB6vZ#eyQ2AZaA",
+  "parent": "vKEsyHFk/9ncuT5DP#08zJvPJq",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ]
 }

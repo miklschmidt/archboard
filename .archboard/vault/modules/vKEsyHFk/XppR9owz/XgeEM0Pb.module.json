@@ -1,4 +1,43 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#4uc2nkyx",
+      "order": 50,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the brief for the repository's servers",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#8xqOjFa6"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#Kk4jceif",
+      "order": 69000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "make the vault; remove an earlier block",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/init/operations/init.ts",
+        "symbol": "setUpRepository"
+      },
+      "to": "vKEsyHFk/XppR9owz#tTkbidT4"
+    },
+    {
+      "id": "vKEsyHFk#Rn3hOh85",
+      "order": 70000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the skills directory to install from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/init/operations/skills-install.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 24000,
   "name": "Init",
   "kind": "module",
@@ -8,7 +47,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/init/operations/init.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#XgeEM0Pb",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "formerNames": [
@@ -33,42 +72,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 50,
-      "kind": "call",
-      "label": "the brief for the repository's servers",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#4uc2nkyx",
-      "to": "vKEsyHFk#8xqOjFa6"
-    },
-    {
-      "order": 69000,
-      "kind": "call",
-      "label": "make the vault; remove an earlier block",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/init/operations/init.ts",
-        "symbol": "setUpRepository"
-      },
-      "id": "vKEsyHFk/XppR9owz#Kk4jceif",
-      "to": "vKEsyHFk/XppR9owz#tTkbidT4"
-    },
-    {
-      "order": 70000,
-      "kind": "dependency",
-      "label": "the skills directory to install from",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/init/operations/skills-install.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#Rn3hOh85",
-      "to": "vKEsyHFk#4FdKQJqK"
     }
   ]
 }

@@ -1,10 +1,11 @@
 {
+  "outgoing": [],
   "order": 30001,
   "name": "Reads and server health",
   "kind": "module",
   "responsibility": "Routes reads, server health and checkpoint retention without changing current architecture",
   "description": "Browser listings, model snapshots and vault diagnostics normalize older schemas in memory. Those inspection requests preserve the original files and their migration fingerprints.",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#ETrslazw",
   "parent": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
   "documents": [
@@ -28,7 +29,6 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/reads"

@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#Hb5DPGx6",
+      "order": 21000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "start and stop the child",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/server-control/operations/server.ts",
+        "symbol": "ensureServerRunning"
+      },
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
+      "order": 57000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "spawn it detached",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "spawn"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#y3Bs3xSs",
+      "order": 72000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "restart on a new bundle",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/server-control/operations/server.ts",
+        "symbol": "restartServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#nvbnGOtV"
+    }
+  ],
   "order": 7000,
   "name": "Runtime control",
   "kind": "module",
@@ -7,7 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/server-control/operations/server.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#fOJvfmZv",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -29,47 +73,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "start and stop the child",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/server-control/operations/server.ts",
-        "symbol": "ensureServerRunning"
-      },
-      "id": "vKEsyHFk/XppR9owz#Hb5DPGx6",
-      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
-    },
-    {
-      "order": 57000,
-      "kind": "call",
-      "label": "spawn it detached",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "spawn"
-      },
-      "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
-    },
-    {
-      "order": 72000,
-      "kind": "call",
-      "label": "restart on a new bundle",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/server-control/operations/server.ts",
-        "symbol": "restartServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#y3Bs3xSs",
-      "to": "vKEsyHFk/XppR9owz#nvbnGOtV"
     }
   ]
 }

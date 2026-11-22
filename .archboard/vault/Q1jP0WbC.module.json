@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 960290,
   "name": "State directory",
   "kind": "function",
@@ -8,7 +9,6 @@
     "path": "packages/workspace/src/runtime/services/state-dir.ts"
   },
   "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#Q1jP0WbC",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#Q1jP0WbC"
 }

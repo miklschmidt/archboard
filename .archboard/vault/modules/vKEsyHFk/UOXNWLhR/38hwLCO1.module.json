@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
+      "order": 17000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the page's own renderer",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts",
+        "symbol": "takePicturesFrom"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2"
+    },
+    {
+      "id": "vKEsyHFk#A87QndqZ",
+      "order": 70032,
+      "kind": "call",
+      "effect": "compute",
+      "label": "preserve retained read refusals",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts",
+        "symbol": "ReadingError"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
+    }
+  ],
   "order": 12000,
   "name": "Picture source",
   "kind": "function",
@@ -10,35 +40,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#38hwLCO1",
-  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
-  "outgoing": [
-    {
-      "order": 17000,
-      "kind": "call",
-      "label": "the page's own renderer",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts",
-        "symbol": "takePicturesFrom"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
-      "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2"
-    },
-    {
-      "order": 70032,
-      "kind": "call",
-      "label": "preserve retained read refusals",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/supply/clients/picture-source.ts",
-        "symbol": "ReadingError"
-      },
-      "id": "vKEsyHFk#A87QndqZ",
-      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    }
-  ]
+  "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1"
 }

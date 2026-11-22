@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#wsEMWmNJ",
+      "order": 70039,
+      "kind": "call",
+      "effect": "compute",
+      "label": "read image dimensions from recipes",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/recipe/operations/read-recipe.ts",
+        "symbol": "readPngDimensions"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
+    },
+    {
+      "id": "vKEsyHFk#Xn6zGm0D",
+      "order": 300,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the recipe a PNG carries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/recipe/operations/read-recipe.ts",
+        "symbol": "pngRecipeText"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#H2MUNwiC"
+    }
+  ],
   "order": 37000,
   "name": "Render recipe",
   "kind": "module",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/recipe"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#bm9AWXkW",
-  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-  "outgoing": [
-    {
-      "order": 70039,
-      "kind": "call",
-      "label": "read image dimensions from recipes",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/recipe/operations/read-recipe.ts",
-        "symbol": "readPngDimensions"
-      },
-      "id": "vKEsyHFk#wsEMWmNJ",
-      "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
-    },
-    {
-      "order": 300,
-      "kind": "call",
-      "label": "the recipe a PNG carries",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/recipe/operations/read-recipe.ts",
-        "symbol": "pngRecipeText"
-      },
-      "to": "vKEsyHFk/SMjRfwN3#H2MUNwiC",
-      "id": "vKEsyHFk#Xn6zGm0D"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm"
 }

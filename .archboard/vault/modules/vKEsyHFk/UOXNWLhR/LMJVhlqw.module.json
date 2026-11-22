@@ -1,4 +1,103 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",
+      "order": 11000,
+      "kind": "http",
+      "effect": "query",
+      "label": "the page",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
+        "symbol": "frontendRoute"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
+      "order": 21000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "whether this page is a replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "replayAskedOf"
+      },
+      "to": "vKEsyHFk#6RJ25ejV"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
+      "order": 82000,
+      "kind": "call",
+      "effect": "mutation",
+      "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startWalkthroughReplay"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#156cyBe3",
+      "order": 102000,
+      "kind": "call",
+      "effect": "mutation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startBrowserRenderer"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
+    },
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
+      "order": 125000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "Start local layout workers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "renderer"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
+    },
+    {
+      "id": "vKEsyHFk#sFuyzbsG",
+      "order": 980120,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "mount the application",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "Application"
+      },
+      "to": "vKEsyHFk#mlSnLR16"
+    },
+    {
+      "id": "vKEsyHFk#rNKtHZ06",
+      "order": 70000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mount the application under the workspace route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "createReadingRoutingHost"
+      },
+      "to": "vKEsyHFk#4DTJtXk6"
+    }
+  ],
   "order": 500,
   "name": "Page start",
   "kind": "function",
@@ -8,99 +107,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/main.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#LMJVhlqw",
-  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
-  "outgoing": [
-    {
-      "order": 11000,
-      "kind": "http",
-      "label": "the page",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/reads/routes/service-routes.ts",
-        "symbol": "frontendRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",
-      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
-    },
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "whether this page is a replay",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "replayAskedOf"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
-      "to": "vKEsyHFk#6RJ25ejV"
-    },
-    {
-      "order": 82000,
-      "kind": "call",
-      "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "startWalkthroughReplay"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
-      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
-    },
-    {
-      "order": 102000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "startBrowserRenderer"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#156cyBe3",
-      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
-    },
-    {
-      "order": 125000,
-      "kind": "call",
-      "label": "Start local layout workers",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "renderer"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
-      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
-    },
-    {
-      "order": 980120,
-      "kind": "render",
-      "label": "mount the application",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "Application"
-      },
-      "id": "vKEsyHFk#sFuyzbsG",
-      "to": "vKEsyHFk#mlSnLR16"
-    },
-    {
-      "order": 70000,
-      "kind": "dependency",
-      "label": "mount the application under the workspace route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "createReadingRoutingHost"
-      },
-      "to": "vKEsyHFk#4DTJtXk6",
-      "id": "vKEsyHFk#rNKtHZ06"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
 }

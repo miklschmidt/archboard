@@ -1,19 +1,10 @@
 {
-  "order": 960140,
-  "name": "Browser connections",
-  "kind": "service",
-  "responsibility": "Holds each browser connection: its lease, its snapshots, its chats and its disconnect",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#sZUpSKaS",
-  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
   "outgoing": [
     {
+      "id": "vKEsyHFk/9ncuT5DP#3C7aLx0q",
       "order": 8000,
       "kind": "call",
+      "effect": "query",
       "label": "the link of this tab session and the shown checkout",
       "description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
       "emphasis": "normal",
@@ -22,12 +13,13 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-connections.ts",
         "symbol": "readWorkhorseBinding"
       },
-      "id": "vKEsyHFk/9ncuT5DP#3C7aLx0q",
       "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
       "order": 67000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the checkout the chat's tab shows, pinned on first read",
       "emphasis": "normal",
       "anchor": {
@@ -35,12 +27,13 @@
         "path": "packages/codex-realtime-voice/src/server/generation/services/gateway-binding.ts",
         "symbol": "shownCheckoutOf"
       },
-      "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
       "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#kUptUGCI",
       "order": 69000,
       "kind": "call",
+      "effect": "query",
       "label": "the tab's live workhorses, for the page's list",
       "emphasis": "normal",
       "anchor": {
@@ -48,12 +41,13 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/owner-projection.ts",
         "symbol": "readWorkhorseList"
       },
-      "id": "vKEsyHFk/9ncuT5DP#kUptUGCI",
       "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#vScn8k62",
       "order": 71000,
       "kind": "call",
+      "effect": "query",
       "label": "the coordinator turns the shown conversation keeps",
       "emphasis": "normal",
       "anchor": {
@@ -61,12 +55,13 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/browser-state/projections/owner-projection.ts",
         "symbol": "coordinatorTurnsShownIn"
       },
-      "id": "vKEsyHFk/9ncuT5DP#vScn8k62",
       "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#IubzjsMw",
       "order": 94000,
       "kind": "call",
+      "effect": "mutation",
       "label": "start admitted voice session",
       "emphasis": "normal",
       "anchor": {
@@ -74,8 +69,18 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections/services/gateway-connections.ts",
         "symbol": "onBrowserDisconnect"
       },
-      "id": "vKEsyHFk/9ncuT5DP#IubzjsMw",
       "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
     }
-  ]
+  ],
+  "order": 960140,
+  "name": "Browser connections",
+  "kind": "service",
+  "responsibility": "Holds each browser connection: its lease, its snapshots, its chats and its disconnect",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/connections"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#sZUpSKaS",
+  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
 }

@@ -1,4 +1,88 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#hiqkoWmI",
+      "order": 63000,
+      "kind": "call",
+      "effect": "query",
+      "label": "every pane and the model it shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "panes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
+      "order": 64000,
+      "kind": "call",
+      "effect": "query",
+      "label": "each pane's repository and checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "placeOfVault"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#ugb7cB3Q",
+      "order": 65000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the caller's vault, when it names one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "statedVault"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#ZX8UUIpb",
+      "order": 82000,
+      "kind": "call",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "parsePaneKey"
+      },
+      "to": "vKEsyHFk#9VahN2IU"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
+      "order": 85000,
+      "kind": "call",
+      "effect": "query",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "tabSessionOf"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "id": "vKEsyHFk#oEoVWYcz",
+      "order": 86000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the address a browser opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "browserUrl"
+      },
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    }
+  ],
   "order": 24000,
   "name": "Panes report",
   "kind": "route",
@@ -11,7 +95,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/Oi6SBIAM#Am1mLDP5",
   "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
   "documents": [
@@ -24,84 +108,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 63000,
-      "kind": "call",
-      "label": "every pane and the model it shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "panes"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#hiqkoWmI",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 64000,
-      "kind": "call",
-      "label": "each pane's repository and checkout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "placeOfVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#8IdEaZWJ",
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "the caller's vault, when it names one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "statedVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#ugb7cB3Q",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 82000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "parsePaneKey"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#ZX8UUIpb",
-      "to": "vKEsyHFk#9VahN2IU"
-    },
-    {
-      "order": 85000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "tabSessionOf"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#qHLocIlw",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
-    },
-    {
-      "order": 86000,
-      "kind": "call",
-      "label": "the address a browser opens",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "browserUrl"
-      },
-      "id": "vKEsyHFk#oEoVWYcz",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }

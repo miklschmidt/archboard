@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/0T9enjhi#UHKlormM",
+      "order": 182000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "applyFlowChanges",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "applyStructure"
+      },
+      "to": "vKEsyHFk/0T9enjhi#yNZEhzyc"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#erkB0gWt",
+      "order": 187000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "selectModule",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "selectedId"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#Idigw8VU",
+      "order": 188000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "ArchiveError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "selectedId"
+      },
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#JGBxddlN",
+      "order": 236000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "applyWalkthroughChanges",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
+        "symbol": "applyWalkthroughChanges"
+      },
+      "to": "vKEsyHFk/0T9enjhi#d8uON4nq"
+    }
+  ],
   "order": 65000,
   "name": "Module structure edits",
   "kind": "module",
@@ -8,7 +66,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#llmZ5fau",
   "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
   "documents": [
@@ -30,60 +88,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 182000,
-      "kind": "call",
-      "label": "applyFlowChanges",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
-        "symbol": "applyStructure"
-      },
-      "id": "vKEsyHFk/0T9enjhi#UHKlormM",
-      "to": "vKEsyHFk/0T9enjhi#yNZEhzyc"
-    },
-    {
-      "order": 187000,
-      "kind": "call",
-      "label": "selectModule",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
-        "symbol": "selectedId"
-      },
-      "id": "vKEsyHFk/0T9enjhi#erkB0gWt",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 188000,
-      "kind": "call",
-      "label": "ArchiveError",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
-        "symbol": "selectedId"
-      },
-      "id": "vKEsyHFk/0T9enjhi#Idigw8VU",
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
-    },
-    {
-      "order": 236000,
-      "kind": "call",
-      "label": "applyWalkthroughChanges",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/edit/operations/structure.ts",
-        "symbol": "applyWalkthroughChanges"
-      },
-      "id": "vKEsyHFk/0T9enjhi#JGBxddlN",
-      "to": "vKEsyHFk/0T9enjhi#d8uON4nq"
     }
   ]
 }

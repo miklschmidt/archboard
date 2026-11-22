@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
+      "order": 61000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the dock's actions: send, Talk, pick a workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "showConversation"
+      },
+      "to": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "id": "vKEsyHFk#tJGMgOeT",
+      "order": 980220,
+      "kind": "render",
+      "effect": "query",
+      "label": "the subtitles toggle",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "SubtitlesToggle"
+      },
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "id": "vKEsyHFk#pzWBfyor",
+      "order": 980230,
+      "kind": "render",
+      "effect": "mutation",
+      "label": "the voice control",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
+        "symbol": "VoiceControl"
+      },
+      "to": "vKEsyHFk#ZTh8T7Ym"
+    }
+  ],
   "order": 960330,
   "name": "Agent dock",
   "kind": "ui",
@@ -7,48 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#UoblaIEv",
-  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
-  "outgoing": [
-    {
-      "order": 61000,
-      "kind": "call",
-      "label": "the dock's actions: send, Talk, pick a workhorse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
-        "symbol": "showConversation"
-      },
-      "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
-      "to": "vKEsyHFk#x1I9VaDn"
-    },
-    {
-      "order": 980220,
-      "kind": "render",
-      "label": "the subtitles toggle",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
-        "symbol": "SubtitlesToggle"
-      },
-      "id": "vKEsyHFk#tJGMgOeT",
-      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
-    },
-    {
-      "order": 980230,
-      "kind": "render",
-      "label": "the voice control",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/workbench-client/dock/components/AgentDock.tsx",
-        "symbol": "VoiceControl"
-      },
-      "id": "vKEsyHFk#pzWBfyor",
-      "to": "vKEsyHFk#ZTh8T7Ym"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO"
 }

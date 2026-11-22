@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 19000,
   "name": "Entry row",
   "kind": "function",
@@ -9,8 +10,7 @@
     "path": "crates/archboard-layout/src/blocks/holding.rs",
     "symbol": "entry_row_edges"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/OjRLKb74#jLUi9ZuH",
-  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ"
 }

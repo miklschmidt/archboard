@@ -1,20 +1,10 @@
 {
-  "order": 1001,
-  "name": "Eval CLI",
-  "kind": "module",
-  "responsibility": "run, grade, report, check and pin, and the cancellation a person's interrupt becomes: the command line of the evaluation, kept in the skills package behind its one evaluation entry",
-  "description": "Never part of the gate: every author run and the grading session call a model, and a person decides when that happens.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/skills/src/runtime/evaluation/operations/command.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/IbGtfJE2#JaLEafPa",
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
   "outgoing": [
     {
+      "id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
       "order": 1000,
       "kind": "call",
+      "effect": "query",
       "label": "load and validate the inputs",
       "emphasis": "hero",
       "traffic": {
@@ -26,12 +16,13 @@
         "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "loadSuite"
       },
-      "id": "vKEsyHFk/IbGtfJE2#EZG5L7jf",
       "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#gkJMDrW9",
       "order": 3000,
       "kind": "call",
+      "effect": "mutation",
       "label": "run the selected arms",
       "emphasis": "hero",
       "traffic": {
@@ -43,12 +34,13 @@
         "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "runBatch"
       },
-      "id": "vKEsyHFk/IbGtfJE2#gkJMDrW9",
       "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#DJsFb8l6",
       "order": 4000,
       "kind": "call",
+      "effect": "mutation",
       "label": "grade what has not been graded",
       "emphasis": "hero",
       "anchor": {
@@ -56,12 +48,13 @@
         "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "gradeBatch"
       },
-      "id": "vKEsyHFk/IbGtfJE2#DJsFb8l6",
       "to": "vKEsyHFk/IbGtfJE2#PwYiE0Hr"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#hlCNYU50",
       "order": 5000,
       "kind": "call",
+      "effect": "mutation",
       "label": "write the report",
       "emphasis": "normal",
       "anchor": {
@@ -69,12 +62,13 @@
         "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "writeReport"
       },
-      "id": "vKEsyHFk/IbGtfJE2#hlCNYU50",
       "to": "vKEsyHFk/IbGtfJE2#LcKROPw0"
     },
     {
+      "id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",
       "order": 48000,
       "kind": "call",
+      "effect": "mutation",
       "label": "pin the executable versions",
       "emphasis": "normal",
       "anchor": {
@@ -82,8 +76,19 @@
         "path": "packages/skills/src/runtime/evaluation/operations/command.ts",
         "symbol": "pinVersions"
       },
-      "id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",
       "to": "vKEsyHFk/IbGtfJE2#yohDGrXU"
     }
-  ]
+  ],
+  "order": 1001,
+  "name": "Eval CLI",
+  "kind": "module",
+  "responsibility": "run, grade, report, check and pin, and the cancellation a person's interrupt becomes: the command line of the evaluation, kept in the skills package behind its one evaluation entry",
+  "description": "Never part of the gate: every author run and the grading session call a model, and a person decides when that happens.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/evaluation/operations/command.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/IbGtfJE2#JaLEafPa",
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3"
 }

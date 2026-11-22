@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#fXxVxFvc",
+      "order": 100,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the chart's boxes as the layout's nodes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/graph.rs",
+        "symbol": "GraphNode"
+      },
+      "to": "vKEsyHFk#nAfoKoOs"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#MooLuYkK",
+      "order": 56000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "measure the boxes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/mod.rs",
+        "symbol": "measure_node"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#LJUm7E1m",
+      "order": 58000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "round each line's corners",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/mod.rs",
+        "symbol": "curve_through"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+    },
+    {
+      "id": "vKEsyHFk#PLVZZKxC",
+      "order": 60000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the kind a flow's node is drawn as",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/design.rs",
+        "symbol": "flow_kind"
+      },
+      "to": "vKEsyHFk#w44DwfpV"
+    }
+  ],
   "order": 32000,
   "name": "Flowchart",
   "kind": "function",
@@ -8,61 +66,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-flows/src/flowchart"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#0idmUHd2",
-  "parent": "vKEsyHFk#oKj5LOcd",
-  "outgoing": [
-    {
-      "order": 100,
-      "kind": "call",
-      "label": "the chart's boxes as the layout's nodes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-flows/src/flowchart/graph.rs",
-        "symbol": "GraphNode"
-      },
-      "id": "vKEsyHFk#fXxVxFvc",
-      "to": "vKEsyHFk#nAfoKoOs"
-    },
-    {
-      "order": 56000,
-      "kind": "call",
-      "label": "measure the boxes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-flows/src/flowchart/mod.rs",
-        "symbol": "measure_node"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#MooLuYkK",
-      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
-    },
-    {
-      "order": 58000,
-      "kind": "call",
-      "label": "round each line's corners",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-flows/src/flowchart/mod.rs",
-        "symbol": "curve_through"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#LJUm7E1m",
-      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
-    },
-    {
-      "order": 60000,
-      "kind": "dependency",
-      "label": "the kind a flow's node is drawn as",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/design.rs",
-        "symbol": "flow_kind"
-      },
-      "id": "vKEsyHFk#PLVZZKxC",
-      "to": "vKEsyHFk#w44DwfpV"
-    }
-  ]
+  "parent": "vKEsyHFk#oKj5LOcd"
 }

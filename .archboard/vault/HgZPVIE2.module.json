@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 5,
   "name": "Drawing engine",
   "kind": "module",
@@ -7,7 +8,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#HgZPVIE2",
-  "outgoing": []
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#HgZPVIE2"
 }

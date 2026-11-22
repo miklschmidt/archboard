@@ -1,34 +1,18 @@
 {
-  "order": 40800,
-  "name": "archboard-render",
-  "kind": "package",
-  "responsibility": "Selects the diagram grammar, then measures, lays out and paints one reading and writes its document",
-  "description": "Renderer::render picks architecture, sequence or flowchart. An architecture has its flow steps turned into lines, its words measured and its layout solved. The last 64 layouts are remembered by model, engine and comparison, so a repeated render lays out nothing. The host runs the solves and holds the icons. Nothing here reads a clock, a random number or a file, so one host draws one request to the same bytes. Every variant is laid out fresh (ADR 0032).",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-render"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
-  "parent": "vKEsyHFk#HgZPVIE2",
-  "formerNames": [
-    "Render driver",
-    "View dispatcher",
-    "Architecture rendering",
-    "Core render"
-  ],
   "outgoing": [
     {
+      "id": "vKEsyHFk#GdOLnrJz",
       "order": 900,
       "kind": "dependency",
       "label": "Graphviz for the native test's solves",
       "emphasis": "normal",
-      "id": "vKEsyHFk#GdOLnrJz",
       "to": "vKEsyHFk#dg6URhSn"
     },
     {
+      "id": "vKEsyHFk/OjRLKb74#TPRWw9F4",
       "order": 1000,
       "kind": "call",
+      "effect": "compute",
       "label": "measure every word",
       "emphasis": "hero",
       "traffic": {
@@ -40,12 +24,13 @@
         "path": "crates/archboard-render/src/architecture.rs",
         "symbol": "measure_node"
       },
-      "id": "vKEsyHFk/OjRLKb74#TPRWw9F4",
       "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
     },
     {
+      "id": "vKEsyHFk/OjRLKb74#oYEzQ4k5",
       "order": 13000,
-      "kind": "render",
+      "kind": "call",
+      "effect": "compute",
       "label": "paint the settled drawing",
       "emphasis": "hero",
       "traffic": {
@@ -57,12 +42,13 @@
         "path": "crates/archboard-render/src/lib.rs",
         "symbol": "paint"
       },
-      "id": "vKEsyHFk/OjRLKb74#oYEzQ4k5",
       "to": "vKEsyHFk#8oId5pfI"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#eJO5yog2",
       "order": 14000,
       "kind": "call",
+      "effect": "compute",
       "label": "content and measured sizes",
       "emphasis": "hero",
       "traffic": {
@@ -74,12 +60,13 @@
         "path": "crates/archboard-render/src/architecture.rs",
         "symbol": "draw"
       },
-      "id": "vKEsyHFk/gbyqW4H3#eJO5yog2",
       "to": "vKEsyHFk#iK24tmVF"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#NSEpn12D",
       "order": 16000,
       "kind": "call",
+      "effect": "compute",
       "label": "lay out every flow",
       "emphasis": "normal",
       "anchor": {
@@ -87,12 +74,13 @@
         "path": "crates/archboard-render/src/flows.rs",
         "symbol": "sequence"
       },
-      "id": "vKEsyHFk/gbyqW4H3#NSEpn12D",
       "to": "vKEsyHFk/gbyqW4H3#wLF1X11D"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#rZknAbkb",
       "order": 17000,
       "kind": "call",
+      "effect": "compute",
       "label": "write the scene as one document",
       "emphasis": "hero",
       "traffic": {
@@ -104,12 +92,13 @@
         "path": "crates/archboard-render/src/lib.rs",
         "symbol": "document"
       },
-      "id": "vKEsyHFk/gbyqW4H3#rZknAbkb",
       "to": "vKEsyHFk/gbyqW4H3#eECDrhMc"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#RSHH7EN4",
       "order": 55000,
       "kind": "call",
+      "effect": "compute",
       "label": "draw a flow's logic",
       "emphasis": "normal",
       "anchor": {
@@ -117,12 +106,13 @@
         "path": "crates/archboard-render/src/flows.rs",
         "symbol": "flowchart"
       },
-      "id": "vKEsyHFk/gbyqW4H3#RSHH7EN4",
       "to": "vKEsyHFk/gbyqW4H3#0idmUHd2"
     },
     {
+      "id": "vKEsyHFk#gJg0IMG5",
       "order": 61000,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "the icon a card falls back to",
       "emphasis": "normal",
       "anchor": {
@@ -130,12 +120,13 @@
         "path": "crates/archboard-render/src/appearance.rs",
         "symbol": "node_appearances"
       },
-      "id": "vKEsyHFk#gJg0IMG5",
       "to": "vKEsyHFk#w44DwfpV"
     },
     {
+      "id": "vKEsyHFk#d0AyIVw1",
       "order": 300,
       "kind": "call",
+      "effect": "compute",
       "label": "print the viewer's marks as constants for the pane",
       "emphasis": "normal",
       "anchor": {
@@ -143,8 +134,25 @@
         "path": "crates/archboard-render/src/bin/export-marks.rs",
         "symbol": "main"
       },
-      "id": "vKEsyHFk#d0AyIVw1",
       "to": "vKEsyHFk#GqMdZbTF"
     }
+  ],
+  "order": 40800,
+  "name": "archboard-render",
+  "kind": "package",
+  "responsibility": "Selects the diagram grammar, then measures, lays out and paints one reading and writes its document",
+  "description": "Renderer::render picks architecture, sequence or flowchart. An architecture has its flow steps turned into lines, its words measured and its layout solved. The last 64 layouts are remembered by model, engine and comparison, so a repeated render lays out nothing. The host runs the solves and holds the icons. Nothing here reads a clock, a random number or a file, so one host draws one request to the same bytes. Every variant is laid out fresh (ADR 0032).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-render"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+  "parent": "vKEsyHFk#HgZPVIE2",
+  "formerNames": [
+    "Render driver",
+    "View dispatcher",
+    "Architecture rendering",
+    "Core render"
   ]
 }

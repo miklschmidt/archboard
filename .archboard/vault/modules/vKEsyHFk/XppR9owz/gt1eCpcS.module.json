@@ -1,4 +1,24 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#T7wRpA8y",
+      "order": 41000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "executeCommand",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/operations/runner.ts",
+        "symbol": "executeCommand"
+      },
+      "to": "vKEsyHFk/XppR9owz#E2MAq7W7"
+    }
+  ],
   "order": 29000,
   "name": "runCommand",
   "kind": "function",
@@ -8,7 +28,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/contract/operations/runner.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#gt1eCpcS",
   "parent": "vKEsyHFk/XppR9owz#o5zkAtUT",
   "documents": [
@@ -30,25 +50,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 41000,
-      "kind": "call",
-      "label": "executeCommand",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/contract/operations/runner.ts",
-        "symbol": "executeCommand"
-      },
-      "id": "vKEsyHFk/XppR9owz#T7wRpA8y",
-      "to": "vKEsyHFk/XppR9owz#E2MAq7W7"
     }
   ]
 }

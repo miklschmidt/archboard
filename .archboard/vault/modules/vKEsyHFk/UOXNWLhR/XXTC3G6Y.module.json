@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 24002,
   "name": "Frame clock",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/ui-kit/src/ui/frame-clock"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
-  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1"
 }

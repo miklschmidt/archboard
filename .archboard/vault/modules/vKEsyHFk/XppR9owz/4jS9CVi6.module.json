@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#PmRXYBFT",
+      "order": 104000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "shared canonical operations",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/edit.ts",
+        "symbol": "editArchitectureModuleOnServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#6JptLyJB",
+      "order": 105000,
+      "kind": "call",
+      "effect": "query",
+      "label": "explicit doing line",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/edit.ts",
+        "symbol": "statedInvocation"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+    }
+  ],
   "order": 60000,
   "name": "Model edit commands",
   "kind": "module",
@@ -11,7 +41,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/edit.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#4jS9CVi6",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -33,34 +63,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 104000,
-      "kind": "call",
-      "label": "shared canonical operations",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/edit.ts",
-        "symbol": "editArchitectureModuleOnServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#PmRXYBFT",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
-    },
-    {
-      "order": 105000,
-      "kind": "call",
-      "label": "explicit doing line",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/edit.ts",
-        "symbol": "statedInvocation"
-      },
-      "id": "vKEsyHFk/XppR9owz#6JptLyJB",
-      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     }
   ]
 }

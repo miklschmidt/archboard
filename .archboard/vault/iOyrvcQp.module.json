@@ -1,4 +1,15 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#moKRYQRu",
+      "order": 900,
+      "kind": "render",
+      "effect": "query",
+      "label": "the selected module's code exports and findings",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#51X5gvya"
+    }
+  ],
   "order": 69000,
   "name": "Right panel",
   "kind": "module",
@@ -8,17 +19,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelPanel.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#iOyrvcQp",
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
-  "outgoing": [
-    {
-      "order": 900,
-      "kind": "render",
-      "label": "the selected module's code exports and findings",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#moKRYQRu",
-      "to": "vKEsyHFk#51X5gvya"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 9000,
   "name": "Receipt",
   "kind": "function",
@@ -10,8 +11,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/rasterizer/operations/receipt.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
-  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
-  "outgoing": []
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6"
 }

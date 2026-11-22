@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#azJqVDzi",
+      "order": 1002000,
+      "kind": "call",
+      "effect": "query",
+      "label": "read the state it inspects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/operations/inspect.ts",
+        "symbol": "readArchitectureModelOnServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I"
+    },
+    {
+      "id": "vKEsyHFk#ImS2FjJd",
+      "order": 1003000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "derive the interface and its counts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/model/rules/inspection.ts",
+        "symbol": "inspectContainer"
+      },
+      "to": "vKEsyHFk#DKzh4lMo"
+    }
+  ],
   "order": 68000,
   "name": "Model inspect",
   "kind": "module",
@@ -8,35 +38,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/inspect.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#rTNYNRVL",
-  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
-  "outgoing": [
-    {
-      "order": 1002000,
-      "kind": "http",
-      "label": "read the state it inspects",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/operations/inspect.ts",
-        "symbol": "readArchitectureModelOnServer"
-      },
-      "id": "vKEsyHFk#azJqVDzi",
-      "to": "vKEsyHFk/XppR9owz#TsCise1I"
-    },
-    {
-      "order": 1003000,
-      "kind": "call",
-      "label": "derive the interface and its counts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/model/rules/inspection.ts",
-        "symbol": "inspectContainer"
-      },
-      "id": "vKEsyHFk#ImS2FjJd",
-      "to": "vKEsyHFk#DKzh4lMo"
-    }
-  ]
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU"
 }

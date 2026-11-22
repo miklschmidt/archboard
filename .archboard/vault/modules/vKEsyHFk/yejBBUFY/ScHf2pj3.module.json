@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",
+      "order": 7000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "open the bound code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/panes/pane-session/state/pane-core.ts",
+        "symbol": "activateCodeTarget"
+      },
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    }
+  ],
   "order": 30000,
   "name": "Session lifecycle",
   "kind": "module",
@@ -7,7 +23,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/panes/pane-session/hooks/use-pane-session.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/yejBBUFY#ScHf2pj3",
   "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "documents": [
@@ -22,21 +38,6 @@
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 7000,
-      "kind": "call",
-      "label": "open the bound code",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/panes/pane-session/state/pane-core.ts",
-        "symbol": "activateCodeTarget"
-      },
-      "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
     }
   ]
 }

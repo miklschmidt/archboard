@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 3000,
   "name": "Subject atlas",
   "kind": "function",
@@ -9,8 +10,7 @@
     "path": "crates/archboard-scene/src/paint/page.rs",
     "symbol": "atlas_boxes"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#y8vuJJKu",
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf"
 }

@@ -1,25 +1,10 @@
 {
-  "order": 35000,
-  "name": "Command dispatch",
-  "kind": "module",
-  "responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-dispatch.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/9ncuT5DP#dEfJJFtS",
-  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
-  "documents": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
   "outgoing": [
     {
+      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
       "order": 14000,
       "kind": "call",
+      "effect": "mutation",
       "label": "edit the queue of the shown checkout's workhorse",
       "emphasis": "normal",
       "anchor": {
@@ -27,12 +12,13 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/browser-gateway.ts",
         "symbol": "add"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
       "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
       "order": 29000,
       "kind": "call",
+      "effect": "mutation",
       "label": "the workhorse of the shown checkout, built on first use",
       "emphasis": "normal",
       "anchor": {
@@ -40,12 +26,13 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/browser-gateway.ts",
         "symbol": "workhorse"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#mK9SfZDk",
       "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#89ivSTaM",
       "order": 31000,
       "kind": "call",
+      "effect": "query",
       "label": "the tab session of this connection",
       "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
       "emphasis": "normal",
@@ -54,12 +41,13 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/services/browser-gateway.ts",
         "symbol": "require"
       },
-      "id": "vKEsyHFk/9ncuT5DP#89ivSTaM",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
+      "id": "vKEsyHFk/9ncuT5DP#b9yFBXHz",
       "order": 42000,
       "kind": "call",
+      "effect": "mutation",
       "label": "create, on the tab's first message or Talk",
       "description": "The server passes a BrowserThreadLinkActions port to Browser gateway. command-dispatch invokes its create method; the implementation remains inside the Archboard server private thread-link composition.",
       "emphasis": "normal",
@@ -68,8 +56,24 @@
         "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-dispatch.ts",
         "symbol": "create"
       },
-      "id": "vKEsyHFk/9ncuT5DP#b9yFBXHz",
       "to": "vKEsyHFk/9ncuT5DP#JHbKEH3A"
+    }
+  ],
+  "order": 35000,
+  "name": "Command dispatch",
+  "kind": "module",
+  "responsibility": "Routes each admitted command to its account, thread, text, queue, approval or voice action",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/chat-conversations/gateway/operations/command-dispatch.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/9ncuT5DP#dEfJJFtS",
+  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ]
 }

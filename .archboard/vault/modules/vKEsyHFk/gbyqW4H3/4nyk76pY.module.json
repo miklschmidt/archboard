@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 13000,
   "name": "Renderer host",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/render/rules/host.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#4nyk76pY",
-  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY"
 }

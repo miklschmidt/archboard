@@ -1,4 +1,113 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
+      "order": 69000,
+      "kind": "call",
+      "effect": "query",
+      "label": "Read current or retained content",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
+        "symbol": "CanonicalModelReader"
+      },
+      "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "id": "vKEsyHFk#5Fd9qq2B",
+      "order": 70016,
+      "kind": "render",
+      "effect": "compute",
+      "label": "show shared reading controls",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx",
+        "symbol": "WarningCount"
+      },
+      "to": "vKEsyHFk#T0qPemAp"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#uZDbu609",
+      "order": 72000,
+      "kind": "call",
+      "effect": "query",
+      "label": "Read the legacy board listing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
+        "symbol": "ArchitectureModelStage"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#m551U9Gl",
+      "order": 74000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "subscribe to current model updates",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
+        "symbol": "useArchitectureFeed"
+      },
+      "to": "vKEsyHFk/yejBBUFY#JrTKhhoI"
+    },
+    {
+      "id": "vKEsyHFk/yejBBUFY#scByKwmU",
+      "order": 75000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "projectModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/hooks/use-model-reading.ts",
+        "symbol": "projectModel"
+      },
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
+    },
+    {
+      "id": "vKEsyHFk#7lMq2csR",
+      "order": 980280,
+      "kind": "render",
+      "effect": "query",
+      "label": "a narrative beside the reader",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
+        "symbol": "ModelWalkthroughReader"
+      },
+      "to": "vKEsyHFk/yejBBUFY#r5MuZktA"
+    },
+    {
+      "id": "vKEsyHFk#3ooGgy80",
+      "order": 997000,
+      "kind": "render",
+      "effect": "compute",
+      "label": "the shared tree list",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelTree.tsx",
+        "symbol": "Tree"
+      },
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "id": "vKEsyHFk#VelaZ2cn",
+      "order": 970000,
+      "kind": "render",
+      "effect": "query",
+      "label": "in Code mode, list the files and show the open one",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#2EpLFgGU"
+    }
+  ],
   "order": 960180,
   "name": "Reading stage",
   "kind": "ui",
@@ -8,108 +117,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#p0EDMxTr",
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
-  "outgoing": [
-    {
-      "order": 69000,
-      "kind": "call",
-      "label": "Read current or retained content",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
-        "symbol": "CanonicalModelReader"
-      },
-      "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
-      "to": "vKEsyHFk#guvtYApo"
-    },
-    {
-      "order": 70016,
-      "kind": "call",
-      "label": "show shared reading controls",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelCodeFindings.tsx",
-        "symbol": "WarningCount"
-      },
-      "id": "vKEsyHFk#5Fd9qq2B",
-      "to": "vKEsyHFk#T0qPemAp"
-    },
-    {
-      "order": 72000,
-      "kind": "call",
-      "label": "Read the legacy board listing",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
-        "symbol": "ArchitectureModelStage"
-      },
-      "id": "vKEsyHFk/yejBBUFY#uZDbu609",
-      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
-    },
-    {
-      "order": 74000,
-      "kind": "call",
-      "label": "subscribe to current model updates",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
-        "symbol": "useArchitectureFeed"
-      },
-      "id": "vKEsyHFk/yejBBUFY#m551U9Gl",
-      "to": "vKEsyHFk/yejBBUFY#JrTKhhoI"
-    },
-    {
-      "order": 75000,
-      "kind": "call",
-      "label": "projectModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/hooks/use-model-reading.ts",
-        "symbol": "projectModel"
-      },
-      "id": "vKEsyHFk/yejBBUFY#scByKwmU",
-      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
-    },
-    {
-      "order": 980280,
-      "kind": "render",
-      "label": "a narrative beside the reader",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ArchitectureModelStage.tsx",
-        "symbol": "ModelWalkthroughReader"
-      },
-      "id": "vKEsyHFk#7lMq2csR",
-      "to": "vKEsyHFk/yejBBUFY#r5MuZktA"
-    },
-    {
-      "order": 997000,
-      "kind": "call",
-      "label": "the shared tree list",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/components/ModelTree.tsx",
-        "symbol": "Tree"
-      },
-      "id": "vKEsyHFk#3ooGgy80",
-      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
-    },
-    {
-      "order": 970000,
-      "kind": "call",
-      "label": "in Code mode, list the files and show the open one",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#VelaZ2cn",
-      "to": "vKEsyHFk#2EpLFgGU"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt"
 }

@@ -1,4 +1,160 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
+      "order": 13000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "record the pane; wait for one the shell opens or closes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "registerPane"
+      },
+      "to": "vKEsyHFk#r2iFMYJk"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
+      "order": 22000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the pane's focus, for its agent",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "publishPaneContext"
+      },
+      "to": "vKEsyHFk#OY4JPr8G"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#hDNka8yA",
+      "order": 40000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "requires a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "requireVault"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#wX9a448V",
+      "order": 61000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts the panes report",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "getPanesRoute"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
+    },
+    {
+      "id": "vKEsyHFk#wvK4SWe1",
+      "order": 61500,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts the show route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "showPaneRoute"
+      },
+      "to": "vKEsyHFk#RZTsoQN5"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
+      "order": 66000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "mounts the activation route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "shownConversationRoute"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
+    },
+    {
+      "id": "vKEsyHFk#kEIA3Iaa",
+      "order": 70029,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "wrap addressed pane requests",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "asyncEndpoint"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
+      "order": 71000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "only the page reaches the activation route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
+    },
+    {
+      "id": "vKEsyHFk#4gRaPRO3",
+      "order": 90000,
+      "kind": "call",
+      "effect": "query",
+      "label": "whether the tab's bundle is current",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "staleFrontend"
+      },
+      "to": "vKEsyHFk#apyQZjM7"
+    },
+    {
+      "id": "vKEsyHFk#vTfr79yF",
+      "order": 91000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the address a browser opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "browserUrl"
+      },
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
+      "id": "vKEsyHFk#lncCBP74",
+      "order": 92000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the panes on screen; ask the answering pane to open one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "sendKeylessToPane"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    }
+  ],
   "order": 9000,
   "name": "Pane routes",
   "kind": "route",
@@ -10,7 +166,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/Oi6SBIAM#MqTq68P3",
   "parent": "vKEsyHFk/Oi6SBIAM#UvFpXmwp",
   "documents": [
@@ -23,151 +179,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 13000,
-      "kind": "call",
-      "label": "record the pane; wait for one the shell opens or closes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "registerPane"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#oi6YF8VO",
-      "to": "vKEsyHFk#r2iFMYJk"
-    },
-    {
-      "order": 22000,
-      "kind": "call",
-      "label": "the pane's focus, for its agent",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "publishPaneContext"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
-      "to": "vKEsyHFk#OY4JPr8G"
-    },
-    {
-      "order": 40000,
-      "kind": "call",
-      "label": "requires a vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "requireVault"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#hDNka8yA",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 61000,
-      "kind": "dependency",
-      "label": "mounts the panes report",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "getPanesRoute"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#wX9a448V",
-      "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
-    },
-    {
-      "order": 61500,
-      "kind": "dependency",
-      "label": "mounts the show route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "showPaneRoute"
-      },
-      "id": "vKEsyHFk#wvK4SWe1",
-      "to": "vKEsyHFk#RZTsoQN5"
-    },
-    {
-      "order": 66000,
-      "kind": "dependency",
-      "label": "mounts the activation route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "shownConversationRoute"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#Evb1IqVj",
-      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
-    },
-    {
-      "order": 70029,
-      "kind": "call",
-      "label": "wrap addressed pane requests",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "asyncEndpoint"
-      },
-      "id": "vKEsyHFk#kEIA3Iaa",
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
-    },
-    {
-      "order": 71000,
-      "kind": "call",
-      "label": "only the page reaches the activation route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "createBrowserOriginGuard"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
-      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "whether the tab's bundle is current",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "staleFrontend"
-      },
-      "id": "vKEsyHFk#4gRaPRO3",
-      "to": "vKEsyHFk#apyQZjM7"
-    },
-    {
-      "order": 91000,
-      "kind": "call",
-      "label": "the address a browser opens",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "browserUrl"
-      },
-      "id": "vKEsyHFk#vTfr79yF",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
-    },
-    {
-      "order": 92000,
-      "kind": "call",
-      "label": "the panes on screen; ask the answering pane to open one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "sendKeylessToPane"
-      },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#lncCBP74"
     }
   ]
 }

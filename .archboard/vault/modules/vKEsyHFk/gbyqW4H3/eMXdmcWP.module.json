@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/gbyqW4H3#veScCirT",
+      "order": 9000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "installRendererHost",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
+        "symbol": "installRendererHost"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#TveKMtfC",
+      "order": 27000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "Bun Workers, as the host's solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
+        "symbol": "createEnginePool"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
+    },
+    {
+      "id": "vKEsyHFk#3Vj0qb9d",
+      "order": 28000,
+      "kind": "call",
+      "effect": "query",
+      "label": "load the core, and hand its module to each worker",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
+        "symbol": "compiledCore"
+      },
+      "to": "vKEsyHFk#jY4mqBJe"
+    },
+    {
+      "id": "vKEsyHFk#Rc1uXY6J",
+      "order": 29000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the program root, where the layout worker lies",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 33000,
   "name": "Bun host installation",
   "kind": "module",
@@ -8,61 +66,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#eMXdmcWP",
-  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
-  "outgoing": [
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "installRendererHost",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
-        "symbol": "installRendererHost"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#veScCirT",
-      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
-    },
-    {
-      "order": 27000,
-      "kind": "call",
-      "label": "Bun Workers, as the host's solve",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
-        "symbol": "createEnginePool"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#TveKMtfC",
-      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
-    },
-    {
-      "order": 28000,
-      "kind": "call",
-      "label": "load the core, and hand its module to each worker",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
-        "symbol": "compiledCore"
-      },
-      "id": "vKEsyHFk#3Vj0qb9d",
-      "to": "vKEsyHFk#jY4mqBJe"
-    },
-    {
-      "order": 29000,
-      "kind": "dependency",
-      "label": "the program root, where the layout worker lies",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/bun-renderer/services/bun-host.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#Rc1uXY6J",
-      "to": "vKEsyHFk#4FdKQJqK"
-    }
-  ]
+  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp"
 }

@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#0IgXUO7L",
+      "order": 1000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "start the platform package's executable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/release/launcher.sh",
+        "symbol": "executable"
+      },
+      "to": "vKEsyHFk/XppR9owz#peyArgPx"
+    }
+  ],
   "order": 3000,
   "name": "Platform launcher",
   "kind": "module",
@@ -8,22 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "scripts/release/launcher.sh"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#xurdJU8F",
-  "parent": "vKEsyHFk#02jxKSM1",
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "start the platform package's executable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/release/launcher.sh",
-        "symbol": "executable"
-      },
-      "id": "vKEsyHFk#0IgXUO7L",
-      "to": "vKEsyHFk/XppR9owz#peyArgPx"
-    }
-  ]
+  "parent": "vKEsyHFk#02jxKSM1"
 }

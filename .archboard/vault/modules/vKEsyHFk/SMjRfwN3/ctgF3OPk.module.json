@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 8000,
   "name": "PNG header",
   "kind": "function",
@@ -10,8 +11,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/rasterizer/operations/png.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#ctgF3OPk",
-  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
-  "outgoing": []
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6"
 }

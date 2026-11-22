@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#dMtR5BqB",
+      "order": 55000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "start it when nothing answers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
+        "symbol": "ensureServerRunning"
+      },
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#EywCr04W",
+      "order": 56000,
+      "kind": "call",
+      "effect": "query",
+      "label": "how many browsers show the canvas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
+        "symbol": "connectedBrowsers"
+      },
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "id": "vKEsyHFk#sYoTKyHa",
+      "order": 57000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the address a browser opens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
+        "symbol": "browserUrl"
+      },
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    }
+  ],
   "order": 33000,
   "name": "Prerequisites",
   "kind": "module",
@@ -8,7 +52,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/contract/clients/prerequisites.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#XKjn4icZ",
   "parent": "vKEsyHFk/XppR9owz#o5zkAtUT",
   "documents": [
@@ -30,47 +74,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 55000,
-      "kind": "call",
-      "label": "start it when nothing answers",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
-        "symbol": "ensureServerRunning"
-      },
-      "id": "vKEsyHFk/XppR9owz#dMtR5BqB",
-      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
-    },
-    {
-      "order": 56000,
-      "kind": "call",
-      "label": "how many browsers show the canvas",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
-        "symbol": "connectedBrowsers"
-      },
-      "id": "vKEsyHFk/XppR9owz#EywCr04W",
-      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
-    },
-    {
-      "order": 57000,
-      "kind": "call",
-      "label": "the address a browser opens",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/contract/clients/prerequisites.ts",
-        "symbol": "browserUrl"
-      },
-      "id": "vKEsyHFk#sYoTKyHa",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }

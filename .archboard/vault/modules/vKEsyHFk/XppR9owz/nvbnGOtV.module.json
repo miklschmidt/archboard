@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#i7r1YcDJ",
+      "order": 73000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the root of the installation to build",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#eSv7lgu3",
+      "order": 74000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "stop, then start again",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "stopServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "id": "vKEsyHFk#e3hkROQO",
+      "order": 75000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "silence the warning about the server it replaces",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "silenceVersionWarning"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "id": "vKEsyHFk#2JxXOGhK",
+      "order": 76000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the bundle a release serves, which it does not build",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "frontendBuild"
+      },
+      "to": "vKEsyHFk#apyQZjM7"
+    }
+  ],
   "order": 44000,
   "name": "Restart",
   "kind": "module",
@@ -8,7 +66,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/operations/restart.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#nvbnGOtV",
   "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "documents": [
@@ -30,60 +88,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 73000,
-      "kind": "dependency",
-      "label": "the root of the installation to build",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk/XppR9owz#i7r1YcDJ",
-      "to": "vKEsyHFk#4FdKQJqK"
-    },
-    {
-      "order": 74000,
-      "kind": "call",
-      "label": "stop, then start again",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
-        "symbol": "stopServer"
-      },
-      "id": "vKEsyHFk/XppR9owz#eSv7lgu3",
-      "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
-    },
-    {
-      "order": 75000,
-      "kind": "call",
-      "label": "silence the warning about the server it replaces",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
-        "symbol": "silenceVersionWarning"
-      },
-      "id": "vKEsyHFk#e3hkROQO",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 76000,
-      "kind": "call",
-      "label": "the bundle a release serves, which it does not build",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
-        "symbol": "frontendBuild"
-      },
-      "id": "vKEsyHFk#2JxXOGhK",
-      "to": "vKEsyHFk#apyQZjM7"
     }
   ]
 }

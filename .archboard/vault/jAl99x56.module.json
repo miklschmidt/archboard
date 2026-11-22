@@ -1,19 +1,10 @@
 {
-  "order": 912000,
-  "name": "Bun render",
-  "kind": "function",
-  "responsibility": "Draws one architecture reading in a Bun process",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#jAl99x56",
-  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
   "outgoing": [
     {
+      "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
       "order": 8000,
       "kind": "call",
+      "effect": "compute",
       "label": "drawLegacyBoard on the core",
       "emphasis": "hero",
       "traffic": {
@@ -25,12 +16,13 @@
         "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "drawLegacyBoard"
       },
-      "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
       "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
       "order": 29000,
       "kind": "call",
+      "effect": "compute",
       "label": "a picture with no model around it",
       "emphasis": "normal",
       "anchor": {
@@ -38,12 +30,13 @@
         "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "renderArchitectureIn"
       },
-      "id": "vKEsyHFk/gbyqW4H3#hlcSv0hV",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
     },
     {
+      "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
       "order": 73000,
       "kind": "call",
+      "effect": "compute",
       "label": "the recipe of a render that stands alone",
       "emphasis": "normal",
       "anchor": {
@@ -51,12 +44,13 @@
         "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "carryingRecipe"
       },
-      "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
       "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
     },
     {
+      "id": "vKEsyHFk#OeBKmvkq",
       "order": 130030,
       "kind": "call",
+      "effect": "mutation",
       "label": "installBunHost",
       "emphasis": "normal",
       "anchor": {
@@ -64,8 +58,18 @@
         "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts",
         "symbol": "installBunHost"
       },
-      "id": "vKEsyHFk#OeBKmvkq",
       "to": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
     }
-  ]
+  ],
+  "order": 912000,
+  "name": "Bun render",
+  "kind": "function",
+  "responsibility": "Draws one architecture reading in a Bun process",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/bun-renderer/operations/render.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#jAl99x56",
+  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp"
 }

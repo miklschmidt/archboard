@@ -1,26 +1,10 @@
 {
-  "order": 4000,
-  "name": "Coordinator tools",
-  "kind": "module",
-  "responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger; each workhorse tool names the checkout whose workhorse it works with, and a spoken stop names none",
-  "description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three workhorse tools refuse a checkout with no ready workhorse, and say what a checkout is. stop_workhorses stops the work tree of every workhorse of the calling tab session and says what each stop observed. inspect_workhorse adds the outcome of the workhorse's last stop to what its operations read.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
-  "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
-  "documents": [
-    {
-      "repo": "github.com/miklschmidt/archboard",
-      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
   "outgoing": [
     {
+      "id": "vKEsyHFk/SJ2JMVyz#e1viO4QT",
       "order": 2000,
       "kind": "call",
+      "effect": "mutation",
       "label": "delegate, steer, inspect or queue in the named checkout",
       "emphasis": "hero",
       "traffic": {
@@ -32,12 +16,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "delegate"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#e1viO4QT",
       "to": "vKEsyHFk/9ncuT5DP#7XZtb0wb"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#FRlXCCgx",
       "order": 8000,
       "kind": "call",
+      "effect": "compute",
       "label": "validate against the frozen manifest",
       "emphasis": "normal",
       "anchor": {
@@ -45,12 +30,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/validation.ts",
         "symbol": "parseCoordinatorToolInput"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#FRlXCCgx",
       "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
       "order": 9000,
       "kind": "call",
+      "effect": "mutation",
       "label": "route the sustained work to the named checkout",
       "emphasis": "hero",
       "traffic": {
@@ -62,12 +48,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "delegate"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
       "to": "vKEsyHFk/9ncuT5DP#iLWBCObu"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#jWYpMYjr",
       "order": 10000,
       "kind": "call",
+      "effect": "mutation",
       "label": "resolve the approval answered aloud",
       "emphasis": "normal",
       "anchor": {
@@ -75,12 +62,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/call-execution.ts",
         "symbol": "resolve"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#jWYpMYjr",
       "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#bK9QB2R5",
       "order": 34000,
       "kind": "call",
+      "effect": "mutation",
       "label": "stop_workhorses: stop every workhorse's work tree",
       "emphasis": "normal",
       "anchor": {
@@ -88,12 +76,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "stopWork"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#bK9QB2R5",
       "to": "vKEsyHFk#A22BWprk"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#au7MY0Yt",
       "order": 40000,
       "kind": "call",
+      "effect": "mutation",
       "label": "stop_workhorses: stop every running workhorse of the tab",
       "emphasis": "normal",
       "anchor": {
@@ -101,12 +90,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/tool-execution.ts",
         "symbol": "stopWork"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#au7MY0Yt",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#8DGohqjh",
       "order": 42000,
       "kind": "rpc",
+      "effect": "mutation",
       "label": "answer the tool call",
       "emphasis": "normal",
       "anchor": {
@@ -114,12 +104,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services/dispatcher.ts",
         "symbol": "respondOnce"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#8DGohqjh",
       "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu"
     },
     {
+      "id": "vKEsyHFk/qKGcB6vZ#veSu4QHr",
       "order": 49000,
       "kind": "call",
+      "effect": "compute",
       "label": "the role a call came through, by name and digest",
       "emphasis": "normal",
       "anchor": {
@@ -127,8 +118,25 @@
         "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/rules/validation.ts",
         "symbol": "toolRoleOf"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#veSu4QHr",
       "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
+    }
+  ],
+  "order": 4000,
+  "name": "Coordinator tools",
+  "kind": "module",
+  "responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger; each workhorse tool names the checkout whose workhorse it works with, and a spoken stop names none",
+  "description": "A replay of one logical call is the same call only when it names the same checkout: the same arguments in another checkout are work for another workhorse. A delegation to a checkout whose workhorse has no thread that can run turns starts it first; the other three workhorse tools refuse a checkout with no ready workhorse, and say what a checkout is. stop_workhorses stops the work tree of every workhorse of the calling tab session and says what each stop observed. inspect_workhorse adds the outcome of the workhorse's last stop to what its operations read.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/voice/coordinator/tools-and-work/coordinator-tools/services"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
+  "parent": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ]
 }

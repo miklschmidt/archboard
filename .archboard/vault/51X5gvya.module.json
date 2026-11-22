@@ -1,4 +1,24 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#NqQSFaBz",
+      "order": 900,
+      "kind": "call",
+      "effect": "query",
+      "label": "the selected module's export names and lines",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "id": "vKEsyHFk#ZGL6hDbE",
+      "order": 910,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "open an export at the line that defines it",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
+    }
+  ],
   "order": 30500,
   "name": "Code exports",
   "kind": "ui",
@@ -8,25 +28,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/model-reader/reading/code-exports"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#51X5gvya",
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
-  "outgoing": [
-    {
-      "order": 900,
-      "kind": "call",
-      "label": "the selected module's export names and lines",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#NqQSFaBz",
-      "to": "vKEsyHFk#guvtYApo"
-    },
-    {
-      "order": 910,
-      "kind": "call",
-      "label": "open an export at the line that defines it",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#ZGL6hDbE",
-      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
-    }
-  ]
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt"
 }

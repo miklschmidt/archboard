@@ -8,25 +8,28 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure-render"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#7yGUY6ta",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "outgoing": [
     {
       "order": 91008,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "mutation",
       "label": "the graph and its attributes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/vendor/graphviz-pure-render/src/agwrite.rs",
-        "symbol": "AttrMap"
+        "path": "crates/vendor/graphviz-pure-render/src/emit/mod.rs",
+        "symbol": "reset_run"
       },
       "id": "vKEsyHFk#LlnBacc1",
       "to": "vKEsyHFk#FLnwES7I"
     },
     {
       "order": 91009,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "draw each node shape",
       "emphasis": "normal",
       "anchor": {
@@ -39,7 +42,8 @@
     },
     {
       "order": 91010,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "write canonical DOT strings",
       "emphasis": "normal",
       "anchor": {
@@ -50,6 +54,5 @@
       "id": "vKEsyHFk#SHrlu0wj",
       "to": "vKEsyHFk#hBkjiO4k"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

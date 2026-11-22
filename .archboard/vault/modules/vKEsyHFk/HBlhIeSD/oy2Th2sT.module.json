@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#CugxYaZL",
+      "order": 129000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "requireVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
+        "symbol": "requireVault"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "id": "vKEsyHFk#RC0KCg55",
+      "order": 130000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "Track accepted work",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
+        "symbol": "asyncEndpoint"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#NdGIaM6r",
+      "order": 256000,
+      "kind": "call",
+      "effect": "query",
+      "label": "exportArchitectureModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
+        "symbol": "exportArchitectureModel"
+      },
+      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT"
+    }
+  ],
   "order": 44000,
   "name": "Portable model routes",
   "kind": "module",
@@ -7,7 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#oy2Th2sT",
   "parent": "vKEsyHFk/HBlhIeSD#I6MrfGUg",
   "documents": [
@@ -29,47 +73,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 129000,
-      "kind": "call",
-      "label": "requireVault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
-        "symbol": "requireVault"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#CugxYaZL",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 130000,
-      "kind": "call",
-      "label": "Track accepted work",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
-        "symbol": "asyncEndpoint"
-      },
-      "id": "vKEsyHFk#RC0KCg55",
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
-    },
-    {
-      "order": 256000,
-      "kind": "call",
-      "label": "exportArchitectureModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/architecture-writes/routes/portable-routes.ts",
-        "symbol": "exportArchitectureModel"
-      },
-      "id": "vKEsyHFk/0T9enjhi#NdGIaM6r",
-      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT"
     }
   ]
 }

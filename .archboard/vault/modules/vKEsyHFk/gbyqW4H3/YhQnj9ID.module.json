@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/gbyqW4H3#0ylLwMwH",
+      "order": 51000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "what the picture draws",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/legend/export.rs",
+        "symbol": "entries_of"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    },
+    {
+      "id": "vKEsyHFk/gbyqW4H3#ryvCaAp5",
+      "order": 68000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "draw the standing key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/legend/symbols.rs",
+        "symbol": "standing_pin_at"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    }
+  ],
   "order": 25000,
   "name": "Export legend",
   "kind": "function",
@@ -9,35 +39,7 @@
     "path": "crates/archboard-scene/src/paint/legend/export.rs",
     "symbol": "legend_of"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
-  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
-  "outgoing": [
-    {
-      "order": 51000,
-      "kind": "call",
-      "label": "what the picture draws",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/legend/export.rs",
-        "symbol": "entries_of"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#0ylLwMwH",
-      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
-    },
-    {
-      "order": 68000,
-      "kind": "call",
-      "label": "draw the standing key",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/legend/symbols.rs",
-        "symbol": "standing_pin_at"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#ryvCaAp5",
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
-    }
-  ]
+  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq"
 }

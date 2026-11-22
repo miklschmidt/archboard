@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 960350,
   "name": "Code warnings",
   "kind": "ui",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/presentation/components/CodeWarnings.tsx"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#T0qPemAp",
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
 }

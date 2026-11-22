@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#aJzBoBHj",
+      "order": 61100,
+      "kind": "call",
+      "effect": "compute",
+      "label": "draw each reading of the corpus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/render-corpus.ts",
+        "symbol": "renderArchitecture"
+      },
+      "to": "vKEsyHFk#jAl99x56"
+    },
+    {
+      "id": "vKEsyHFk#ZzfH0MsX",
+      "order": 200,
+      "kind": "call",
+      "effect": "query",
+      "label": "the model of each reading in the corpus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "scripts/render-corpus.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    }
+  ],
   "order": 29010,
   "name": "Render corpus",
   "kind": "module",
@@ -7,34 +37,6 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "scripts/render-corpus.ts"
   },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#4jqzTNi6",
-  "outgoing": [
-    {
-      "order": 61100,
-      "kind": "call",
-      "label": "draw each reading of the corpus",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/render-corpus.ts",
-        "symbol": "renderArchitecture"
-      },
-      "id": "vKEsyHFk#aJzBoBHj",
-      "to": "vKEsyHFk#jAl99x56"
-    },
-    {
-      "order": 200,
-      "kind": "call",
-      "label": "the model of each reading in the corpus",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/render-corpus.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "to": "vKEsyHFk#ZGONZKxj",
-      "id": "vKEsyHFk#ZzfH0MsX"
-    }
-  ]
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#4jqzTNi6"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 91000,
   "name": "Release version",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/rules/release-version.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#hcmla1Wa",
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih"
 }

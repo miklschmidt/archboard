@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#KBBwvHf9",
+      "order": 1000,
+      "kind": "call",
+      "effect": "query",
+      "label": "place a pane whose vault is gone",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/request/services/vault.ts",
+        "symbol": "placeOfVault"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    }
+  ],
   "order": 37000,
   "name": "Vault requirement",
   "kind": "module",
@@ -8,7 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/request/services/vault.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
@@ -25,21 +41,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "call",
-      "label": "place a pane whose vault is gone",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/request/services/vault.ts",
-        "symbol": "placeOfVault"
-      },
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-      "id": "vKEsyHFk#KBBwvHf9"
     }
   ]
 }

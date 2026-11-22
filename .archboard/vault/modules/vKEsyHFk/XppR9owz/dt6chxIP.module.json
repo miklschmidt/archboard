@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
+      "order": 12000,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "open, close and show panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
+        "symbol": "mountPaneRoutes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
+      "id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
+      "order": 62000,
+      "kind": "http",
+      "effect": "query",
+      "label": "browser panes: each pane's repository, checkout and own",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
+        "symbol": "getPanesRoute"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#IybnFJlJ",
+      "order": 79000,
+      "kind": "call",
+      "effect": "query",
+      "label": "reads the writing session for a pane show",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
+        "symbol": "statedInvocation"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#4qdyTWGi",
+      "order": 82000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the pane routes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
+        "symbol": "requestJson"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    }
+  ],
   "order": 49000,
   "name": "Pane client",
   "kind": "module",
@@ -7,7 +65,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/server-access/clients/panes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#dt6chxIP",
   "parent": "vKEsyHFk/XppR9owz#dHZeNcMs",
   "documents": [
@@ -29,60 +87,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 12000,
-      "kind": "http",
-      "label": "open, close and show panes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-routes.ts",
-        "symbol": "mountPaneRoutes"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
-      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
-    },
-    {
-      "order": 62000,
-      "kind": "http",
-      "label": "browser panes: each pane's repository, checkout and own",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/panes/connections/routes/pane-report-route.ts",
-        "symbol": "getPanesRoute"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
-      "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
-    },
-    {
-      "order": 79000,
-      "kind": "call",
-      "label": "reads the writing session for a pane show",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
-        "symbol": "statedInvocation"
-      },
-      "id": "vKEsyHFk/XppR9owz#IybnFJlJ",
-      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
-    },
-    {
-      "order": 82000,
-      "kind": "call",
-      "label": "the pane routes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/server-access/clients/panes.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#4qdyTWGi",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     }
   ]
 }

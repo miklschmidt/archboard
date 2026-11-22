@@ -1,27 +1,19 @@
 {
-  "order": 960150,
-  "name": "Model queries",
-  "kind": "function",
-  "responsibility": "The query options of a model, its history, its walkthroughs and its explanations, and the requests behind them",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#guvtYApo",
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "outgoing": [
     {
+      "id": "vKEsyHFk#tLRnKy0B",
       "order": 90,
       "kind": "http",
+      "effect": "query",
       "label": "read the branch footprint and the source refs",
       "emphasis": "normal",
-      "id": "vKEsyHFk#tLRnKy0B",
       "to": "vKEsyHFk#75K8M1QX"
     },
     {
+      "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
       "order": 2000,
       "kind": "http",
+      "effect": "mutation",
       "label": "views and controls",
       "emphasis": "hero",
       "traffic": {
@@ -33,12 +25,13 @@
         "path": "packages/server-requests/src/ui/clients/server-requests.ts",
         "symbol": "fetch"
       },
-      "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     },
     {
+      "id": "vKEsyHFk#mgj7wHRP",
       "order": 40000,
       "kind": "http",
+      "effect": "query",
       "label": "read the file an evidence excerpt cuts its lines from",
       "emphasis": "normal",
       "anchor": {
@@ -46,12 +39,13 @@
         "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/source-lines.ts",
         "symbol": "sourceLinesQuery"
       },
-      "id": "vKEsyHFk#mgj7wHRP",
       "to": "vKEsyHFk#fCXk4gkF"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
       "order": 67000,
       "kind": "call",
+      "effect": "query",
       "label": "Fetch the canonical model",
       "emphasis": "normal",
       "anchor": {
@@ -59,12 +53,13 @@
         "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/queries.ts",
         "symbol": "readModel"
       },
-      "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
     },
     {
+      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
       "order": 105000,
       "kind": "http",
+      "effect": "query",
       "label": "Read the canonical model",
       "emphasis": "normal",
       "anchor": {
@@ -72,8 +67,18 @@
         "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients/queries.ts",
         "symbol": "readModel"
       },
-      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
       "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     }
-  ]
+  ],
+  "order": 960150,
+  "name": "Model queries",
+  "kind": "function",
+  "responsibility": "The query options of a model, its history, its walkthroughs and its explanations, and the requests behind them",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/architecture-drawing/model-reader/access/clients"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#guvtYApo",
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P"
 }

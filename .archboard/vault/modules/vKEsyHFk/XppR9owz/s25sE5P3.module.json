@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#pn92tto1",
+      "order": 95000,
+      "kind": "spawn",
+      "effect": "mutation",
+      "label": "the default branch vault, shallow and sparse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/vault/embeds/operations/fetched-vaults.ts",
+        "symbol": "fetchSteps"
+      },
+      "to": "vKEsyHFk/XppR9owz#kdK2HT99"
+    },
+    {
+      "id": "vKEsyHFk#5yYA6WLY",
+      "order": 1008020,
+      "kind": "call",
+      "effect": "query",
+      "label": "the checkouts embeds read from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/vault/embeds/operations/embeds-check.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
+    }
+  ],
   "order": 51000,
   "name": "Embeds check",
   "kind": "module",
@@ -7,7 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/vault/embeds"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#s25sE5P3",
   "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
   "documents": [
@@ -29,34 +59,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 95000,
-      "kind": "data",
-      "label": "the default branch vault, shallow and sparse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/vault/embeds/operations/fetched-vaults.ts",
-        "symbol": "fetchSteps"
-      },
-      "id": "vKEsyHFk/XppR9owz#pn92tto1",
-      "to": "vKEsyHFk/XppR9owz#kdK2HT99"
-    },
-    {
-      "order": 1008020,
-      "kind": "call",
-      "label": "the checkouts embeds read from",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/vault/embeds/operations/embeds-check.ts",
-        "symbol": "checkoutsReadFrom"
-      },
-      "id": "vKEsyHFk#5yYA6WLY",
-      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
     }
   ]
 }

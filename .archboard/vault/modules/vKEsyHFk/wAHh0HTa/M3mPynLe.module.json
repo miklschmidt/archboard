@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/wAHh0HTa#JOmIweJF",
+      "order": 15000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "which identities each result holds",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/session/operations/response-identity-adoption.ts",
+        "symbol": "SESSION_PROTOCOL_METHODS"
+      },
+      "to": "vKEsyHFk/wAHh0HTa#aRDbMlep"
+    }
+  ],
   "order": 5001,
   "name": "Adopt response identities",
   "kind": "function",
@@ -8,28 +24,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/session/operations/response-identity-adoption.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/wAHh0HTa#M3mPynLe",
   "parent": "vKEsyHFk/9ncuT5DP#jylkTBp7",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 15000,
-      "kind": "dependency",
-      "label": "which identities each result holds",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/session/operations/response-identity-adoption.ts",
-        "symbol": "SESSION_PROTOCOL_METHODS"
-      },
-      "id": "vKEsyHFk/wAHh0HTa#JOmIweJF",
-      "to": "vKEsyHFk/wAHh0HTa#aRDbMlep"
     }
   ]
 }

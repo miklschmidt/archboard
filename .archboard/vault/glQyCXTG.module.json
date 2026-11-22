@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/XppR9owz#kggkjerM",
+      "order": 52000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the registry, for the generated proof",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/contract-artifacts/operations/render.ts",
+        "symbol": "cliContractRegistry"
+      },
+      "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
+    },
+    {
+      "id": "vKEsyHFk#GNKmFWDI",
+      "order": 53000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the root to write the artifacts into",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts",
+        "symbol": "installation"
+      },
+      "to": "vKEsyHFk#4FdKQJqK"
+    }
+  ],
   "order": 960360,
   "name": "Contract reference",
   "kind": "function",
@@ -7,35 +37,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/contract-artifacts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#glQyCXTG",
-  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
-  "outgoing": [
-    {
-      "order": 52000,
-      "kind": "call",
-      "label": "the registry, for the generated proof",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/contract-artifacts/operations/render.ts",
-        "symbol": "cliContractRegistry"
-      },
-      "id": "vKEsyHFk/XppR9owz#kggkjerM",
-      "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
-    },
-    {
-      "order": 53000,
-      "kind": "dependency",
-      "label": "the root to write the artifacts into",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/commands/contract-artifacts/operations/generate.ts",
-        "symbol": "installation"
-      },
-      "id": "vKEsyHFk#GNKmFWDI",
-      "to": "vKEsyHFk#4FdKQJqK"
-    }
-  ]
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU"
 }

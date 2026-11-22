@@ -1,4 +1,67 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/SMjRfwN3#7gIxznvp",
+      "order": 2000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "refuse what is past the limits first",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "symbol": "boundsRefusal"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
+    },
+    {
+      "id": "vKEsyHFk/SMjRfwN3#IiA7nIxT",
+      "order": 3000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "capture, one job at a time",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "symbol": "RasterSession"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#8c0zvhQW"
+    },
+    {
+      "id": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
+      "order": 14000,
+      "kind": "call",
+      "effect": "query",
+      "label": "which Chromium",
+      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "symbol": "discoveredChromiumPath"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#ShT7QadJ"
+    },
+    {
+      "id": "vKEsyHFk#zAZwER1T",
+      "order": 15000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "raster job, start-up and cleanup durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
+        "symbol": "rasterMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ],
   "order": 2000,
   "name": "Rasterizer",
   "kind": "module",
@@ -11,66 +74,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/SMjRfwN3#KyQxypRC",
-  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
-  "outgoing": [
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "refuse what is past the limits first",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
-        "symbol": "boundsRefusal"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#7gIxznvp",
-      "to": "vKEsyHFk/SMjRfwN3#7N0JLb2b"
-    },
-    {
-      "order": 3000,
-      "kind": "call",
-      "label": "capture, one job at a time",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
-        "symbol": "RasterSession"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#IiA7nIxT",
-      "to": "vKEsyHFk/SMjRfwN3#8c0zvhQW"
-    },
-    {
-      "order": 14000,
-      "kind": "call",
-      "label": "which Chromium",
-      "description": "The caller imports the headless-chromium root. The target implements the exported launchHeadlessChromium, DevTools instance methods or discoveredChromiumPath; it is a public entry point, even though its owner file is under lib/.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
-        "symbol": "discoveredChromiumPath"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#FDMYhJSq",
-      "to": "vKEsyHFk/SMjRfwN3#ShT7QadJ"
-    },
-    {
-      "order": 15000,
-      "kind": "dependency",
-      "label": "raster job, start-up and cleanup durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/rasterizer/services/rasterizer.ts",
-        "symbol": "rasterMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#zAZwER1T"
-    }
-  ]
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6"
 }

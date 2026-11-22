@@ -1,20 +1,10 @@
 {
-  "order": 8000,
-  "name": "Layout engine",
-  "kind": "function",
-  "responsibility": "Lays one graph out as Track or Blocks inside a layout worker",
-  "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutPicture, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
-  "parent": "vKEsyHFk/OjRLKb74#e10t6gst",
   "outgoing": [
     {
+      "id": "vKEsyHFk/OjRLKb74#T4hTbGVM",
       "order": 14000,
       "kind": "call",
+      "effect": "compute",
       "label": "solve one graph",
       "emphasis": "hero",
       "traffic": {
@@ -26,12 +16,13 @@
         "path": "packages/renderer/src/runtime/bun-renderer/processes/layout-worker.ts",
         "symbol": "layOutPicture"
       },
-      "id": "vKEsyHFk/OjRLKb74#T4hTbGVM",
       "to": "vKEsyHFk#6sGFjsRQ"
     },
     {
+      "id": "vKEsyHFk#kF19dfsx",
       "order": 60300,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "whether the engine aborted",
       "emphasis": "normal",
       "anchor": {
@@ -39,8 +30,19 @@
         "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts",
         "symbol": "engineAborted"
       },
-      "id": "vKEsyHFk#kF19dfsx",
       "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
     }
-  ]
+  ],
+  "order": 8000,
+  "name": "Layout engine",
+  "kind": "function",
+  "responsibility": "Lays one graph out as Track or Blocks inside a layout worker",
+  "description": "serveLayoutEngine takes the core that its host compiled and answers each solve with the core's layOutPicture, which runs Graphviz in the core (ADR 0059, ADR 0060). The host runs it in a worker pool: Bun Workers under Bun, Web Workers in a tab. Engine coordinates are never authored or persisted (ADR 0023).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/engine/rules/layout-engine.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+  "parent": "vKEsyHFk/OjRLKb74#e10t6gst"
 }

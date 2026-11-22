@@ -1,4 +1,29 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#2FWAcHpG",
+      "order": 10,
+      "kind": "call",
+      "effect": "query",
+      "label": "the logic behind exports and the expression around uses",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
+    },
+    {
+      "id": "vKEsyHFk#3lLeTRtE",
+      "order": 20,
+      "kind": "call",
+      "effect": "compute",
+      "label": "whether a file lies inside a module",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/module-depth/operations/depth-reading.ts",
+        "symbol": "within"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    }
+  ],
   "order": 21010,
   "name": "Module depth",
   "kind": "module",
@@ -8,30 +33,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/module-depth"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#ds3DX618",
-  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
-  "outgoing": [
-    {
-      "order": 10,
-      "kind": "call",
-      "label": "the logic behind exports and the expression around uses",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#2FWAcHpG",
-      "to": "vKEsyHFk/6E6hL0Zk#mR7wPSei"
-    },
-    {
-      "order": 20,
-      "kind": "call",
-      "label": "whether a file lies inside a module",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/module-depth/operations/depth-reading.ts",
-        "symbol": "within"
-      },
-      "id": "vKEsyHFk#3lLeTRtE",
-      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    }
-  ]
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK"
 }

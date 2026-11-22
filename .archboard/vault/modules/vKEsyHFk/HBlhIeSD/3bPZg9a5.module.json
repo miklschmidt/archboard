@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/HBlhIeSD#9g0Uli0a",
+      "order": 31000,
+      "kind": "call",
+      "effect": "query",
+      "label": "run: the models, the plans, the pass and behind",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "run"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#T6lWsdFm",
+      "order": 32000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "keep what a finished pass found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "createCodeFindingsMemory"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#yYQ3AHkf"
+    },
+    {
+      "id": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
+      "order": 53000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "requires a vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
+        "symbol": "requireVault"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    }
+  ],
   "order": 8000,
   "name": "Code check route",
   "kind": "route",
@@ -7,7 +51,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
   "parent": "vKEsyHFk/HBlhIeSD#KovkhwZi",
   "documents": [
@@ -29,47 +73,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 31000,
-      "kind": "call",
-      "label": "run: the models, the plans, the pass and behind",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
-        "symbol": "run"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#9g0Uli0a",
-      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
-    },
-    {
-      "order": 32000,
-      "kind": "call",
-      "label": "keep what a finished pass found",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
-        "symbol": "createCodeFindingsMemory"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#T6lWsdFm",
-      "to": "vKEsyHFk/HBlhIeSD#yYQ3AHkf"
-    },
-    {
-      "order": 53000,
-      "kind": "call",
-      "label": "requires a vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/http/handlers/code-checks/routes/code-check-route.ts",
-        "symbol": "requireVault"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     }
   ]
 }

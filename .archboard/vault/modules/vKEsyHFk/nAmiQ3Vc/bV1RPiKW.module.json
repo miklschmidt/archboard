@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 7000,
   "name": "Failure reporting",
   "kind": "function",
@@ -7,8 +8,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing/operations/exit-codes.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
-  "outgoing": []
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
 }

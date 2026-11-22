@@ -1,4 +1,48 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
+      "order": 51000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "agent.announce: one change, worded for each audience",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
+        "symbol": "announce"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
+      "id": "vKEsyHFk#uTLOYjNB",
+      "order": 70000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "capture canonical context",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
+        "symbol": "canonicalContextFromBrief"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
+    },
+    {
+      "id": "vKEsyHFk/9ncuT5DP#GFyFbH49",
+      "order": 92000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "agent.announce, one change at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
+        "symbol": "announce"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    }
+  ],
   "order": 52000,
   "name": "Archboard announcements",
   "kind": "module",
@@ -8,54 +52,13 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/host/services/archboard-announcements.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
   "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 51000,
-      "kind": "call",
-      "label": "agent.announce: one change, worded for each audience",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
-        "symbol": "announce"
-      },
-      "id": "vKEsyHFk/qKGcB6vZ#FQ6Dm2Go",
-      "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
-    },
-    {
-      "order": 70000,
-      "kind": "call",
-      "label": "capture canonical context",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
-        "symbol": "canonicalContextFromBrief"
-      },
-      "id": "vKEsyHFk#uTLOYjNB",
-      "to": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
-    },
-    {
-      "order": 92000,
-      "kind": "call",
-      "label": "agent.announce, one change at a time",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/host/services/archboard-announcements.ts",
-        "symbol": "announce"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#GFyFbH49",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
     }
   ]
 }

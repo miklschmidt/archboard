@@ -1,4 +1,62 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
+      "order": 21000,
+      "kind": "call",
+      "effect": "query",
+      "label": "the chosen checkouts and untracked vaults",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+        "symbol": "listRegistry"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
+      "order": 22000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "the vault layout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+        "symbol": "isVaultLayout"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "order": 39000,
+      "kind": "call",
+      "effect": "query",
+      "label": "find vaults through the chosen checkouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
+      "order": 76000,
+      "kind": "call",
+      "effect": "query",
+      "label": "read models bound to a repository",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "to": "vKEsyHFk#ZGONZKxj"
+    }
+  ],
   "order": 35000,
   "name": "Bound vaults",
   "kind": "function",
@@ -9,7 +67,7 @@
     "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
     "symbol": "vaultsBoundTo"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/0T9enjhi#mYtOhgML",
   "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
   "documents": [
@@ -31,60 +89,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 21000,
-      "kind": "call",
-      "label": "the chosen checkouts and untracked vaults",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
-        "symbol": "listRegistry"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#fhDFIUme",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
-      "order": 22000,
-      "kind": "call",
-      "label": "the vault layout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
-        "symbol": "isVaultLayout"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#7hxRgVwY",
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
-      "order": 39000,
-      "kind": "data",
-      "label": "find vaults through the chosen checkouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
-      "order": 76000,
-      "kind": "call",
-      "label": "read models bound to a repository",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/model/src/runtime/canonical/read/store/bound-vaults.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
-      "to": "vKEsyHFk#ZGONZKxj"
     }
   ]
 }

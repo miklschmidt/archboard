@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 91000,
   "name": "Model schema command",
   "kind": "function",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/commands/model/operations/schema.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#t7OeO7ll",
-  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
-  "outgoing": []
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU"
 }

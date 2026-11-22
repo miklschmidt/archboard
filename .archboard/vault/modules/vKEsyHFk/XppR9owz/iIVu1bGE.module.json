@@ -1,4 +1,118 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
+      "order": 7000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "argv",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "runCliWith"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
+    },
+    {
+      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
+      "order": 9000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "registryOf, for the contract proof",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "registryOf"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#l1mVF45a",
+      "order": 48000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "its contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "statusContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#2KmUovkl"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#T67XkF7L",
+      "order": 98000,
+      "kind": "call",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "modelInventoryContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#e7erk6w3"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#4PgjyVVt",
+      "order": 103000,
+      "kind": "call",
+      "effect": "compute",
+      "label": "register model edit, claim and recovery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "modelEditContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#4jS9CVi6"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#cluonY9L",
+      "order": 106000,
+      "kind": "call",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "modelPublishContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#ize7K190"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#TLj1cMMq",
+      "order": 108000,
+      "kind": "call",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "modelArchiveInitContract"
+      },
+      "to": "vKEsyHFk/XppR9owz#4uhjRtE1"
+    },
+    {
+      "id": "vKEsyHFk/XppR9owz#yiZPCy4w",
+      "order": 112000,
+      "kind": "call",
+      "effect": "compute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/routing/operations/run.ts",
+        "symbol": "COMMANDS"
+      },
+      "to": "vKEsyHFk/XppR9owz#twkUdQwl"
+    }
+  ],
   "order": 2000,
   "name": "Command catalogue",
   "kind": "module",
@@ -7,7 +121,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/cli/src/cli/routing/operations/run.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/XppR9owz#iIVu1bGE",
   "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
   "documents": [
@@ -29,112 +143,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 7000,
-      "kind": "call",
-      "label": "argv",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "runCliWith"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#Xqy7fxY0",
-      "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT"
-    },
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "registryOf, for the contract proof",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "registryOf"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
-      "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
-    },
-    {
-      "order": 48000,
-      "kind": "call",
-      "label": "its contract",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "statusContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#l1mVF45a",
-      "to": "vKEsyHFk/XppR9owz#2KmUovkl"
-    },
-    {
-      "order": 98000,
-      "kind": "dependency",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "modelInventoryContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#T67XkF7L",
-      "to": "vKEsyHFk/XppR9owz#e7erk6w3"
-    },
-    {
-      "order": 103000,
-      "kind": "call",
-      "label": "register model edit, claim and recovery",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "modelEditContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#4PgjyVVt",
-      "to": "vKEsyHFk/XppR9owz#4jS9CVi6"
-    },
-    {
-      "order": 106000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "modelPublishContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#cluonY9L",
-      "to": "vKEsyHFk/XppR9owz#ize7K190"
-    },
-    {
-      "order": 108000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "modelArchiveInitContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#TLj1cMMq",
-      "to": "vKEsyHFk/XppR9owz#4uhjRtE1"
-    },
-    {
-      "order": 112000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/routing/operations/run.ts",
-        "symbol": "COMMANDS"
-      },
-      "id": "vKEsyHFk/XppR9owz#yiZPCy4w",
-      "to": "vKEsyHFk/XppR9owz#twkUdQwl"
     }
   ]
 }

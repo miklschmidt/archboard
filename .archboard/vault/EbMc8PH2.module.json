@@ -1,4 +1,56 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk#xSE5rIqu",
+      "order": 10000,
+      "kind": "http",
+      "effect": "mutation",
+      "label": "daily usage and error events",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#HJ4c8lJd"
+    },
+    {
+      "id": "vKEsyHFk#HscFxd1C",
+      "order": 10100,
+      "kind": "call",
+      "effect": "query",
+      "label": "keeps its records in the state directory",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#Q1jP0WbC"
+    },
+    {
+      "id": "vKEsyHFk#fzTE6of7",
+      "order": 10200,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "writes settings and error reports whole",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
+    },
+    {
+      "id": "vKEsyHFk#9izxe3Ys",
+      "order": 10300,
+      "kind": "call",
+      "effect": "query",
+      "label": "reads the version, mode and program root",
+      "emphasis": "normal",
+      "to": "vKEsyHFk#4FdKQJqK"
+    },
+    {
+      "id": "vKEsyHFk#iFWjFhbg",
+      "order": 10400,
+      "kind": "call",
+      "effect": "compute",
+      "label": "how close two agents' use counts as overlap",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/telemetry/src/runtime/rollup/rules/daily-usage.ts",
+        "symbol": "telemetryMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ],
   "order": 28500,
   "name": "telemetry",
   "kind": "package",
@@ -10,54 +62,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/telemetry"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk#EbMc8PH2",
-  "parent": "vKEsyHFk#EuaJBisP",
-  "outgoing": [
-    {
-      "order": 10000,
-      "kind": "http",
-      "label": "daily usage and error events",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#xSE5rIqu",
-      "to": "vKEsyHFk#HJ4c8lJd"
-    },
-    {
-      "order": 10100,
-      "kind": "call",
-      "label": "keeps its records in the state directory",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#HscFxd1C",
-      "to": "vKEsyHFk#Q1jP0WbC"
-    },
-    {
-      "order": 10200,
-      "kind": "call",
-      "label": "writes settings and error reports whole",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#fzTE6of7",
-      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw"
-    },
-    {
-      "order": 10300,
-      "kind": "call",
-      "label": "reads the version, mode and program root",
-      "emphasis": "normal",
-      "id": "vKEsyHFk#9izxe3Ys",
-      "to": "vKEsyHFk#4FdKQJqK"
-    },
-    {
-      "order": 10400,
-      "kind": "dependency",
-      "label": "how close two agents' use counts as overlap",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/telemetry/src/runtime/rollup/rules/daily-usage.ts",
-        "symbol": "telemetryMs"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-      "id": "vKEsyHFk#iFWjFhbg"
-    }
-  ]
+  "parent": "vKEsyHFk#EuaJBisP"
 }

@@ -1,4 +1,5 @@
 {
+  "outgoing": [],
   "order": 53000,
   "name": "Picture departure",
   "kind": "module",
@@ -8,8 +9,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/clients/picture-departure.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
-  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND"
 }

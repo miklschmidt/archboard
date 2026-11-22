@@ -1,19 +1,10 @@
 {
-  "order": 913000,
-  "name": "Voice session state",
-  "kind": "module",
-  "responsibility": "Owns the live voice of a tab: start, stop, level and mute",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/workbench/src/ui/voice-session/state/session.ts"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#rG1FeuCg",
-  "parent": "vKEsyHFk/yejBBUFY#0SRnYXnC",
   "outgoing": [
     {
+      "id": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
       "order": 3000,
       "kind": "event",
+      "effect": "mutation",
       "label": "the offer this tab made",
       "emphasis": "hero",
       "traffic": {
@@ -25,12 +16,13 @@
         "path": "packages/codex-realtime-voice/src/server/voice/services/realtime-actions.ts",
         "symbol": "createOffer"
       },
-      "id": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
       "to": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
       "order": 26000,
-      "kind": "data",
+      "kind": "call",
+      "effect": "query",
       "label": "the pane's agent and media state",
       "emphasis": "normal",
       "anchor": {
@@ -38,12 +30,13 @@
         "path": "packages/workbench/src/ui/voice-session/state/session.ts",
         "symbol": "capabilities"
       },
-      "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
     },
     {
+      "id": "vKEsyHFk/yejBBUFY#bFY85rkM",
       "order": 64000,
       "kind": "call",
+      "effect": "mutation",
       "label": "control the shared browser voice lifecycle",
       "emphasis": "normal",
       "anchor": {
@@ -51,8 +44,18 @@
         "path": "packages/workbench/src/ui/voice-session/state/session.ts",
         "symbol": "start"
       },
-      "id": "vKEsyHFk/yejBBUFY#bFY85rkM",
       "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
     }
-  ]
+  ],
+  "order": 913000,
+  "name": "Voice session state",
+  "kind": "module",
+  "responsibility": "Owns the live voice of a tab: start, stop, level and mute",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/voice-session/state/session.ts"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#rG1FeuCg",
+  "parent": "vKEsyHFk/yejBBUFY#0SRnYXnC"
 }

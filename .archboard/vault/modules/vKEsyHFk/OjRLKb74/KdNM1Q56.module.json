@@ -8,8 +8,9 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/vendor/graphviz-pure"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/OjRLKb74#KdNM1Q56",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "outgoing": [
     {
       "order": 91000,
@@ -26,7 +27,8 @@
     },
     {
       "order": 91001,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "lay the graph out",
       "emphasis": "normal",
       "anchor": {
@@ -39,7 +41,8 @@
     },
     {
       "order": 91002,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "parse the DOT text",
       "emphasis": "normal",
       "anchor": {
@@ -52,13 +55,14 @@
     },
     {
       "order": 91003,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "mutation",
       "label": "write the laid-out graph",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/vendor/graphviz-pure/src/lib.rs",
-        "symbol": "OutputFormat"
+        "symbol": "reset_render_state"
       },
       "id": "vKEsyHFk#q7glsoJH",
       "to": "vKEsyHFk#7yGUY6ta"
@@ -76,6 +80,5 @@
       "id": "vKEsyHFk#5iytjWV7",
       "to": "vKEsyHFk#1Af2oLOM"
     }
-  ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  ]
 }

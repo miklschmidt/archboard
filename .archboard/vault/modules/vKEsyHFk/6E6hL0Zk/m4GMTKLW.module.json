@@ -1,4 +1,20 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/6E6hL0Zk#PKAaizYP",
+      "order": 92000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "start the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server.ts",
+        "symbol": "startServer"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    }
+  ],
   "order": 34000,
   "name": "Server entry",
   "kind": "function",
@@ -8,7 +24,7 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
   "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
   "documents": [
@@ -25,21 +41,6 @@
       "repo": "github.com/miklschmidt/archboard",
       "commit": "4aed11f76a960af4cbd22cb1515f1c1228712d68",
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
-    }
-  ],
-  "outgoing": [
-    {
-      "order": 92000,
-      "kind": "call",
-      "label": "start the server",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server.ts",
-        "symbol": "startServer"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#PKAaizYP",
-      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
     }
   ]
 }

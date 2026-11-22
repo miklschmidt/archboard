@@ -1,4 +1,34 @@
 {
+  "outgoing": [
+    {
+      "id": "vKEsyHFk/UOXNWLhR#WLWCyeOY",
+      "order": 59000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "the plain move, to end the flight with",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
+        "symbol": "into"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#hc77pwzB"
+    },
+    {
+      "id": "vKEsyHFk/UOXNWLhR#Ob2qNlXS",
+      "order": 109000,
+      "kind": "call",
+      "effect": "mutation",
+      "label": "open a model down, go back along the trail",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
+        "symbol": "backTo"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA"
+    }
+  ],
   "order": 37000,
   "name": "Open or leave a picture",
   "kind": "function",
@@ -7,38 +37,10 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts"
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "vKEsyHFk/UOXNWLhR#gIakrnWa",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
   "formerNames": [
     "Open or leave a board"
-  ],
-  "outgoing": [
-    {
-      "order": 59000,
-      "kind": "call",
-      "label": "the plain move, to end the flight with",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
-        "symbol": "into"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#WLWCyeOY",
-      "to": "vKEsyHFk/UOXNWLhR#hc77pwzB"
-    },
-    {
-      "order": 109000,
-      "kind": "call",
-      "label": "open a model down, go back along the trail",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/architecture-drawing/canvas/picture/transitions/hooks/use-drill-moves.ts",
-        "symbol": "backTo"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#Ob2qNlXS",
-      "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA"
-    }
   ]
 }

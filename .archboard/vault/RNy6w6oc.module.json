@@ -1,19 +1,10 @@
 {
-  "order": 960230,
-  "name": "Thread opening",
-  "kind": "function",
-  "responsibility": "Opens the thread of one workhorse under a staged epoch and binds its link",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services"
-  },
-  "schemaVersion": 1,
-  "id": "vKEsyHFk#RNy6w6oc",
-  "parent": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
   "outgoing": [
     {
+      "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
       "order": 7000,
       "kind": "call",
+      "effect": "mutation",
       "label": "classify and bind the checkout's link",
       "emphasis": "normal",
       "anchor": {
@@ -21,12 +12,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "classifyAndBind"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#5B5ZeO2k",
       "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
       "order": 8000,
       "kind": "call",
+      "effect": "mutation",
       "label": "stage, commit or roll back the start",
       "emphasis": "normal",
       "anchor": {
@@ -34,12 +26,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "stageOperation"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#uiPv1wnk",
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     },
     {
+      "id": "vKEsyHFk/wAHh0HTa#7dDHchT9",
       "order": 9000,
       "kind": "call",
+      "effect": "mutation",
       "label": "thread/start with a new workhorse's authored body",
       "description": "The caller invokes threadStart on the public CodexSession object returned by createCodexSession. The target owns that public instance method; no caller imports its private implementation file.",
       "emphasis": "hero",
@@ -52,12 +45,13 @@
         "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "threadStart"
       },
-      "id": "vKEsyHFk/wAHh0HTa#7dDHchT9",
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
+      "id": "vKEsyHFk/SJ2JMVyz#joxzVFXq",
       "order": 39000,
-      "kind": "dependency",
+      "kind": "call",
+      "effect": "compute",
       "label": "capture immutable core and host role evidence",
       "emphasis": "normal",
       "anchor": {
@@ -65,8 +59,18 @@
         "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services/start.ts",
         "symbol": "captureThreadProfile"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#joxzVFXq",
       "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
     }
-  ]
+  ],
+  "order": 960230,
+  "name": "Thread opening",
+  "kind": "function",
+  "responsibility": "Opens the thread of one workhorse under a staged epoch and binds its link",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/workhorses/workhorse-start/services"
+  },
+  "schemaVersion": 2,
+  "id": "vKEsyHFk#RNy6w6oc",
+  "parent": "vKEsyHFk/9ncuT5DP#6Jjha6LN"
 }
