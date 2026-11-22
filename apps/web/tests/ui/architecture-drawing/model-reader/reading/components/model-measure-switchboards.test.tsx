@@ -162,29 +162,23 @@ const EXPOSED: Partial<Props> = {
 /** A table of what a module exposes in the model and in its code, as the dialog gives it. */
 const EXPOSED_CODE: Partial<Props> = { ...EXPOSED, keys: [...EXPOSES, ...CODE] };
 
-/** A module's exports by kind. */
-type Exports = Record<"functions" | "classes" | "methods" | "values" | "types", number>;
-
 /**
- * One module the pass measured: its `languages` judged or not, and its `exports` by kind.
+ * One module the pass measured, in TypeScript with one function.
+ * @param id The module.
  * @returns What the pass remembers of it.
  */
-function measured(
-	id: string,
-	languages: { readonly judged: string[]; readonly unjudged: string[] },
-	exports: Exports,
-) {
+function measured(id: string) {
 	return {
 		model: "Shop",
 		state: "Current",
 		subject: subject(id),
 		repo: "example/shop",
 		directory: `src/${id}`,
-		languages: languages.judged,
-		unjudged: languages.unjudged,
-		exports,
-		logic: exports.functions * 3,
-		width: exports.functions + exports.classes + exports.methods + exports.values,
+		languages: ["typescript"],
+		unjudged: [],
+		exports: { functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
+		logic: 3,
+		width: 1,
 		switchboards: [],
 	};
 }
@@ -210,23 +204,7 @@ const REMEMBERED: RememberedFindings = {
 				subject: subject("route"),
 				message: "route hands its insides to its callers.",
 			})),
-			depth: [
-				measured(
-					"api",
-					{ judged: ["typescript"], unjudged: [] },
-					{ functions: 2, classes: 1, methods: 2, values: 0, types: 3 },
-				),
-				measured(
-					"route",
-					{ judged: ["typescript"], unjudged: [] },
-					{ functions: 0, classes: 0, methods: 0, values: 2, types: 0 },
-				),
-				measured(
-					"store",
-					{ judged: ["typescript"], unjudged: ["python"] },
-					{ functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
-				),
-			],
+			depth: [measured("api"), measured("route"), measured("store")],
 			skipped: [
 				{
 					reason: "exposure-unknown",
@@ -250,11 +228,7 @@ function cell(id: string, measure: string): HTMLElement | null {
 }
 
 test("a passing module exposes switchboard evidence on its Width cell and row button", async () => {
-	const api = measured(
-		"api",
-		{ judged: ["typescript"], unjudged: [] },
-		{ functions: 1, classes: 0, methods: 0, values: 0, types: 0 },
-	);
+	const api = measured("api");
 	const depth = [
 		{
 			...api,
