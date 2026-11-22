@@ -3,13 +3,14 @@
   "name": "Canonical model",
   "kind": "datastore",
   "responsibility": "One file for each module, with the lines it owns",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#JY7vNPEy",
   "parent": "q9TUBeZT#8asrTSy2",
   "outgoing": [
     {
       "order": 65,
-      "kind": "data",
+      "kind": "storage",
+      "effect": "mutation",
       "label": "checkpoints",
       "emphasis": "normal",
       "traffic": {

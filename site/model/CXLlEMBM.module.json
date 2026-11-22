@@ -3,7 +3,7 @@
   "name": "Browser",
   "kind": "ui",
   "responsibility": "Where you explore, focus and compare",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#CXLlEMBM",
   "outgoing": []
 }

@@ -3,7 +3,7 @@
   "name": "Archboard server",
   "kind": "system",
   "responsibility": "Draws the model for the people who read it",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "q9TUBeZT#cJMRcSvL",
   "outgoing": []
 }
