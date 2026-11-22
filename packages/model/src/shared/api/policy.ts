@@ -3,6 +3,7 @@ export { drillDirection } from "#shared/rules/levels.ts";
 export {
 	defaultSemanticPolicy,
 	evidenceKindSchema,
+	isEffectlessKind,
 	paletteColorSchema,
 	semanticPolicySchema,
 } from "#shared/schemas/semantic-policy.ts";

@@ -26,7 +26,10 @@
 // `RELATIONSHIP_UNSUPPORTED` that none joins the ends. Both are information:
 // the direction of a kind is the vault's convention, and code does not prove
 // a call across a network, through an event bus or through a value a part
-// receives. A relationship with an anchor is judged only by its anchor.
+// receives. A dependency whose evidence from its start to its end holds a
+// call gets `DEPENDENCY_CALLED` and no other finding, whatever its kind
+// accepts (dependency-call.ts). A relationship with an anchor is judged only by its
+// anchor.
 //
 // Where no accepted evidence supports a relationship whose kind accepts a
 // build dependency, the code of its start holds a Nix expression the static
@@ -52,8 +55,9 @@ import type { ClaimSite } from "#runtime/code-check/claims/operations/claims.ts"
 import type { EnvironmentJoin } from "#runtime/code-check/evidence/operations/environment-join.ts";
 import type { StateEvidence, Piece } from "#runtime/code-check/evidence/operations/evidence.ts";
 import { sideOf, sidesJoined } from "#runtime/code-check/evidence/operations/sides.ts";
-import { differingCode } from "#runtime/code-check/operations/part-code.ts";
-import type { PartCode, ReadPart, SkippedPart } from "#runtime/code-check/operations/part-code.ts";
+import { differingCode, isRead, isSkipped } from "#runtime/code-check/operations/part-code.ts";
+import { dependencyCalled } from "#runtime/code-check/operations/dependency-call.ts";
+import type { PartCode, ReadPart } from "#runtime/code-check/operations/part-code.ts";
 import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import { messagesOf } from "@archboard/model/flow";
@@ -289,24 +293,6 @@ function accepts(reading: RelationshipReading, kind: string, evidence: EvidenceK
 type Unjudged = Pick<CodeCheckSkip, "reason" | "repo" | "ref" | "detail"> | "silent";
 
 /**
- * Whether the pass skipped a part, with the reason it gives.
- * @param code The part's code.
- * @returns True when it did.
- */
-function isSkipped(code: PartCode | undefined): code is SkippedPart {
-	return code?.status === "skipped";
-}
-
-/**
- * Whether the pass read a part's code.
- * @param code The part's code.
- * @returns True when it did.
- */
-function isRead(code: PartCode | undefined): code is ReadPart {
-	return code?.status === "read";
-}
-
-/**
  * Whether code facts, not the text reading, read some of the code of a part
  * or of a part inside it, so references can join it to another.
  * @param reading The document.
@@ -386,7 +372,7 @@ function pairOf(piece: Piece): string {
 
 /**
  * The finding about a relationship with no anchor that the accepted evidence
- * does not support, if any.
+ * does not support, or a dependency that the code calls, if any.
  * @param reading The document.
  * @param edge The relationship.
  * @returns The finding, or undefined when accepted evidence supports it.
@@ -401,10 +387,13 @@ function judgeEdge(
 		(piece) =>
 			(start.has(piece.from) && end.has(piece.to)) || (end.has(piece.from) && start.has(piece.to)),
 	);
-	const accepted = between.filter((piece) => accepts(reading, edge.kind, piece.kind));
-	if (accepted.some((piece) => start.has(piece.from))) return undefined;
 	const subject = edgeSubjects(reading.read.variant.content)(edge);
 	const site = siteOf(reading.read, `edges.${edge.id}`, subject);
+	const forward = between.filter((piece) => start.has(piece.from));
+	const called = dependencyCalled(site, edge.kind, forward);
+	if (called !== undefined) return called;
+	const accepted = between.filter((piece) => accepts(reading, edge.kind, piece.kind));
+	if (accepted.some((piece) => start.has(piece.from))) return undefined;
 	const about = `${describeSubject(subject)} has no anchor, and`;
 	const kind = JSON.stringify(edge.kind);
 	if (accepted.length > 0) {

@@ -7,7 +7,7 @@ import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import { LegacyBoardSchema, SemanticVariantSchema } from "#shared/schemas/legacy-board.ts";
 import { documentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
-import { EFFECTLESS_KIND } from "#shared/schemas/semantic-policy.ts";
+import { EFFECTLESS_KIND, isEffectlessKind } from "#shared/schemas/semantic-policy.ts";
 import {
 	SemanticIdSchema,
 	DisplayNameSchema,
@@ -165,7 +165,7 @@ const ModuleDocumentSchema = ArchitectureModuleSchema.extend({
 	schemaVersion: z.literal(MODULE_FORMAT),
 }).superRefine((module, context) => {
 	for (const [index, relationship] of module.outgoing.entries())
-		if (relationship.effect === undefined && relationship.kind !== EFFECTLESS_KIND)
+		if (relationship.effect === undefined && !isEffectlessKind(relationship.kind))
 			context.addIssue({
 				code: "custom",
 				path: ["outgoing", index, "effect"],

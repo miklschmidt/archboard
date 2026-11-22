@@ -528,6 +528,16 @@ export {
 };
 
 /**
+ * Whether a relationship kind is the declared requirement, the one kind that
+ * may state no effect, because nothing of its target runs at run time.
+ * @param kind The relationship's kind.
+ * @returns True for that kind.
+ */
+export function isEffectlessKind(kind: string): boolean {
+	return kind === EFFECTLESS_KIND;
+}
+
+/**
  * The value `DEFAULT_SEMANTIC_POLICY`, for callers that read it.
  * @returns The value.
  */
