@@ -272,6 +272,7 @@ const ArchitectureModelFailureSchema = z
 			"MODEL_CHANGED",
 			"LEGACY_AUTHORITY",
 			"MODULE_NOT_FOUND",
+			"LENS_NOT_FOUND",
 			"FLOW_REQUIRED",
 			"FLOW_NOT_FOUND",
 			"FLOW_AMBIGUOUS",

@@ -192,8 +192,13 @@ async function inspect(
 	options: Options,
 	cached: boolean,
 ): Promise<Checked> {
-	// A file stands alone, so a recipe that names no theme redraws as `auto`.
-	const reading = { ...recipe.reading, theme: recipe.reading.theme ?? ("auto" as const) };
+	// A file stands alone, so a recipe that names no theme redraws as `auto`. A structural recipe
+	// from before lenses drew every relationship, so it redraws through `all`.
+	const reading = {
+		...recipe.reading,
+		theme: recipe.reading.theme ?? ("auto" as const),
+		lens: recipe.reading.grammar === "architecture" ? (recipe.reading.lens ?? "all") : undefined,
+	};
 	const fresh = await renderArchitectureFlowOnServer(reading, vault);
 	if (!fresh.success)
 		return unavailable(

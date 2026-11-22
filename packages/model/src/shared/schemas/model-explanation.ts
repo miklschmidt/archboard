@@ -34,6 +34,8 @@ const ExplanationRequestSchema = z.strictObject({
 		scope: QualifiedSubjectIdSchema.optional(),
 		focus: z.array(QualifiedSubjectIdSchema),
 		expand: z.array(QualifiedSubjectIdSchema).optional(),
+		/** The lens the structural picture is read through, when the pane reports one. */
+		lens: z.string().min(1).optional(),
 		relationshipKinds: z.array(z.string().min(1)),
 		grammar: DiagramGrammarSchema,
 		flow: QualifiedSubjectIdSchema.optional(),

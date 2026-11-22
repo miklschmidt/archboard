@@ -20,7 +20,7 @@ use crate::paint::legend::entries::{Entry, entries_of, mark_counts};
 use crate::paint::legend::symbols::{GLYPH, ROW, symbol_of};
 use crate::paint::page::{PaintedPage, moved_atlas};
 use crate::paint::palette::Palette;
-use crate::request::{ExportFrame, LegendLayout, Standing};
+use crate::request::{ExportFrame, LeftOut, LegendLayout, Standing};
 use crate::scene::{Atlas, Colour, Group, Item, Role, Slot, Text, Transform};
 use crate::sizes::{CARD_NOTE_FONT, CARD_TITLE_FONT, DIAGRAM_MARGIN};
 
@@ -31,6 +31,7 @@ const LIST_GAP: f64 = 40.0;
 const WORD_SIZE: f64 = 12.0;
 const TITLE_SIZE: f64 = 18.0;
 const TITLE_LINE: f64 = 24.0;
+const NOTE_LINE: f64 = 20.0;
 
 /// How wide an entry is: its symbol, its words and its count, rounded.
 fn width_of(entry: &Entry) -> f64 {
@@ -243,6 +244,40 @@ fn under_title(page: PaintedPage, title: &str, palette: &Palette) -> PaintedPage
     }
 }
 
+/// What the note under a picture says of the lines its lens left out.
+fn left_out_words(left_out: &LeftOut) -> String {
+    let lines = if left_out.count == 1 { "line" } else { "lines" };
+    format!("{}: {} {lines} left out", left_out.lens, left_out.count)
+}
+
+/// A page with the note under it that counts the lines its lens left out,
+/// made wide enough for the note.
+fn with_note(page: PaintedPage, left_out: &LeftOut, palette: &Palette) -> PaintedPage {
+    let words = left_out_words(left_out);
+    let note = caption(
+        Point {
+            x: DIAGRAM_MARGIN,
+            y: page.height,
+        },
+        CARD_NOTE_FONT,
+        WORD_SIZE,
+        &palette.muted,
+        &words,
+    );
+    PaintedPage {
+        body: lines(vec![
+            page.body,
+            grouped(Group::new(Role::Slot(Slot::ExportNote), note)),
+        ]),
+        width: js::js_max(
+            page.width,
+            with_diagram_margins(measure::width(&words, CARD_NOTE_FONT, WORD_SIZE).ceil()),
+        ),
+        height: round_coord(page.height + NOTE_LINE / 2.0 + DIAGRAM_MARGIN),
+        atlas: page.atlas,
+    }
+}
+
 /// Whether a key is an array index, which an ECMAScript object lists before
 /// its other keys, in ascending order.
 fn array_index(key: &str) -> Option<u32> {
@@ -276,8 +311,9 @@ pub(in crate::paint) fn placed_on(atlas: &Atlas) -> Vec<String> {
     placed
 }
 
-/// A page as an export carries it: with its legend under it or beside it, or
-/// its legend alone, under its title when it has one.
+/// A page as an export carries it: with the note of what its lens left out
+/// under it, with its legend under it or beside it, or its legend alone, under
+/// its title when it has one.
 pub(in crate::paint) fn framed_for_export(
     page: PaintedPage,
     frame: Option<&ExportFrame>,
@@ -288,27 +324,30 @@ pub(in crate::paint) fn framed_for_export(
     let Some(frame) = frame else {
         return page;
     };
-    let keyed = match frame.legend {
-        None => page,
-        Some(layout) => {
-            let marks = if plain {
-                Vec::new()
-            } else {
-                mark_counts(standing, &placed.iter().map(String::as_str).collect())
-            };
-            let legend = legend_of(&page.body, &marks, layout, page.width);
-            let shown = if frame.legend_only == Some(true) {
-                PaintedPage {
-                    body: Items::new(),
-                    width: 0.0,
-                    height: 0.0,
-                    atlas: Atlas::default(),
-                }
-            } else {
-                page
-            };
-            with_legend(shown, &legend, palette)
+    let legend = frame.legend.map(|layout| {
+        let marks = if plain {
+            Vec::new()
+        } else {
+            mark_counts(standing, &placed.iter().map(String::as_str).collect())
+        };
+        legend_of(&page.body, &marks, layout, page.width)
+    });
+    let shown = if legend.is_some() && frame.legend_only == Some(true) {
+        PaintedPage {
+            body: Items::new(),
+            width: 0.0,
+            height: 0.0,
+            atlas: Atlas::default(),
         }
+    } else {
+        match &frame.left_out {
+            None => page,
+            Some(left_out) => with_note(page, left_out, palette),
+        }
+    };
+    let keyed = match &legend {
+        None => shown,
+        Some(legend) => with_legend(shown, legend, palette),
     };
     match &frame.title {
         None => keyed,

@@ -178,6 +178,9 @@ fn page(group: &Group, out: &mut Attributes) -> bool {
         Role::Slot(Slot::ExportTitle) => {
             out.set("data-slot", "export-title");
         }
+        Role::Slot(Slot::ExportNote) => {
+            out.set("data-slot", "export-note");
+        }
         Role::Slot(Slot::ExportLegend { layout }) => {
             out.set("data-slot", "export-legend")
                 .set("data-layout", word(layout));

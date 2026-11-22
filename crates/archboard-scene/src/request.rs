@@ -274,6 +274,21 @@ pub struct ExportFrame {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub legend_only: Option<bool>,
+    /// The lines the picture's lens left out, which a note under the picture
+    /// counts with or without a legend; no note when absent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub left_out: Option<LeftOut>,
+}
+
+/// How many lines a lens left out of a picture, and the lens's name.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+pub struct LeftOut {
+    /// How many lines the picture leaves out.
+    pub count: u32,
+    /// The name of the lens it is read through.
+    pub lens: String,
 }
 
 /// How the blocks of a picture are drawn.

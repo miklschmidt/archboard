@@ -35,12 +35,17 @@ type Reading = z.infer<ReturnType<typeof architecturePaneReadingSchema>>;
 type Model = Extract<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>;
 type NavigationError = { code: string; error: string };
 /**
- * Refuse a missing scope or focus before pane navigation changes state.
+ * Refuse a missing lens, scope or focus before pane navigation changes state.
  * @param model The complete canonical reading.
  * @param request The requested presentation.
  * @returns Its refusal, when unavailable.
  */
 function structuralRefusal(model: Model, request: Reading): NavigationError | undefined {
+	if (request.lens !== undefined && !Object.hasOwn(model.policy.lenses, request.lens))
+		return {
+			code: "LENS_NOT_FOUND",
+			error: `This reading has no lens "${request.lens}". Its lenses: ${Object.keys(model.policy.lenses).join(", ")}.`,
+		};
 	const projection = projectModel(
 		model,
 		request.scope ?? model.selectedModule ?? null,
@@ -246,6 +251,7 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		scope: _scope,
 		focus: _focus,
 		hideKinds: _kinds,
+		lens: _lens,
 		expand: _expand,
 		grammar: _grammar,
 		beat: _beat,

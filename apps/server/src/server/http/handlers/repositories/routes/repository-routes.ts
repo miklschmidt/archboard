@@ -204,6 +204,7 @@ function followedReading(
 		focus: captured.reading.focus,
 		expand: captured.reading.expand,
 		flow: captured.reading.flow,
+		lens: captured.reading.lens,
 		hideKinds: model.success
 			? Object.keys(model.policy.relationshipKinds).filter(
 					(kind) => !relationshipKinds.includes(kind),

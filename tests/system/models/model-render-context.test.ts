@@ -42,12 +42,14 @@ beforeAll(async () => {
 	const worker = JSON.parse(readFileSync(join(vault, "worker.module.json"), "utf8"));
 	worker.outgoing = [
 		{ id: "Shop#Enter", to: "Shop#Handler", kind: "call", effect: "mutation", order: 10 },
+		{ id: "Shop#Uses", to: "Shop#Library", kind: "dependency", order: 20 },
 	];
 	writeFileSync(join(vault, "worker.module.json"), JSON.stringify(worker));
 	for (const [id, order, parent] of [
 		["Job", 40, "Shop#Gateway"],
 		["Core", 50, "Shop#Gateway"],
 		["Obsolete", 60, undefined],
+		["Library", 70, undefined],
 	] as const) {
 		writeFileSync(
 			join(vault, `${id}.module.json`),
@@ -358,4 +360,50 @@ test("a file the CLI renders stands alone, in a directory it creates, and refuse
 	});
 	expect(legend.status, legend.stderr).toBe(0);
 	expect(readFileSync(bare, "utf8")).toContain('data-slot="export-legend"');
+}, 30000);
+
+test("a picture through a lens counts the lines it left out, with or without a legend, and its recipe names the lens", () => {
+	const run = (...args: string[]) =>
+		runServerCli({
+			repoRoot,
+			server: server!,
+			input: undefined,
+			args: ["model", "render", ...args],
+		});
+	const drawn = (args: string[]) => {
+		const out = join(home, "lenses", `${crypto.randomUUID()}.svg`);
+		const result = run(...args, "--out", out);
+		expect(result.status, result.stderr).toBe(0);
+		const svg = readFileSync(out, "utf8");
+		const recipe = readRenderRecipe(Buffer.from(svg));
+		if (recipe.kind !== "recipe" || recipe.recipe.recipe !== 2)
+			throw new Error(JSON.stringify(recipe));
+		const note = /<g data-slot="export-note">[^]*?<text [^>]*>([^<]*)<\/text><\/g>/u.exec(svg)?.[1];
+		return { svg, note, lens: recipe.recipe.reading.lens };
+	};
+	// The default lens leaves out the declared dependency, and says so with and without a legend.
+	const main = drawn([]);
+	expect(main).toMatchObject({ note: "Main lines: 1 line left out", lens: "main" });
+	expect(main.svg).toContain('data-slot="export-legend"');
+	const bare = drawn(["--legend", "none"]);
+	expect(bare.note).toBe("Main lines: 1 line left out");
+	expect(bare.svg).not.toContain('data-slot="export-legend"');
+	// A lens keeps every part of its scope: Library stays though its only line is left out.
+	expect(main.svg).toContain('data-semantic-id="Shop#Library"');
+	expect(drawn(["--lens", "dependencies"])).toMatchObject({
+		note: "Declared dependencies: 1 line left out",
+		lens: "dependencies",
+	});
+	const all = drawn(["--lens", "all"]);
+	expect(all).toMatchObject({ note: undefined, lens: "all" });
+	const refused = run(
+		...["--lens", "main", "--grammar", "sequence", "--flow", "Shop#Request"],
+		...["--out", join(home, "lenses", "refused.svg")],
+	);
+	expect(refused.status).toBe(2);
+	expect(refused.stderr).toContain("--lens");
+	const unknown = run("--lens", "nowhere", "--out", join(home, "lenses", "nowhere.svg"));
+	expect(unknown.status).toBe(2);
+	expect(unknown.stdout).toContain("LENS_NOT_FOUND");
+	expect(unknown.stderr).toContain("main, effects, reads, network, dependencies, all");
 }, 30000);

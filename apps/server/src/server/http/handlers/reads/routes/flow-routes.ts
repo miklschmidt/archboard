@@ -13,6 +13,7 @@ import { requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import { respond } from "#server/http/handlers/routes/model-response.ts";
 
 type Reading = z.infer<ReturnType<typeof architectureRenderRequestSchema>>;
+type ExportFrame = NonNullable<Parameters<typeof renderArchitecture>[0]["frame"]>;
 /**
  * Read the explicitly selected current or retained flow through the public runtime.
  * @param vault The addressed vault.
@@ -47,6 +48,8 @@ function flowReading(vault: string, input: Reading) {
  * @returns The SVG and exact reading receipt.
  */
 async function flowPicture(model: Model, input: Reading, vault: string) {
+	const unknown = unknownLens(model, input.lens);
+	if (unknown !== undefined) return unknown;
 	const reference = await comparisonModel(vault, model);
 	if (reference !== undefined && !reference.success) return reference;
 	const { projection, flow } = renderProjection(model, input, reference);
@@ -73,9 +76,54 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		grammar: input.grammar,
 		policy: model.policy,
 		theme: input.theme,
-		frame: input.legend === "none" ? undefined : { legend: input.legend },
+		frame: exportFrame(input, projection),
 	});
-	return renderReceipt(model, input, vault, drawn, flow);
+	const reading = input.grammar === "architecture" ? { ...input, lens: projection.lens.id } : input;
+	return renderReceipt(model, reading, vault, drawn, flow);
+}
+/**
+ * What an export carries beside its drawing: its legend, and the note of the lines its lens left
+ * out, which stands with or without the legend.
+ * @param input The requested presentation.
+ * @param projection The reading drawn.
+ * @returns The frame, or nothing when it carries neither.
+ */
+function exportFrame(
+	input: Reading,
+	projection: ReturnType<typeof renderProjection>["projection"],
+): ExportFrame | undefined {
+	const leftOut =
+		input.grammar === "architecture" && projection.leftOut > 0
+			? { count: projection.leftOut, lens: projection.lens.name }
+			: undefined;
+	if (input.legend === "none" && leftOut === undefined) return undefined;
+	return {
+		...(input.legend === "none" ? {} : { legend: input.legend }),
+		...(leftOut === undefined ? {} : { leftOut }),
+	};
+}
+/**
+ * Refuse a lens the reading's policy does not have, naming those it has.
+ * @param model The coherent selected reading.
+ * @param lens The lens the request names, if any.
+ * @returns The refusal, or nothing when the reading has the lens.
+ */
+function unknownLens(model: Model, lens: string | undefined) {
+	if (lens === undefined || Object.hasOwn(model.policy.lenses, lens)) return undefined;
+	const known = Object.keys(model.policy.lenses).join(", ");
+	return {
+		success: false as const,
+		code: "LENS_NOT_FOUND" as const,
+		error: `This reading has no lens "${lens}".`,
+		diagnostics: [
+			{
+				code: "LENS_NOT_FOUND",
+				file: "config.yaml",
+				message: `This reading has no lens "${lens}". Its lenses: ${known}.`,
+				recovery: `Pass one of ${known} to --lens, or leave it out for the default lens.`,
+			},
+		],
+	};
 }
 /**
  * Read only the comparison base identified by the shared public reader.
@@ -151,7 +199,7 @@ function renderProjection(model: Model, input: Reading, reference?: Model) {
 		model,
 		input.scope ?? model.selectedModule ?? null,
 		input.focus ?? null,
-		{ hideKinds: input.hideKinds, expand: input.expand },
+		{ lens: input.lens, hideKinds: input.hideKinds, expand: input.expand },
 		reference,
 	);
 	const flow = model.collections

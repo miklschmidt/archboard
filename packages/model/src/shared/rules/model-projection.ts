@@ -16,13 +16,14 @@ import {
 import { containment, foldedScope } from "#shared/rules/module-fold.ts";
 import { drawnEnds, drawnLines, joinedLines, strandedCards } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/inspect/rules/container-interface.ts";
+import { readingLens, type ReadingLens } from "#shared/rules/lens.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
 /** What a reader chose of a reading, besides its scope and its focus. */
 type ModelFilters = Pick<
 	z.infer<typeof ArchitectureRenderRequestSchema>,
-	"hideKinds" | "expand"
+	"hideKinds" | "expand" | "lens"
 > & {
 	/** Whether a live reader draws its picture, so that its doors and frames wear their controls. */
 	readonly controls?: boolean;
@@ -46,8 +47,8 @@ type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 	edges: DrawnEdge[];
 };
 
-/** What decides which lines a reading draws. */
-type LineChoices = Pick<ModelFilters, "hideKinds">;
+/** What decides which lines a reading draws: its lens, then the kinds a reader hid besides. */
+type LineChoices = Pick<ModelFilters, "hideKinds"> & { readonly lens: ReadingLens };
 /** What a scope draws besides its own frame, and whether its controls are drawn. */
 type ScopeChoices = LineChoices & {
 	readonly frames: readonly string[];
@@ -83,7 +84,7 @@ function modelContent(model: Model): VariantContent {
  * @param complete The complete depicted content.
  * @param scope The module to open, or null for repository roots.
  * @param standing The comparison status of each depicted relationship.
- * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
+ * @param choices The lens, the kinds hidden besides, what the scope expands, and whether controls are drawn.
  * @returns The projected content and every relationship behind each line.
  */
 function projectScope(
@@ -107,21 +108,31 @@ function projectScope(
 		complete.nodes.map((node) => [node.id, visibleEndpoint(byId, node.id, boundary)]),
 	);
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
-	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
 	/**
 	 * Every line runs between the drawn ends of its relationship.
 	 * @param edge The relationship.
 	 * @returns Both drawn ends.
 	 */
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
+	/**
+	 * The lines some of the relationships draw, joined once when they are all of the previous.
+	 * @param edges The relationships.
+	 * @param previous The lines of a wider set of them.
+	 * @param wider How many relationships the wider set holds.
+	 * @returns The lines.
+	 */
+	const linesOf = (edges: readonly Edge[], previous: OverviewLine[], wider: number) =>
+		edges.length === wider
+			? previous
+			: drawnLines(complete, joinedLines(complete, edges, endsOf, open, standing), open);
 	const allConnections = joinedLines(complete, relevant, endsOf, open, standing);
 	const every = drawnLines(complete, allConnections, open);
-	// With no kind hidden, the reading draws every line, so it joins them only once.
-	const connections =
-		shown.length === relevant.length
-			? every
-			: drawnLines(complete, joinedLines(complete, shown, endsOf, open, standing), open);
-	const stranded = strandedCards(every, connections, open);
+	const lensed = relevant.filter(choices.lens.draws);
+	const throughLens = linesOf(lensed, every, relevant.length);
+	const shown = lensed.filter((edge) => !choices.hideKinds?.includes(edge.kind));
+	const connections = linesOf(shown, throughLens, lensed.length);
+	// A lens keeps every part of its scope; a kind the reader hid takes off the cards it stranded.
+	const stranded = strandedCards(throughLens, connections, open);
 	const children = complete.nodes.filter(
 		({ id, parent }) =>
 			!stranded.has(id) &&
@@ -147,6 +158,8 @@ function projectScope(
 			return node === undefined ? [] : [node];
 		}),
 		missing: scope !== null && scoped === undefined,
+		lens: { id: choices.lens.id, name: choices.lens.name },
+		leftOut: every.length - connections.length,
 		inspection: interfaceOf(complete, scoped),
 		content: drawingContent(complete, visible, connections, {
 			parents: open,
@@ -161,7 +174,7 @@ function projectScope(
  * @param model The coherent model.
  * @param scope The scope to restore when focus is cleared.
  * @param focus Explicit focused identities, or no focus.
- * @param filters Hidden relationship kinds.
+ * @param filters The lens, and the relationship kinds hidden besides.
  * @param reference The coherent comparison base, when available.
  * @param visibility Exact imported view membership, when the reading supplies it.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
@@ -183,7 +196,12 @@ function projectModel(
 		filters,
 	);
 	const frames = expanded.map(({ frame }) => frame);
-	const choices = { hideKinds: filters.hideKinds, frames, controls };
+	const choices = {
+		lens: readingLens(model.policy, filters.lens),
+		hideKinds: filters.hideKinds,
+		frames,
+		controls,
+	};
 	/**
 	 * Both sides of a comparison read the same opened scope.
 	 * @param content The side to project.
@@ -287,7 +305,7 @@ function comparisonContent(model: Model, reference: Model | undefined) {
  * @param scope The recursive scope.
  * @param focus Explicit focused identities, or no focus.
  * @param standing Exact subject comparison states.
- * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
+ * @param choices The lens, the kinds hidden besides, what the scope expands, and whether controls are drawn.
  * @param visibility Exact imported view membership, when present.
  * @returns The requested structural reading.
  */
@@ -311,7 +329,7 @@ function projectContent(
  * @param complete The complete architecture used for inspection.
  * @param scope The underlying recursive location.
  * @param standing The existing comparison classification.
- * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
+ * @param choices The lens, the kinds hidden besides, what the scope expands, and whether controls are drawn.
  * @param visibility Explicit modules and relationships in the original view.
  * @returns The same projection contract with only the requested picture narrowed.
  */
@@ -329,11 +347,14 @@ function projectVisible(
 		.map((edge) => ({ line: edge, joins: [edge] as const }));
 	const connections = drawnLines(
 		complete,
-		allConnections.filter(({ line }) => !choices.hideKinds?.includes(line.kind)),
+		allConnections.filter(
+			({ line }) => choices.lens.draws(line) && !choices.hideKinds?.includes(line.kind),
+		),
 		visible,
 	);
 	return {
 		...projectScope(complete, scope, standing, choices),
+		leftOut: drawnLines(complete, allConnections, visible).length - connections.length,
 		children: complete.nodes.filter((node) => visible.has(node.id)),
 		context: [],
 		connections,
@@ -360,7 +381,7 @@ function withLinesOf(content: DrawnContent, depicted: DrawnContent): DrawnConten
  * @param scope The underlying recursive scope.
  * @param focus The captured subject identities, including missing identities.
  * @param standing The comparison status of depicted subjects.
- * @param choices Hidden relationship kinds, and whether every line stays drawn.
+ * @param choices The lens, and the kinds hidden besides.
  * @returns The focused reading and required endpoint context.
  */
 function projectFocused(
@@ -400,7 +421,10 @@ function projectFocused(
 	 * @returns Both drawn ends.
 	 */
 	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
-	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
+	const shown = relevant.filter(
+		(edge) => choices.lens.draws(edge) && !choices.hideKinds?.includes(edge.kind),
+	);
+	const allConnections = joinedLines(complete, relevant, ends, openSelf, standing);
 	const joined = joinedLines(complete, shown, ends, openSelf, standing);
 	const connections = drawnLines(complete, joined, open);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));
@@ -412,7 +436,7 @@ function projectFocused(
 		missingFocus: focus.filter((id) => !known.has(id)),
 		complete,
 		connections,
-		allConnections: joinedLines(complete, relevant, ends, openSelf, standing),
+		allConnections,
 		children,
 		context,
 		trail:
@@ -422,6 +446,8 @@ function projectFocused(
 						.toReversed()
 						.flatMap((id) => byId.get(id) ?? []),
 		missing: false,
+		lens: { id: choices.lens.id, name: choices.lens.name },
+		leftOut: drawnLines(complete, allConnections, open).length - connections.length,
 		inspection: interfaceOf(complete, byId.get(scope ?? "")),
 		content: drawingContent(complete, visible, connections, {
 			parents: anchors,
