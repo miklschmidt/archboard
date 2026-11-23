@@ -1,10 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	architectureFeedFrameSchema,
+	type architectureFeedRequestSchema,
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
 } from "@archboard/model/contract";
 import { after } from "@archboard/timing";
+import type { z } from "zod";
 
 /** The listing of the repositories of this machine, as one frame carries it. */
 type RepositoriesFrame = Extract<ArchitectureFeedFrame, { type: "repositories" }>;
@@ -16,7 +18,7 @@ interface FeedFollower<Heard> {
 }
 
 /** What the socket asks the server to send it. */
-type FeedTopic = { readonly vault: string } | { readonly topic: "repositories" };
+type FeedRequest = z.infer<ReturnType<typeof architectureFeedRequestSchema>>;
 
 /**
  * Decode one frame at the network boundary.
@@ -54,11 +56,10 @@ function createFeedSocket() {
 	/**
 	 * Ask the server for one change, when the socket can carry it. A socket that
 	 * is still opening subscribes every follower when it opens.
-	 * @param type What to change.
-	 * @param topic What it changes.
+	 * @param request The subscription change.
 	 */
-	function tell(type: "subscribe" | "unsubscribe", topic: FeedTopic): void {
-		if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type, ...topic }));
+	function tell(request: FeedRequest): void {
+		if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(request));
 	}
 	/**
 	 * Route one frame to its follower. A frame that makes no sense says nothing
@@ -90,8 +91,8 @@ function createFeedSocket() {
 		socket = opening;
 		opening.addEventListener("open", () => {
 			if (socket !== opening) return;
-			for (const vault of followers.keys()) tell("subscribe", { vault });
-			if (machine !== null) tell("subscribe", { topic: "repositories" });
+			for (const vault of followers.keys()) tell({ type: "subscribe", vault });
+			if (machine !== null) tell({ type: "subscribe", topic: "repositories" });
 		});
 		opening.addEventListener("message", (message) => {
 			if (socket === opening) receive(message);
@@ -122,10 +123,10 @@ function createFeedSocket() {
 		follow(vault: string, follower: FeedFollower<ArchitectureEvent>): () => void {
 			followers.set(vault, follower);
 			connect();
-			tell("subscribe", { vault });
+			tell({ type: "subscribe", vault });
 			return () => {
 				followers.delete(vault);
-				tell("unsubscribe", { vault });
+				tell({ type: "unsubscribe", vault });
 				release();
 			};
 		},
@@ -138,10 +139,10 @@ function createFeedSocket() {
 		followRepositories(follower: FeedFollower<RepositoriesFrame>): () => void {
 			machine = follower;
 			connect();
-			tell("subscribe", { topic: "repositories" });
+			tell({ type: "subscribe", topic: "repositories" });
 			return () => {
 				machine = null;
-				tell("unsubscribe", { topic: "repositories" });
+				tell({ type: "unsubscribe", topic: "repositories" });
 				release();
 			};
 		},
