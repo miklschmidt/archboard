@@ -31,15 +31,4 @@ export { backoff, expiresAt, lapsed, ms } from "#shared/operations/spans.ts";
 export { TimedOut } from "#shared/operations/timed-out.ts";
 export { createElapsedClock } from "#shared/constants/elapsed-clock.ts";
 export { painterPhasesJson } from "#shared/constants/diagram-motion.ts";
-export type {
-	Backoff,
-	Bound,
-	Delay,
-	Handed,
-	Motion,
-	Polled,
-	Span,
-	Tick,
-	Timeout,
-	Wait,
-} from "#shared/constants/waits.ts";
+export type { Bound, Polled, Span } from "#shared/constants/waits.ts";

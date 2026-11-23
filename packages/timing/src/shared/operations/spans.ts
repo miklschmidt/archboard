@@ -49,7 +49,8 @@ function backoff(wait: Backoff, attempt: number): number {
  * @returns It, in milliseconds.
  */
 function ms(wait: Readable): number {
-	return lengthOf(wait);
+	const declared: { readonly ms: number } = WAITS[wait];
+	return declared.ms;
 }
 
 export { backoff, expiresAt, lapsed, ms };
