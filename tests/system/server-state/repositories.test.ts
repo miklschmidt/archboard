@@ -320,15 +320,33 @@ describe.serial("the repositories of the navigator", () => {
 	});
 
 	test("two choices at once are each answered with the listing that follows them, in order", async () => {
+		const other = realpathSync.native(join(fixture.root, "orders-fix"));
+		expect((await choose(other)).status).toBe(200);
 		using tab = await openRepositoryFeed(server.base);
-		await tab.next();
+		const snapshot = await tab.next();
+		expect(ordersVault(snapshot.repositories)).toBe(vaultOf(other));
 		const answers = await Promise.all(
-			[main, worktree].map(async (root) => (await (await choose(root)).json()) as Answer),
+			[main, worktree].map(async (root) => {
+				const response = await choose(root);
+				expect(response.status).toBe(200);
+				const listing = (await response.json()) as Answer;
+				expect(ordersVault(listing.repositories)).toBe(vaultOf(root));
+				return listing;
+			}),
 		);
 		const [first, last] = answers.toSorted((a, b) => a.revision - b.revision);
-		expect(first!.revision).toBeLessThan(last!.revision);
-		const sent = await tab.until((listing) => listing.revision === last!.revision);
-		expect(ordersVault(sent.repositories)).toBe(ordersVault(last!.repositories));
+		expect(first!.revision).toBe(snapshot.revision + 1);
+		expect(last!.revision).toBe(snapshot.revision + 2);
+		expect(await tab.next()).toEqual({
+			type: "repositories",
+			revision: first!.revision,
+			repositories: first!.repositories,
+		});
+		expect(await tab.next()).toEqual({
+			type: "repositories",
+			revision: last!.revision,
+			repositories: last!.repositories,
+		});
 		const now = (await listed()).find((each) => each.name === ORDERS);
 		expect(now?.vault).toBe(ordersVault(last!.repositories));
 	});
