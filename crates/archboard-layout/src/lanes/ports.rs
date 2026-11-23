@@ -53,12 +53,18 @@ fn fanned(face: &Rect, wanted: &[f64]) -> Vec<f64> {
 /// face's reach: a port leaves the middle only to make room for the others, never to stand nearer
 /// its line's other end. A group longer than the face packs closer, still centred.
 pub(crate) fn gathered((low, high): (f64, f64), count: usize) -> Vec<f64> {
+    gathered_at((low, high), count, f64::midpoint(low, high))
+}
+
+/// Gather a face's ports as close to its middle as its clear reach allows.
+fn gathered_at((low, high): (f64, f64), count: usize, middle: f64) -> Vec<f64> {
     let gap = if count > 1 {
         js_min(LANE, (high - low) / (count - 1) as f64)
     } else {
         0.0
     };
-    let start = f64::midpoint(low, high) - gap * (count.saturating_sub(1)) as f64 / 2.0;
+    let width = gap * count.saturating_sub(1) as f64;
+    let start = js_max(low, js_min(high - width, middle - width / 2.0));
     (0..count).map(|at| start + at as f64 * gap).collect()
 }
 
@@ -176,7 +182,8 @@ impl Router<'_> {
         let (low, high) = self.face_reach(item, &face, fan);
         let reach = (low.min(high), high);
         let ports = if self.bus {
-            gathered(reach, wanted.len())
+            let (left, right) = port_reach(&face);
+            gathered_at(reach, wanted.len(), f64::midpoint(left, right))
         } else {
             spread_along(reach, &if fan { fanned(&face, &wanted) } else { wanted })
         };

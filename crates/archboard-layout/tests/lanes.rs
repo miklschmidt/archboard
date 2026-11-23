@@ -256,6 +256,30 @@ fn lanes_lands_the_lines_bound_for_one_card_together_a_lane_apart_centred_on_its
 }
 
 #[test]
+fn lanes_centres_ports_when_a_group_caption_leaves_the_middle_clear() {
+    let mut target = card("target", 300);
+    target["layoutOptions"]["archboard.group"] = json!("group");
+    let graph = json!({
+        "id": "root",
+        "layoutOptions": {"archboard.group.captions": "[[\"group\",80,20]]"},
+        "children": [card("caller", 200), target],
+        "edges": [line("in", "caller", "target", "call")]
+    });
+    let drawn = drawn_by_lanes(&graph);
+    let target = &drawn["cards"]
+        .as_array()
+        .expect("its cards")
+        .iter()
+        .find(|card| card["id"] == "target")
+        .expect("the target is drawn")["box"];
+    let middle =
+        target["x"].as_f64().expect("an x") + target["width"].as_f64().expect("a width") / 2.0;
+    let lines = lines_of(&drawn);
+    let head = lines[0].1.last().expect("a head");
+    assert!((head.0 - middle).abs() < 0.01, "{head:?}, middle {middle}");
+}
+
+#[test]
 fn lanes_runs_no_line_round_the_outside_of_the_readme_reading() {
     let drawn =
         drawn_by_lanes(&serde_json::from_str(include_str!("fixtures/readme-all.json")).unwrap());
