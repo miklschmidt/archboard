@@ -85,6 +85,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			stdout: "pipe",
 			stderr: "ignore",
 		});
+		const owner = await ownProcess(child);
 		// Each phase of the stop is shortened by name, so TERM's refusal costs a tenth of a second.
 		const schedule = globalThis.setTimeout;
 		globalThis.setTimeout = ((
@@ -97,7 +98,6 @@ describe("evaluation process ownership with local shell fakes", () => {
 				args[0] === "skillEval.groupStop" ? TEST_POLL_MS : delay,
 				...args,
 			)) as typeof globalThis.setTimeout;
-		const owner = await ownProcess(child);
 		try {
 			const reader = child.stdout.getReader();
 			const { value } = await reader.read();
