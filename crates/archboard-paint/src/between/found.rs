@@ -112,7 +112,7 @@ pub(super) fn found(scene: &Scene) -> Vec<Found<'_>> {
     let mut groups = Vec::new();
     walk(
         &scene.body,
-        Transform::IDENTITY,
+        Transform::translate(0.0, 0.0),
         &atlas,
         &mut seen,
         &mut groups,

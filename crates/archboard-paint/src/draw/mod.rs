@@ -298,7 +298,7 @@ impl<C: Canvas> Walk<'_, C> {
 
     /// Where a group sits, in the swap between the near and the far view.
     fn place_of(&self, group: &Group, view: View) -> Transform {
-        let (far, still) = (self.presentation.far, Transform::IDENTITY);
+        let (far, still) = (self.presentation.far, Transform::translate(0.0, 0.0));
         match (&group.role, view) {
             (Role::Chip { far: place }, _) => between(group.transform, *place, far),
             (Role::Words { away }, View::Near) => between(still, *away, far),

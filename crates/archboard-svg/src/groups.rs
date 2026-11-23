@@ -230,7 +230,7 @@ pub(crate) fn group_attributes(group: &Group, names: &Names) -> Attributes {
         subject(drawn, &mut out);
     }
     out.maybe("class", class_of(&group.role));
-    if group.transform != Transform::IDENTITY {
+    if !group.transform.moves_nothing() {
         out.set("transform", placed(group.transform, ""));
     }
     stated(&mut out, "opacity", js::number(group.opacity));

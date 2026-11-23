@@ -141,7 +141,7 @@ impl Leave {
         Leave {
             group: Group::new(Role::Marks, vec![item]),
             frame: None,
-            outer: Transform::IDENTITY,
+            outer: Transform::translate(0.0, 0.0),
             exit_end,
         }
     }
@@ -156,7 +156,7 @@ impl Leave {
         group.opacity *= 1.0 - gone;
         scaled_about(&mut group, self.frame, 1.0 - (1.0 - LEAVE_SCALE) * gone);
         let item = Item::Group(group);
-        if self.outer == Transform::IDENTITY {
+        if self.outer.moves_nothing() {
             vec![item]
         } else {
             vec![Item::Group(

@@ -221,7 +221,7 @@ impl Anchors {
     /// A group: one placed by its own move keeps to the nearer edge as a whole.
     fn group(&self, group: &Group) -> Group {
         let mut group = group.clone();
-        if group.transform == Transform::IDENTITY {
+        if group.transform.moves_nothing() {
             group.items = self.items(&group.items);
         } else {
             let at = &mut group.transform;

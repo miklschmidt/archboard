@@ -134,10 +134,10 @@ pub(super) fn look(shape: &Shape) -> Shape {
 fn unplaced_role(role: &Role) -> Role {
     match role {
         Role::Chip { .. } => Role::Chip {
-            far: Transform::IDENTITY,
+            far: Transform::translate(0.0, 0.0),
         },
         Role::Words { .. } => Role::Words {
-            away: Transform::IDENTITY,
+            away: Transform::translate(0.0, 0.0),
         },
         other => other.clone(),
     }
@@ -148,7 +148,7 @@ fn signature(item: &Item) -> Item {
     match item {
         Item::Group(group) => Item::Group(Group {
             role: unplaced_role(&group.role),
-            transform: Transform::IDENTITY,
+            transform: Transform::translate(0.0, 0.0),
             items: group.items.iter().map(signature).collect(),
             ..group.clone()
         }),

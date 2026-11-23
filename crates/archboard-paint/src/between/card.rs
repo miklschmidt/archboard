@@ -193,7 +193,7 @@ fn is_corner_mark(item: &Item, card: Rect) -> bool {
     let Item::Group(Group { transform: at, .. }) = item else {
         return false;
     };
-    if *at == Transform::IDENTITY {
+    if at.moves_nothing() {
         return false;
     }
     let near_x = at.x - card.x < MARK_MARGIN || card.x + card.width - at.x < MARK_MARGIN;

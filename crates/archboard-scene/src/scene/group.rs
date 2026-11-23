@@ -63,7 +63,12 @@ impl Transform {
     }
 
     /// The transform that moves nothing.
-    pub const IDENTITY: Transform = Transform::translate(0.0, 0.0);
+    const IDENTITY: Transform = Transform::translate(0.0, 0.0);
+
+    /// Whether the transform leaves what it holds where it stands, at its size.
+    pub fn moves_nothing(&self) -> bool {
+        *self == Transform::IDENTITY
+    }
 }
 
 /// How a relationship's line was drawn: its kind's appearance and its kind.
