@@ -35,6 +35,7 @@ const events = [
 			<p class="event-head">
 				<span class="kind">Current</span>
 				<span class="name">{current.name}</span>
+				<span class="shown">On screen</span>
 				<time class="mono when">{current.when}</time>
 			</p>
 			<p class="text">{current.text}</p>
@@ -152,6 +153,11 @@ const events = [
 		color: var(--ink-muted);
 	}
 	.current .kind {
+		color: var(--gold-mark);
+	}
+	.shown {
+		font-size: 0.75rem;
+		font-weight: 500;
 		color: var(--gold-mark);
 	}
 	.name {
