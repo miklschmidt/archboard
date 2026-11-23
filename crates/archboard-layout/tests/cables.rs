@@ -63,6 +63,49 @@ fn wide_fallback_cables_leave_their_card_a_lane_apart() {
 }
 
 #[test]
+fn a_group_caption_leaves_the_full_width_of_each_lanes_ribbon() {
+    let graph = json!({
+        "id": "root",
+        "layoutOptions": {
+            "archboard.layout.engine": "lanes",
+            "archboard.group.captions": "[[\"group\",100,20]]"
+        },
+        "children": [
+            {"id": "left", "width": 200, "height": 80},
+            {"id": "right", "width": 200, "height": 80},
+            {"id": "target", "width": 200, "height": 80,
+                "layoutOptions": {"archboard.group": "group"}}
+        ],
+        "edges": [
+            {"id": "a", "sources": ["left"], "targets": ["target"],
+                "layoutOptions": {"archboard.cable": "sync;event;rpc;http;queue"}},
+            {"id": "b", "sources": ["right"], "targets": ["target"],
+                "layoutOptions": {"archboard.cable": "sync;event;rpc;http;queue"}}
+        ]
+    });
+    let (placed, _) = told(&graph);
+    let placed: Value = serde_json::from_str(&placed).expect("a drawing");
+    let caption = &placed["regions"][0]["caption"];
+    let caption_end = caption["x"].as_f64().expect("caption x")
+        + caption["width"].as_f64().expect("caption width");
+    let mut ports: Vec<_> = placed["edges"]
+        .as_array()
+        .expect("the lines")
+        .iter()
+        .map(|line| {
+            let points = line["points"].as_array().expect("the route");
+            points.last().expect("a head")["x"]
+                .as_f64()
+                .expect("port x")
+        })
+        .collect();
+    ports.sort_by(f64::total_cmp);
+    // Five strands span 32 units. Compress the gap between ribbons and keep their widths.
+    assert!(ports[1] - ports[0] > 32.0, "{ports:?}");
+    assert!(ports[0] - 16.0 >= caption_end, "{ports:?}");
+}
+
+#[test]
 fn a_fallback_cable_leaves_room_for_its_marks_at_both_ends() {
     let graph = json!({
         "id": "root", "layoutOptions": {"archboard.layout.engine": "lanes"},

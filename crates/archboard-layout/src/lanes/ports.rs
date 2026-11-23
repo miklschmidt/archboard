@@ -97,25 +97,25 @@ fn gathered_at((low, high): (f64, f64), count: usize, middle: f64) -> Vec<f64> {
     (0..count).map(|at| start + at as f64 * gap).collect()
 }
 
-/// Gather the ports of cables about `middle`, each as wide as its ribbon and a lane clear of the
-/// next, when the reach holds them; lone lines, or ribbons too wide for the reach, gather as
-/// `gathered_at` does.
+/// Gather the ports of cables about `middle` with up to a lane between their ribbons. A short
+/// reach compresses the gaps first. Ordinary lines, or ribbons too wide for the reach, gather
+/// as `gathered_at` does.
 fn gathered_ribbons((low, high): (f64, f64), half: &[f64], middle: f64) -> Option<Vec<f64>> {
-    if half.iter().all(|&one| one == 0.0) {
+    let girth = 2.0 * half.iter().sum::<f64>();
+    let free = high - low - girth;
+    if girth == 0.0 || free < 0.0 {
         return None;
     }
+    let gap = js_min(LANE, free / half.len().saturating_sub(1).max(1) as f64);
     let mut centres = Vec::with_capacity(half.len());
     let mut at = half.first().copied().unwrap_or(0.0);
     for (index, &one) in half.iter().enumerate() {
         if index > 0 {
-            at += half[index - 1] + LANE + one;
+            at += half[index - 1] + gap + one;
         }
         centres.push(at);
     }
     let width = at + half.last().copied().unwrap_or(0.0);
-    if width > high - low {
-        return None;
-    }
     let start = js_max(low, js_min(high - width, middle - width / 2.0));
     Some(centres.into_iter().map(|centre| start + centre).collect())
 }
