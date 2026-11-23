@@ -264,7 +264,8 @@ function cablePlates(
 	for (const cable of cablesOf(lines, standingOf)) {
 		const [first, ...rest] = cable;
 		if (first === undefined || rest.length === 0) continue;
-		const ends = { from: first.line.from, to: first.line.to, twoWay: first.line.twoWay === true };
+		const { from, to } = first.line;
+		const ends = { from, to, twoWay: cable.some(({ line }) => line.twoWay === true) };
 		const joins = cable.flatMap((one) => one.joins);
 		words.set(first.line.id, wordsOnJoinedLine(joins, ends, reached));
 		for (const other of rest) words.set(other.line.id, undefined);

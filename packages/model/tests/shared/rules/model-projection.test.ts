@@ -172,12 +172,13 @@ describe("the words on a joined line", () => {
 		expect(said.get("bare>void")).toBeUndefined();
 	});
 
-	test("on a two-way line, name the card with more parts reached", () => {
+	test("on a two-way cable, name the card with more parts reached", () => {
 		const [line] = projectModel(
 			modelOf(
 				[...closed("left", ["l1"]), ...closed("right", ["r1", "r2", "r3"])],
 				[
-					{ id: "there", from: "right", to: "l1", label: "ask" },
+					{ id: "lead", from: "right", to: "l1", kind: "http" },
+					{ id: "there", from: "right", to: "l1" },
 					{ id: "back", from: "l1", to: "r1" },
 					{ id: "again", from: "l1", to: "r2" },
 					{ id: "more", from: "l1", to: "r3" },
@@ -186,7 +187,6 @@ describe("the words on a joined line", () => {
 		).content.edges;
 		expect(line?.label).toBe("with the r1, the r2 +1");
 	});
-
 	test("skip an end that the content does not hold", () => {
 		const reading = projectModel(
 			modelOf(
