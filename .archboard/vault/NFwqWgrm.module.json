@@ -1,5 +1,4 @@
 {
-  "outgoing": [],
   "order": 41100,
   "name": "archboard-paint",
   "kind": "package",
@@ -14,8 +13,18 @@
   },
   "schemaVersion": 2,
   "id": "vKEsyHFk#NFwqWgrm",
+  "parent": "vKEsyHFk#HgZPVIE2",
   "formerNames": [
     "Painter core"
   ],
-  "parent": "vKEsyHFk#HgZPVIE2"
+  "outgoing": [
+    {
+      "order": 900,
+      "kind": "dependency",
+      "label": "the SVG its parity tests hold the canvas to",
+      "emphasis": "normal",
+      "to": "vKEsyHFk/gbyqW4H3#eECDrhMc",
+      "id": "vKEsyHFk#CPgBdjsI"
+    }
+  ]
 }
