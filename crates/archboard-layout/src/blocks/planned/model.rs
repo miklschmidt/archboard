@@ -138,12 +138,15 @@ impl<'a> Model<'a> {
                 .ends
                 .push((model.ending(from, to), model.ending(to, from)));
         }
+        // A cable is a kind of its own: two cables never share a port or a fan, because the
+        // order of a ribbon's strands turns with the side it comes from, and two ribbons that
+        // met on one port from two sides would cross their strands beside it.
         model.treatments = model
             .edges
             .iter()
             .map(|edge| {
                 if let Some(cable) = edge.option(crate::graph::CABLE) {
-                    return cable.to_owned();
+                    return format!("{cable}|{}", edge.id);
                 }
                 format!(
                     "{}|{}|{}",
