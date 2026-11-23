@@ -269,7 +269,7 @@ process.exit(await child.exited);
 	);
 	const sync = git(root, "rev-parse", "refs/heads/archboard-history");
 	expect(JSON.parse(git(root, "show", `${sync}:record.json`))).toEqual({
-		schemaVersion: 1,
+		schemaVersion: 2,
 		kind: "synchronization",
 	});
 	expect(git(root, "cat-file", "-p", sync)).toContain("gpgsig -----BEGIN SSH SIGNATURE-----");
