@@ -161,6 +161,8 @@ impl CardLayout<'_> {
         self.edges.extend(grid);
         self.edges.extend(titles);
         self.edges.extend(holds);
+        let sides = self.sides_held();
+        self.edges.extend(sides);
         self.hold_sources();
         self.hold_sinks();
     }
@@ -186,13 +188,7 @@ impl CardLayout<'_> {
             ])
         };
         let Some(label) = label else {
-            let mut attributes = leg(id.clone());
-            if let Some(field) = self.field_of(&line.tail) {
-                attributes.set("tailport", field);
-            }
-            if let Some(field) = self.field_of(&line.head) {
-                attributes.set("headport", field);
-            }
+            let attributes = leg(id.clone());
             self.edges.push(Edge::new(tail, head, attributes));
             return;
         };

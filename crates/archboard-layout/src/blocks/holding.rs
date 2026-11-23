@@ -11,7 +11,7 @@ use crate::viz::{Attrs, Edge, Subgraph, Value};
 use super::card_layout::{Arrangement, CardLayout, Sub};
 use super::tree::header_of;
 
-impl<'t> CardLayout<'t> {
+impl CardLayout<'_> {
     /// The invisible edges that hold a wrap's lowered cards down: each under
     /// the card above it in its column when the rows keep their columns, and
     /// one no line or column reaches by the first card of the rank's first row.

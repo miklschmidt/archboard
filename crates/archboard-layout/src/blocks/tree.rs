@@ -1,8 +1,8 @@
 //! The picture, every container and every group region round more than one node is a block, laid out on its own from
 //! its cards and child blocks; its parent places it as one box, as compact as
 //! what it holds. A block of blocks gathers the cards it holds outside every
-//! block into a cluster, so each block holds cards alone or blocks alone, except
-//! in a Lanes drawing, which ranks those cards with the blocks (`nested.rs`).
+//! block into a cluster, so each block holds cards alone or blocks alone. A Lanes
+//! drawing draws its containers and regions inline, as clusters of the picture (`inline.rs`).
 //! A folded block's columns are blocks too (`fold.rs`).
 //!
 //! A relationship is drawn in the lowest block that holds both its ends, and
@@ -275,8 +275,8 @@ pub(crate) struct BlockTree {
     /// Whether this layout is the drawing itself, not a candidate the planner routes again: its
     /// channels pack their tracks a lane apart, and a door widens for the heads of its lines.
     pub packed: bool,
-    /// Whether this layout is a Lanes drawing, which rides its lanes everywhere: the cards beside
-    /// a block are ranked with it (`nested.rs`). Blocks' own fallback keeps them apart.
+    /// Whether this layout is a Lanes drawing, which draws every container and group region inline
+    /// (`inline.rs`), so the whole picture is ranked in one layout and routed in one scene.
     pub lanes: bool,
     feedback: Set<String>,
     /// A shared-source fork whose labels follow its incoming boundary.
@@ -391,7 +391,11 @@ impl BlockTree {
             orders: kept.orders,
         };
         tree.root = tree.block(":root".to_owned(), Kind::Root, None, None, None);
-        tree.fill(tree.root, graph.kids())?;
+        if tree.lanes {
+            tree.fill_inline(tree.root, graph.kids())?;
+        } else {
+            tree.fill(tree.root, graph.kids())?;
+        }
         tree.gather(tree.root, graph.edges.as_deref().unwrap_or(&[]));
         tree.projections = graph
             .edges

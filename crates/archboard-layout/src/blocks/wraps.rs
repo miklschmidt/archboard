@@ -237,7 +237,7 @@ fn wraps_better(one: &Weighing, other: &Weighing) -> bool {
 /// The first hierarchy holds columns; the bounded placement comparison can also
 /// try the hierarchy with free columns.
 fn column_choices(free: bool) -> Vec<bool> {
-    if !free { vec![true] } else { vec![false, true] }
+    if free { vec![false, true] } else { vec![true] }
 }
 
 /// The ways to wrap a block's widest rank of items into rows, when the block

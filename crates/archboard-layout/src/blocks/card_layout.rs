@@ -94,7 +94,7 @@ pub(crate) struct Lined {
 /// One block of cards' layout, from its Graphviz graph to its routed lines.
 pub(crate) struct CardLayout<'t> {
     pub(super) tree: &'t BlockTree,
-    pub(super) laid: &'t LaidMap,
+    laid: &'t LaidMap,
     id: BlockId,
     pub(super) block: &'t Block,
     insets: Insets,
@@ -218,7 +218,7 @@ impl<'t> CardLayout<'t> {
     /// A vendor node of the size its item has; the header is ranked as a sliver.
     pub(super) fn node_of(&self, name: &str) -> Node {
         let Size { width, height } = self.size_of(name);
-        let mut node = box_node(
+        box_node(
             name,
             if name == header_of(self.block) {
                 PORT
@@ -226,12 +226,7 @@ impl<'t> CardLayout<'t> {
                 width
             },
             height,
-        );
-        if let Some(label) = self.record_of(name) {
-            node.attributes.set("shape", "record");
-            node.attributes.set("label", label);
-        }
-        node
+        )
     }
 
     /// Put a node where it goes.

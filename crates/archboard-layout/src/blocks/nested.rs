@@ -1,8 +1,7 @@
 //! A picture drawn as blocks: every container is a block of its own and every group region round more than one node too, each laid out
 //! on its own. A block of blocks gathers the cards it holds outside every block
-//! into a cluster, so every block holds cards alone or blocks alone, except in a Lanes drawing
-//! (`BlockTree::lanes`): there the cards beside a block are ranked with it, so each card stands
-//! above or below the blocks it talks to.
+//! into a cluster, so every block holds cards alone or blocks alone. A Lanes drawing draws its
+//! containers inline instead (`inline.rs`).
 
 use std::rc::Rc;
 
@@ -72,12 +71,7 @@ impl BlockTree {
     /// Gather loose cards into compact units beside the blocks a parent holds.
     /// A named parent interface keeps disconnected member work independent.
     /// The picture's loose collaborators retain their shared rank context.
-    /// A Lanes drawing gathers none: a cluster is laid out without the blocks beside it, so it
-    /// stands every card on one rank and wraps that rank into a grid, whatever the card talks to.
     pub(super) fn gather(&mut self, block: BlockId, edges: &[Rc<Edge>]) {
-        if self.lanes {
-            return;
-        }
         let items = self.get(block).items.clone();
         let inner: Vec<&String> = items.iter().filter(|item| self.is_block(item)).collect();
         for item in &inner {
@@ -165,7 +159,7 @@ fn connected(card: &str, remaining: &mut Set<String>, edges: &[Rc<Edge>]) -> Set
 }
 
 /// Nodes in the picture's order: by their authored order, stably.
-fn by_order(nodes: &[Node]) -> Vec<&Node> {
+pub(super) fn by_order(nodes: &[Node]) -> Vec<&Node> {
     let all: Vec<&Node> = nodes.iter().collect();
     sorted_by(&all, |one, other| {
         semantic_order(one.layout_options.as_ref()) - semantic_order(other.layout_options.as_ref())
