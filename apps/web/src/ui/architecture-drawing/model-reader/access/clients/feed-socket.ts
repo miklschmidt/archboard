@@ -43,6 +43,7 @@ function createFeedSocket() {
 	const followers = new Map<string, FeedFollower<ArchitectureEvent>>();
 	let machine: FeedFollower<RepositoriesFrame> | null = null;
 	let socket: WebSocket | null = null;
+	let retry: (() => void) | null = null;
 	/**
 	 * Every follower, of a vault or of the machine.
 	 * @returns Them.
@@ -82,23 +83,34 @@ function createFeedSocket() {
 	/** Open the socket while anything follows, and open it again after it drops. */
 	function connect(): void {
 		if (socket !== null || everyone().length === 0) return;
+		retry?.();
+		retry = null;
 		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 		const opening = new WebSocket(`${protocol}//${window.location.host}/api/architecture/events`);
 		socket = opening;
 		opening.addEventListener("open", () => {
+			if (socket !== opening) return;
 			for (const vault of followers.keys()) tell("subscribe", { vault });
 			if (machine !== null) tell("subscribe", { topic: "repositories" });
 		});
-		opening.addEventListener("message", receive);
+		opening.addEventListener("message", (message) => {
+			if (socket === opening) receive(message);
+		});
 		opening.addEventListener("close", () => {
+			if (socket !== opening) return;
 			socket = null;
+			retry = after("pane.socketReconnect", connect);
 			for (const follower of everyone()) follower.lost(true);
-			after("pane.socketReconnect", connect);
 		});
 	}
 	/** Close the socket once nothing follows. */
 	function release(): void {
-		if (everyone().length === 0) socket?.close(1000);
+		if (everyone().length > 0) return;
+		retry?.();
+		retry = null;
+		const closing = socket;
+		socket = null;
+		closing?.close(1000);
 	}
 	return {
 		/**

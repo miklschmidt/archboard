@@ -153,6 +153,26 @@ test("a cache opens nothing, and the follow starts with the first reader and sto
 	expect(socket.readyState).toBe(3);
 });
 
+test("the last reader cancels a pending reconnect", () =>
+	onTestClock(async () => {
+		const { unmount } = readIn(createModelQueryClient());
+		await act(async () => {});
+		const socket = followingNow();
+		await act(async () => socket.receive(listing(MAIN, 0)));
+		const schedule = jest.spyOn(globalThis, "setTimeout");
+		const cancel = jest.spyOn(globalThis, "clearTimeout");
+		try {
+			socket.close();
+			expect(schedule).toHaveBeenCalledTimes(1);
+			const retry = schedule.mock.results[0]?.value;
+			unmount();
+			expect(cancel).toHaveBeenCalledWith(retry);
+		} finally {
+			schedule.mockRestore();
+			cancel.mockRestore();
+		}
+	}));
+
 test("a reconnect takes the server's snapshot, even from a server that counts from nought again", () =>
 	onTestClock(async () => {
 		const { result } = readIn(createModelQueryClient());
