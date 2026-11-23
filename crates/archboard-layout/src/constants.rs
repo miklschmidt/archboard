@@ -49,6 +49,12 @@ pub(crate) const STRAIGHT_RUN: f64 = archboard_scene::paint::design::straight_ru
 /// How far back from its ends a strand of a cable in echelon stands its marks.
 pub(crate) const ECHELON: f64 = archboard_scene::paint::design::echelon();
 
+/// The room between a wall and a turn, including the cable's innermost strand and its marks.
+pub(crate) fn approach_of(half: f64) -> f64 {
+    let echelon = if half > 0.0 { ECHELON } else { 0.0 };
+    APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
+}
+
 /// The page shape the renderer lays a picture out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;
 

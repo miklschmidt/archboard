@@ -236,8 +236,8 @@ fn one_incoming_run_keeps_room_for_each_target_join() {
                     &[
                         (200.0, 50.0),
                         (250.0, 50.0),
-                        (250.0, 300.0),
-                        (400.0, 300.0),
+                        (250.0, 220.0),
+                        (400.0, 220.0),
                         (400.0, 100.0),
                     ],
                 ),
@@ -246,8 +246,8 @@ fn one_incoming_run_keeps_room_for_each_target_join() {
                     &[
                         (200.0, 50.0),
                         (250.0, 50.0),
-                        (250.0, 300.0),
-                        (700.0, 300.0),
+                        (250.0, 220.0),
+                        (700.0, 220.0),
                         (700.0, 500.0),
                     ],
                 ),
@@ -515,4 +515,26 @@ fn a_cable_keeps_the_approach_its_strands_need() {
     let inks: rustc_hash::FxHashMap<&str, f64> = std::iter::once(("cable", 12.0)).collect();
     assert!(approach(&none, "lone") < APPROACH + ECHELON);
     assert!(approach(&inks, "cable") >= APPROACH + 12.0 + ECHELON);
+}
+
+#[test]
+fn a_straight_cable_keeps_room_for_its_marks_when_the_cards_move_together() {
+    let shape = Shape::new(Placed {
+        width: 1000.0,
+        height: 600.0,
+        cards: vec![card("from", 100.0, 200.0), card("to", 600.0, 200.0)],
+        frames: Vec::new(),
+        regions: Vec::new(),
+        edges: vec![PlacedLine {
+            id: "cable".into(),
+            points: vec![Point { x: 300.0, y: 250.0 }, Point { x: 600.0, y: 250.0 }],
+            label: None,
+        }],
+        titles: Vec::new(),
+        routed: None,
+    });
+    let inks = std::iter::once(("cable", 4.0)).collect();
+    let drawn = drawing(&shape, 8.0, (&[], &inks)).expect("a gap to close");
+    let gap = drawn.edges[0].points[1].x - drawn.edges[0].points[0].x;
+    assert!((crate::constants::STRAIGHT_RUN + 2.0 * ECHELON..300.0).contains(&gap));
 }

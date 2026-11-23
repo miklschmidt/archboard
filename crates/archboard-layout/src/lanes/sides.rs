@@ -259,7 +259,8 @@ impl Router<'_> {
     }
 
     /// The ends of a routing's lines that could land on a side, but for a line in a bus between
-    /// two cards, which lands with the bus.
+    /// two cards, which lands with the bus, and a cable, whose ribbon and marks need the room a
+    /// face's port keeps.
     fn side_candidates(&self, routed: &Map<String, Routed>) -> Sided {
         let nets: Vec<NetId> = routed
             .values()
@@ -274,6 +275,12 @@ impl Router<'_> {
         for (id, route) in routed
             .iter()
             .filter(|(_, route)| pairs[&self.pair_of(route)] == 1)
+            .filter(|(_, route)| {
+                route
+                    .nets
+                    .iter()
+                    .all(|&net| self.net(net).half_width() == 0.0)
+            })
         {
             for end in [End::Top, End::Bottom] {
                 if self.could_side(route, end, &lanes) {

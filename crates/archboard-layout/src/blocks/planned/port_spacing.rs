@@ -306,7 +306,8 @@ fn wall_span(
     horizontal: bool,
 ) -> (f64, f64) {
     let card = shape.endpoints[&endpoint(model, edge, source)];
-    let margin = if source { 12.0 } else { 20.0 };
+    // The corner margin belongs to the outer strand of a cable.
+    let margin = (if source { 12.0 } else { 20.0 }) + model.half(edge);
     let (start, span) = if horizontal {
         (card.y, card.height)
     } else {

@@ -50,10 +50,10 @@ pub(crate) struct Routed {
 }
 
 /// The relationship kind, effect, standing, emphasis, and traffic required to share a trunk:
-/// a cable's every strand (`graph::CABLE`).
+/// a cable's every strand (`graph::CABLE`) and its line id, since each cable keeps its own port.
 pub(crate) fn trunk_kind(edge: &crate::graph::Edge) -> String {
     if let Some(cable) = edge.option(crate::graph::CABLE) {
-        return cable.to_owned();
+        return format!("{cable}|{}", edge.id);
     }
     [
         edge.option("archboard.relationship.kind").unwrap_or(""),
@@ -282,6 +282,7 @@ impl Router<'_> {
             } else if abs(from.x - to.x) <= STRAIGHT {
                 points.extend([from, to]);
             } else if let Some(x) = net.detour_x() {
+                let return_track = track + net.detour_lanes() as f64 * LANE;
                 points.extend([
                     from,
                     Point {
@@ -294,11 +295,11 @@ impl Router<'_> {
                     },
                     Point {
                         x: x + left,
-                        y: track + LANE,
+                        y: return_track,
                     },
                     Point {
                         x: to.x,
-                        y: track + LANE,
+                        y: return_track,
                     },
                     to,
                 ]);
@@ -575,3 +576,6 @@ pub(crate) fn route_once(
     track.space_bands(&nets, &rising, top, rim);
     Ok(track.drawn(&routed, margin))
 }
+
+#[cfg(test)]
+mod tests;

@@ -15,6 +15,35 @@ struct PortRequest {
     side: End,
     wanted: f64,
     order: f64,
+    half: f64,
+}
+
+/// Spread the free space between ribbons as ordinary ports, then restore their widths.
+fn spread_ribbons((low, high): (f64, f64), wanted: &[f64], half: &[f64]) -> Vec<f64> {
+    let mut taken = 0.0;
+    let offsets: Vec<_> = half
+        .iter()
+        .map(|&half| {
+            let offset = taken + half;
+            taken += 2.0 * half;
+            offset
+        })
+        .collect();
+    // A frame tab can keep a fixed width. Keep its centres on the face even when the
+    // ribbons take more than the entire span.
+    if taken > high - low {
+        return spread_along((low, high), wanted);
+    }
+    let free: Vec<_> = wanted
+        .iter()
+        .zip(&offsets)
+        .map(|(x, offset)| x - offset)
+        .collect();
+    spread_along((low, high - taken), &free)
+        .into_iter()
+        .zip(offsets)
+        .map(|(x, offset)| x + offset)
+        .collect()
 }
 
 /// Where ports that want to stand beyond one end of a face ask to stand instead.
@@ -68,6 +97,29 @@ fn gathered_at((low, high): (f64, f64), count: usize, middle: f64) -> Vec<f64> {
     (0..count).map(|at| start + at as f64 * gap).collect()
 }
 
+/// Gather the ports of cables about `middle`, each as wide as its ribbon and a lane clear of the
+/// next, when the reach holds them; lone lines, or ribbons too wide for the reach, gather as
+/// `gathered_at` does.
+fn gathered_ribbons((low, high): (f64, f64), half: &[f64], middle: f64) -> Option<Vec<f64>> {
+    if half.iter().all(|&one| one == 0.0) {
+        return None;
+    }
+    let mut centres = Vec::with_capacity(half.len());
+    let mut at = half.first().copied().unwrap_or(0.0);
+    for (index, &one) in half.iter().enumerate() {
+        if index > 0 {
+            at += half[index - 1] + LANE + one;
+        }
+        centres.push(at);
+    }
+    let width = at + half.last().copied().unwrap_or(0.0);
+    if width > high - low {
+        return None;
+    }
+    let start = js_max(low, js_min(high - width, middle - width / 2.0));
+    Some(centres.into_iter().map(|centre| start + centre).collect())
+}
+
 /// Spread two or more ports evenly over a stretch of a face, the last at its
 /// end and none at its start; a lone port is left where it asked.
 fn spread_over(asked: &mut [f64], ports: &[usize], start: f64, end: f64) {
@@ -112,12 +164,13 @@ impl Router<'_> {
             if self.one_point(Some(item)) {
                 continue;
             }
-            let free = |side: End| {
-                let fixed = |request: &&PortRequest| request.side == side;
-                requests.iter().filter(fixed).count()
+            let span = |side| {
+                let ports = requests.iter().filter(|request| request.side == side);
+                let count = ports.clone().count();
+                ports.map(|request| 2.0 * request.half).sum::<f64>()
+                    + count.saturating_sub(1) as f64 * LANE
             };
-            let count = free(End::Top).max(free(End::Bottom));
-            let width = 2.0 * PORT_MARGIN + (count as f64 - 1.0) * LANE;
+            let width = 2.0 * PORT_MARGIN + span(End::Top).max(span(End::Bottom));
             let found = self.scene.item(item);
             if width > card_face(found).width {
                 widths.insert(item, width + 2.0 * found.inset.unwrap_or(0.0));
@@ -166,6 +219,10 @@ impl Router<'_> {
             side,
             wanted,
             order: min(members.iter().map(|&net| self.net(net).order)),
+            half: members
+                .iter()
+                .map(|&net| self.net(net).half_width())
+                .fold(0.0, f64::max),
         }
     }
 
@@ -183,9 +240,18 @@ impl Router<'_> {
         let reach = (low.min(high), high);
         let ports = if self.bus {
             let (left, right) = port_reach(&face);
-            gathered_at(reach, wanted.len(), f64::midpoint(left, right))
+            let middle = f64::midpoint(left, right);
+            let half: Vec<f64> = ordered.iter().map(|request| request.half).collect();
+            gathered_ribbons(reach, &half, middle)
+                .unwrap_or_else(|| gathered_at(reach, wanted.len(), middle))
         } else {
-            spread_along(reach, &if fan { fanned(&face, &wanted) } else { wanted })
+            let wanted = if fan { fanned(&face, &wanted) } else { wanted };
+            if self.one_point(Some(item)) || ordered.iter().all(|request| request.half == 0.0) {
+                spread_along(reach, &wanted)
+            } else {
+                let half: Vec<f64> = ordered.iter().map(|request| request.half).collect();
+                spread_ribbons(reach, &wanted, &half)
+            }
         };
         for (index, request) in ordered.iter().enumerate() {
             for &net in &request.nets {
