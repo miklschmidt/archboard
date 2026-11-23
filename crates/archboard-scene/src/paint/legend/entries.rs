@@ -269,8 +269,8 @@ pub(super) fn mark_counts(
 
 /// What a picture's key lists, read back from its scene: each subject it
 /// draws with an appearance, in the order it draws them, one sample of each
-/// distinct part kind and relationship kind among them, and the effects their
-/// lines' dashes say.
+/// distinct part kind and relationship kind among them, and the effects
+/// shown by their lines.
 #[derive(Clone, Debug)]
 pub struct PictureLegend {
     /// Each subject and what it was drawn as, where it was first met, as it was last met.
@@ -280,7 +280,7 @@ pub struct PictureLegend {
     /// One sample of each distinct relationship kind drawn, as its kind samples
     /// it, and the last subject drawn so.
     pub relationships: Vec<(String, Applied)>,
-    /// Each effect a drawn line's dash says, in the key's order.
+    /// Each effect shown by a drawn line, in the key's order.
     pub effects: Vec<LineEffect>,
 }
 
@@ -314,8 +314,8 @@ pub fn picture_legend(body: &[Item]) -> PictureLegend {
 }
 
 /// The legend's lists, empty ones left out: the comparison's marks, the part
-/// kinds drawn, and the relationship kinds drawn followed by the effects their
-/// dashes say, emphasis and traffic.
+/// kinds drawn, and the relationship kinds drawn followed by their effects,
+/// emphasis and traffic.
 pub(super) fn entries_of(
     body: &[Item],
     marks: &[(Standing, &'static str, usize)],
