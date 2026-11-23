@@ -16,6 +16,9 @@ const LOCK_RENEW_MS = 1000;
 /** `modelLock.lease`, named once so that a claim's lease and the registry's lock can be as long. */
 const LOCK_LEASE_MS = 3000;
 
+/** The wait cap shared by writers and readers. */
+const LOCK_WAIT_MS = 5000;
+
 /** `claim.campaign`, named once so that a claim of subjects runs as long. */
 const CLAIM_DEFAULT_MS = 10 * 60_000;
 
@@ -64,9 +67,9 @@ const MODEL_LOCKS = {
 	 * this one for how long a person is willing to hear nothing, that one for how
 	 * long a crash costs.
 	 */
-	"modelLock.wait": polled(5000, "the model to come free"),
+	"modelLock.wait": polled(LOCK_WAIT_MS, "the model to come free"),
 	/** The same wait, handed to a reader in the browser that asks again while a write holds the model. */
-	"modelLock.readerWait": handed(5000),
+	"modelLock.readerWait": handed(LOCK_WAIT_MS),
 	/**
 	 * How long a process pauses after taking over a lapsed lease before it
 	 * believes it got it.
