@@ -4,7 +4,7 @@
 // header sorts its table, as in the shell. No score: every count describes the model or its
 // commits. A module with no parts has no interface, so its interface counts stand blank.
 import Icon from "../Icon.astro";
-import { measureRows, measureTabs } from "../../lib/measures";
+import { compareMeasures, measureRows, measureTabs } from "../../lib/measures";
 import type { MeasureKey, MeasureRow } from "../../lib/measures";
 
 /**
@@ -13,9 +13,7 @@ import type { MeasureKey, MeasureRow } from "../../lib/measures";
  * @returns The rows.
  */
 const sortedBy = (key: MeasureKey): MeasureRow[] =>
-	[...measureRows].sort(
-		(a, b) => (b[key] ?? Number.NEGATIVE_INFINITY) - (a[key] ?? Number.NEGATIVE_INFINITY),
-	);
+	measureRows.toSorted((one, other) => compareMeasures(one, other, key, true));
 const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[key] ?? 0));
 ---
 
@@ -266,6 +264,7 @@ const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[ke
 <script>
 	import type { MeasureKey, MeasureRow } from "../../lib/measures";
 	import { mountTabs } from "../../scripts/tabs";
+	import { compareMeasures } from "../../lib/measures";
 
 	for (const root of document.querySelectorAll<HTMLElement>("[data-measures]")) {
 		mountTabs(root);
@@ -279,12 +278,8 @@ const most = (key: MeasureKey) => Math.max(1, ...measureRows.map((row) => row[ke
 				descending = key === current ? !descending : true;
 				current = key;
 				const rows = [...body.querySelectorAll<HTMLTableRowElement>("tr")];
-				// A blank has no count, so it stands last whichever way the column sorts.
-				const value = (row: HTMLTableRowElement) => {
-					const data = JSON.parse(row.dataset["row"] ?? "{}") as MeasureRow;
-					return data[key] ?? (descending ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY);
-				};
-				rows.sort((a, b) => (descending ? value(b) - value(a) : value(a) - value(b)));
+				const data = (row: HTMLTableRowElement) => JSON.parse(row.dataset["row"] ?? "{}") as MeasureRow;
+				rows.sort((one, other) => compareMeasures(data(one), data(other), key, descending));
 				const before = new Map(rows.map((row) => [row, row.getBoundingClientRect().top]));
 				body.append(...rows);
 				for (const row of rows) {
