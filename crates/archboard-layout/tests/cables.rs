@@ -105,6 +105,36 @@ fn a_fallback_cable_leaves_room_for_its_marks_at_both_ends() {
 }
 
 #[test]
+fn a_lanes_cable_keeps_its_face_port_when_it_could_enter_by_a_frame_wall() {
+    let graph = json!({
+        "id": "root",
+        "layoutOptions": {"archboard.layout.engine": "lanes"},
+        "children": [
+            {"id": "frame", "width": 175, "height": 36,
+                "layoutOptions": {"archboard.header.size": "36", "archboard.order": "2"},
+                "children": [{"id": "target", "width": 60, "height": 130}]},
+            {"id": "source", "width": 40, "height": 150,
+                "layoutOptions": {"archboard.order": "10"}},
+            {"id": "anchor", "width": 300, "height": 100}
+        ],
+        "edges": [{"id": "cable", "sources": ["source"], "targets": ["target"],
+            "layoutOptions": {"archboard.cable": "sync;event"}}]
+    });
+    let (placed, _) = told(&graph);
+    let placed: Value = serde_json::from_str(&placed).expect("a drawing");
+    let card = &placed["cards"]
+        .as_array()
+        .expect("the cards")
+        .iter()
+        .find(|card| card["id"] == "target")
+        .expect("the target card")["box"];
+    let points = placed["edges"][0]["points"].as_array().expect("the route");
+    let head = points.last().expect("a head");
+    assert_eq!(head["y"], card["y"]);
+    assert_eq!(head["x"], points[points.len() - 2]["x"]);
+}
+
+#[test]
 fn two_cables_with_the_same_strands_leave_a_card_from_separate_ports() {
     let mut graph = json!({
         "id": "root",
