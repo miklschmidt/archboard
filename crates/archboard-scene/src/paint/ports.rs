@@ -328,7 +328,7 @@ fn floor_of(slot: Rect) -> Vec<PathStep> {
 pub(super) fn port_inside(
     port: &Port,
     well: bool,
-    stroke: &Stroke,
+    stroke: Option<&Stroke>,
     width: f64,
     palette: &Palette,
 ) -> Items {
@@ -348,34 +348,38 @@ pub(super) fn port_inside(
             } else {
                 Items::new()
             },
-            shape(
-                Shape::new(
-                    Purpose::Line,
-                    Geometry::Line {
-                        from: point(port.x, port.foot),
-                        to: point(port.x, slot.y),
-                    },
-                )
-                .pointer(Pointer::None)
-                .unfilled()
-                .stroked(stroke.clone().capped(Cap::Butt)),
-            ),
-            outlined(
-                vec![
-                    go(point(left, slot.y)),
-                    PathStep::Across {
-                        x: round_coord(left + width),
-                    },
-                    PathStep::Down {
-                        y: round_coord(bottom),
-                    },
-                    PathStep::Across {
-                        x: round_coord(left),
-                    },
-                    PathStep::Close,
-                ],
-                GradientId::PortFade,
-            ),
+            stroke.map_or_else(Items::new, |stroke| {
+                lines(vec![
+                    shape(
+                        Shape::new(
+                            Purpose::Line,
+                            Geometry::Line {
+                                from: point(port.x, port.foot),
+                                to: point(port.x, slot.y),
+                            },
+                        )
+                        .pointer(Pointer::None)
+                        .unfilled()
+                        .stroked(stroke.clone().capped(Cap::Butt)),
+                    ),
+                    outlined(
+                        vec![
+                            go(point(left, slot.y)),
+                            PathStep::Across {
+                                x: round_coord(left + width),
+                            },
+                            PathStep::Down {
+                                y: round_coord(bottom),
+                            },
+                            PathStep::Across {
+                                x: round_coord(left),
+                            },
+                            PathStep::Close,
+                        ],
+                        GradientId::PortFade,
+                    ),
+                ])
+            }),
         ]),
     ))
 }
@@ -449,12 +453,16 @@ pub(super) fn port_plan(ports: &Ports, edges: &[Edge]) -> PortPlan {
     PortPlan { wells, cuts }
 }
 
-/// Where a line's pulses start or stop when the line ends at a port's foot: a
-/// little inside the port.
+/// Whether a line endpoint stands at the foot of this port.
+pub(super) fn at_port(point: Point, port: &Port) -> bool {
+    port.x == point.x && (port.foot - point.y).abs() < 0.5
+}
+
+/// Where a line's pulses start or stop: a little inside the port.
 fn inside_port(point: Point, ports: &[Port]) -> Option<Point> {
     ports
         .iter()
-        .any(|port| port.x == point.x && (port.foot - point.y).abs() < 0.5)
+        .any(|port| at_port(point, port))
         .then_some(Point {
             x: point.x,
             y: point.y - RIDE_IN,

@@ -10,7 +10,7 @@ use crate::paint::build::{Items, group, grouped, lines, point, route, shape};
 use crate::paint::cards::halo;
 use crate::paint::heads::{IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker};
 use crate::paint::palette::Palette;
-use crate::paint::ports::{Port, port_inside};
+use crate::paint::ports::{Port, at_port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
 use crate::paint::standing::{
     ghost_opacity, standing_palette, standing_swipe, subject, warning_on_line,
@@ -177,7 +177,15 @@ pub(super) fn paint_edge_line(
     let inside = line.stroke.clone().unwrap_or(stroke);
     parts.push(shape(line));
     for (port, well) in ports {
-        parts.push(port_inside(port, *well, &inside, width, palette));
+        // The ink inside a port would run through the centre of the caller's ring.
+        let caller_ring = tail == Some(Head::Ring) && at_port(routed.curve.from, port);
+        parts.push(port_inside(
+            port,
+            *well,
+            (!caller_ring).then_some(&inside),
+            width,
+            palette,
+        ));
     }
     grouped(Group {
         opacity: ghost_opacity(standing),
