@@ -17,6 +17,7 @@
 import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { cablesOf } from "#tests/runtime/support/drawn-cables.ts";
+import { endsOffWalls, wallsOffCentre } from "#tests/runtime/support/drawn-ports.ts";
 import {
 	fitOf,
 	flankFanOf,
@@ -193,6 +194,20 @@ function scorecardOf(drawing: RenderedDiagram, content: VariantContent): Measure
 			digits: 0,
 			better: "lower",
 			meaning: "invariant, must be zero",
+		},
+		{
+			name: "ends off walls",
+			value: endsOffWalls(drawing, content).length,
+			digits: 0,
+			better: "lower",
+			meaning: "invariant, must be zero: a line end past its card's wall, its mark at empty space",
+		},
+		{
+			name: "walls off centre",
+			value: wallsOffCentre(drawing, content).length,
+			digits: 0,
+			better: "lower",
+			meaning: "walls with room whose ends do not stand as one group in the middle",
 		},
 		{
 			name: "cables",
