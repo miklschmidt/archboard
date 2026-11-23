@@ -5,10 +5,11 @@ import path from "node:path";
 import { ownProcess, runProcess } from "#runtime/evaluation/processes/process.ts";
 import { startServer } from "#runtime/evaluation/run-world/processes/server.ts";
 import { readProcessObservation } from "@archboard/process/observation";
-import { ms } from "@archboard/timing";
 
-/** A short pause for the test's own looks, and the shortened phase of a stop. */
+/** A short pause for test observations and the grace for a process that outlives TERM. */
 const TEST_POLL_MS = 100;
+/** Time for a local fixture command to start and publish its output. */
+const TEST_COMMAND_TIMEOUT_MS = 1_000;
 
 const env = { PATH: process.env["PATH"] ?? "" };
 const cwd = process.cwd();
@@ -25,7 +26,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["true"],
 				cwd,
 				env,
-				timeoutMs: ms("skillEval.healthRequest"),
+				timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 			});
 			expect(result.exitCode).toBe(0);
 		}
@@ -35,7 +36,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 			argv: ["sh", "-c", "sleep 60 & echo $!; echo problem >&2; exit 7"],
 			cwd,
 			env,
-			timeoutMs: ms("skillEval.healthRequest"),
+			timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 		});
 		expect(result).toMatchObject({
 			exitCode: 7,
@@ -55,7 +56,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 				argv: ["sh", "-c", "sleep 60 & echo $!; wait"],
 				cwd,
 				env,
-				timeoutMs: ms("skillEval.healthRequest"),
+				timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 				signal: controller.signal,
 				onStdout: (chunk) => {
 					descendant = Number(chunk.trim());
@@ -123,7 +124,7 @@ describe("evaluation process ownership with local shell fakes", () => {
 					argv: ["touch", output],
 					cwd,
 					env,
-					timeoutMs: ms("skillEval.healthRequest"),
+					timeoutMs: TEST_COMMAND_TIMEOUT_MS,
 					signal: AbortSignal.abort(),
 				}),
 			).rejects.toBeInstanceOf(Error);
