@@ -465,9 +465,10 @@ kind's name and a middle dot, except on a sync line, so its kind never rests on 
 
 **The Ends Carry the Effect Rule.** A line's effect, what it does, is drawn at its ends, in the
 kind's ink, and its body stays solid: dashes and dots make a busy picture harder to follow. A
-mutation ends in a solid wedge, and in the live reader the wedge leaves an imprint on the target:
-a short stripe along the card's edge, centered on the tip, fading at both ends with a soft glow and
-kept inside the port's share of the edge; an export draws it as a flat contact bar. A query ends in
+mutation ends in a solid wedge, and the wedge leaves an imprint on the target: a short stripe along
+the card's edge, centered on the tip and lying just in front of the edge, so the card hides none of
+it, on a soft glow in the kind's ink, kept inside the port's share of the edge. The live reader
+fades the stripe at both ends, and an export draws it flat over a blurred glow. A query ends in
 an eye, a rounded back, a dot at its center and a sharp forward tip, in outline, and a hollow ring sits
 on the caller's edge, where the answer lands. A compute ends in an "=", two short bars across the
 line just behind a small open point, and its body stops before the bars. Only a dependency that
@@ -483,8 +484,10 @@ emphasised one 3.6, and a declared-only body 0.7 of that. Every mark is drawn at
 the line's weight, in a 24-unit square: the wedge is 15 long and 15 wide, about six times the line's
 width; the eye about 16 long; the "=" with its point reaches 21 back from the tip, its bars 13 across
 the line and 8 apart; the detached chevron about 8 long, clear of the body's end; the ring at the
-caller is 4.2 round. A mutation's imprint reaches 9 to either side of the tip and is 2.6 thick. A
-line runs straight for 30 after its last bend, the longest head and some body, so no head sits on
+caller is 4.2 round. A mutation's imprint reaches 9 to either side of the tip and is 3.6 thick,
+as thick as an emphasised line; its glow is a lane (16) broad across the edge and fades to nothing
+at its rim from a heart 0.4 solid on the light ground and 0.6 on the dark one. A line runs
+straight for 30 after its last bend, the longest head and some body, so no head sits on
 or just past a bend; a line with no bend needs only 23, its marks and a little body. Seen from far
 out, a viewer grows each mark about its tip until its square is 8 CSS pixels: at the opening zoom
 of a large picture that keeps the "=" open, and from about a third of full size inward every mark

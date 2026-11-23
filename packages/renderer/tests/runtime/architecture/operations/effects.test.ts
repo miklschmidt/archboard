@@ -186,7 +186,8 @@ describe("a line's ends say its effect", () => {
 		const fromTip = Math.hypot(imprint.middle[0]! - tip[0]!, imprint.middle[1]! - tip[1]!);
 		expect(fromTip).toBeCloseTo(imprint.width / 2, 1);
 		const ink = (style: string) => /stroke:([^;]*)/u.exec(style)![1];
-		expect(ink(glow.style)).toBe(ink(imprint.style));
+		// The glow is the imprint's ink, at a strength of its own on each ground.
+		expect(ink(glow.style)).toContain(ink(imprint.style));
 		expect(glow.width).toBeGreaterThan(imprint.width);
 	});
 

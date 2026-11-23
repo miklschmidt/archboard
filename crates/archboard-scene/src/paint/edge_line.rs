@@ -8,6 +8,7 @@ use crate::paint::Edge;
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, point, route, shape};
 use crate::paint::cards::halo;
+use crate::paint::colour::{light_dark, translucent};
 use crate::paint::heads::{
     ECHELON, IMPRINT_GLOW, IMPRINT_WIDTH, body_short_of, ink_reach, mark_marker,
 };
@@ -85,11 +86,12 @@ fn imprint(curve: &Curve, reach: f64, ink: &Colour) -> Vec<Shape> {
         .unfilled()
         .stroked(stroke)
     };
-    let (breadth, solid) = IMPRINT_GLOW;
+    let (breadth, light, dark) = IMPRINT_GLOW;
+    let glow = light_dark(&translucent(ink, light), &translucent(ink, dark));
     vec![
         along(
             Purpose::Glow,
-            Stroke::new(ink, breadth).capped(Cap::Round).at(solid),
+            Stroke::new(&glow, breadth).capped(Cap::Round),
         ),
         along(
             Purpose::Imprint,

@@ -182,9 +182,15 @@ indigo. A kind no longer sets the arrowhead.
 | Compute       | solid                        | an "=" (two short bars) just behind a small point  | plain         |
 | Declared only | long broken strokes, thinner | a detached open chevron                            | plain         |
 
-The imprint of a mutation is a short stripe along the card's edge, centered on the tip, fading at
-both ends with a soft glow, and kept inside the port's share of the edge. An export draws it as a
-flat contact bar. The ring of a query sits on the caller's edge, where the answer lands. The body
+The imprint of a mutation is a short stripe along the card's edge, centered on the tip, on a soft
+glow in the kind's ink, and kept inside the port's share of the edge. It lies just in front of the
+edge: the card is drawn over its lines, and a stripe centered on the edge showed only half its
+width. The live reader fades the stripe at both ends; an export draws it flat over a blurred glow.
+The owner asked for a thicker stripe with a colored glow, and the advisors set it at 3.6, as thick
+as an emphasised line, so the wedge keeps its point, with a glow a lane (16) broad, 0.4 solid at
+its heart on the light ground and 0.6 on the dark one, where the inks are already dimmed. Exports
+glow too, because a still picture in a README is half of what readers see, and the export's
+colors already need the same modern CSS that its blur does. The ring of a query sits on the caller's edge, where the answer lands. The body
 of a compute stops before its bars.
 
 The body is solid for every effect but declared-only. The owner decided it: "Dashes / dots make

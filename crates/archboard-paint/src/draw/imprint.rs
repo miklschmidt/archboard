@@ -15,7 +15,7 @@ const FALLOFF: [(f32, f32); 4] = [(0.0, 1.0), (0.35, 0.55), (0.7, 0.15), (1.0, 0
 
 /// How solid a stripe is along its length, as a share of its ink: solid
 /// through its middle, so it reads as a bar, and fading out at each end.
-const FADE: [(f32, f32); 4] = [(0.0, 0.0), (0.3, 1.0), (0.7, 1.0), (1.0, 0.0)];
+const FADE: [(f32, f32); 4] = [(0.0, 0.0), (0.2, 1.0), (0.8, 1.0), (1.0, 0.0)];
 
 impl<C: Canvas> Walk<'_, C> {
     /// Draw a mutation's imprint or the glow under it, lit as its play lands.
@@ -36,9 +36,10 @@ impl<C: Canvas> Walk<'_, C> {
         let Some((from, to, stroke, width)) = self.stripe(shape) else {
             return;
         };
-        let heart = self
-            .lit_colour(&stroke.paint, lit)
-            .multiply_alpha(solid(stroke.opacity.unwrap_or(1.0) * (1.0 + lit)));
+        let ink = self.lit_colour(&stroke.paint, lit);
+        let heart = ink.with_alpha(solid(
+            f64::from(ink.components[3]) * stroke.opacity.unwrap_or(1.0) * (1.0 + lit),
+        ));
         let along = to - from;
         let centre = from.midpoint(to);
         let radii = (along.length() / 2.0 + width / 4.0, width / 2.0);
