@@ -10,7 +10,7 @@ use crate::{
     lanes::chains::LANE,
 };
 
-use super::{junctions::JOIN_ROOM, shape::Shape};
+use super::{channel::straight_run_of, junctions::JOIN_ROOM, shape::Shape};
 
 mod sheet;
 
@@ -322,7 +322,17 @@ fn squeeze(
 ) -> bool {
     let mut sheet = Sheet::of(drawing, axis, looks);
     reach_through(&mut sheet.pieces, reach);
-    let (rules, bodies) = rules_of(&sheet.pieces, sheet.movers, reach);
+    let (mut rules, bodies) = rules_of(&sheet.pieces, sheet.movers, reach);
+    rules.extend(sheet.straight_cables(drawing, axis, looks).filter_map(
+        |((first, second), length, half)| {
+            let (first, second) = (bodies[first], bodies[second]);
+            (first != second).then_some(Rule {
+                first,
+                second,
+                least: (straight_run_of(half) - length).min(0.0),
+            })
+        },
+    ));
     let start = sheet.pieces.iter().map(|piece| piece.low);
     let start = start.fold(reach, f64::min);
     let mut shifts = vec![f64::NEG_INFINITY; sheet.movers];
@@ -343,8 +353,8 @@ fn squeeze(
 }
 
 /// A routed drawing with the space that nothing uses taken out, if any was. Every run keeps
-/// a clearance of `clear` on each side. `two_way` names the lines with an arrowhead at their
-/// start. The caller must place the labels again and apply the complete geometry guard.
+/// a clearance of `clear` on each side. The caller must place the labels again and apply the
+/// complete geometry guard.
 pub(super) fn drawing(shape: &Shape, clear: f64, looks: Looks<'_>) -> Option<Placed> {
     let mut drawing = shape.routed();
     let reach = 2.0 * clear;

@@ -402,9 +402,14 @@ pub(super) fn approaches(points: &[Point], half: f64) -> bool {
     let required = if points.len() > 2 {
         approach_of(half)
     } else {
-        STRAIGHT_RUN + 2.0 * if half > 0.0 { ECHELON } else { 0.0 }
+        straight_run_of(half)
     };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
+}
+
+/// The shortest straight route that fits the marks of a line or cable.
+pub(super) fn straight_run_of(half: f64) -> f64 {
+    STRAIGHT_RUN + if half > 0.0 { 2.0 * ECHELON } else { 0.0 }
 }
 
 /// Whether a cable as wide as `girth` keeps every strand the right way round: between two bends
