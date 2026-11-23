@@ -392,9 +392,9 @@ pub(super) fn approach_of(half: f64) -> f64 {
     APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
 }
 
-/// How many times its direct way a cable's route may run, past the long detour's length: a
+/// How many times its direct way a route may run, past the long detour's length: a
 /// ring round the page is refused, and placement makes room for the direct way instead.
-const CABLE_DETOUR: f64 = 2.5;
+const DETOUR_LIMIT: f64 = 2.5;
 
 /// Rounded corners must leave the complete arrow approach after painting (`approach_of`). A
 /// line with no bend needs only the room its marks take.
@@ -534,8 +534,7 @@ fn basic(
     {
         return Some("attachment wall");
     }
-    // A cable a reader follows as one ribbon takes no long way round its direct one.
-    if girth > 0.0 && super::reading::runs_beyond(points, CABLE_DETOUR) {
+    if super::reading::runs_beyond(points, DETOUR_LIMIT) {
         return Some("detour");
     }
     if !points.iter().all(|point| {
@@ -552,4 +551,36 @@ fn basic(
         return Some("bounds");
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_lone_line_cannot_take_a_detour_around_the_page() {
+        let card = |x| Rect {
+            x,
+            y: 0.0,
+            width: 100.0,
+            height: 100.0,
+        };
+        let source = card(0.0);
+        let target = card(200.0);
+        let bounds = Rect {
+            width: 400.0,
+            height: 600.0,
+            ..source
+        };
+        let points = [
+            Point { x: 50.0, y: 100.0 },
+            Point { x: 50.0, y: 500.0 },
+            Point { x: 250.0, y: 500.0 },
+            Point { x: 250.0, y: 100.0 },
+        ];
+        assert_eq!(
+            basic((&points, 0.0), source, target, bounds),
+            Some("detour")
+        );
+    }
 }
