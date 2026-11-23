@@ -474,6 +474,59 @@ mod tests {
     use serde_json::json;
 
     #[test]
+    fn the_final_guard_keeps_distinct_door_ports_a_lane_apart_on_one_wall() {
+        let graph: Node = serde_json::from_value(json!({"id":"root","children":[
+            {"id":"door","layoutOptions":{"archboard.door":"across"}},
+            {"id":"left"}, {"id":"right"}],
+            "edges":[{"id":"left","sources":["door"],"targets":["left"],
+                "layoutOptions":{"archboard.relationship.kind":"http"}},
+                {"id":"right","sources":["door"],"targets":["right"],
+                "layoutOptions":{"archboard.relationship.kind":"event"}}]}))
+        .unwrap();
+        let model = Model::new(&graph).unwrap();
+        let topology = Topology::new(&model);
+        let card = |id: &str, x, y, width, height| PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width,
+                height,
+            },
+            depth: 0,
+            header: None,
+        };
+        let drawing = Placed {
+            width: 550.0,
+            height: 400.0,
+            cards: vec![
+                card("door", 180.0, 80.0, 140.0, 34.0),
+                card("left", 40.0, 180.0, 140.0, 80.0),
+                card("right", 320.0, 180.0, 140.0, 80.0),
+            ],
+            frames: vec![],
+            regions: vec![],
+            edges: vec![],
+            titles: vec![],
+            routed: None,
+        };
+        let route = |id: &str, x, far| PlacedLine {
+            id: id.into(),
+            points: vec![
+                Point { x, y: 114.02 },
+                Point { x, y: 220.0 },
+                Point { x: far, y: 220.0 },
+            ],
+            label: None,
+        };
+        let mut shape = placement(&model, drawing).unwrap();
+        shape.routes = vec![route("left", 243.0, 180.02), route("right", 257.0, 319.98)];
+        finish(&model, &topology, &mut shape).expect_err("fourteen units is less than a lane");
+        shape.routes = vec![route("left", 242.0, 180.02), route("right", 258.0, 319.98)];
+        finish(&model, &topology, &mut shape).expect("sixteen units leaves a full lane");
+    }
+
+    #[test]
     fn opposite_wall_ports_keep_distinct_routes_off_one_line() {
         let graph: Node = serde_json::from_value(json!({"id":"root","children":[
             {"id":"a","width":160,"height":80},
