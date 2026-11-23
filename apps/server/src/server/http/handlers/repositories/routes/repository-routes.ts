@@ -55,7 +55,7 @@ import { every } from "@archboard/timing";
  * @param res Its response.
  */
 function repositoriesRoute(_req: Request, res: Response): void {
-	res.json(publish());
+	res.json(refresh());
 }
 
 /**
@@ -169,14 +169,12 @@ function registryText(): string | null {
 }
 
 /**
- * Read the listing and, when it differs from the last one, send it to every tab
- * that follows the repositories.
+ * Send a changed listing to the tabs that follow it.
+ * @param repositories The current list.
+ * @param text The serialized list used to recognize changes.
  * @returns The listing as published.
  */
-function publish(): Listing {
-	const repositories = listRepositories();
-	const text = JSON.stringify(repositories);
-	if (published?.text === text) return published.listing;
+function publish(repositories: Listing["repositories"], text: string): Listing {
 	const revision = (published?.listing.revision ?? -1) + 1;
 	const listing: Listing = { success: true, revision, repositories };
 	agentActivity.register(repositories.flatMap((entry) => entry.vault ?? []));
@@ -186,12 +184,27 @@ function publish(): Listing {
 }
 
 /**
+ * Follow changes in pane placement and publish changes to the listing.
+ * @param chosenHere Whether this server made a choice whose panes must follow.
+ * @returns The current listing.
+ */
+function refresh(chosenHere = false): Listing {
+	const repositories = listRepositories();
+	const text = JSON.stringify(repositories);
+	const cached = published?.text === text ? published.listing : undefined;
+	followPanes(chosenHere || cached === undefined);
+	return cached ?? publish(repositories, text);
+}
+
+/**
  * Bring every pane in line with the registry (ADR 0050). A pane in the vault of
  * an unchosen checkout moves to the chosen vault, keeping its model. Every other
  * pane hears its repository name, even if the navigator has no entry for it.
- * @param registry The registry contents the panes are following.
+ * @param placementMayHaveChanged Whether a listing or a local choice can affect pane placement.
  */
-function followPanes(registry: string | null): void {
+function followPanes(placementMayHaveChanged: boolean): void {
+	const registry = registryText();
+	if (!placementMayHaveChanged && registry === followedRegistry) return;
 	// A move sets the entry of a pane it has visited already, which adds no entry to visit.
 	for (const [clientId, vault] of panesWithVaults()) {
 		const { home, repository } = placeOfVault(vault);
@@ -209,19 +222,16 @@ function followPanes(registry: string | null): void {
  * @returns The listing as published.
  */
 function followRegistry(): Listing {
-	followPanes(registryText());
-	return publish();
+	return refresh(true);
 }
 
 /**
  * Look again from a watch or a tick, where a failure has no caller to answer.
  * @param why What made the server look.
- * @param registry The current contents when a registry event prompted the look.
  */
-function lookAgainFor(why: string, registry?: string | null): void {
+function lookAgainFor(why: string): void {
 	try {
-		if (registry !== undefined && registry !== followedRegistry) followPanes(registry);
-		publish();
+		refresh();
 	} catch (error) {
 		logger().warn(`Cannot list the repositories of this machine after ${why}`, { error });
 	}
@@ -354,20 +364,19 @@ function watchRegistry(): void {
 		return;
 	}
 	const file = path.resolve(registryPath());
-	followedRegistry = registryText();
-	publish();
+	refresh();
 	try {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
 		registryWatcher = fs.watch(path.dirname(file), { persistent: false }, (_event, name) => {
 			if (name !== null && name !== path.basename(file)) return;
-			lookAgainFor(`a change of the checkout registry ${file}`, registryText());
+			lookAgainFor(`a change of the checkout registry ${file}`);
 		});
 		registryWatcher.on("error", (error) => {
 			logger().warn(`Stopped watching the checkout registry ${file}`, { error });
 		});
 	} catch (error) {
 		logger().warn(
-			`Cannot watch the checkout registry ${file}, so the panes follow only the changes this server makes`,
+			`Cannot watch the checkout registry ${file}. The server still checks it while a tab follows the repositories.`,
 			{ error },
 		);
 	}

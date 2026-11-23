@@ -283,10 +283,19 @@ describe.serial("the repositories of the navigator", () => {
 		await pane.sync();
 		expect(pane.events.slice(mark).filter((event) => event.type === "pane_place")).toEqual([]);
 
-		// With a vault it is chosen, and the pane moves there with its model.
+		// The CLI can choose a checkout before it has a vault. Once the vault appears,
+		// the same disk recheck that updates the listing also moves the pane.
+		const tab = resources.use(await openRepositoryFeed(server.base));
+		await tab.next();
+		cli("repo", "use", fix);
+		await tab.until((listing) =>
+			listing.repositories.some((entry) => entry.name === ORDERS && entry.state === "no-vault"),
+		);
+		await pane.sync();
+		const beforeVault = pane.mark();
 		const fixVault = vaultOf(fix);
-		expect((await choose(fix)).status).toBe(200);
-		const moved = await pane.waitFor("pane_place", mark);
+		await tab.until((listing) => ordersVault(listing.repositories) === fixVault);
+		const moved = await pane.waitFor("pane_place", beforeVault);
 		expect(moved).toMatchObject({ paneKey: "payments", vault: fixVault, repository: ORDERS });
 	});
 
@@ -307,6 +316,7 @@ describe.serial("the repositories of the navigator", () => {
 			await tab.until((listing) => !names(listing).includes("zz-scratch"));
 
 			// Forgetting an already missing vault leaves the listing alone but removes the pane's name.
+			await pane.sync();
 			const mark = pane.mark();
 			cli("repo", "forget", holder);
 			expect(await pane.waitFor("pane_place", mark)).toMatchObject({ vault, repository: null });
