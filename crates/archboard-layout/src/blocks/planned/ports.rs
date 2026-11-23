@@ -2,6 +2,7 @@
 
 use super::model::Model;
 use super::shape::{CLEAR, Shape};
+use crate::constants::approach_of;
 use crate::geometry::{Point, Rect, Side};
 use crate::graph::Node;
 use crate::lanes::chains::LANE;
@@ -26,7 +27,7 @@ impl Port {
             self.approach.y - self.attachment.y,
         );
         let length = dx.hypot(dy);
-        let reach = super::channel::approach_of(half) + 0.02;
+        let reach = approach_of(half) + 0.02;
         Self {
             approach: Point {
                 x: self.attachment.x + dx / length * reach,
@@ -425,10 +426,7 @@ mod tests {
         let reach = |port: Port| port.approach.y - port.attachment.y;
         assert!(port.reaching(0.0) == port);
         let half = 12.0;
-        assert!(
-            (reach(port.reaching(half)) - super::super::channel::approach_of(half) - 0.02).abs()
-                < 1e-9
-        );
+        assert!((reach(port.reaching(half)) - super::approach_of(half) - 0.02).abs() < 1e-9);
     }
 
     #[test]

@@ -28,6 +28,48 @@ fn lanes_takes_the_lanes_placement_where_blocks_plans() {
     }
 }
 
+#[test]
+fn a_fallback_cable_leaves_room_for_its_marks_at_both_ends() {
+    let graph = json!({
+        "id": "root", "layoutOptions": {"archboard.layout.engine": "lanes"},
+        "children": [
+            {"id": "source", "width": 120, "height": 80},
+            {"id": "left", "width": 200, "height": 80},
+            {"id": "right", "width": 200, "height": 80}
+        ],
+        "edges": [
+            {"id": "a", "sources": ["source"], "targets": ["left"],
+                "layoutOptions": {"archboard.cable": "sync;async"}},
+            {"id": "b", "sources": ["source"], "targets": ["right"],
+                "layoutOptions": {"archboard.cable": "http;rpc"}}
+        ]
+    });
+    let (placed, _) = told(&graph);
+    let placed: Value = serde_json::from_str(&placed).expect("a drawing");
+    let minimum = archboard_scene::paint::design::approach_straight()
+        + archboard_scene::geometry::bend_radius()
+        + archboard_scene::paint::design::echelon()
+        + 4.0;
+    let length = |one: &Value, two: &Value| {
+        let coordinate = |point: &Value, axis: &str| point[axis].as_f64().expect("a coordinate");
+        (coordinate(one, "x") - coordinate(two, "x")).abs()
+            + (coordinate(one, "y") - coordinate(two, "y")).abs()
+    };
+    let mut bent = 0;
+    for line in placed["edges"].as_array().expect("the lines") {
+        let points = line["points"].as_array().expect("the route");
+        if let [first, second, _, ..] = points.as_slice() {
+            bent += 1;
+            assert!(length(first, second) >= minimum, "{line}");
+            assert!(
+                length(&points[points.len() - 2], &points[points.len() - 1]) >= minimum,
+                "{line}"
+            );
+        }
+    }
+    assert!(bent > 0);
+}
+
 /// What one solve answers for a graph: the drawing as it was written, and whether it was planned.
 fn told(graph: &Value) -> (String, bool) {
     let answer =

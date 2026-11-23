@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use std::{cell::RefCell, rc::Rc};
 
 use crate::blocks::assembly::PlacedLine;
-use crate::constants::{APPROACH_STRAIGHT, BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND};
+use crate::constants::{BEND_RADIUS, ECHELON, STRAIGHT_RUN, STRAND, approach_of};
 use crate::geometry::{Point, Rect, inflate};
 
 use super::geometry::{contains, intersection, length, meets_itself};
@@ -382,14 +382,6 @@ pub(super) fn shared_fragment(
     };
     model.treatments[edge] == model.treatments[other]
         && (model.ends[edge].0 == model.ends[other].0 || model.ends[edge].1 == model.ends[other].1)
-}
-
-/// How long the straight run beside a wall must be for a line whose ink reaches `half` to
-/// either side: the arrow's approach and the bend's room, on the inner strand of a cable too,
-/// which turns `half` sooner, and room for the marks its strands set back in echelon.
-pub(super) fn approach_of(half: f64) -> f64 {
-    let echelon = if half > 0.0 { ECHELON } else { 0.0 };
-    APPROACH_STRAIGHT + BEND_RADIUS + half + echelon
 }
 
 /// How many times its direct way a route may run, past the long detour's length: a
